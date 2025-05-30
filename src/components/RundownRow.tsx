@@ -4,6 +4,7 @@ import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { ClockFormat } from '@/hooks/useClockFormat';
 
 interface RundownRowProps {
   item: RundownItem;
@@ -16,6 +17,7 @@ interface RundownRowProps {
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
   headerDuration?: string;
+  clockFormat: ClockFormat;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;

@@ -5,6 +5,7 @@ import RundownContent from './RundownContent';
 import ColumnManager from './ColumnManager';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { ClockFormat } from '@/hooks/useClockFormat';
 
 interface RundownContainerProps {
   currentTime: Date;
@@ -21,6 +22,8 @@ interface RundownContainerProps {
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   currentSegmentId: string | null;
+  clockFormat: ClockFormat;
+  onClockFormatToggle: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -73,6 +76,8 @@ const RundownContainer = ({
   selectedRows,
   draggedItemIndex,
   currentSegmentId,
+  clockFormat,
+  onClockFormatToggle,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -118,6 +123,8 @@ const RundownContainer = ({
             timezone={timezone}
             onTimezoneChange={onTimezoneChange}
             totalRuntime={totalRuntime}
+            clockFormat={clockFormat}
+            onClockFormatToggle={onClockFormatToggle}
             onAddRow={onAddRow}
             onAddHeader={onAddHeader}
             onShowColumnManager={() => setShowColumnManager(true)}
@@ -146,6 +153,7 @@ const RundownContainer = ({
             selectedRows={selectedRows}
             draggedItemIndex={draggedItemIndex}
             currentSegmentId={currentSegmentId}
+            clockFormat={clockFormat}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}
             getRowNumber={getRowNumber}
