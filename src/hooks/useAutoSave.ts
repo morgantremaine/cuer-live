@@ -62,7 +62,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       return true;
     } catch (error) {
       console.error('Manual save: Failed:', error);
-      return false;
+      throw error; // Re-throw to let the caller handle the error
     }
   }, [rundownId, rundownTitle, items, columns, updateRundown, saveRundown, canSave, navigate, isNewRundown]);
 
