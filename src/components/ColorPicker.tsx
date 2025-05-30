@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,14 +12,14 @@ interface ColorPickerProps {
 const ColorPicker = ({ itemId, showColorPicker, onToggle, onColorSelect }: ColorPickerProps) => {
   const colorOptions = [
     { name: 'Default', value: '' },
-    { name: 'Red', value: '#fef2f2' },
-    { name: 'Orange', value: '#fff7ed' },
-    { name: 'Yellow', value: '#fefce8' },
-    { name: 'Green', value: '#f0fdf4' },
-    { name: 'Blue', value: '#eff6ff' },
-    { name: 'Purple', value: '#faf5ff' },
-    { name: 'Pink', value: '#fdf2f8' },
-    { name: 'Gray', value: '#f9fafb' }
+    { name: 'Red', value: '#fca5a5' },
+    { name: 'Orange', value: '#fdba74' },
+    { name: 'Yellow', value: '#fde047' },
+    { name: 'Green', value: '#86efac' },
+    { name: 'Blue', value: '#93c5fd' },
+    { name: 'Purple', value: '#c4b5fd' },
+    { name: 'Pink', value: '#f9a8d4' },
+    { name: 'Gray', value: '#d1d5db' }
   ];
 
   return (
