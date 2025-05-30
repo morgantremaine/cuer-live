@@ -1,30 +1,9 @@
-
 import React from 'react';
 import { Trash2, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ColorPicker from './ColorPicker';
-
-interface RundownItem {
-  id: string;
-  segmentName: string;
-  duration: string;
-  startTime: string;
-  endTime: string;
-  notes: string;
-  status: 'upcoming' | 'current' | 'completed';
-  color?: string;
-  isHeader?: boolean;
-  customFields?: { [key: string]: string };
-}
-
-interface Column {
-  id: string;
-  name: string;
-  key: string;
-  width: string;
-  isCustom: boolean;
-  isEditable: boolean;
-}
+import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownRowProps {
   item: RundownItem;
