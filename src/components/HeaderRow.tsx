@@ -52,37 +52,38 @@ const HeaderRow = ({
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, index)}
     >
-      <td className="px-4 py-2 text-sm text-gray-300 dark:text-gray-400 font-mono" style={{ width: '60px' }}>
+      <td className="px-4 py-2 text-sm text-gray-300 dark:text-gray-400 font-mono" style={{ width: '80px' }}>
         <span className="text-xl font-bold text-white">{item.segmentName}</span>
       </td>
-      <td className="px-4 py-3" style={{ width: getColumnWidth(columns[0]) }}>
-        <div className="flex items-center justify-between">
-          <input
-            ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
-            type="text"
-            value={item.notes}
-            onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
-            onClick={() => onCellClick(item.id, 'notes')}
-            onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-            className="flex-1 border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm"
-            placeholder="Header description..."
-          />
-          <span className="text-sm text-gray-300 font-mono ml-3">({headerDuration})</span>
-        </div>
-      </td>
-      {columns.slice(1).map((column) => (
+      {columns.map((column, columnIndex) => (
         <td key={column.id} className="px-4 py-3" style={{ width: getColumnWidth(column) }}>
+          {columnIndex === 0 ? (
+            <input
+              ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
+              type="text"
+              value={item.notes}
+              onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
+              onClick={() => onCellClick(item.id, 'notes')}
+              onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
+              className="flex-1 border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm w-full"
+              placeholder="Header description..."
+            />
+          ) : column.key === 'duration' ? (
+            <span className="text-sm text-gray-300 font-mono">({headerDuration})</span>
+          ) : null}
         </td>
       ))}
-      <td className="px-4 py-2" style={{ width: '120px' }}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onDeleteRow(item.id)}
-          className="text-red-300 hover:text-red-200 hover:bg-red-900 dark:hover:bg-red-800"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      <td className="px-4 py-2" onClick={(e) => e.stopPropagation()} style={{ width: '120px' }}>
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDeleteRow(item.id)}
+            className="text-red-300 hover:text-red-200 hover:bg-red-900 dark:hover:bg-red-800"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </td>
     </tr>
   );
