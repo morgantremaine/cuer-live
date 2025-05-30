@@ -67,7 +67,7 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[]) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false) => {
     if (!user) return
 
     const { error } = await supabase
@@ -81,16 +81,21 @@ export const useRundownStorage = () => {
       .eq('user_id', user.id)
 
     if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update rundown',
-        variant: 'destructive',
-      })
+      if (!silent) {
+        toast({
+          title: 'Error',
+          description: 'Failed to update rundown',
+          variant: 'destructive',
+        })
+      }
+      throw error
     } else {
-      toast({
-        title: 'Success',
-        description: 'Rundown updated successfully!',
-      })
+      if (!silent) {
+        toast({
+          title: 'Success',
+          description: 'Rundown updated successfully!',
+        })
+      }
       loadRundowns()
     }
   }
