@@ -25,6 +25,14 @@ interface RundownHeaderSectionProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onSave: () => void;
+  onExport: () => void;
+  onImport: () => void;
+  onToggleSidebar: () => void;
+  onOpenSettings: () => void;
+  title: string;
+  onTitleChange: (title: string) => void;
+  isModified: boolean;
 }
 
 const RundownHeaderSection = ({
@@ -48,7 +56,15 @@ const RundownHeaderSection = ({
   onPlay,
   onPause,
   onForward,
-  onBackward
+  onBackward,
+  onSave,
+  onExport,
+  onImport,
+  onToggleSidebar,
+  onOpenSettings,
+  title,
+  onTitleChange,
+  isModified
 }: RundownHeaderSectionProps) => {
   return (
     <div className="sticky top-0 z-10 bg-white dark:bg-gray-800">
@@ -57,6 +73,14 @@ const RundownHeaderSection = ({
         timezone={timezone}
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
+        onSave={onSave}
+        onExport={onExport}
+        onImport={onImport}
+        onToggleSidebar={onToggleSidebar}
+        onOpenSettings={onOpenSettings}
+        title={title}
+        onTitleChange={onTitleChange}
+        isModified={isModified}
       />
       
       <RundownToolbar
