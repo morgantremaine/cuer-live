@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -19,6 +18,7 @@ export const useRundownGridState = () => {
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
@@ -38,8 +38,6 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle);
-
   const {
     columns,
     visibleColumns,
@@ -48,7 +46,9 @@ export const useRundownGridState = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager();
+
+  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle, columns);
 
   const {
     columnWidths,
@@ -105,21 +105,32 @@ export const useRundownGridState = () => {
 
   // Load saved rundown data when component mounts or rundownId changes
   useEffect(() => {
-    if (rundownId && savedRundowns.length > 0) {
+    if (rundownId && !loading && savedRundowns.length > 0 && !isDataLoaded) {
       const savedRundown = savedRundowns.find(r => r.id === rundownId);
       if (savedRundown) {
         console.log('Loading saved rundown:', savedRundown);
-        setItems(savedRundown.items);
-        setRundownTitle(savedRundown.title);
+        console.log('Rundown items:', savedRundown.items);
+        console.log('Column config:', savedRundown.column_config);
+        
+        // Load the rundown data
+        setItems(savedRundown.items || []);
+        setRundownTitle(savedRundown.title || 'Live Broadcast Rundown');
         
         // Load column configuration if it exists
-        if (savedRundown.column_config) {
-          console.log('Loading column config:', savedRundown.column_config);
+        if (savedRundown.column_config && Array.isArray(savedRundown.column_config)) {
+          console.log('Loading column configuration:', savedRundown.column_config);
           handleLoadLayout(savedRundown.column_config);
         }
+        
+        setIsDataLoaded(true);
       }
     }
-  }, [rundownId, savedRundowns, setItems, setRundownTitle, handleLoadLayout]);
+  }, [rundownId, savedRundowns, loading, isDataLoaded, setItems, setRundownTitle, handleLoadLayout]);
+
+  // Reset data loaded flag when rundownId changes
+  useEffect(() => {
+    setIsDataLoaded(false);
+  }, [rundownId]);
 
   // Timer effect for current time
   useEffect(() => {
@@ -136,7 +147,7 @@ export const useRundownGridState = () => {
     setShowColumnManager,
     rundownTitle,
     setRundownTitle,
-    rundownId,
+    rundownId: rundownId || '',
     
     // Items state
     items,
