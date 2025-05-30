@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -49,7 +48,7 @@ export const useRundownGridState = () => {
     handleLoadLayout
   } = useColumnsManager();
 
-  // Initialize auto-save after columns are set up
+  // Initialize manual save only (no auto-save)
   const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle, columns);
 
   const {
