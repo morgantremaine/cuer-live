@@ -10,7 +10,7 @@ import { useColorPicker } from '@/hooks/useColorPicker';
 import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
-import { useAutoSave } from '@/hooks/useAutoSave';
+import { useSimpleAutoSave } from '@/hooks/useSimpleAutoSave';
 import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 import { useRundownTimers } from '@/hooks/useRundownTimers';
 
@@ -47,10 +47,10 @@ export const useRundownGridState = () => {
     handleLoadLayout
   } = useColumnsManager();
 
-  // Auto-save hook
-  const { hasUnsavedChanges, markAsChanged, lastSaved, isSaving } = useAutoSave(items, rundownTitle, columns);
+  // Simple auto-save hook
+  const { hasUnsavedChanges, markAsChanged, lastSaved, isSaving } = useSimpleAutoSave(items, rundownTitle, columns);
 
-  console.log('🔄 useRundownGridState: Auto-save state', {
+  console.log('🔄 useRundownGridState: Simple auto-save state', {
     hasUnsavedChanges,
     lastSaved: lastSaved?.toISOString(),
     isSaving
@@ -148,7 +148,7 @@ export const useRundownGridState = () => {
     calculateTotalRuntime,
     calculateHeaderDuration,
     
-    // Auto-save state
+    // Simple auto-save state
     hasUnsavedChanges,
     markAsChanged,
     lastSaved,

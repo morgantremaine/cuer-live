@@ -20,7 +20,7 @@ const RundownGrid = () => {
     calculateEndTime: state.calculateEndTime,
     selectColor: state.selectColor,
     markAsChanged: (source?: string) => {
-      console.log('🔔 RundownGrid: markAsChanged called', { source, hasUnsavedChanges: state.hasUnsavedChanges });
+      console.log('🔔 RundownGrid: markAsChanged called from', source);
       state.markAsChanged();
     },
     selectedRows: state.selectedRows,
@@ -90,23 +90,23 @@ const RundownGrid = () => {
       onForward={state.forward}
       onBackward={state.backward}
       handleAddColumn={(name: string) => {
-        console.log('🔔 RundownGrid: Adding column, calling markAsChanged', name);
+        console.log('🔔 RundownGrid: Adding column');
         state.handleAddColumn(name);
         state.markAsChanged();
       }}
       handleReorderColumns={(columns) => {
-        console.log('🔔 RundownGrid: Reordering columns, calling markAsChanged');
+        console.log('🔔 RundownGrid: Reordering columns');
         state.handleReorderColumns(columns);
         state.markAsChanged();
       }}
       handleDeleteColumnWithCleanup={handlers.handleDeleteColumnWithCleanup}
       handleToggleColumnVisibility={(columnId: string) => {
-        console.log('🔔 RundownGrid: Toggling column visibility, calling markAsChanged', columnId);
+        console.log('🔔 RundownGrid: Toggling column visibility');
         state.handleToggleColumnVisibility(columnId);
         state.markAsChanged();
       }}
       handleLoadLayout={(layoutColumns) => {
-        console.log('🔔 RundownGrid: Loading layout, calling markAsChanged');
+        console.log('🔔 RundownGrid: Loading layout');
         state.handleLoadLayout(layoutColumns);
         state.markAsChanged();
       }}
