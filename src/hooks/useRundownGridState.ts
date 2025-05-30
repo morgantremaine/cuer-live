@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -48,6 +49,7 @@ export const useRundownGridState = () => {
     handleLoadLayout
   } = useColumnsManager();
 
+  // Initialize auto-save after columns are set up
   const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle, columns);
 
   const {
@@ -105,30 +107,44 @@ export const useRundownGridState = () => {
 
   // Load saved rundown data when component mounts or rundownId changes
   useEffect(() => {
+    console.log('useRundownGridState: Effect triggered', { rundownId, loading, savedRundownsLength: savedRundowns.length, isDataLoaded });
+    
     if (rundownId && !loading && savedRundowns.length > 0 && !isDataLoaded) {
       const savedRundown = savedRundowns.find(r => r.id === rundownId);
+      console.log('useRundownGridState: Looking for rundown with id:', rundownId);
+      console.log('useRundownGridState: Found rundown:', savedRundown);
+      
       if (savedRundown) {
-        console.log('Loading saved rundown:', savedRundown);
-        console.log('Rundown items:', savedRundown.items);
-        console.log('Column config:', savedRundown.column_config);
+        console.log('useRundownGridState: Loading saved rundown data');
+        console.log('useRundownGridState: Items to load:', savedRundown.items);
+        console.log('useRundownGridState: Column config to load:', savedRundown.column_config);
         
         // Load the rundown data
-        setItems(savedRundown.items || []);
-        setRundownTitle(savedRundown.title || 'Live Broadcast Rundown');
+        if (savedRundown.items && Array.isArray(savedRundown.items)) {
+          setItems(savedRundown.items);
+        }
+        
+        if (savedRundown.title) {
+          setRundownTitle(savedRundown.title);
+        }
         
         // Load column configuration if it exists
         if (savedRundown.column_config && Array.isArray(savedRundown.column_config)) {
-          console.log('Loading column configuration:', savedRundown.column_config);
+          console.log('useRundownGridState: Loading column configuration');
           handleLoadLayout(savedRundown.column_config);
         }
         
         setIsDataLoaded(true);
+        console.log('useRundownGridState: Data loading complete');
+      } else {
+        console.log('useRundownGridState: No rundown found with id:', rundownId);
       }
     }
   }, [rundownId, savedRundowns, loading, isDataLoaded, setItems, setRundownTitle, handleLoadLayout]);
 
   // Reset data loaded flag when rundownId changes
   useEffect(() => {
+    console.log('useRundownGridState: Rundown ID changed, resetting data loaded flag');
     setIsDataLoaded(false);
   }, [rundownId]);
 

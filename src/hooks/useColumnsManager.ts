@@ -11,7 +11,7 @@ export interface Column {
   isVisible?: boolean;
 }
 
-export const useColumnsManager = (markAsChanged?: () => void) => {
+export const useColumnsManager = () => {
   const [columns, setColumns] = useState<Column[]>([
     { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: 'min-w-48', isCustom: false, isEditable: true, isVisible: true },
     { id: 'duration', name: 'Duration', key: 'duration', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
@@ -39,41 +39,25 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       newColumns.splice(1, 0, newColumn);
       return newColumns;
     });
-    
-    // Mark as changed when adding a column
-    if (markAsChanged) {
-      markAsChanged();
-    }
   };
 
   const handleReorderColumns = (newColumns: Column[]) => {
     setColumns(newColumns);
-    if (markAsChanged) {
-      markAsChanged();
-    }
   };
 
   const handleDeleteColumn = (columnId: string) => {
     setColumns(prev => prev.filter(col => col.id !== columnId));
-    if (markAsChanged) {
-      markAsChanged();
-    }
   };
 
   const handleToggleColumnVisibility = (columnId: string) => {
     setColumns(prev => prev.map(col => 
       col.id === columnId ? { ...col, isVisible: col.isVisible !== false ? false : true } : col
     ));
-    if (markAsChanged) {
-      markAsChanged();
-    }
   };
 
   const handleLoadLayout = (layoutColumns: Column[]) => {
+    console.log('useColumnsManager: Loading layout with columns:', layoutColumns);
     setColumns(layoutColumns);
-    if (markAsChanged) {
-      markAsChanged();
-    }
   };
 
   return {

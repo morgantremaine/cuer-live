@@ -10,10 +10,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const { updateRundown, saveRundown, savedRundowns } = useRundownStorage();
   const navigate = useNavigate();
   
-  // Keep track of initial state to compare against
-  const initialStateRef = useRef<{ items: RundownItem[], title: string, columns?: Column[] } | null>(null);
-  const lastSavedStateRef = useRef<{ items: RundownItem[], title: string, columns?: Column[] } | null>(null);
-  const isNewRundownRef = useRef<boolean>(!rundownId);
+  // Keep track of last saved state
+  const lastSavedStateRef = useRef<string | null>(null);
   const isInitializedRef = useRef<boolean>(false);
 
   // Check if the current rundown exists in saved rundowns
@@ -21,41 +19,24 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const canAutoSave = rundownId && currentRundown;
   const isNewRundown = !rundownId;
 
-  // Initialize the refs when we first load a rundown or start a new one
+  // Initialize the state when we first load
   useEffect(() => {
-    if (currentRundown && !isInitializedRef.current) {
-      const initialState = { 
-        items: currentRundown.items || [], 
-        title: currentRundown.title || 'Live Broadcast Rundown',
-        columns: currentRundown.column_config || []
-      };
-      initialStateRef.current = initialState;
-      lastSavedStateRef.current = initialState;
-      setHasUnsavedChanges(false);
-      isNewRundownRef.current = false;
-      isInitializedRef.current = true;
-      console.log('Auto-save: Initialized with existing rundown:', initialState);
-    } else if (isNewRundown && !isInitializedRef.current && items.length > 0) {
-      // For new rundowns, set initial state to current state
-      const initialState = { items, title: rundownTitle, columns: columns || [] };
-      initialStateRef.current = initialState;
-      lastSavedStateRef.current = null; // No saved state yet
-      setHasUnsavedChanges(false);
-      isNewRundownRef.current = true;
-      isInitializedRef.current = true;
-      console.log('Auto-save: Initialized for new rundown:', initialState);
-    }
-  }, [currentRundown, isNewRundown, items, rundownTitle, columns]);
-
-  // Change detection for both existing and new rundowns
-  useEffect(() => {
-    if (isInitializedRef.current && initialStateRef.current) {
+    if (!isInitializedRef.current) {
       const currentState = JSON.stringify({ items, title: rundownTitle, columns: columns || [] });
-      const compareState = lastSavedStateRef.current || initialStateRef.current;
-      const savedState = JSON.stringify(compareState);
+      lastSavedStateRef.current = currentState;
+      setHasUnsavedChanges(false);
+      isInitializedRef.current = true;
+      console.log('Auto-save: Initialized');
+    }
+  }, [items, rundownTitle, columns]);
+
+  // Simple change detection
+  useEffect(() => {
+    if (isInitializedRef.current) {
+      const currentState = JSON.stringify({ items, title: rundownTitle, columns: columns || [] });
       
-      if (currentState !== savedState) {
-        console.log('Auto-save: Changes detected, marking as unsaved');
+      if (currentState !== lastSavedStateRef.current) {
+        console.log('Auto-save: Changes detected');
         setHasUnsavedChanges(true);
       }
     }
@@ -71,32 +52,29 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
           if (hasUnsavedChanges && isInitializedRef.current) {
             console.log('Auto-save: Starting auto-save...');
             try {
-              if (isNewRundownRef.current) {
-                // Save as new rundown
-                console.log('Auto-save: Saving new rundown to database');
+              if (isNewRundown) {
+                console.log('Auto-save: Saving new rundown');
                 const result = await saveRundown(rundownTitle, items, columns);
                 if (result?.id) {
-                  // Navigate to the new rundown URL
                   navigate(`/rundown/${result.id}`, { replace: true });
-                  isNewRundownRef.current = false;
                 }
               } else if (canAutoSave) {
-                // Update existing rundown
-                await updateRundown(rundownId!, rundownTitle, items, true, columns); // silent = true for auto-save
+                console.log('Auto-save: Updating existing rundown');
+                await updateRundown(rundownId!, rundownTitle, items, true, columns);
               }
               
-              lastSavedStateRef.current = { items: [...items], title: rundownTitle, columns: columns ? [...columns] : [] };
+              const newSavedState = JSON.stringify({ items, title: rundownTitle, columns: columns || [] });
+              lastSavedStateRef.current = newSavedState;
               setHasUnsavedChanges(false);
               console.log('Auto-save: Successful');
             } catch (error) {
               console.error('Auto-save: Failed:', error);
-              // Keep unsaved changes flag true if save failed
             }
           }
-        }, 3000); // 3 second debounce
+        }, 2000); // 2 second debounce
       };
     })(),
-    [hasUnsavedChanges, rundownTitle, items, columns, updateRundown, saveRundown, rundownId, canAutoSave, navigate]
+    [hasUnsavedChanges, rundownTitle, items, columns, updateRundown, saveRundown, rundownId, canAutoSave, navigate, isNewRundown]
   );
 
   // Trigger auto-save when there are unsaved changes
@@ -115,21 +93,18 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const manualSave = useCallback(async () => {
     try {
       console.log('Auto-save: Manual save triggered');
-      if (isNewRundownRef.current) {
-        // Save as new rundown
-        console.log('Auto-save: Manually saving new rundown to database');
+      if (isNewRundown) {
+        console.log('Auto-save: Manually saving new rundown');
         const result = await saveRundown(rundownTitle, items, columns);
         if (result?.id) {
-          // Navigate to the new rundown URL
           navigate(`/rundown/${result.id}`, { replace: true });
-          isNewRundownRef.current = false;
         }
       } else if (canAutoSave) {
-        // Update existing rundown
-        await updateRundown(rundownId!, rundownTitle, items, false, columns); // silent = false for manual save
+        await updateRundown(rundownId!, rundownTitle, items, false, columns);
       }
       
-      lastSavedStateRef.current = { items: [...items], title: rundownTitle, columns: columns ? [...columns] : [] };
+      const newSavedState = JSON.stringify({ items, title: rundownTitle, columns: columns || [] });
+      lastSavedStateRef.current = newSavedState;
       setHasUnsavedChanges(false);
       console.log('Auto-save: Manual save successful');
       return true;
@@ -137,10 +112,10 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       console.error('Auto-save: Manual save failed:', error);
       return false;
     }
-  }, [rundownId, rundownTitle, items, columns, updateRundown, saveRundown, canAutoSave, navigate]);
+  }, [rundownId, rundownTitle, items, columns, updateRundown, saveRundown, canAutoSave, navigate, isNewRundown]);
 
   return {
-    hasUnsavedChanges: hasUnsavedChanges,
+    hasUnsavedChanges,
     markAsChanged,
     manualSave
   };
