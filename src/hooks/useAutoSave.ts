@@ -83,7 +83,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       lastItemId: items[items.length - 1]?.id || 'none'
     });
     
-    // Clear existing timeout
+    // Clear existing timeout only if it exists
     if (saveTimeoutRef.current) {
       console.log('🚫 Clearing existing save timeout');
       clearTimeout(saveTimeoutRef.current);
@@ -92,11 +92,10 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     // Schedule save after 2 seconds
     saveTimeoutRef.current = setTimeout(performSaveCallback, 2000);
 
-    // Don't cleanup timeout in this effect - let it complete
-    return undefined;
+    // NO cleanup function - let the timeout complete
   }, [hasUnsavedChanges, isInitialized, isSaving, user?.id, performSaveCallback]);
 
-  // Cleanup on unmount only
+  // Cleanup ONLY on component unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
