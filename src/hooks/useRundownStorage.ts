@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,105 +22,163 @@ export const useRundownStorage = () => {
   const { toast } = useToast()
 
   const loadRundowns = async () => {
-    if (!user) return
+    if (!user) {
+      console.log('No user found, skipping rundown load');
+      return;
+    }
 
     setLoading(true)
     console.log('Loading rundowns for user:', user.id)
-    const { data, error } = await supabase
-      .from('rundowns')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
+    
+    try {
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
 
-    if (error) {
-      console.error('Error loading rundowns:', error)
+      if (error) {
+        console.error('Error loading rundowns:', error)
+        toast({
+          title: 'Error',
+          description: `Failed to load rundowns: ${error.message}`,
+          variant: 'destructive',
+        })
+      } else {
+        console.log('Loaded rundowns:', data)
+        setSavedRundowns(data || [])
+      }
+    } catch (error) {
+      console.error('Unexpected error loading rundowns:', error)
       toast({
         title: 'Error',
-        description: 'Failed to load rundowns',
+        description: 'An unexpected error occurred while loading rundowns',
         variant: 'destructive',
       })
-    } else {
-      console.log('Loaded rundowns:', data)
-      setSavedRundowns(data || [])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const saveRundown = async (title: string, items: RundownItem[], columnConfig?: Column[]) => {
-    if (!user) return
+    if (!user) {
+      console.error('Save rundown: No user found');
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to save rundowns',
+        variant: 'destructive',
+      });
+      throw new Error('No user found');
+    }
 
     console.log('Saving new rundown:', { title, itemsCount: items.length, columnConfig })
     
-    const payload = {
-      user_id: user.id,
-      title,
-      items,
-      is_archived: false,
-      ...(columnConfig && { column_config: columnConfig })
-    }
+    try {
+      const payload = {
+        user_id: user.id,
+        title: title.trim(),
+        items,
+        is_archived: false,
+        ...(columnConfig && { column_config: columnConfig })
+      }
 
-    const { data, error } = await supabase
-      .from('rundowns')
-      .insert(payload)
-      .select()
-      .single()
+      console.log('Save payload:', payload);
 
-    if (error) {
-      console.error('Error saving rundown:', error)
+      const { data, error } = await supabase
+        .from('rundowns')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error saving rundown:', error)
+        toast({
+          title: 'Error',
+          description: `Failed to save rundown: ${error.message}`,
+          variant: 'destructive',
+        })
+        throw error
+      } else {
+        console.log('Rundown saved successfully:', data)
+        toast({
+          title: 'Success',
+          description: 'Rundown saved successfully!',
+        })
+        await loadRundowns()
+        return data
+      }
+    } catch (error) {
+      console.error('Unexpected error saving rundown:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save rundown',
+        description: 'An unexpected error occurred while saving the rundown',
         variant: 'destructive',
-      })
-      throw error
-    } else {
-      console.log('Rundown saved successfully:', data)
-      toast({
-        title: 'Success',
-        description: 'Rundown saved successfully!',
-      })
-      loadRundowns()
-      return data
+      });
+      throw error;
     }
   }
 
   const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, columnConfig?: Column[]) => {
-    if (!user) return
-
-    console.log('Updating rundown:', { id, title, itemsCount: items.length, silent, columnConfig })
-
-    const payload = {
-      title,
-      items,
-      updated_at: new Date().toISOString(),
-      ...(columnConfig && { column_config: columnConfig })
-    }
-
-    const { error } = await supabase
-      .from('rundowns')
-      .update(payload)
-      .eq('id', id)
-      .eq('user_id', user.id)
-
-    if (error) {
-      console.error('Error updating rundown:', error)
+    if (!user) {
+      console.error('Update rundown: No user found');
       if (!silent) {
         toast({
           title: 'Error',
-          description: 'Failed to update rundown',
+          description: 'You must be logged in to update rundowns',
           variant: 'destructive',
-        })
+        });
       }
-      throw error
-    } else {
-      console.log('Rundown updated successfully')
+      throw new Error('No user found');
+    }
+
+    console.log('Updating rundown:', { id, title, itemsCount: items.length, silent, columnConfig })
+
+    try {
+      const payload = {
+        title: title.trim(),
+        items,
+        updated_at: new Date().toISOString(),
+        ...(columnConfig && { column_config: columnConfig })
+      }
+
+      console.log('Update payload:', payload);
+
+      const { error } = await supabase
+        .from('rundowns')
+        .update(payload)
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Error updating rundown:', error)
+        if (!silent) {
+          toast({
+            title: 'Error',
+            description: `Failed to update rundown: ${error.message}`,
+            variant: 'destructive',
+          })
+        }
+        throw error
+      } else {
+        console.log('Rundown updated successfully')
+        if (!silent) {
+          toast({
+            title: 'Success',
+            description: 'Rundown updated successfully!',
+          })
+        }
+        await loadRundowns()
+      }
+    } catch (error) {
+      console.error('Unexpected error updating rundown:', error);
       if (!silent) {
         toast({
-          title: 'Success',
-          description: 'Rundown updated successfully!',
-        })
+          title: 'Error',
+          description: 'An unexpected error occurred while updating the rundown',
+          variant: 'destructive',
+        });
       }
-      loadRundowns()
+      throw error;
     }
   }
 
