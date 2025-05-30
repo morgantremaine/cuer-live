@@ -23,7 +23,7 @@ interface RegularRowProps {
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
@@ -68,15 +68,20 @@ const RegularRow = ({
   const textColor = item.color ? getContrastTextColor(item.color) : '';
 
   const handleRowClick = (e: React.MouseEvent) => {
-    if (onRowSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+    if (onRowSelect) {
       e.preventDefault();
-      onRowSelect(item.id, index, e.shiftKey);
+      onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
     }
+  };
+
+  const handleCellClick = (e: React.MouseEvent, itemId: string, field: string) => {
+    e.stopPropagation(); // Prevent row selection when clicking on cells
+    onCellClick(itemId, field);
   };
 
   return (
     <tr 
-      className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-move`}
+      className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-pointer select-none`}
       style={{ 
         backgroundColor: item.color || undefined,
         color: textColor || undefined
@@ -87,22 +92,26 @@ const RegularRow = ({
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, index)}
     >
-      <td className="px-4 py-2 text-sm font-mono" style={{ color: textColor || undefined }}>
+      <td 
+        className="px-4 py-2 text-sm font-mono cursor-move" 
+        style={{ color: textColor || undefined }}
+      >
         <span>{rowNumber}</span>
       </td>
       {columns.map((column) => (
-        <CellRenderer
-          key={column.id}
-          column={column}
-          item={item}
-          cellRefs={cellRefs}
-          textColor={textColor}
-          onUpdateItem={onUpdateItem}
-          onCellClick={onCellClick}
-          onKeyDown={onKeyDown}
-        />
+        <td key={column.id} onClick={(e) => e.stopPropagation()}>
+          <CellRenderer
+            column={column}
+            item={item}
+            cellRefs={cellRefs}
+            textColor={textColor}
+            onUpdateItem={onUpdateItem}
+            onCellClick={handleCellClick}
+            onKeyDown={onKeyDown}
+          />
+        </td>
       ))}
-      <td className="px-4 py-2">
+      <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center space-x-1">
           <ColorPicker
             itemId={item.id}

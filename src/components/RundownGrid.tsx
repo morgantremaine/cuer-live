@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Copy, Clipboard, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -111,8 +110,8 @@ const RundownGrid = () => {
     clearSelection();
   };
 
-  const handleRowSelection = (itemId: string, index: number, isShiftClick: boolean) => {
-    toggleRowSelection(itemId, index, isShiftClick, items);
+  const handleRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
   };
 
   const selectedCount = selectedRows.size;
