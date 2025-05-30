@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
-import { Clock, Save } from 'lucide-react';
+import { Clock, Save, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import TimezoneSelector from './TimezoneSelector';
 
 interface RundownHeaderProps {
@@ -29,6 +29,11 @@ const RundownHeader = ({
 }: RundownHeaderProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(title);
+  const navigate = useNavigate();
+
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
 
   const handleTitleClick = () => {
     setTempTitle(title);
@@ -74,6 +79,16 @@ const RundownHeader = ({
     <div className="p-4 border-b bg-gray-100 dark:bg-gray-900">
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
+          <Button
+            onClick={handleBackToDashboard}
+            variant="ghost"
+            size="sm"
+            className="flex items-center space-x-1"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Dashboard</span>
+          </Button>
+          
           {isEditingTitle ? (
             <input
               type="text"
