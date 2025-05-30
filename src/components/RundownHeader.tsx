@@ -118,7 +118,7 @@ const RundownHeader = ({
           <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
             <Clock className="h-4 w-4" />
             <span className="font-mono">{formatTime(currentTime)}</span>
-            <TimezoneSelector timezone={timezone} onTimezoneChange={onTimezoneChange} />
+            <TimezoneSelector currentTimezone={timezone} onTimezoneChange={onTimezoneChange} />
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-300">
             Total Runtime: <span className="font-mono font-bold">{totalRuntime}</span>
