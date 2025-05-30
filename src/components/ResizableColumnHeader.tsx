@@ -1,7 +1,6 @@
 
 import React, { useState, useRef } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
-import { Separator } from '@/components/ui/separator';
 
 interface ResizableColumnHeaderProps {
   column: Column;
@@ -45,12 +44,9 @@ const ResizableColumnHeader = ({
 
   return (
     <th 
-      className="px-4 py-3 text-left text-sm font-semibold text-white relative select-none"
+      className="px-4 py-3 text-left text-sm font-semibold text-white relative select-none border-r border-gray-500"
       style={{ width }}
     >
-      {showLeftSeparator && (
-        <Separator orientation="vertical" className="absolute left-0 top-0 h-full bg-gray-500" />
-      )}
       {children}
       <div 
         className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors flex items-center justify-center"
@@ -59,7 +55,6 @@ const ResizableColumnHeader = ({
       >
         <div className="w-0.5 h-6 bg-gray-400 opacity-60" />
       </div>
-      <Separator orientation="vertical" className="absolute right-0 top-0 h-full bg-gray-500" />
     </th>
   );
 };
