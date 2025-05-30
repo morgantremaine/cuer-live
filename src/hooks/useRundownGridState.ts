@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -49,8 +48,8 @@ export const useRundownGridState = () => {
     handleLoadLayout
   } = useColumnsManager();
 
-  // Manual save only (no auto-save)
-  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle, columns);
+  // Auto-save every 10 seconds (no manual save)
+  const { hasUnsavedChanges, markAsChanged, lastSaved, isSaving } = useAutoSave(items, rundownTitle, columns);
 
   const {
     columnWidths,
@@ -136,12 +135,6 @@ export const useRundownGridState = () => {
         
         setIsDataLoaded(true);
         console.log('useRundownGridState: Data loading complete');
-        
-        // Reset unsaved changes flag after loading data
-        // This prevents the "unsaved changes" notification from appearing on load
-        setTimeout(() => {
-          console.log('useRundownGridState: Resetting unsaved changes flag after data load');
-        }, 100);
       } else {
         console.log('useRundownGridState: No rundown found with id:', rundownId);
       }
@@ -185,10 +178,11 @@ export const useRundownGridState = () => {
     calculateTotalRuntime,
     calculateHeaderDuration,
     
-    // Manual save state (no auto-save)
+    // Auto-save state (10-second intervals)
     hasUnsavedChanges,
     markAsChanged,
-    manualSave,
+    lastSaved,
+    isSaving,
     
     // Columns state
     columns,

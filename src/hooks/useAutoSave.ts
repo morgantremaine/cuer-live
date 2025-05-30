@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { RundownItem } from './useRundownItems';
@@ -7,9 +7,30 @@ import { Column } from './useColumnsManager';
 
 export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { id: rundownId } = useParams<{ id: string }>();
   const { updateRundown, saveRundown, savedRundowns } = useRundownStorage();
   const navigate = useNavigate();
+  
+  // Use refs to track the latest values for auto-save
+  const itemsRef = useRef(items);
+  const titleRef = useRef(rundownTitle);
+  const columnsRef = useRef(columns);
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update refs when values change
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    titleRef.current = rundownTitle;
+  }, [rundownTitle]);
+
+  useEffect(() => {
+    columnsRef.current = columns;
+  }, [columns]);
 
   // Check if the current rundown exists in saved rundowns
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
@@ -17,58 +38,101 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const isNewRundown = !rundownId;
 
   const markAsChanged = useCallback(() => {
-    console.log('Manual save: Marking as changed');
+    console.log('Auto-save: Marking as changed');
     setHasUnsavedChanges(true);
   }, []);
 
-  const manualSave = useCallback(async () => {
+  const performAutoSave = useCallback(async () => {
+    if (isSaving) {
+      console.log('Auto-save: Already saving, skipping...');
+      return;
+    }
+
     try {
-      console.log('Manual save: Save triggered', {
+      setIsSaving(true);
+      console.log('Auto-save: Starting auto-save', {
         isNewRundown,
         canSave,
         rundownId,
-        rundownTitle,
-        itemsCount: items.length,
-        columnsCount: columns?.length
+        rundownTitle: titleRef.current,
+        itemsCount: itemsRef.current.length,
+        columnsCount: columnsRef.current?.length
       });
 
-      if (!rundownTitle || rundownTitle.trim() === '') {
-        console.error('Manual save: Invalid title');
-        throw new Error('Rundown title is required');
+      if (!titleRef.current || titleRef.current.trim() === '') {
+        console.error('Auto-save: Invalid title, skipping');
+        return;
       }
 
-      if (!items || items.length === 0) {
-        console.warn('Manual save: No items to save');
+      if (!itemsRef.current || itemsRef.current.length === 0) {
+        console.log('Auto-save: No items to save, skipping');
+        return;
       }
 
       if (isNewRundown) {
-        console.log('Manual save: Saving new rundown');
-        const result = await saveRundown(rundownTitle, items, columns);
-        console.log('Manual save: New rundown saved, result:', result);
+        console.log('Auto-save: Saving new rundown');
+        const result = await saveRundown(titleRef.current, itemsRef.current, columnsRef.current);
+        console.log('Auto-save: New rundown saved, result:', result);
         if (result?.id) {
           navigate(`/rundown/${result.id}`, { replace: true });
         }
       } else if (canSave) {
-        console.log('Manual save: Updating existing rundown');
-        await updateRundown(rundownId!, rundownTitle, items, false, columns);
-        console.log('Manual save: Existing rundown updated');
+        console.log('Auto-save: Updating existing rundown');
+        await updateRundown(rundownId!, titleRef.current, itemsRef.current, true, columnsRef.current);
+        console.log('Auto-save: Existing rundown updated');
       } else {
-        console.error('Manual save: Cannot save - no valid rundown context');
-        throw new Error('Cannot save rundown - invalid context');
+        console.log('Auto-save: Cannot save - no valid rundown context');
+        return;
       }
       
       setHasUnsavedChanges(false);
-      console.log('Manual save: Successful');
-      return true;
+      setLastSaved(new Date());
+      console.log('Auto-save: Successful');
     } catch (error) {
-      console.error('Manual save: Failed:', error);
-      throw error; // Re-throw to let the caller handle the error
+      console.error('Auto-save: Failed:', error);
+      // Don't throw error for auto-save, just log it
+    } finally {
+      setIsSaving(false);
     }
-  }, [rundownId, rundownTitle, items, columns, updateRundown, saveRundown, canSave, navigate, isNewRundown]);
+  }, [rundownId, updateRundown, saveRundown, canSave, navigate, isNewRundown, isSaving]);
+
+  // Set up auto-save interval (10 seconds)
+  useEffect(() => {
+    console.log('Auto-save: Setting up 10-second auto-save interval');
+    
+    // Clear any existing interval
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current);
+    }
+
+    // Set up new interval
+    autoSaveIntervalRef.current = setInterval(() => {
+      if (hasUnsavedChanges && !isSaving) {
+        console.log('Auto-save: Triggered by 10-second interval');
+        performAutoSave();
+      }
+    }, 10000); // 10 seconds
+
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [hasUnsavedChanges, isSaving, performAutoSave]);
+
+  // Auto-save when data changes (with debounce)
+  useEffect(() => {
+    if (hasUnsavedChanges && !isSaving) {
+      console.log('Auto-save: Data changed, will save in next interval');
+    }
+  }, [items, rundownTitle, columns, hasUnsavedChanges, isSaving]);
 
   return {
     hasUnsavedChanges,
     markAsChanged,
-    manualSave
+    lastSaved,
+    isSaving,
+    // Remove manual save function since we're doing auto-save only
   };
 };
