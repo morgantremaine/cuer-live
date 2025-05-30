@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Play, Clock } from 'lucide-react';
+import { Plus, Trash2, Play, Clock, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface RundownItem {
@@ -11,6 +10,7 @@ interface RundownItem {
   endTime: string;
   notes: string;
   status: 'upcoming' | 'current' | 'completed';
+  color?: string;
 }
 
 const RundownGrid = () => {
@@ -46,7 +46,20 @@ const RundownGrid = () => {
 
   const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: keyof RundownItem } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+
+  const colorOptions = [
+    { name: 'Default', value: '' },
+    { name: 'Red', value: '#fef2f2' },
+    { name: 'Orange', value: '#fff7ed' },
+    { name: 'Yellow', value: '#fefce8' },
+    { name: 'Green', value: '#f0fdf4' },
+    { name: 'Blue', value: '#eff6ff' },
+    { name: 'Purple', value: '#faf5ff' },
+    { name: 'Pink', value: '#fdf2f8' },
+    { name: 'Gray', value: '#f9fafb' }
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -89,6 +102,11 @@ const RundownGrid = () => {
       }
       return item;
     }));
+  };
+
+  const updateItemColor = (id: string, color: string) => {
+    updateItem(id, 'color', color);
+    setShowColorPicker(null);
   };
 
   const addRow = () => {
@@ -188,20 +206,28 @@ const RundownGrid = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">Start Time</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">End Time</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 min-w-64">Notes</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-16">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, index) => {
                   const status = getRowStatus(item);
-                  const rowClass = status === 'current' 
-                    ? 'bg-green-50 border-l-4 border-green-500' 
-                    : status === 'completed' 
-                    ? 'bg-gray-50 text-gray-500' 
-                    : 'bg-white hover:bg-gray-50';
+                  let rowClass = 'bg-white hover:bg-gray-50';
+                  
+                  if (item.color) {
+                    rowClass = `hover:opacity-90`;
+                  } else if (status === 'current') {
+                    rowClass = 'bg-green-50 border-l-4 border-green-500';
+                  } else if (status === 'completed') {
+                    rowClass = 'bg-gray-50 text-gray-500';
+                  }
                   
                   return (
-                    <tr key={item.id} className={`border-b border-gray-200 ${rowClass} transition-colors`}>
+                    <tr 
+                      key={item.id} 
+                      className={`border-b border-gray-200 ${rowClass} transition-colors`}
+                      style={{ backgroundColor: item.color || undefined }}
+                    >
                       <td className="px-4 py-2 text-sm text-gray-600 font-mono">
                         {index + 1}
                       </td>
@@ -257,14 +283,47 @@ const RundownGrid = () => {
                         />
                       </td>
                       <td className="px-4 py-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteRow(item.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center space-x-1">
+                          <div className="relative">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowColorPicker(showColorPicker === item.id ? null : item.id)}
+                              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                            >
+                              <Palette className="h-4 w-4" />
+                            </Button>
+                            
+                            {showColorPicker === item.id && (
+                              <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-48">
+                                <div className="grid grid-cols-3 gap-2">
+                                  {colorOptions.map((color) => (
+                                    <button
+                                      key={color.name}
+                                      onClick={() => updateItemColor(item.id, color.value)}
+                                      className="flex flex-col items-center p-2 rounded hover:bg-gray-100 text-xs"
+                                    >
+                                      <div 
+                                        className="w-6 h-6 rounded border border-gray-300 mb-1"
+                                        style={{ backgroundColor: color.value || '#ffffff' }}
+                                      />
+                                      {color.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteRow(item.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
