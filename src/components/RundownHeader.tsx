@@ -2,8 +2,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Menu, Save, Download, Upload, Settings } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
-import { TimezoneSelector } from './TimezoneSelector';
+import ThemeToggle from './ThemeToggle';
+import TimezoneSelector from './TimezoneSelector';
 
 interface RundownHeaderProps {
   onSave: () => void;
@@ -14,6 +14,10 @@ interface RundownHeaderProps {
   title: string;
   onTitleChange: (title: string) => void;
   isModified: boolean;
+  currentTime: Date;
+  timezone: string;
+  onTimezoneChange: (timezone: string) => void;
+  totalRuntime: string;
 }
 
 const RundownHeader: React.FC<RundownHeaderProps> = ({
@@ -24,7 +28,11 @@ const RundownHeader: React.FC<RundownHeaderProps> = ({
   onOpenSettings,
   title,
   onTitleChange,
-  isModified
+  isModified,
+  currentTime,
+  timezone,
+  onTimezoneChange,
+  totalRuntime
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
@@ -50,7 +58,7 @@ const RundownHeader: React.FC<RundownHeaderProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          <TimezoneSelector />
+          <TimezoneSelector currentTimezone={timezone} onTimezoneChange={onTimezoneChange} />
           <ThemeToggle />
           
           <div className="h-6 w-px bg-gray-200 dark:bg-gray-600" />
