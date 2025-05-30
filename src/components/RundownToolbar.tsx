@@ -50,11 +50,16 @@ const RundownToolbar = ({
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handlePlay = () => {
-    if (selectedRowId && selectedCount === 1) {
-      onPlay(selectedRowId);
-    } else if (currentSegmentId) {
-      onPlay();
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      onPause();
+    } else {
+      // If a row is selected, play that row, otherwise play current segment
+      if (selectedRowId && selectedCount === 1) {
+        onPlay(selectedRowId);
+      } else if (currentSegmentId) {
+        onPlay();
+      }
     }
   };
 
@@ -95,7 +100,7 @@ const RundownToolbar = ({
           </Button>
           
           <Button
-            onClick={isPlaying ? onPause : handlePlay}
+            onClick={handlePlayPause}
             variant="outline"
             size="sm"
             disabled={!currentSegmentId && (!selectedRowId || selectedCount !== 1)}

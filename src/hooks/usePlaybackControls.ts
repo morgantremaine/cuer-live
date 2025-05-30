@@ -11,6 +11,18 @@ export const usePlaybackControls = (
   const [timeRemaining, setTimeRemaining] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Set default current segment to first non-header item (A1) on mount
+  useEffect(() => {
+    if (!currentSegmentId && items.length > 0) {
+      const firstSegment = items.find(item => !item.isHeader);
+      if (firstSegment) {
+        setCurrentSegmentId(firstSegment.id);
+        const duration = timeToSeconds(firstSegment.duration);
+        setTimeRemaining(duration);
+      }
+    }
+  }, [items, currentSegmentId]);
+
   const timeToSeconds = (timeStr: string) => {
     if (!timeStr) return 0;
     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
