@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ColorPicker from './ColorPicker';
 
@@ -27,6 +26,10 @@ interface RundownRowProps {
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  isDragging: boolean;
 }
 
 const RundownRow = ({
@@ -40,11 +43,17 @@ const RundownRow = ({
   onKeyDown,
   onToggleColorPicker,
   onColorSelect,
-  onDeleteRow
+  onDeleteRow,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  isDragging
 }: RundownRowProps) => {
   let rowClass = 'bg-white hover:bg-gray-50';
   
-  if (item.color) {
+  if (isDragging) {
+    rowClass = 'bg-blue-100 opacity-50';
+  } else if (item.color) {
     rowClass = `hover:opacity-90`;
   } else if (status === 'current') {
     rowClass = 'bg-green-50 border-l-4 border-green-500';
@@ -54,11 +63,18 @@ const RundownRow = ({
 
   return (
     <tr 
-      className={`border-b border-gray-200 ${rowClass} transition-colors`}
+      className={`border-b border-gray-200 ${rowClass} transition-colors cursor-move`}
       style={{ backgroundColor: item.color || undefined }}
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop(e, index)}
     >
       <td className="px-4 py-2 text-sm text-gray-600 font-mono">
-        {index + 1}
+        <div className="flex items-center space-x-2">
+          <Move className="h-4 w-4 text-gray-400" />
+          <span>{index + 1}</span>
+        </div>
       </td>
       <td className="px-4 py-2">
         <input

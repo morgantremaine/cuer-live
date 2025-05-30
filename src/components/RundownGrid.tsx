@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,6 +50,7 @@ const RundownGrid = () => {
   const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: keyof RundownItem } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
   useEffect(() => {
@@ -98,6 +98,37 @@ const RundownGrid = () => {
   const handleColorSelect = (id: string, color: string) => {
     updateItem(id, 'color', color);
     setShowColorPicker(null);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedItemIndex === null || draggedItemIndex === dropIndex) {
+      setDraggedItemIndex(null);
+      return;
+    }
+
+    const newItems = [...items];
+    const draggedItem = newItems[draggedItemIndex];
+    
+    // Remove the dragged item from its original position
+    newItems.splice(draggedItemIndex, 1);
+    
+    // Insert the dragged item at the new position
+    newItems.splice(dropIndex, 0, draggedItem);
+    
+    setItems(newItems);
+    setDraggedItemIndex(null);
   };
 
   const addRow = () => {
@@ -208,6 +239,10 @@ const RundownGrid = () => {
                     onToggleColorPicker={handleToggleColorPicker}
                     onColorSelect={handleColorSelect}
                     onDeleteRow={deleteRow}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    isDragging={draggedItemIndex === index}
                   />
                 ))}
               </tbody>
