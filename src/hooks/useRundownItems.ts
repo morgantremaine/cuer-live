@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 export interface RundownItem {
@@ -121,9 +122,9 @@ export const useRundownItems = () => {
     const newItem: RundownItem = {
       id: newId,
       segmentName: 'New Segment',
-      duration: '00:01:00',
+      duration: '00:00:00',
       startTime: newStartTime,
-      endTime: calculateEndTime(newStartTime, '00:01:00'),
+      endTime: calculateEndTime(newStartTime, '00:00:00'),
       notes: '',
       status: 'upcoming',
       customFields: {}
