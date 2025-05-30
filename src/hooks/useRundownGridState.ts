@@ -35,7 +35,7 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle);
+  const { hasUnsavedChanges, markAsChanged } = useAutoSave(items, rundownTitle);
 
   const {
     columns,
@@ -134,7 +134,6 @@ export const useRundownGridState = () => {
     // Auto-save state
     hasUnsavedChanges,
     markAsChanged,
-    manualSave,
     
     // Columns state
     columns,

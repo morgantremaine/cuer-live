@@ -15,7 +15,6 @@ interface UseRundownGridHandlersProps {
   calculateEndTime: (startTime: string, duration: string) => string;
   selectColor: (id: string, color: string, updateItem: (id: string, field: string, value: string) => void) => void;
   markAsChanged: () => void;
-  manualSave: () => Promise<boolean>;
   selectedRows: Set<string>;
   clearSelection: () => void;
   copyItems: (items: any[]) => void;
@@ -39,7 +38,6 @@ export const useRundownGridHandlers = ({
   calculateEndTime,
   selectColor,
   markAsChanged,
-  manualSave,
   selectedRows,
   clearSelection,
   copyItems,
@@ -75,10 +73,6 @@ export const useRundownGridHandlers = ({
     markAsChanged
   });
 
-  const handleManualSave = useCallback(async () => {
-    await manualSave();
-  }, [manualSave]);
-
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
     copyItems(selectedItems);
@@ -112,7 +106,6 @@ export const useRundownGridHandlers = ({
     handleDeleteSelectedRows: handleDeleteSelectedRowsWithClear,
     handlePasteRows: handlePasteRowsWithClipboard,
     handleDeleteColumnWithCleanup,
-    handleManualSave,
     handleCopySelectedRows,
     handleRowSelection,
     handleTitleChange

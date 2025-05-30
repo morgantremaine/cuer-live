@@ -98,7 +98,7 @@ const RundownHeader = ({
                 <Edit2 className="h-4 w-4" />
               </Button>
               {hasUnsavedChanges && (
-                <span className="text-xs opacity-75 ml-2">Auto-saving...</span>
+                <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">Saving...</span>
               )}
             </div>
           )}

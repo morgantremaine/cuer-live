@@ -60,7 +60,6 @@ interface RundownContainerProps {
   hasUnsavedChanges: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
-  onManualSave: () => void;
 }
 
 const RundownContainer = ({
@@ -115,8 +114,7 @@ const RundownContainer = ({
   handleToggleColumnVisibility,
   hasUnsavedChanges,
   rundownTitle,
-  onTitleChange,
-  onManualSave
+  onTitleChange
 }: RundownContainerProps) => {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
@@ -147,7 +145,6 @@ const RundownContainer = ({
             hasUnsavedChanges={hasUnsavedChanges}
             rundownTitle={rundownTitle}
             onTitleChange={onTitleChange}
-            onManualSave={onManualSave}
           />
 
           <RundownContent
