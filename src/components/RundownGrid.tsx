@@ -1,11 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import RundownHeader from './RundownHeader';
-import RundownRow from './RundownRow';
+import RundownToolbar from './RundownToolbar';
+import RundownTable from './RundownTable';
 import RundownFooter from './RundownFooter';
 import ColumnManager from './ColumnManager';
-import ResizableColumnHeader from './ResizableColumnHeader';
 import ThemeToggle from './ThemeToggle';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
@@ -139,95 +138,47 @@ const RundownGrid = () => {
             totalRuntime={calculateTotalRuntime()}
           />
           
-          <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
-            <div className="flex space-x-2">
-              <Button onClick={() => addRow(calculateEndTime)} className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add Segment</span>
-              </Button>
-              <Button onClick={addHeader} variant="outline" className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add Header</span>
-              </Button>
-              <Button onClick={() => setShowColumnManager(true)} variant="outline" className="flex items-center space-x-2">
-                <Settings className="h-4 w-4" />
-                <span>Manage Columns</span>
-              </Button>
-            </div>
+          <RundownToolbar
+            onAddRow={() => addRow(calculateEndTime)}
+            onAddHeader={addHeader}
+            onShowColumnManager={() => setShowColumnManager(true)}
+            selectedCount={selectedCount}
+            hasClipboardData={hasClipboardData()}
+            onCopySelectedRows={handleCopySelectedRows}
+            onPasteRows={handlePasteRows}
+            onDeleteSelectedRows={handleDeleteSelectedRows}
+            onClearSelection={clearSelection}
+          />
 
-            {selectedCount > 0 && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {selectedCount} selected
-                </span>
-                <Button onClick={handleCopySelectedRows} variant="outline" size="sm">
-                  <Copy className="h-4 w-4" />
-                </Button>
-                {hasClipboardData() && (
-                  <Button onClick={handlePasteRows} variant="outline" size="sm">
-                    <Clipboard className="h-4 w-4" />
-                  </Button>
-                )}
-                <Button onClick={handleDeleteSelectedRows} variant="outline" size="sm">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                <Button onClick={clearSelection} variant="ghost" size="sm">
-                  Clear
-                </Button>
-              </div>
-            )}
+          <div className="flex justify-end p-4">
             <ThemeToggle />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700 dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-600">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '60px' }}>#</th>
-                  {visibleColumns.map((column) => (
-                    <ResizableColumnHeader
-                      key={column.id}
-                      column={column}
-                      width={getColumnWidth(column)}
-                      onWidthChange={updateColumnWidth}
-                    >
-                      {column.name}
-                    </ResizableColumnHeader>
-                  ))}
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '120px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <RundownRow
-                    key={item.id}
-                    item={item}
-                    index={index}
-                    rowNumber={getRowNumber(index)}
-                    status={getRowStatus(item, currentTime)}
-                    showColorPicker={showColorPicker}
-                    cellRefs={cellRefs}
-                    columns={visibleColumns}
-                    isSelected={selectedRows.has(item.id)}
-                    headerDuration={item.isHeader ? calculateHeaderDuration(index) : ''}
-                    onUpdateItem={updateItem}
-                    onCellClick={handleCellClick}
-                    onKeyDown={handleKeyDown}
-                    onToggleColorPicker={handleToggleColorPicker}
-                    onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
-                    onDeleteRow={deleteRow}
-                    onToggleFloat={toggleFloatRow}
-                    onRowSelect={handleRowSelection}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    isDragging={draggedItemIndex === index}
-                    getColumnWidth={getColumnWidth}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RundownTable
+            items={items}
+            visibleColumns={visibleColumns}
+            currentTime={currentTime}
+            showColorPicker={showColorPicker}
+            cellRefs={cellRefs}
+            selectedRows={selectedRows}
+            draggedItemIndex={draggedItemIndex}
+            getColumnWidth={getColumnWidth}
+            updateColumnWidth={updateColumnWidth}
+            getRowNumber={getRowNumber}
+            getRowStatus={getRowStatus}
+            calculateHeaderDuration={calculateHeaderDuration}
+            onUpdateItem={updateItem}
+            onCellClick={handleCellClick}
+            onKeyDown={handleKeyDown}
+            onToggleColorPicker={handleToggleColorPicker}
+            onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
+            onDeleteRow={deleteRow}
+            onToggleFloat={toggleFloatRow}
+            onRowSelect={handleRowSelection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          />
           
           <RundownFooter totalSegments={items.filter(item => !item.isHeader).length} />
         </div>
