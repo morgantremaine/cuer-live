@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Edit2, User, LogOut, ArrowLeft } from 'lucide-react';
+import { Edit2, User, LogOut, ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import TimezoneSelector from './TimezoneSelector';
@@ -13,6 +13,8 @@ interface RundownHeaderProps {
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
   hasUnsavedChanges: boolean;
+  isSaving: boolean;
+  onManualSave: () => void;
   title: string;
   onTitleChange: (title: string) => void;
 }
@@ -23,6 +25,8 @@ const RundownHeader = ({
   onTimezoneChange, 
   totalRuntime,
   hasUnsavedChanges,
+  isSaving,
+  onManualSave,
   title,
   onTitleChange
 }: RundownHeaderProps) => {
@@ -98,8 +102,20 @@ const RundownHeader = ({
                 <Edit2 className="h-4 w-4" />
               </Button>
               {hasUnsavedChanges && (
-                <span className="text-xs opacity-75 ml-2">Auto-saving...</span>
+                <span className="text-xs opacity-75 ml-2">
+                  {isSaving ? 'Saving...' : 'Auto-saving in 10s'}
+                </span>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onManualSave}
+                disabled={isSaving || !hasUnsavedChanges}
+                className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Save manually"
+              >
+                <Save className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>

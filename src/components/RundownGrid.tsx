@@ -24,7 +24,9 @@ const RundownGrid = () => {
     copyItems: state.copyItems,
     clipboardItems: state.clipboardItems,
     hasClipboardData: state.hasClipboardData,
-    toggleRowSelection: state.toggleRowSelection,
+    toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+      state.toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, state.items);
+    },
     items: state.items,
     setRundownTitle: state.setRundownTitle
   });
