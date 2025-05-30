@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { Play, Edit2, User, LogOut } from 'lucide-react';
+import { Play, Edit2, User, LogOut, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import TimezoneSelector from './TimezoneSelector';
 import AuthModal from './AuthModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ const RundownHeader = ({
   const [title, setTitle] = useState('Live Broadcast Rundown');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -52,10 +54,23 @@ const RundownHeader = ({
     await signOut();
   };
 
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="bg-blue-600 dark:bg-blue-700 text-white p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToDashboard}
+            className="text-white hover:bg-blue-700 dark:hover:bg-blue-600 p-2"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <Play className="h-6 w-6" />
           {isEditingTitle ? (
             <input
