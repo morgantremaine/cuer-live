@@ -28,32 +28,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     userId: user?.id || 'none'
   });
 
-  // Stable callback for performing save
-  const performSaveCallback = useCallback(async () => {
-    console.log('🎯 Auto-save timeout triggered, attempting save...');
-    console.log('📤 Saving data:', {
-      itemsCount: items.length,
-      title: rundownTitle,
-      userId: user?.id
-    });
-    
-    try {
-      const success = await performSave(items, rundownTitle);
-      console.log('💾 Save operation result:', success);
-      
-      if (success) {
-        console.log('✅ Auto-save successful, marking as saved');
-        markAsSaved(items, rundownTitle);
-      } else {
-        console.log('❌ Auto-save failed, keeping unsaved state');
-        setHasUnsavedChanges(true);
-      }
-    } catch (error) {
-      console.error('💥 Auto-save threw an error:', error);
-      setHasUnsavedChanges(true);
-    }
-  }, [items, rundownTitle, performSave, markAsSaved, setHasUnsavedChanges, user?.id]);
-
   // Auto-save when there are unsaved changes
   useEffect(() => {
     console.log('⚡ Auto-save effect triggered:', {
@@ -90,10 +64,33 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     }
     
     // Schedule save after 2 seconds
-    saveTimeoutRef.current = setTimeout(performSaveCallback, 2000);
+    saveTimeoutRef.current = setTimeout(async () => {
+      console.log('🎯 Auto-save timeout triggered, attempting save...');
+      console.log('📤 Saving data:', {
+        itemsCount: items.length,
+        title: rundownTitle,
+        userId: user?.id
+      });
+      
+      try {
+        const success = await performSave(items, rundownTitle);
+        console.log('💾 Save operation result:', success);
+        
+        if (success) {
+          console.log('✅ Auto-save successful, marking as saved');
+          markAsSaved(items, rundownTitle);
+        } else {
+          console.log('❌ Auto-save failed, keeping unsaved state');
+          setHasUnsavedChanges(true);
+        }
+      } catch (error) {
+        console.error('💥 Auto-save threw an error:', error);
+        setHasUnsavedChanges(true);
+      }
+    }, 2000);
 
     // NO cleanup function - let the timeout complete
-  }, [hasUnsavedChanges, isInitialized, isSaving, user?.id, performSaveCallback]);
+  }, [hasUnsavedChanges, isInitialized, isSaving, user?.id, items, rundownTitle, performSave, markAsSaved, setHasUnsavedChanges]);
 
   // Cleanup ONLY on component unmount
   useEffect(() => {
