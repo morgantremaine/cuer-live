@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -24,12 +25,12 @@ export const useRundownItems = () => {
       
       if (existingRundown && existingRundown.items) {
         console.log('Found existing rundown, loading items:', existingRundown.items.length);
-        // Ensure loaded items have all required properties
+        // Ensure loaded items have all required properties with proper defaults
         const itemsWithDefaults = existingRundown.items.map(item => ({
           ...item,
           isHeader: item.type === 'header',
           isFloated: item.isFloated || false,
-          segmentName: item.segmentName || item.rowNumber,
+          segmentName: item.segmentName || (item.type === 'header' ? item.rowNumber : undefined),
           status: item.status || 'upcoming',
           customFields: item.customFields || {},
         }));

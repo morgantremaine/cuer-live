@@ -4,9 +4,22 @@ import { RundownItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
   const getRowNumber = useCallback((index: number) => {
-    // Filter out header rows to calculate the correct row number
-    const regularItems = items.filter(item => item.type === 'regular');
-    return String(regularItems.length > 0 ? index + 1 : 1);
+    const item = items[index];
+    if (!item) return '1';
+    
+    // For headers, use their segmentName or rowNumber
+    if (item.type === 'header' || item.isHeader) {
+      return item.segmentName || item.rowNumber || 'A';
+    }
+    
+    // For regular items, count only regular items before this one
+    let regularCount = 0;
+    for (let i = 0; i < index; i++) {
+      if (items[i].type === 'regular' && !items[i].isHeader) {
+        regularCount++;
+      }
+    }
+    return String(regularCount + 1);
   }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {
