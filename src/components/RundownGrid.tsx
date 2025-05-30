@@ -19,10 +19,6 @@ const RundownGrid = () => {
     setItems: state.setItems,
     calculateEndTime: state.calculateEndTime,
     selectColor: state.selectColor,
-    markAsChanged: () => {
-      // No auto-save logic for now
-      console.log('🔔 RundownGrid: markAsChanged called (no-op)');
-    },
     selectedRows: state.selectedRows,
     clearSelection: state.clearSelection,
     copyItems: state.copyItems,

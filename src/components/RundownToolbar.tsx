@@ -23,8 +23,6 @@ interface RundownToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
-  // Auto-save status removed
-  hasUnsavedChanges: boolean;
 }
 
 const RundownToolbar = ({
@@ -44,8 +42,7 @@ const RundownToolbar = ({
   onPlay,
   onPause,
   onForward,
-  onBackward,
-  hasUnsavedChanges
+  onBackward
 }: RundownToolbarProps) => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
