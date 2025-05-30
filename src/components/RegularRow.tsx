@@ -74,8 +74,7 @@ const RegularRow = ({
     }
   };
 
-  const handleCellClick = (e: React.MouseEvent, itemId: string, field: string) => {
-    e.stopPropagation(); // Prevent row selection when clicking on cells
+  const handleCellClick = (itemId: string, field: string) => {
     onCellClick(itemId, field);
   };
 
