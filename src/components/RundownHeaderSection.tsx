@@ -2,12 +2,15 @@
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
+import { ClockFormat } from '@/hooks/useClockFormat';
 
 interface RundownHeaderSectionProps {
   currentTime: Date;
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
+  clockFormat: ClockFormat;
+  onClockFormatToggle: () => void;
   onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
@@ -32,6 +35,8 @@ const RundownHeaderSection = ({
   timezone,
   onTimezoneChange,
   totalRuntime,
+  clockFormat,
+  onClockFormatToggle,
   onAddRow,
   onAddHeader,
   onShowColumnManager,
@@ -57,6 +62,8 @@ const RundownHeaderSection = ({
         timezone={timezone}
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
+        clockFormat={clockFormat}
+        onClockFormatToggle={onClockFormatToggle}
       />
       
       <RundownToolbar
@@ -77,6 +84,7 @@ const RundownHeaderSection = ({
         onPause={onPause}
         onForward={onForward}
         onBackward={onBackward}
+        clockFormat={clockFormat}
       />
     </div>
   );

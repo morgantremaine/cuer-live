@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
+import { ClockFormat } from '@/hooks/useClockFormat';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -19,6 +19,7 @@ interface RundownToolbarProps {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
+  clockFormat: ClockFormat;
   onPlay: (selectedSegmentId?: string) => void;
   onPause: () => void;
   onForward: () => void;
@@ -39,6 +40,7 @@ const RundownToolbar = ({
   isPlaying,
   currentSegmentId,
   timeRemaining,
+  clockFormat,
   onPlay,
   onPause,
   onForward,
@@ -47,7 +49,15 @@ const RundownToolbar = ({
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    const timeString = `${minutes}:${secs.toString().padStart(2, '0')}`;
+    
+    if (clockFormat === '12') {
+      // For countdown, we'll keep it simple and just show MM:SS format
+      // since it's a duration, not a time of day
+      return timeString;
+    }
+    
+    return timeString;
   };
 
   const handlePlayPause = () => {
@@ -84,9 +94,9 @@ const RundownToolbar = ({
         {/* Playback Controls */}
         <div className="flex items-center space-x-2 px-2 border-r border-gray-300 dark:border-gray-600">
           {currentSegmentId && (
-            <span className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+            <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-3 py-1 rounded font-mono text-sm border">
               {formatTime(timeRemaining)}
-            </span>
+            </div>
           )}
           
           <Button
