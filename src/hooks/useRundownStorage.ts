@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -10,6 +11,7 @@ interface SavedRundown {
   items: RundownItem[]
   created_at: string
   updated_at: string
+  archived?: boolean
 }
 
 export const useRundownStorage = () => {
@@ -70,16 +72,22 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false) => {
     if (!user) return
+
+    const updateData: any = {
+      title,
+      items,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (archived !== undefined) {
+      updateData.archived = archived
+    }
 
     const { error } = await supabase
       .from('rundowns')
-      .update({
-        title,
-        items,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .eq('user_id', user.id)
 
@@ -94,9 +102,10 @@ export const useRundownStorage = () => {
       throw error
     } else {
       if (!silent) {
+        const message = archived ? 'Rundown archived successfully!' : 'Rundown updated successfully!'
         toast({
           title: 'Success',
-          description: 'Rundown updated successfully!',
+          description: message,
         })
       }
       loadRundowns()
