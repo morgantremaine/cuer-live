@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -48,6 +49,59 @@ export const useRundownGridState = () => {
   } = useColumnsManager();
 
   const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle, columns);
+
+  const {
+    columnWidths,
+    updateColumnWidth,
+    getColumnWidth
+  } = useResizableColumns();
+
+  const {
+    selectedCell,
+    cellRefs,
+    handleCellClick,
+    handleKeyDown
+  } = useCellNavigation();
+
+  const {
+    draggedItemIndex,
+    handleDragStart,
+    handleDragOver,
+    handleDrop
+  } = useDragAndDrop();
+
+  const {
+    calculateEndTime,
+    getRowStatus
+  } = useTimeCalculations(items, updateItem);
+
+  const {
+    showColorPicker,
+    handleToggleColorPicker,
+    selectColor
+  } = useColorPicker();
+
+  const {
+    selectedRows,
+    toggleRowSelection,
+    clearSelection
+  } = useMultiRowSelection();
+
+  const {
+    clipboardItems,
+    copyItems,
+    hasClipboardData
+  } = useClipboard();
+
+  const {
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward
+  } = usePlaybackControls();
 
   // Load saved rundown data when component mounts
   useEffect(() => {
