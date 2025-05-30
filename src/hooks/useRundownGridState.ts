@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -11,17 +12,14 @@ import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
+import { useRundownTimers } from '@/hooks/useRundownTimers';
 
 export const useRundownGridState = () => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const { id: rundownId } = useParams<{ id: string }>();
-  const { savedRundowns, loading } = useRundownStorage();
 
   const {
     items,
@@ -104,54 +102,11 @@ export const useRundownGridState = () => {
     backward
   } = usePlaybackControls(items, updateItem);
 
-  // Load saved rundown data when component mounts or rundownId changes
-  useEffect(() => {
-    console.log('useRundownGridState: Effect triggered', { rundownId, loading, savedRundownsLength: savedRundowns.length, isDataLoaded });
-    
-    if (rundownId && !loading && savedRundowns.length > 0 && !isDataLoaded) {
-      const savedRundown = savedRundowns.find(r => r.id === rundownId);
-      console.log('useRundownGridState: Looking for rundown with id:', rundownId);
-      console.log('useRundownGridState: Found rundown:', savedRundown);
-      
-      if (savedRundown) {
-        console.log('useRundownGridState: Loading saved rundown data');
-        console.log('useRundownGridState: Items to load:', savedRundown.items);
-        console.log('useRundownGridState: Column config to load:', savedRundown.column_config);
-        
-        // Load the rundown data
-        if (savedRundown.items && Array.isArray(savedRundown.items)) {
-          setItems(savedRundown.items);
-        }
-        
-        if (savedRundown.title) {
-          setRundownTitle(savedRundown.title);
-        }
-        
-        // Load column configuration if it exists
-        if (savedRundown.column_config && Array.isArray(savedRundown.column_config)) {
-          console.log('useRundownGridState: Loading column configuration');
-          handleLoadLayout(savedRundown.column_config);
-        }
-        
-        setIsDataLoaded(true);
-        console.log('useRundownGridState: Data loading complete');
-      } else {
-        console.log('useRundownGridState: No rundown found with id:', rundownId);
-      }
-    }
-  }, [rundownId, savedRundowns, loading, isDataLoaded, setItems, setRundownTitle, handleLoadLayout]);
+  // Load saved rundown data
+  useRundownDataLoader(rundownId, setItems, setRundownTitle, handleLoadLayout);
 
-  // Reset data loaded flag when rundownId changes
-  useEffect(() => {
-    console.log('useRundownGridState: Rundown ID changed, resetting data loaded flag');
-    setIsDataLoaded(false);
-  }, [rundownId]);
-
-  // Timer effect for current time
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // Timer management
+  const { currentTime, timezone, setTimezone } = useRundownTimers();
 
   return {
     // Basic state
