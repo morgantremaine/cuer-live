@@ -11,6 +11,7 @@ import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useRundownStorage } from '@/hooks/useRundownStorage';
 
 export const useRundownGridState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -19,6 +20,7 @@ export const useRundownGridState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
 
   const { id: rundownId } = useParams<{ id: string }>();
+  const { savedRundowns } = useRundownStorage();
 
   const {
     items,
@@ -35,8 +37,6 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle);
-
   const {
     columns,
     visibleColumns,
@@ -45,60 +45,27 @@ export const useRundownGridState = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager();
 
-  const {
-    columnWidths,
-    updateColumnWidth,
-    getColumnWidth
-  } = useResizableColumns(visibleColumns);
+  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle, columns);
 
-  const {
-    selectedCell,
-    cellRefs,
-    handleCellClick,
-    handleKeyDown
-  } = useCellNavigation(visibleColumns, items);
-
-  const {
-    draggedItemIndex,
-    handleDragStart,
-    handleDragOver,
-    handleDrop
-  } = useDragAndDrop(items, setItems);
-
-  const {
-    calculateEndTime,
-    getRowStatus
-  } = useTimeCalculations(items, updateItem);
-
-  const {
-    showColorPicker,
-    handleToggleColorPicker,
-    handleColorSelect: selectColor
-  } = useColorPicker();
-
-  const {
-    selectedRows,
-    toggleRowSelection,
-    clearSelection
-  } = useMultiRowSelection();
-
-  const {
-    clipboardItems,
-    copyItems,
-    hasClipboardData
-  } = useClipboard();
-
-  const {
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward
-  } = usePlaybackControls(items, updateItem);
+  // Load saved rundown data when component mounts
+  useEffect(() => {
+    if (rundownId && savedRundowns.length > 0) {
+      const savedRundown = savedRundowns.find(r => r.id === rundownId);
+      if (savedRundown) {
+        console.log('Loading saved rundown:', savedRundown);
+        setItems(savedRundown.items);
+        setRundownTitle(savedRundown.title);
+        
+        // Load saved columns if they exist
+        if (savedRundown.columns && savedRundown.columns.length > 0) {
+          console.log('Loading saved columns:', savedRundown.columns);
+          handleLoadLayout(savedRundown.columns);
+        }
+      }
+    }
+  }, [rundownId, savedRundowns, setItems, setRundownTitle, handleLoadLayout]);
 
   // Timer effect for current time
   useEffect(() => {
