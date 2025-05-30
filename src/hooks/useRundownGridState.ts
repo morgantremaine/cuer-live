@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -78,6 +77,11 @@ export const useRundownGridState = () => {
     handleToggleColorPicker,
     handleColorSelect
   } = useColorPicker();
+
+  const selectColor = (id: string, color: string) => {
+    updateItem(id, 'color', color);
+    handleColorSelect(id, color);
+  };
 
   const {
     selectedRows,
@@ -184,7 +188,7 @@ export const useRundownGridState = () => {
     // Color picker state
     showColorPicker,
     handleToggleColorPicker,
-    selectColor: handleColorSelect,
+    selectColor,
     
     // Row selection state
     selectedRows,

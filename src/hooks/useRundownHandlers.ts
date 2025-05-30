@@ -13,7 +13,7 @@ interface UseRundownHandlersProps {
   handleDeleteColumn: (columnId: string) => void;
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
-  selectColor: (id: string, color: string, updateItem: (id: string, field: string, value: string) => void) => void;
+  selectColor: (id: string, color: string) => void;
   markAsChanged: () => void;
 }
 
@@ -57,9 +57,9 @@ export const useRundownHandlers = ({
   }, [toggleFloatRow, markAsChanged]);
 
   const handleColorSelect = useCallback((id: string, color: string) => {
-    selectColor(id, color, updateItem);
+    selectColor(id, color);
     markAsChanged();
-  }, [selectColor, updateItem, markAsChanged]);
+  }, [selectColor, markAsChanged]);
 
   const handleDeleteSelectedRows = useCallback((selectedRows: Set<string>, clearSelection: () => void) => {
     deleteMultipleRows(Array.from(selectedRows));

@@ -8,9 +8,9 @@ export const useColorPicker = () => {
     setShowColorPicker(showColorPicker === itemId ? null : itemId);
   };
 
-  const handleColorSelect = (id: string, color: string, updateItem: (id: string, field: string, value: string) => void) => {
-    updateItem(id, 'color', color);
+  const handleColorSelect = (id: string, color: string) => {
     setShowColorPicker(null);
+    return { id, color };
   };
 
   return {

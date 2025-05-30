@@ -63,9 +63,7 @@ export const useRundownGridHandlers = ({
     handleDeleteColumn,
     setItems,
     calculateEndTime,
-    selectColor: (id: string, color: string, updateItemFn: (id: string, field: string, value: string) => void) => {
-      selectColor(id, color);
-    },
+    selectColor,
     markAsChanged
   });
 
