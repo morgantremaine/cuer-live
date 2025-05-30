@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 export interface Column {
@@ -32,7 +31,13 @@ export const useColumnsManager = () => {
       isEditable: true,
       isVisible: true
     };
-    setColumns(prev => [...prev, newColumn]);
+    
+    // Insert the new column right after the segment name column (index 1)
+    setColumns(prev => {
+      const newColumns = [...prev];
+      newColumns.splice(1, 0, newColumn);
+      return newColumns;
+    });
   };
 
   const handleReorderColumns = (newColumns: Column[]) => {
