@@ -13,6 +13,7 @@ import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 import { useRundownTimers } from '@/hooks/useRundownTimers';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 export const useRundownGridState = () => {
   const [showColumnManager, setShowColumnManager] = useState(false);
@@ -101,16 +102,28 @@ export const useRundownGridState = () => {
   } = usePlaybackControls(items, updateItem);
 
   // Load saved rundown data
-  useRundownDataLoader(rundownId, setItems, setRundownTitle, handleLoadLayout);
+  const { isDataLoaded } = useRundownDataLoader(rundownId, setItems, setRundownTitle, handleLoadLayout);
 
   // Timer management
   const { currentTime, timezone, setTimezone } = useRundownTimers();
+
+  // Auto-save functionality
+  const autoSave = useAutoSave({
+    rundownId: rundownId || 'new',
+    items,
+    rundownTitle,
+    columns,
+    isDataLoaded
+  });
 
   console.log('📊 useRundownGridState: Current state summary', {
     rundownId,
     title: rundownTitle,
     itemsCount: items.length,
-    columnsCount: columns.length
+    columnsCount: columns.length,
+    isDataLoaded,
+    hasUnsavedChanges: autoSave.hasUnsavedChanges,
+    isSaving: autoSave.isSaving
   });
 
   return {
@@ -190,6 +203,12 @@ export const useRundownGridState = () => {
     play,
     pause,
     forward,
-    backward
+    backward,
+
+    // Auto-save state
+    hasUnsavedChanges: autoSave.hasUnsavedChanges,
+    isSaving: autoSave.isSaving,
+    lastSaved: autoSave.lastSaved,
+    manualSave: autoSave.manualSave
   };
 };

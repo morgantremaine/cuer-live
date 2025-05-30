@@ -34,7 +34,9 @@ const RundownGrid = () => {
 
   console.log('🏗️ RundownGrid render', { 
     itemsCount: state.items.length,
-    title: state.rundownTitle
+    title: state.rundownTitle,
+    hasUnsavedChanges: state.hasUnsavedChanges,
+    isSaving: state.isSaving
   });
 
   return (
@@ -101,7 +103,9 @@ const RundownGrid = () => {
         console.log('🔔 RundownGrid: Loading layout');
         state.handleLoadLayout(layoutColumns);
       }}
-      hasUnsavedChanges={false}
+      hasUnsavedChanges={state.hasUnsavedChanges}
+      isSaving={state.isSaving}
+      onManualSave={state.manualSave}
       rundownTitle={state.rundownTitle}
       onTitleChange={handlers.handleTitleChange}
     />
