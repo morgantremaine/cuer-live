@@ -11,35 +11,48 @@ export const useSimpleAutoSave = (items: RundownItem[], rundownTitle: string, co
   const [isSaving, setIsSaving] = useState(false);
   
   const { id: rundownId } = useParams<{ id: string }>();
-  const { updateRundown, saveRundown, savedRundowns } = useRundownStorage();
+  const { updateRundown, saveRundown } = useRundownStorage();
   const navigate = useNavigate();
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastDataRef = useRef<string>('');
-  const saveInProgressRef = useRef(false);
+  const isInitializedRef = useRef(false);
 
-  console.log('🔄 SimpleAutoSave: Initialized', { rundownId, title: rundownTitle, itemsCount: items.length });
+  console.log('🔄 SimpleAutoSave: Hook called', { 
+    rundownId, 
+    title: rundownTitle, 
+    itemsCount: items.length,
+    hasUnsavedChanges,
+    isSaving
+  });
+
+  // Initialize lastDataRef on first load
+  useEffect(() => {
+    if (!isInitializedRef.current && items.length > 0) {
+      lastDataRef.current = JSON.stringify({ title: rundownTitle, items, columns });
+      isInitializedRef.current = true;
+      console.log('🎯 SimpleAutoSave: Initialized with existing data');
+    }
+  }, [items, rundownTitle, columns]);
 
   const performSave = useCallback(async () => {
-    if (saveInProgressRef.current) {
-      console.log('⚠️ SimpleAutoSave: Save already in progress, skipping');
+    if (isSaving) {
+      console.log('⚠️ SimpleAutoSave: Already saving, skipping');
       return;
     }
 
     const trimmedTitle = rundownTitle.trim();
     if (!trimmedTitle) {
-      console.log('⚠️ SimpleAutoSave: No title provided, skipping save');
+      console.log('⚠️ SimpleAutoSave: No title, skipping save');
       return;
     }
 
-    console.log('🚀 SimpleAutoSave: Starting save...', { rundownId, title: trimmedTitle });
-    
-    saveInProgressRef.current = true;
+    console.log('🚀 SimpleAutoSave: Starting save', { rundownId, title: trimmedTitle });
     setIsSaving(true);
 
     try {
       if (!rundownId) {
-        // New rundown
+        // Create new rundown
         console.log('📝 SimpleAutoSave: Creating new rundown');
         const result = await saveRundown(trimmedTitle, items, columns);
         console.log('✅ SimpleAutoSave: New rundown created', result);
@@ -51,32 +64,39 @@ export const useSimpleAutoSave = (items: RundownItem[], rundownTitle: string, co
         // Update existing rundown
         console.log('📝 SimpleAutoSave: Updating existing rundown');
         await updateRundown(rundownId, trimmedTitle, items, true, columns);
-        console.log('✅ SimpleAutoSave: Rundown updated successfully');
+        console.log('✅ SimpleAutoSave: Rundown updated');
       }
 
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
+      lastDataRef.current = JSON.stringify({ title: trimmedTitle, items, columns });
       console.log('🎉 SimpleAutoSave: Save completed successfully');
       
     } catch (error) {
       console.error('💥 SimpleAutoSave: Save failed', error);
       setHasUnsavedChanges(true);
     } finally {
-      saveInProgressRef.current = false;
       setIsSaving(false);
     }
-  }, [rundownId, rundownTitle, items, columns, saveRundown, updateRundown, navigate]);
+  }, [rundownId, rundownTitle, items, columns, saveRundown, updateRundown, navigate, isSaving]);
 
   const markAsChanged = useCallback(() => {
+    if (!isInitializedRef.current) {
+      console.log('⏭️ SimpleAutoSave: Not initialized yet, skipping change detection');
+      return;
+    }
+
     const currentData = JSON.stringify({ title: rundownTitle, items, columns });
     
     if (currentData === lastDataRef.current) {
-      console.log('⏭️ SimpleAutoSave: No changes detected');
+      console.log('⏭️ SimpleAutoSave: No actual changes detected');
       return;
     }
 
     console.log('📋 SimpleAutoSave: Changes detected, scheduling save');
-    lastDataRef.current = currentData;
+    console.log('📋 Old data length:', lastDataRef.current.length);
+    console.log('📋 New data length:', currentData.length);
+    
     setHasUnsavedChanges(true);
 
     // Clear existing timeout

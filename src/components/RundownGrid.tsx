@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContainer from './RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -19,8 +18,8 @@ const RundownGrid = () => {
     setItems: state.setItems,
     calculateEndTime: state.calculateEndTime,
     selectColor: state.selectColor,
-    markAsChanged: (source?: string) => {
-      console.log('🔔 RundownGrid: markAsChanged called from', source);
+    markAsChanged: () => {
+      console.log('🔔 RundownGrid: markAsChanged called');
       state.markAsChanged();
     },
     selectedRows: state.selectedRows,

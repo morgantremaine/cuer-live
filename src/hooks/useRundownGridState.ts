@@ -47,10 +47,10 @@ export const useRundownGridState = () => {
     handleLoadLayout
   } = useColumnsManager();
 
-  // Simple auto-save hook
+  // Simple auto-save hook - this should be the ONLY auto-save logic
   const { hasUnsavedChanges, markAsChanged, lastSaved, isSaving } = useSimpleAutoSave(items, rundownTitle, columns);
 
-  console.log('🔄 useRundownGridState: Simple auto-save state', {
+  console.log('🔄 useRundownGridState: Auto-save state', {
     hasUnsavedChanges,
     lastSaved: lastSaved?.toISOString(),
     isSaving
