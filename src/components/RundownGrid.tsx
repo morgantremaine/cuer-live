@@ -13,6 +13,7 @@ import { useTimeCalculations } from '@/hooks/useTimeCalculations';
 import { useColorPicker } from '@/hooks/useColorPicker';
 import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
+import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 
 const RundownGrid = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -86,6 +87,16 @@ const RundownGrid = () => {
     hasClipboardData
   } = useClipboard();
 
+  const {
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward
+  } = usePlaybackControls(items, updateItem);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -124,6 +135,7 @@ const RundownGrid = () => {
   };
 
   const selectedCount = selectedRows.size;
+  const selectedRowId = selectedCount === 1 ? Array.from(selectedRows)[0] : null;
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
@@ -146,6 +158,14 @@ const RundownGrid = () => {
             onPasteRows={handlePasteRows}
             onDeleteSelectedRows={handleDeleteSelectedRows}
             onClearSelection={clearSelection}
+            selectedRowId={selectedRowId}
+            isPlaying={isPlaying}
+            currentSegmentId={currentSegmentId}
+            timeRemaining={timeRemaining}
+            onPlay={play}
+            onPause={pause}
+            onForward={forward}
+            onBackward={backward}
           />
 
           <RundownTable

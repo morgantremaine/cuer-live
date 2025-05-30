@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2 } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 
@@ -14,6 +14,15 @@ interface RundownToolbarProps {
   onPasteRows: () => void;
   onDeleteSelectedRows: () => void;
   onClearSelection: () => void;
+  // Playback controls
+  selectedRowId: string | null;
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
+  onPlay: (selectedSegmentId?: string) => void;
+  onPause: () => void;
+  onForward: () => void;
+  onBackward: () => void;
 }
 
 const RundownToolbar = ({
@@ -25,8 +34,30 @@ const RundownToolbar = ({
   onCopySelectedRows,
   onPasteRows,
   onDeleteSelectedRows,
-  onClearSelection
+  onClearSelection,
+  selectedRowId,
+  isPlaying,
+  currentSegmentId,
+  timeRemaining,
+  onPlay,
+  onPause,
+  onForward,
+  onBackward
 }: RundownToolbarProps) => {
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handlePlay = () => {
+    if (selectedRowId && selectedCount === 1) {
+      onPlay(selectedRowId);
+    } else if (currentSegmentId) {
+      onPlay();
+    }
+  };
+
   return (
     <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
@@ -45,6 +76,45 @@ const RundownToolbar = ({
       </div>
 
       <div className="flex items-center space-x-2">
+        {/* Playback Controls */}
+        <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
+          <Button
+            onClick={onBackward}
+            variant="outline"
+            size="sm"
+            disabled={!currentSegmentId}
+            title="Previous segment"
+          >
+            <SkipBack className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            onClick={isPlaying ? onPause : handlePlay}
+            variant="outline"
+            size="sm"
+            disabled={!currentSegmentId && (!selectedRowId || selectedCount !== 1)}
+            title={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </Button>
+          
+          <Button
+            onClick={onForward}
+            variant="outline"
+            size="sm"
+            disabled={!currentSegmentId}
+            title="Next segment"
+          >
+            <SkipForward className="h-4 w-4" />
+          </Button>
+          
+          {currentSegmentId && (
+            <span className="text-sm text-gray-600 dark:text-gray-300 font-mono ml-2">
+              {formatTime(timeRemaining)}
+            </span>
+          )}
+        </div>
+
         {selectedCount > 0 && (
           <>
             <span className="text-sm text-gray-600 dark:text-gray-300">
