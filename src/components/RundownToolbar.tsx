@@ -2,6 +2,7 @@
 import React from 'react';
 import { Plus, Settings, Copy, Clipboard, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from './ThemeToggle';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -43,27 +44,30 @@ const RundownToolbar = ({
         </Button>
       </div>
 
-      {selectedCount > 0 && (
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            {selectedCount} selected
-          </span>
-          <Button onClick={onCopySelectedRows} variant="outline" size="sm">
-            <Copy className="h-4 w-4" />
-          </Button>
-          {hasClipboardData && (
-            <Button onClick={onPasteRows} variant="outline" size="sm">
-              <Clipboard className="h-4 w-4" />
+      <div className="flex items-center space-x-2">
+        {selectedCount > 0 && (
+          <>
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {selectedCount} selected
+            </span>
+            <Button onClick={onCopySelectedRows} variant="outline" size="sm">
+              <Copy className="h-4 w-4" />
             </Button>
-          )}
-          <Button onClick={onDeleteSelectedRows} variant="outline" size="sm">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Button onClick={onClearSelection} variant="ghost" size="sm">
-            Clear
-          </Button>
-        </div>
-      )}
+            {hasClipboardData && (
+              <Button onClick={onPasteRows} variant="outline" size="sm">
+                <Clipboard className="h-4 w-4" />
+              </Button>
+            )}
+            <Button onClick={onDeleteSelectedRows} variant="outline" size="sm">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button onClick={onClearSelection} variant="ghost" size="sm">
+              Clear
+            </Button>
+          </>
+        )}
+        <ThemeToggle />
+      </div>
     </div>
   );
 };

@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
 import RundownTable from './RundownTable';
 import RundownFooter from './RundownFooter';
 import ColumnManager from './ColumnManager';
-import ThemeToggle from './ThemeToggle';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useResizableColumns } from '@/hooks/useResizableColumns';
@@ -149,10 +147,6 @@ const RundownGrid = () => {
             onDeleteSelectedRows={handleDeleteSelectedRows}
             onClearSelection={clearSelection}
           />
-
-          <div className="flex justify-end p-4">
-            <ThemeToggle />
-          </div>
 
           <RundownTable
             items={items}
