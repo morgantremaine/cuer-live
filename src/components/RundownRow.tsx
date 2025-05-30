@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Trash2, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,11 +13,13 @@ interface RundownItem {
   notes: string;
   status: 'upcoming' | 'current' | 'completed';
   color?: string;
+  isHeader?: boolean;
 }
 
 interface RundownRowProps {
   item: RundownItem;
   index: number;
+  rowNumber: string;
   status: 'upcoming' | 'current' | 'completed';
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
@@ -35,6 +38,7 @@ interface RundownRowProps {
 const RundownRow = ({
   item,
   index,
+  rowNumber,
   status,
   showColorPicker,
   cellRefs,
@@ -53,12 +57,58 @@ const RundownRow = ({
   
   if (isDragging) {
     rowClass = 'bg-blue-100 opacity-50';
+  } else if (item.isHeader) {
+    rowClass = 'bg-blue-50 border-l-4 border-blue-500 font-semibold';
   } else if (item.color) {
     rowClass = `hover:opacity-90`;
   } else if (status === 'current') {
     rowClass = 'bg-green-50 border-l-4 border-green-500';
   } else if (status === 'completed') {
     rowClass = 'bg-gray-50 text-gray-500';
+  }
+
+  if (item.isHeader) {
+    return (
+      <tr 
+        className={`border-b border-gray-200 ${rowClass} transition-colors cursor-move`}
+        draggable
+        onDragStart={(e) => onDragStart(e, index)}
+        onDragOver={onDragOver}
+        onDrop={(e) => onDrop(e, index)}
+      >
+        <td className="px-4 py-2 text-sm text-gray-600 font-mono">
+          <div className="flex items-center space-x-2">
+            <Move className="h-4 w-4 text-gray-400" />
+            <span>{rowNumber}</span>
+          </div>
+        </td>
+        <td colSpan={5} className="px-4 py-3">
+          <div className="flex items-center space-x-3">
+            <span className="text-xl font-bold text-blue-600">{item.segmentName}</span>
+            <input
+              ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
+              type="text"
+              value={item.notes}
+              onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
+              onClick={() => onCellClick(item.id, 'notes')}
+              onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
+              className="flex-1 border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm"
+              placeholder="Header description..."
+            />
+          </div>
+        </td>
+        <td className="px-4 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDeleteRow(item.id)}
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </td>
+      </tr>
+    );
   }
 
   return (
@@ -73,7 +123,7 @@ const RundownRow = ({
       <td className="px-4 py-2 text-sm text-gray-600 font-mono">
         <div className="flex items-center space-x-2">
           <Move className="h-4 w-4 text-gray-400" />
-          <span>{index + 1}</span>
+          <span>{rowNumber}</span>
         </div>
       </td>
       <td className="px-4 py-2">

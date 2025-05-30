@@ -14,12 +14,23 @@ interface RundownItem {
   notes: string;
   status: 'upcoming' | 'current' | 'completed';
   color?: string;
+  isHeader?: boolean;
 }
 
 const RundownGrid = () => {
   const [items, setItems] = useState<RundownItem[]>([
     {
       id: '1',
+      segmentName: 'A',
+      duration: '',
+      startTime: '',
+      endTime: '',
+      notes: '',
+      status: 'upcoming',
+      isHeader: true
+    },
+    {
+      id: '2',
       segmentName: 'Opening Headlines',
       duration: '00:02:30',
       startTime: '18:00:00',
@@ -28,7 +39,7 @@ const RundownGrid = () => {
       status: 'upcoming'
     },
     {
-      id: '2',
+      id: '3',
       segmentName: 'Weather Report',
       duration: '00:03:00',
       startTime: '18:02:30',
@@ -37,7 +48,7 @@ const RundownGrid = () => {
       status: 'upcoming'
     },
     {
-      id: '3',
+      id: '4',
       segmentName: 'Breaking News',
       duration: '00:05:00',
       startTime: '18:05:30',
@@ -81,7 +92,7 @@ const RundownGrid = () => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
         
-        if (field === 'startTime' || field === 'duration') {
+        if (!item.isHeader && (field === 'startTime' || field === 'duration')) {
           updatedItem.endTime = calculateEndTime(updatedItem.startTime, updatedItem.duration);
         }
         
@@ -134,7 +145,7 @@ const RundownGrid = () => {
   const addRow = () => {
     const newId = (items.length + 1).toString();
     const lastItem = items[items.length - 1];
-    const newStartTime = lastItem ? lastItem.endTime : '18:00:00';
+    const newStartTime = lastItem && !lastItem.isHeader ? lastItem.endTime : '18:00:00';
     
     const newItem: RundownItem = {
       id: newId,
@@ -147,6 +158,49 @@ const RundownGrid = () => {
     };
     
     setItems(prev => [...prev, newItem]);
+  };
+
+  const addHeader = () => {
+    const newId = (items.length + 1).toString();
+    const nextLetter = String.fromCharCode(65 + getNextHeaderLetter());
+    
+    const newHeader: RundownItem = {
+      id: newId,
+      segmentName: nextLetter,
+      duration: '',
+      startTime: '',
+      endTime: '',
+      notes: '',
+      status: 'upcoming',
+      isHeader: true
+    };
+    
+    setItems(prev => [...prev, newHeader]);
+  };
+
+  const getNextHeaderLetter = () => {
+    const headers = items.filter(item => item.isHeader);
+    return headers.length;
+  };
+
+  const getRowNumber = (index: number) => {
+    if (items[index].isHeader) {
+      return items[index].segmentName;
+    }
+
+    let currentHeaderLetter = 'A';
+    let rowCount = 0;
+
+    for (let i = 0; i <= index; i++) {
+      if (items[i].isHeader) {
+        currentHeaderLetter = items[i].segmentName;
+        rowCount = 0;
+      } else {
+        rowCount++;
+      }
+    }
+
+    return `${currentHeaderLetter}${rowCount}`;
   };
 
   const deleteRow = (id: string) => {
@@ -204,10 +258,14 @@ const RundownGrid = () => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <RundownHeader currentTime={currentTime} />
           
-          <div className="p-4 border-b bg-gray-50">
+          <div className="p-4 border-b bg-gray-50 flex space-x-2">
             <Button onClick={addRow} className="flex items-center space-x-2">
               <Plus className="h-4 w-4" />
               <span>Add Segment</span>
+            </Button>
+            <Button onClick={addHeader} variant="outline" className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Add Header</span>
             </Button>
           </div>
 
@@ -230,6 +288,7 @@ const RundownGrid = () => {
                     key={item.id}
                     item={item}
                     index={index}
+                    rowNumber={getRowNumber(index)}
                     status={getRowStatus(item)}
                     showColorPicker={showColorPicker}
                     cellRefs={cellRefs}
@@ -249,7 +308,7 @@ const RundownGrid = () => {
             </table>
           </div>
           
-          <RundownFooter totalSegments={items.length} />
+          <RundownFooter totalSegments={items.filter(item => !item.isHeader).length} />
         </div>
       </div>
     </div>
