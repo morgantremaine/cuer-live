@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -68,6 +67,13 @@ const RundownToolbar = ({
     }
   };
 
+  const handleManualSave = () => {
+    console.log('Manual save button clicked, hasUnsavedChanges:', hasUnsavedChanges);
+    onManualSave();
+  };
+
+  console.log('RundownToolbar render - hasUnsavedChanges:', hasUnsavedChanges);
+
   return (
     <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
@@ -84,13 +90,12 @@ const RundownToolbar = ({
           <span>Manage Columns</span>
         </Button>
         <Button 
-          onClick={onManualSave} 
+          onClick={handleManualSave} 
           variant={hasUnsavedChanges ? "default" : "outline"} 
           className="flex items-center space-x-2"
-          disabled={!hasUnsavedChanges}
         >
           <Save className="h-4 w-4" />
-          <span>Save</span>
+          <span>Save{hasUnsavedChanges ? ' *' : ''}</span>
         </Button>
       </div>
 

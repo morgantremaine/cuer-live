@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -24,49 +23,22 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       initialStateRef.current = initialState;
       lastSavedStateRef.current = initialState;
       setHasUnsavedChanges(false);
+      console.log('Initialized auto-save with:', initialState);
     }
   }, [currentRundown]);
 
-  // Check if current state differs from last saved state
-  const hasChanges = useCallback(() => {
-    if (!lastSavedStateRef.current) return true; // If no saved state, assume changes
-    
-    const currentState = { items: [...items], title: rundownTitle };
-    const lastSavedState = lastSavedStateRef.current;
-    
-    // Compare title
-    if (currentState.title !== lastSavedState.title) {
-      console.log('Title changed:', currentState.title, 'vs', lastSavedState.title);
-      return true;
-    }
-    
-    // Compare items length
-    if (currentState.items.length !== lastSavedState.items.length) {
-      console.log('Items length changed:', currentState.items.length, 'vs', lastSavedState.items.length);
-      return true;
-    }
-    
-    // Deep compare each item
-    for (let i = 0; i < currentState.items.length; i++) {
-      const currentItem = currentState.items[i];
-      const savedItem = lastSavedState.items[i];
+  // Simple change detection - mark as changed when items or title change
+  useEffect(() => {
+    if (canAutoSave && lastSavedStateRef.current) {
+      const currentState = JSON.stringify({ items, title: rundownTitle });
+      const savedState = JSON.stringify(lastSavedStateRef.current);
       
-      if (JSON.stringify(currentItem) !== JSON.stringify(savedItem)) {
-        console.log('Item changed at index', i, currentItem, 'vs', savedItem);
-        return true;
+      if (currentState !== savedState) {
+        console.log('Changes detected, marking as unsaved');
+        setHasUnsavedChanges(true);
       }
     }
-    
-    return false;
-  }, [items, rundownTitle]);
-
-  // Track changes immediately when items or title change
-  useEffect(() => {
-    if (canAutoSave && lastSavedStateRef.current && hasChanges()) {
-      console.log('Changes detected, marking as unsaved');
-      setHasUnsavedChanges(true);
-    }
-  }, [items, rundownTitle, canAutoSave, hasChanges]);
+  }, [items, rundownTitle, canAutoSave]);
 
   // Debounced auto-save functionality
   const debouncedSave = useCallback(

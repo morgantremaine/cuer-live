@@ -34,6 +34,8 @@ const RundownGrid = () => {
   const selectedCount = state.selectedRows.size;
   const selectedRowId = selectedCount === 1 ? Array.from(state.selectedRows)[0] : null;
 
+  console.log('RundownGrid render - hasUnsavedChanges:', state.hasUnsavedChanges);
+
   return (
     <RundownContainer
       currentTime={state.currentTime}
@@ -81,10 +83,22 @@ const RundownGrid = () => {
       onPause={state.pause}
       onForward={state.forward}
       onBackward={state.backward}
-      handleAddColumn={state.handleAddColumn}
-      handleReorderColumns={state.handleReorderColumns}
+      handleAddColumn={(name: string) => {
+        console.log('Adding column:', name);
+        state.handleAddColumn(name);
+        state.markAsChanged();
+      }}
+      handleReorderColumns={(columns) => {
+        console.log('Reordering columns');
+        state.handleReorderColumns(columns);
+        state.markAsChanged();
+      }}
       handleDeleteColumnWithCleanup={handlers.handleDeleteColumnWithCleanup}
-      handleToggleColumnVisibility={state.handleToggleColumnVisibility}
+      handleToggleColumnVisibility={(columnId: string) => {
+        console.log('Toggling column visibility:', columnId);
+        state.handleToggleColumnVisibility(columnId);
+        state.markAsChanged();
+      }}
       hasUnsavedChanges={state.hasUnsavedChanges}
       rundownTitle={state.rundownTitle}
       onTitleChange={handlers.handleTitleChange}
