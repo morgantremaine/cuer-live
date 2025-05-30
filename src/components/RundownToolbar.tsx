@@ -77,7 +77,13 @@ const RundownToolbar = ({
 
       <div className="flex items-center space-x-2">
         {/* Playback Controls */}
-        <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
+        <div className="flex items-center space-x-2 px-2 border-r border-gray-300 dark:border-gray-600">
+          {currentSegmentId && (
+            <span className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+              {formatTime(timeRemaining)}
+            </span>
+          )}
+          
           <Button
             onClick={onBackward}
             variant="outline"
@@ -107,12 +113,6 @@ const RundownToolbar = ({
           >
             <SkipForward className="h-4 w-4" />
           </Button>
-          
-          {currentSegmentId && (
-            <span className="text-sm text-gray-600 dark:text-gray-300 font-mono ml-2">
-              {formatTime(timeRemaining)}
-            </span>
-          )}
         </div>
 
         {selectedCount > 0 && (

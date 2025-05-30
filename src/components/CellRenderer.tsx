@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -46,7 +47,7 @@ const CellRenderer = ({
     return (
       <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
         <span 
-          className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
+          className="text-sm font-mono"
           style={{ color: textColor || undefined }}
         >
           {value}
