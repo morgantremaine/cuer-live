@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -12,7 +11,6 @@ import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
 
 export const useRundownGridState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -21,7 +19,6 @@ export const useRundownGridState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
 
   const { id: rundownId } = useParams<{ id: string }>();
-  const { savedRundowns } = useRundownStorage();
 
   const {
     items,
@@ -38,6 +35,8 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
+  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle);
+
   const {
     columns,
     visibleColumns,
@@ -46,29 +45,27 @@ export const useRundownGridState = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout
-  } = useColumnsManager();
-
-  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle, columns);
+  } = useColumnsManager(markAsChanged);
 
   const {
     columnWidths,
     updateColumnWidth,
     getColumnWidth
-  } = useResizableColumns();
+  } = useResizableColumns(visibleColumns);
 
   const {
     selectedCell,
     cellRefs,
     handleCellClick,
     handleKeyDown
-  } = useCellNavigation();
+  } = useCellNavigation(visibleColumns, items);
 
   const {
     draggedItemIndex,
     handleDragStart,
     handleDragOver,
     handleDrop
-  } = useDragAndDrop();
+  } = useDragAndDrop(items, setItems);
 
   const {
     calculateEndTime,
@@ -78,7 +75,7 @@ export const useRundownGridState = () => {
   const {
     showColorPicker,
     handleToggleColorPicker,
-    selectColor
+    handleColorSelect: selectColor
   } = useColorPicker();
 
   const {
@@ -101,25 +98,7 @@ export const useRundownGridState = () => {
     pause,
     forward,
     backward
-  } = usePlaybackControls();
-
-  // Load saved rundown data when component mounts
-  useEffect(() => {
-    if (rundownId && savedRundowns.length > 0) {
-      const savedRundown = savedRundowns.find(r => r.id === rundownId);
-      if (savedRundown) {
-        console.log('Loading saved rundown:', savedRundown);
-        setItems(savedRundown.items);
-        setRundownTitle(savedRundown.title);
-        
-        // Load saved columns if they exist
-        if (savedRundown.columns && savedRundown.columns.length > 0) {
-          console.log('Loading saved columns:', savedRundown.columns);
-          handleLoadLayout(savedRundown.columns);
-        }
-      }
-    }
-  }, [rundownId, savedRundowns, setItems, setRundownTitle, handleLoadLayout]);
+  } = usePlaybackControls(items, updateItem);
 
   // Timer effect for current time
   useEffect(() => {

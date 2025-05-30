@@ -1,16 +1,13 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { RundownItem } from '@/hooks/useRundownItems'
-import { Column } from '@/hooks/useColumnsManager'
 import { useToast } from '@/hooks/use-toast'
 
 interface SavedRundown {
   id: string
   title: string
   items: RundownItem[]
-  columns?: Column[]
   created_at: string
   updated_at: string
 }
@@ -43,7 +40,7 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[], columns?: Column[]) => {
+  const saveRundown = async (title: string, items: RundownItem[]) => {
     if (!user) return
 
     const { data, error } = await supabase
@@ -52,7 +49,6 @@ export const useRundownStorage = () => {
         user_id: user.id,
         title,
         items,
-        columns,
       })
       .select()
       .single()
@@ -74,7 +70,7 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], columns?: Column[], silent = false) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false) => {
     if (!user) return
 
     const { error } = await supabase
@@ -82,7 +78,6 @@ export const useRundownStorage = () => {
       .update({
         title,
         items,
-        columns,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
