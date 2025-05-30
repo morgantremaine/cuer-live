@@ -1,6 +1,6 @@
 
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
@@ -8,8 +8,8 @@ import { useChangeTracking } from './useChangeTracking';
 
 export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   const { user } = useAuth();
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSaveAttemptRef = useRef<string>('');
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSaveDataRef = useRef<string>('');
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -30,95 +30,79 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     userId: user?.id || 'none'
   });
 
-  // Schedule auto-save when data changes - simplified dependency array
-  useEffect(() => {
-    console.log('⚡ Auto-save effect triggered:', { 
-      hasUnsavedChanges, 
-      isInitialized, 
-      isSaving, 
-      hasUser: !!user,
-      userId: user?.id || 'none'
-    });
+  // Create a debounced save function that's stable across renders
+  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string) => {
+    console.log('🎯 Debounced save triggered');
+    
+    if (!user || isSaving) {
+      console.log('⏸️ Skipping save - no user or already saving');
+      return;
+    }
 
-    if (!hasUnsavedChanges || !isInitialized || isSaving || !user) {
+    try {
+      const success = await performSave(itemsToSave, titleToSave);
+      console.log('💾 Save operation result:', success);
+      
+      if (success) {
+        console.log('✅ Auto-save successful, marking as saved');
+        markAsSaved(itemsToSave, titleToSave);
+      } else {
+        console.log('❌ Auto-save failed, keeping unsaved state');
+        setHasUnsavedChanges(true);
+      }
+    } catch (error) {
+      console.error('💥 Auto-save threw an error:', error);
+      setHasUnsavedChanges(true);
+    }
+  }, [user, isSaving, performSave, markAsSaved, setHasUnsavedChanges]);
+
+  // Main effect that schedules saves
+  useEffect(() => {
+    if (!hasUnsavedChanges || !isInitialized || !user) {
       console.log('⏸️ Skipping auto-save scheduling:', { 
         hasUnsavedChanges, 
         isInitialized, 
-        isSaving, 
-        hasUser: !!user,
-        userId: user?.id || 'none'
+        hasUser: !!user
       });
       return;
     }
 
-    // Create a unique identifier for this save attempt
-    const currentDataSignature = `${items.length}-${rundownTitle}-${items.map(i => i.id).join(',')}`;
+    // Create a unique signature for this data
+    const currentDataSignature = JSON.stringify({ items, title: rundownTitle });
     
-    // Only schedule if this is different from the last attempt
-    if (lastSaveAttemptRef.current === currentDataSignature) {
+    // Only schedule if data actually changed
+    if (lastSaveDataRef.current === currentDataSignature) {
       console.log('📋 Same data signature, skipping schedule');
       return;
     }
 
-    lastSaveAttemptRef.current = currentDataSignature;
+    console.log('⏰ Scheduling debounced auto-save...');
+    lastSaveDataRef.current = currentDataSignature;
 
-    console.log('⏰ Scheduling auto-save in 2 seconds...');
-    console.log('📊 Current data to save:', {
-      itemsCount: items.length,
-      title: rundownTitle,
-      firstItemId: items[0]?.id || 'none',
-      lastItemId: items[items.length - 1]?.id || 'none',
-      signature: currentDataSignature
-    });
-    
-    // Clear any existing timeout
-    if (saveTimeoutRef.current) {
-      console.log('🚫 Clearing existing save timeout');
-      clearTimeout(saveTimeoutRef.current);
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      console.log('🚫 Clearing existing debounce timeout');
+      clearTimeout(debounceTimeoutRef.current);
     }
-    
-    // Schedule new save with the current data captured in closure
-    const currentItems = [...items];
-    const currentTitle = rundownTitle;
-    
-    saveTimeoutRef.current = setTimeout(async () => {
-      console.log('⚡ Timeout executing for signature:', currentDataSignature);
-      console.log('🎯 Auto-save timeout triggered, attempting save...');
-      console.log('📤 Saving data:', {
-        itemsCount: currentItems.length,
-        title: currentTitle,
-        userId: user?.id
-      });
-      
-      try {
-        const success = await performSave(currentItems, currentTitle);
-        console.log('💾 Save operation result:', success);
-        
-        if (success) {
-          console.log('✅ Auto-save successful, marking as saved');
-          markAsSaved(currentItems, currentTitle);
-        } else {
-          console.log('❌ Auto-save failed, keeping unsaved state');
-          setHasUnsavedChanges(true);
-        }
-      } catch (error) {
-        console.error('💥 Auto-save threw an error:', error);
-        setHasUnsavedChanges(true);
-      }
-      
-      saveTimeoutRef.current = null;
+
+    // Schedule new save
+    debounceTimeoutRef.current = setTimeout(() => {
+      console.log('⚡ Executing debounced auto-save');
+      debouncedSave([...items], rundownTitle);
+      debounceTimeoutRef.current = null;
     }, 2000);
 
-    // Return cleanup function only for this specific timeout
+  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, debouncedSave]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        console.log('🧹 Effect cleanup: clearing save timeout');
-        clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
+      if (debounceTimeoutRef.current) {
+        console.log('🧹 Cleanup: clearing debounce timeout');
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
-
-  }, [hasUnsavedChanges, isInitialized, isSaving, user?.id]);
+  }, []);
 
   const markAsChangedCallback = () => {
     markAsChanged();
