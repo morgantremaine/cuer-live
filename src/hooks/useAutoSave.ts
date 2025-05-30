@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -17,7 +16,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const itemsRef = useRef(items);
   const titleRef = useRef(rundownTitle);
   const columnsRef = useRef(columns);
-  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAutoSaveRef = useRef<Date | null>(null);
 
   // Update refs when values change
   useEffect(() => {
@@ -40,11 +40,31 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const markAsChanged = useCallback(() => {
     console.log('Auto-save: Marking as changed');
     setHasUnsavedChanges(true);
-  }, []);
+    
+    // Clear any existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    // Set a new timeout for auto-save (debounced)
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      if (!isSaving) {
+        performAutoSave();
+      }
+    }, 2000); // 2 second debounce
+  }, [isSaving]);
 
   const performAutoSave = useCallback(async () => {
+    // Prevent multiple simultaneous saves
     if (isSaving) {
       console.log('Auto-save: Already saving, skipping...');
+      return;
+    }
+
+    // Don't save too frequently
+    const now = new Date();
+    if (lastAutoSaveRef.current && (now.getTime() - lastAutoSaveRef.current.getTime()) < 5000) {
+      console.log('Auto-save: Too soon since last save, skipping...');
       return;
     }
 
@@ -59,13 +79,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
         columnsCount: columnsRef.current?.length
       });
 
+      // Validate data before saving
       if (!titleRef.current || titleRef.current.trim() === '') {
-        console.error('Auto-save: Invalid title, skipping');
+        console.log('Auto-save: Invalid title, skipping');
+        setHasUnsavedChanges(false);
         return;
       }
 
       if (!itemsRef.current || itemsRef.current.length === 0) {
         console.log('Auto-save: No items to save, skipping');
+        setHasUnsavedChanges(false);
         return;
       }
 
@@ -82,57 +105,36 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
         console.log('Auto-save: Existing rundown updated');
       } else {
         console.log('Auto-save: Cannot save - no valid rundown context');
+        setHasUnsavedChanges(false);
         return;
       }
       
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
+      lastAutoSaveRef.current = new Date();
       console.log('Auto-save: Successful');
     } catch (error) {
       console.error('Auto-save: Failed:', error);
-      // Don't throw error for auto-save, just log it
+      // Reset saving state on error but keep unsaved changes flag
+      setHasUnsavedChanges(true);
     } finally {
       setIsSaving(false);
     }
   }, [rundownId, updateRundown, saveRundown, canSave, navigate, isNewRundown, isSaving]);
 
-  // Set up auto-save interval (10 seconds)
+  // Cleanup timeout on unmount
   useEffect(() => {
-    console.log('Auto-save: Setting up 10-second auto-save interval');
-    
-    // Clear any existing interval
-    if (autoSaveIntervalRef.current) {
-      clearInterval(autoSaveIntervalRef.current);
-    }
-
-    // Set up new interval
-    autoSaveIntervalRef.current = setInterval(() => {
-      if (hasUnsavedChanges && !isSaving) {
-        console.log('Auto-save: Triggered by 10-second interval');
-        performAutoSave();
-      }
-    }, 10000); // 10 seconds
-
-    // Cleanup on unmount
     return () => {
-      if (autoSaveIntervalRef.current) {
-        clearInterval(autoSaveIntervalRef.current);
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [hasUnsavedChanges, isSaving, performAutoSave]);
-
-  // Auto-save when data changes (with debounce)
-  useEffect(() => {
-    if (hasUnsavedChanges && !isSaving) {
-      console.log('Auto-save: Data changed, will save in next interval');
-    }
-  }, [items, rundownTitle, columns, hasUnsavedChanges, isSaving]);
+  }, []);
 
   return {
     hasUnsavedChanges,
     markAsChanged,
     lastSaved,
     isSaving,
-    // Remove manual save function since we're doing auto-save only
   };
 };

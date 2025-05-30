@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 
@@ -81,9 +81,14 @@ const RundownToolbar = ({
           <Settings className="h-4 w-4" />
           <span>Manage Columns</span>
         </Button>
-        {hasUnsavedChanges && (
-          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded text-sm text-blue-800 dark:text-blue-200">
+        {hasUnsavedChanges ? (
+          <div className="flex items-center space-x-2 px-3 py-1 bg-yellow-100 dark:bg-yellow-900 rounded text-sm text-yellow-800 dark:text-yellow-200">
             <span>Auto-saving...</span>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 dark:bg-green-900 rounded text-sm text-green-800 dark:text-green-200">
+            <CheckCircle className="h-4 w-4" />
+            <span>Saved</span>
           </div>
         )}
       </div>
