@@ -14,6 +14,11 @@ export interface RundownItem {
   notes: string;
   color: string;
   isFloating: boolean;
+  isHeader?: boolean;
+  isFloated?: boolean;
+  segmentName?: string;
+  status?: 'upcoming' | 'current' | 'completed';
+  customFields?: { [key: string]: string };
 }
 
 export const useRundownItems = () => {
@@ -33,6 +38,9 @@ export const useRundownItems = () => {
       notes: '',
       color: '#3B82F6',
       isFloating: false,
+      isHeader: true,
+      segmentName: 'A',
+      status: 'upcoming',
     },
     {
       id: '2',
@@ -46,6 +54,9 @@ export const useRundownItems = () => {
       notes: 'Introduce today\'s guests',
       color: '#10B981',
       isFloating: false,
+      isHeader: false,
+      isFloated: false,
+      status: 'upcoming',
     },
     {
       id: '3',
@@ -59,6 +70,9 @@ export const useRundownItems = () => {
       notes: 'Focus on new product launch',
       color: '#F59E0B',
       isFloating: false,
+      isHeader: false,
+      isFloated: false,
+      status: 'upcoming',
     },
     {
       id: '4',
@@ -72,6 +86,9 @@ export const useRundownItems = () => {
       notes: 'Sponsor: TechCorp',
       color: '#EF4444',
       isFloating: false,
+      isHeader: false,
+      isFloated: false,
+      status: 'upcoming',
     },
     {
       id: '5',
@@ -85,6 +102,9 @@ export const useRundownItems = () => {
       notes: '',
       color: '#8B5CF6',
       isFloating: false,
+      isHeader: true,
+      segmentName: 'B',
+      status: 'upcoming',
     },
     {
       id: '6',
@@ -98,6 +118,9 @@ export const useRundownItems = () => {
       notes: 'Take live caller questions',
       color: '#06B6D4',
       isFloating: false,
+      isHeader: false,
+      isFloated: false,
+      status: 'upcoming',
     },
     {
       id: '7',
@@ -111,6 +134,9 @@ export const useRundownItems = () => {
       notes: 'Thank guests, preview next episode',
       color: '#84CC16',
       isFloating: false,
+      isHeader: false,
+      isFloated: false,
+      status: 'upcoming',
     },
   ]);
 
@@ -124,106 +150,22 @@ export const useRundownItems = () => {
       
       if (existingRundown && existingRundown.items) {
         console.log('Found existing rundown, loading items:', existingRundown.items.length);
-        setItems(existingRundown.items);
+        // Ensure loaded items have all required properties
+        const itemsWithDefaults = existingRundown.items.map(item => ({
+          ...item,
+          isHeader: item.type === 'header',
+          isFloated: item.isFloated || false,
+          segmentName: item.segmentName || item.rowNumber,
+          status: item.status || 'upcoming',
+          customFields: item.customFields || {},
+        }));
+        setItems(itemsWithDefaults);
       } else {
         console.log('Rundown not found or has no items, keeping default');
       }
     } else if (!rundownId) {
       console.log('No rundown ID, using default items for new rundown');
-      // Reset to default for new rundowns
-      setItems([
-        {
-          id: '1',
-          type: 'header',
-          rowNumber: 'A',
-          name: 'SHOW OPEN',
-          startTime: '09:00:00',
-          duration: '00:05:00',
-          endTime: '09:05:00',
-          talent: '',
-          notes: '',
-          color: '#3B82F6',
-          isFloating: false,
-        },
-        {
-          id: '2',
-          type: 'regular',
-          rowNumber: '1',
-          name: 'Welcome & Introductions',
-          startTime: '09:05:00',
-          duration: '00:03:00',
-          endTime: '09:08:00',
-          talent: 'Host',
-          notes: 'Introduce today\'s guests',
-          color: '#10B981',
-          isFloating: false,
-        },
-        {
-          id: '3',
-          type: 'regular',
-          rowNumber: '2',
-          name: 'Main Interview Segment',
-          startTime: '09:08:00',
-          duration: '00:20:00',
-          endTime: '09:28:00',
-          talent: 'Host, Guest',
-          notes: 'Focus on new product launch',
-          color: '#F59E0B',
-          isFloating: false,
-        },
-        {
-          id: '4',
-          type: 'regular',
-          rowNumber: '3',
-          name: 'Commercial Break',
-          startTime: '09:28:00',
-          duration: '00:02:00',
-          endTime: '09:30:00',
-          talent: '',
-          notes: 'Sponsor: TechCorp',
-          color: '#EF4444',
-          isFloating: false,
-        },
-        {
-          id: '5',
-          type: 'header',
-          rowNumber: 'B',
-          name: 'SEGMENT 2',
-          startTime: '09:30:00',
-          duration: '00:15:00',
-          endTime: '09:45:00',
-          talent: '',
-          notes: '',
-          color: '#8B5CF6',
-          isFloating: false,
-        },
-        {
-          id: '6',
-          type: 'regular',
-          rowNumber: '4',
-          name: 'Q&A Session',
-          startTime: '09:45:00',
-          duration: '00:10:00',
-          endTime: '09:55:00',
-          talent: 'Host, Guest',
-          notes: 'Take live caller questions',
-          color: '#06B6D4',
-          isFloating: false,
-        },
-        {
-          id: '7',
-          type: 'regular',
-          rowNumber: '5',
-          name: 'Closing Remarks',
-          startTime: '09:55:00',
-          duration: '00:05:00',
-          endTime: '10:00:00',
-          talent: 'Host',
-          notes: 'Thank guests, preview next episode',
-          color: '#84CC16',
-          isFloating: false,
-        },
-      ]);
+      // Reset to default for new rundowns - items already have defaults above
     }
   }, [rundownId, savedRundowns, loading]);
 
@@ -253,6 +195,10 @@ export const useRundownItems = () => {
         notes: '',
         color: '#FFFFFF',
         isFloating: false,
+        isHeader: false,
+        isFloated: false,
+        status: 'upcoming',
+        customFields: {},
       };
       return [...prevItems, newItem];
     });
@@ -276,6 +222,10 @@ export const useRundownItems = () => {
         notes: '',
         color: '#888888',
         isFloating: false,
+        isHeader: true,
+        segmentName: newHeaderNumber,
+        status: 'upcoming',
+        customFields: {},
       };
       return [...prevItems, newHeader];
     });
@@ -299,6 +249,11 @@ export const useRundownItems = () => {
         id: String(Date.now() + index),
         startTime: calculateEndTime(newStartTime, item.duration),
         endTime: calculateEndTime(calculateEndTime(newStartTime, item.duration), item.duration),
+        isHeader: item.type === 'header',
+        isFloated: item.isFloated || false,
+        segmentName: item.segmentName || item.rowNumber,
+        status: item.status || 'upcoming',
+        customFields: item.customFields || {},
       }));
       return [...prevItems, ...newItems];
     });
@@ -313,7 +268,7 @@ export const useRundownItems = () => {
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prevItems =>
       prevItems.map(item =>
-        item.id === id ? { ...item, isFloating: !item.isFloating } : item
+        item.id === id ? { ...item, isFloating: !item.isFloating, isFloated: !item.isFloated } : item
       )
     );
   }, [setItems]);
