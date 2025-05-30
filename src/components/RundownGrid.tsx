@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import RundownContainer from './RundownContainer';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -13,12 +12,17 @@ import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useRundownHandlers } from '@/hooks/useRundownHandlers';
+import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { useParams } from 'react-router-dom';
 
 const RundownGrid = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
+
+  const { id: rundownId } = useParams<{ id: string }>();
+  const { updateRundown } = useRundownStorage();
 
   const {
     items,
@@ -124,6 +128,16 @@ const RundownGrid = () => {
     markAsChanged
   });
 
+  const handleManualSave = async () => {
+    if (rundownId && hasUnsavedChanges) {
+      try {
+        await updateRundown(rundownId, rundownTitle, items);
+      } catch (error) {
+        console.error('Manual save failed:', error);
+      }
+    }
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -201,6 +215,7 @@ const RundownGrid = () => {
       hasUnsavedChanges={hasUnsavedChanges}
       rundownTitle={rundownTitle}
       onTitleChange={handleTitleChange}
+      onManualSave={handleManualSave}
     />
   );
 };

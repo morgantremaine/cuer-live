@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 
@@ -23,6 +23,9 @@ interface RundownToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  // Save functionality
+  hasUnsavedChanges: boolean;
+  onManualSave: () => void;
 }
 
 const RundownToolbar = ({
@@ -42,7 +45,9 @@ const RundownToolbar = ({
   onPlay,
   onPause,
   onForward,
-  onBackward
+  onBackward,
+  hasUnsavedChanges,
+  onManualSave
 }: RundownToolbarProps) => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -77,6 +82,15 @@ const RundownToolbar = ({
         <Button onClick={onShowColumnManager} variant="outline" className="flex items-center space-x-2">
           <Settings className="h-4 w-4" />
           <span>Manage Columns</span>
+        </Button>
+        <Button 
+          onClick={onManualSave} 
+          variant={hasUnsavedChanges ? "default" : "outline"} 
+          className="flex items-center space-x-2"
+          disabled={!hasUnsavedChanges}
+        >
+          <Save className="h-4 w-4" />
+          <span>Save</span>
         </Button>
       </div>
 
