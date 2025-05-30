@@ -145,10 +145,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
           lastSavedDataRef.current = dataToSave;
           setHasUnsavedChanges(false);
           navigate(`/rundown/${result.id}`, { replace: true });
-          toast({
-            title: 'Rundown Saved',
-            description: 'Your new rundown has been saved successfully',
-          });
         } else {
           throw new Error('Failed to save new rundown - no ID returned');
         }
@@ -158,10 +154,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
         console.log('Rundown updated successfully');
         lastSavedDataRef.current = dataToSave;
         setHasUnsavedChanges(false);
-        toast({
-          title: 'Changes Saved',
-          description: 'Your rundown has been updated',
-        });
       }
     } catch (error) {
       console.error('Save failed:', error);
