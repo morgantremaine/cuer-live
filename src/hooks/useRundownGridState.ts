@@ -11,6 +11,7 @@ import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useRundownStorage } from '@/hooks/useRundownStorage';
 
 export const useRundownGridState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -19,6 +20,23 @@ export const useRundownGridState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
 
   const { id: rundownId } = useParams<{ id: string }>();
+  const { savedRundowns, loading } = useRundownStorage();
+
+  // Load the title from existing rundown
+  useEffect(() => {
+    if (loading) return;
+    
+    if (rundownId && savedRundowns.length > 0) {
+      const existingRundown = savedRundowns.find(r => r.id === rundownId);
+      if (existingRundown) {
+        console.log('Loading rundown title:', existingRundown.title);
+        setRundownTitle(existingRundown.title);
+      }
+    } else if (!rundownId) {
+      console.log('New rundown, using default title');
+      setRundownTitle('Live Broadcast Rundown');
+    }
+  }, [rundownId, savedRundowns, loading]);
 
   const {
     items,
