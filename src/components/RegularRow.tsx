@@ -57,7 +57,7 @@ const RegularRow = ({
   isDragging,
   getColumnWidth
 }: RegularRowProps) => {
-  let rowClass = 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800';
+  let rowClass = '';
   
   if (isDragging) {
     rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
@@ -65,14 +65,14 @@ const RegularRow = ({
     rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
   } else if (isSelected) {
     rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
-  } else if (item.color) {
-    rowClass = `hover:opacity-90 dark:bg-gray-800`;
+  } else if (item.color && item.color !== '#FFFFFF') {
+    rowClass = `hover:opacity-90`;
   } else {
-    // Ensure proper dark mode background for regular rows
+    // Default styling for regular rows - ensure proper dark mode
     rowClass = 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700';
   }
 
-  const textColor = item.isFloated ? 'white' : (item.color ? getContrastTextColor(item.color) : '');
+  const textColor = item.isFloated ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
 
   const handleRowClick = (e: React.MouseEvent) => {
     // Only handle row selection if the click target is the row itself or the row number cell
@@ -90,7 +90,7 @@ const RegularRow = ({
     <tr 
       className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-pointer select-none`}
       style={{ 
-        backgroundColor: item.isFloated ? '#991b1b' : (item.color || undefined),
+        backgroundColor: item.isFloated ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
         color: textColor || undefined
       }}
       draggable

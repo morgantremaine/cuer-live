@@ -126,7 +126,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
         description: 'You must be logged in to save changes',
         variant: 'destructive',
       });
-      setHasUnsavedChanges(true); // Keep showing unsaved state
+      setHasUnsavedChanges(true);
       return;
     }
 
