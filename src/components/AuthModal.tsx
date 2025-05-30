@@ -86,9 +86,11 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 <Label htmlFor="signin-email">Email</Label>
                 <Input
                   id="signin-email"
+                  name="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -96,9 +98,11 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 <Label htmlFor="signin-password">Password</Label>
                 <Input
                   id="signin-password"
+                  name="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -114,18 +118,22 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 <Label htmlFor="signup-name">Full Name</Label>
                 <Input
                   id="signup-name"
+                  name="name"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
                 />
               </div>
               <div>
                 <Label htmlFor="signup-email">Email</Label>
                 <Input
                   id="signup-email"
+                  name="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -133,9 +141,11 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 <Label htmlFor="signup-password">Password</Label>
                 <Input
                   id="signup-password"
+                  name="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   required
                 />
               </div>
