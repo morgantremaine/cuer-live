@@ -1,4 +1,5 @@
 
+
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
@@ -29,8 +30,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     userId: user?.id || 'none'
   });
 
-  // Schedule auto-save when data changes
+  // Schedule auto-save when data changes - simplified dependency array
   useEffect(() => {
+    console.log('⚡ Auto-save effect triggered:', { 
+      hasUnsavedChanges, 
+      isInitialized, 
+      isSaving, 
+      hasUser: !!user,
+      userId: user?.id || 'none'
+    });
+
     if (!hasUnsavedChanges || !isInitialized || isSaving || !user) {
       console.log('⏸️ Skipping auto-save scheduling:', { 
         hasUnsavedChanges, 
@@ -100,17 +109,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       saveTimeoutRef.current = null;
     }, 2000);
 
-  }, [hasUnsavedChanges, isInitialized, isSaving, user?.id, items.length, rundownTitle, items.map(i => `${i.id}-${i.name}-${i.startTime}-${i.duration}`).join('|')]);
-
-  // Cleanup on unmount only
-  useEffect(() => {
+    // Return cleanup function only for this specific timeout
     return () => {
       if (saveTimeoutRef.current) {
-        console.log('🧹 Component unmount: clearing save timeout');
+        console.log('🧹 Effect cleanup: clearing save timeout');
         clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
       }
     };
-  }, []);
+
+  }, [hasUnsavedChanges, isInitialized, isSaving, user?.id]);
 
   const markAsChangedCallback = () => {
     markAsChanged();
@@ -122,3 +130,4 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     markAsChanged: markAsChangedCallback
   };
 };
+
