@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
-import { Play, Edit2 } from 'lucide-react';
+import { Play, Edit2, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TimezoneSelector from './TimezoneSelector';
+import AuthModal from './AuthModal';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -19,6 +21,8 @@ const RundownHeader = ({
 }: RundownHeaderProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState('Live Broadcast Rundown');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const { user, signOut } = useAuth();
 
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -42,6 +46,10 @@ const RundownHeader = ({
     } else if (e.key === 'Escape') {
       setIsEditingTitle(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -79,12 +87,40 @@ const RundownHeader = ({
             currentTimezone={timezone}
             onTimezoneChange={onTimezoneChange}
           />
+          {user ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm">{user.email}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="text-white hover:bg-blue-700 dark:hover:bg-blue-600"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAuthModal(true)}
+              className="text-white hover:bg-blue-700 dark:hover:bg-blue-600"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Sign In
+            </Button>
+          )}
         </div>
       </div>
       <div className="flex justify-between items-center text-sm">
         <span className="opacity-75">Total Runtime: {totalRuntime}</span>
         <span className="opacity-75">{timezone.replace('_', ' ')}</span>
       </div>
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </div>
   );
 };
