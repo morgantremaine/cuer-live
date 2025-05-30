@@ -42,7 +42,7 @@ const HeaderRow = ({
 }: HeaderRowProps) => {
   const rowClass = isDragging 
     ? 'bg-blue-100 dark:bg-blue-900 opacity-50'
-    : 'bg-gray-600 dark:bg-gray-800 border-l-4 border-gray-800 dark:border-gray-600 font-semibold text-white';
+    : 'bg-gray-50 dark:bg-gray-700 border-l-4 border-gray-300 dark:border-gray-600 font-semibold';
 
   return (
     <tr 
@@ -52,8 +52,8 @@ const HeaderRow = ({
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, index)}
     >
-      <td className="px-4 py-2 text-sm text-gray-300 dark:text-gray-400 font-mono" style={{ width: '80px' }}>
-        <span className="text-xl font-bold text-white">{item.segmentName}</span>
+      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ width: '80px' }}>
+        <span className="text-xl font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
       </td>
       {columns.map((column, columnIndex) => (
         <td key={column.id} className="px-4 py-3" style={{ width: getColumnWidth(column) }}>
@@ -65,11 +65,11 @@ const HeaderRow = ({
               onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
               onClick={() => onCellClick(item.id, 'notes')}
               onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-              className="flex-1 border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm w-full"
+              className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-2 py-1 text-sm w-full"
               placeholder="Header description..."
             />
           ) : column.key === 'duration' ? (
-            <span className="text-sm text-gray-300 font-mono">({headerDuration})</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">({headerDuration})</span>
           ) : column.key === 'notes' ? (
             // Skip notes column since it's now in segmentName column
             null
@@ -82,7 +82,7 @@ const HeaderRow = ({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteRow(item.id)}
-            className="text-red-300 hover:text-red-200 hover:bg-red-900 dark:hover:bg-red-800"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
