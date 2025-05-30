@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -18,6 +19,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const columnsRef = useRef(columns);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastAutoSaveRef = useRef<Date | null>(null);
+  const isSavingRef = useRef(false);
 
   // Update refs when values change
   useEffect(() => {
@@ -31,6 +33,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   useEffect(() => {
     columnsRef.current = columns;
   }, [columns]);
+
+  // Update isSaving ref when state changes
+  useEffect(() => {
+    isSavingRef.current = isSaving;
+  }, [isSaving]);
 
   // Check if the current rundown exists in saved rundowns
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
@@ -54,16 +61,17 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
   const performAutoSave = useCallback(async () => {
     console.log('Auto-save: performAutoSave called', {
-      isSaving,
+      isSaving: isSavingRef.current,
       hasTitle: !!titleRef.current,
       titleLength: titleRef.current?.length,
       isNewRundown,
       canSave,
-      rundownId
+      rundownId,
+      itemsCount: itemsRef.current?.length
     });
 
-    // Prevent multiple simultaneous saves
-    if (isSaving) {
+    // Prevent multiple simultaneous saves using ref
+    if (isSavingRef.current) {
       console.log('Auto-save: Already saving, skipping...');
       return;
     }
@@ -82,26 +90,26 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       return;
     }
 
-    console.log('Auto-save: Starting save process', {
-      isNewRundown,
-      canSave,
-      rundownId,
-      rundownTitle: titleRef.current,
-      itemsCount: itemsRef.current.length,
-      columnsCount: columnsRef.current?.length
-    });
-
+    console.log('Auto-save: Starting save process');
+    
+    // Set saving state
     setIsSaving(true);
+    isSavingRef.current = true;
 
     try {
+      let result;
+      
       if (isNewRundown) {
         console.log('Auto-save: Saving new rundown...');
-        const result = await saveRundown(titleRef.current, itemsRef.current, columnsRef.current);
+        result = await saveRundown(titleRef.current, itemsRef.current, columnsRef.current);
         console.log('Auto-save: New rundown saved successfully:', result);
         
         if (result?.id) {
           console.log('Auto-save: Navigating to new rundown URL:', `/rundown/${result.id}`);
-          navigate(`/rundown/${result.id}`, { replace: true });
+          // Use setTimeout to ensure state updates complete before navigation
+          setTimeout(() => {
+            navigate(`/rundown/${result.id}`, { replace: true });
+          }, 100);
         } else {
           console.error('Auto-save: No ID returned from saveRundown');
           throw new Error('No ID returned from save operation');
@@ -113,12 +121,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       } else {
         console.log('Auto-save: Cannot save - invalid context', {
           rundownId,
-          currentRundown,
+          currentRundown: !!currentRundown,
           isNewRundown,
           canSave
         });
+        // Reset states and exit
         setHasUnsavedChanges(false);
         setIsSaving(false);
+        isSavingRef.current = false;
         return;
       }
       
@@ -139,9 +149,19 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       
       // Keep the unsaved changes flag on error
       setHasUnsavedChanges(true);
+      
+      // Retry after a delay on error
+      setTimeout(() => {
+        if (titleRef.current && titleRef.current.trim() !== '') {
+          console.log('Auto-save: Retrying after error...');
+          performAutoSave();
+        }
+      }, 5000);
+      
     } finally {
       console.log('Auto-save: Resetting isSaving to false');
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   }, [rundownId, updateRundown, saveRundown, canSave, navigate, isNewRundown]);
 
@@ -153,6 +173,19 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       }
     };
   }, []);
+
+  // Force reset saving state if it gets stuck
+  useEffect(() => {
+    if (isSaving) {
+      const timeout = setTimeout(() => {
+        console.log('Auto-save: Force resetting stuck saving state');
+        setIsSaving(false);
+        isSavingRef.current = false;
+      }, 30000); // 30 seconds timeout
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isSaving]);
 
   return {
     hasUnsavedChanges,
