@@ -78,8 +78,8 @@ const Dashboard = () => {
     if (archiveDialog.rundownId) {
       const rundown = savedRundowns.find(r => r.id === archiveDialog.rundownId)
       if (rundown) {
-        // Add archived flag to the rundown
-        await updateRundown(archiveDialog.rundownId, rundown.title, rundown.items, true)
+        // Archive the rundown by setting archived to true
+        await updateRundown(archiveDialog.rundownId, rundown.title, rundown.items, false, true)
       }
       setArchiveDialog({ open: false, rundownId: '', title: '' })
     }
@@ -227,6 +227,15 @@ const Dashboard = () => {
                     </Card>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
+                    <ContextMenuItem 
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        await updateRundown(rundown.id, rundown.title, rundown.items, false, false)
+                      }}
+                    >
+                      <Archive className="h-4 w-4 mr-2" />
+                      Unarchive
+                    </ContextMenuItem>
                     <ContextMenuItem 
                       onClick={(e) => handleDeleteClick(rundown.id, rundown.title, e)}
                       className="text-red-600 focus:text-red-600"

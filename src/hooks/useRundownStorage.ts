@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -57,6 +56,7 @@ export const useRundownStorage = () => {
         user_id: user.id,
         title,
         items,
+        archived: false
       })
       .select()
       .single()
@@ -95,15 +95,12 @@ export const useRundownStorage = () => {
       archived
     })
 
-    // Prepare the update data - only include fields that exist in the database
-    const updateData: any = {
+    const updateData = {
       title: title,
       items: items,
       updated_at: new Date().toISOString(),
+      archived: archived
     }
-
-    // Note: archived field is not included because it doesn't exist in the database schema
-    // If archiving is needed, it should be implemented by adding the column to the database first
 
     console.log('Update payload (cleaned):', updateData)
 
