@@ -74,7 +74,7 @@ const HeaderRow = ({
         </td>
       ))}
       <td className="px-4 py-2" onClick={(e) => e.stopPropagation()} style={{ width: '120px' }}>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center justify-end space-x-1">
           <Button
             variant="ghost"
             size="sm"
