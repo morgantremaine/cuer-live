@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContainer from './RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -19,7 +20,6 @@ const RundownGrid = () => {
     calculateEndTime: state.calculateEndTime,
     selectColor: state.selectColor,
     markAsChanged: state.markAsChanged,
-    manualSave: state.manualSave,
     selectedRows: state.selectedRows,
     clearSelection: state.clearSelection,
     copyItems: state.copyItems,
@@ -106,7 +106,6 @@ const RundownGrid = () => {
       hasUnsavedChanges={state.hasUnsavedChanges}
       rundownTitle={state.rundownTitle}
       onTitleChange={handlers.handleTitleChange}
-      onManualSave={handlers.handleManualSave}
     />
   );
 };
