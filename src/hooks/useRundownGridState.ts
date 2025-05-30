@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -45,7 +44,7 @@ export const useRundownGridState = () => {
     handleReorderColumns,
     handleDeleteColumn,
     handleToggleColumnVisibility
-  } = useColumnsManager();
+  } = useColumnsManager(markAsChanged);
 
   const {
     columnWidths,
