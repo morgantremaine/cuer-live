@@ -26,7 +26,7 @@ export const useAutoSaveOperations = () => {
     }
 
     try {
-      console.log('Starting save operation...');
+      console.log('Starting save operation...', { isNewRundown, itemsCount: items.length, title: rundownTitle });
       setIsSaving(true);
       
       if (isNewRundown) {
@@ -35,6 +35,7 @@ export const useAutoSaveOperations = () => {
         
         if (result?.id) {
           console.log('New rundown saved with ID:', result.id);
+          // Use replace: true to avoid navigation issues
           navigate(`/rundown/${result.id}`, { replace: true });
           return true;
         } else {

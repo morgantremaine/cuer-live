@@ -37,34 +37,40 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string) =>
         title: currentRundown.title || 'Untitled Rundown'
       };
       console.log('Initialized with existing rundown:', currentRundown.id);
+      setHasUnsavedChanges(false);
     } else {
-      lastSavedDataRef.current = null;
-      console.log('Initialized for new rundown');
+      // For new rundowns, set an empty baseline so any changes will be detected
+      lastSavedDataRef.current = {
+        items: [],
+        title: 'Live Broadcast Rundown'
+      };
+      console.log('Initialized for new rundown with empty baseline');
+      // For new rundowns, mark as changed if we have any non-default content
+      const hasNonDefaultContent = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
+      setHasUnsavedChanges(hasNonDefaultContent);
     }
     
     isInitializedRef.current = true;
-    setHasUnsavedChanges(false);
-  }, [currentRundown, isNewRundown, loading]);
+  }, [currentRundown, isNewRundown, loading, items.length, rundownTitle]);
 
   // Check for changes using memoized serialization
   useEffect(() => {
-    if (!isInitializedRef.current) return;
+    if (!isInitializedRef.current || !lastSavedDataRef.current) return;
 
     const currentSerialized = serializeData(items, rundownTitle);
-    const lastSavedSerialized = lastSavedDataRef.current 
-      ? serializeData(lastSavedDataRef.current.items, lastSavedDataRef.current.title)
-      : null;
+    const lastSavedSerialized = serializeData(lastSavedDataRef.current.items, lastSavedDataRef.current.title);
     
-    const hasChanges = lastSavedSerialized === null || currentSerialized !== lastSavedSerialized;
+    const hasChanges = currentSerialized !== lastSavedSerialized;
     
-    if (hasChanges && !hasUnsavedChanges) {
-      console.log('Changes detected - marking as unsaved');
-      setHasUnsavedChanges(true);
+    if (hasChanges !== hasUnsavedChanges) {
+      console.log('Change detection:', hasChanges ? 'Changes detected' : 'No changes');
+      setHasUnsavedChanges(hasChanges);
     }
   }, [items, rundownTitle, hasUnsavedChanges, serializeData]);
 
   const markAsSaved = useCallback((items: RundownItem[], title: string) => {
-    lastSavedDataRef.current = { items, title };
+    console.log('Marking as saved with items:', items.length, 'title:', title);
+    lastSavedDataRef.current = { items: [...items], title };
     setHasUnsavedChanges(false);
   }, []);
 

@@ -30,10 +30,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   // Auto-save when there are unsaved changes
   useEffect(() => {
     if (!hasUnsavedChanges || !isInitialized || isSaving || !user) {
+      console.log('Skipping auto-save:', { 
+        hasUnsavedChanges, 
+        isInitialized, 
+        isSaving, 
+        hasUser: !!user 
+      });
       return;
     }
 
-    console.log('Scheduling auto-save...');
+    console.log('Scheduling auto-save in 2 seconds...');
     
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -42,11 +48,13 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     
     // Schedule save after 2 seconds
     saveTimeoutRef.current = setTimeout(async () => {
-      console.log('Auto-save timeout triggered');
+      console.log('Auto-save timeout triggered, attempting save...');
       const success = await performSave(items, rundownTitle);
       if (success) {
+        console.log('Auto-save successful, marking as saved');
         markAsSaved(items, rundownTitle);
       } else {
+        console.log('Auto-save failed, keeping unsaved state');
         setHasUnsavedChanges(true);
       }
     }, 2000);
