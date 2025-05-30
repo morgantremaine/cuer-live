@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 export interface RundownItem {
@@ -91,6 +90,25 @@ export const useRundownItems = () => {
     setItems(prev => [...prev, newItem]);
   };
 
+  const addMultipleRows = (itemsToAdd: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => {
+    const lastItem = items[items.length - 1];
+    let currentStartTime = lastItem && !lastItem.isHeader ? lastItem.endTime : '18:00:00';
+    
+    const newItems = itemsToAdd.map(item => {
+      const newId = (items.length + Math.random()).toString();
+      const newItem = {
+        ...item,
+        id: newId,
+        startTime: currentStartTime,
+        endTime: calculateEndTime(currentStartTime, item.duration)
+      };
+      currentStartTime = newItem.endTime;
+      return newItem;
+    });
+    
+    setItems(prev => [...prev, ...newItems]);
+  };
+
   const addHeader = () => {
     const newId = (items.length + 1).toString();
     const nextLetter = String.fromCharCode(65 + getNextHeaderLetter());
@@ -119,6 +137,10 @@ export const useRundownItems = () => {
     setItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const deleteMultipleRows = (idsToDelete: string[]) => {
+    setItems(prev => prev.filter(item => !idsToDelete.includes(item.id)));
+  };
+
   const getRowNumber = (index: number) => {
     if (items[index].isHeader) {
       return items[index].segmentName;
@@ -144,8 +166,10 @@ export const useRundownItems = () => {
     setItems,
     updateItem,
     addRow,
+    addMultipleRows,
     addHeader,
     deleteRow,
+    deleteMultipleRows,
     getRowNumber
   };
 };

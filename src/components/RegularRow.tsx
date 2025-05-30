@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Copy, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ColorPicker from './ColorPicker';
 import CellRenderer from './CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface RegularRowProps {
   item: RundownItem;
@@ -15,12 +16,14 @@ interface RegularRowProps {
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
+  isSelected?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
@@ -35,12 +38,14 @@ const RegularRow = ({
   showColorPicker,
   cellRefs,
   columns,
+  isSelected = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
   onToggleColorPicker,
   onColorSelect,
   onDeleteRow,
+  onRowSelect,
   onDragStart,
   onDragOver,
   onDrop,
@@ -50,6 +55,8 @@ const RegularRow = ({
   
   if (isDragging) {
     rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
+  } else if (isSelected) {
+    rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
   } else if (item.color) {
     rowClass = `hover:opacity-90`;
   } else if (status === 'current') {
@@ -58,16 +65,29 @@ const RegularRow = ({
     rowClass = 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400';
   }
 
+  const textColor = item.color ? getContrastTextColor(item.color) : '';
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    if (onRowSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+      e.preventDefault();
+      onRowSelect(item.id, index, e.shiftKey);
+    }
+  };
+
   return (
     <tr 
       className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-move`}
-      style={{ backgroundColor: item.color || undefined }}
+      style={{ 
+        backgroundColor: item.color || undefined,
+        color: textColor || undefined
+      }}
       draggable
+      onClick={handleRowClick}
       onDragStart={(e) => onDragStart(e, index)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, index)}
     >
-      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 font-mono">
+      <td className="px-4 py-2 text-sm font-mono" style={{ color: textColor || undefined }}>
         <span>{rowNumber}</span>
       </td>
       {columns.map((column) => (
@@ -76,6 +96,7 @@ const RegularRow = ({
           column={column}
           item={item}
           cellRefs={cellRefs}
+          textColor={textColor}
           onUpdateItem={onUpdateItem}
           onCellClick={onCellClick}
           onKeyDown={onKeyDown}

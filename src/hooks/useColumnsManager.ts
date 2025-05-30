@@ -8,16 +8,19 @@ export interface Column {
   width: string;
   isCustom: boolean;
   isEditable: boolean;
+  isVisible?: boolean;
 }
 
 export const useColumnsManager = () => {
   const [columns, setColumns] = useState<Column[]>([
-    { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: 'min-w-48', isCustom: false, isEditable: true },
-    { id: 'duration', name: 'Duration', key: 'duration', width: 'w-24', isCustom: false, isEditable: true },
-    { id: 'startTime', name: 'Start Time', key: 'startTime', width: 'w-24', isCustom: false, isEditable: true },
-    { id: 'endTime', name: 'End Time', key: 'endTime', width: 'w-24', isCustom: false, isEditable: false },
-    { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true }
+    { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: 'min-w-48', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'duration', name: 'Duration', key: 'duration', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'startTime', name: 'Start Time', key: 'startTime', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'endTime', name: 'End Time', key: 'endTime', width: 'w-24', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true, isVisible: true }
   ]);
+
+  const visibleColumns = columns.filter(col => col.isVisible !== false);
 
   const handleAddColumn = (name: string) => {
     const newColumn: Column = {
@@ -26,7 +29,8 @@ export const useColumnsManager = () => {
       key: `custom_${Date.now()}`,
       width: 'min-w-32',
       isCustom: true,
-      isEditable: true
+      isEditable: true,
+      isVisible: true
     };
     setColumns(prev => [...prev, newColumn]);
   };
@@ -39,10 +43,18 @@ export const useColumnsManager = () => {
     setColumns(prev => prev.filter(col => col.id !== columnId));
   };
 
+  const handleToggleColumnVisibility = (columnId: string) => {
+    setColumns(prev => prev.map(col => 
+      col.id === columnId ? { ...col, isVisible: col.isVisible !== false ? false : true } : col
+    ));
+  };
+
   return {
     columns,
+    visibleColumns,
     handleAddColumn,
     handleReorderColumns,
-    handleDeleteColumn
+    handleDeleteColumn,
+    handleToggleColumnVisibility
   };
 };
