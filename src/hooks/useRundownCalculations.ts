@@ -1,5 +1,6 @@
+
 import { useCallback } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
   const getRowNumber = useCallback((index: number) => {
@@ -7,7 +8,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     if (!item) return '1';
     
     // For headers, return their segment name (A, B, C, etc.)
-    if (item.type === 'header' || item.isHeader) {
+    if (isHeaderItem(item)) {
       return item.segmentName || item.rowNumber || 'A';
     }
     
@@ -17,7 +18,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     
     // Go backwards to find the most recent header
     for (let i = index - 1; i >= 0; i--) {
-      if (items[i].type === 'header' || items[i].isHeader) {
+      if (isHeaderItem(items[i])) {
         currentSegment = items[i].segmentName || items[i].rowNumber || 'A';
         break;
       }
@@ -26,7 +27,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Count regular items in the current segment up to this index
     let segmentStartIndex = 0;
     for (let i = 0; i < items.length; i++) {
-      if (items[i].type === 'header' || items[i].isHeader) {
+      if (isHeaderItem(items[i])) {
         if ((items[i].segmentName || items[i].rowNumber) === currentSegment) {
           segmentStartIndex = i + 1;
           break;
@@ -35,7 +36,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     }
     
     for (let i = segmentStartIndex; i < index; i++) {
-      if (items[i].type === 'regular' && !items[i].isHeader) {
+      if (!isHeaderItem(items[i])) {
         regularCountInSegment++;
       }
     }
@@ -62,14 +63,14 @@ export const useRundownCalculations = (items: RundownItem[]) => {
   }, [items]);
 
   const calculateHeaderDuration = useCallback((index: number) => {
-    if (index < 0 || index >= items.length || items[index].type !== 'header') {
+    if (index < 0 || index >= items.length || !isHeaderItem(items[index])) {
       return '00:00:00';
     }
   
     let totalSeconds = 0;
     let i = index + 1;
   
-    while (i < items.length && items[i].type !== 'header') {
+    while (i < items.length && !isHeaderItem(items[i])) {
       const [hours, minutes, seconds] = items[i].duration.split(':').map(Number);
       totalSeconds += (hours * 3600) + (minutes * 60) + seconds;
       i++;

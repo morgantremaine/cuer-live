@@ -61,7 +61,7 @@ const RegularRow = ({
   
   if (isDragging) {
     rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
-  } else if (item.isFloated) {
+  } else if (item.isFloating || item.isFloated) {
     rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
   } else if (isSelected) {
     rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
@@ -72,7 +72,7 @@ const RegularRow = ({
     rowClass = 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700';
   }
 
-  const textColor = item.isFloated ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
+  const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
 
   const handleRowClick = (e: React.MouseEvent) => {
     // Only handle row selection if the click target is the row itself or the row number cell
@@ -90,7 +90,7 @@ const RegularRow = ({
     <tr 
       className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-pointer select-none`}
       style={{ 
-        backgroundColor: item.isFloated ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
+        backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
         color: textColor || undefined
       }}
       draggable
@@ -129,8 +129,8 @@ const RegularRow = ({
             variant="ghost"
             size="sm"
             onClick={() => onToggleFloat(item.id)}
-            className={`${item.isFloated ? 'text-white hover:bg-red-700' : 'text-gray-500 hover:text-red-500'} hover:bg-red-50 dark:hover:bg-red-900`}
-            title={item.isFloated ? 'Unfloat row' : 'Float row'}
+            className={`${(item.isFloating || item.isFloated) ? 'text-white hover:bg-red-700' : 'text-gray-500 hover:text-red-500'} hover:bg-red-50 dark:hover:bg-red-900`}
+            title={(item.isFloating || item.isFloated) ? 'Unfloat row' : 'Float row'}
           >
             <Anchor className="h-4 w-4" />
           </Button>

@@ -11,6 +11,9 @@ export interface RundownItem {
   notes: string;
   color: string;
   isFloating: boolean;
+  // Legacy properties for backward compatibility
+  isFloated?: boolean;
+  isHeader?: boolean;
   // Additional properties used by components
   customFields?: { [key: string]: string };
   segmentName?: string;

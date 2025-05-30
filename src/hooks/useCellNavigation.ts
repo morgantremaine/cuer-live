@@ -1,7 +1,7 @@
 
 import { useState, useRef } from 'react';
 import { Column } from './useColumnsManager';
-import { RundownItem } from './useRundownItems';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: string } | null>(null);
@@ -40,7 +40,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       // Find the previous non-header item
       let prevItemIndex = currentItemIndex - 1;
-      while (prevItemIndex >= 0 && items[prevItemIndex].isHeader) {
+      while (prevItemIndex >= 0 && isHeaderItem(items[prevItemIndex])) {
         prevItemIndex--;
       }
       
@@ -57,7 +57,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       // Find the next non-header item
       let nextItemIndex = currentItemIndex + 1;
-      while (nextItemIndex < items.length && items[nextItemIndex].isHeader) {
+      while (nextItemIndex < items.length && isHeaderItem(items[nextItemIndex])) {
         nextItemIndex++;
       }
       

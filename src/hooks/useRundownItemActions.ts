@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -31,7 +30,6 @@ export const useRundownItemActions = (
         notes: '',
         color: '#FFFFFF',
         isFloating: false,
-        isHeader: false,
         isFloated: false,
         status: 'upcoming',
         customFields: {},
@@ -58,7 +56,6 @@ export const useRundownItemActions = (
         notes: '',
         color: '#888888',
         isFloating: false,
-        isHeader: true,
         segmentName: newHeaderNumber,
         status: 'upcoming',
         customFields: {},

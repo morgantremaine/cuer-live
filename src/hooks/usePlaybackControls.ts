@@ -1,6 +1,5 @@
-
 import { useState, useRef, useEffect } from 'react';
-import { RundownItem } from './useRundownItems';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const usePlaybackControls = (
   items: RundownItem[],
@@ -14,7 +13,7 @@ export const usePlaybackControls = (
   // Set default current segment to first non-header item (A1) on mount
   useEffect(() => {
     if (!currentSegmentId && items.length > 0) {
-      const firstSegment = items.find(item => !item.isHeader);
+      const firstSegment = items.find(item => !isHeaderItem(item));
       if (firstSegment) {
         setCurrentSegmentId(firstSegment.id);
         const duration = timeToSeconds(firstSegment.duration);
@@ -40,7 +39,7 @@ export const usePlaybackControls = (
   const setCurrentSegment = (segmentId: string) => {
     clearCurrentStatus();
     const segment = items.find(item => item.id === segmentId);
-    if (segment && !segment.isHeader) {
+    if (segment && !isHeaderItem(segment)) {
       updateItem(segmentId, 'status', 'current');
       setCurrentSegmentId(segmentId);
       const duration = timeToSeconds(segment.duration);
@@ -51,7 +50,7 @@ export const usePlaybackControls = (
   const getNextSegment = (currentId: string) => {
     const currentIndex = items.findIndex(item => item.id === currentId);
     for (let i = currentIndex + 1; i < items.length; i++) {
-      if (!items[i].isHeader) {
+      if (!isHeaderItem(items[i])) {
         return items[i];
       }
     }
@@ -61,7 +60,7 @@ export const usePlaybackControls = (
   const getPreviousSegment = (currentId: string) => {
     const currentIndex = items.findIndex(item => item.id === currentId);
     for (let i = currentIndex - 1; i >= 0; i--) {
-      if (!items[i].isHeader) {
+      if (!isHeaderItem(items[i])) {
         return items[i];
       }
     }
@@ -109,7 +108,7 @@ export const usePlaybackControls = (
       // Mark all segments before the selected one as upcoming
       const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
       items.forEach((item, index) => {
-        if (!item.isHeader) {
+        if (!isHeaderItem(item)) {
           if (index < selectedIndex) {
             updateItem(item.id, 'status', 'upcoming');
           } else if (index > selectedIndex) {

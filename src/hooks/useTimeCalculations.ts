@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { RundownItem } from './useRundownItems';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useTimeCalculations = (items: RundownItem[], updateItem: (id: string, field: string, value: string) => void) => {
   const timeToSeconds = (timeStr: string) => {
@@ -42,7 +42,7 @@ export const useTimeCalculations = (items: RundownItem[], updateItem: (id: strin
   // Update end times when start time or duration changes
   useEffect(() => {
     items.forEach(item => {
-      if (!item.isHeader && item.startTime && item.duration) {
+      if (!isHeaderItem(item) && item.startTime && item.duration) {
         const expectedEndTime = calculateEndTime(item.startTime, item.duration);
         if (item.endTime !== expectedEndTime) {
           updateItem(item.id, 'endTime', expectedEndTime);

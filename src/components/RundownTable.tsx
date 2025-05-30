@@ -2,7 +2,7 @@
 import React from 'react';
 import RundownTableHeader from './RundownTableHeader';
 import RundownRow from './RundownRow';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownTableProps {
@@ -78,8 +78,8 @@ const RundownTable = ({
               cellRefs={cellRefs}
               columns={visibleColumns}
               isSelected={selectedRows.has(item.id)}
-              isCurrentlyPlaying={!item.isHeader && currentSegmentId === item.id}
-              headerDuration={item.isHeader ? calculateHeaderDuration(index) : ''}
+              isCurrentlyPlaying={!isHeaderItem(item) && currentSegmentId === item.id}
+              headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
