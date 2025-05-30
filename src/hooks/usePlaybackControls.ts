@@ -20,7 +20,7 @@ export const usePlaybackControls = (
   const clearCurrentStatus = () => {
     items.forEach(item => {
       if (item.status === 'current') {
-        updateItem(item.id, 'status', 'upcoming');
+        updateItem(item.id, 'status', 'completed');
       }
     });
   };
@@ -64,12 +64,13 @@ export const usePlaybackControls = (
     timerRef.current = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
-          // Time's up, move to next segment
+          // Time's up, mark current as completed and move to next segment
           if (currentSegmentId) {
             updateItem(currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(currentSegmentId);
             if (nextSegment) {
               setCurrentSegment(nextSegment.id);
+              return timeToSeconds(nextSegment.duration);
             } else {
               // No more segments, stop playback
               setIsPlaying(false);
@@ -93,6 +94,17 @@ export const usePlaybackControls = (
 
   const play = (selectedSegmentId?: string) => {
     if (selectedSegmentId) {
+      // Mark all segments before the selected one as upcoming
+      const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
+      items.forEach((item, index) => {
+        if (!item.isHeader) {
+          if (index < selectedIndex) {
+            updateItem(item.id, 'status', 'upcoming');
+          } else if (index > selectedIndex) {
+            updateItem(item.id, 'status', 'upcoming');
+          }
+        }
+      });
       setCurrentSegment(selectedSegmentId);
     }
     setIsPlaying(true);

@@ -65,10 +65,12 @@ const RegularRow = ({
     rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
   } else if (item.color) {
     rowClass = `hover:opacity-90`;
-  } else if (status === 'current') {
+  } else if (item.status === 'current') {
     rowClass = 'bg-green-50 dark:bg-green-900 border-l-4 border-green-500';
-  } else if (status === 'completed') {
+  } else if (item.status === 'completed') {
     rowClass = 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400';
+  } else if (item.status === 'upcoming') {
+    rowClass = 'bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500';
   }
 
   const textColor = item.isFloated ? 'white' : (item.color ? getContrastTextColor(item.color) : '');
