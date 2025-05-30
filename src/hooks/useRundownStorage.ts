@@ -1,13 +1,16 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { useToast } from '@/hooks/use-toast'
+import { Column } from '@/hooks/useColumnsManager'
 
 interface SavedRundown {
   id: string
   title: string
   items: RundownItem[]
+  column_config?: Column[]
   created_at: string
   updated_at: string
 }
@@ -22,6 +25,7 @@ export const useRundownStorage = () => {
     if (!user) return
 
     setLoading(true)
+    console.log('Loading rundowns for user:', user.id)
     const { data, error } = await supabase
       .from('rundowns')
       .select('*')
@@ -29,31 +33,39 @@ export const useRundownStorage = () => {
       .order('updated_at', { ascending: false })
 
     if (error) {
+      console.error('Error loading rundowns:', error)
       toast({
         title: 'Error',
         description: 'Failed to load rundowns',
         variant: 'destructive',
       })
     } else {
+      console.log('Loaded rundowns:', data)
       setSavedRundowns(data || [])
     }
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[]) => {
+  const saveRundown = async (title: string, items: RundownItem[], columnConfig?: Column[]) => {
     if (!user) return
+
+    console.log('Saving new rundown:', { title, itemsCount: items.length, columnConfig })
+    
+    const payload = {
+      user_id: user.id,
+      title,
+      items,
+      ...(columnConfig && { column_config: columnConfig })
+    }
 
     const { data, error } = await supabase
       .from('rundowns')
-      .insert({
-        user_id: user.id,
-        title,
-        items,
-      })
+      .insert(payload)
       .select()
       .single()
 
     if (error) {
+      console.error('Error saving rundown:', error)
       toast({
         title: 'Error',
         description: 'Failed to save rundown',
@@ -61,6 +73,7 @@ export const useRundownStorage = () => {
       })
       throw error
     } else {
+      console.log('Rundown saved successfully:', data)
       toast({
         title: 'Success',
         description: 'Rundown saved successfully!',
@@ -70,20 +83,26 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, columnConfig?: Column[]) => {
     if (!user) return
+
+    console.log('Updating rundown:', { id, title, itemsCount: items.length, silent, columnConfig })
+
+    const payload = {
+      title,
+      items,
+      updated_at: new Date().toISOString(),
+      ...(columnConfig && { column_config: columnConfig })
+    }
 
     const { error } = await supabase
       .from('rundowns')
-      .update({
-        title,
-        items,
-        updated_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq('id', id)
       .eq('user_id', user.id)
 
     if (error) {
+      console.error('Error updating rundown:', error)
       if (!silent) {
         toast({
           title: 'Error',
@@ -93,6 +112,7 @@ export const useRundownStorage = () => {
       }
       throw error
     } else {
+      console.log('Rundown updated successfully')
       if (!silent) {
         toast({
           title: 'Success',
@@ -106,6 +126,7 @@ export const useRundownStorage = () => {
   const deleteRundown = async (id: string) => {
     if (!user) return
 
+    console.log('Deleting rundown:', id)
     const { error } = await supabase
       .from('rundowns')
       .delete()
@@ -113,12 +134,14 @@ export const useRundownStorage = () => {
       .eq('user_id', user.id)
 
     if (error) {
+      console.error('Error deleting rundown:', error)
       toast({
         title: 'Error',
         description: 'Failed to delete rundown',
         variant: 'destructive',
       })
     } else {
+      console.log('Rundown deleted successfully')
       toast({
         title: 'Success',
         description: 'Rundown deleted successfully!',

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -11,6 +12,7 @@ import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useRundownStorage } from '@/hooks/useRundownStorage';
 
 export const useRundownGridState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -19,6 +21,7 @@ export const useRundownGridState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
 
   const { id: rundownId } = useParams<{ id: string }>();
+  const { savedRundowns, loading } = useRundownStorage();
 
   const {
     items,
@@ -75,7 +78,7 @@ export const useRundownGridState = () => {
   const {
     showColorPicker,
     handleToggleColorPicker,
-    handleColorSelect: selectColor
+    handleColorSelect
   } = useColorPicker();
 
   const {
@@ -99,6 +102,24 @@ export const useRundownGridState = () => {
     forward,
     backward
   } = usePlaybackControls(items, updateItem);
+
+  // Load saved rundown data when component mounts or rundownId changes
+  useEffect(() => {
+    if (rundownId && savedRundowns.length > 0) {
+      const savedRundown = savedRundowns.find(r => r.id === rundownId);
+      if (savedRundown) {
+        console.log('Loading saved rundown:', savedRundown);
+        setItems(savedRundown.items);
+        setRundownTitle(savedRundown.title);
+        
+        // Load column configuration if it exists
+        if (savedRundown.column_config) {
+          console.log('Loading column config:', savedRundown.column_config);
+          handleLoadLayout(savedRundown.column_config);
+        }
+      }
+    }
+  }, [rundownId, savedRundowns, setItems, setRundownTitle, handleLoadLayout]);
 
   // Timer effect for current time
   useEffect(() => {
@@ -169,7 +190,7 @@ export const useRundownGridState = () => {
     // Color picker state
     showColorPicker,
     handleToggleColorPicker,
-    selectColor,
+    selectColor: handleColorSelect,
     
     // Row selection state
     selectedRows,

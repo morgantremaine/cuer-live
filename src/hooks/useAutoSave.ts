@@ -14,6 +14,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   const initialStateRef = useRef<{ items: RundownItem[], title: string } | null>(null);
   const lastSavedStateRef = useRef<{ items: RundownItem[], title: string } | null>(null);
   const isNewRundownRef = useRef<boolean>(!rundownId);
+  const isInitializedRef = useRef<boolean>(false);
 
   // Check if the current rundown exists in saved rundowns
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
@@ -22,33 +23,37 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
 
   // Initialize the refs when we first load a rundown or start a new one
   useEffect(() => {
-    if (currentRundown && !initialStateRef.current) {
+    if (currentRundown && !isInitializedRef.current) {
       const initialState = { items: currentRundown.items, title: currentRundown.title };
       initialStateRef.current = initialState;
       lastSavedStateRef.current = initialState;
       setHasUnsavedChanges(false);
       isNewRundownRef.current = false;
+      isInitializedRef.current = true;
       console.log('Initialized auto-save with existing rundown:', initialState);
-    } else if (isNewRundown && !initialStateRef.current) {
+    } else if (isNewRundown && !isInitializedRef.current && items.length > 0) {
       // For new rundowns, set initial state to current state
       const initialState = { items, title: rundownTitle };
       initialStateRef.current = initialState;
       lastSavedStateRef.current = null; // No saved state yet
       setHasUnsavedChanges(false);
       isNewRundownRef.current = true;
+      isInitializedRef.current = true;
       console.log('Initialized auto-save for new rundown:', initialState);
     }
   }, [currentRundown, isNewRundown, items, rundownTitle]);
 
   // Change detection for both existing and new rundowns
   useEffect(() => {
-    if (initialStateRef.current) {
+    if (isInitializedRef.current && initialStateRef.current) {
       const currentState = JSON.stringify({ items, title: rundownTitle });
       const compareState = lastSavedStateRef.current || initialStateRef.current;
       const savedState = JSON.stringify(compareState);
       
       if (currentState !== savedState) {
         console.log('Changes detected, marking as unsaved');
+        console.log('Current state:', currentState.substring(0, 100) + '...');
+        console.log('Saved state:', savedState.substring(0, 100) + '...');
         setHasUnsavedChanges(true);
       }
     }
@@ -61,7 +66,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       return () => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(async () => {
-          if (hasUnsavedChanges) {
+          if (hasUnsavedChanges && isInitializedRef.current) {
             console.log('Auto-saving rundown...');
             try {
               if (isNewRundownRef.current) {
@@ -94,7 +99,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
 
   // Trigger auto-save when there are unsaved changes
   useEffect(() => {
-    if (hasUnsavedChanges) {
+    if (hasUnsavedChanges && isInitializedRef.current) {
+      console.log('Triggering auto-save due to changes');
       debouncedSave();
     }
   }, [hasUnsavedChanges, debouncedSave]);
