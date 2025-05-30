@@ -24,7 +24,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     hasUnsavedChanges,
     isSaving,
     initialized: isInitialized,
-    userLoggedIn: !!user
+    userLoggedIn: !!user,
+    userId: user?.id || 'none'
   });
 
   // Auto-save when there are unsaved changes
@@ -33,7 +34,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       hasUnsavedChanges,
       isInitialized,
       isSaving,
-      hasUser: !!user
+      hasUser: !!user,
+      userId: user?.id || 'none'
     });
 
     if (!hasUnsavedChanges || !isInitialized || isSaving || !user) {
@@ -41,12 +43,19 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
         hasUnsavedChanges, 
         isInitialized, 
         isSaving, 
-        hasUser: !!user 
+        hasUser: !!user,
+        userId: user?.id || 'none'
       });
       return;
     }
 
     console.log('⏰ Scheduling auto-save in 2 seconds...');
+    console.log('📊 Current data to save:', {
+      itemsCount: items.length,
+      title: rundownTitle,
+      firstItemId: items[0]?.id || 'none',
+      lastItemId: items[items.length - 1]?.id || 'none'
+    });
     
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -57,12 +66,25 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     // Schedule save after 2 seconds
     saveTimeoutRef.current = setTimeout(async () => {
       console.log('🎯 Auto-save timeout triggered, attempting save...');
-      const success = await performSave(items, rundownTitle);
-      if (success) {
-        console.log('✅ Auto-save successful, marking as saved');
-        markAsSaved(items, rundownTitle);
-      } else {
-        console.log('❌ Auto-save failed, keeping unsaved state');
+      console.log('📤 Saving data:', {
+        itemsCount: items.length,
+        title: rundownTitle,
+        userId: user?.id
+      });
+      
+      try {
+        const success = await performSave(items, rundownTitle);
+        console.log('💾 Save operation result:', success);
+        
+        if (success) {
+          console.log('✅ Auto-save successful, marking as saved');
+          markAsSaved(items, rundownTitle);
+        } else {
+          console.log('❌ Auto-save failed, keeping unsaved state');
+          setHasUnsavedChanges(true);
+        }
+      } catch (error) {
+        console.error('💥 Auto-save threw an error:', error);
         setHasUnsavedChanges(true);
       }
     }, 2000);

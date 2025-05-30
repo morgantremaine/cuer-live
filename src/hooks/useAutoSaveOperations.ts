@@ -15,6 +15,15 @@ export const useAutoSaveOperations = () => {
   const isNewRundown = !rundownId;
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string) => {
+    console.log('🔧 performSave called with:', {
+      itemsCount: items.length,
+      title: rundownTitle,
+      isNewRundown,
+      rundownId,
+      userId: user?.id || 'none',
+      isSaving
+    });
+
     if (isSaving) {
       console.log('Save already in progress, skipping...');
       return false;
@@ -32,6 +41,7 @@ export const useAutoSaveOperations = () => {
       if (isNewRundown) {
         console.log('Saving new rundown...');
         const result = await saveRundown(rundownTitle, items);
+        console.log('Save result:', result);
         
         if (result?.id) {
           console.log('New rundown saved with ID:', result.id);
@@ -53,6 +63,7 @@ export const useAutoSaveOperations = () => {
       console.error('Save failed:', error);
       return false;
     } finally {
+      console.log('Save operation completed, setting isSaving to false');
       setIsSaving(false);
     }
   }, [isSaving, user, isNewRundown, rundownId, saveRundown, updateRundown, navigate]);
