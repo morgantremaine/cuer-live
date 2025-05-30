@@ -1,19 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
+import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
+import { useToast } from './use-toast';
 
 export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { id: rundownId } = useParams<{ id: string }>();
   const { updateRundown, saveRundown, savedRundowns, loading } = useRundownStorage();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   
   const lastSavedDataRef = useRef<{ items: RundownItem[], title: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitializedRef = useRef(false);
-  const currentlySavingRef = useRef(false);
 
   // Find current rundown
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
@@ -27,7 +30,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     hasUnsavedChanges,
     isSaving,
     initialized: isInitializedRef.current,
-    currentlySaving: currentlySavingRef.current
+    userLoggedIn: !!user
   });
 
   // Initialize the baseline when component mounts
@@ -53,7 +56,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
 
   // Check for changes and mark as unsaved
   useEffect(() => {
-    if (!isInitializedRef.current || currentlySavingRef.current) return;
+    if (!isInitializedRef.current || isSaving) return;
 
     const currentData = { items, title: rundownTitle };
     
@@ -71,11 +74,22 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       console.log('Changes detected - marking as unsaved');
       setHasUnsavedChanges(true);
     }
-  }, [items, rundownTitle, hasUnsavedChanges]);
+  }, [items, rundownTitle, hasUnsavedChanges, isSaving]);
 
   // Auto-save when there are unsaved changes
   useEffect(() => {
-    if (!hasUnsavedChanges || !isInitializedRef.current || currentlySavingRef.current) {
+    if (!hasUnsavedChanges || !isInitializedRef.current || isSaving) {
+      return;
+    }
+
+    // Check if user is logged in before attempting to save
+    if (!user) {
+      console.warn('Cannot save: user not logged in');
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to save your changes',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -97,17 +111,27 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [hasUnsavedChanges]);
+  }, [hasUnsavedChanges, user]);
 
   const performSave = async () => {
-    if (currentlySavingRef.current) {
+    if (isSaving) {
       console.log('Save already in progress, skipping...');
+      return;
+    }
+
+    if (!user) {
+      console.error('Cannot save: user not authenticated');
+      toast({
+        title: 'Save Failed',
+        description: 'You must be logged in to save changes',
+        variant: 'destructive',
+      });
+      setHasUnsavedChanges(true); // Keep showing unsaved state
       return;
     }
 
     try {
       console.log('Starting save operation...');
-      currentlySavingRef.current = true;
       setIsSaving(true);
       
       const dataToSave = { items, title: rundownTitle };
@@ -121,8 +145,12 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
           lastSavedDataRef.current = dataToSave;
           setHasUnsavedChanges(false);
           navigate(`/rundown/${result.id}`, { replace: true });
+          toast({
+            title: 'Rundown Saved',
+            description: 'Your new rundown has been saved successfully',
+          });
         } else {
-          throw new Error('Failed to save new rundown');
+          throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
         console.log('Updating existing rundown:', rundownId);
@@ -130,12 +158,32 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
         console.log('Rundown updated successfully');
         lastSavedDataRef.current = dataToSave;
         setHasUnsavedChanges(false);
+        toast({
+          title: 'Changes Saved',
+          description: 'Your rundown has been updated',
+        });
       }
     } catch (error) {
       console.error('Save failed:', error);
+      
+      // Check if it's an authentication error
+      if (error instanceof Error && error.message.includes('JWT')) {
+        toast({
+          title: 'Session Expired',
+          description: 'Please log in again to save your changes',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Save Failed',
+          description: 'Unable to save changes. Please try again.',
+          variant: 'destructive',
+        });
+      }
+      
       // Keep unsaved state on error
+      setHasUnsavedChanges(true);
     } finally {
-      currentlySavingRef.current = false;
       setIsSaving(false);
     }
   };
