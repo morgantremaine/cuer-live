@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { useRundownHandlers } from './useRundownHandlers';
+import { useRundownHandlers } from '@/hooks/useRundownHandlers';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
@@ -13,13 +13,15 @@ interface UseRundownGridHandlersProps {
   handleDeleteColumn: (columnId: string) => void;
   setItems: (updater: (prev: any[]) => any[]) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
-  selectColor: (id: string, color: string) => void;
+  selectColor: (id: string, color: string, updateItem: (id: string, field: string, value: string) => void) => void;
+  markAsChanged: () => void;
+  manualSave: () => Promise<boolean>;
   selectedRows: Set<string>;
   clearSelection: () => void;
   copyItems: (items: any[]) => void;
   clipboardItems: any[];
   hasClipboardData: () => boolean;
-  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: any[]) => void;
   items: any[];
   setRundownTitle: (title: string) => void;
 }
@@ -36,6 +38,8 @@ export const useRundownGridHandlers = ({
   setItems,
   calculateEndTime,
   selectColor,
+  markAsChanged,
+  manualSave,
   selectedRows,
   clearSelection,
   copyItems,
@@ -46,13 +50,17 @@ export const useRundownGridHandlers = ({
   setRundownTitle
 }: UseRundownGridHandlersProps) => {
   
-  // Create a no-op markAsChanged function since auto-save handles change detection automatically
-  const markAsChanged = useCallback(() => {
-    // Auto-save will detect changes automatically through state monitoring
-    console.log('🔔 RundownGridHandlers: Change detected (handled by auto-save)');
-  }, []);
-
-  const handlers = useRundownHandlers({
+  const {
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleDeleteColumnWithCleanup
+  } = useRundownHandlers({
     updateItem,
     addRow,
     addHeader,
@@ -67,39 +75,46 @@ export const useRundownGridHandlers = ({
     markAsChanged
   });
 
-  const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick);
-  }, [toggleRowSelection]);
+  const handleManualSave = useCallback(async () => {
+    await manualSave();
+  }, [manualSave]);
 
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
     copyItems(selectedItems);
-  }, [items, selectedRows, copyItems]);
+    clearSelection();
+  }, [items, selectedRows, copyItems, clearSelection]);
 
-  const handlePasteRows = useCallback(() => {
-    handlers.handlePasteRows(clipboardItems, hasClipboardData);
-  }, [handlers, clipboardItems, hasClipboardData]);
-
-  const handleDeleteSelectedRows = useCallback(() => {
-    handlers.handleDeleteSelectedRows(selectedRows, clearSelection);
-  }, [handlers, selectedRows, clearSelection]);
+  const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
+  }, [toggleRowSelection, items]);
 
   const handleTitleChange = useCallback((title: string) => {
     setRundownTitle(title);
-  }, [setRundownTitle]);
+    markAsChanged();
+  }, [setRundownTitle, markAsChanged]);
+
+  const handlePasteRowsWithClipboard = useCallback(() => {
+    handlePasteRows(clipboardItems, hasClipboardData);
+  }, [handlePasteRows, clipboardItems, hasClipboardData]);
+
+  const handleDeleteSelectedRowsWithClear = useCallback(() => {
+    handleDeleteSelectedRows(selectedRows, clearSelection);
+  }, [handleDeleteSelectedRows, selectedRows, clearSelection]);
 
   return {
-    handleUpdateItem: handlers.handleUpdateItem,
-    handleAddRow: handlers.handleAddRow,
-    handleAddHeader: handlers.handleAddHeader,
-    handleDeleteRow: handlers.handleDeleteRow,
-    handleToggleFloat: handlers.handleToggleFloat,
-    handleColorSelect: handlers.handleColorSelect,
-    handleDeleteColumnWithCleanup: handlers.handleDeleteColumnWithCleanup,
-    handleRowSelection,
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows: handleDeleteSelectedRowsWithClear,
+    handlePasteRows: handlePasteRowsWithClipboard,
+    handleDeleteColumnWithCleanup,
+    handleManualSave,
     handleCopySelectedRows,
-    handlePasteRows,
-    handleDeleteSelectedRows,
+    handleRowSelection,
     handleTitleChange
   };
 };

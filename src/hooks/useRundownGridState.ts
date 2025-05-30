@@ -10,17 +10,15 @@ import { useColorPicker } from '@/hooks/useColorPicker';
 import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
-import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
-import { useRundownTimers } from '@/hooks/useRundownTimers';
 import { useAutoSave } from '@/hooks/useAutoSave';
 
 export const useRundownGridState = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
 
   const { id: rundownId } = useParams<{ id: string }>();
-
-  console.log('🏗️ useRundownGridState: Initializing with rundownId:', rundownId);
 
   const {
     items,
@@ -37,6 +35,8 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
+  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle);
+
   const {
     columns,
     visibleColumns,
@@ -45,7 +45,7 @@ export const useRundownGridState = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout
-  } = useColumnsManager();
+  } = useColumnsManager(markAsChanged);
 
   const {
     columnWidths,
@@ -75,13 +75,8 @@ export const useRundownGridState = () => {
   const {
     showColorPicker,
     handleToggleColorPicker,
-    handleColorSelect
+    handleColorSelect: selectColor
   } = useColorPicker();
-
-  const selectColor = (id: string, color: string) => {
-    updateItem(id, 'color', color);
-    handleColorSelect(id, color);
-  };
 
   const {
     selectedRows,
@@ -105,30 +100,11 @@ export const useRundownGridState = () => {
     backward
   } = usePlaybackControls(items, updateItem);
 
-  // Load saved rundown data
-  const { isDataLoaded } = useRundownDataLoader(rundownId, setItems, setRundownTitle, handleLoadLayout);
-
-  // Timer management
-  const { currentTime, timezone, setTimezone } = useRundownTimers();
-
-  // Auto-save functionality
-  const autoSave = useAutoSave({
-    rundownId: rundownId || 'new',
-    items,
-    rundownTitle,
-    columns,
-    isDataLoaded
-  });
-
-  console.log('📊 useRundownGridState: Current state summary', {
-    rundownId,
-    title: rundownTitle,
-    itemsCount: items.length,
-    columnsCount: columns.length,
-    isDataLoaded,
-    hasUnsavedChanges: autoSave.hasUnsavedChanges,
-    isSaving: autoSave.isSaving
-  });
+  // Timer effect for current time
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return {
     // Basic state
@@ -139,7 +115,7 @@ export const useRundownGridState = () => {
     setShowColumnManager,
     rundownTitle,
     setRundownTitle,
-    rundownId: rundownId || '',
+    rundownId,
     
     // Items state
     items,
@@ -154,6 +130,11 @@ export const useRundownGridState = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
+    
+    // Auto-save state
+    hasUnsavedChanges,
+    markAsChanged,
+    manualSave,
     
     // Columns state
     columns,
@@ -207,12 +188,6 @@ export const useRundownGridState = () => {
     play,
     pause,
     forward,
-    backward,
-
-    // Auto-save state
-    hasUnsavedChanges: autoSave.hasUnsavedChanges,
-    isSaving: autoSave.isSaving,
-    lastSaved: autoSave.lastSaved,
-    manualSave: autoSave.manualSave
+    backward
   };
 };

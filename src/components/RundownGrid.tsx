@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContainer from './RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -19,14 +18,14 @@ const RundownGrid = () => {
     setItems: state.setItems,
     calculateEndTime: state.calculateEndTime,
     selectColor: state.selectColor,
+    markAsChanged: state.markAsChanged,
+    manualSave: state.manualSave,
     selectedRows: state.selectedRows,
     clearSelection: state.clearSelection,
     copyItems: state.copyItems,
     clipboardItems: state.clipboardItems,
     hasClipboardData: state.hasClipboardData,
-    toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-      state.toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, state.items);
-    },
+    toggleRowSelection: state.toggleRowSelection,
     items: state.items,
     setRundownTitle: state.setRundownTitle
   });
@@ -34,12 +33,7 @@ const RundownGrid = () => {
   const selectedCount = state.selectedRows.size;
   const selectedRowId = selectedCount === 1 ? Array.from(state.selectedRows)[0] : null;
 
-  console.log('🏗️ RundownGrid render', { 
-    itemsCount: state.items.length,
-    title: state.rundownTitle,
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    isSaving: state.isSaving
-  });
+  console.log('RundownGrid render - hasUnsavedChanges:', state.hasUnsavedChanges);
 
   return (
     <RundownContainer
@@ -89,27 +83,30 @@ const RundownGrid = () => {
       onForward={state.forward}
       onBackward={state.backward}
       handleAddColumn={(name: string) => {
-        console.log('🔔 RundownGrid: Adding column');
+        console.log('Adding column:', name);
         state.handleAddColumn(name);
+        state.markAsChanged();
       }}
       handleReorderColumns={(columns) => {
-        console.log('🔔 RundownGrid: Reordering columns');
+        console.log('Reordering columns');
         state.handleReorderColumns(columns);
+        state.markAsChanged();
       }}
       handleDeleteColumnWithCleanup={handlers.handleDeleteColumnWithCleanup}
       handleToggleColumnVisibility={(columnId: string) => {
-        console.log('🔔 RundownGrid: Toggling column visibility');
+        console.log('Toggling column visibility:', columnId);
         state.handleToggleColumnVisibility(columnId);
+        state.markAsChanged();
       }}
       handleLoadLayout={(layoutColumns) => {
-        console.log('🔔 RundownGrid: Loading layout');
+        console.log('Loading layout');
         state.handleLoadLayout(layoutColumns);
+        state.markAsChanged();
       }}
       hasUnsavedChanges={state.hasUnsavedChanges}
-      isSaving={state.isSaving}
-      onManualSave={state.manualSave}
       rundownTitle={state.rundownTitle}
       onTitleChange={handlers.handleTitleChange}
+      onManualSave={handlers.handleManualSave}
     />
   );
 };
