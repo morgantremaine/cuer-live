@@ -58,6 +58,7 @@ interface RundownContainerProps {
   handleToggleColumnVisibility: (columnId: string) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
   hasUnsavedChanges: boolean;
+  isSaving: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
 }
@@ -113,6 +114,7 @@ const RundownContainer = ({
   handleDeleteColumnWithCleanup,
   handleToggleColumnVisibility,
   hasUnsavedChanges,
+  isSaving,
   rundownTitle,
   onTitleChange
 }: RundownContainerProps) => {
@@ -143,6 +145,7 @@ const RundownContainer = ({
             onForward={onForward}
             onBackward={onBackward}
             hasUnsavedChanges={hasUnsavedChanges}
+            isSaving={isSaving}
             rundownTitle={rundownTitle}
             onTitleChange={onTitleChange}
           />

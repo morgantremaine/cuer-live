@@ -26,6 +26,7 @@ interface RundownHeaderSectionProps {
   onForward: () => void;
   onBackward: () => void;
   hasUnsavedChanges: boolean;
+  isSaving: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
 }
@@ -53,6 +54,7 @@ const RundownHeaderSection = ({
   onForward,
   onBackward,
   hasUnsavedChanges,
+  isSaving,
   rundownTitle,
   onTitleChange
 }: RundownHeaderSectionProps) => {
@@ -64,6 +66,7 @@ const RundownHeaderSection = ({
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
         hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
         title={rundownTitle}
         onTitleChange={onTitleChange}
       />

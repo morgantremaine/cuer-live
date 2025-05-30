@@ -33,7 +33,10 @@ const RundownGrid = () => {
   const selectedCount = state.selectedRows.size;
   const selectedRowId = selectedCount === 1 ? Array.from(state.selectedRows)[0] : null;
 
-  console.log('RundownGrid render - hasUnsavedChanges:', state.hasUnsavedChanges);
+  console.log('RundownGrid render - save state:', {
+    hasUnsavedChanges: state.hasUnsavedChanges,
+    isSaving: state.isSaving
+  });
 
   return (
     <RundownContainer
@@ -104,6 +107,7 @@ const RundownGrid = () => {
         state.markAsChanged();
       }}
       hasUnsavedChanges={state.hasUnsavedChanges}
+      isSaving={state.isSaving}
       rundownTitle={state.rundownTitle}
       onTitleChange={handlers.handleTitleChange}
     />

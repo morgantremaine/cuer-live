@@ -13,6 +13,7 @@ interface RundownHeaderProps {
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
   hasUnsavedChanges: boolean;
+  isSaving: boolean;
   title: string;
   onTitleChange: (title: string) => void;
 }
@@ -23,6 +24,7 @@ const RundownHeader = ({
   onTimezoneChange, 
   totalRuntime,
   hasUnsavedChanges,
+  isSaving,
   title,
   onTitleChange
 }: RundownHeaderProps) => {
@@ -63,6 +65,16 @@ const RundownHeader = ({
     navigate('/dashboard');
   };
 
+  const getSaveStatus = () => {
+    if (isSaving) {
+      return <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">Saving...</span>;
+    }
+    if (hasUnsavedChanges) {
+      return <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">Unsaved changes</span>;
+    }
+    return <span className="text-xs text-green-600 dark:text-green-400 ml-2">Saved</span>;
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-4 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-2">
@@ -97,9 +109,7 @@ const RundownHeader = ({
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
-              {hasUnsavedChanges && (
-                <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">Saving...</span>
-              )}
+              {getSaveStatus()}
             </div>
           )}
         </div>
