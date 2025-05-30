@@ -59,8 +59,8 @@ const RundownTable = ({
   onDrop
 }: RundownTableProps) => {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
+    <div className="w-full">
+      <table className="w-full min-w-max">
         <RundownTableHeader
           visibleColumns={visibleColumns}
           getColumnWidth={getColumnWidth}
