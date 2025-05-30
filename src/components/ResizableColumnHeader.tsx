@@ -49,12 +49,10 @@ const ResizableColumnHeader = ({
     >
       {children}
       <div 
-        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors flex items-center justify-center"
+        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors"
         onMouseDown={handleMouseDown}
         style={{ backgroundColor: isResizing ? '#60a5fa' : 'transparent' }}
-      >
-        <div className="w-0.5 h-6 bg-gray-400 opacity-60" />
-      </div>
+      />
     </th>
   );
 };
