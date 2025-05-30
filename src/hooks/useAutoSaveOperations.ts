@@ -34,6 +34,17 @@ export const useAutoSaveOperations = () => {
       return false;
     }
 
+    // Validate data before saving
+    if (!rundownTitle || rundownTitle.trim() === '') {
+      console.error('Cannot save: title is empty');
+      return false;
+    }
+
+    if (!Array.isArray(items)) {
+      console.error('Cannot save: items is not an array');
+      return false;
+    }
+
     try {
       console.log('Starting save operation...', { isNewRundown, itemsCount: items.length, title: rundownTitle });
       setIsSaving(true);
@@ -53,14 +64,30 @@ export const useAutoSaveOperations = () => {
         }
       } else if (rundownId) {
         console.log('Updating existing rundown:', rundownId);
+        console.log('Update data:', {
+          id: rundownId,
+          title: rundownTitle,
+          itemsCount: items.length,
+          silent: true
+        });
+        
+        // Call updateRundown with proper parameters and error handling
         await updateRundown(rundownId, rundownTitle, items, true);
         console.log('Rundown updated successfully');
         return true;
       }
       
+      console.error('No valid save path found');
       return false;
     } catch (error) {
-      console.error('Save failed:', error);
+      console.error('Save failed with detailed error:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        rundownId,
+        title: rundownTitle,
+        itemsCount: items.length,
+        isNewRundown
+      });
       return false;
     } finally {
       console.log('Save operation completed, setting isSaving to false');

@@ -31,6 +31,7 @@ export const useRundownStorage = () => {
       .order('updated_at', { ascending: false })
 
     if (error) {
+      console.error('Error loading rundowns:', error)
       toast({
         title: 'Error',
         description: 'Failed to load rundowns',
@@ -43,7 +44,12 @@ export const useRundownStorage = () => {
   }
 
   const saveRundown = async (title: string, items: RundownItem[]) => {
-    if (!user) return
+    if (!user) {
+      console.error('Cannot save: no user')
+      return
+    }
+
+    console.log('Saving new rundown to database:', { title, itemsCount: items.length, userId: user.id })
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -56,6 +62,7 @@ export const useRundownStorage = () => {
       .single()
 
     if (error) {
+      console.error('Database error saving rundown:', error)
       toast({
         title: 'Error',
         description: 'Failed to save rundown',
@@ -63,27 +70,45 @@ export const useRundownStorage = () => {
       })
       throw error
     } else {
-      toast({
-        title: 'Success',
-        description: 'Rundown saved successfully!',
-      })
+      console.log('Successfully saved new rundown:', data)
+      if (!silent) {
+        toast({
+          title: 'Success',
+          description: 'Rundown saved successfully!',
+        })
+      }
       loadRundowns()
       return data
     }
   }
 
   const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false) => {
-    if (!user) return
+    if (!user) {
+      console.error('Cannot update: no user')
+      return
+    }
 
-    const updateData: any = {
+    console.log('Updating rundown in database:', {
+      id,
       title,
-      items,
+      itemsCount: items.length,
+      userId: user.id,
+      silent,
+      archived
+    })
+
+    // Prepare the update data
+    const updateData: any = {
+      title: title,
+      items: items,
       updated_at: new Date().toISOString(),
     }
 
     if (archived !== undefined) {
       updateData.archived = archived
     }
+
+    console.log('Update payload:', updateData)
 
     const { error } = await supabase
       .from('rundowns')
@@ -92,6 +117,12 @@ export const useRundownStorage = () => {
       .eq('user_id', user.id)
 
     if (error) {
+      console.error('Database error updating rundown:', {
+        error,
+        id,
+        userId: user.id,
+        updateData
+      })
       if (!silent) {
         toast({
           title: 'Error',
@@ -101,6 +132,7 @@ export const useRundownStorage = () => {
       }
       throw error
     } else {
+      console.log('Successfully updated rundown:', id)
       if (!silent) {
         const message = archived ? 'Rundown archived successfully!' : 'Rundown updated successfully!'
         toast({
