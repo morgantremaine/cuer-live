@@ -10,137 +10,150 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   const { updateRundown, saveRundown, savedRundowns, loading } = useRundownStorage();
   const navigate = useNavigate();
   
-  const lastSavedStateRef = useRef<string | null>(null);
+  const lastSavedDataRef = useRef<{ items: RundownItem[], title: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitializedRef = useRef(false);
-  const isSavingRef = useRef(false);
+  const currentlySavingRef = useRef(false);
 
   // Find current rundown
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
   const isNewRundown = !rundownId;
 
-  console.log('AutoSave state:', {
+  console.log('AutoSave render:', {
     rundownId,
     isNewRundown,
-    currentRundown: !!currentRundown,
     itemsCount: items.length,
     title: rundownTitle,
     hasUnsavedChanges,
     isSaving,
-    storageLoading: loading
+    initialized: isInitializedRef.current,
+    currentlySaving: currentlySavingRef.current
   });
 
-  // Initialize the last saved state when we first load
+  // Initialize the baseline when component mounts
   useEffect(() => {
-    if (loading) return; // Wait for storage to load
+    if (loading || isInitializedRef.current) return;
     
-    if (!isInitializedRef.current) {
-      console.log('Initializing auto-save...');
-      
-      if (currentRundown) {
-        const initialState = JSON.stringify({ 
-          items: currentRundown.items, 
-          title: currentRundown.title 
-        });
-        lastSavedStateRef.current = initialState;
-        console.log('Initialized with existing rundown:', currentRundown.id);
-      } else if (isNewRundown) {
-        lastSavedStateRef.current = null;
-        console.log('Initialized for new rundown');
-      }
-      
-      isInitializedRef.current = true;
-      setHasUnsavedChanges(false);
+    console.log('Initializing auto-save baseline...');
+    
+    if (currentRundown && !isNewRundown) {
+      lastSavedDataRef.current = {
+        items: currentRundown.items || [],
+        title: currentRundown.title || 'Untitled Rundown'
+      };
+      console.log('Initialized with existing rundown:', currentRundown.id);
+    } else {
+      lastSavedDataRef.current = null;
+      console.log('Initialized for new rundown');
     }
+    
+    isInitializedRef.current = true;
+    setHasUnsavedChanges(false);
   }, [currentRundown, isNewRundown, loading]);
 
-  // Auto-save function
-  const performAutoSave = useCallback(async () => {
-    if (isSavingRef.current) {
-      console.log('Already saving, skipping...');
+  // Check for changes and mark as unsaved
+  useEffect(() => {
+    if (!isInitializedRef.current || currentlySavingRef.current) return;
+
+    const currentData = { items, title: rundownTitle };
+    
+    // Compare with last saved data
+    const hasChanges = lastSavedDataRef.current === null || 
+      JSON.stringify(lastSavedDataRef.current) !== JSON.stringify(currentData);
+    
+    console.log('Checking for changes:', {
+      hasChanges,
+      lastSaved: lastSavedDataRef.current,
+      current: currentData
+    });
+    
+    if (hasChanges && !hasUnsavedChanges) {
+      console.log('Changes detected - marking as unsaved');
+      setHasUnsavedChanges(true);
+    }
+  }, [items, rundownTitle, hasUnsavedChanges]);
+
+  // Auto-save when there are unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges || !isInitializedRef.current || currentlySavingRef.current) {
+      return;
+    }
+
+    console.log('Scheduling auto-save...');
+    
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Schedule save after 2 seconds
+    saveTimeoutRef.current = setTimeout(async () => {
+      console.log('Auto-save timeout triggered');
+      await performSave();
+    }, 2000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [hasUnsavedChanges]);
+
+  const performSave = async () => {
+    if (currentlySavingRef.current) {
+      console.log('Save already in progress, skipping...');
       return;
     }
 
     try {
-      console.log('Starting auto-save...', { isNewRundown, rundownId, itemsCount: items.length });
-      
+      console.log('Starting save operation...');
+      currentlySavingRef.current = true;
       setIsSaving(true);
-      isSavingRef.current = true;
+      
+      const dataToSave = { items, title: rundownTitle };
       
       if (isNewRundown) {
         console.log('Saving new rundown...');
         const result = await saveRundown(rundownTitle, items);
-        console.log('Save result:', result);
         
         if (result?.id) {
-          console.log('Navigating to new rundown:', result.id);
-          navigate(`/rundown/${result.id}`, { replace: true });
-          lastSavedStateRef.current = JSON.stringify({ items, title: rundownTitle });
+          console.log('New rundown saved with ID:', result.id);
+          lastSavedDataRef.current = dataToSave;
           setHasUnsavedChanges(false);
+          navigate(`/rundown/${result.id}`, { replace: true });
         } else {
-          throw new Error('No ID returned from save operation');
+          throw new Error('Failed to save new rundown');
         }
-      } else if (currentRundown && rundownId) {
+      } else if (rundownId) {
         console.log('Updating existing rundown:', rundownId);
         await updateRundown(rundownId, rundownTitle, items, true);
-        lastSavedStateRef.current = JSON.stringify({ items, title: rundownTitle });
+        console.log('Rundown updated successfully');
+        lastSavedDataRef.current = dataToSave;
         setHasUnsavedChanges(false);
-        console.log('Update successful');
-      } else {
-        console.error('Cannot save: no current rundown found');
-        throw new Error('Current rundown not found');
       }
     } catch (error) {
-      console.error('Auto-save failed:', error);
-      // Keep hasUnsavedChanges true on error
+      console.error('Save failed:', error);
+      // Keep unsaved state on error
     } finally {
+      currentlySavingRef.current = false;
       setIsSaving(false);
-      isSavingRef.current = false;
     }
-  }, [isNewRundown, rundownTitle, items, saveRundown, navigate, currentRundown, updateRundown, rundownId]);
+  };
 
-  // Check for changes and trigger auto-save
-  useEffect(() => {
-    if (!isInitializedRef.current || loading) return;
-
-    const currentState = JSON.stringify({ items, title: rundownTitle });
-    const hasChanged = lastSavedStateRef.current !== currentState;
-    
-    console.log('Checking for changes:', {
-      hasChanged,
-      currentStateLength: currentState.length,
-      lastSavedStateLength: lastSavedStateRef.current?.length || 0
-    });
-    
-    if (hasChanged) {
-      console.log('Changes detected, marking as unsaved and scheduling save');
+  const markAsChanged = useCallback(() => {
+    console.log('Manually marking as changed');
+    if (!hasUnsavedChanges) {
       setHasUnsavedChanges(true);
-      
-      // Clear existing timeout
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      
-      // Schedule auto-save after 2 seconds of no changes
-      saveTimeoutRef.current = setTimeout(() => {
-        console.log('Auto-save timeout triggered');
-        performAutoSave();
-      }, 2000);
     }
-  }, [items, rundownTitle, performAutoSave, loading]);
+  }, [hasUnsavedChanges]);
 
-  // Cleanup timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, []);
-
-  const markAsChanged = useCallback(() => {
-    console.log('Manually marking as changed');
-    setHasUnsavedChanges(true);
   }, []);
 
   return {
