@@ -1,11 +1,8 @@
 
 import React, { useState } from 'react';
-import { Edit2, User, LogOut, ArrowLeft, Save } from 'lucide-react';
+import { Clock, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 import TimezoneSelector from './TimezoneSelector';
-import AuthModal from './AuthModal';
-import { useAuth } from '@/hooks/useAuth';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -31,134 +28,103 @@ const RundownHeader = ({
   onTitleChange
 }: RundownHeaderProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const [tempTitle, setTempTitle] = useState(title);
 
-  const formatTime = (time: Date, tz: string) => {
-    try {
-      const timeString = time.toLocaleTimeString('en-US', { 
-        hour12: false,
-        timeZone: tz
-      });
-      return timeString;
-    } catch {
-      return time.toLocaleTimeString('en-US', { hour12: false });
-    }
+  const handleTitleClick = () => {
+    setTempTitle(title);
+    setIsEditingTitle(true);
   };
 
   const handleTitleSubmit = () => {
+    onTitleChange(tempTitle.trim() || 'Untitled Rundown');
     setIsEditingTitle(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleTitleSubmit();
     } else if (e.key === 'Escape') {
+      setTempTitle(title);
       setIsEditingTitle(false);
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false 
+    });
   };
 
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
+  const getSaveStatusText = () => {
+    if (isSaving) return 'Saving...';
+    if (hasUnsavedChanges) return 'Unsaved changes';
+    return 'All changes saved';
+  };
+
+  const getSaveStatusColor = () => {
+    if (isSaving) return 'text-blue-600';
+    if (hasUnsavedChanges) return 'text-amber-600';
+    return 'text-green-600';
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-4 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-4 border-b bg-gray-100 dark:bg-gray-900">
+      <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBackToDashboard}
-            className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-2"
-            title="Back to Dashboard"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
           {isEditingTitle ? (
             <input
               type="text"
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
+              value={tempTitle}
+              onChange={(e) => setTempTitle(e.target.value)}
               onBlur={handleTitleSubmit}
-              onKeyDown={handleKeyDown}
-              className="text-xl font-bold bg-transparent border-b-2 border-gray-400 dark:border-gray-500 outline-none text-gray-900 dark:text-white placeholder-gray-500"
+              onKeyDown={handleTitleKeyDown}
+              className="text-2xl font-bold bg-transparent border-b-2 border-blue-500 focus:outline-none min-w-[200px]"
               autoFocus
             />
           ) : (
-            <div className="flex items-center space-x-2 group">
-              <h1 className="text-xl font-bold">{title}</h1>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditingTitle(true)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              {hasUnsavedChanges && (
-                <span className="text-xs opacity-75 ml-2">
-                  {isSaving ? 'Saving...' : 'Auto-saving in 10s'}
-                </span>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onManualSave}
-                disabled={isSaving || !hasUnsavedChanges}
-                className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                title="Save manually"
-              >
-                <Save className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
-          <TimezoneSelector 
-            currentTimezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-          />
-          {user ? (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm">{user.email}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAuthModal(true)}
-              className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+            <h1 
+              className="text-2xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={handleTitleClick}
+              title="Click to edit title"
             >
-              <User className="h-4 w-4 mr-2" />
-              Sign In
-            </Button>
+              {title}
+            </h1>
           )}
+          
+          {/* Save Status Indicator */}
+          <div className="flex items-center space-x-2">
+            <div className={`text-sm ${getSaveStatusColor()}`}>
+              {getSaveStatusText()}
+            </div>
+            {(hasUnsavedChanges || isSaving) && (
+              <Button
+                onClick={onManualSave}
+                disabled={isSaving}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-1"
+              >
+                <Save className={`h-4 w-4 ${isSaving ? 'animate-spin' : ''}`} />
+                <span>{isSaving ? 'Saving...' : 'Save Now'}</span>
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
+            <Clock className="h-4 w-4" />
+            <span className="font-mono">{formatTime(currentTime)}</span>
+            <TimezoneSelector timezone={timezone} onTimezoneChange={onTimezoneChange} />
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            Total Runtime: <span className="font-mono font-bold">{totalRuntime}</span>
+          </div>
         </div>
       </div>
-      <div className="flex justify-between items-center text-sm">
-        <span className="opacity-75">Total Runtime: {totalRuntime}</span>
-        <span className="opacity-75">{timezone.replace('_', ' ')}</span>
-      </div>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
     </div>
   );
 };

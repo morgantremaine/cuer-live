@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRundownStorage } from './useRundownStorage';
 import { RundownItem } from './useRundownItems';
@@ -22,19 +23,23 @@ export const useAutoSave = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [currentRundownId, setCurrentRundownId] = useState(rundownId);
   
   const { saveRundown, updateRundown } = useRundownStorage();
   const { toast } = useToast();
   
   // Keep track of the last saved state to detect changes
   const lastSavedState = useRef<{
-    items: RundownItem[];
+    items: string;
     title: string;
-    columns: Column[];
+    columns: string;
   } | null>(null);
   
   const hasDataChanged = useCallback(() => {
-    if (!lastSavedState.current || !isDataLoaded) return false;
+    if (!lastSavedState.current || !isDataLoaded) {
+      console.log('🔍 AutoSave: No baseline state or data not loaded');
+      return false;
+    }
     
     const currentState = {
       items: JSON.stringify(items),
@@ -42,17 +47,21 @@ export const useAutoSave = ({
       columns: JSON.stringify(columns)
     };
     
-    const savedState = {
-      items: JSON.stringify(lastSavedState.current.items),
-      title: lastSavedState.current.title,
-      columns: JSON.stringify(lastSavedState.current.columns)
-    };
-    
-    return (
-      currentState.items !== savedState.items ||
-      currentState.title !== savedState.title ||
-      currentState.columns !== savedState.columns
+    const changed = (
+      currentState.items !== lastSavedState.current.items ||
+      currentState.title !== lastSavedState.current.title ||
+      currentState.columns !== lastSavedState.current.columns
     );
+    
+    if (changed) {
+      console.log('📝 AutoSave: Data has changed', {
+        itemsChanged: currentState.items !== lastSavedState.current.items,
+        titleChanged: currentState.title !== lastSavedState.current.title,
+        columnsChanged: currentState.columns !== lastSavedState.current.columns
+      });
+    }
+    
+    return changed;
   }, [items, rundownTitle, columns, isDataLoaded]);
 
   const performSave = useCallback(async (silent = true) => {
@@ -62,8 +71,8 @@ export const useAutoSave = ({
     }
 
     console.log('💾 AutoSave: Starting save process', {
-      rundownId,
-      hasRundownId: !!rundownId,
+      rundownId: currentRundownId,
+      isNewRundown: currentRundownId === 'new' || !currentRundownId,
       itemsCount: items.length,
       title: rundownTitle,
       columnsCount: columns.length
@@ -72,26 +81,30 @@ export const useAutoSave = ({
     setIsSaving(true);
     
     try {
-      if (rundownId && rundownId !== 'new') {
-        // Update existing rundown
-        console.log('💾 AutoSave: Updating existing rundown');
-        await updateRundown(rundownId, rundownTitle, items, silent, columns);
-      } else {
+      let finalRundownId = currentRundownId;
+      
+      if (!currentRundownId || currentRundownId === 'new') {
         // Create new rundown
         console.log('💾 AutoSave: Creating new rundown');
         const newRundown = await saveRundown(rundownTitle, items, columns);
-        if (newRundown) {
+        if (newRundown?.id) {
+          finalRundownId = newRundown.id;
+          setCurrentRundownId(newRundown.id);
           console.log('💾 AutoSave: New rundown created with ID:', newRundown.id);
           // Update the URL without reloading the page
           window.history.replaceState({}, '', `/rundown/${newRundown.id}`);
         }
+      } else {
+        // Update existing rundown
+        console.log('💾 AutoSave: Updating existing rundown');
+        await updateRundown(currentRundownId, rundownTitle, items, silent, columns);
       }
       
-      // Update our tracking state
+      // Update our tracking state with stringified versions for comparison
       lastSavedState.current = {
-        items: JSON.parse(JSON.stringify(items)),
+        items: JSON.stringify(items),
         title: rundownTitle,
-        columns: JSON.parse(JSON.stringify(columns))
+        columns: JSON.stringify(columns)
       };
       
       setHasUnsavedChanges(false);
@@ -110,14 +123,14 @@ export const useAutoSave = ({
     } finally {
       setIsSaving(false);
     }
-  }, [rundownId, items, rundownTitle, columns, isDataLoaded, isSaving, saveRundown, updateRundown, toast]);
+  }, [currentRundownId, items, rundownTitle, columns, isDataLoaded, isSaving, saveRundown, updateRundown, toast]);
 
   // Mark data as changed when any of the tracked values change
   useEffect(() => {
     if (!isDataLoaded) return;
     
     if (hasDataChanged()) {
-      console.log('📝 AutoSave: Data changed detected');
+      console.log('📝 AutoSave: Data changed detected, marking as unsaved');
       setHasUnsavedChanges(true);
     }
   }, [items, rundownTitle, columns, isDataLoaded, hasDataChanged]);
@@ -128,6 +141,7 @@ export const useAutoSave = ({
 
     console.log('⏰ AutoSave: Setting up 10-second auto-save timer');
     const timer = setTimeout(() => {
+      console.log('⏰ AutoSave: Timer triggered, performing auto-save');
       performSave(true);
     }, 10000);
 
@@ -142,12 +156,28 @@ export const useAutoSave = ({
     if (isDataLoaded && !lastSavedState.current) {
       console.log('🔄 AutoSave: Initializing saved state tracking');
       lastSavedState.current = {
-        items: JSON.parse(JSON.stringify(items)),
+        items: JSON.stringify(items),
         title: rundownTitle,
-        columns: JSON.parse(JSON.stringify(columns))
+        columns: JSON.stringify(columns)
       };
+      // For existing rundowns, we start with no unsaved changes
+      // For new rundowns, we want to save them once they have content
+      if (currentRundownId === 'new' && (items.length > 0 || rundownTitle.trim())) {
+        setHasUnsavedChanges(true);
+      }
     }
-  }, [isDataLoaded, items, rundownTitle, columns]);
+  }, [isDataLoaded, items, rundownTitle, columns, currentRundownId]);
+
+  // Update current rundown ID when prop changes
+  useEffect(() => {
+    if (rundownId !== currentRundownId) {
+      console.log('🔄 AutoSave: Rundown ID changed, updating state', { from: currentRundownId, to: rundownId });
+      setCurrentRundownId(rundownId);
+      // Reset saved state when switching rundowns
+      lastSavedState.current = null;
+      setHasUnsavedChanges(false);
+    }
+  }, [rundownId, currentRundownId]);
 
   const manualSave = useCallback(() => {
     console.log('👆 AutoSave: Manual save triggered');
