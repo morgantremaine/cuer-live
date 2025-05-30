@@ -63,34 +63,30 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     // Don't save too frequently
     const now = new Date();
-    if (lastAutoSaveRef.current && (now.getTime() - lastAutoSaveRef.current.getTime()) < 5000) {
+    if (lastAutoSaveRef.current && (now.getTime() - lastAutoSaveRef.current.getTime()) < 3000) {
       console.log('Auto-save: Too soon since last save, skipping...');
       return;
     }
 
+    // More lenient validation - allow saving with empty items but require a title
+    if (!titleRef.current || titleRef.current.trim() === '') {
+      console.log('Auto-save: No title provided, skipping save');
+      setHasUnsavedChanges(false);
+      setIsSaving(false);
+      return;
+    }
+
+    console.log('Auto-save: Starting auto-save', {
+      isNewRundown,
+      canSave,
+      rundownId,
+      rundownTitle: titleRef.current,
+      itemsCount: itemsRef.current.length,
+      columnsCount: columnsRef.current?.length
+    });
+
     try {
       setIsSaving(true);
-      console.log('Auto-save: Starting auto-save', {
-        isNewRundown,
-        canSave,
-        rundownId,
-        rundownTitle: titleRef.current,
-        itemsCount: itemsRef.current.length,
-        columnsCount: columnsRef.current?.length
-      });
-
-      // Validate data before saving
-      if (!titleRef.current || titleRef.current.trim() === '') {
-        console.log('Auto-save: Invalid title, skipping');
-        setHasUnsavedChanges(false);
-        return;
-      }
-
-      if (!itemsRef.current || itemsRef.current.length === 0) {
-        console.log('Auto-save: No items to save, skipping');
-        setHasUnsavedChanges(false);
-        return;
-      }
 
       if (isNewRundown) {
         console.log('Auto-save: Saving new rundown');
@@ -102,22 +98,26 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       } else if (canSave) {
         console.log('Auto-save: Updating existing rundown');
         await updateRundown(rundownId!, titleRef.current, itemsRef.current, true, columnsRef.current);
-        console.log('Auto-save: Existing rundown updated');
+        console.log('Auto-save: Existing rundown updated successfully');
       } else {
         console.log('Auto-save: Cannot save - no valid rundown context');
         setHasUnsavedChanges(false);
+        setIsSaving(false);
         return;
       }
       
+      // Success - reset all states
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
       lastAutoSaveRef.current = new Date();
-      console.log('Auto-save: Successful');
+      console.log('Auto-save: Completed successfully');
+      
     } catch (error) {
-      console.error('Auto-save: Failed:', error);
-      // Reset saving state on error but keep unsaved changes flag
+      console.error('Auto-save: Failed with error:', error);
+      // On error, keep the unsaved changes flag but reset saving state
       setHasUnsavedChanges(true);
     } finally {
+      // Always reset the saving state
       setIsSaving(false);
     }
   }, [rundownId, updateRundown, saveRundown, canSave, navigate, isNewRundown, isSaving]);
