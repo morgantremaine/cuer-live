@@ -1,215 +1,94 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import RundownContainer from './RundownContainer';
-import { useRundownItems } from '@/hooks/useRundownItems';
-import { useColumnsManager } from '@/hooks/useColumnsManager';
-import { useResizableColumns } from '@/hooks/useResizableColumns';
-import { useCellNavigation } from '@/hooks/useCellNavigation';
-import { useDragAndDrop } from '@/hooks/useDragAndDrop';
-import { useTimeCalculations } from '@/hooks/useTimeCalculations';
-import { useColorPicker } from '@/hooks/useColorPicker';
-import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
-import { useClipboard } from '@/hooks/useClipboard';
-import { usePlaybackControls } from '@/hooks/usePlaybackControls';
-import { useAutoSave } from '@/hooks/useAutoSave';
-import { useRundownHandlers } from '@/hooks/useRundownHandlers';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
-import { useParams } from 'react-router-dom';
+import { useRundownGridState } from '@/hooks/useRundownGridState';
+import { useRundownGridHandlers } from '@/hooks/useRundownGridHandlers';
 
 const RundownGrid = () => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [timezone, setTimezone] = useState('America/New_York');
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
-
-  const { id: rundownId } = useParams<{ id: string }>();
-  const { updateRundown } = useRundownStorage();
-
-  const {
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration
-  } = useRundownItems();
-
-  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle);
-
-  const {
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleToggleColumnVisibility
-  } = useColumnsManager();
-
-  const {
-    columnWidths,
-    updateColumnWidth,
-    getColumnWidth
-  } = useResizableColumns(visibleColumns);
-
-  const {
-    selectedCell,
-    cellRefs,
-    handleCellClick,
-    handleKeyDown
-  } = useCellNavigation(visibleColumns, items);
-
-  const {
-    draggedItemIndex,
-    handleDragStart,
-    handleDragOver,
-    handleDrop
-  } = useDragAndDrop(items, setItems);
-
-  const {
-    calculateEndTime,
-    getRowStatus
-  } = useTimeCalculations(items, updateItem);
-
-  const {
-    showColorPicker,
-    handleToggleColorPicker,
-    handleColorSelect: selectColor
-  } = useColorPicker();
-
-  const {
-    selectedRows,
-    toggleRowSelection,
-    clearSelection
-  } = useMultiRowSelection();
-
-  const {
-    clipboardItems,
-    copyItems,
-    hasClipboardData
-  } = useClipboard();
-
-  const {
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward
-  } = usePlaybackControls(items, updateItem);
-
-  const {
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    handleDeleteColumnWithCleanup
-  } = useRundownHandlers({
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    toggleFloatRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    handleDeleteColumn,
-    setItems,
-    calculateEndTime,
-    selectColor,
-    markAsChanged
+  const state = useRundownGridState();
+  
+  const handlers = useRundownGridHandlers({
+    updateItem: state.updateItem,
+    addRow: state.addRow,
+    addHeader: state.addHeader,
+    deleteRow: state.deleteRow,
+    toggleFloatRow: state.toggleFloatRow,
+    deleteMultipleRows: state.deleteMultipleRows,
+    addMultipleRows: state.addMultipleRows,
+    handleDeleteColumn: state.handleDeleteColumn,
+    setItems: state.setItems,
+    calculateEndTime: state.calculateEndTime,
+    selectColor: state.selectColor,
+    markAsChanged: state.markAsChanged,
+    manualSave: state.manualSave,
+    selectedRows: state.selectedRows,
+    clearSelection: state.clearSelection,
+    copyItems: state.copyItems,
+    clipboardItems: state.clipboardItems,
+    hasClipboardData: state.hasClipboardData,
+    toggleRowSelection: state.toggleRowSelection,
+    items: state.items,
+    setRundownTitle: state.setRundownTitle
   });
 
-  const handleManualSave = async () => {
-    await manualSave();
-  };
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleCopySelectedRows = () => {
-    const selectedItems = items.filter(item => selectedRows.has(item.id));
-    copyItems(selectedItems);
-    clearSelection();
-  };
-
-  const handleRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
-  };
-
-  const handleTitleChange = (title: string) => {
-    setRundownTitle(title);
-    markAsChanged();
-  };
-
-  const selectedCount = selectedRows.size;
-  const selectedRowId = selectedCount === 1 ? Array.from(selectedRows)[0] : null;
+  const selectedCount = state.selectedRows.size;
+  const selectedRowId = selectedCount === 1 ? Array.from(state.selectedRows)[0] : null;
 
   return (
     <RundownContainer
-      currentTime={currentTime}
-      timezone={timezone}
-      onTimezoneChange={setTimezone}
-      totalRuntime={calculateTotalRuntime()}
-      showColumnManager={showColumnManager}
-      setShowColumnManager={setShowColumnManager}
-      items={items}
-      visibleColumns={visibleColumns}
-      columns={columns}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      currentSegmentId={currentSegmentId}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={updateColumnWidth}
-      getRowNumber={getRowNumber}
-      getRowStatus={getRowStatus}
-      calculateHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={handleUpdateItem}
-      onCellClick={handleCellClick}
-      onKeyDown={handleKeyDown}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
-      onDeleteRow={handleDeleteRow}
-      onToggleFloat={handleToggleFloat}
-      onRowSelect={handleRowSelection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
+      currentTime={state.currentTime}
+      timezone={state.timezone}
+      onTimezoneChange={state.setTimezone}
+      totalRuntime={state.calculateTotalRuntime()}
+      showColumnManager={state.showColumnManager}
+      setShowColumnManager={state.setShowColumnManager}
+      items={state.items}
+      visibleColumns={state.visibleColumns}
+      columns={state.columns}
+      showColorPicker={state.showColorPicker}
+      cellRefs={state.cellRefs}
+      selectedRows={state.selectedRows}
+      draggedItemIndex={state.draggedItemIndex}
+      currentSegmentId={state.currentSegmentId}
+      getColumnWidth={state.getColumnWidth}
+      updateColumnWidth={state.updateColumnWidth}
+      getRowNumber={state.getRowNumber}
+      getRowStatus={state.getRowStatus}
+      calculateHeaderDuration={state.calculateHeaderDuration}
+      onUpdateItem={handlers.handleUpdateItem}
+      onCellClick={state.handleCellClick}
+      onKeyDown={state.handleKeyDown}
+      onToggleColorPicker={state.handleToggleColorPicker}
+      onColorSelect={handlers.handleColorSelect}
+      onDeleteRow={handlers.handleDeleteRow}
+      onToggleFloat={handlers.handleToggleFloat}
+      onRowSelect={handlers.handleRowSelection}
+      onDragStart={state.handleDragStart}
+      onDragOver={state.handleDragOver}
+      onDrop={state.handleDrop}
+      onAddRow={handlers.handleAddRow}
+      onAddHeader={handlers.handleAddHeader}
       selectedCount={selectedCount}
-      hasClipboardData={hasClipboardData()}
-      onCopySelectedRows={handleCopySelectedRows}
-      onPasteRows={() => handlePasteRows(clipboardItems, hasClipboardData)}
-      onDeleteSelectedRows={() => handleDeleteSelectedRows(selectedRows, clearSelection)}
-      onClearSelection={clearSelection}
+      hasClipboardData={state.hasClipboardData()}
+      onCopySelectedRows={handlers.handleCopySelectedRows}
+      onPasteRows={handlers.handlePasteRows}
+      onDeleteSelectedRows={handlers.handleDeleteSelectedRows}
+      onClearSelection={state.clearSelection}
       selectedRowId={selectedRowId}
-      isPlaying={isPlaying}
-      timeRemaining={timeRemaining}
-      onPlay={play}
-      onPause={pause}
-      onForward={forward}
-      onBackward={backward}
-      handleAddColumn={handleAddColumn}
-      handleReorderColumns={handleReorderColumns}
-      handleDeleteColumnWithCleanup={handleDeleteColumnWithCleanup}
-      handleToggleColumnVisibility={handleToggleColumnVisibility}
-      hasUnsavedChanges={hasUnsavedChanges}
-      rundownTitle={rundownTitle}
-      onTitleChange={handleTitleChange}
-      onManualSave={handleManualSave}
+      isPlaying={state.isPlaying}
+      timeRemaining={state.timeRemaining}
+      onPlay={state.play}
+      onPause={state.pause}
+      onForward={state.forward}
+      onBackward={state.backward}
+      handleAddColumn={state.handleAddColumn}
+      handleReorderColumns={state.handleReorderColumns}
+      handleDeleteColumnWithCleanup={handlers.handleDeleteColumnWithCleanup}
+      handleToggleColumnVisibility={state.handleToggleColumnVisibility}
+      hasUnsavedChanges={state.hasUnsavedChanges}
+      rundownTitle={state.rundownTitle}
+      onTitleChange={handlers.handleTitleChange}
+      onManualSave={handlers.handleManualSave}
     />
   );
 };
