@@ -53,11 +53,13 @@ const HeaderRow = ({
       onDrop={(e) => onDrop(e, index)}
     >
       <td className="px-4 py-2 text-sm text-gray-300 dark:text-gray-400 font-mono" style={{ width: '80px' }}>
-        <span className="text-xl font-bold text-white">{item.segmentName}</span>
+        {rowNumber}
       </td>
       {columns.map((column, columnIndex) => (
         <td key={column.id} className="px-4 py-3" style={{ width: getColumnWidth(column) }}>
-          {columnIndex === 0 ? (
+          {column.key === 'segmentName' ? (
+            <span className="text-xl font-bold text-white">{item.segmentName}</span>
+          ) : column.key === 'notes' ? (
             <input
               ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
               type="text"
