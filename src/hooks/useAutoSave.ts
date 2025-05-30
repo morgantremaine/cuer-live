@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -13,177 +12,113 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const { updateRundown, saveRundown, savedRundowns } = useRundownStorage();
   const navigate = useNavigate();
   
-  // Use refs to track the latest values for auto-save
-  const itemsRef = useRef(items);
-  const titleRef = useRef(rundownTitle);
-  const columnsRef = useRef(columns);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastAutoSaveRef = useRef<Date | null>(null);
-  const isSavingRef = useRef(false);
-
-  // Update refs when values change
-  useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
-
-  useEffect(() => {
-    titleRef.current = rundownTitle;
-  }, [rundownTitle]);
-
-  useEffect(() => {
-    columnsRef.current = columns;
-  }, [columns]);
-
-  // Update isSaving ref when state changes
-  useEffect(() => {
-    isSavingRef.current = isSaving;
-  }, [isSaving]);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSaveDataRef = useRef<string>('');
 
   // Check if the current rundown exists in saved rundowns
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
-  const canSave = rundownId && currentRundown;
   const isNewRundown = !rundownId;
 
-  const markAsChanged = useCallback(() => {
-    console.log('Auto-save: Marking as changed');
-    setHasUnsavedChanges(true);
-    
-    // Clear any existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
+  const performSave = useCallback(async () => {
+    // Prevent saving if already in progress
+    if (isSaving) {
+      console.log('Auto-save: Save already in progress, skipping');
+      return;
     }
-    
-    // Set a new timeout for auto-save (debounced)
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      performAutoSave();
-    }, 2000); // 2 second debounce
-  }, []);
 
-  const performAutoSave = useCallback(async () => {
-    console.log('Auto-save: performAutoSave called', {
-      isSaving: isSavingRef.current,
-      hasTitle: !!titleRef.current,
-      titleLength: titleRef.current?.length,
+    // Validate title
+    const trimmedTitle = rundownTitle.trim();
+    if (!trimmedTitle) {
+      console.log('Auto-save: No title provided, clearing unsaved changes flag');
+      setHasUnsavedChanges(false);
+      return;
+    }
+
+    console.log('Auto-save: Starting save operation', {
       isNewRundown,
-      canSave,
       rundownId,
-      itemsCount: itemsRef.current?.length
+      title: trimmedTitle,
+      itemsCount: items.length
     });
 
-    // Prevent multiple simultaneous saves using ref
-    if (isSavingRef.current) {
-      console.log('Auto-save: Already saving, skipping...');
-      return;
-    }
-
-    // Don't save too frequently
-    const now = new Date();
-    if (lastAutoSaveRef.current && (now.getTime() - lastAutoSaveRef.current.getTime()) < 3000) {
-      console.log('Auto-save: Too soon since last save, skipping...');
-      return;
-    }
-
-    // Validate we have a title
-    if (!titleRef.current || titleRef.current.trim() === '') {
-      console.log('Auto-save: No title provided, skipping save');
-      setHasUnsavedChanges(false);
-      return;
-    }
-
-    console.log('Auto-save: Starting save process');
-    
-    // Set saving state
     setIsSaving(true);
-    isSavingRef.current = true;
 
     try {
-      let result;
-      
       if (isNewRundown) {
-        console.log('Auto-save: Saving new rundown...');
-        result = await saveRundown(titleRef.current, itemsRef.current, columnsRef.current);
-        console.log('Auto-save: New rundown saved successfully:', result);
+        // Save new rundown
+        const result = await saveRundown(trimmedTitle, items, columns);
+        console.log('Auto-save: New rundown saved:', result);
         
         if (result?.id) {
-          console.log('Auto-save: Navigating to new rundown URL:', `/rundown/${result.id}`);
-          // Use setTimeout to ensure state updates complete before navigation
-          setTimeout(() => {
-            navigate(`/rundown/${result.id}`, { replace: true });
-          }, 100);
-        } else {
-          console.error('Auto-save: No ID returned from saveRundown');
-          throw new Error('No ID returned from save operation');
+          // Navigate to the new rundown
+          navigate(`/rundown/${result.id}`, { replace: true });
         }
-      } else if (canSave) {
-        console.log('Auto-save: Updating existing rundown...');
-        await updateRundown(rundownId!, titleRef.current, itemsRef.current, true, columnsRef.current);
-        console.log('Auto-save: Existing rundown updated successfully');
+      } else if (currentRundown) {
+        // Update existing rundown
+        await updateRundown(rundownId!, trimmedTitle, items, true, columns);
+        console.log('Auto-save: Existing rundown updated');
       } else {
-        console.log('Auto-save: Cannot save - invalid context', {
-          rundownId,
-          currentRundown: !!currentRundown,
-          isNewRundown,
-          canSave
-        });
-        // Reset states and exit
+        console.log('Auto-save: Cannot save - rundown not found');
         setHasUnsavedChanges(false);
-        setIsSaving(false);
-        isSavingRef.current = false;
         return;
       }
-      
-      // Success - reset all states
+
+      // Mark as saved
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
-      lastAutoSaveRef.current = new Date();
-      console.log('Auto-save: Completed successfully at', new Date().toISOString());
-      
+      console.log('Auto-save: Save completed successfully');
+
     } catch (error) {
-      console.error('Auto-save: Save operation failed:', error);
-      
-      // Log more details about the error
-      if (error instanceof Error) {
-        console.error('Auto-save: Error message:', error.message);
-        console.error('Auto-save: Error stack:', error.stack);
-      }
-      
+      console.error('Auto-save: Save failed:', error);
       // Keep the unsaved changes flag on error
       setHasUnsavedChanges(true);
-      
-      // Retry after a delay on error
-      setTimeout(() => {
-        if (titleRef.current && titleRef.current.trim() !== '') {
-          console.log('Auto-save: Retrying after error...');
-          performAutoSave();
-        }
-      }, 5000);
-      
     } finally {
-      console.log('Auto-save: Resetting isSaving to false');
       setIsSaving(false);
-      isSavingRef.current = false;
     }
-  }, [rundownId, updateRundown, saveRundown, canSave, navigate, isNewRundown]);
+  }, [isNewRundown, rundownId, rundownTitle, items, columns, currentRundown, updateRundown, saveRundown, navigate, isSaving]);
+
+  const markAsChanged = useCallback(() => {
+    // Create a data signature to avoid unnecessary saves
+    const currentDataSignature = JSON.stringify({ title: rundownTitle, items, columns });
+    
+    // Only mark as changed if data actually changed
+    if (currentDataSignature === lastSaveDataRef.current) {
+      return;
+    }
+
+    console.log('Auto-save: Data changed, marking as unsaved');
+    setHasUnsavedChanges(true);
+    lastSaveDataRef.current = currentDataSignature;
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new save timeout (2 seconds debounce)
+    saveTimeoutRef.current = setTimeout(() => {
+      performSave();
+    }, 2000);
+  }, [rundownTitle, items, columns, performSave]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
   }, []);
 
-  // Force reset saving state if it gets stuck
+  // Reset saving state if it gets stuck (safety mechanism)
   useEffect(() => {
     if (isSaving) {
-      const timeout = setTimeout(() => {
+      const resetTimeout = setTimeout(() => {
         console.log('Auto-save: Force resetting stuck saving state');
         setIsSaving(false);
-        isSavingRef.current = false;
-      }, 30000); // 30 seconds timeout
-      
-      return () => clearTimeout(timeout);
+      }, 15000); // 15 seconds timeout
+
+      return () => clearTimeout(resetTimeout);
     }
   }, [isSaving]);
 
