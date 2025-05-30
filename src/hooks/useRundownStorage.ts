@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -94,28 +95,31 @@ export const useRundownStorage = () => {
       archived
     })
 
-    // Prepare the update data
+    // Prepare the update data - only include fields that exist in the database
     const updateData: any = {
       title: title,
       items: items,
       updated_at: new Date().toISOString(),
     }
 
-    if (archived !== undefined) {
-      updateData.archived = archived
-    }
+    // Note: archived field is not included because it doesn't exist in the database schema
+    // If archiving is needed, it should be implemented by adding the column to the database first
 
-    console.log('Update payload:', updateData)
+    console.log('Update payload (cleaned):', updateData)
 
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from('rundowns')
       .update(updateData)
       .eq('id', id)
       .eq('user_id', user.id)
+      .select()
 
     if (error) {
       console.error('Database error updating rundown:', {
         error,
+        errorMessage: error.message,
+        errorDetails: error.details,
+        errorHint: error.hint,
         id,
         userId: user.id,
         updateData
@@ -123,13 +127,13 @@ export const useRundownStorage = () => {
       if (!silent) {
         toast({
           title: 'Error',
-          description: 'Failed to update rundown',
+          description: `Failed to update rundown: ${error.message}`,
           variant: 'destructive',
         })
       }
       throw error
     } else {
-      console.log('Successfully updated rundown:', id)
+      console.log('Successfully updated rundown:', { id, updatedData: data })
       if (!silent) {
         const message = archived ? 'Rundown archived successfully!' : 'Rundown updated successfully!'
         toast({

@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js'
 
 // Temporarily hardcoded values - these should come from environment variables
