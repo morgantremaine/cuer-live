@@ -1,15 +1,23 @@
 
 import React, { useState, useRef } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
+import { Separator } from '@/components/ui/separator';
 
 interface ResizableColumnHeaderProps {
   column: Column;
   width: string;
   onWidthChange: (columnId: string, width: number) => void;
   children: React.ReactNode;
+  showLeftSeparator?: boolean;
 }
 
-const ResizableColumnHeader = ({ column, width, onWidthChange, children }: ResizableColumnHeaderProps) => {
+const ResizableColumnHeader = ({ 
+  column, 
+  width, 
+  onWidthChange, 
+  children, 
+  showLeftSeparator = false 
+}: ResizableColumnHeaderProps) => {
   const [isResizing, setIsResizing] = useState(false);
   const startX = useRef(0);
   const startWidth = useRef(0);
@@ -40,12 +48,18 @@ const ResizableColumnHeader = ({ column, width, onWidthChange, children }: Resiz
       className="px-4 py-3 text-left text-sm font-semibold text-white relative select-none"
       style={{ width }}
     >
+      {showLeftSeparator && (
+        <Separator orientation="vertical" className="absolute left-0 top-0 h-full bg-gray-500" />
+      )}
       {children}
       <div 
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 transition-colors"
+        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors flex items-center justify-center"
         onMouseDown={handleMouseDown}
         style={{ backgroundColor: isResizing ? '#60a5fa' : 'transparent' }}
-      />
+      >
+        <div className="w-0.5 h-6 bg-gray-400 opacity-60" />
+      </div>
+      <Separator orientation="vertical" className="absolute right-0 top-0 h-full bg-gray-500" />
     </th>
   );
 };
