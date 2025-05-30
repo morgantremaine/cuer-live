@@ -18,7 +18,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     isInitialized 
   } = useChangeTracking(items, rundownTitle);
 
-  console.log('AutoSave render:', {
+  console.log('🚀 AutoSave render:', {
     itemsCount: items.length,
     title: rundownTitle,
     hasUnsavedChanges,
@@ -29,8 +29,15 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
 
   // Auto-save when there are unsaved changes
   useEffect(() => {
+    console.log('⚡ Auto-save effect triggered:', {
+      hasUnsavedChanges,
+      isInitialized,
+      isSaving,
+      hasUser: !!user
+    });
+
     if (!hasUnsavedChanges || !isInitialized || isSaving || !user) {
-      console.log('Skipping auto-save:', { 
+      console.log('⏸️ Skipping auto-save:', { 
         hasUnsavedChanges, 
         isInitialized, 
         isSaving, 
@@ -39,28 +46,30 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       return;
     }
 
-    console.log('Scheduling auto-save in 2 seconds...');
+    console.log('⏰ Scheduling auto-save in 2 seconds...');
     
     // Clear existing timeout
     if (saveTimeoutRef.current) {
+      console.log('🚫 Clearing existing save timeout');
       clearTimeout(saveTimeoutRef.current);
     }
     
     // Schedule save after 2 seconds
     saveTimeoutRef.current = setTimeout(async () => {
-      console.log('Auto-save timeout triggered, attempting save...');
+      console.log('🎯 Auto-save timeout triggered, attempting save...');
       const success = await performSave(items, rundownTitle);
       if (success) {
-        console.log('Auto-save successful, marking as saved');
+        console.log('✅ Auto-save successful, marking as saved');
         markAsSaved(items, rundownTitle);
       } else {
-        console.log('Auto-save failed, keeping unsaved state');
+        console.log('❌ Auto-save failed, keeping unsaved state');
         setHasUnsavedChanges(true);
       }
     }, 2000);
 
     return () => {
       if (saveTimeoutRef.current) {
+        console.log('🧹 Cleanup: clearing save timeout');
         clearTimeout(saveTimeoutRef.current);
       }
     };

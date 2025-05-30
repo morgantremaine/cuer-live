@@ -29,14 +29,19 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string) =>
   useEffect(() => {
     if (loading || isInitializedRef.current) return;
     
-    console.log('Initializing change tracking baseline...');
+    console.log('🔄 Initializing change tracking baseline...', {
+      isNewRundown,
+      hasCurrentRundown: !!currentRundown,
+      itemsLength: items.length,
+      title: rundownTitle
+    });
     
     if (currentRundown && !isNewRundown) {
       lastSavedDataRef.current = {
         items: currentRundown.items || [],
         title: currentRundown.title || 'Untitled Rundown'
       };
-      console.log('Initialized with existing rundown:', currentRundown.id);
+      console.log('📁 Initialized with existing rundown:', currentRundown.id);
       setHasUnsavedChanges(false);
     } else {
       // For new rundowns, set an empty baseline so any changes will be detected
@@ -44,9 +49,15 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string) =>
         items: [],
         title: 'Live Broadcast Rundown'
       };
-      console.log('Initialized for new rundown with empty baseline');
+      console.log('✨ Initialized for new rundown with empty baseline');
       // For new rundowns, mark as changed if we have any non-default content
       const hasNonDefaultContent = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
+      console.log('🔍 New rundown content check:', {
+        itemsLength: items.length,
+        title: rundownTitle,
+        defaultTitle: 'Live Broadcast Rundown',
+        hasNonDefaultContent
+      });
       setHasUnsavedChanges(hasNonDefaultContent);
     }
     
@@ -55,27 +66,40 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string) =>
 
   // Check for changes using memoized serialization
   useEffect(() => {
-    if (!isInitializedRef.current || !lastSavedDataRef.current) return;
+    if (!isInitializedRef.current || !lastSavedDataRef.current) {
+      console.log('⏸️ Skipping change detection - not initialized or no baseline');
+      return;
+    }
 
     const currentSerialized = serializeData(items, rundownTitle);
     const lastSavedSerialized = serializeData(lastSavedDataRef.current.items, lastSavedDataRef.current.title);
     
     const hasChanges = currentSerialized !== lastSavedSerialized;
     
+    console.log('🔍 Change detection:', {
+      hasChanges,
+      currentHasUnsavedChanges: hasUnsavedChanges,
+      willUpdate: hasChanges !== hasUnsavedChanges,
+      currentItems: items.length,
+      savedItems: lastSavedDataRef.current?.items.length || 0,
+      currentTitle: rundownTitle,
+      savedTitle: lastSavedDataRef.current?.title || 'none'
+    });
+    
     if (hasChanges !== hasUnsavedChanges) {
-      console.log('Change detection:', hasChanges ? 'Changes detected' : 'No changes');
+      console.log('📝 Updating unsaved changes state to:', hasChanges);
       setHasUnsavedChanges(hasChanges);
     }
   }, [items, rundownTitle, hasUnsavedChanges, serializeData]);
 
   const markAsSaved = useCallback((items: RundownItem[], title: string) => {
-    console.log('Marking as saved with items:', items.length, 'title:', title);
+    console.log('✅ Marking as saved with items:', items.length, 'title:', title);
     lastSavedDataRef.current = { items: [...items], title };
     setHasUnsavedChanges(false);
   }, []);
 
   const markAsChanged = useCallback(() => {
-    console.log('Manually marking as changed');
+    console.log('🔄 Manually marking as changed');
     if (!hasUnsavedChanges) {
       setHasUnsavedChanges(true);
     }
