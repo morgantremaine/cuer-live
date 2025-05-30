@@ -36,9 +36,14 @@ const CellRenderer = ({
   const fieldKey = getFieldKey(column);
   const value = getCellValue(column);
 
+  const handleCellClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row selection when clicking on cells
+    onCellClick(item.id, fieldKey);
+  };
+
   if (column.key === 'endTime') {
     return (
-      <td key={column.id} className="px-4 py-2">
+      <td key={column.id} className="px-4 py-2" onClick={handleCellClick}>
         <span 
           className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
           style={{ color: textColor || undefined }}
@@ -51,12 +56,11 @@ const CellRenderer = ({
 
   if (column.key === 'notes' || column.isCustom) {
     return (
-      <td key={column.id} className="px-4 py-2">
+      <td key={column.id} className="px-4 py-2" onClick={handleCellClick}>
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
           value={value}
           onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
-          onClick={() => onCellClick(item.id, fieldKey)}
           onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
           className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
           style={{ color: textColor || undefined }}
@@ -67,13 +71,12 @@ const CellRenderer = ({
   }
 
   return (
-    <td key={column.id} className="px-4 py-2">
+    <td key={column.id} className="px-4 py-2" onClick={handleCellClick}>
       <input
         ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
         type="text"
         value={value}
         onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
-        onClick={() => onCellClick(item.id, fieldKey)}
         onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
         className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm ${
           column.key === 'duration' || column.key === 'startTime' ? 'font-mono' : ''

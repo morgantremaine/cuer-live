@@ -68,14 +68,15 @@ const RegularRow = ({
   const textColor = item.color ? getContrastTextColor(item.color) : '';
 
   const handleRowClick = (e: React.MouseEvent) => {
-    if (onRowSelect) {
+    // Only handle row selection if the click target is the row itself or the row number cell
+    const target = e.target as HTMLElement;
+    const isRowNumberCell = target.closest('td')?.classList.contains('row-number-cell');
+    const isRowElement = target === e.currentTarget;
+    
+    if ((isRowElement || isRowNumberCell) && onRowSelect) {
       e.preventDefault();
       onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
     }
-  };
-
-  const handleCellClick = (itemId: string, field: string) => {
-    onCellClick(itemId, field);
   };
 
   return (
@@ -92,23 +93,22 @@ const RegularRow = ({
       onDrop={(e) => onDrop(e, index)}
     >
       <td 
-        className="px-4 py-2 text-sm font-mono cursor-move" 
+        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
         style={{ color: textColor || undefined }}
       >
         <span>{rowNumber}</span>
       </td>
       {columns.map((column) => (
-        <td key={column.id} onClick={(e) => e.stopPropagation()}>
-          <CellRenderer
-            column={column}
-            item={item}
-            cellRefs={cellRefs}
-            textColor={textColor}
-            onUpdateItem={onUpdateItem}
-            onCellClick={handleCellClick}
-            onKeyDown={onKeyDown}
-          />
-        </td>
+        <CellRenderer
+          key={column.id}
+          column={column}
+          item={item}
+          cellRefs={cellRefs}
+          textColor={textColor}
+          onUpdateItem={onUpdateItem}
+          onCellClick={onCellClick}
+          onKeyDown={onKeyDown}
+        />
       ))}
       <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center space-x-1">
