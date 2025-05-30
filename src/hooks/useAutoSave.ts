@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
@@ -29,32 +29,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     userId: user?.id || 'none'
   });
 
-  // Create a stable save function
-  const executeAutoSave = useCallback(async () => {
-    console.log('🎯 Auto-save timeout triggered, attempting save...');
-    console.log('📤 Saving data:', {
-      itemsCount: items.length,
-      title: rundownTitle,
-      userId: user?.id
-    });
-    
-    try {
-      const success = await performSave(items, rundownTitle);
-      console.log('💾 Save operation result:', success);
-      
-      if (success) {
-        console.log('✅ Auto-save successful, marking as saved');
-        markAsSaved(items, rundownTitle);
-      } else {
-        console.log('❌ Auto-save failed, keeping unsaved state');
-        setHasUnsavedChanges(true);
-      }
-    } catch (error) {
-      console.error('💥 Auto-save threw an error:', error);
-      setHasUnsavedChanges(true);
-    }
-  }, [items, rundownTitle, performSave, markAsSaved, setHasUnsavedChanges, user?.id]);
-
   // Schedule auto-save when data changes
   useEffect(() => {
     if (!hasUnsavedChanges || !isInitialized || isSaving || !user) {
@@ -69,7 +43,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     }
 
     // Create a unique identifier for this save attempt
-    const currentDataSignature = `${items.length}-${rundownTitle}-${Date.now()}`;
+    const currentDataSignature = `${items.length}-${rundownTitle}-${items.map(i => i.id).join(',')}`;
     
     // Only schedule if this is different from the last attempt
     if (lastSaveAttemptRef.current === currentDataSignature) {
@@ -94,14 +68,39 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       clearTimeout(saveTimeoutRef.current);
     }
     
-    // Schedule new save
-    saveTimeoutRef.current = setTimeout(() => {
+    // Schedule new save with the current data captured in closure
+    const currentItems = [...items];
+    const currentTitle = rundownTitle;
+    
+    saveTimeoutRef.current = setTimeout(async () => {
       console.log('⚡ Timeout executing for signature:', currentDataSignature);
-      executeAutoSave();
+      console.log('🎯 Auto-save timeout triggered, attempting save...');
+      console.log('📤 Saving data:', {
+        itemsCount: currentItems.length,
+        title: currentTitle,
+        userId: user?.id
+      });
+      
+      try {
+        const success = await performSave(currentItems, currentTitle);
+        console.log('💾 Save operation result:', success);
+        
+        if (success) {
+          console.log('✅ Auto-save successful, marking as saved');
+          markAsSaved(currentItems, currentTitle);
+        } else {
+          console.log('❌ Auto-save failed, keeping unsaved state');
+          setHasUnsavedChanges(true);
+        }
+      } catch (error) {
+        console.error('💥 Auto-save threw an error:', error);
+        setHasUnsavedChanges(true);
+      }
+      
       saveTimeoutRef.current = null;
     }, 2000);
 
-  }, [hasUnsavedChanges, isInitialized, isSaving, user?.id, executeAutoSave]);
+  }, [hasUnsavedChanges, isInitialized, isSaving, user?.id, items.length, rundownTitle, items.map(i => `${i.id}-${i.name}-${i.startTime}-${i.duration}`).join('|')]);
 
   // Cleanup on unmount only
   useEffect(() => {
@@ -113,9 +112,9 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     };
   }, []);
 
-  const markAsChangedCallback = useCallback(() => {
+  const markAsChangedCallback = () => {
     markAsChanged();
-  }, [markAsChanged]);
+  };
 
   return {
     hasUnsavedChanges,
