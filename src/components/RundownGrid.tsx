@@ -76,7 +76,7 @@ const RundownGrid = () => {
   const {
     showColorPicker,
     handleToggleColorPicker,
-    handleColorSelect
+    handleColorSelect: selectColor
   } = useColorPicker();
 
   const {
@@ -159,7 +159,7 @@ const RundownGrid = () => {
   };
 
   const handleColorSelect = (id: string, color: string) => {
-    handleColorSelect(id, color, updateItem);
+    selectColor(id, color, updateItem);
     setHasUnsavedChanges(true);
   };
 
