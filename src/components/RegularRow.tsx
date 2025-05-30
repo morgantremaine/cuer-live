@@ -66,7 +66,10 @@ const RegularRow = ({
   } else if (isSelected) {
     rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
   } else if (item.color) {
-    rowClass = `hover:opacity-90`;
+    rowClass = `hover:opacity-90 dark:bg-gray-800`;
+  } else {
+    // Ensure proper dark mode background for regular rows
+    rowClass = 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700';
   }
 
   const textColor = item.isFloated ? 'white' : (item.color ? getContrastTextColor(item.color) : '');
@@ -97,13 +100,15 @@ const RegularRow = ({
       onDrop={(e) => onDrop(e, index)}
     >
       <td 
-        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell flex items-center space-x-2" 
+        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
         style={{ color: textColor || undefined, width: '80px' }}
       >
-        {isCurrentlyPlaying && (
-          <Play className="h-6 w-6 text-green-500 fill-green-500" />
-        )}
-        <span>{rowNumber}</span>
+        <div className="flex items-center space-x-2">
+          {isCurrentlyPlaying && (
+            <Play className="h-4 w-4 text-green-500 fill-green-500" />
+          )}
+          <span>{rowNumber}</span>
+        </div>
       </td>
       {columns.map((column) => (
         <CellRenderer
