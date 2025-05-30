@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Play, Edit2, User, LogOut, ArrowLeft } from 'lucide-react';
+import { Edit2, User, LogOut, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import TimezoneSelector from './TimezoneSelector';
@@ -71,7 +70,6 @@ const RundownHeader = ({
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <Play className="h-6 w-6" />
           {isEditingTitle ? (
             <input
               type="text"
