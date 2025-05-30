@@ -1,10 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import RundownHeader from './RundownHeader';
-import RundownToolbar from './RundownToolbar';
-import RundownTable from './RundownTable';
-import ColumnManager from './ColumnManager';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import RundownContainer from './RundownContainer';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useResizableColumns } from '@/hooks/useResizableColumns';
@@ -139,88 +135,57 @@ const RundownGrid = () => {
   const selectedRowId = selectedCount === 1 ? Array.from(selectedRows)[0] : null;
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
-      <div className="max-w-none mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          {/* Sticky header and toolbar */}
-          <div className="sticky top-0 z-10 bg-white dark:bg-gray-800">
-            <RundownHeader 
-              currentTime={currentTime} 
-              timezone={timezone}
-              onTimezoneChange={setTimezone}
-              totalRuntime={calculateTotalRuntime()}
-            />
-            
-            <RundownToolbar
-              onAddRow={() => addRow(calculateEndTime)}
-              onAddHeader={addHeader}
-              onShowColumnManager={() => setShowColumnManager(true)}
-              selectedCount={selectedCount}
-              hasClipboardData={hasClipboardData()}
-              onCopySelectedRows={handleCopySelectedRows}
-              onPasteRows={handlePasteRows}
-              onDeleteSelectedRows={handleDeleteSelectedRows}
-              onClearSelection={clearSelection}
-              selectedRowId={selectedRowId}
-              isPlaying={isPlaying}
-              currentSegmentId={currentSegmentId}
-              timeRemaining={timeRemaining}
-              onPlay={play}
-              onPause={pause}
-              onForward={forward}
-              onBackward={backward}
-            />
-          </div>
-
-          {/* Scrollable table content */}
-          <div className="relative">
-            <ScrollArea className="w-full h-[calc(100vh-200px)]">
-              <div className="min-w-max">
-                <RundownTable
-                  items={items}
-                  visibleColumns={visibleColumns}
-                  currentTime={currentTime}
-                  showColorPicker={showColorPicker}
-                  cellRefs={cellRefs}
-                  selectedRows={selectedRows}
-                  draggedItemIndex={draggedItemIndex}
-                  currentSegmentId={currentSegmentId}
-                  getColumnWidth={getColumnWidth}
-                  updateColumnWidth={updateColumnWidth}
-                  getRowNumber={getRowNumber}
-                  getRowStatus={getRowStatus}
-                  calculateHeaderDuration={calculateHeaderDuration}
-                  onUpdateItem={updateItem}
-                  onCellClick={handleCellClick}
-                  onKeyDown={handleKeyDown}
-                  onToggleColorPicker={handleToggleColorPicker}
-                  onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
-                  onDeleteRow={deleteRow}
-                  onToggleFloat={toggleFloatRow}
-                  onRowSelect={handleRowSelection}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                />
-              </div>
-              <ScrollBar orientation="horizontal" />
-              <ScrollBar orientation="vertical" />
-            </ScrollArea>
-          </div>
-        </div>
-      </div>
-
-      {showColumnManager && (
-        <ColumnManager
-          columns={columns}
-          onAddColumn={handleAddColumn}
-          onReorderColumns={handleReorderColumns}
-          onDeleteColumn={handleDeleteColumnWithCleanup}
-          onToggleColumnVisibility={handleToggleColumnVisibility}
-          onClose={() => setShowColumnManager(false)}
-        />
-      )}
-    </div>
+    <RundownContainer
+      currentTime={currentTime}
+      timezone={timezone}
+      onTimezoneChange={setTimezone}
+      totalRuntime={calculateTotalRuntime()}
+      showColumnManager={showColumnManager}
+      setShowColumnManager={setShowColumnManager}
+      items={items}
+      visibleColumns={visibleColumns}
+      columns={columns}
+      showColorPicker={showColorPicker}
+      cellRefs={cellRefs}
+      selectedRows={selectedRows}
+      draggedItemIndex={draggedItemIndex}
+      currentSegmentId={currentSegmentId}
+      getColumnWidth={getColumnWidth}
+      updateColumnWidth={updateColumnWidth}
+      getRowNumber={getRowNumber}
+      getRowStatus={getRowStatus}
+      calculateHeaderDuration={calculateHeaderDuration}
+      onUpdateItem={updateItem}
+      onCellClick={handleCellClick}
+      onKeyDown={handleKeyDown}
+      onToggleColorPicker={handleToggleColorPicker}
+      onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
+      onDeleteRow={deleteRow}
+      onToggleFloat={toggleFloatRow}
+      onRowSelect={handleRowSelection}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onAddRow={() => addRow(calculateEndTime)}
+      onAddHeader={addHeader}
+      selectedCount={selectedCount}
+      hasClipboardData={hasClipboardData()}
+      onCopySelectedRows={handleCopySelectedRows}
+      onPasteRows={handlePasteRows}
+      onDeleteSelectedRows={handleDeleteSelectedRows}
+      onClearSelection={clearSelection}
+      selectedRowId={selectedRowId}
+      isPlaying={isPlaying}
+      timeRemaining={timeRemaining}
+      onPlay={play}
+      onPause={pause}
+      onForward={forward}
+      onBackward={backward}
+      handleAddColumn={handleAddColumn}
+      handleReorderColumns={handleReorderColumns}
+      handleDeleteColumnWithCleanup={handleDeleteColumnWithCleanup}
+      handleToggleColumnVisibility={handleToggleColumnVisibility}
+    />
   );
 };
 
