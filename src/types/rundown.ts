@@ -14,7 +14,9 @@ export interface RundownItem {
   // Additional properties used by components
   customFields?: { [key: string]: string };
   segmentName?: string;
-  isFloated?: boolean;
-  isHeader?: boolean;
   status?: 'upcoming' | 'current' | 'completed';
 }
+
+// Helper type guards for better type safety
+export const isHeaderItem = (item: RundownItem): boolean => item.type === 'header';
+export const isRegularItem = (item: RundownItem): boolean => item.type === 'regular';

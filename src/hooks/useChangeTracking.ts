@@ -1,20 +1,29 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { RundownItem } from './useRundownItems';
+
+interface SavedData {
+  items: RundownItem[];
+  title: string;
+}
 
 export const useChangeTracking = (items: RundownItem[], rundownTitle: string) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
   
-  const lastSavedDataRef = useRef<{ items: RundownItem[], title: string } | null>(null);
+  const lastSavedDataRef = useRef<SavedData | null>(null);
   const isInitializedRef = useRef(false);
 
   // Find current rundown
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
   const isNewRundown = !rundownId;
+
+  const serializeData = useCallback((items: RundownItem[], title: string): string => {
+    return JSON.stringify({ items, title });
+  }, []);
 
   // Initialize the baseline when component mounts
   useEffect(() => {
@@ -37,39 +46,34 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string) =>
     setHasUnsavedChanges(false);
   }, [currentRundown, isNewRundown, loading]);
 
-  // Check for changes and mark as unsaved
+  // Check for changes using memoized serialization
   useEffect(() => {
     if (!isInitializedRef.current) return;
 
-    const currentData = { items, title: rundownTitle };
+    const currentSerialized = serializeData(items, rundownTitle);
+    const lastSavedSerialized = lastSavedDataRef.current 
+      ? serializeData(lastSavedDataRef.current.items, lastSavedDataRef.current.title)
+      : null;
     
-    // Compare with last saved data
-    const hasChanges = lastSavedDataRef.current === null || 
-      JSON.stringify(lastSavedDataRef.current) !== JSON.stringify(currentData);
-    
-    console.log('Checking for changes:', {
-      hasChanges,
-      lastSaved: lastSavedDataRef.current,
-      current: currentData
-    });
+    const hasChanges = lastSavedSerialized === null || currentSerialized !== lastSavedSerialized;
     
     if (hasChanges && !hasUnsavedChanges) {
       console.log('Changes detected - marking as unsaved');
       setHasUnsavedChanges(true);
     }
-  }, [items, rundownTitle, hasUnsavedChanges]);
+  }, [items, rundownTitle, hasUnsavedChanges, serializeData]);
 
-  const markAsSaved = (items: RundownItem[], title: string) => {
+  const markAsSaved = useCallback((items: RundownItem[], title: string) => {
     lastSavedDataRef.current = { items, title };
     setHasUnsavedChanges(false);
-  };
+  }, []);
 
-  const markAsChanged = () => {
+  const markAsChanged = useCallback(() => {
     console.log('Manually marking as changed');
     if (!hasUnsavedChanges) {
       setHasUnsavedChanges(true);
     }
-  };
+  }, [hasUnsavedChanges]);
 
   return {
     hasUnsavedChanges,

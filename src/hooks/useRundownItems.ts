@@ -4,10 +4,17 @@ import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownItemActions } from './useRundownItemActions';
 import { useRundownCalculations } from './useRundownCalculations';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export type { RundownItem } from '@/types/rundown';
+
+const normalizeRundownItem = (item: RundownItem): RundownItem => ({
+  ...item,
+  status: item.status || 'upcoming',
+  customFields: item.customFields || {},
+  segmentName: isHeaderItem(item) ? item.segmentName || item.rowNumber : item.segmentName,
+});
 
 export const useRundownItems = () => {
   const { id: rundownId } = useParams<{ id: string }>();
@@ -23,18 +30,10 @@ export const useRundownItems = () => {
       console.log('Loading rundown with ID:', rundownId);
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       
-      if (existingRundown && existingRundown.items) {
+      if (existingRundown?.items) {
         console.log('Found existing rundown, loading items:', existingRundown.items.length);
-        // Ensure loaded items have all required properties with proper defaults
-        const itemsWithDefaults = existingRundown.items.map(item => ({
-          ...item,
-          isHeader: item.type === 'header',
-          isFloated: item.isFloated || false,
-          segmentName: item.segmentName || (item.type === 'header' ? item.rowNumber : undefined),
-          status: item.status || 'upcoming',
-          customFields: item.customFields || {},
-        }));
-        setItems(itemsWithDefaults);
+        const normalizedItems = existingRundown.items.map(normalizeRundownItem);
+        setItems(normalizedItems);
       } else {
         console.log('Rundown not found or has no items, keeping default');
       }

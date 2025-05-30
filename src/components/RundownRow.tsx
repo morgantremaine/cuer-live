@@ -2,7 +2,7 @@
 import React from 'react';
 import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownRowProps {
@@ -32,7 +32,7 @@ interface RundownRowProps {
 }
 
 const RundownRow = (props: RundownRowProps) => {
-  if (props.item.isHeader) {
+  if (isHeaderItem(props.item)) {
     return (
       <HeaderRow 
         {...props} 

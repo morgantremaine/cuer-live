@@ -2,13 +2,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
-import { useToast } from './use-toast';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
 export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { isSaving, performSave } = useAutoSaveOperations();
@@ -31,18 +29,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
 
   // Auto-save when there are unsaved changes
   useEffect(() => {
-    if (!hasUnsavedChanges || !isInitialized || isSaving) {
-      return;
-    }
-
-    // Check if user is logged in before attempting to save
-    if (!user) {
-      console.warn('Cannot save: user not logged in');
-      toast({
-        title: 'Authentication Required',
-        description: 'Please log in to save your changes',
-        variant: 'destructive',
-      });
+    if (!hasUnsavedChanges || !isInitialized || isSaving || !user) {
       return;
     }
 
@@ -69,7 +56,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [hasUnsavedChanges, user, isInitialized, isSaving, items, rundownTitle, performSave, markAsSaved, setHasUnsavedChanges, toast]);
+  }, [hasUnsavedChanges, user, isInitialized, isSaving, items, rundownTitle, performSave, markAsSaved, setHasUnsavedChanges]);
 
   // Cleanup on unmount
   useEffect(() => {
