@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContainer from './RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -19,8 +20,8 @@ const RundownGrid = () => {
     calculateEndTime: state.calculateEndTime,
     selectColor: state.selectColor,
     markAsChanged: () => {
-      console.log('🔔 RundownGrid: markAsChanged called');
-      state.markAsChanged();
+      // No auto-save logic for now
+      console.log('🔔 RundownGrid: markAsChanged called (no-op)');
     },
     selectedRows: state.selectedRows,
     clearSelection: state.clearSelection,
@@ -36,7 +37,6 @@ const RundownGrid = () => {
   const selectedRowId = selectedCount === 1 ? Array.from(state.selectedRows)[0] : null;
 
   console.log('🏗️ RundownGrid render', { 
-    hasUnsavedChanges: state.hasUnsavedChanges,
     itemsCount: state.items.length,
     title: state.rundownTitle
   });
@@ -91,25 +91,21 @@ const RundownGrid = () => {
       handleAddColumn={(name: string) => {
         console.log('🔔 RundownGrid: Adding column');
         state.handleAddColumn(name);
-        state.markAsChanged();
       }}
       handleReorderColumns={(columns) => {
         console.log('🔔 RundownGrid: Reordering columns');
         state.handleReorderColumns(columns);
-        state.markAsChanged();
       }}
       handleDeleteColumnWithCleanup={handlers.handleDeleteColumnWithCleanup}
       handleToggleColumnVisibility={(columnId: string) => {
         console.log('🔔 RundownGrid: Toggling column visibility');
         state.handleToggleColumnVisibility(columnId);
-        state.markAsChanged();
       }}
       handleLoadLayout={(layoutColumns) => {
         console.log('🔔 RundownGrid: Loading layout');
         state.handleLoadLayout(layoutColumns);
-        state.markAsChanged();
       }}
-      hasUnsavedChanges={state.hasUnsavedChanges}
+      hasUnsavedChanges={false}
       rundownTitle={state.rundownTitle}
       onTitleChange={handlers.handleTitleChange}
     />

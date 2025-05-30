@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -10,7 +11,6 @@ import { useColorPicker } from '@/hooks/useColorPicker';
 import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
-import { useSimpleAutoSave } from '@/hooks/useSimpleAutoSave';
 import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 import { useRundownTimers } from '@/hooks/useRundownTimers';
 
@@ -46,15 +46,6 @@ export const useRundownGridState = () => {
     handleToggleColumnVisibility,
     handleLoadLayout
   } = useColumnsManager();
-
-  // Simple auto-save hook - this should be the ONLY auto-save logic
-  const { hasUnsavedChanges, markAsChanged, lastSaved, isSaving } = useSimpleAutoSave(items, rundownTitle, columns);
-
-  console.log('🔄 useRundownGridState: Auto-save state', {
-    hasUnsavedChanges,
-    lastSaved: lastSaved?.toISOString(),
-    isSaving
-  });
 
   const {
     columnWidths,
@@ -119,8 +110,7 @@ export const useRundownGridState = () => {
     rundownId,
     title: rundownTitle,
     itemsCount: items.length,
-    columnsCount: columns.length,
-    hasUnsavedChanges
+    columnsCount: columns.length
   });
 
   return {
@@ -147,12 +137,6 @@ export const useRundownGridState = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    
-    // Simple auto-save state
-    hasUnsavedChanges,
-    markAsChanged,
-    lastSaved,
-    isSaving,
     
     // Columns state
     columns,
