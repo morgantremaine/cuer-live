@@ -71,7 +71,7 @@ const RundownToolbar = ({
   return (
     <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
-        <Button onClick={onAddRow} className="flex items-center space-x-2">
+        <Button onClick={onAddRow} variant="outline" className="flex items-center space-x-2">
           <Plus className="h-4 w-4" />
           <span>Add Segment</span>
         </Button>
