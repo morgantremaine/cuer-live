@@ -43,7 +43,8 @@ export const useRundownGridState = () => {
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
-    handleToggleColumnVisibility
+    handleToggleColumnVisibility,
+    handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
   const {
@@ -142,6 +143,7 @@ export const useRundownGridState = () => {
     handleReorderColumns,
     handleDeleteColumn,
     handleToggleColumnVisibility,
+    handleLoadLayout,
     
     // Resizable columns state
     columnWidths,

@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Column } from '@/hooks/useColumnsManager'
 import { useToast } from '@/hooks/use-toast'
+import { Column } from '@/hooks/useColumnsManager'
 
-interface SavedColumnLayout {
+interface ColumnLayout {
   id: string
   name: string
   columns: Column[]
@@ -15,7 +15,7 @@ interface SavedColumnLayout {
 }
 
 export const useColumnLayoutStorage = () => {
-  const [savedLayouts, setSavedLayouts] = useState<SavedColumnLayout[]>([])
+  const [savedLayouts, setSavedLayouts] = useState<ColumnLayout[]>([])
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
@@ -45,15 +45,7 @@ export const useColumnLayoutStorage = () => {
   const saveLayout = async (name: string, columns: Column[], isDefault = false) => {
     if (!user) return
 
-    // If setting as default, remove default from others
-    if (isDefault) {
-      await supabase
-        .from('column_layouts')
-        .update({ is_default: false })
-        .eq('user_id', user.id)
-    }
-
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('column_layouts')
       .insert({
         user_id: user.id,
@@ -61,6 +53,8 @@ export const useColumnLayoutStorage = () => {
         columns,
         is_default: isDefault,
       })
+      .select()
+      .single()
 
     if (error) {
       toast({
@@ -68,35 +62,15 @@ export const useColumnLayoutStorage = () => {
         description: 'Failed to save column layout',
         variant: 'destructive',
       })
+      throw error
     } else {
       toast({
         title: 'Success',
         description: 'Column layout saved successfully!',
       })
       loadLayouts()
+      return data
     }
-  }
-
-  const loadLayout = async (id: string): Promise<Column[] | null> => {
-    if (!user) return null
-
-    const { data, error } = await supabase
-      .from('column_layouts')
-      .select('columns')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single()
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load column layout',
-        variant: 'destructive',
-      })
-      return null
-    }
-
-    return data.columns
   }
 
   const deleteLayout = async (id: string) => {
@@ -123,10 +97,6 @@ export const useColumnLayoutStorage = () => {
     }
   }
 
-  const getDefaultLayout = (): SavedColumnLayout | null => {
-    return savedLayouts.find(layout => layout.is_default) || null
-  }
-
   useEffect(() => {
     if (user) {
       loadLayouts()
@@ -137,9 +107,7 @@ export const useColumnLayoutStorage = () => {
     savedLayouts,
     loading,
     saveLayout,
-    loadLayout,
     deleteLayout,
-    getDefaultLayout,
     loadLayouts,
   }
 }

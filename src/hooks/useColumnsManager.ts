@@ -69,12 +69,20 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   };
 
+  const handleLoadLayout = (layoutColumns: Column[]) => {
+    setColumns(layoutColumns);
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  };
+
   return {
     columns,
     visibleColumns,
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
-    handleToggleColumnVisibility
+    handleToggleColumnVisibility,
+    handleLoadLayout
   };
 };

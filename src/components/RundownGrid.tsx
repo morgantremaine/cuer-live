@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContainer from './RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -97,6 +96,11 @@ const RundownGrid = () => {
       handleToggleColumnVisibility={(columnId: string) => {
         console.log('Toggling column visibility:', columnId);
         state.handleToggleColumnVisibility(columnId);
+        state.markAsChanged();
+      }}
+      handleLoadLayout={(layoutColumns) => {
+        console.log('Loading layout');
+        state.handleLoadLayout(layoutColumns);
         state.markAsChanged();
       }}
       hasUnsavedChanges={state.hasUnsavedChanges}

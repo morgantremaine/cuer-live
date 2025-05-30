@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { X, Plus, GripVertical, Trash2, Eye, EyeOff } from 'lucide-react';
+import { X, Plus, GripVertical, Trash2, Eye, EyeOff, Save, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
 interface Column {
   id: string;
@@ -19,6 +20,7 @@ interface ColumnManagerProps {
   onReorderColumns: (columns: Column[]) => void;
   onDeleteColumn: (columnId: string) => void;
   onToggleColumnVisibility: (columnId: string) => void;
+  onLoadLayout: (columns: Column[]) => void;
   onClose: () => void;
 }
 
@@ -28,16 +30,39 @@ const ColumnManager = ({
   onReorderColumns, 
   onDeleteColumn, 
   onToggleColumnVisibility,
+  onLoadLayout,
   onClose 
 }: ColumnManagerProps) => {
   const [newColumnName, setNewColumnName] = useState('');
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
+  const [layoutName, setLayoutName] = useState('');
+  const [showSaveLayout, setShowSaveLayout] = useState(false);
+  const [showLoadLayout, setShowLoadLayout] = useState(false);
+  
+  const { savedLayouts, loading, saveLayout, deleteLayout } = useColumnLayoutStorage();
 
   const handleAddColumn = () => {
     if (newColumnName.trim()) {
       onAddColumn(newColumnName.trim());
       setNewColumnName('');
     }
+  };
+
+  const handleSaveLayout = async () => {
+    if (layoutName.trim()) {
+      try {
+        await saveLayout(layoutName.trim(), columns);
+        setLayoutName('');
+        setShowSaveLayout(false);
+      } catch (error) {
+        // Error handled by the hook
+      }
+    }
+  };
+
+  const handleLoadLayout = (layout: any) => {
+    onLoadLayout(layout.columns);
+    setShowLoadLayout(false);
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -79,6 +104,80 @@ const ColumnManager = ({
         </div>
         
         <div className="p-4 space-y-4">
+          {/* Layout Management */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Layouts</h3>
+            <div className="flex space-x-2">
+              <Button 
+                onClick={() => setShowSaveLayout(!showSaveLayout)} 
+                variant="outline" 
+                size="sm"
+                className="flex items-center space-x-1"
+              >
+                <Save className="h-3 w-3" />
+                <span>Save Layout</span>
+              </Button>
+              <Button 
+                onClick={() => setShowLoadLayout(!showLoadLayout)} 
+                variant="outline" 
+                size="sm"
+                className="flex items-center space-x-1"
+              >
+                <FolderOpen className="h-3 w-3" />
+                <span>Load Layout</span>
+              </Button>
+            </div>
+
+            {showSaveLayout && (
+              <div className="flex space-x-2 mt-2">
+                <input
+                  type="text"
+                  value={layoutName}
+                  onChange={(e) => setLayoutName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveLayout()}
+                  placeholder="Layout name"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                />
+                <Button onClick={handleSaveLayout} size="sm">
+                  Save
+                </Button>
+              </div>
+            )}
+
+            {showLoadLayout && (
+              <div className="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
+                {loading ? (
+                  <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading...</div>
+                ) : savedLayouts.length === 0 ? (
+                  <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No saved layouts</div>
+                ) : (
+                  savedLayouts.map((layout) => (
+                    <div
+                      key={layout.id}
+                      className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <button
+                        onClick={() => handleLoadLayout(layout)}
+                        className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {layout.name}
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteLayout(layout.id)}
+                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Add New Column */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">Add New Column</h3>
             <div className="flex space-x-2">
@@ -96,6 +195,7 @@ const ColumnManager = ({
             </div>
           </div>
 
+          {/* Column Order & Visibility */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Order & Visibility</h3>
             <div className="space-y-1 max-h-64 overflow-y-auto">

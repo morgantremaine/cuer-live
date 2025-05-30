@@ -56,6 +56,7 @@ interface RundownContainerProps {
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
+  handleLoadLayout: (layoutColumns: Column[]) => void;
   hasUnsavedChanges: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
@@ -185,6 +186,9 @@ const RundownContainer = ({
           onReorderColumns={handleReorderColumns}
           onDeleteColumn={handleDeleteColumnWithCleanup}
           onToggleColumnVisibility={handleToggleColumnVisibility}
+          onLoadLayout={(layoutColumns) => {
+            handleReorderColumns(layoutColumns);
+          }}
           onClose={() => setShowColumnManager(false)}
         />
       )}
