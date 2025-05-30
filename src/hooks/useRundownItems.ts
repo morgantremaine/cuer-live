@@ -10,6 +10,7 @@ export interface RundownItem {
   status: 'upcoming' | 'current' | 'completed';
   color?: string;
   isHeader?: boolean;
+  isFloated?: boolean;
   customFields?: { [key: string]: string };
 }
 
@@ -54,6 +55,41 @@ export const useRundownItems = () => {
     }
   ]);
 
+  const timeToSeconds = (timeStr: string) => {
+    if (!timeStr) return 0;
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
+  };
+
+  const secondsToTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const calculateTotalRuntime = () => {
+    const totalSeconds = items
+      .filter(item => !item.isHeader && !item.isFloated && item.duration)
+      .reduce((total, item) => total + timeToSeconds(item.duration), 0);
+    return secondsToTime(totalSeconds);
+  };
+
+  const calculateHeaderDuration = (headerIndex: number) => {
+    const nextHeaderIndex = items.findIndex((item, index) => 
+      index > headerIndex && item.isHeader
+    );
+    
+    const endIndex = nextHeaderIndex === -1 ? items.length : nextHeaderIndex;
+    const headerItems = items.slice(headerIndex + 1, endIndex);
+    
+    const totalSeconds = headerItems
+      .filter(item => !item.isHeader && !item.isFloated && item.duration)
+      .reduce((total, item) => total + timeToSeconds(item.duration), 0);
+    
+    return secondsToTime(totalSeconds);
+  };
+
   const updateItem = (id: string, field: string, value: string) => {
     setItems(prev => prev.map(item => {
       if (item.id === id) {
@@ -69,6 +105,12 @@ export const useRundownItems = () => {
       }
       return item;
     }));
+  };
+
+  const toggleFloatRow = (id: string) => {
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, isFloated: !item.isFloated } : item
+    ));
   };
 
   const addRow = (calculateEndTime: (startTime: string, duration: string) => string) => {
@@ -170,6 +212,9 @@ export const useRundownItems = () => {
     addHeader,
     deleteRow,
     deleteMultipleRows,
-    getRowNumber
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration
   };
 };

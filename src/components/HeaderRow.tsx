@@ -11,6 +11,7 @@ interface HeaderRowProps {
   rowNumber: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
+  headerDuration: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -19,6 +20,7 @@ interface HeaderRowProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   isDragging: boolean;
+  getColumnWidth: (column: Column) => string;
 }
 
 const HeaderRow = ({
@@ -27,6 +29,7 @@ const HeaderRow = ({
   rowNumber,
   cellRefs,
   columns,
+  headerDuration,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -34,7 +37,8 @@ const HeaderRow = ({
   onDragStart,
   onDragOver,
   onDrop,
-  isDragging
+  isDragging,
+  getColumnWidth
 }: HeaderRowProps) => {
   const rowClass = isDragging 
     ? 'bg-blue-100 dark:bg-blue-900 opacity-50'
@@ -48,25 +52,28 @@ const HeaderRow = ({
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, index)}
     >
-      <td className="px-4 py-2 text-sm text-gray-300 dark:text-gray-400 font-mono">
+      <td className="px-4 py-2 text-sm text-gray-300 dark:text-gray-400 font-mono" style={{ width: '60px' }}>
         <span>{rowNumber}</span>
       </td>
-      <td colSpan={columns.length} className="px-4 py-3">
+      <td className="px-4 py-3" style={{ width: getColumnWidth(columns[0]) }}>
         <div className="flex items-center space-x-3">
           <span className="text-xl font-bold text-white">{item.segmentName}</span>
-          <input
-            ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
-            type="text"
-            value={item.notes}
-            onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
-            onClick={() => onCellClick(item.id, 'notes')}
-            onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-            className="flex-1 border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm"
-            placeholder="Header description..."
-          />
+          <span className="text-sm text-gray-300 font-mono">({headerDuration})</span>
         </div>
       </td>
-      <td className="px-4 py-2">
+      <td colSpan={columns.length - 1} className="px-4 py-3">
+        <input
+          ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
+          type="text"
+          value={item.notes}
+          onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
+          onClick={() => onCellClick(item.id, 'notes')}
+          onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
+          className="w-full border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm"
+          placeholder="Header description..."
+        />
+      </td>
+      <td className="px-4 py-2" style={{ width: '120px' }}>
         <Button
           variant="ghost"
           size="sm"

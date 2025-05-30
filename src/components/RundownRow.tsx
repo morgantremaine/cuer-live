@@ -14,25 +14,38 @@ interface RundownRowProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
   isSelected?: boolean;
+  headerDuration?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
+  onToggleFloat?: (id: string) => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   isDragging: boolean;
+  getColumnWidth: (column: Column) => string;
 }
 
 const RundownRow = (props: RundownRowProps) => {
   if (props.item.isHeader) {
-    return <HeaderRow {...props} />;
+    return (
+      <HeaderRow 
+        {...props} 
+        headerDuration={props.headerDuration || ''}
+      />
+    );
   }
 
-  return <RegularRow {...props} />;
+  return (
+    <RegularRow 
+      {...props} 
+      onToggleFloat={props.onToggleFloat || (() => {})}
+    />
+  );
 };
 
 export default RundownRow;

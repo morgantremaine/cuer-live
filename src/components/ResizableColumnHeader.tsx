@@ -1,0 +1,53 @@
+
+import React, { useState, useRef } from 'react';
+import { Column } from '@/hooks/useColumnsManager';
+
+interface ResizableColumnHeaderProps {
+  column: Column;
+  width: string;
+  onWidthChange: (columnId: string, width: number) => void;
+  children: React.ReactNode;
+}
+
+const ResizableColumnHeader = ({ column, width, onWidthChange, children }: ResizableColumnHeaderProps) => {
+  const [isResizing, setIsResizing] = useState(false);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    startX.current = e.clientX;
+    startWidth.current = parseInt(width);
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const diff = e.clientX - startX.current;
+      const newWidth = Math.max(80, startWidth.current + diff); // Minimum width of 80px
+      onWidthChange(column.id, newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  return (
+    <th 
+      className="px-4 py-3 text-left text-sm font-semibold text-white relative select-none"
+      style={{ width }}
+    >
+      {children}
+      <div 
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 transition-colors"
+        onMouseDown={handleMouseDown}
+        style={{ backgroundColor: isResizing ? '#60a5fa' : 'transparent' }}
+      />
+    </th>
+  );
+};
+
+export default ResizableColumnHeader;

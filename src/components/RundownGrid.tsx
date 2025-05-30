@@ -5,9 +5,11 @@ import RundownHeader from './RundownHeader';
 import RundownRow from './RundownRow';
 import RundownFooter from './RundownFooter';
 import ColumnManager from './ColumnManager';
+import ResizableColumnHeader from './ResizableColumnHeader';
 import ThemeToggle from './ThemeToggle';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
+import { useResizableColumns } from '@/hooks/useResizableColumns';
 import { useCellNavigation } from '@/hooks/useCellNavigation';
 import { useDragAndDrop } from '@/hooks/useDragAndDrop';
 import { useTimeCalculations } from '@/hooks/useTimeCalculations';
@@ -17,6 +19,7 @@ import { useClipboard } from '@/hooks/useClipboard';
 
 const RundownGrid = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
 
   const {
@@ -28,7 +31,10 @@ const RundownGrid = () => {
     deleteRow,
     deleteMultipleRows,
     addMultipleRows,
-    getRowNumber
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration
   } = useRundownItems();
 
   const {
@@ -39,6 +45,12 @@ const RundownGrid = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility
   } = useColumnsManager();
+
+  const {
+    columnWidths,
+    updateColumnWidth,
+    getColumnWidth
+  } = useResizableColumns(visibleColumns);
 
   const {
     selectedCell,
@@ -120,10 +132,12 @@ const RundownGrid = () => {
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-            <RundownHeader currentTime={currentTime} />
-            <ThemeToggle />
-          </div>
+          <RundownHeader 
+            currentTime={currentTime} 
+            timezone={timezone}
+            onTimezoneChange={setTimezone}
+            totalRuntime={calculateTotalRuntime()}
+          />
           
           <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
             <div className="flex space-x-2">
@@ -162,19 +176,25 @@ const RundownGrid = () => {
                 </Button>
               </div>
             )}
+            <ThemeToggle />
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-700 dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-600">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white w-8">#</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '60px' }}>#</th>
                   {visibleColumns.map((column) => (
-                    <th key={column.id} className={`px-4 py-3 text-left text-sm font-semibold text-white ${column.width}`}>
+                    <ResizableColumnHeader
+                      key={column.id}
+                      column={column}
+                      width={getColumnWidth(column)}
+                      onWidthChange={updateColumnWidth}
+                    >
                       {column.name}
-                    </th>
+                    </ResizableColumnHeader>
                   ))}
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white w-24">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '120px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -189,17 +209,20 @@ const RundownGrid = () => {
                     cellRefs={cellRefs}
                     columns={visibleColumns}
                     isSelected={selectedRows.has(item.id)}
+                    headerDuration={item.isHeader ? calculateHeaderDuration(index) : ''}
                     onUpdateItem={updateItem}
                     onCellClick={handleCellClick}
                     onKeyDown={handleKeyDown}
                     onToggleColorPicker={handleToggleColorPicker}
                     onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
                     onDeleteRow={deleteRow}
+                    onToggleFloat={toggleFloatRow}
                     onRowSelect={handleRowSelection}
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     isDragging={draggedItemIndex === index}
+                    getColumnWidth={getColumnWidth}
                   />
                 ))}
               </tbody>

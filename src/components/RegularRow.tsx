@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Trash2, Copy, Clipboard } from 'lucide-react';
+import { Trash2, Copy, Clipboard, Anchor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ColorPicker from './ColorPicker';
 import CellRenderer from './CellRenderer';
@@ -23,11 +23,13 @@ interface RegularRowProps {
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
+  onToggleFloat: (id: string) => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   isDragging: boolean;
+  getColumnWidth: (column: Column) => string;
 }
 
 const RegularRow = ({
@@ -45,16 +47,20 @@ const RegularRow = ({
   onToggleColorPicker,
   onColorSelect,
   onDeleteRow,
+  onToggleFloat,
   onRowSelect,
   onDragStart,
   onDragOver,
   onDrop,
-  isDragging
+  isDragging,
+  getColumnWidth
 }: RegularRowProps) => {
   let rowClass = 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800';
   
   if (isDragging) {
     rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
+  } else if (item.isFloated) {
+    rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
   } else if (isSelected) {
     rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
   } else if (item.color) {
@@ -65,7 +71,7 @@ const RegularRow = ({
     rowClass = 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400';
   }
 
-  const textColor = item.color ? getContrastTextColor(item.color) : '';
+  const textColor = item.isFloated ? 'white' : (item.color ? getContrastTextColor(item.color) : '');
 
   const handleRowClick = (e: React.MouseEvent) => {
     // Only handle row selection if the click target is the row itself or the row number cell
@@ -83,7 +89,7 @@ const RegularRow = ({
     <tr 
       className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-pointer select-none`}
       style={{ 
-        backgroundColor: item.color || undefined,
+        backgroundColor: item.isFloated ? '#991b1b' : (item.color || undefined),
         color: textColor || undefined
       }}
       draggable
@@ -94,7 +100,7 @@ const RegularRow = ({
     >
       <td 
         className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
-        style={{ color: textColor || undefined }}
+        style={{ color: textColor || undefined, width: '60px' }}
       >
         <span>{rowNumber}</span>
       </td>
@@ -108,10 +114,21 @@ const RegularRow = ({
           onUpdateItem={onUpdateItem}
           onCellClick={onCellClick}
           onKeyDown={onKeyDown}
+          width={getColumnWidth(column)}
         />
       ))}
-      <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
+      <td className="px-4 py-2" onClick={(e) => e.stopPropagation()} style={{ width: '120px' }}>
         <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleFloat(item.id)}
+            className={`${item.isFloated ? 'text-white hover:bg-red-700' : 'text-gray-500 hover:text-red-500'} hover:bg-red-50 dark:hover:bg-red-900`}
+            title={item.isFloated ? 'Unfloat row' : 'Float row'}
+          >
+            <Anchor className="h-4 w-4" />
+          </Button>
+          
           <ColorPicker
             itemId={item.id}
             showColorPicker={showColorPicker}

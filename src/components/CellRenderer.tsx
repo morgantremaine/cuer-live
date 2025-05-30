@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -11,6 +10,7 @@ interface CellRendererProps {
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  width?: string;
 }
 
 const CellRenderer = ({
@@ -20,7 +20,8 @@ const CellRenderer = ({
   textColor,
   onUpdateItem,
   onCellClick,
-  onKeyDown
+  onKeyDown,
+  width
 }: CellRendererProps) => {
   const getCellValue = (column: Column) => {
     if (column.isCustom) {
@@ -43,7 +44,7 @@ const CellRenderer = ({
 
   if (column.key === 'endTime') {
     return (
-      <td key={column.id} className="px-4 py-2" onClick={handleCellClick}>
+      <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
         <span 
           className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
           style={{ color: textColor || undefined }}
@@ -56,7 +57,7 @@ const CellRenderer = ({
 
   if (column.key === 'notes' || column.isCustom) {
     return (
-      <td key={column.id} className="px-4 py-2" onClick={handleCellClick}>
+      <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
           value={value}
@@ -71,7 +72,7 @@ const CellRenderer = ({
   }
 
   return (
-    <td key={column.id} className="px-4 py-2" onClick={handleCellClick}>
+    <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
       <input
         ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
         type="text"
