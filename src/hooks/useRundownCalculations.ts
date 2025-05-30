@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -7,19 +6,41 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     const item = items[index];
     if (!item) return '1';
     
-    // For headers, use their segmentName or rowNumber
+    // For headers, return their segment name (A, B, C, etc.)
     if (item.type === 'header' || item.isHeader) {
       return item.segmentName || item.rowNumber || 'A';
     }
     
-    // For regular items, count only regular items before this one
-    let regularCount = 0;
-    for (let i = 0; i < index; i++) {
-      if (items[i].type === 'regular' && !items[i].isHeader) {
-        regularCount++;
+    // For regular items, find the current segment and count within that segment
+    let currentSegment = 'A';
+    let regularCountInSegment = 0;
+    
+    // Go backwards to find the most recent header
+    for (let i = index - 1; i >= 0; i--) {
+      if (items[i].type === 'header' || items[i].isHeader) {
+        currentSegment = items[i].segmentName || items[i].rowNumber || 'A';
+        break;
       }
     }
-    return String(regularCount + 1);
+    
+    // Count regular items in the current segment up to this index
+    let segmentStartIndex = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type === 'header' || items[i].isHeader) {
+        if ((items[i].segmentName || items[i].rowNumber) === currentSegment) {
+          segmentStartIndex = i + 1;
+          break;
+        }
+      }
+    }
+    
+    for (let i = segmentStartIndex; i < index; i++) {
+      if (items[i].type === 'regular' && !items[i].isHeader) {
+        regularCountInSegment++;
+      }
+    }
+    
+    return `${currentSegment}${regularCountInSegment + 1}`;
   }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {
