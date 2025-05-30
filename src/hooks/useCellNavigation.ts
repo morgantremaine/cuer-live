@@ -34,6 +34,40 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
           cellRefs.current[`${nextItemId}-${firstFieldKey}`]?.focus();
         }, 0);
       }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const currentItemIndex = items.findIndex(item => item.id === itemId);
+      
+      // Find the previous non-header item
+      let prevItemIndex = currentItemIndex - 1;
+      while (prevItemIndex >= 0 && items[prevItemIndex].isHeader) {
+        prevItemIndex--;
+      }
+      
+      if (prevItemIndex >= 0) {
+        const prevItem = items[prevItemIndex];
+        setSelectedCell({ itemId: prevItem.id, field });
+        setTimeout(() => {
+          cellRefs.current[`${prevItem.id}-${field}`]?.focus();
+        }, 0);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const currentItemIndex = items.findIndex(item => item.id === itemId);
+      
+      // Find the next non-header item
+      let nextItemIndex = currentItemIndex + 1;
+      while (nextItemIndex < items.length && items[nextItemIndex].isHeader) {
+        nextItemIndex++;
+      }
+      
+      if (nextItemIndex < items.length) {
+        const nextItem = items[nextItemIndex];
+        setSelectedCell({ itemId: nextItem.id, field });
+        setTimeout(() => {
+          cellRefs.current[`${nextItem.id}-${field}`]?.focus();
+        }, 0);
+      }
     }
   };
 
