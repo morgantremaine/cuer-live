@@ -101,7 +101,7 @@ const RegularRow = ({
         style={{ color: textColor || undefined, width: '80px' }}
       >
         {isCurrentlyPlaying && (
-          <Play className="h-4 w-4 text-green-500 fill-green-500" />
+          <Play className="h-6 w-6 text-green-500 fill-green-500" />
         )}
         <span>{rowNumber}</span>
       </td>

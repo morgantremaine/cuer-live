@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
 import RundownTable from './RundownTable';
-import RundownFooter from './RundownFooter';
 import ColumnManager from './ColumnManager';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
@@ -194,8 +193,6 @@ const RundownGrid = () => {
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           />
-          
-          <RundownFooter totalSegments={items.filter(item => !item.isHeader).length} />
         </div>
       </div>
 
