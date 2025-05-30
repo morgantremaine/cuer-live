@@ -64,14 +64,14 @@ const RundownHeader = ({
   };
 
   return (
-    <div className="bg-blue-600 dark:bg-blue-700 text-white p-4">
+    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-4 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleBackToDashboard}
-            className="text-white hover:bg-blue-700 dark:hover:bg-blue-600 p-2"
+            className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-2"
             title="Back to Dashboard"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -83,7 +83,7 @@ const RundownHeader = ({
               onChange={(e) => onTitleChange(e.target.value)}
               onBlur={handleTitleSubmit}
               onKeyDown={handleKeyDown}
-              className="text-xl font-bold bg-transparent border-b-2 border-white outline-none text-white placeholder-white"
+              className="text-xl font-bold bg-transparent border-b-2 border-gray-400 dark:border-gray-500 outline-none text-gray-900 dark:text-white placeholder-gray-500"
               autoFocus
             />
           ) : (
@@ -93,7 +93,7 @@ const RundownHeader = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsEditingTitle(true)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-blue-700 dark:hover:bg-blue-600"
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
@@ -116,7 +116,7 @@ const RundownHeader = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-white hover:bg-blue-700 dark:hover:bg-blue-600"
+                className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -126,7 +126,7 @@ const RundownHeader = ({
               variant="ghost"
               size="sm"
               onClick={() => setShowAuthModal(true)}
-              className="text-white hover:bg-blue-700 dark:hover:bg-blue-600"
+              className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <User className="h-4 w-4 mr-2" />
               Sign In
