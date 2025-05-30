@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import RundownContainer from './RundownContainer';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
@@ -10,17 +11,14 @@ import { useColorPicker } from '@/hooks/useColorPicker';
 import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
 import { useClipboard } from '@/hooks/useClipboard';
 import { usePlaybackControls } from '@/hooks/usePlaybackControls';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
-import { useParams } from 'react-router-dom';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { useRundownHandlers } from '@/hooks/useRundownHandlers';
 
 const RundownGrid = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
-  const { id: rundownId } = useParams<{ id: string }>();
 
   const {
     items,
@@ -37,7 +35,7 @@ const RundownGrid = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { updateRundown } = useRundownStorage();
+  const { hasUnsavedChanges, markAsChanged } = useAutoSave(items, rundownTitle);
 
   const {
     columns,
@@ -101,92 +99,35 @@ const RundownGrid = () => {
     backward
   } = usePlaybackControls(items, updateItem);
 
+  const {
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleDeleteColumnWithCleanup
+  } = useRundownHandlers({
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    toggleFloatRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    handleDeleteColumn,
+    setItems,
+    calculateEndTime,
+    selectColor,
+    markAsChanged
+  });
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // Debounced auto-save functionality
-  const debouncedSave = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return () => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(async () => {
-          if (rundownId && hasUnsavedChanges) {
-            console.log('Auto-saving rundown...');
-            await updateRundown(rundownId, rundownTitle, items);
-            setHasUnsavedChanges(false);
-          }
-        }, 2000); // 2 second debounce
-      };
-    })(),
-    [rundownId, rundownTitle, items, hasUnsavedChanges, updateRundown]
-  );
-
-  // Track changes to items and trigger auto-save
-  useEffect(() => {
-    if (rundownId) {
-      setHasUnsavedChanges(true);
-      debouncedSave();
-    }
-  }, [items, rundownTitle, debouncedSave, rundownId]);
-
-  // Wrapped update functions to trigger auto-save
-  const handleUpdateItem = (id: string, field: string, value: string) => {
-    updateItem(id, field, value);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleAddRow = () => {
-    addRow(calculateEndTime);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleAddHeader = () => {
-    addHeader();
-    setHasUnsavedChanges(true);
-  };
-
-  const handleDeleteRow = (id: string) => {
-    deleteRow(id);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleToggleFloat = (id: string) => {
-    toggleFloatRow(id);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleColorSelect = (id: string, color: string) => {
-    selectColor(id, color, updateItem);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleDeleteSelectedRows = () => {
-    deleteMultipleRows(Array.from(selectedRows));
-    clearSelection();
-    setHasUnsavedChanges(true);
-  };
-
-  const handlePasteRows = () => {
-    if (hasClipboardData()) {
-      addMultipleRows(clipboardItems, calculateEndTime);
-      setHasUnsavedChanges(true);
-    }
-  };
-
-  const handleDeleteColumnWithCleanup = (columnId: string) => {
-    handleDeleteColumn(columnId);
-    setItems(prev => prev.map(item => {
-      if (item.customFields) {
-        const { [columnId]: removed, ...rest } = item.customFields;
-        return { ...item, customFields: rest };
-      }
-      return item;
-    }));
-    setHasUnsavedChanges(true);
-  };
 
   const handleCopySelectedRows = () => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
@@ -196,6 +137,11 @@ const RundownGrid = () => {
 
   const handleRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
+  };
+
+  const handleTitleChange = (title: string) => {
+    setRundownTitle(title);
+    markAsChanged();
   };
 
   const selectedCount = selectedRows.size;
@@ -238,8 +184,8 @@ const RundownGrid = () => {
       selectedCount={selectedCount}
       hasClipboardData={hasClipboardData()}
       onCopySelectedRows={handleCopySelectedRows}
-      onPasteRows={handlePasteRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
+      onPasteRows={() => handlePasteRows(clipboardItems, hasClipboardData)}
+      onDeleteSelectedRows={() => handleDeleteSelectedRows(selectedRows, clearSelection)}
       onClearSelection={clearSelection}
       selectedRowId={selectedRowId}
       isPlaying={isPlaying}
@@ -254,7 +200,7 @@ const RundownGrid = () => {
       handleToggleColumnVisibility={handleToggleColumnVisibility}
       hasUnsavedChanges={hasUnsavedChanges}
       rundownTitle={rundownTitle}
-      onTitleChange={setRundownTitle}
+      onTitleChange={handleTitleChange}
     />
   );
 };
