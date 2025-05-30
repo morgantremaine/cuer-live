@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -7,7 +6,7 @@ import { useRundownCalculations } from './useRundownCalculations';
 import { RundownItem } from '@/types/rundown';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
-export { RundownItem } from '@/types/rundown';
+export type { RundownItem } from '@/types/rundown';
 
 export const useRundownItems = () => {
   const { id: rundownId } = useParams<{ id: string }>();
