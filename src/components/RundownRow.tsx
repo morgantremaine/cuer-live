@@ -14,6 +14,7 @@ interface RundownRowProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
   isSelected?: boolean;
+  isCurrentlyPlaying?: boolean;
   headerDuration?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -43,6 +44,7 @@ const RundownRow = (props: RundownRowProps) => {
   return (
     <RegularRow 
       {...props} 
+      isCurrentlyPlaying={props.isCurrentlyPlaying}
       onToggleFloat={props.onToggleFloat || (() => {})}
     />
   );

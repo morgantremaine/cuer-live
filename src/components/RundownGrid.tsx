@@ -176,6 +176,7 @@ const RundownGrid = () => {
             cellRefs={cellRefs}
             selectedRows={selectedRows}
             draggedItemIndex={draggedItemIndex}
+            currentSegmentId={currentSegmentId}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}
             getRowNumber={getRowNumber}

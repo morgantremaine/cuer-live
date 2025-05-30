@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Trash2, Copy, Clipboard, Anchor } from 'lucide-react';
+import { Trash2, Copy, Clipboard, Anchor, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ColorPicker from './ColorPicker';
 import CellRenderer from './CellRenderer';
@@ -17,6 +17,7 @@ interface RegularRowProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
   isSelected?: boolean;
+  isCurrentlyPlaying?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -41,6 +42,7 @@ const RegularRow = ({
   cellRefs,
   columns,
   isSelected = false,
+  isCurrentlyPlaying = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -65,12 +67,6 @@ const RegularRow = ({
     rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
   } else if (item.color) {
     rowClass = `hover:opacity-90`;
-  } else if (item.status === 'current') {
-    rowClass = 'bg-green-50 dark:bg-green-900 border-l-4 border-green-500';
-  } else if (item.status === 'completed') {
-    rowClass = 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400';
-  } else if (item.status === 'upcoming') {
-    rowClass = 'bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500';
   }
 
   const textColor = item.isFloated ? 'white' : (item.color ? getContrastTextColor(item.color) : '');
@@ -101,9 +97,12 @@ const RegularRow = ({
       onDrop={(e) => onDrop(e, index)}
     >
       <td 
-        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
-        style={{ color: textColor || undefined, width: '60px' }}
+        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell flex items-center space-x-2" 
+        style={{ color: textColor || undefined, width: '80px' }}
       >
+        {isCurrentlyPlaying && (
+          <Play className="h-4 w-4 text-green-500 fill-green-500" />
+        )}
         <span>{rowNumber}</span>
       </td>
       {columns.map((column) => (
