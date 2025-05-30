@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownContent from './RundownContent';
@@ -52,6 +51,14 @@ interface RundownContainerProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onSave: () => void;
+  onExport: () => void;
+  onImport: () => void;
+  onToggleSidebar: () => void;
+  onOpenSettings: () => void;
+  title: string;
+  onTitleChange: (title: string) => void;
+  isModified: boolean;
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
@@ -104,6 +111,14 @@ const RundownContainer = ({
   onPause,
   onForward,
   onBackward,
+  onSave,
+  onExport,
+  onImport,
+  onToggleSidebar,
+  onOpenSettings,
+  title,
+  onTitleChange,
+  isModified,
   handleAddColumn,
   handleReorderColumns,
   handleDeleteColumnWithCleanup,
@@ -135,6 +150,14 @@ const RundownContainer = ({
             onPause={onPause}
             onForward={onForward}
             onBackward={onBackward}
+            onSave={onSave}
+            onExport={onExport}
+            onImport={onImport}
+            onToggleSidebar={onToggleSidebar}
+            onOpenSettings={onOpenSettings}
+            title={title}
+            onTitleChange={onTitleChange}
+            isModified={isModified}
           />
 
           <RundownContent
