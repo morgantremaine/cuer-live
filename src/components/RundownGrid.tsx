@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
@@ -137,62 +138,68 @@ const RundownGrid = () => {
   const selectedRowId = selectedCount === 1 ? Array.from(selectedRows)[0] : null;
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          <RundownHeader 
-            currentTime={currentTime} 
-            timezone={timezone}
-            onTimezoneChange={setTimezone}
-            totalRuntime={calculateTotalRuntime()}
-          />
-          
-          <RundownToolbar
-            onAddRow={() => addRow(calculateEndTime)}
-            onAddHeader={addHeader}
-            onShowColumnManager={() => setShowColumnManager(true)}
-            selectedCount={selectedCount}
-            hasClipboardData={hasClipboardData()}
-            onCopySelectedRows={handleCopySelectedRows}
-            onPasteRows={handlePasteRows}
-            onDeleteSelectedRows={handleDeleteSelectedRows}
-            onClearSelection={clearSelection}
-            selectedRowId={selectedRowId}
-            isPlaying={isPlaying}
-            currentSegmentId={currentSegmentId}
-            timeRemaining={timeRemaining}
-            onPlay={play}
-            onPause={pause}
-            onForward={forward}
-            onBackward={backward}
-          />
+          {/* Sticky header and toolbar */}
+          <div className="sticky top-0 z-10 bg-white dark:bg-gray-800">
+            <RundownHeader 
+              currentTime={currentTime} 
+              timezone={timezone}
+              onTimezoneChange={setTimezone}
+              totalRuntime={calculateTotalRuntime()}
+            />
+            
+            <RundownToolbar
+              onAddRow={() => addRow(calculateEndTime)}
+              onAddHeader={addHeader}
+              onShowColumnManager={() => setShowColumnManager(true)}
+              selectedCount={selectedCount}
+              hasClipboardData={hasClipboardData()}
+              onCopySelectedRows={handleCopySelectedRows}
+              onPasteRows={handlePasteRows}
+              onDeleteSelectedRows={handleDeleteSelectedRows}
+              onClearSelection={clearSelection}
+              selectedRowId={selectedRowId}
+              isPlaying={isPlaying}
+              currentSegmentId={currentSegmentId}
+              timeRemaining={timeRemaining}
+              onPlay={play}
+              onPause={pause}
+              onForward={forward}
+              onBackward={backward}
+            />
+          </div>
 
-          <RundownTable
-            items={items}
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            currentSegmentId={currentSegmentId}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-            getRowNumber={getRowNumber}
-            getRowStatus={getRowStatus}
-            calculateHeaderDuration={calculateHeaderDuration}
-            onUpdateItem={updateItem}
-            onCellClick={handleCellClick}
-            onKeyDown={handleKeyDown}
-            onToggleColorPicker={handleToggleColorPicker}
-            onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
-            onDeleteRow={deleteRow}
-            onToggleFloat={toggleFloatRow}
-            onRowSelect={handleRowSelection}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          />
+          {/* Scrollable table content */}
+          <div className="overflow-auto max-h-[calc(100vh-200px)]">
+            <RundownTable
+              items={items}
+              visibleColumns={visibleColumns}
+              currentTime={currentTime}
+              showColorPicker={showColorPicker}
+              cellRefs={cellRefs}
+              selectedRows={selectedRows}
+              draggedItemIndex={draggedItemIndex}
+              currentSegmentId={currentSegmentId}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+              getRowNumber={getRowNumber}
+              getRowStatus={getRowStatus}
+              calculateHeaderDuration={calculateHeaderDuration}
+              onUpdateItem={updateItem}
+              onCellClick={handleCellClick}
+              onKeyDown={handleKeyDown}
+              onToggleColorPicker={handleToggleColorPicker}
+              onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
+              onDeleteRow={deleteRow}
+              onToggleFloat={toggleFloatRow}
+              onRowSelect={handleRowSelection}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            />
+          </div>
         </div>
       </div>
 
