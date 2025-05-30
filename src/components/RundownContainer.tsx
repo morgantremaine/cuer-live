@@ -56,6 +56,9 @@ interface RundownContainerProps {
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
+  hasUnsavedChanges: boolean;
+  rundownTitle: string;
+  onTitleChange: (title: string) => void;
 }
 
 const RundownContainer = ({
@@ -107,7 +110,10 @@ const RundownContainer = ({
   handleAddColumn,
   handleReorderColumns,
   handleDeleteColumnWithCleanup,
-  handleToggleColumnVisibility
+  handleToggleColumnVisibility,
+  hasUnsavedChanges,
+  rundownTitle,
+  onTitleChange
 }: RundownContainerProps) => {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
@@ -135,6 +141,9 @@ const RundownContainer = ({
             onPause={onPause}
             onForward={onForward}
             onBackward={onBackward}
+            hasUnsavedChanges={hasUnsavedChanges}
+            rundownTitle={rundownTitle}
+            onTitleChange={onTitleChange}
           />
 
           <RundownContent

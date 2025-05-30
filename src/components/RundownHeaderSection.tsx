@@ -25,6 +25,9 @@ interface RundownHeaderSectionProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  hasUnsavedChanges: boolean;
+  rundownTitle: string;
+  onTitleChange: (title: string) => void;
 }
 
 const RundownHeaderSection = ({
@@ -48,7 +51,10 @@ const RundownHeaderSection = ({
   onPlay,
   onPause,
   onForward,
-  onBackward
+  onBackward,
+  hasUnsavedChanges,
+  rundownTitle,
+  onTitleChange
 }: RundownHeaderSectionProps) => {
   return (
     <div className="sticky top-0 z-10 bg-white dark:bg-gray-800">
@@ -57,6 +63,9 @@ const RundownHeaderSection = ({
         timezone={timezone}
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
+        hasUnsavedChanges={hasUnsavedChanges}
+        title={rundownTitle}
+        onTitleChange={onTitleChange}
       />
       
       <RundownToolbar

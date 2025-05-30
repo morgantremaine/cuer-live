@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Edit2, User, LogOut, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,16 +12,21 @@ interface RundownHeaderProps {
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
+  hasUnsavedChanges: boolean;
+  title: string;
+  onTitleChange: (title: string) => void;
 }
 
 const RundownHeader = ({ 
   currentTime, 
   timezone, 
   onTimezoneChange, 
-  totalRuntime
+  totalRuntime,
+  hasUnsavedChanges,
+  title,
+  onTitleChange
 }: RundownHeaderProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [title, setTitle] = useState('Live Broadcast Rundown');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -74,7 +80,7 @@ const RundownHeader = ({
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => onTitleChange(e.target.value)}
               onBlur={handleTitleSubmit}
               onKeyDown={handleKeyDown}
               className="text-xl font-bold bg-transparent border-b-2 border-white outline-none text-white placeholder-white"
@@ -91,6 +97,9 @@ const RundownHeader = ({
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
+              {hasUnsavedChanges && (
+                <span className="text-xs opacity-75 ml-2">Auto-saving...</span>
+              )}
             </div>
           )}
         </div>
