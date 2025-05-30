@@ -19,7 +19,10 @@ const RundownGrid = () => {
     setItems: state.setItems,
     calculateEndTime: state.calculateEndTime,
     selectColor: state.selectColor,
-    markAsChanged: state.markAsChanged,
+    markAsChanged: (source?: string) => {
+      console.log('🔔 RundownGrid: markAsChanged called', { source, hasUnsavedChanges: state.hasUnsavedChanges });
+      state.markAsChanged();
+    },
     selectedRows: state.selectedRows,
     clearSelection: state.clearSelection,
     copyItems: state.copyItems,
@@ -33,7 +36,11 @@ const RundownGrid = () => {
   const selectedCount = state.selectedRows.size;
   const selectedRowId = selectedCount === 1 ? Array.from(state.selectedRows)[0] : null;
 
-  console.log('RundownGrid render - hasUnsavedChanges:', state.hasUnsavedChanges);
+  console.log('🏗️ RundownGrid render', { 
+    hasUnsavedChanges: state.hasUnsavedChanges,
+    itemsCount: state.items.length,
+    title: state.rundownTitle
+  });
 
   return (
     <RundownContainer
@@ -83,23 +90,23 @@ const RundownGrid = () => {
       onForward={state.forward}
       onBackward={state.backward}
       handleAddColumn={(name: string) => {
-        console.log('Adding column:', name);
+        console.log('🔔 RundownGrid: Adding column, calling markAsChanged', name);
         state.handleAddColumn(name);
         state.markAsChanged();
       }}
       handleReorderColumns={(columns) => {
-        console.log('Reordering columns');
+        console.log('🔔 RundownGrid: Reordering columns, calling markAsChanged');
         state.handleReorderColumns(columns);
         state.markAsChanged();
       }}
       handleDeleteColumnWithCleanup={handlers.handleDeleteColumnWithCleanup}
       handleToggleColumnVisibility={(columnId: string) => {
-        console.log('Toggling column visibility:', columnId);
+        console.log('🔔 RundownGrid: Toggling column visibility, calling markAsChanged', columnId);
         state.handleToggleColumnVisibility(columnId);
         state.markAsChanged();
       }}
       handleLoadLayout={(layoutColumns) => {
-        console.log('Loading layout');
+        console.log('🔔 RundownGrid: Loading layout, calling markAsChanged');
         state.handleLoadLayout(layoutColumns);
         state.markAsChanged();
       }}

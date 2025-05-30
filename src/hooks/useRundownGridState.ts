@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -20,6 +19,8 @@ export const useRundownGridState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
 
   const { id: rundownId } = useParams<{ id: string }>();
+
+  console.log('🏗️ useRundownGridState: Initializing with rundownId:', rundownId);
 
   const {
     items,
@@ -46,8 +47,14 @@ export const useRundownGridState = () => {
     handleLoadLayout
   } = useColumnsManager();
 
-  // Auto-save every 10 seconds (no manual save)
+  // Auto-save hook
   const { hasUnsavedChanges, markAsChanged, lastSaved, isSaving } = useAutoSave(items, rundownTitle, columns);
+
+  console.log('🔄 useRundownGridState: Auto-save state', {
+    hasUnsavedChanges,
+    lastSaved: lastSaved?.toISOString(),
+    isSaving
+  });
 
   const {
     columnWidths,
@@ -108,6 +115,14 @@ export const useRundownGridState = () => {
   // Timer management
   const { currentTime, timezone, setTimezone } = useRundownTimers();
 
+  console.log('📊 useRundownGridState: Current state summary', {
+    rundownId,
+    title: rundownTitle,
+    itemsCount: items.length,
+    columnsCount: columns.length,
+    hasUnsavedChanges
+  });
+
   return {
     // Basic state
     currentTime,
@@ -133,7 +148,7 @@ export const useRundownGridState = () => {
     calculateTotalRuntime,
     calculateHeaderDuration,
     
-    // Auto-save state (10-second intervals)
+    // Auto-save state
     hasUnsavedChanges,
     markAsChanged,
     lastSaved,
