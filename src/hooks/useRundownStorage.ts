@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -44,13 +43,15 @@ export const useRundownStorage = () => {
   const saveRundown = async (title: string, items: RundownItem[]) => {
     if (!user) return
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('rundowns')
       .insert({
         user_id: user.id,
         title,
         items,
       })
+      .select()
+      .single()
 
     if (error) {
       toast({
@@ -58,12 +59,14 @@ export const useRundownStorage = () => {
         description: 'Failed to save rundown',
         variant: 'destructive',
       })
+      throw error
     } else {
       toast({
         title: 'Success',
         description: 'Rundown saved successfully!',
       })
       loadRundowns()
+      return data
     }
   }
 

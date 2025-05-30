@@ -1,44 +1,58 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { RundownItem } from './useRundownItems';
 
 export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { id: rundownId } = useParams<{ id: string }>();
-  const { updateRundown, savedRundowns } = useRundownStorage();
+  const { updateRundown, saveRundown, savedRundowns } = useRundownStorage();
+  const navigate = useNavigate();
   
   // Keep track of initial state to compare against
   const initialStateRef = useRef<{ items: RundownItem[], title: string } | null>(null);
   const lastSavedStateRef = useRef<{ items: RundownItem[], title: string } | null>(null);
+  const isNewRundownRef = useRef<boolean>(!rundownId);
 
   // Check if the current rundown exists in saved rundowns
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
   const canAutoSave = rundownId && currentRundown;
+  const isNewRundown = !rundownId;
 
-  // Initialize the refs when we first load a rundown
+  // Initialize the refs when we first load a rundown or start a new one
   useEffect(() => {
     if (currentRundown && !initialStateRef.current) {
       const initialState = { items: currentRundown.items, title: currentRundown.title };
       initialStateRef.current = initialState;
       lastSavedStateRef.current = initialState;
       setHasUnsavedChanges(false);
-      console.log('Initialized auto-save with:', initialState);
+      isNewRundownRef.current = false;
+      console.log('Initialized auto-save with existing rundown:', initialState);
+    } else if (isNewRundown && !initialStateRef.current) {
+      // For new rundowns, set initial state to current state
+      const initialState = { items, title: rundownTitle };
+      initialStateRef.current = initialState;
+      lastSavedStateRef.current = null; // No saved state yet
+      setHasUnsavedChanges(false);
+      isNewRundownRef.current = true;
+      console.log('Initialized auto-save for new rundown:', initialState);
     }
-  }, [currentRundown]);
+  }, [currentRundown, isNewRundown, items, rundownTitle]);
 
-  // Simple change detection - mark as changed when items or title change
+  // Change detection for both existing and new rundowns
   useEffect(() => {
-    if (canAutoSave && lastSavedStateRef.current) {
+    if (initialStateRef.current) {
       const currentState = JSON.stringify({ items, title: rundownTitle });
-      const savedState = JSON.stringify(lastSavedStateRef.current);
+      const compareState = lastSavedStateRef.current || initialStateRef.current;
+      const savedState = JSON.stringify(compareState);
       
       if (currentState !== savedState) {
         console.log('Changes detected, marking as unsaved');
         setHasUnsavedChanges(true);
       }
     }
-  }, [items, rundownTitle, canAutoSave]);
+  }, [items, rundownTitle]);
 
   // Debounced auto-save functionality
   const debouncedSave = useCallback(
@@ -47,10 +61,23 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       return () => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(async () => {
-          if (canAutoSave && hasUnsavedChanges) {
+          if (hasUnsavedChanges) {
             console.log('Auto-saving rundown...');
             try {
-              await updateRundown(rundownId!, rundownTitle, items, true); // silent = true for auto-save
+              if (isNewRundownRef.current) {
+                // Save as new rundown
+                console.log('Saving new rundown to database');
+                const result = await saveRundown(rundownTitle, items);
+                if (result?.id) {
+                  // Navigate to the new rundown URL
+                  navigate(`/rundown/${result.id}`, { replace: true });
+                  isNewRundownRef.current = false;
+                }
+              } else if (canAutoSave) {
+                // Update existing rundown
+                await updateRundown(rundownId!, rundownTitle, items, true); // silent = true for auto-save
+              }
+              
               lastSavedStateRef.current = { items: [...items], title: rundownTitle };
               setHasUnsavedChanges(false);
               console.log('Auto-save successful');
@@ -62,42 +89,50 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
         }, 3000); // 3 second debounce
       };
     })(),
-    [canAutoSave, rundownTitle, items, updateRundown, rundownId, hasUnsavedChanges]
+    [hasUnsavedChanges, rundownTitle, items, updateRundown, saveRundown, rundownId, canAutoSave, navigate]
   );
 
   // Trigger auto-save when there are unsaved changes
   useEffect(() => {
-    if (hasUnsavedChanges && canAutoSave) {
+    if (hasUnsavedChanges) {
       debouncedSave();
     }
-  }, [hasUnsavedChanges, debouncedSave, canAutoSave]);
+  }, [hasUnsavedChanges, debouncedSave]);
 
   const markAsChanged = useCallback(() => {
-    if (canAutoSave) {
-      console.log('Manually marking as changed');
-      setHasUnsavedChanges(true);
-    }
-  }, [canAutoSave]);
+    console.log('Manually marking as changed');
+    setHasUnsavedChanges(true);
+  }, []);
 
   const manualSave = useCallback(async () => {
-    if (canAutoSave) {
-      try {
-        console.log('Manual save triggered');
+    try {
+      console.log('Manual save triggered');
+      if (isNewRundownRef.current) {
+        // Save as new rundown
+        console.log('Manually saving new rundown to database');
+        const result = await saveRundown(rundownTitle, items);
+        if (result?.id) {
+          // Navigate to the new rundown URL
+          navigate(`/rundown/${result.id}`, { replace: true });
+          isNewRundownRef.current = false;
+        }
+      } else if (canAutoSave) {
+        // Update existing rundown
         await updateRundown(rundownId!, rundownTitle, items, false); // silent = false for manual save
-        lastSavedStateRef.current = { items: [...items], title: rundownTitle };
-        setHasUnsavedChanges(false);
-        console.log('Manual save successful');
-        return true;
-      } catch (error) {
-        console.error('Manual save failed:', error);
-        return false;
       }
+      
+      lastSavedStateRef.current = { items: [...items], title: rundownTitle };
+      setHasUnsavedChanges(false);
+      console.log('Manual save successful');
+      return true;
+    } catch (error) {
+      console.error('Manual save failed:', error);
+      return false;
     }
-    return true;
-  }, [canAutoSave, rundownId, rundownTitle, items, updateRundown]);
+  }, [rundownId, rundownTitle, items, updateRundown, saveRundown, canAutoSave, navigate]);
 
   return {
-    hasUnsavedChanges: canAutoSave ? hasUnsavedChanges : false,
+    hasUnsavedChanges: hasUnsavedChanges,
     markAsChanged,
     manualSave
   };
