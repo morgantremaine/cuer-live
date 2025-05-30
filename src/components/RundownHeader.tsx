@@ -1,26 +1,21 @@
 
 import React, { useState } from 'react';
-import { Play, Edit2, Clock } from 'lucide-react';
+import { Play, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TimezoneSelector from './TimezoneSelector';
-import { ClockFormat } from '@/hooks/useClockFormat';
 
 interface RundownHeaderProps {
   currentTime: Date;
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
-  clockFormat: ClockFormat;
-  onClockFormatToggle: () => void;
 }
 
 const RundownHeader = ({ 
   currentTime, 
   timezone, 
   onTimezoneChange, 
-  totalRuntime, 
-  clockFormat, 
-  onClockFormatToggle 
+  totalRuntime
 }: RundownHeaderProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState('Live Broadcast Rundown');
@@ -28,12 +23,12 @@ const RundownHeader = ({
   const formatTime = (time: Date, tz: string) => {
     try {
       const timeString = time.toLocaleTimeString('en-US', { 
-        hour12: clockFormat === '12',
+        hour12: false,
         timeZone: tz
       });
       return timeString;
     } catch {
-      return time.toLocaleTimeString('en-US', { hour12: clockFormat === '12' });
+      return time.toLocaleTimeString('en-US', { hour12: false });
     }
   };
 
@@ -80,16 +75,6 @@ const RundownHeader = ({
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClockFormatToggle}
-            className="text-white hover:bg-blue-700 dark:hover:bg-blue-600 flex items-center space-x-1"
-            title={`Switch to ${clockFormat === '12' ? '24' : '12'}-hour format`}
-          >
-            <Clock className="h-4 w-4" />
-            <span className="text-sm">{clockFormat}H</span>
-          </Button>
           <TimezoneSelector 
             currentTimezone={timezone}
             onTimezoneChange={onTimezoneChange}

@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
-import { ClockFormat } from '@/hooks/useClockFormat';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -19,7 +19,6 @@ interface RundownToolbarProps {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
-  clockFormat: ClockFormat;
   onPlay: (selectedSegmentId?: string) => void;
   onPause: () => void;
   onForward: () => void;
@@ -40,7 +39,6 @@ const RundownToolbar = ({
   isPlaying,
   currentSegmentId,
   timeRemaining,
-  clockFormat,
   onPlay,
   onPause,
   onForward,
@@ -49,15 +47,7 @@ const RundownToolbar = ({
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    const timeString = `${minutes}:${secs.toString().padStart(2, '0')}`;
-    
-    if (clockFormat === '12') {
-      // For countdown, we'll keep it simple and just show MM:SS format
-      // since it's a duration, not a time of day
-      return timeString;
-    }
-    
-    return timeString;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handlePlayPause = () => {

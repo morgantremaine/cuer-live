@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Trash2, Copy, Clipboard, Anchor, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,6 @@ import ColorPicker from './ColorPicker';
 import CellRenderer from './CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
-import { ClockFormat } from '@/hooks/useClockFormat';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface RegularRowProps {
@@ -18,7 +18,6 @@ interface RegularRowProps {
   columns: Column[];
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
-  clockFormat: ClockFormat;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -44,7 +43,6 @@ const RegularRow = ({
   columns,
   isSelected = false,
   isCurrentlyPlaying = false,
-  clockFormat,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -114,7 +112,6 @@ const RegularRow = ({
           item={item}
           cellRefs={cellRefs}
           textColor={textColor}
-          clockFormat={clockFormat}
           onUpdateItem={onUpdateItem}
           onCellClick={onCellClick}
           onKeyDown={onKeyDown}
