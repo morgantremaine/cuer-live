@@ -58,20 +58,24 @@ const HeaderRow = ({
       {columns.map((column, columnIndex) => (
         <td key={column.id} className="px-4 py-3" style={{ width: getColumnWidth(column) }}>
           {column.key === 'segmentName' ? (
-            <span className="text-xl font-bold text-white">{item.segmentName}</span>
-          ) : column.key === 'notes' ? (
-            <input
-              ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
-              type="text"
-              value={item.notes}
-              onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
-              onClick={() => onCellClick(item.id, 'notes')}
-              onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-              className="flex-1 border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm w-full"
-              placeholder="Header description..."
-            />
+            <div className="flex flex-col space-y-2">
+              <span className="text-xl font-bold text-white">{item.segmentName}</span>
+              <input
+                ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
+                type="text"
+                value={item.notes}
+                onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
+                onClick={() => onCellClick(item.id, 'notes')}
+                onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
+                className="flex-1 border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm w-full"
+                placeholder="Header description..."
+              />
+            </div>
           ) : column.key === 'duration' ? (
             <span className="text-sm text-gray-300 font-mono">({headerDuration})</span>
+          ) : column.key === 'notes' ? (
+            // Skip notes column since it's now in segmentName column
+            null
           ) : null}
         </td>
       ))}
