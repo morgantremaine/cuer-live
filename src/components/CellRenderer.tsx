@@ -37,7 +37,7 @@ const CellRenderer = ({
   if (column.key === 'endTime') {
     return (
       <td key={column.id} className="px-4 py-2">
-        <span className="text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
+        <span className="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
           {value}
         </span>
       </td>
@@ -53,7 +53,7 @@ const CellRenderer = ({
           onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
           onClick={() => onCellClick(item.id, fieldKey)}
           onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
-          className="w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm resize-none"
+          className="w-full border-none bg-transparent text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
           rows={1}
         />
       </td>
@@ -69,7 +69,7 @@ const CellRenderer = ({
         onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
         onClick={() => onCellClick(item.id, fieldKey)}
         onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
-        className={`w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm ${
+        className={`w-full border-none bg-transparent text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm ${
           column.key === 'duration' || column.key === 'startTime' ? 'font-mono' : ''
         }`}
         placeholder={column.key === 'duration' || column.key === 'startTime' ? '00:00:00' : ''}

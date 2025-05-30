@@ -6,6 +6,7 @@ import RundownHeader from './RundownHeader';
 import RundownRow from './RundownRow';
 import RundownFooter from './RundownFooter';
 import ColumnManager from './ColumnManager';
+import ThemeToggle from './ThemeToggle';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useCellNavigation } from '@/hooks/useCellNavigation';
@@ -77,12 +78,15 @@ const RundownGrid = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <RundownHeader currentTime={currentTime} />
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+            <RundownHeader currentTime={currentTime} />
+            <ThemeToggle />
+          </div>
           
-          <div className="p-4 border-b bg-gray-50 flex space-x-2">
+          <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex space-x-2">
             <Button onClick={() => addRow(calculateEndTime)} className="flex items-center space-x-2">
               <Plus className="h-4 w-4" />
               <span>Add Segment</span>
@@ -99,7 +103,7 @@ const RundownGrid = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-700 border-b-2 border-gray-200">
+              <thead className="bg-gray-700 dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-600">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white w-8">#</th>
                   {columns.map((column) => (

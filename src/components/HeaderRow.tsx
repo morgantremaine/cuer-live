@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Trash2, Move } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -37,22 +37,19 @@ const HeaderRow = ({
   isDragging
 }: HeaderRowProps) => {
   const rowClass = isDragging 
-    ? 'bg-blue-100 opacity-50'
-    : 'bg-gray-600 border-l-4 border-gray-800 font-semibold text-white';
+    ? 'bg-blue-100 dark:bg-blue-900 opacity-50'
+    : 'bg-gray-600 dark:bg-gray-800 border-l-4 border-gray-800 dark:border-gray-600 font-semibold text-white';
 
   return (
     <tr 
-      className={`border-b border-gray-200 ${rowClass} transition-colors cursor-move`}
+      className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-move`}
       draggable
       onDragStart={(e) => onDragStart(e, index)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, index)}
     >
-      <td className="px-4 py-2 text-sm text-gray-300 font-mono">
-        <div className="flex items-center space-x-2">
-          <Move className="h-4 w-4 text-gray-400" />
-          <span>{rowNumber}</span>
-        </div>
+      <td className="px-4 py-2 text-sm text-gray-300 dark:text-gray-400 font-mono">
+        <span>{rowNumber}</span>
       </td>
       <td colSpan={columns.length} className="px-4 py-3">
         <div className="flex items-center space-x-3">
@@ -64,7 +61,7 @@ const HeaderRow = ({
             onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
             onClick={() => onCellClick(item.id, 'notes')}
             onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-            className="flex-1 border-none bg-transparent text-white placeholder-gray-300 focus:bg-gray-700 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm"
+            className="flex-1 border-none bg-transparent text-white placeholder-gray-300 dark:placeholder-gray-400 focus:bg-gray-700 dark:focus:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm"
             placeholder="Header description..."
           />
         </div>
@@ -74,7 +71,7 @@ const HeaderRow = ({
           variant="ghost"
           size="sm"
           onClick={() => onDeleteRow(item.id)}
-          className="text-red-300 hover:text-red-200 hover:bg-red-900"
+          className="text-red-300 hover:text-red-200 hover:bg-red-900 dark:hover:bg-red-800"
         >
           <Trash2 className="h-4 w-4" />
         </Button>

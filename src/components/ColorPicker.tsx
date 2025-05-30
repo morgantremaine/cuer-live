@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,22 +29,22 @@ const ColorPicker = ({ itemId, showColorPicker, onToggle, onColorSelect }: Color
         variant="ghost"
         size="sm"
         onClick={() => onToggle(itemId)}
-        className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+        className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700"
       >
         <Palette className="h-4 w-4" />
       </Button>
       
       {showColorPicker === itemId && (
-        <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-48">
+        <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-3 z-10 min-w-48">
           <div className="grid grid-cols-3 gap-2">
             {colorOptions.map((color) => (
               <button
                 key={color.name}
                 onClick={() => onColorSelect(itemId, color.value)}
-                className="flex flex-col items-center p-2 rounded hover:bg-gray-100 text-xs"
+                className="flex flex-col items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-xs text-gray-900 dark:text-gray-100"
               >
                 <div 
-                  className="w-6 h-6 rounded border border-gray-300 mb-1"
+                  className="w-6 h-6 rounded border border-gray-300 dark:border-gray-500 mb-1"
                   style={{ backgroundColor: color.value || '#ffffff' }}
                 />
                 {color.name}

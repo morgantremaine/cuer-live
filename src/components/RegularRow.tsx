@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Trash2, Move } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ColorPicker from './ColorPicker';
 import CellRenderer from './CellRenderer';
@@ -46,32 +46,29 @@ const RegularRow = ({
   onDrop,
   isDragging
 }: RegularRowProps) => {
-  let rowClass = 'bg-white hover:bg-gray-50';
+  let rowClass = 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800';
   
   if (isDragging) {
-    rowClass = 'bg-blue-100 opacity-50';
+    rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
   } else if (item.color) {
     rowClass = `hover:opacity-90`;
   } else if (status === 'current') {
-    rowClass = 'bg-green-50 border-l-4 border-green-500';
+    rowClass = 'bg-green-50 dark:bg-green-900 border-l-4 border-green-500';
   } else if (status === 'completed') {
-    rowClass = 'bg-gray-50 text-gray-500';
+    rowClass = 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400';
   }
 
   return (
     <tr 
-      className={`border-b border-gray-200 ${rowClass} transition-colors cursor-move`}
+      className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-move`}
       style={{ backgroundColor: item.color || undefined }}
       draggable
       onDragStart={(e) => onDragStart(e, index)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, index)}
     >
-      <td className="px-4 py-2 text-sm text-gray-600 font-mono">
-        <div className="flex items-center space-x-2">
-          <Move className="h-4 w-4 text-gray-400" />
-          <span>{rowNumber}</span>
-        </div>
+      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 font-mono">
+        <span>{rowNumber}</span>
       </td>
       {columns.map((column) => (
         <CellRenderer
@@ -97,7 +94,7 @@ const RegularRow = ({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteRow(item.id)}
-            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
