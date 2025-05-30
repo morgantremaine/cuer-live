@@ -48,13 +48,20 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     
     // Set a new timeout for auto-save (debounced)
     autoSaveTimeoutRef.current = setTimeout(() => {
-      if (!isSaving) {
-        performAutoSave();
-      }
+      performAutoSave();
     }, 2000); // 2 second debounce
-  }, [isSaving]);
+  }, []);
 
   const performAutoSave = useCallback(async () => {
+    console.log('Auto-save: performAutoSave called', {
+      isSaving,
+      hasTitle: !!titleRef.current,
+      titleLength: titleRef.current?.length,
+      isNewRundown,
+      canSave,
+      rundownId
+    });
+
     // Prevent multiple simultaneous saves
     if (isSaving) {
       console.log('Auto-save: Already saving, skipping...');
@@ -68,15 +75,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       return;
     }
 
-    // More lenient validation - allow saving with empty items but require a title
+    // Validate we have a title
     if (!titleRef.current || titleRef.current.trim() === '') {
       console.log('Auto-save: No title provided, skipping save');
       setHasUnsavedChanges(false);
-      setIsSaving(false);
       return;
     }
 
-    console.log('Auto-save: Starting auto-save', {
+    console.log('Auto-save: Starting save process', {
       isNewRundown,
       canSave,
       rundownId,
@@ -85,22 +91,32 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       columnsCount: columnsRef.current?.length
     });
 
-    try {
-      setIsSaving(true);
+    setIsSaving(true);
 
+    try {
       if (isNewRundown) {
-        console.log('Auto-save: Saving new rundown');
+        console.log('Auto-save: Saving new rundown...');
         const result = await saveRundown(titleRef.current, itemsRef.current, columnsRef.current);
-        console.log('Auto-save: New rundown saved, result:', result);
+        console.log('Auto-save: New rundown saved successfully:', result);
+        
         if (result?.id) {
+          console.log('Auto-save: Navigating to new rundown URL:', `/rundown/${result.id}`);
           navigate(`/rundown/${result.id}`, { replace: true });
+        } else {
+          console.error('Auto-save: No ID returned from saveRundown');
+          throw new Error('No ID returned from save operation');
         }
       } else if (canSave) {
-        console.log('Auto-save: Updating existing rundown');
+        console.log('Auto-save: Updating existing rundown...');
         await updateRundown(rundownId!, titleRef.current, itemsRef.current, true, columnsRef.current);
         console.log('Auto-save: Existing rundown updated successfully');
       } else {
-        console.log('Auto-save: Cannot save - no valid rundown context');
+        console.log('Auto-save: Cannot save - invalid context', {
+          rundownId,
+          currentRundown,
+          isNewRundown,
+          canSave
+        });
         setHasUnsavedChanges(false);
         setIsSaving(false);
         return;
@@ -110,17 +126,24 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
       lastAutoSaveRef.current = new Date();
-      console.log('Auto-save: Completed successfully');
+      console.log('Auto-save: Completed successfully at', new Date().toISOString());
       
     } catch (error) {
-      console.error('Auto-save: Failed with error:', error);
-      // On error, keep the unsaved changes flag but reset saving state
+      console.error('Auto-save: Save operation failed:', error);
+      
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error('Auto-save: Error message:', error.message);
+        console.error('Auto-save: Error stack:', error.stack);
+      }
+      
+      // Keep the unsaved changes flag on error
       setHasUnsavedChanges(true);
     } finally {
-      // Always reset the saving state
+      console.log('Auto-save: Resetting isSaving to false');
       setIsSaving(false);
     }
-  }, [rundownId, updateRundown, saveRundown, canSave, navigate, isNewRundown, isSaving]);
+  }, [rundownId, updateRundown, saveRundown, canSave, navigate, isNewRundown]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
