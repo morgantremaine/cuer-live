@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -71,12 +70,10 @@ export const useRundownStorage = () => {
       throw error
     } else {
       console.log('Successfully saved new rundown:', data)
-      if (!silent) {
-        toast({
-          title: 'Success',
-          description: 'Rundown saved successfully!',
-        })
-      }
+      toast({
+        title: 'Success',
+        description: 'Rundown saved successfully!',
+      })
       loadRundowns()
       return data
     }
