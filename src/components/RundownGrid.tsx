@@ -39,7 +39,7 @@ const RundownGrid = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, markAsChanged } = useAutoSave(items, rundownTitle);
+  const { hasUnsavedChanges, markAsChanged, manualSave } = useAutoSave(items, rundownTitle);
 
   const {
     columns,
@@ -129,13 +129,7 @@ const RundownGrid = () => {
   });
 
   const handleManualSave = async () => {
-    if (rundownId && hasUnsavedChanges) {
-      try {
-        await updateRundown(rundownId, rundownTitle, items);
-      } catch (error) {
-        console.error('Manual save failed:', error);
-      }
-    }
+    await manualSave();
   };
 
   useEffect(() => {
