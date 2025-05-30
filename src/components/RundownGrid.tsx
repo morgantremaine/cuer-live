@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RundownHeader from './RundownHeader';
 import RundownRow from './RundownRow';
 import RundownFooter from './RundownFooter';
+import ColumnManager from './ColumnManager';
 
 interface RundownItem {
   id: string;
@@ -15,6 +16,16 @@ interface RundownItem {
   status: 'upcoming' | 'current' | 'completed';
   color?: string;
   isHeader?: boolean;
+  customFields?: { [key: string]: string };
+}
+
+interface Column {
+  id: string;
+  name: string;
+  key: string;
+  width: string;
+  isCustom: boolean;
+  isEditable: boolean;
 }
 
 const RundownGrid = () => {
@@ -58,10 +69,19 @@ const RundownGrid = () => {
     }
   ]);
 
-  const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: keyof RundownItem } | null>(null);
+  const [columns, setColumns] = useState<Column[]>([
+    { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: 'min-w-48', isCustom: false, isEditable: true },
+    { id: 'duration', name: 'Duration', key: 'duration', width: 'w-24', isCustom: false, isEditable: true },
+    { id: 'startTime', name: 'Start Time', key: 'startTime', width: 'w-24', isCustom: false, isEditable: true },
+    { id: 'endTime', name: 'End Time', key: 'endTime', width: 'w-24', isCustom: false, isEditable: false },
+    { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true }
+  ]);
+
+  const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: string } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [showColumnManager, setShowColumnManager] = useState(false);
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
   useEffect(() => {
@@ -87,10 +107,16 @@ const RundownGrid = () => {
     return secondsToTime(startSeconds + durationSeconds);
   };
 
-  const updateItem = (id: string, field: keyof RundownItem, value: string) => {
+  const updateItem = (id: string, field: string, value: string) => {
     setItems(prev => prev.map(item => {
       if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
+        let updatedItem = { ...item };
+        
+        if (field.startsWith('custom_')) {
+          updatedItem.customFields = { ...updatedItem.customFields, [field]: value };
+        } else {
+          updatedItem = { ...updatedItem, [field]: value };
+        }
         
         if (!item.isHeader && (field === 'startTime' || field === 'duration')) {
           updatedItem.endTime = calculateEndTime(updatedItem.startTime, updatedItem.duration);
@@ -154,7 +180,8 @@ const RundownGrid = () => {
       startTime: newStartTime,
       endTime: calculateEndTime(newStartTime, '00:01:00'),
       notes: '',
-      status: 'upcoming'
+      status: 'upcoming',
+      customFields: {}
     };
     
     setItems(prev => [...prev, newItem]);
@@ -172,7 +199,8 @@ const RundownGrid = () => {
       endTime: '',
       notes: '',
       status: 'upcoming',
-      isHeader: true
+      isHeader: true,
+      customFields: {}
     };
     
     setItems(prev => [...prev, newHeader]);
@@ -207,28 +235,31 @@ const RundownGrid = () => {
     setItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const handleCellClick = (itemId: string, field: keyof RundownItem) => {
+  const handleCellClick = (itemId: string, field: string) => {
     setSelectedCell({ itemId, field });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: keyof RundownItem) => {
+  const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const currentIndex = items.findIndex(item => item.id === itemId);
-      const fields: (keyof RundownItem)[] = ['segmentName', 'duration', 'startTime', 'notes'];
-      const currentFieldIndex = fields.indexOf(field);
+      const editableColumns = columns.filter(col => col.isEditable);
+      const currentFieldIndex = editableColumns.findIndex(col => col.key === field || `custom_${col.key}` === field);
       
-      if (currentFieldIndex < fields.length - 1) {
-        const nextField = fields[currentFieldIndex + 1];
-        setSelectedCell({ itemId, field: nextField });
+      if (currentFieldIndex < editableColumns.length - 1) {
+        const nextField = editableColumns[currentFieldIndex + 1];
+        const nextFieldKey = nextField.isCustom ? `custom_${nextField.key}` : nextField.key;
+        setSelectedCell({ itemId, field: nextFieldKey });
         setTimeout(() => {
-          cellRefs.current[`${itemId}-${nextField}`]?.focus();
+          cellRefs.current[`${itemId}-${nextFieldKey}`]?.focus();
         }, 0);
       } else if (currentIndex < items.length - 1) {
         const nextItemId = items[currentIndex + 1].id;
-        setSelectedCell({ itemId: nextItemId, field: 'segmentName' });
+        const firstField = editableColumns[0];
+        const firstFieldKey = firstField.isCustom ? `custom_${firstField.key}` : firstField.key;
+        setSelectedCell({ itemId: nextItemId, field: firstFieldKey });
         setTimeout(() => {
-          cellRefs.current[`${nextItemId}-segmentName`]?.focus();
+          cellRefs.current[`${nextItemId}-${firstFieldKey}`]?.focus();
         }, 0);
       }
     }
@@ -252,6 +283,34 @@ const RundownGrid = () => {
     return 'upcoming';
   };
 
+  const handleAddColumn = (name: string) => {
+    const newColumn: Column = {
+      id: `custom_${Date.now()}`,
+      name,
+      key: `custom_${Date.now()}`,
+      width: 'min-w-32',
+      isCustom: true,
+      isEditable: true
+    };
+    setColumns(prev => [...prev, newColumn]);
+  };
+
+  const handleReorderColumns = (newColumns: Column[]) => {
+    setColumns(newColumns);
+  };
+
+  const handleDeleteColumn = (columnId: string) => {
+    setColumns(prev => prev.filter(col => col.id !== columnId));
+    // Remove the custom field data from all items
+    setItems(prev => prev.map(item => {
+      if (item.customFields) {
+        const { [columnId]: removed, ...rest } = item.customFields;
+        return { ...item, customFields: rest };
+      }
+      return item;
+    }));
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -267,19 +326,23 @@ const RundownGrid = () => {
               <Plus className="h-4 w-4" />
               <span>Add Header</span>
             </Button>
+            <Button onClick={() => setShowColumnManager(true)} variant="outline" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Manage Columns</span>
+            </Button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-100 border-b-2 border-gray-200">
+              <thead className="bg-gray-700 border-b-2 border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-8">#</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 min-w-48">Segment Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">Duration</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">Start Time</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">End Time</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 min-w-64">Notes</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white w-8">#</th>
+                  {columns.map((column) => (
+                    <th key={column.id} className={`px-4 py-3 text-left text-sm font-semibold text-white ${column.width}`}>
+                      {column.name}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white w-24">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -292,6 +355,7 @@ const RundownGrid = () => {
                     status={getRowStatus(item)}
                     showColorPicker={showColorPicker}
                     cellRefs={cellRefs}
+                    columns={columns}
                     onUpdateItem={updateItem}
                     onCellClick={handleCellClick}
                     onKeyDown={handleKeyDown}
@@ -311,6 +375,16 @@ const RundownGrid = () => {
           <RundownFooter totalSegments={items.filter(item => !item.isHeader).length} />
         </div>
       </div>
+
+      {showColumnManager && (
+        <ColumnManager
+          columns={columns}
+          onAddColumn={handleAddColumn}
+          onReorderColumns={handleReorderColumns}
+          onDeleteColumn={handleDeleteColumn}
+          onClose={() => setShowColumnManager(false)}
+        />
+      )}
     </div>
   );
 };

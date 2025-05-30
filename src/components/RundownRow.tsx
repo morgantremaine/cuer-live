@@ -14,6 +14,16 @@ interface RundownItem {
   status: 'upcoming' | 'current' | 'completed';
   color?: string;
   isHeader?: boolean;
+  customFields?: { [key: string]: string };
+}
+
+interface Column {
+  id: string;
+  name: string;
+  key: string;
+  width: string;
+  isCustom: boolean;
+  isEditable: boolean;
 }
 
 interface RundownRowProps {
@@ -23,9 +33,10 @@ interface RundownRowProps {
   status: 'upcoming' | 'current' | 'completed';
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
-  onUpdateItem: (id: string, field: keyof RundownItem, value: string) => void;
-  onCellClick: (itemId: string, field: keyof RundownItem) => void;
-  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: keyof RundownItem) => void;
+  columns: Column[];
+  onUpdateItem: (id: string, field: string, value: string) => void;
+  onCellClick: (itemId: string, field: string) => void;
+  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
@@ -42,6 +53,7 @@ const RundownRow = ({
   status,
   showColorPicker,
   cellRefs,
+  columns,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -58,7 +70,7 @@ const RundownRow = ({
   if (isDragging) {
     rowClass = 'bg-blue-100 opacity-50';
   } else if (item.isHeader) {
-    rowClass = 'bg-blue-50 border-l-4 border-blue-500 font-semibold';
+    rowClass = 'bg-gray-600 border-l-4 border-gray-800 font-semibold text-white';
   } else if (item.color) {
     rowClass = `hover:opacity-90`;
   } else if (status === 'current') {
@@ -66,6 +78,17 @@ const RundownRow = ({
   } else if (status === 'completed') {
     rowClass = 'bg-gray-50 text-gray-500';
   }
+
+  const getCellValue = (column: Column) => {
+    if (column.isCustom) {
+      return item.customFields?.[column.key] || '';
+    }
+    return (item as any)[column.key] || '';
+  };
+
+  const getFieldKey = (column: Column) => {
+    return column.isCustom ? column.key : column.key;
+  };
 
   if (item.isHeader) {
     return (
@@ -76,15 +99,15 @@ const RundownRow = ({
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
       >
-        <td className="px-4 py-2 text-sm text-gray-600 font-mono">
+        <td className="px-4 py-2 text-sm text-gray-300 font-mono">
           <div className="flex items-center space-x-2">
             <Move className="h-4 w-4 text-gray-400" />
             <span>{rowNumber}</span>
           </div>
         </td>
-        <td colSpan={5} className="px-4 py-3">
+        <td colSpan={columns.length} className="px-4 py-3">
           <div className="flex items-center space-x-3">
-            <span className="text-xl font-bold text-blue-600">{item.segmentName}</span>
+            <span className="text-xl font-bold text-white">{item.segmentName}</span>
             <input
               ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
               type="text"
@@ -92,7 +115,7 @@ const RundownRow = ({
               onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
               onClick={() => onCellClick(item.id, 'notes')}
               onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-              className="flex-1 border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm"
+              className="flex-1 border-none bg-transparent text-white placeholder-gray-300 focus:bg-gray-700 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded px-2 py-1 text-sm"
               placeholder="Header description..."
             />
           </div>
@@ -102,7 +125,7 @@ const RundownRow = ({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteRow(item.id)}
-            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            className="text-red-300 hover:text-red-200 hover:bg-red-900"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -126,57 +149,53 @@ const RundownRow = ({
           <span>{rowNumber}</span>
         </div>
       </td>
-      <td className="px-4 py-2">
-        <input
-          ref={el => el && (cellRefs.current[`${item.id}-segmentName`] = el)}
-          type="text"
-          value={item.segmentName}
-          onChange={(e) => onUpdateItem(item.id, 'segmentName', e.target.value)}
-          onClick={() => onCellClick(item.id, 'segmentName')}
-          onKeyDown={(e) => onKeyDown(e, item.id, 'segmentName')}
-          className="w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm"
-        />
-      </td>
-      <td className="px-4 py-2">
-        <input
-          ref={el => el && (cellRefs.current[`${item.id}-duration`] = el)}
-          type="text"
-          value={item.duration}
-          onChange={(e) => onUpdateItem(item.id, 'duration', e.target.value)}
-          onClick={() => onCellClick(item.id, 'duration')}
-          onKeyDown={(e) => onKeyDown(e, item.id, 'duration')}
-          className="w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm font-mono"
-          placeholder="00:00:00"
-        />
-      </td>
-      <td className="px-4 py-2">
-        <input
-          ref={el => el && (cellRefs.current[`${item.id}-startTime`] = el)}
-          type="text"
-          value={item.startTime}
-          onChange={(e) => onUpdateItem(item.id, 'startTime', e.target.value)}
-          onClick={() => onCellClick(item.id, 'startTime')}
-          onKeyDown={(e) => onKeyDown(e, item.id, 'startTime')}
-          className="w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm font-mono"
-          placeholder="00:00:00"
-        />
-      </td>
-      <td className="px-4 py-2">
-        <span className="text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
-          {item.endTime}
-        </span>
-      </td>
-      <td className="px-4 py-2">
-        <textarea
-          ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
-          value={item.notes}
-          onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
-          onClick={() => onCellClick(item.id, 'notes')}
-          onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-          className="w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm resize-none"
-          rows={1}
-        />
-      </td>
+      {columns.map((column) => {
+        const fieldKey = getFieldKey(column);
+        const value = getCellValue(column);
+        
+        if (column.key === 'endTime') {
+          return (
+            <td key={column.id} className="px-4 py-2">
+              <span className="text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                {value}
+              </span>
+            </td>
+          );
+        }
+
+        if (column.key === 'notes' || column.isCustom) {
+          return (
+            <td key={column.id} className="px-4 py-2">
+              <textarea
+                ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
+                value={value}
+                onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
+                onClick={() => onCellClick(item.id, fieldKey)}
+                onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
+                className="w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm resize-none"
+                rows={1}
+              />
+            </td>
+          );
+        }
+
+        return (
+          <td key={column.id} className="px-4 py-2">
+            <input
+              ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
+              type="text"
+              value={value}
+              onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
+              onClick={() => onCellClick(item.id, fieldKey)}
+              onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
+              className={`w-full border-none bg-transparent focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 text-sm ${
+                column.key === 'duration' || column.key === 'startTime' ? 'font-mono' : ''
+              }`}
+              placeholder={column.key === 'duration' || column.key === 'startTime' ? '00:00:00' : ''}
+            />
+          </td>
+        );
+      })}
       <td className="px-4 py-2">
         <div className="flex items-center space-x-1">
           <ColorPicker
