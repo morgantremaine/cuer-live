@@ -172,53 +172,40 @@ const RundownGrid = () => {
             />
           </div>
 
-          {/* Scrollable table content with enhanced scroll controls */}
+          {/* Scrollable table content */}
           <div className="relative">
-            {/* Left vertical scrollbar */}
-            <div className="absolute left-0 top-0 z-20 h-full">
-              <ScrollArea className="h-[calc(100vh-200px)]" orientation="vertical">
-                <div className="w-4 h-full" />
-                <ScrollBar orientation="vertical" />
-              </ScrollArea>
-            </div>
-            
-            {/* Main content area with padding for left scrollbar */}
-            <div className="pl-4">
-              <ScrollArea className="w-full">
-                <div className="min-w-max">
-                  <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-                    <RundownTable
-                      items={items}
-                      visibleColumns={visibleColumns}
-                      currentTime={currentTime}
-                      showColorPicker={showColorPicker}
-                      cellRefs={cellRefs}
-                      selectedRows={selectedRows}
-                      draggedItemIndex={draggedItemIndex}
-                      currentSegmentId={currentSegmentId}
-                      getColumnWidth={getColumnWidth}
-                      updateColumnWidth={updateColumnWidth}
-                      getRowNumber={getRowNumber}
-                      getRowStatus={getRowStatus}
-                      calculateHeaderDuration={calculateHeaderDuration}
-                      onUpdateItem={updateItem}
-                      onCellClick={handleCellClick}
-                      onKeyDown={handleKeyDown}
-                      onToggleColorPicker={handleToggleColorPicker}
-                      onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
-                      onDeleteRow={deleteRow}
-                      onToggleFloat={toggleFloatRow}
-                      onRowSelect={handleRowSelection}
-                      onDragStart={handleDragStart}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                    />
-                  </div>
-                </div>
-                {/* Bottom horizontal scrollbar */}
-                <ScrollBar orientation="horizontal" className="h-4" />
-              </ScrollArea>
-            </div>
+            <ScrollArea className="w-full h-[calc(100vh-200px)]">
+              <div className="min-w-max">
+                <RundownTable
+                  items={items}
+                  visibleColumns={visibleColumns}
+                  currentTime={currentTime}
+                  showColorPicker={showColorPicker}
+                  cellRefs={cellRefs}
+                  selectedRows={selectedRows}
+                  draggedItemIndex={draggedItemIndex}
+                  currentSegmentId={currentSegmentId}
+                  getColumnWidth={getColumnWidth}
+                  updateColumnWidth={updateColumnWidth}
+                  getRowNumber={getRowNumber}
+                  getRowStatus={getRowStatus}
+                  calculateHeaderDuration={calculateHeaderDuration}
+                  onUpdateItem={updateItem}
+                  onCellClick={handleCellClick}
+                  onKeyDown={handleKeyDown}
+                  onToggleColorPicker={handleToggleColorPicker}
+                  onColorSelect={(id, color) => handleColorSelect(id, color, updateItem)}
+                  onDeleteRow={deleteRow}
+                  onToggleFloat={toggleFloatRow}
+                  onRowSelect={handleRowSelection}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                />
+              </div>
+              <ScrollBar orientation="horizontal" />
+              <ScrollBar orientation="vertical" />
+            </ScrollArea>
           </div>
         </div>
       </div>
