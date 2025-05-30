@@ -13,6 +13,7 @@ interface SavedRundown {
   column_config?: Column[]
   created_at: string
   updated_at: string
+  is_archived?: boolean
 }
 
 export const useRundownStorage = () => {
@@ -55,6 +56,7 @@ export const useRundownStorage = () => {
       user_id: user.id,
       title,
       items,
+      is_archived: false,
       ...(columnConfig && { column_config: columnConfig })
     }
 
@@ -123,6 +125,60 @@ export const useRundownStorage = () => {
     }
   }
 
+  const archiveRundown = async (id: string) => {
+    if (!user) return
+
+    console.log('Archiving rundown:', id)
+    const { error } = await supabase
+      .from('rundowns')
+      .update({ is_archived: true, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error archiving rundown:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to archive rundown',
+        variant: 'destructive',
+      })
+    } else {
+      console.log('Rundown archived successfully')
+      toast({
+        title: 'Success',
+        description: 'Rundown archived successfully!',
+      })
+      loadRundowns()
+    }
+  }
+
+  const unarchiveRundown = async (id: string) => {
+    if (!user) return
+
+    console.log('Unarchiving rundown:', id)
+    const { error } = await supabase
+      .from('rundowns')
+      .update({ is_archived: false, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error unarchiving rundown:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to unarchive rundown',
+        variant: 'destructive',
+      })
+    } else {
+      console.log('Rundown unarchived successfully')
+      toast({
+        title: 'Success',
+        description: 'Rundown unarchived successfully!',
+      })
+      loadRundowns()
+    }
+  }
+
   const deleteRundown = async (id: string) => {
     if (!user) return
 
@@ -156,12 +212,20 @@ export const useRundownStorage = () => {
     }
   }, [user])
 
+  // Filter active and archived rundowns
+  const activeRundowns = savedRundowns.filter(r => !r.is_archived)
+  const archivedRundowns = savedRundowns.filter(r => r.is_archived)
+
   return {
     savedRundowns,
+    activeRundowns,
+    archivedRundowns,
     loading,
     saveRundown,
     updateRundown,
     deleteRundown,
+    archiveRundown,
+    unarchiveRundown,
     loadRundowns,
   }
 }
