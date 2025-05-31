@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { SearchMatch } from '@/types/search';
 
@@ -48,10 +47,21 @@ export const useSearch = (
     });
 
     setMatches(foundMatches);
+    
+    // Only update current match index if we have matches and no current match is set
     if (foundMatches.length > 0) {
-      setCurrentMatchIndex(0);
-      const firstMatch = foundMatches[0];
-      onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
+      // If we don't have a current match or the current index is invalid, set to first match
+      if (currentMatchIndex === -1 || currentMatchIndex >= foundMatches.length) {
+        setCurrentMatchIndex(0);
+        const firstMatch = foundMatches[0];
+        onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
+      } else {
+        // Keep the current match if it's still valid
+        const currentMatch = foundMatches[currentMatchIndex];
+        if (currentMatch) {
+          onHighlightMatch(currentMatch.itemId, currentMatch.field, currentMatch.index, currentMatch.index + currentMatch.length);
+        }
+      }
     } else {
       setCurrentMatchIndex(-1);
       onHighlightMatch('', '', 0, 0);
