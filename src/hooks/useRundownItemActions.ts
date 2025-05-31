@@ -42,6 +42,7 @@ export const useRundownItemActions = (
         duration: '00:00:00',
         endTime: calculateEndTime(newStartTime, '00:00:00'),
         talent: '',
+        script: '',
         notes: '',
         color: '#FFFFFF',
         isFloating: false,
@@ -68,6 +69,7 @@ export const useRundownItemActions = (
         duration: '00:00:00',
         endTime: newStartTime,
         talent: '',
+        script: '',
         notes: '',
         color: '#888888',
         isFloating: false,
@@ -102,6 +104,7 @@ export const useRundownItemActions = (
         segmentName: item.segmentName || item.rowNumber,
         status: item.status || 'upcoming',
         customFields: item.customFields || {},
+        script: item.script || '',
       }));
       return [...prevItems, ...newItems];
     });
