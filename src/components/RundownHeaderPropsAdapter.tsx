@@ -10,14 +10,12 @@ interface RundownHeaderPropsAdapterProps {
 const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
   // Create handlers for search functionality
   const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
-    // Focus on the cell and highlight the match
+    // Simply focus on the cell without trying to modify selection
     const cellKey = `${itemId}-${field}`;
     const cellElement = props.cellRefs.current[cellKey];
     if (cellElement) {
       cellElement.focus();
-      if (cellElement.setSelectionRange) {
-        cellElement.setSelectionRange(startIndex, endIndex);
-      }
+      cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 

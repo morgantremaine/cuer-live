@@ -71,10 +71,26 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     setMatches(foundMatches);
     if (foundMatches.length > 0) {
       setCurrentMatchIndex(0);
+      // Only focus the cell, don't try to set selection
       const firstMatch = foundMatches[0];
-      onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
+      focusCell(firstMatch.itemId, firstMatch.field);
     } else {
       setCurrentMatchIndex(-1);
+    }
+  };
+
+  // Helper function to focus a cell without modifying its content
+  const focusCell = (itemId: string, field: string) => {
+    try {
+      const cellKey = `${itemId}-${field}`;
+      const cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
+      if (cellElement) {
+        cellElement.focus();
+        // Only scroll into view, don't modify text selection
+        cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch (error) {
+      console.log('Could not focus cell:', error);
     }
   };
 
@@ -90,7 +106,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
 
     setCurrentMatchIndex(newIndex);
     const match = matches[newIndex];
-    onHighlightMatch(match.itemId, match.field, match.index, match.index + match.length);
+    focusCell(match.itemId, match.field);
   };
 
   const handleReplace = (replaceAll: boolean = false) => {
