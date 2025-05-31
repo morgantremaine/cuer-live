@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
@@ -54,7 +55,7 @@ const Dashboard = () => {
 
   const handleUnarchiveClick = async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation()
-    await updateRundown(rundownId, title, items, 'America/New_York', false, false)
+    await updateRundown(rundownId, title, items, false, false)
   }
 
   const confirmDelete = async () => {
@@ -68,7 +69,7 @@ const Dashboard = () => {
     if (archiveDialog.rundownId) {
       const rundown = savedRundowns.find(r => r.id === archiveDialog.rundownId)
       if (rundown) {
-        await updateRundown(archiveDialog.rundownId, rundown.title, rundown.items, rundown.timezone || 'America/New_York', false, true)
+        await updateRundown(archiveDialog.rundownId, rundown.title, rundown.items, false, true)
       }
       setArchiveDialog({ open: false, rundownId: '', title: '' })
     }

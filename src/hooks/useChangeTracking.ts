@@ -7,10 +7,9 @@ import { RundownItem } from './useRundownItems';
 interface SavedData {
   items: RundownItem[];
   title: string;
-  timezone: string;
 }
 
-export const useChangeTracking = (items: RundownItem[], rundownTitle: string, timezone: string) => {
+export const useChangeTracking = (items: RundownItem[], rundownTitle: string) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
@@ -22,8 +21,8 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, ti
   const currentRundown = savedRundowns.find(r => r.id === rundownId);
   const isNewRundown = !rundownId;
 
-  const serializeData = useCallback((items: RundownItem[], title: string, timezone: string): string => {
-    return JSON.stringify({ items, title, timezone });
+  const serializeData = useCallback((items: RundownItem[], title: string): string => {
+    return JSON.stringify({ items, title });
   }, []);
 
   // Initialize the baseline when component mounts
@@ -34,15 +33,13 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, ti
       isNewRundown,
       hasCurrentRundown: !!currentRundown,
       itemsLength: items.length,
-      title: rundownTitle,
-      timezone
+      title: rundownTitle
     });
     
     if (currentRundown && !isNewRundown) {
       lastSavedDataRef.current = {
         items: currentRundown.items || [],
-        title: currentRundown.title || 'Untitled Rundown',
-        timezone: currentRundown.timezone || 'America/New_York'
+        title: currentRundown.title || 'Untitled Rundown'
       };
       console.log('📁 Initialized with existing rundown:', currentRundown.id);
       setHasUnsavedChanges(false);
@@ -50,23 +47,22 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, ti
       // For new rundowns, set an empty baseline so any changes will be detected
       lastSavedDataRef.current = {
         items: [],
-        title: 'Live Broadcast Rundown',
-        timezone: 'America/New_York'
+        title: 'Live Broadcast Rundown'
       };
       console.log('✨ Initialized for new rundown with empty baseline');
       // For new rundowns, mark as changed if we have any non-default content
-      const hasNonDefaultContent = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown' || timezone !== 'America/New_York';
+      const hasNonDefaultContent = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
       console.log('🔍 New rundown content check:', {
         itemsLength: items.length,
         title: rundownTitle,
-        timezone,
+        defaultTitle: 'Live Broadcast Rundown',
         hasNonDefaultContent
       });
       setHasUnsavedChanges(hasNonDefaultContent);
     }
     
     isInitializedRef.current = true;
-  }, [currentRundown, isNewRundown, loading, items.length, rundownTitle, timezone]);
+  }, [currentRundown, isNewRundown, loading, items.length, rundownTitle]);
 
   // Check for changes using memoized serialization
   useEffect(() => {
@@ -75,8 +71,8 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, ti
       return;
     }
 
-    const currentSerialized = serializeData(items, rundownTitle, timezone);
-    const lastSavedSerialized = serializeData(lastSavedDataRef.current.items, lastSavedDataRef.current.title, lastSavedDataRef.current.timezone);
+    const currentSerialized = serializeData(items, rundownTitle);
+    const lastSavedSerialized = serializeData(lastSavedDataRef.current.items, lastSavedDataRef.current.title);
     
     const hasChanges = currentSerialized !== lastSavedSerialized;
     
@@ -87,20 +83,18 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, ti
       currentItems: items.length,
       savedItems: lastSavedDataRef.current?.items.length || 0,
       currentTitle: rundownTitle,
-      savedTitle: lastSavedDataRef.current?.title || 'none',
-      currentTimezone: timezone,
-      savedTimezone: lastSavedDataRef.current?.timezone || 'none'
+      savedTitle: lastSavedDataRef.current?.title || 'none'
     });
     
     if (hasChanges !== hasUnsavedChanges) {
       console.log('📝 Updating unsaved changes state to:', hasChanges);
       setHasUnsavedChanges(hasChanges);
     }
-  }, [items, rundownTitle, timezone, hasUnsavedChanges, serializeData]);
+  }, [items, rundownTitle, hasUnsavedChanges, serializeData]);
 
-  const markAsSaved = useCallback((items: RundownItem[], title: string, timezone: string) => {
-    console.log('✅ Marking as saved with items:', items.length, 'title:', title, 'timezone:', timezone);
-    lastSavedDataRef.current = { items: [...items], title, timezone };
+  const markAsSaved = useCallback((items: RundownItem[], title: string) => {
+    console.log('✅ Marking as saved with items:', items.length, 'title:', title);
+    lastSavedDataRef.current = { items: [...items], title };
     setHasUnsavedChanges(false);
   }, []);
 
