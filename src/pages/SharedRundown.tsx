@@ -48,6 +48,7 @@ const SharedRundown = () => {
     const todayDateStr = format(now, 'yyyy-MM-dd');
     
     for (const item of rundownData.items) {
+      // Skip headers when determining current segment
       if (item.type === 'header') continue;
       
       const startDateTime = new Date(`${todayDateStr}T${item.startTime}`);
@@ -156,7 +157,8 @@ const SharedRundown = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
             {rundownData.items.map((item, index) => {
-              const isCurrentSegment = currentSegmentId === item.id;
+              // Only non-header items can be current segments
+              const isCurrentSegment = item.type !== 'header' && currentSegmentId === item.id;
               
               return (
                 <tr
