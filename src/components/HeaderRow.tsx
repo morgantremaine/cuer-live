@@ -112,7 +112,7 @@ const HeaderRow = ({
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
       >
-        <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ width: '60px' }}>
+        <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ width: '50px' }}>
           <span className="text-xl font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
         </td>
         {columns.map((column, columnIndex) => (
