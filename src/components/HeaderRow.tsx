@@ -69,9 +69,9 @@ const HeaderRow = ({
     rowClass = 'bg-gray-200 dark:bg-gray-800 border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:bg-gray-300 dark:hover:bg-gray-700';
   }
 
-  // Add selection styling to match regular rows
+  // Add selection styling that matches regular rows
   if (isSelected) {
-    rowClass += ' ring-2 ring-inset ring-blue-500 border-blue-500';
+    rowClass += ' ring-2 ring-inset ring-blue-500 bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-500';
   }
 
   const handleContextMenuCopy = () => {
