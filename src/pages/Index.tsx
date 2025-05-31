@@ -2,8 +2,11 @@
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const { toast } = useToast();
+  
   const {
     currentTime,
     timezone,
@@ -79,6 +82,20 @@ const Index = () => {
     markAsChanged();
   };
 
+  const handleOpenTeleprompter = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot open teleprompter",
+        description: "Save this rundown first to access the teleprompter.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
+    window.open(teleprompterUrl, '_blank', 'width=1200,height=800');
+  };
+
   return (
     <RundownContainer
       currentTime={currentTime}
@@ -141,6 +158,7 @@ const Index = () => {
       rundownStartTime={rundownStartTime}
       onRundownStartTimeChange={handleRundownStartTimeChange}
       rundownId={rundownId}
+      onOpenTeleprompter={handleOpenTeleprompter}
     />
   );
 };

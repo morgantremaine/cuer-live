@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SharedRundown from "./pages/SharedRundown";
+import Teleprompter from "./pages/Teleprompter";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const AppRoutes = () => {
       {/* Public routes */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+      <Route path="/teleprompter/:id" element={<Teleprompter />} />
       
       {/* Protected routes */}
       <Route 

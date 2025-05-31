@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Share2 } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,8 @@ interface RundownToolbarProps {
   onBackward: () => void;
   // Share functionality
   rundownId: string | undefined;
+  // Teleprompter functionality
+  onOpenTeleprompter: () => void;
 }
 
 const RundownToolbar = ({
@@ -46,7 +48,8 @@ const RundownToolbar = ({
   onPause,
   onForward,
   onBackward,
-  rundownId
+  rundownId,
+  onOpenTeleprompter
 }: RundownToolbarProps) => {
   const { toast } = useToast();
   
@@ -107,6 +110,10 @@ const RundownToolbar = ({
         <Button onClick={handleShareRundown} variant="outline" className="flex items-center space-x-2">
           <Share2 className="h-4 w-4" />
           <span>Share Rundown</span>
+        </Button>
+        <Button onClick={onOpenTeleprompter} variant="outline" className="flex items-center space-x-2">
+          <Monitor className="h-4 w-4" />
+          <span>Teleprompter</span>
         </Button>
       </div>
 
