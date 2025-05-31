@@ -1,8 +1,8 @@
 
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
-import RundownContent from './RundownContent';
-import ColumnManager from './ColumnManager';
+import RundownLayoutWrapper from './RundownLayoutWrapper';
+import RundownMainContent from './RundownMainContent';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -67,145 +67,137 @@ interface RundownContainerProps {
   rundownId?: string;
 }
 
-const RundownContainer = ({
-  currentTime,
-  timezone,
-  onTimezoneChange,
-  totalRuntime,
-  showColumnManager,
-  setShowColumnManager,
-  items,
-  visibleColumns,
-  columns,
-  showColorPicker,
-  cellRefs,
-  selectedRows,
-  draggedItemIndex,
-  isDraggingMultiple,
-  currentSegmentId,
-  getColumnWidth,
-  updateColumnWidth,
-  getRowNumber,
-  getRowStatus,
-  calculateHeaderDuration,
-  onUpdateItem,
-  onCellClick,
-  onKeyDown,
-  onToggleColorPicker,
-  onColorSelect,
-  onDeleteRow,
-  onToggleFloat,
-  onRowSelect,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onAddRow,
-  onAddHeader,
-  selectedCount,
-  hasClipboardData,
-  onCopySelectedRows,
-  onPasteRows,
-  onDeleteSelectedRows,
-  onClearSelection,
-  selectedRowId,
-  isPlaying,
-  timeRemaining,
-  onPlay,
-  onPause,
-  onForward,
-  onBackward,
-  handleAddColumn,
-  handleReorderColumns,
-  handleDeleteColumnWithCleanup,
-  handleToggleColumnVisibility,
-  handleLoadLayout,
-  hasUnsavedChanges,
-  isSaving,
-  rundownTitle,
-  onTitleChange,
-  rundownStartTime,
-  onRundownStartTimeChange,
-  rundownId
-}: RundownContainerProps) => {
+const RundownContainer = (props: RundownContainerProps) => {
+  const {
+    currentTime,
+    timezone,
+    onTimezoneChange,
+    totalRuntime,
+    showColumnManager,
+    setShowColumnManager,
+    items,
+    visibleColumns,
+    columns,
+    showColorPicker,
+    cellRefs,
+    selectedRows,
+    draggedItemIndex,
+    isDraggingMultiple,
+    currentSegmentId,
+    getColumnWidth,
+    updateColumnWidth,
+    getRowNumber,
+    getRowStatus,
+    calculateHeaderDuration,
+    onUpdateItem,
+    onCellClick,
+    onKeyDown,
+    onToggleColorPicker,
+    onColorSelect,
+    onDeleteRow,
+    onToggleFloat,
+    onRowSelect,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onAddRow,
+    onAddHeader,
+    selectedCount,
+    hasClipboardData,
+    onCopySelectedRows,
+    onPasteRows,
+    onDeleteSelectedRows,
+    onClearSelection,
+    selectedRowId,
+    isPlaying,
+    timeRemaining,
+    onPlay,
+    onPause,
+    onForward,
+    onBackward,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumnWithCleanup,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    hasUnsavedChanges,
+    isSaving,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId
+  } = props;
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
-      <div className="max-w-none mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          <RundownHeaderSection
-            currentTime={currentTime}
-            timezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-            totalRuntime={totalRuntime}
-            onAddRow={onAddRow}
-            onAddHeader={onAddHeader}
-            onShowColumnManager={() => setShowColumnManager(true)}
-            selectedCount={selectedCount}
-            hasClipboardData={hasClipboardData}
-            onCopySelectedRows={onCopySelectedRows}
-            onPasteRows={onPasteRows}
-            onDeleteSelectedRows={onDeleteSelectedRows}
-            onClearSelection={onClearSelection}
-            selectedRowId={selectedRowId}
-            isPlaying={isPlaying}
-            currentSegmentId={currentSegmentId}
-            timeRemaining={timeRemaining}
-            onPlay={onPlay}
-            onPause={onPause}
-            onForward={onForward}
-            onBackward={onBackward}
-            hasUnsavedChanges={hasUnsavedChanges}
-            isSaving={isSaving}
-            rundownTitle={rundownTitle}
-            onTitleChange={onTitleChange}
-            rundownStartTime={rundownStartTime}
-            onRundownStartTimeChange={onRundownStartTimeChange}
-            rundownId={rundownId}
-          />
+    <RundownLayoutWrapper>
+      <RundownHeaderSection
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
+        onShowColumnManager={() => setShowColumnManager(true)}
+        selectedCount={selectedCount}
+        hasClipboardData={hasClipboardData}
+        onCopySelectedRows={onCopySelectedRows}
+        onPasteRows={onPasteRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
+        onClearSelection={onClearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        rundownId={rundownId}
+      />
 
-          <RundownContent
-            items={items}
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            isDraggingMultiple={isDraggingMultiple}
-            currentSegmentId={currentSegmentId}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-            getRowNumber={getRowNumber}
-            getRowStatus={getRowStatus}
-            calculateHeaderDuration={calculateHeaderDuration}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            onToggleColorPicker={onToggleColorPicker}
-            onColorSelect={onColorSelect}
-            onDeleteRow={onDeleteRow}
-            onToggleFloat={onToggleFloat}
-            onRowSelect={onRowSelect}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-          />
-        </div>
-      </div>
-
-      {showColumnManager && (
-        <ColumnManager
-          columns={columns}
-          onAddColumn={handleAddColumn}
-          onReorderColumns={handleReorderColumns}
-          onDeleteColumn={handleDeleteColumnWithCleanup}
-          onToggleColumnVisibility={handleToggleColumnVisibility}
-          onLoadLayout={(layoutColumns) => {
-            handleReorderColumns(layoutColumns);
-          }}
-          onClose={() => setShowColumnManager(false)}
-        />
-      )}
-    </div>
+      <RundownMainContent
+        items={items}
+        visibleColumns={visibleColumns}
+        columns={columns}
+        currentTime={currentTime}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        currentSegmentId={currentSegmentId}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={updateColumnWidth}
+        getRowNumber={getRowNumber}
+        getRowStatus={getRowStatus}
+        calculateHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={onUpdateItem}
+        onCellClick={onCellClick}
+        onKeyDown={onKeyDown}
+        onToggleColorPicker={onToggleColorPicker}
+        onColorSelect={onColorSelect}
+        onDeleteRow={onDeleteRow}
+        onToggleFloat={onToggleFloat}
+        onRowSelect={onRowSelect}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        showColumnManager={showColumnManager}
+        handleAddColumn={handleAddColumn}
+        handleReorderColumns={handleReorderColumns}
+        handleDeleteColumnWithCleanup={handleDeleteColumnWithCleanup}
+        handleToggleColumnVisibility={handleToggleColumnVisibility}
+        handleLoadLayout={handleLoadLayout}
+        onCloseColumnManager={() => setShowColumnManager(false)}
+      />
+    </RundownLayoutWrapper>
   );
 };
 
