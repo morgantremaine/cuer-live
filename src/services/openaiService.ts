@@ -1,4 +1,3 @@
-
 interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -60,36 +59,30 @@ Only suggest modifications when explicitly asked or when critical issues need fi
 
 Respond in a helpful, professional manner and always aim to improve the quality and efficiency of broadcast production.`;
 
+// TODO: Replace with your actual OpenAI API key
+const HARDCODED_API_KEY = 'your-api-key-here';
+
 class OpenAIService {
-  private apiKey: string | null = null;
+  private apiKey: string = HARDCODED_API_KEY;
 
   setApiKey(apiKey: string) {
-    this.apiKey = apiKey;
-    localStorage.setItem('openai_api_key', apiKey);
-    console.log('OpenAI API key set:', apiKey.substring(0, 10) + '...');
+    // Keep this method for backward compatibility, but use hardcoded key
+    console.log('API key setting ignored - using hardcoded key');
   }
 
-  getApiKey(): string | null {
-    if (this.apiKey) return this.apiKey;
-    
-    const stored = localStorage.getItem('openai_api_key');
-    if (stored) {
-      this.apiKey = stored;
-      return stored;
-    }
-    
-    return null;
+  getApiKey(): string {
+    return this.apiKey;
   }
 
   clearApiKey() {
-    this.apiKey = null;
-    localStorage.removeItem('openai_api_key');
+    // Do nothing - always use hardcoded key
+    console.log('API key clearing ignored - using hardcoded key');
   }
 
   async sendMessage(messages: OpenAIMessage[]): Promise<string> {
     const apiKey = this.getApiKey();
-    if (!apiKey) {
-      throw new Error('OpenAI API key not set. Please configure your API key first.');
+    if (!apiKey || apiKey === 'your-api-key-here') {
+      throw new Error('Please replace HARDCODED_API_KEY in openaiService.ts with your actual OpenAI API key.');
     }
 
     console.log('Sending request to OpenAI with:', {
@@ -195,8 +188,8 @@ Please analyze this rundown for timing issues, content flow, missing segments, a
 
   async checkConnection(): Promise<boolean> {
     const apiKey = this.getApiKey();
-    if (!apiKey) {
-      console.log('No API key found for connection check');
+    if (!apiKey || apiKey === 'your-api-key-here') {
+      console.log('No valid API key found for connection check');
       return false;
     }
 
@@ -226,8 +219,8 @@ Please analyze this rundown for timing issues, content flow, missing segments, a
   }
 
   hasApiKey(): boolean {
-    const hasKey = !!this.getApiKey();
-    console.log('Has API key:', hasKey);
+    const hasKey = !!(this.getApiKey() && this.getApiKey() !== 'your-api-key-here');
+    console.log('Has valid API key:', hasKey);
     return hasKey;
   }
 }

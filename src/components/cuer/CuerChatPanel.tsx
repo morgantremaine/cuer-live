@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { X, MessageCircle, Send, Zap, Trash2, Wifi, WifiOff, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,13 +47,10 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
 
   useEffect(() => {
     if (isOpen) {
-      if (!hasApiKey()) {
-        setShowApiKeySetup(true);
-      } else {
-        checkConnection();
-      }
+      // Always check connection when panel opens
+      checkConnection();
     }
-  }, [isOpen, hasApiKey, checkConnection]);
+  }, [isOpen, checkConnection]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -144,6 +140,9 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
 
   if (!isOpen) return null;
 
+  // Check if we need to show API key setup (only if no hardcoded key and connection failed)
+  const needsApiKeySetup = !hasApiKey() && isConnected === false;
+
   return (
     <>
       <div className="fixed right-4 bottom-4 w-96 h-[600px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col">
@@ -159,14 +158,17 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
             )}
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSettingsClick}
-              title="API Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
+            {/* Only show settings if API key setup is needed */}
+            {needsApiKeySetup && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSettingsClick}
+                title="API Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -181,20 +183,23 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
           </div>
         </div>
 
-        {/* API Key Setup */}
-        {showApiKeySetup && (
+        {/* API Key Setup - only shown if needed */}
+        {showApiKeySetup && needsApiKeySetup && (
           <div className="border-b border-gray-200">
             <ApiKeySetup
               onApiKeySet={handleApiKeySet}
-              onCancel={hasApiKey() ? () => setShowApiKeySetup(false) : undefined}
+              onCancel={() => setShowApiKeySetup(false)}
             />
           </div>
         )}
 
         {/* Connection Status */}
-        {!showApiKeySetup && isConnected === false && hasApiKey() && (
+        {!showApiKeySetup && isConnected === false && (
           <div className="p-3 bg-red-50 border-b border-red-200 text-sm text-red-700">
-            ⚠️ Connection failed. Check your API key or try again.
+            {needsApiKeySetup ? 
+              '⚠️ Please configure your API key to use Cuer.' :
+              '⚠️ Connection failed. Please check your API key configuration.'
+            }
           </div>
         )}
 

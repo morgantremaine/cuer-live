@@ -101,14 +101,14 @@ export const useCuerChat = () => {
     setPendingModifications(null);
   }, []);
 
+  // These methods are kept for backward compatibility but do nothing
   const setApiKey = useCallback((apiKey: string) => {
-    openaiService.setApiKey(apiKey);
+    console.log('API key setting ignored - using hardcoded key');
     checkConnection();
   }, [checkConnection]);
 
   const clearApiKey = useCallback(() => {
-    openaiService.clearApiKey();
-    setIsConnected(false);
+    console.log('API key clearing ignored - using hardcoded key');
   }, []);
 
   const hasApiKey = useCallback(() => {
