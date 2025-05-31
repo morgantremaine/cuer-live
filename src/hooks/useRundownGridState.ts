@@ -2,7 +2,7 @@
 import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridState = () => {
@@ -14,14 +14,7 @@ export const useRundownGridState = () => {
 
   console.log('useRundownGridState: items count:', coreState.items.length);
 
-  // Stable color select function
-  const selectColor = useCallback((id: string, color: string) => {
-    console.log('Selecting color for item:', id, color);
-    coreState.updateItem(id, 'color', color);
-    coreState.markAsChanged();
-  }, [coreState.updateItem, coreState.markAsChanged]);
-
-  // Get interaction handlers - pass functions directly without memoization
+  // Get interaction handlers - use core functions directly
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
@@ -34,7 +27,11 @@ export const useRundownGridState = () => {
     coreState.addMultipleRows,
     coreState.handleDeleteColumn,
     coreState.calculateEndTime,
-    selectColor,
+    (id: string, color: string) => {
+      console.log('Selecting color for item:', id, color);
+      coreState.updateItem(id, 'color', color);
+      coreState.markAsChanged();
+    },
     coreState.markAsChanged,
     coreState.setRundownTitle
   );

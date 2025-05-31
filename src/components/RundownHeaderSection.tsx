@@ -33,10 +33,6 @@ interface RundownHeaderSectionProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
-  // Row actions
-  onToggleFloat?: (id: string) => void;
-  onToggleColorPicker?: (id: string) => void;
-  selectedRowIds?: string[];
 }
 
 const RundownHeaderSection = ({
@@ -68,13 +64,10 @@ const RundownHeaderSection = ({
   rundownStartTime,
   onRundownStartTimeChange,
   rundownId,
-  onOpenTeleprompter,
-  onToggleFloat,
-  onToggleColorPicker,
-  selectedRowIds
+  onOpenTeleprompter
 }: RundownHeaderSectionProps) => {
   return (
-    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+    <div>
       <RundownHeader
         currentTime={currentTime}
         timezone={timezone}
@@ -107,9 +100,6 @@ const RundownHeaderSection = ({
         onBackward={onBackward}
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
-        onToggleFloat={onToggleFloat}
-        onShowColorPicker={onToggleColorPicker}
-        selectedRowIds={selectedRowIds}
       />
     </div>
   );

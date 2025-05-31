@@ -131,8 +131,6 @@ const RundownContainer = (props: RundownContainerProps) => {
     onOpenTeleprompter
   } = props;
 
-  const selectedRowIds = Array.from(selectedRows);
-
   return (
     <RundownLayoutWrapper>
       <RundownHeaderSection
@@ -165,9 +163,6 @@ const RundownContainer = (props: RundownContainerProps) => {
         onRundownStartTimeChange={onRundownStartTimeChange}
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
-        onToggleFloat={onToggleFloat}
-        onToggleColorPicker={onToggleColorPicker}
-        selectedRowIds={selectedRowIds}
       />
 
       <RundownMainContent
