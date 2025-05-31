@@ -43,32 +43,15 @@ const CellRenderer = ({
     onCellClick(item.id, fieldKey);
   };
 
-  if (column.key === 'endTime') {
+  if (column.key === 'endTime' || column.key === 'startTime') {
     return (
       <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
         <span 
-          className="text-sm font-mono"
+          className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
           style={{ color: textColor || undefined }}
         >
           {value}
         </span>
-      </td>
-    );
-  }
-
-  if (column.key === 'startTime') {
-    return (
-      <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
-        <input
-          ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
-          type="text"
-          value={value}
-          onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
-          onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
-          className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm font-mono"
-          style={{ color: textColor || undefined }}
-          placeholder="00:00:00"
-        />
       </td>
     );
   }
@@ -98,10 +81,10 @@ const CellRenderer = ({
         onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
         onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
         className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm ${
-          column.key === 'duration' || column.key === 'startTime' ? 'font-mono' : ''
+          column.key === 'duration' ? 'font-mono' : ''
         }`}
         style={{ color: textColor || undefined }}
-        placeholder={column.key === 'duration' || column.key === 'startTime' ? '00:00:00' : ''}
+        placeholder={column.key === 'duration' ? '00:00:00' : ''}
       />
     </td>
   );

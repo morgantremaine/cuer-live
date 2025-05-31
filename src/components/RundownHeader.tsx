@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Edit2, User, LogOut, ArrowLeft } from 'lucide-react';
+import { Edit2, User, LogOut, ArrowLeft, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import TimezoneSelector from './TimezoneSelector';
@@ -16,6 +16,8 @@ interface RundownHeaderProps {
   isSaving: boolean;
   title: string;
   onTitleChange: (title: string) => void;
+  rundownStartTime: string;
+  onRundownStartTimeChange: (startTime: string) => void;
 }
 
 const RundownHeader = ({ 
@@ -26,7 +28,9 @@ const RundownHeader = ({
   hasUnsavedChanges,
   isSaving,
   title,
-  onTitleChange
+  onTitleChange,
+  rundownStartTime,
+  onRundownStartTimeChange
 }: RundownHeaderProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -145,7 +149,20 @@ const RundownHeader = ({
         </div>
       </div>
       <div className="flex justify-between items-center text-sm">
-        <span className="opacity-75">Total Runtime: {totalRuntime}</span>
+        <div className="flex items-center space-x-4">
+          <span className="opacity-75">Total Runtime: {totalRuntime}</span>
+          <div className="flex items-center space-x-2">
+            <Clock className="h-4 w-4 opacity-75" />
+            <span className="opacity-75">Start Time:</span>
+            <input
+              type="text"
+              value={rundownStartTime}
+              onChange={(e) => onRundownStartTimeChange(e.target.value)}
+              className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-20 focus:outline-none focus:border-blue-500"
+              placeholder="00:00:00"
+            />
+          </div>
+        </div>
         <span className="opacity-75">{timezone.replace('_', ' ')}</span>
       </div>
 

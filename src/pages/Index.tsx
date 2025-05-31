@@ -12,6 +12,8 @@ const Index = () => {
     setShowColumnManager,
     rundownTitle,
     setRundownTitle,
+    rundownStartTime,
+    setRundownStartTime,
     items,
     visibleColumns,
     columns,
@@ -58,11 +60,17 @@ const Index = () => {
     hasUnsavedChanges,
     isSaving,
     calculateTotalRuntime,
-    calculateEndTime
+    calculateEndTime,
+    markAsChanged
   } = useRundownGridState();
 
   const selectedRowsArray = Array.from(selectedRowsSet);
   const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+
+  const handleRundownStartTimeChange = (startTime: string) => {
+    setRundownStartTime(startTime);
+    markAsChanged();
+  };
 
   return (
     <RundownContainer
@@ -122,6 +130,8 @@ const Index = () => {
       isSaving={isSaving}
       rundownTitle={rundownTitle}
       onTitleChange={setRundownTitle}
+      rundownStartTime={rundownStartTime}
+      onRundownStartTimeChange={handleRundownStartTimeChange}
     />
   );
 };

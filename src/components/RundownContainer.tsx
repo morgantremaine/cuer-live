@@ -61,6 +61,8 @@ interface RundownContainerProps {
   isSaving: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
+  rundownStartTime: string;
+  onRundownStartTimeChange: (startTime: string) => void;
 }
 
 const RundownContainer = ({
@@ -116,7 +118,9 @@ const RundownContainer = ({
   hasUnsavedChanges,
   isSaving,
   rundownTitle,
-  onTitleChange
+  onTitleChange,
+  rundownStartTime,
+  onRundownStartTimeChange
 }: RundownContainerProps) => {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
@@ -148,6 +152,8 @@ const RundownContainer = ({
             isSaving={isSaving}
             rundownTitle={rundownTitle}
             onTitleChange={onTitleChange}
+            rundownStartTime={rundownStartTime}
+            onRundownStartTimeChange={onRundownStartTimeChange}
           />
 
           <RundownContent

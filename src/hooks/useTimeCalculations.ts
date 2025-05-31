@@ -2,7 +2,11 @@
 import { useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
-export const useTimeCalculations = (items: RundownItem[], updateItem: (id: string, field: string, value: string) => void) => {
+export const useTimeCalculations = (
+  items: RundownItem[], 
+  updateItem: (id: string, field: string, value: string) => void, 
+  rundownStartTime: string
+) => {
   const timeToSeconds = (timeStr: string) => {
     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
     return hours * 3600 + minutes * 60 + seconds;
@@ -39,17 +43,38 @@ export const useTimeCalculations = (items: RundownItem[], updateItem: (id: strin
     return 'upcoming';
   };
 
-  // Update end times when start time or duration changes
+  // Recalculate all start and end times based on rundown start time and durations
   useEffect(() => {
-    items.forEach(item => {
-      if (!isHeaderItem(item) && item.startTime && item.duration) {
-        const expectedEndTime = calculateEndTime(item.startTime, item.duration);
+    let currentTime = rundownStartTime;
+    let needsUpdate = false;
+
+    items.forEach((item, index) => {
+      // For headers, they don't have duration, so they start at current time and end at current time
+      if (isHeaderItem(item)) {
+        if (item.startTime !== currentTime || item.endTime !== currentTime) {
+          updateItem(item.id, 'startTime', currentTime);
+          updateItem(item.id, 'endTime', currentTime);
+          needsUpdate = true;
+        }
+      } else {
+        // For regular items, calculate start and end based on duration
+        const expectedEndTime = calculateEndTime(currentTime, item.duration);
+        
+        if (item.startTime !== currentTime) {
+          updateItem(item.id, 'startTime', currentTime);
+          needsUpdate = true;
+        }
+        
         if (item.endTime !== expectedEndTime) {
           updateItem(item.id, 'endTime', expectedEndTime);
+          needsUpdate = true;
         }
+        
+        // Next item starts when this one ends
+        currentTime = expectedEndTime;
       }
     });
-  }, [items, updateItem]);
+  }, [items, updateItem, rundownStartTime]);
 
   return {
     calculateEndTime,

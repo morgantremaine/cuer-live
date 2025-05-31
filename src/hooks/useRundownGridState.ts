@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -18,6 +19,7 @@ export const useRundownGridState = () => {
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
+  const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
 
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
@@ -88,7 +90,7 @@ export const useRundownGridState = () => {
   const {
     calculateEndTime,
     getRowStatus
-  } = useTimeCalculations(items, updateItem);
+  } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   const {
     showColorPicker,
@@ -133,6 +135,8 @@ export const useRundownGridState = () => {
     setShowColumnManager,
     rundownTitle,
     setRundownTitle,
+    rundownStartTime,
+    setRundownStartTime,
     rundownId,
     
     // Items state

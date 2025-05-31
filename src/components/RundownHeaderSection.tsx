@@ -29,6 +29,8 @@ interface RundownHeaderSectionProps {
   isSaving: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
+  rundownStartTime: string;
+  onRundownStartTimeChange: (startTime: string) => void;
 }
 
 const RundownHeaderSection = ({
@@ -56,7 +58,9 @@ const RundownHeaderSection = ({
   hasUnsavedChanges,
   isSaving,
   rundownTitle,
-  onTitleChange
+  onTitleChange,
+  rundownStartTime,
+  onRundownStartTimeChange
 }: RundownHeaderSectionProps) => {
   return (
     <div className="sticky top-0 z-10 bg-white dark:bg-gray-800">
@@ -69,6 +73,8 @@ const RundownHeaderSection = ({
         isSaving={isSaving}
         title={rundownTitle}
         onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
       />
       
       <RundownToolbar
