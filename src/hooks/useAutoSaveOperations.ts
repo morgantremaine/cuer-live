@@ -14,10 +14,11 @@ export const useAutoSaveOperations = () => {
 
   const isNewRundown = !rundownId;
 
-  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string) => {
+  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, timezone: string) => {
     console.log('🔧 performSave called with:', {
       itemsCount: items.length,
       title: rundownTitle,
+      timezone,
       isNewRundown,
       rundownId,
       userId: user?.id || 'none',
@@ -46,12 +47,12 @@ export const useAutoSaveOperations = () => {
     }
 
     try {
-      console.log('Starting save operation...', { isNewRundown, itemsCount: items.length, title: rundownTitle });
+      console.log('Starting save operation...', { isNewRundown, itemsCount: items.length, title: rundownTitle, timezone });
       setIsSaving(true);
       
       if (isNewRundown) {
         console.log('Saving new rundown...');
-        const result = await saveRundown(rundownTitle, items);
+        const result = await saveRundown(rundownTitle, items, timezone);
         console.log('Save result:', result);
         
         if (result?.id) {
@@ -67,12 +68,13 @@ export const useAutoSaveOperations = () => {
         console.log('Update data:', {
           id: rundownId,
           title: rundownTitle,
+          timezone,
           itemsCount: items.length,
           silent: true
         });
         
         // Call updateRundown with proper parameters and error handling
-        await updateRundown(rundownId, rundownTitle, items, true);
+        await updateRundown(rundownId, rundownTitle, items, timezone, true);
         console.log('Rundown updated successfully');
         return true;
       }
@@ -85,6 +87,7 @@ export const useAutoSaveOperations = () => {
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
         rundownId,
         title: rundownTitle,
+        timezone,
         itemsCount: items.length,
         isNewRundown
       });

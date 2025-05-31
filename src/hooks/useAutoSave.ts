@@ -1,12 +1,10 @@
-
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
-export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
+export const useAutoSave = (items: RundownItem[], rundownTitle: string, timezone: string) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
@@ -18,11 +16,12 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     markAsSaved, 
     markAsChanged,
     isInitialized 
-  } = useChangeTracking(items, rundownTitle);
+  } = useChangeTracking(items, rundownTitle, timezone);
 
   console.log('🚀 AutoSave render:', {
     itemsCount: items.length,
     title: rundownTitle,
+    timezone,
     hasUnsavedChanges,
     isSaving,
     initialized: isInitialized,
@@ -31,7 +30,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   });
 
   // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string) => {
+  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, timezoneToSave: string) => {
     console.log('🎯 Debounced save triggered');
     
     if (!user || isSaving) {
@@ -40,12 +39,12 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     }
 
     try {
-      const success = await performSave(itemsToSave, titleToSave);
+      const success = await performSave(itemsToSave, titleToSave, timezoneToSave);
       console.log('💾 Save operation result:', success);
       
       if (success) {
         console.log('✅ Auto-save successful, marking as saved');
-        markAsSaved(itemsToSave, titleToSave);
+        markAsSaved(itemsToSave, titleToSave, timezoneToSave);
       } else {
         console.log('❌ Auto-save failed, keeping unsaved state');
         setHasUnsavedChanges(true);
@@ -68,7 +67,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     }
 
     // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle });
+    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, timezone });
     
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
@@ -88,11 +87,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
       console.log('⚡ Executing debounced auto-save');
-      debouncedSave([...items], rundownTitle);
+      debouncedSave([...items], rundownTitle, timezone);
       debounceTimeoutRef.current = null;
     }, 2000);
 
-  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, debouncedSave]);
+  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, timezone, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -114,4 +113,3 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     markAsChanged: markAsChangedCallback
   };
 };
-

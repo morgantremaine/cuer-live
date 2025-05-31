@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -8,6 +9,7 @@ interface SavedRundown {
   id: string
   title: string
   items: RundownItem[]
+  timezone?: string
   created_at: string
   updated_at: string
   archived?: boolean
@@ -42,13 +44,13 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[]) => {
+  const saveRundown = async (title: string, items: RundownItem[], timezone: string = 'America/New_York') => {
     if (!user) {
       console.error('Cannot save: no user')
       return
     }
 
-    console.log('Saving new rundown to database:', { title, itemsCount: items.length, userId: user.id })
+    console.log('Saving new rundown to database:', { title, itemsCount: items.length, timezone, userId: user.id })
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -56,6 +58,7 @@ export const useRundownStorage = () => {
         user_id: user.id,
         title,
         items,
+        timezone,
         archived: false
       })
       .select()
@@ -80,7 +83,7 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], timezone: string = 'America/New_York', silent = false, archived = false) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
@@ -90,6 +93,7 @@ export const useRundownStorage = () => {
       id,
       title,
       itemsCount: items.length,
+      timezone,
       userId: user.id,
       silent,
       archived
@@ -98,6 +102,7 @@ export const useRundownStorage = () => {
     const updateData = {
       title: title,
       items: items,
+      timezone: timezone,
       updated_at: new Date().toISOString(),
       archived: archived
     }

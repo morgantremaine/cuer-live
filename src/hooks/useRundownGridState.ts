@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -24,19 +23,23 @@ export const useRundownGridState = () => {
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Load the title from existing rundown
+  // Load the title and timezone from existing rundown
   useEffect(() => {
     if (loading) return;
     
     if (rundownId && savedRundowns.length > 0) {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
-        console.log('Loading rundown title:', existingRundown.title);
+        console.log('Loading rundown data:', existingRundown.title, existingRundown.timezone);
         setRundownTitle(existingRundown.title);
+        if (existingRundown.timezone) {
+          setTimezone(existingRundown.timezone);
+        }
       }
     } else if (!rundownId) {
-      console.log('New rundown, using default title');
+      console.log('New rundown, using defaults');
       setRundownTitle('Live Broadcast Rundown');
+      setTimezone('America/New_York');
     }
   }, [rundownId, savedRundowns, loading]);
 
@@ -55,7 +58,7 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle);
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, timezone);
 
   const {
     columns,
