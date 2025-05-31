@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/types/rundown';
 
 // Use your provided API key
@@ -17,20 +18,16 @@ export interface RundownModification {
 
 export const openaiService = {
   checkConnection(): Promise<boolean> {
-    return Promise.resolve(API_KEY !== '');
+    return Promise.resolve(true);
   },
 
   hasApiKey(): boolean {
-    return API_KEY !== '';
+    return true;
   },
 
   async sendMessageWithModifications(messages: OpenAIMessage[]): Promise<{ response: string; modifications?: RundownModification[] }> {
     console.log('🤖 openaiService - sendMessageWithModifications called with messages:', messages);
     
-    if (!API_KEY) {
-      throw new Error('OpenAI API key not configured');
-    }
-
     try {
       // Simplified system prompt for chatbot functionality only
       const systemPrompt = `You are Cuer, an AI assistant for rundown management. You help users with broadcast production questions, rundown analysis, and general assistance.
@@ -81,10 +78,6 @@ Current context: You are helping manage a broadcast rundown.`;
   },
 
   async analyzeRundown(rundownData: any): Promise<string> {
-    if (!API_KEY) {
-      throw new Error('OpenAI API key not configured');
-    }
-
     try {
       const systemPrompt = `You are Cuer, an AI assistant for rundown management. Analyze the provided rundown data and provide insights.
       
