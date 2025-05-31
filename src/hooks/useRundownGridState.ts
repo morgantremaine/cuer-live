@@ -61,7 +61,7 @@ export const useRundownGridState = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations();
 
-  // UI state management - fix selectColor function signature
+  // UI state management - fix function parameters
   const {
     showColorPicker,
     handleToggleColorPicker,
@@ -82,7 +82,7 @@ export const useRundownGridState = () => {
     markAsChanged
   );
 
-  // Interaction handlers - fix selectColor parameter
+  // Interaction handlers - fix function parameters
   const {
     selectedRows,
     toggleRowSelection,

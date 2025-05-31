@@ -31,7 +31,7 @@ export const useRundownInteractionHandlers = (
     handleDragStart, 
     handleDragOver, 
     handleDrop 
-  } = useDragAndDrop(items, setItems, selectedRows);
+  } = useDragAndDrop(items, (newItems: RundownItem[]) => setItems(() => newItems), selectedRows);
 
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();

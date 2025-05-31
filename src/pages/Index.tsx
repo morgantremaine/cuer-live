@@ -126,7 +126,7 @@ const Index = () => {
         onCellClick={handleCellClick}
         onKeyDown={handleKeyDown}
         onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={(id, color) => selectColor(id, color, updateItem)}
+        onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
         onRowSelect={(itemId, index, isShiftClick, isCtrlClick) => 
