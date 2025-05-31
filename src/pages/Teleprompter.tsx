@@ -248,7 +248,7 @@ const Teleprompter = () => {
                   className="text-left mb-6"
                   style={{ fontSize: `${fontSize + 4}px` }}
                 >
-                  [{getRowNumber(item.originalIndex)} {item.name?.toUpperCase() || 'SEGMENT'}]
+                  [{getRowNumber(item.originalIndex)} {item.name?.toUpperCase() || 'UNTITLED'}]
                 </div>
 
                 {/* Talent */}
