@@ -31,6 +31,7 @@ interface RundownHeaderSectionProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  rundownId?: string;
 }
 
 const RundownHeaderSection = ({
@@ -60,23 +61,23 @@ const RundownHeaderSection = ({
   rundownTitle,
   onTitleChange,
   rundownStartTime,
-  onRundownStartTimeChange
+  onRundownStartTimeChange,
+  rundownId
 }: RundownHeaderSectionProps) => {
   return (
-    <div className="sticky top-0 z-10 bg-white dark:bg-gray-800">
-      <RundownHeader 
-        currentTime={currentTime} 
+    <div>
+      <RundownHeader
+        currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
-        title={rundownTitle}
+        rundownTitle={rundownTitle}
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
       />
-      
       <RundownToolbar
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
@@ -95,6 +96,7 @@ const RundownHeaderSection = ({
         onPause={onPause}
         onForward={onForward}
         onBackward={onBackward}
+        rundownId={rundownId}
       />
     </div>
   );

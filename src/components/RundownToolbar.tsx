@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
+import { useToast } from '@/hooks/use-toast';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -23,6 +24,8 @@ interface RundownToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  // Share functionality
+  rundownId: string | undefined;
 }
 
 const RundownToolbar = ({
@@ -42,8 +45,11 @@ const RundownToolbar = ({
   onPlay,
   onPause,
   onForward,
-  onBackward
+  onBackward,
+  rundownId
 }: RundownToolbarProps) => {
+  const { toast } = useToast();
+  
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -63,6 +69,26 @@ const RundownToolbar = ({
     }
   };
 
+  const handleShareRundown = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot share rundown",
+        description: "Save this rundown first before sharing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        title: "Share link copied!",
+        description: "Read-only rundown URL has been copied to clipboard",
+        variant: "default"
+      });
+    });
+  };
+
   return (
     <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
@@ -77,6 +103,10 @@ const RundownToolbar = ({
         <Button onClick={onShowColumnManager} variant="outline" className="flex items-center space-x-2">
           <Settings className="h-4 w-4" />
           <span>Manage Columns</span>
+        </Button>
+        <Button onClick={handleShareRundown} variant="outline" className="flex items-center space-x-2">
+          <Share2 className="h-4 w-4" />
+          <span>Share Rundown</span>
         </Button>
       </div>
 

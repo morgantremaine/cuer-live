@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SharedRundown from "./pages/SharedRundown";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const AppRoutes = () => {
       
       {/* Public routes */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/shared/rundown/:id" element={<SharedRundown />} />
       
       {/* Protected routes */}
       <Route 

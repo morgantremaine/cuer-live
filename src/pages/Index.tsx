@@ -14,6 +14,7 @@ const Index = () => {
     setRundownTitle,
     rundownStartTime,
     setRundownStartTime,
+    rundownId,
     items,
     visibleColumns,
     columns,
@@ -134,6 +135,7 @@ const Index = () => {
       onTitleChange={setRundownTitle}
       rundownStartTime={rundownStartTime}
       onRundownStartTimeChange={handleRundownStartTimeChange}
+      rundownId={rundownId}
     />
   );
 };

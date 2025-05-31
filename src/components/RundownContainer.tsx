@@ -64,6 +64,7 @@ interface RundownContainerProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  rundownId?: string;
 }
 
 const RundownContainer = ({
@@ -117,12 +118,14 @@ const RundownContainer = ({
   handleReorderColumns,
   handleDeleteColumnWithCleanup,
   handleToggleColumnVisibility,
+  handleLoadLayout,
   hasUnsavedChanges,
   isSaving,
   rundownTitle,
   onTitleChange,
   rundownStartTime,
-  onRundownStartTimeChange
+  onRundownStartTimeChange,
+  rundownId
 }: RundownContainerProps) => {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
@@ -156,6 +159,7 @@ const RundownContainer = ({
             onTitleChange={onTitleChange}
             rundownStartTime={rundownStartTime}
             onRundownStartTimeChange={onRundownStartTimeChange}
+            rundownId={rundownId}
           />
 
           <RundownContent
