@@ -27,9 +27,11 @@ export const useRundownInteractionHandlers = (
   // Drag and drop - fix the function call to match expected signature
   const { 
     draggedItemIndex, 
-    isDraggingMultiple, 
+    isDraggingMultiple,
+    dropTargetIndex,
     handleDragStart, 
-    handleDragOver, 
+    handleDragOver,
+    handleDragLeave,
     handleDrop 
   } = useDragAndDrop(items, (newItems: RundownItem[]) => setItems(() => newItems), selectedRows);
 
@@ -79,8 +81,10 @@ export const useRundownInteractionHandlers = (
     clearSelection,
     draggedItemIndex,
     isDraggingMultiple,
+    dropTargetIndex,
     handleDragStart,
     handleDragOver,
+    handleDragLeave,
     handleDrop,
     clipboardItems,
     copyItems,

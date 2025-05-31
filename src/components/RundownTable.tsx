@@ -14,6 +14,7 @@ interface RundownTableProps {
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
+  dropTargetIndex: number | null;
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
   getColumnWidth: (column: Column) => string;
@@ -30,7 +31,8 @@ interface RundownTableProps {
   onToggleFloat: (id: string) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, index?: number) => void;
+  onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
@@ -47,6 +49,7 @@ const RundownTable = ({
   selectedRows,
   draggedItemIndex,
   isDraggingMultiple,
+  dropTargetIndex,
   currentSegmentId,
   hasClipboardData = false,
   getColumnWidth,
@@ -64,6 +67,7 @@ const RundownTable = ({
   onRowSelect,
   onDragStart,
   onDragOver,
+  onDragLeave,
   onDrop,
   onCopySelectedRows,
   onDeleteSelectedRows,
@@ -71,7 +75,10 @@ const RundownTable = ({
   onClearSelection
 }: RundownTableProps) => {
   return (
-    <div className="w-full">
+    <div 
+      className="w-full"
+      onDragLeave={onDragLeave}
+    >
       <table className="w-full min-w-max">
         <RundownTableHeader
           visibleColumns={visibleColumns}
@@ -80,40 +87,59 @@ const RundownTable = ({
         />
         <tbody>
           {items.map((item, index) => (
-            <RundownRow
-              key={item.id}
-              item={item}
-              index={index}
-              rowNumber={getRowNumber(index)}
-              status={item.status}
-              showColorPicker={showColorPicker}
-              cellRefs={cellRefs}
-              columns={visibleColumns}
-              isSelected={selectedRows.has(item.id)}
-              isCurrentlyPlaying={!isHeaderItem(item) && currentSegmentId === item.id}
-              isDraggingMultiple={isDraggingMultiple && selectedRows.has(item.id)}
-              selectedRowsCount={selectedRows.size}
-              selectedRows={selectedRows}
-              headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
-              hasClipboardData={hasClipboardData}
-              onUpdateItem={onUpdateItem}
-              onCellClick={onCellClick}
-              onKeyDown={onKeyDown}
-              onToggleColorPicker={onToggleColorPicker}
-              onColorSelect={(id, color) => onColorSelect(id, color)}
-              onDeleteRow={onDeleteRow}
-              onToggleFloat={onToggleFloat}
-              onRowSelect={onRowSelect}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDrop={onDrop}
-              onCopySelectedRows={onCopySelectedRows}
-              onDeleteSelectedRows={onDeleteSelectedRows}
-              onPasteRows={onPasteRows}
-              onClearSelection={onClearSelection}
-              isDragging={draggedItemIndex === index}
-              getColumnWidth={getColumnWidth}
-            />
+            <React.Fragment key={item.id}>
+              {/* Drop indicator above current row */}
+              {dropTargetIndex === index && (
+                <tr>
+                  <td colSpan={visibleColumns.length + 1} className="p-0">
+                    <div className="h-0.5 bg-gray-400 mx-2"></div>
+                  </td>
+                </tr>
+              )}
+              
+              <RundownRow
+                item={item}
+                index={index}
+                rowNumber={getRowNumber(index)}
+                status={item.status}
+                showColorPicker={showColorPicker}
+                cellRefs={cellRefs}
+                columns={visibleColumns}
+                isSelected={selectedRows.has(item.id)}
+                isCurrentlyPlaying={!isHeaderItem(item) && currentSegmentId === item.id}
+                isDraggingMultiple={isDraggingMultiple && selectedRows.has(item.id)}
+                selectedRowsCount={selectedRows.size}
+                selectedRows={selectedRows}
+                headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
+                hasClipboardData={hasClipboardData}
+                onUpdateItem={onUpdateItem}
+                onCellClick={onCellClick}
+                onKeyDown={onKeyDown}
+                onToggleColorPicker={onToggleColorPicker}
+                onColorSelect={(id, color) => onColorSelect(id, color)}
+                onDeleteRow={onDeleteRow}
+                onToggleFloat={onToggleFloat}
+                onRowSelect={onRowSelect}
+                onDragStart={onDragStart}
+                onDragOver={(e) => onDragOver(e, index)}
+                onDrop={onDrop}
+                onCopySelectedRows={onCopySelectedRows}
+                onDeleteSelectedRows={onDeleteSelectedRows}
+                onPasteRows={onPasteRows}
+                onClearSelection={onClearSelection}
+                isDragging={draggedItemIndex === index}
+                getColumnWidth={getColumnWidth}
+              />
+              
+              {/* Drop indicator after last row */}
+              {index === items.length - 1 && dropTargetIndex === items.length && (
+                <tr>
+                  <td colSpan={visibleColumns.length + 1} className="p-0">
+                    <div className="h-0.5 bg-gray-400 mx-2"></div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>

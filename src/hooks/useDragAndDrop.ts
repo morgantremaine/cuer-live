@@ -9,6 +9,7 @@ export const useDragAndDrop = (
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     const item = items[index];
@@ -26,13 +27,30 @@ export const useDragAndDrop = (
     }));
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    
+    if (targetIndex !== undefined) {
+      setDropTargetIndex(targetIndex);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear drop target if we're leaving the table area
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDropTargetIndex(null);
+    }
   };
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+    
+    setDropTargetIndex(null);
     
     if (draggedItemIndex === null) {
       setDraggedItemIndex(null);
@@ -77,8 +95,10 @@ export const useDragAndDrop = (
   return {
     draggedItemIndex,
     isDraggingMultiple,
+    dropTargetIndex,
     handleDragStart,
     handleDragOver,
+    handleDragLeave,
     handleDrop
   };
 };
