@@ -158,7 +158,7 @@ const RundownHeader = ({
               type="text"
               value={rundownStartTime}
               onChange={(e) => onRundownStartTimeChange(e.target.value)}
-              className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-20 focus:outline-none focus:border-blue-500"
+              className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-24 focus:outline-none focus:border-blue-500"
               placeholder="00:00:00"
             />
           </div>
