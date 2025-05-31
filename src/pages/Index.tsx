@@ -130,7 +130,7 @@ const Index = () => {
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
         onRowSelect={(itemId, index, isShiftClick, isCtrlClick) => 
-          toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items)
+          toggleRowSelection(itemId, index, isShiftClick, isCtrlClick)
         }
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
