@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { format } from 'date-fns';
 
 export const useSharedRundownState = () => {
   const { id: rundownId } = useParams<{ id: string }>();
-  const { savedRundowns, loading } = useRundownStorage();
   const [rundownData, setRundownData] = useState<{
     title: string;
     items: RundownItem[];
@@ -16,6 +15,7 @@ export const useSharedRundownState = () => {
   } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Update current time every second
   useEffect(() => {
@@ -25,20 +25,48 @@ export const useSharedRundownState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Load rundown data
+  // Load rundown data directly from Supabase (no auth required)
   useEffect(() => {
-    if (loading || !rundownId) return;
+    const loadRundownData = async () => {
+      if (!rundownId) {
+        setLoading(false);
+        return;
+      }
 
-    const rundown = savedRundowns.find(r => r.id === rundownId);
-    if (rundown) {
-      setRundownData({
-        title: rundown.title,
-        items: rundown.items || [],
-        columns: rundown.columns || [],
-        startTime: rundown.startTime || '09:00'
-      });
-    }
-  }, [rundownId, savedRundowns, loading]);
+      console.log('Loading shared rundown with ID:', rundownId);
+
+      try {
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', rundownId)
+          .single();
+
+        if (error) {
+          console.error('Error loading shared rundown:', error);
+          setRundownData(null);
+        } else if (data) {
+          console.log('Loaded shared rundown data:', data);
+          setRundownData({
+            title: data.title,
+            items: data.items || [],
+            columns: data.columns || [],
+            startTime: '09:00' // Default start time
+          });
+        } else {
+          console.log('No rundown found with ID:', rundownId);
+          setRundownData(null);
+        }
+      } catch (error) {
+        console.error('Error fetching rundown:', error);
+        setRundownData(null);
+      }
+
+      setLoading(false);
+    };
+
+    loadRundownData();
+  }, [rundownId]);
 
   // Calculate current segment based on time
   useEffect(() => {
