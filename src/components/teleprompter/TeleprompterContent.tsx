@@ -30,8 +30,8 @@ const TeleprompterContent = ({
         }}
       >
         <ChevronRight 
-          className="text-red-500 drop-shadow-lg" 
-          size={48}
+          className="text-white drop-shadow-lg" 
+          size={56}
           strokeWidth={3}
         />
       </div>
