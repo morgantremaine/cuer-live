@@ -93,6 +93,45 @@ const SharedRundown = () => {
     }
   };
 
+  const getCellValue = (item: RundownItem, column: any) => {
+    let value = '';
+    
+    if (column.isCustom) {
+      value = item.customFields?.[column.key] || '';
+    } else {
+      switch (column.key) {
+        case 'segmentName':
+          // For headers, show the header name in notes, for regular items show name
+          if (item.type === 'header') {
+            value = item.notes || '';
+          } else {
+            value = (item.name && item.name !== 'New Header' && item.name !== 'New Segment') ? item.name : '';
+          }
+          break;
+        case 'duration':
+          value = item.duration || '';
+          break;
+        case 'startTime':
+          value = item.startTime || '';
+          break;
+        case 'endTime':
+          value = item.endTime || '';
+          break;
+        case 'notes':
+          value = item.notes || '';
+          break;
+        case 'script':
+          value = item.script || '';
+          break;
+        default:
+          // Handle any other fields that might exist on the item
+          value = (item as any)[column.key] || '';
+      }
+    }
+    
+    return value;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -178,34 +217,14 @@ const SharedRundown = () => {
                   </td>
                   
                   {visibleColumns.map((column) => {
-                    let value = '';
-                    switch (column.key) {
-                      case 'segmentName':
-                        // Only show name if it's not the default placeholder text
-                        value = (item.name && item.name !== 'New Header' && item.name !== 'New Segment') ? item.name : '';
-                        break;
-                      case 'duration':
-                        value = item.duration || '';
-                        break;
-                      case 'startTime':
-                        value = item.startTime || '';
-                        break;
-                      case 'endTime':
-                        value = item.endTime || '';
-                        break;
-                      case 'notes':
-                        value = item.notes || '';
-                        break;
-                      default:
-                        value = item.customFields?.[column.key] || '';
-                    }
+                    const value = getCellValue(item, column);
                     
                     return (
                       <td
                         key={column.id}
                         className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400"
                       >
-                        <div className="break-words">{value}</div>
+                        <div className="break-words whitespace-pre-wrap">{value}</div>
                       </td>
                     );
                   })}
