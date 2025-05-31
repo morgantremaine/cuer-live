@@ -27,11 +27,20 @@ export const useRundownItemActions = (
     );
   }, [setItems]);
 
-  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string) => {
+  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
     setItems(prevItems => {
       const newRowNumber = String(prevItems.filter(item => item.type === 'regular').length + 1);
-      const lastItem = prevItems[prevItems.length - 1];
-      const newStartTime = lastItem ? calculateEndTime(lastItem.startTime, lastItem.duration) : '00:00:00';
+      
+      let newStartTime: string;
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
+        // Insert after the selected row
+        const itemAtIndex = prevItems[insertAfterIndex];
+        newStartTime = calculateEndTime(itemAtIndex.startTime, itemAtIndex.duration);
+      } else {
+        // Insert at the end (default behavior)
+        const lastItem = prevItems[prevItems.length - 1];
+        newStartTime = lastItem ? calculateEndTime(lastItem.startTime, lastItem.duration) : '00:00:00';
+      }
 
       const newItem: RundownItem = {
         id: String(Date.now()),
@@ -50,15 +59,33 @@ export const useRundownItemActions = (
         status: 'upcoming',
         customFields: {},
       };
-      return [...prevItems, newItem];
+
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
+        // Insert after the specified index
+        const newItems = [...prevItems];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
+        return newItems;
+      } else {
+        // Add to the end (default behavior)
+        return [...prevItems, newItem];
+      }
     });
   }, [setItems]);
 
-  const addHeader = useCallback(() => {
+  const addHeader = useCallback((insertAfterIndex?: number) => {
     setItems(prevItems => {
       const newHeaderNumber = String.fromCharCode(65 + prevItems.filter(item => item.type === 'header').length);
-      const lastItem = prevItems[prevItems.length - 1];
-      const newStartTime = lastItem ? lastItem.endTime : '00:00:00';
+      
+      let newStartTime: string;
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
+        // Insert after the selected row
+        const itemAtIndex = prevItems[insertAfterIndex];
+        newStartTime = itemAtIndex.endTime;
+      } else {
+        // Insert at the end (default behavior)
+        const lastItem = prevItems[prevItems.length - 1];
+        newStartTime = lastItem ? lastItem.endTime : '00:00:00';
+      }
 
       const newHeader: RundownItem = {
         id: String(Date.now()),
@@ -77,7 +104,16 @@ export const useRundownItemActions = (
         status: 'upcoming',
         customFields: {},
       };
-      return [...prevItems, newHeader];
+
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
+        // Insert after the specified index
+        const newItems = [...prevItems];
+        newItems.splice(insertAfterIndex + 1, 0, newHeader);
+        return newItems;
+      } else {
+        // Add to the end (default behavior)
+        return [...prevItems, newHeader];
+      }
     });
   }, [setItems]);
 

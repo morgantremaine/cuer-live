@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -107,7 +106,31 @@ const Index = () => {
   };
 
   const handleAddRow = () => {
+    // If there's a single selected row, insert after it
+    if (selectedRowsArray.length === 1) {
+      const selectedItemId = selectedRowsArray[0];
+      const selectedIndex = items.findIndex(item => item.id === selectedItemId);
+      if (selectedIndex !== -1) {
+        addRow(calculateEndTime, selectedIndex);
+        return;
+      }
+    }
+    // Default behavior: add to the end
     addRow(calculateEndTime);
+  };
+
+  const handleAddHeader = () => {
+    // If there's a single selected row, insert after it
+    if (selectedRowsArray.length === 1) {
+      const selectedItemId = selectedRowsArray[0];
+      const selectedIndex = items.findIndex(item => item.id === selectedItemId);
+      if (selectedIndex !== -1) {
+        addHeader(selectedIndex);
+        return;
+      }
+    }
+    // Default behavior: add to the end
+    addHeader();
   };
 
   return (
@@ -145,7 +168,7 @@ const Index = () => {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onAddRow={handleAddRow}
-        onAddHeader={addHeader}
+        onAddHeader={handleAddHeader}
         selectedCount={selectedRowsSet.size}
         hasClipboardData={hasClipboardData()}
         onCopySelectedRows={handleCopySelectedRows}
