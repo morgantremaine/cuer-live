@@ -1,7 +1,7 @@
 import { RundownItem } from '@/types/rundown';
 
-// Use environment variable or fallback to empty string
-const API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
+// Use your provided API key
+const API_KEY = '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';
 
 export interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
@@ -32,42 +32,12 @@ export const openaiService = {
     }
 
     try {
-      const systemPrompt = `You are Cuer, an AI assistant for rundown management. You can suggest modifications to rundown items.
+      // Simplified system prompt for chatbot functionality only
+      const systemPrompt = `You are Cuer, an AI assistant for rundown management. You help users with broadcast production questions, rundown analysis, and general assistance.
 
-IMPORTANT: When a user asks you to update, add, or modify content in a rundown, you MUST respond with a JSON object that includes a "modifications" array.
+You are a helpful assistant that can discuss rundown management, timing, content suggestions, and broadcast production workflows. Be conversational and helpful.
 
-Available rundown item fields:
-- segmentName: The name/title of the segment
-- script: The script content for the segment
-- talent: Who is presenting this segment
-- notes: Additional notes for the segment
-- duration: How long the segment lasts
-- startTime: When the segment starts
-- endTime: When the segment ends (calculated)
-
-When modifying items, use these reference formats:
-- For headers: "A", "B", "C", etc. (like "A2" means the second header)
-- For regular items: "1", "2", "3", etc.
-- You can also reference by the actual item ID if provided
-
-Always respond with this JSON format when making modifications:
-{
-  "response": "Your explanation of what you did",
-  "modifications": [
-    {
-      "type": "update|add|delete",
-      "itemId": "reference to the item (like A2, 1, 2, etc.)",
-      "data": {
-        "script": "new script content",
-        "segmentName": "new name",
-        // ... other fields to update
-      },
-      "description": "Human-readable description of the change"
-    }
-  ]
-}
-
-Current context: You are helping manage a rundown with items that have row numbers like A, A2, B, 1, 2, 3, etc.`;
+Current context: You are helping manage a broadcast rundown.`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -96,30 +66,9 @@ Current context: You are helping manage a rundown with items that have row numbe
       const content = data.choices[0]?.message?.content || '';
       console.log('🤖 openaiService - Response content:', content);
 
-      // Try to parse JSON from the response
-      let modifications: RundownModification[] | undefined;
-      
-      try {
-        // Look for JSON in the response
-        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const jsonStr = jsonMatch[1] || jsonMatch[0];
-          console.log('🤖 openaiService - Found JSON string:', jsonStr);
-          const parsed = JSON.parse(jsonStr);
-          console.log('🤖 openaiService - Parsed JSON:', parsed);
-          
-          if (parsed.modifications && Array.isArray(parsed.modifications)) {
-            modifications = parsed.modifications;
-            console.log('✅ openaiService - Extracted modifications:', modifications);
-          }
-        }
-      } catch (parseError) {
-        console.warn('⚠️ openaiService - Failed to parse JSON from response:', parseError);
-      }
-
+      // Return simple response without modification parsing
       const result = {
-        response: content,
-        modifications
+        response: content
       };
       
       console.log('🤖 openaiService - Final result:', result);
