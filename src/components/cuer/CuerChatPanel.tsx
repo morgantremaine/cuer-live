@@ -121,22 +121,22 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
         )}
 
         {!showApiKeySetup && (
-          <CuerChatMessages
-            messages={messages}
-            isLoading={isLoading}
-            isConnected={isConnected}
-          />
-        )}
-
-        {!showApiKeySetup && (
-          <CuerChatInput
-            inputValue={inputValue}
-            setInputValue={setInputValue}
-            isConnected={isConnected}
-            isLoading={isLoading}
-            onSendMessage={handleSendMessage}
-            onKeyDown={handleKeyDown}
-          />
+          <div className="flex-1 flex flex-col min-h-0">
+            <CuerChatMessages
+              messages={messages}
+              isLoading={isLoading}
+              isConnected={isConnected}
+            />
+            
+            <CuerChatInput
+              inputValue={inputValue}
+              setInputValue={setInputValue}
+              isConnected={isConnected}
+              isLoading={isLoading}
+              onSendMessage={handleSendMessage}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
         )}
       </div>
 

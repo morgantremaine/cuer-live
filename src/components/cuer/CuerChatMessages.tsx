@@ -24,9 +24,9 @@ const CuerChatMessages = ({ messages, isLoading, isConnected }: CuerChatMessages
   }, [messages]);
 
   return (
-    <div className="flex-1 bg-white">
-      <ScrollArea className="h-full p-4">
-        <div className="space-y-4">
+    <div className="flex-1 bg-white min-h-0">
+      <ScrollArea className="h-full">
+        <div className="p-4 space-y-4">
           {messages.length === 0 && isConnected && (
             <div className="text-center text-gray-500 text-sm">
               <p>👋 Hi! I'm Cuer, your broadcast production assistant.</p>
