@@ -20,7 +20,12 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
+  console.log('useColumnsManager - All columns:', columns);
+  console.log('useColumnsManager - Script column:', columns.find(col => col.key === 'script'));
+
   const visibleColumns = columns.filter(col => col.isVisible !== false);
+  console.log('useColumnsManager - Visible columns:', visibleColumns);
+  console.log('useColumnsManager - Script in visible columns:', visibleColumns.find(col => col.key === 'script'));
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {

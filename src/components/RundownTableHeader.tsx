@@ -14,23 +14,29 @@ const RundownTableHeader = ({
   getColumnWidth,
   updateColumnWidth
 }: RundownTableHeaderProps) => {
+  console.log('RundownTableHeader - visibleColumns:', visibleColumns);
+  console.log('RundownTableHeader - Script column in visible:', visibleColumns.find(col => col.key === 'script'));
+
   return (
     <thead className="bg-gray-700 dark:bg-gray-800 sticky top-0 z-10">
       <tr>
         <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '60px' }}>
           #
         </th>
-        {visibleColumns.map((column, index) => (
-          <ResizableColumnHeader
-            key={column.id}
-            column={column}
-            width={getColumnWidth(column)}
-            onWidthChange={updateColumnWidth}
-            showLeftSeparator={index > 0}
-          >
-            {column.name}
-          </ResizableColumnHeader>
-        ))}
+        {visibleColumns.map((column, index) => {
+          console.log('RundownTableHeader - Rendering column:', column.name, column.key);
+          return (
+            <ResizableColumnHeader
+              key={column.id}
+              column={column}
+              width={getColumnWidth(column)}
+              onWidthChange={updateColumnWidth}
+              showLeftSeparator={index > 0}
+            >
+              {column.name}
+            </ResizableColumnHeader>
+          );
+        })}
         <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '120px' }}>
           Actions
         </th>
