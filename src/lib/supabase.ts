@@ -37,6 +37,7 @@ export type Database = {
           title: string
           items: any
           columns?: any
+          timezone?: string
           created_at: string
           updated_at: string
           archived: boolean
@@ -47,6 +48,7 @@ export type Database = {
           title: string
           items: any
           columns?: any
+          timezone?: string
           created_at?: string
           updated_at?: string
           archived?: boolean
@@ -57,6 +59,7 @@ export type Database = {
           title?: string
           items?: any
           columns?: any
+          timezone?: string
           created_at?: string
           updated_at?: string
           archived?: boolean
