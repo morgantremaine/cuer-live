@@ -20,6 +20,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       draggedItemIndex={props.draggedItemIndex}
       isDraggingMultiple={props.isDraggingMultiple}
       currentSegmentId={props.currentSegmentId}
+      hasClipboardData={props.hasClipboardData}
       getColumnWidth={props.getColumnWidth}
       updateColumnWidth={props.updateColumnWidth}
       getRowNumber={props.getRowNumber}
@@ -38,6 +39,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       onDrop={props.onDrop}
       onCopySelectedRows={props.onCopySelectedRows}
       onDeleteSelectedRows={props.onDeleteSelectedRows}
+      onPasteRows={props.onPasteRows}
+      onClearSelection={props.onClearSelection}
       showColumnManager={props.showColumnManager}
       handleAddColumn={props.handleAddColumn}
       handleReorderColumns={props.handleReorderColumns}

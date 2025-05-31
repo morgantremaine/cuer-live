@@ -19,6 +19,7 @@ interface RegularRowProps {
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
   selectedRowsCount?: number;
+  hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -32,6 +33,8 @@ interface RegularRowProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
+  onPasteRows?: () => void;
+  onClearSelection?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -48,6 +51,7 @@ const RegularRow = ({
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
   selectedRowsCount = 1,
+  hasClipboardData = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -61,6 +65,8 @@ const RegularRow = ({
   onDrop,
   onCopySelectedRows,
   onDeleteSelectedRows,
+  onPasteRows,
+  onClearSelection,
   isDragging,
   getColumnWidth
 }: RegularRowProps) => {
@@ -124,10 +130,16 @@ const RegularRow = ({
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
       isFloated={item.isFloating || item.isFloated}
+      hasClipboardData={hasClipboardData}
+      showColorPicker={showColorPicker}
+      itemId={item.id}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
       onColorPicker={handleContextMenuColor}
+      onColorSelect={onColorSelect}
+      onPaste={onPasteRows}
+      onClearSelection={onClearSelection}
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer select-none`}

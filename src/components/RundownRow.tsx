@@ -18,6 +18,7 @@ interface RundownRowProps {
   isDraggingMultiple?: boolean;
   selectedRowsCount?: number;
   headerDuration?: string;
+  hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -31,6 +32,8 @@ interface RundownRowProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
+  onPasteRows?: () => void;
+  onClearSelection?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -42,6 +45,9 @@ const RundownRow = (props: RundownRowProps) => {
         {...props} 
         headerDuration={props.headerDuration || ''}
         selectedRowsCount={props.selectedRowsCount || 1}
+        hasClipboardData={props.hasClipboardData}
+        onPasteRows={props.onPasteRows}
+        onClearSelection={props.onClearSelection}
       />
     );
   }
@@ -52,7 +58,10 @@ const RundownRow = (props: RundownRowProps) => {
       isCurrentlyPlaying={props.isCurrentlyPlaying}
       isDraggingMultiple={props.isDraggingMultiple}
       selectedRowsCount={props.selectedRowsCount || 1}
+      hasClipboardData={props.hasClipboardData}
       onToggleFloat={props.onToggleFloat || (() => {})}
+      onPasteRows={props.onPasteRows}
+      onClearSelection={props.onClearSelection}
     />
   );
 };

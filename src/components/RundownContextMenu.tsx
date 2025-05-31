@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Trash2, Copy, Anchor, Palette } from 'lucide-react';
+import { Trash2, Copy, Anchor, Palette, ClipboardPaste, X } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -8,25 +8,38 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import ColorPicker from './ColorPicker';
 
 interface RundownContextMenuProps {
   children: React.ReactNode;
   selectedCount: number;
   isFloated?: boolean;
+  hasClipboardData?: boolean;
+  showColorPicker?: string | null;
+  itemId: string;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
   onColorPicker: () => void;
+  onColorSelect: (itemId: string, color: string) => void;
+  onPaste?: () => void;
+  onClearSelection?: () => void;
 }
 
 const RundownContextMenu = ({
   children,
   selectedCount,
   isFloated = false,
+  hasClipboardData = false,
+  showColorPicker,
+  itemId,
   onCopy,
   onDelete,
   onToggleFloat,
-  onColorPicker
+  onColorPicker,
+  onColorSelect,
+  onPaste,
+  onClearSelection
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -41,6 +54,13 @@ const RundownContextMenu = ({
           {isMultipleSelection ? `Copy ${selectedCount} rows` : 'Copy row'}
         </ContextMenuItem>
         
+        {hasClipboardData && onPaste && (
+          <ContextMenuItem onClick={onPaste}>
+            <ClipboardPaste className="mr-2 h-4 w-4" />
+            Paste rows
+          </ContextMenuItem>
+        )}
+        
         <ContextMenuSeparator />
         
         <ContextMenuItem onClick={onToggleFloat}>
@@ -51,12 +71,28 @@ const RundownContextMenu = ({
           }
         </ContextMenuItem>
         
-        <ContextMenuItem onClick={onColorPicker}>
-          <Palette className="mr-2 h-4 w-4" />
-          {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
-        </ContextMenuItem>
+        <div className="relative">
+          <ContextMenuItem onClick={onColorPicker}>
+            <Palette className="mr-2 h-4 w-4" />
+            {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
+          </ContextMenuItem>
+          
+          <ColorPicker
+            itemId={itemId}
+            showColorPicker={showColorPicker}
+            onToggle={onColorPicker}
+            onColorSelect={onColorSelect}
+          />
+        </div>
         
         <ContextMenuSeparator />
+        
+        {isMultipleSelection && onClearSelection && (
+          <ContextMenuItem onClick={onClearSelection}>
+            <X className="mr-2 h-4 w-4" />
+            Clear selection
+          </ContextMenuItem>
+        )}
         
         <ContextMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
           <Trash2 className="mr-2 h-4 w-4" />

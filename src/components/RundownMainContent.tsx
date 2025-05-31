@@ -16,6 +16,7 @@ interface RundownMainContentProps {
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
   currentSegmentId: string | null;
+  hasClipboardData?: boolean;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -34,6 +35,8 @@ interface RundownMainContentProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
+  onPasteRows?: () => void;
+  onClearSelection?: () => void;
   showColumnManager: boolean;
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
@@ -54,6 +57,7 @@ const RundownMainContent = ({
   draggedItemIndex,
   isDraggingMultiple,
   currentSegmentId,
+  hasClipboardData = false,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -72,6 +76,8 @@ const RundownMainContent = ({
   onDrop,
   onCopySelectedRows,
   onDeleteSelectedRows,
+  onPasteRows,
+  onClearSelection,
   showColumnManager,
   handleAddColumn,
   handleReorderColumns,
@@ -92,6 +98,7 @@ const RundownMainContent = ({
         draggedItemIndex={draggedItemIndex}
         isDraggingMultiple={isDraggingMultiple}
         currentSegmentId={currentSegmentId}
+        hasClipboardData={hasClipboardData}
         getColumnWidth={getColumnWidth}
         updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
@@ -110,6 +117,8 @@ const RundownMainContent = ({
         onDrop={onDrop}
         onCopySelectedRows={onCopySelectedRows}
         onDeleteSelectedRows={onDeleteSelectedRows}
+        onPasteRows={onPasteRows}
+        onClearSelection={onClearSelection}
       />
 
       {showColumnManager && (

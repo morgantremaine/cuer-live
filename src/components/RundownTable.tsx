@@ -15,6 +15,7 @@ interface RundownTableProps {
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
   currentSegmentId: string | null;
+  hasClipboardData?: boolean;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -33,6 +34,8 @@ interface RundownTableProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
+  onPasteRows?: () => void;
+  onClearSelection?: () => void;
 }
 
 const RundownTable = ({
@@ -45,6 +48,7 @@ const RundownTable = ({
   draggedItemIndex,
   isDraggingMultiple,
   currentSegmentId,
+  hasClipboardData = false,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -62,7 +66,9 @@ const RundownTable = ({
   onDragOver,
   onDrop,
   onCopySelectedRows,
-  onDeleteSelectedRows
+  onDeleteSelectedRows,
+  onPasteRows,
+  onClearSelection
 }: RundownTableProps) => {
   return (
     <div className="w-full">
@@ -88,6 +94,7 @@ const RundownTable = ({
               isDraggingMultiple={isDraggingMultiple && selectedRows.has(item.id)}
               selectedRowsCount={selectedRows.size}
               headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
+              hasClipboardData={hasClipboardData}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
@@ -101,6 +108,8 @@ const RundownTable = ({
               onDrop={onDrop}
               onCopySelectedRows={onCopySelectedRows}
               onDeleteSelectedRows={onDeleteSelectedRows}
+              onPasteRows={onPasteRows}
+              onClearSelection={onClearSelection}
               isDragging={draggedItemIndex === index}
               getColumnWidth={getColumnWidth}
             />

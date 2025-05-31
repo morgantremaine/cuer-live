@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -12,6 +13,8 @@ interface HeaderRowProps {
   headerDuration: string;
   selectedRowsCount?: number;
   isSelected?: boolean;
+  showColorPicker: string | null;
+  hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -22,6 +25,9 @@ interface HeaderRowProps {
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
+  onPasteRows?: () => void;
+  onClearSelection?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -35,6 +41,8 @@ const HeaderRow = ({
   headerDuration,
   selectedRowsCount = 1,
   isSelected = false,
+  showColorPicker,
+  hasClipboardData = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -45,6 +53,9 @@ const HeaderRow = ({
   onCopySelectedRows,
   onDeleteSelectedRows,
   onToggleColorPicker,
+  onColorSelect,
+  onPasteRows,
+  onClearSelection,
   isDragging,
   getColumnWidth
 }: HeaderRowProps) => {
@@ -80,10 +91,16 @@ const HeaderRow = ({
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
       isFloated={false}
+      hasClipboardData={hasClipboardData}
+      showColorPicker={showColorPicker}
+      itemId={item.id}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
       onColorPicker={handleContextMenuColor}
+      onColorSelect={onColorSelect}
+      onPaste={onPasteRows}
+      onClearSelection={onClearSelection}
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-move`}
