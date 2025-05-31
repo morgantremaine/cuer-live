@@ -18,10 +18,10 @@ export const useRundownUIState = (
   // Color picker
   const { showColorPicker, handleToggleColorPicker } = useColorPicker();
 
-  // Cell navigation - fix the function call to use visibleColumns instead of items
+  // Cell navigation - fix the function call to use correct order: columns first, then items
   const { cellRefs, handleCellClick, handleKeyDown } = useCellNavigation(
-    items, 
-    visibleColumns
+    visibleColumns, 
+    items
   );
 
   // Resizable columns
@@ -40,7 +40,7 @@ export const useRundownUIState = (
 
   // Color selection function
   const selectColor = useCallback((id: string, color: string) => {
-    updateItem(id, 'color', color);
+    updateItem(id, color, color);
     markAsChanged();
   }, [updateItem, markAsChanged]);
 
