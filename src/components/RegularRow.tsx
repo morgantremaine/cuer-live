@@ -74,8 +74,8 @@ const RegularRow = ({
   } else if (item.color && item.color !== '#FFFFFF') {
     rowClass = `hover:opacity-90`;
   } else {
-    // Default styling for regular rows - ensure proper dark mode
-    rowClass = 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700';
+    // Default styling for regular rows - switched colors in dark mode
+    rowClass = 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600';
   }
 
   const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
