@@ -36,7 +36,7 @@ export const useRundownInteractionHandlers = (
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
 
-  // Grid handlers
+  // Grid handlers - fix the function call to match expected signature
   const {
     handleUpdateItem,
     handleAddRow,

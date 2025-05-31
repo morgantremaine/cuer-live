@@ -18,7 +18,7 @@ export const useRundownUIState = (
   // Color picker
   const { showColorPicker, handleToggleColorPicker } = useColorPicker();
 
-  // Cell navigation
+  // Cell navigation - fix the function call to match expected signature
   const { cellRefs, handleCellClick, handleKeyDown } = useCellNavigation(
     items, 
     visibleColumns, 
