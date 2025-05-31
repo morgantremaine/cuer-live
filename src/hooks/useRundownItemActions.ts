@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -7,9 +6,24 @@ export const useRundownItemActions = (
 ) => {
   const updateItem = useCallback((id: string, field: string, value: string) => {
     setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
+      prevItems.map(item => {
+        if (item.id !== id) return item;
+        
+        // Handle custom fields with dot notation
+        if (field.startsWith('customFields.')) {
+          const customFieldKey = field.replace('customFields.', '');
+          return {
+            ...item,
+            customFields: {
+              ...item.customFields,
+              [customFieldKey]: value
+            }
+          };
+        }
+        
+        // Handle regular fields
+        return { ...item, [field]: value };
+      })
     );
   }, [setItems]);
 
@@ -96,7 +110,7 @@ export const useRundownItemActions = (
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prevItems =>
       prevItems.map(item =>
-        item.id === id ? { ...item, isFloating: !item.isFloating, isFloated: !item.isFloating } : item
+        item.id === id ? { ...item, isFloating: !item.isFloating, isFloated: !item.isFloated } : item
       )
     );
   }, [setItems]);
