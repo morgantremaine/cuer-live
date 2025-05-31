@@ -52,7 +52,8 @@ export const useRundownStorage = () => {
       return
     }
 
-    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, userId: user.id })
+    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, userId: user.id })
+    console.log('Note: timezone will be stored locally until database schema is updated')
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -61,7 +62,6 @@ export const useRundownStorage = () => {
         title,
         items,
         columns: columns || null,
-        timezone: timezone || null,
         archived: false
       })
       .select()
@@ -97,17 +97,16 @@ export const useRundownStorage = () => {
       title,
       itemsCount: items.length,
       columnsCount: columns?.length || 0,
-      timezone,
       userId: user.id,
       silent,
       archived
     })
+    console.log('Note: timezone will be stored locally until database schema is updated')
 
     const updateData = {
       title: title,
       items: items,
       columns: columns || null,
-      timezone: timezone || null,
       updated_at: new Date().toISOString(),
       archived: archived
     }

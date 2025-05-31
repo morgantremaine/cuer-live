@@ -36,6 +36,7 @@ export type Database = {
           user_id: string
           title: string
           items: any
+          columns?: any
           created_at: string
           updated_at: string
           archived: boolean
@@ -45,6 +46,7 @@ export type Database = {
           user_id: string
           title: string
           items: any
+          columns?: any
           created_at?: string
           updated_at?: string
           archived?: boolean
@@ -54,6 +56,7 @@ export type Database = {
           user_id?: string
           title?: string
           items?: any
+          columns?: any
           created_at?: string
           updated_at?: string
           archived?: boolean
