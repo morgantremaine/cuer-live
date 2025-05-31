@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -81,7 +82,7 @@ export const useRundownGridState = () => {
     markAsChanged
   );
 
-  // Interaction handlers - fix function parameters
+  // Interaction handlers - fix function parameters with all required arguments
   const {
     selectedRows,
     toggleRowSelection,
