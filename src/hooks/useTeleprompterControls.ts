@@ -6,6 +6,7 @@ export const useTeleprompterControls = () => {
   const [isScrolling, setIsScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isUppercase, setIsUppercase] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Handle fullscreen and escape key
@@ -48,17 +49,23 @@ export const useTeleprompterControls = () => {
     setIsFullscreen(!isFullscreen);
   };
 
+  const toggleUppercase = () => {
+    setIsUppercase(!isUppercase);
+  };
+
   return {
     fontSize,
     isScrolling,
     scrollSpeed,
     isFullscreen,
+    isUppercase,
     containerRef,
     toggleScrolling,
     resetScroll,
     adjustFontSize,
     adjustScrollSpeed,
     toggleFullscreen,
+    toggleUppercase,
     setIsScrolling
   };
 };

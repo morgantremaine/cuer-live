@@ -5,10 +5,15 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 interface TeleprompterItemProps {
   item: RundownItem & { originalIndex: number };
   fontSize: number;
+  isUppercase: boolean;
   getRowNumber: (index: number) => string;
 }
 
-const TeleprompterItem = ({ item, fontSize, getRowNumber }: TeleprompterItemProps) => {
+const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: TeleprompterItemProps) => {
+  const formatText = (text: string) => {
+    return isUppercase ? text.toUpperCase() : text;
+  };
+
   if (isHeaderItem(item)) {
     return (
       <div className="mb-12">
@@ -16,7 +21,7 @@ const TeleprompterItem = ({ item, fontSize, getRowNumber }: TeleprompterItemProp
           className="font-bold text-left mb-8"
           style={{ fontSize: `${fontSize + 8}px` }}
         >
-          [{getRowNumber(item.originalIndex)} {(item.segmentName || item.name)?.toUpperCase() || 'HEADER'}]
+          [{getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}]
         </h2>
       </div>
     );
@@ -29,7 +34,7 @@ const TeleprompterItem = ({ item, fontSize, getRowNumber }: TeleprompterItemProp
         className="text-left mb-6"
         style={{ fontSize: `${fontSize + 4}px` }}
       >
-        [{getRowNumber(item.originalIndex)} {(item.segmentName || item.name)?.toUpperCase() || 'UNTITLED'}]
+        [{getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}]
       </div>
 
       {/* Talent */}
@@ -38,7 +43,7 @@ const TeleprompterItem = ({ item, fontSize, getRowNumber }: TeleprompterItemProp
           className="text-left mb-8 bg-white text-black py-2 px-4 inline-block rounded"
           style={{ fontSize: `${fontSize}px` }}
         >
-          {item.talent}
+          {formatText(item.talent)}
         </div>
       )}
 
@@ -50,7 +55,7 @@ const TeleprompterItem = ({ item, fontSize, getRowNumber }: TeleprompterItemProp
           lineHeight: '1.6'
         }}
       >
-        {item.script}
+        {formatText(item.script || '')}
       </div>
     </div>
   );

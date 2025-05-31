@@ -21,12 +21,14 @@ const Teleprompter = () => {
     isScrolling,
     scrollSpeed,
     isFullscreen,
+    isUppercase,
     containerRef,
     toggleScrolling,
     resetScroll,
     adjustFontSize,
     adjustScrollSpeed,
-    toggleFullscreen
+    toggleFullscreen,
+    toggleUppercase
   } = useTeleprompterControls();
 
   // Use the scroll hook
@@ -98,9 +100,11 @@ const Teleprompter = () => {
           isScrolling={isScrolling}
           fontSize={fontSize}
           scrollSpeed={scrollSpeed}
+          isUppercase={isUppercase}
           onToggleScrolling={toggleScrolling}
           onResetScroll={resetScroll}
           onToggleFullscreen={toggleFullscreen}
+          onToggleUppercase={toggleUppercase}
           onAdjustFontSize={adjustFontSize}
           onAdjustScrollSpeed={adjustScrollSpeed}
         />
@@ -112,6 +116,7 @@ const Teleprompter = () => {
         isFullscreen={isFullscreen}
         itemsWithScript={itemsWithScript}
         fontSize={fontSize}
+        isUppercase={isUppercase}
         getRowNumber={getRowNumber}
       />
 

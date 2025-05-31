@@ -1,14 +1,16 @@
 
 import React from 'react';
-import { Plus, Minus, Play, Pause, RotateCcw, Maximize } from 'lucide-react';
+import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type } from 'lucide-react';
 
 interface TeleprompterControlsProps {
   isScrolling: boolean;
   fontSize: number;
   scrollSpeed: number;
+  isUppercase: boolean;
   onToggleScrolling: () => void;
   onResetScroll: () => void;
   onToggleFullscreen: () => void;
+  onToggleUppercase: () => void;
   onAdjustFontSize: (delta: number) => void;
   onAdjustScrollSpeed: (delta: number) => void;
 }
@@ -17,9 +19,11 @@ const TeleprompterControls = ({
   isScrolling,
   fontSize,
   scrollSpeed,
+  isUppercase,
   onToggleScrolling,
   onResetScroll,
   onToggleFullscreen,
+  onToggleUppercase,
   onAdjustFontSize,
   onAdjustScrollSpeed
 }: TeleprompterControlsProps) => {
@@ -50,6 +54,16 @@ const TeleprompterControls = ({
           >
             <Maximize className="h-4 w-4" />
             <span>Fullscreen</span>
+          </button>
+
+          <button
+            onClick={onToggleUppercase}
+            className={`flex items-center space-x-2 px-4 py-2 rounded text-sm ${
+              isUppercase ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700'
+            }`}
+          >
+            <Type className="h-4 w-4" />
+            <span>UPPERCASE</span>
           </button>
         </div>
 

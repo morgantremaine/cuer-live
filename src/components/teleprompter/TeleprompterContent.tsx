@@ -9,6 +9,7 @@ interface TeleprompterContentProps {
   isFullscreen: boolean;
   itemsWithScript: (RundownItem & { originalIndex: number })[];
   fontSize: number;
+  isUppercase: boolean;
   getRowNumber: (index: number) => string;
 }
 
@@ -17,6 +18,7 @@ const TeleprompterContent = ({
   isFullscreen,
   itemsWithScript,
   fontSize,
+  isUppercase,
   getRowNumber
 }: TeleprompterContentProps) => {
   return (
@@ -50,6 +52,7 @@ const TeleprompterContent = ({
               key={item.id}
               item={item}
               fontSize={fontSize}
+              isUppercase={isUppercase}
               getRowNumber={getRowNumber}
             />
           ))}
