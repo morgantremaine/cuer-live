@@ -43,7 +43,7 @@ const RundownGrid = ({
 }: RundownGridProps) => {
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">{title}</h2>
+      <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           // Loading skeleton
@@ -63,8 +63,8 @@ const RundownGrid = ({
           // Empty state
           <div className="col-span-full text-center py-12">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No rundowns yet</h3>
-            <p className="text-gray-600 mb-4">Create your first rundown to get started</p>
+            <h3 className="text-lg font-medium text-white mb-2">No rundowns yet</h3>
+            <p className="text-gray-400 mb-4">Create your first rundown to get started</p>
             {onCreateNew && (
               <Button onClick={onCreateNew}>
                 <Plus className="h-4 w-4 mr-2" />
