@@ -15,8 +15,8 @@ const RundownTableHeader = ({
   updateColumnWidth
 }: RundownTableHeaderProps) => {
   return (
-    <thead className="bg-gray-700 dark:bg-gray-800 sticky top-0 z-10 border-b-4 border-blue-900">
-      <tr>
+    <thead className="bg-gray-700 dark:bg-gray-800 sticky top-0 z-10">
+      <tr className="border-b-4 border-blue-900">
         <th className="px-4 py-3 text-left text-sm font-semibold text-white border-r border-gray-300 dark:border-gray-600" style={{ width: '60px' }}>
           #
         </th>
