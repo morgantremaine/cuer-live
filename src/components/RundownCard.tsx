@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Clock, Trash2, Archive, MoreVertical } from 'lucide-react'
+import { Calendar, Clock, Trash2, Archive, MoreVertical, Copy } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
 
@@ -26,6 +26,7 @@ interface RundownCardProps {
   onDelete: (id: string, title: string, e: React.MouseEvent) => void
   onArchive?: (id: string, title: string, e: React.MouseEvent) => void
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   isArchived?: boolean
 }
 
@@ -35,6 +36,7 @@ const RundownCard = ({
   onDelete, 
   onArchive, 
   onUnarchive, 
+  onDuplicate,
   isArchived = false 
 }: RundownCardProps) => {
   return (
@@ -69,6 +71,18 @@ const RundownCard = ({
               align="end" 
               className="z-50 bg-white border shadow-lg rounded-md min-w-[160px]"
             >
+              {onDuplicate && (
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDuplicate(rundown.id, rundown.title, rundown.items, e)
+                  }}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </DropdownMenuItem>
+              )}
               {isArchived ? (
                 <DropdownMenuItem 
                   onClick={(e) => {

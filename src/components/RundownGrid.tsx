@@ -23,6 +23,7 @@ interface RundownGridProps {
   onDelete: (id: string, title: string, e: React.MouseEvent) => void
   onArchive?: (id: string, title: string, e: React.MouseEvent) => void
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   isArchived?: boolean
   showEmptyState?: boolean
 }
@@ -36,6 +37,7 @@ const RundownGrid = ({
   onDelete, 
   onArchive, 
   onUnarchive, 
+  onDuplicate,
   isArchived = false,
   showEmptyState = true
 }: RundownGridProps) => {
@@ -80,6 +82,7 @@ const RundownGrid = ({
               onDelete={onDelete}
               onArchive={onArchive}
               onUnarchive={onUnarchive}
+              onDuplicate={onDuplicate}
               isArchived={isArchived}
             />
           ))

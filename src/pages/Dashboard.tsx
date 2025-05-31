@@ -11,7 +11,7 @@ import { RundownItem } from '@/hooks/useRundownItems'
 
 const Dashboard = () => {
   const { user, signOut } = useAuth()
-  const { savedRundowns, loading, loadRundowns, deleteRundown, updateRundown } = useRundownStorage()
+  const { savedRundowns, loading, loadRundowns, deleteRundown, updateRundown, saveRundown } = useRundownStorage()
   const navigate = useNavigate()
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; rundownId: string; title: string }>({
     open: false,
@@ -58,6 +58,19 @@ const Dashboard = () => {
     await updateRundown(rundownId, title, items, false, false)
   }
 
+  const handleDuplicateClick = async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
+    e.stopPropagation()
+    const rundown = savedRundowns.find(r => r.id === rundownId)
+    if (rundown) {
+      const newTitle = `COPY ${title}`
+      try {
+        await saveRundown(newTitle, items, rundown.columns, rundown.timezone)
+      } catch (error) {
+        console.error('Failed to duplicate rundown:', error)
+      }
+    }
+  }
+
   const confirmDelete = async () => {
     if (deleteDialog.rundownId) {
       await deleteRundown(deleteDialog.rundownId)
@@ -94,6 +107,7 @@ const Dashboard = () => {
           onOpen={handleOpenRundown}
           onDelete={handleDeleteClick}
           onArchive={handleArchiveClick}
+          onDuplicate={handleDuplicateClick}
           showEmptyState={true}
         />
 
@@ -105,6 +119,7 @@ const Dashboard = () => {
             onOpen={handleOpenRundown}
             onDelete={handleDeleteClick}
             onUnarchive={handleUnarchiveClick}
+            onDuplicate={handleDuplicateClick}
             isArchived={true}
             showEmptyState={false}
           />
