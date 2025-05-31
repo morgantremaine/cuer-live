@@ -87,8 +87,8 @@ const RegularRow = ({
     rowClass = 'bg-red-800 text-white';
     borderClass = 'border-l-4 border-red-600';
   } else if (isSelected) {
-    // For selected rows, use a prominent blue border
-    borderClass = 'border-2 border-blue-500 shadow-lg';
+    // For selected rows, use a thick blue border with box shadow for visibility
+    borderClass = 'border-4 border-blue-500 shadow-lg ring-2 ring-blue-300';
     rowClass = item.color && item.color !== '#FFFFFF' ? 'hover:opacity-90' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   } else if (item.color && item.color !== '#FFFFFF') {
     rowClass = 'hover:opacity-90';
