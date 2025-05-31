@@ -57,7 +57,8 @@ const Index = () => {
     handleLoadLayout,
     hasUnsavedChanges,
     isSaving,
-    calculateTotalRuntime
+    calculateTotalRuntime,
+    calculateEndTime
   } = useRundownGridState();
 
   const selectedRowsArray = Array.from(selectedRowsSet);
@@ -88,21 +89,21 @@ const Index = () => {
       onCellClick={handleCellClick}
       onKeyDown={handleKeyDown}
       onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={selectColor}
+      onColorSelect={(id, color) => selectColor(id, color, updateItem)}
       onDeleteRow={deleteRow}
       onToggleFloat={toggleFloatRow}
       onRowSelect={(itemId, index, isShiftClick, isCtrlClick) => 
-        toggleRowSelection(itemId, index, isShiftClick, isCtrlClick)
+        toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items)
       }
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      onAddRow={addRow}
+      onAddRow={() => addRow(calculateEndTime)}
       onAddHeader={addHeader}
       selectedCount={selectedRowsSet.size}
-      hasClipboardData={hasClipboardData}
+      hasClipboardData={hasClipboardData()}
       onCopySelectedRows={() => copyItems(Array.from(selectedRowsSet).map(id => items.find(item => item.id === id)!).filter(Boolean))}
-      onPasteRows={() => addMultipleRows()}
+      onPasteRows={() => addMultipleRows([], calculateEndTime)}
       onDeleteSelectedRows={() => deleteMultipleRows(Array.from(selectedRowsSet))}
       onClearSelection={clearSelection}
       selectedRowId={selectedRowId}
