@@ -1,9 +1,8 @@
-
 import { RundownItem } from '@/types/rundown';
 
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns) return [];
-  return columns.filter(col => col.isVisible !== false);
+  return columns.filter(col => col.isVisible !== false && col.key !== 'notes');
 };
 
 export const getRowNumber = (index: number, items: RundownItem[]) => {
