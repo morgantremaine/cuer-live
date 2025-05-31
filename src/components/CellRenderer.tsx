@@ -78,33 +78,51 @@ const CellRenderer = ({
 
   if (column.key === 'notes' || column.isCustom) {
     return (
-      <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
+      <td key={column.id} className="px-4 py-2 align-top" onClick={handleCellClick} style={{ width }}>
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
           value={value}
           onChange={(e) => handleUpdateValue(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-          className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
-          style={{ color: textColor || undefined }}
-          rows={1}
+          className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden"
+          style={{ 
+            color: textColor || undefined,
+            minHeight: '24px',
+            height: 'auto'
+          }}
+          rows={2}
+          onInput={(e) => {
+            const target = e.target as HTMLTextAreaElement;
+            target.style.height = 'auto';
+            target.style.height = Math.min(target.scrollHeight, 48) + 'px'; // Max 2 lines (24px per line)
+          }}
         />
       </td>
     );
   }
 
   return (
-    <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
-      <input
+    <td key={column.id} className="px-4 py-2 align-top" onClick={handleCellClick} style={{ width }}>
+      <textarea
         ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
-        type="text"
         value={value}
         onChange={(e) => handleUpdateValue(e.target.value)}
         onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-        className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm ${
+        className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden ${
           column.key === 'duration' ? 'font-mono' : ''
         }`}
-        style={{ color: textColor || undefined }}
+        style={{ 
+          color: textColor || undefined,
+          minHeight: '24px',
+          height: 'auto'
+        }}
+        rows={2}
         placeholder={column.key === 'duration' ? '00:00:00' : ''}
+        onInput={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          target.style.height = 'auto';
+          target.style.height = Math.min(target.scrollHeight, 48) + 'px'; // Max 2 lines (24px per line)
+        }}
       />
     </td>
   );
