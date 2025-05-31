@@ -53,14 +53,22 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
+  // Create a placeholder markAsChanged function that will be replaced
+  const [markAsChangedFn, setMarkAsChangedFn] = useState<(() => void) | null>(null);
+
   const {
     columns,
     visibleColumns,
     handleAddColumn,
     handleUpdateColumnName
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager(markAsChangedFn || (() => {}));
 
   const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
+
+  // Update the markAsChanged function once it's available
+  useEffect(() => {
+    setMarkAsChangedFn(() => markAsChanged);
+  }, [markAsChanged]);
 
   const {
     columnWidths,
