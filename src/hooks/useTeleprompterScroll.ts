@@ -6,26 +6,43 @@ export const useTeleprompterScroll = (
   scrollSpeed: number,
   containerRef: React.RefObject<HTMLDivElement>
 ) => {
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
 
-  // Handle smooth scrolling
+  // Handle smooth scrolling with requestAnimationFrame
   useEffect(() => {
+    const scroll = (currentTime: number) => {
+      if (!containerRef.current || !isScrolling) return;
+
+      // Calculate time delta for consistent speed regardless of frame rate
+      const deltaTime = currentTime - lastTimeRef.current;
+      lastTimeRef.current = currentTime;
+
+      // Convert scroll speed to pixels per second (speed * 60 pixels per second)
+      const pixelsPerSecond = scrollSpeed * 60;
+      const scrollIncrement = (pixelsPerSecond * deltaTime) / 1000;
+
+      containerRef.current.scrollTop += scrollIncrement;
+
+      // Continue the animation
+      if (isScrolling) {
+        animationFrameRef.current = requestAnimationFrame(scroll);
+      }
+    };
+
     if (isScrolling && containerRef.current) {
-      scrollIntervalRef.current = setInterval(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop += scrollSpeed;
-        }
-      }, 16); // ~60fps
+      lastTimeRef.current = performance.now();
+      animationFrameRef.current = requestAnimationFrame(scroll);
     } else {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-        scrollIntervalRef.current = null;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     }
 
     return () => {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, [isScrolling, scrollSpeed, containerRef]);
