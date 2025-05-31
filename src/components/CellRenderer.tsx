@@ -52,10 +52,7 @@ const CellRenderer = ({
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
       <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
-        <span 
-          className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
-          style={{ color: textColor || undefined }}
-        >
+        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
           {value}
         </span>
       </td>
