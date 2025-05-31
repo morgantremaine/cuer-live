@@ -53,22 +53,20 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  // Create a placeholder markAsChanged function that will be replaced
-  const [markAsChangedFn, setMarkAsChangedFn] = useState<(() => void) | null>(null);
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle);
 
   const {
     columns,
     visibleColumns,
     handleAddColumn,
     handleUpdateColumnName
-  } = useColumnsManager(markAsChangedFn || (() => {}));
+  } = useColumnsManager(markAsChanged);
 
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
-
-  // Update the markAsChanged function once it's available
+  // Timer effect for current time
   useEffect(() => {
-    setMarkAsChangedFn(() => markAsChanged);
-  }, [markAsChanged]);
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const {
     columnWidths,
@@ -122,12 +120,6 @@ export const useRundownGridState = () => {
     forward,
     backward
   } = usePlaybackControls(items, updateItem);
-
-  // Timer effect for current time
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   return {
     // Basic state
