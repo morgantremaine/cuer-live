@@ -26,7 +26,7 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems(markAsChanged);
 
-  // Column management - call without arguments as the hook doesn't expect markAsChanged
+  // Column management - pass markAsChanged to ensure proper change tracking
   const {
     columns,
     visibleColumns,
@@ -36,7 +36,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  } = useColumnsManager();
+  } = useColumnsManager(markAsChanged);
 
   // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone
   const { hasUnsavedChanges, isSaving } = useAutoSave(
