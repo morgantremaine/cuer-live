@@ -59,13 +59,13 @@ const RundownCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 z-10"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="z-50">
               {isArchived ? (
                 <DropdownMenuItem 
                   onClick={(e) => {
@@ -77,13 +77,21 @@ const RundownCard = ({
                   Unarchive
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={(e) => onArchive?.(rundown.id, rundown.title, e)}>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onArchive?.(rundown.id, rundown.title, e)
+                  }}
+                >
                   <Archive className="h-4 w-4 mr-2" />
                   Archive
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem 
-                onClick={(e) => onDelete(rundown.id, rundown.title, e)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete(rundown.id, rundown.title, e)
+                }}
                 className="text-red-600 focus:text-red-600"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
