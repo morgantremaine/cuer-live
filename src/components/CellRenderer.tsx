@@ -50,6 +50,15 @@ const CellRenderer = ({
     onUpdateItem(item.id, updateFieldKey, newValue);
   };
 
+  // Helper function to determine if content needs two lines
+  const needsTwoLines = (text: string) => {
+    // Rough estimation: if text is longer than ~40 characters, it might need two lines
+    // This can be adjusted based on your typical column widths
+    return text.length > 40 || text.includes('\n');
+  };
+
+  const shouldExpandRow = needsTwoLines(value);
+
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
       <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
@@ -88,13 +97,15 @@ const CellRenderer = ({
           style={{ 
             color: textColor || undefined,
             minHeight: '24px',
-            height: 'auto'
+            height: shouldExpandRow ? '48px' : '24px'
           }}
-          rows={2}
+          rows={shouldExpandRow ? 2 : 1}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = 'auto';
-            target.style.height = Math.min(target.scrollHeight, 48) + 'px'; // Max 2 lines (24px per line)
+            const scrollHeight = target.scrollHeight;
+            // Dynamically adjust height based on content, max 2 lines
+            target.style.height = Math.min(scrollHeight, 48) + 'px';
           }}
         />
       </td>
@@ -114,14 +125,16 @@ const CellRenderer = ({
         style={{ 
           color: textColor || undefined,
           minHeight: '24px',
-          height: 'auto'
+          height: shouldExpandRow ? '48px' : '24px'
         }}
-        rows={2}
+        rows={shouldExpandRow ? 2 : 1}
         placeholder={column.key === 'duration' ? '00:00:00' : ''}
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement;
           target.style.height = 'auto';
-          target.style.height = Math.min(target.scrollHeight, 48) + 'px'; // Max 2 lines (24px per line)
+          const scrollHeight = target.scrollHeight;
+          // Dynamically adjust height based on content, max 2 lines
+          target.style.height = Math.min(scrollHeight, 48) + 'px';
         }}
       />
     </td>
