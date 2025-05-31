@@ -1,12 +1,12 @@
 
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
+import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
-export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
+export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
@@ -23,6 +23,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   console.log('🚀 AutoSave render:', {
     itemsCount: items.length,
     title: rundownTitle,
+    columnsCount: columns?.length || 0,
     hasUnsavedChanges,
     isSaving,
     initialized: isInitialized,
@@ -31,7 +32,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
   });
 
   // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string) => {
+  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[]) => {
     console.log('🎯 Debounced save triggered');
     
     if (!user || isSaving) {
@@ -40,7 +41,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     }
 
     try {
-      const success = await performSave(itemsToSave, titleToSave);
+      const success = await performSave(itemsToSave, titleToSave, columnsToSave);
       console.log('💾 Save operation result:', success);
       
       if (success) {
@@ -67,8 +68,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
       return;
     }
 
-    // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle });
+    // Create a unique signature for this data including columns
+    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns });
     
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
@@ -88,11 +89,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
       console.log('⚡ Executing debounced auto-save');
-      debouncedSave([...items], rundownTitle);
+      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined);
       debounceTimeoutRef.current = null;
     }, 2000);
 
-  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, debouncedSave]);
+  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -114,4 +115,3 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string) => {
     markAsChanged: markAsChangedCallback
   };
 };
-

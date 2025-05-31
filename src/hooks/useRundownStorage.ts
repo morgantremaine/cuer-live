@@ -1,13 +1,16 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { RundownItem } from '@/hooks/useRundownItems'
+import { Column } from '@/hooks/useColumnsManager'
 import { useToast } from '@/hooks/use-toast'
 
 interface SavedRundown {
   id: string
   title: string
   items: RundownItem[]
+  column_layout?: Column[]
   created_at: string
   updated_at: string
   archived?: boolean
@@ -42,7 +45,7 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[]) => {
+  const saveRundown = async (title: string, items: RundownItem[], columnLayout?: Column[]) => {
     if (!user) {
       console.error('Cannot save: no user')
       return
@@ -56,6 +59,7 @@ export const useRundownStorage = () => {
         user_id: user.id,
         title,
         items,
+        column_layout: columnLayout,
         archived: false
       })
       .select()
@@ -80,7 +84,7 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columnLayout?: Column[]) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
@@ -98,6 +102,7 @@ export const useRundownStorage = () => {
     const updateData = {
       title: title,
       items: items,
+      column_layout: columnLayout,
       updated_at: new Date().toISOString(),
       archived: archived
     }

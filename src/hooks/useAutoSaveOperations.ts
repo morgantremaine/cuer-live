@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
+import { Column } from './useColumnsManager';
 
 export const useAutoSaveOperations = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -14,10 +15,11 @@ export const useAutoSaveOperations = () => {
 
   const isNewRundown = !rundownId;
 
-  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string) => {
+  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
     console.log('🔧 performSave called with:', {
       itemsCount: items.length,
       title: rundownTitle,
+      columnsCount: columns?.length || 0,
       isNewRundown,
       rundownId,
       userId: user?.id || 'none',
@@ -51,7 +53,7 @@ export const useAutoSaveOperations = () => {
       
       if (isNewRundown) {
         console.log('Saving new rundown...');
-        const result = await saveRundown(rundownTitle, items);
+        const result = await saveRundown(rundownTitle, items, columns);
         console.log('Save result:', result);
         
         if (result?.id) {
@@ -68,11 +70,12 @@ export const useAutoSaveOperations = () => {
           id: rundownId,
           title: rundownTitle,
           itemsCount: items.length,
+          columnsCount: columns?.length || 0,
           silent: true
         });
         
         // Call updateRundown with proper parameters and error handling
-        await updateRundown(rundownId, rundownTitle, items, true);
+        await updateRundown(rundownId, rundownTitle, items, true, false, columns);
         console.log('Rundown updated successfully');
         return true;
       }

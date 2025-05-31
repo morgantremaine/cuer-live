@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -54,14 +53,14 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle);
-
   const {
     columns,
     visibleColumns,
     handleAddColumn,
     handleUpdateColumnName
   } = useColumnsManager(markAsChanged);
+
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
 
   const {
     columnWidths,
