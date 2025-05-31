@@ -1,16 +1,31 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import { RundownContainerProps } from '@/types/rundownContainer';
+import { SearchHighlight } from '@/types/search';
 
 interface RundownHeaderPropsAdapterProps {
   props: RundownContainerProps;
 }
 
 const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
+  const [currentHighlight, setCurrentHighlight] = useState<SearchHighlight | null>(null);
+
   // Create handlers for search functionality
   const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
-    // Simply focus on the cell without trying to modify selection
+    if (!itemId || !field) {
+      setCurrentHighlight(null);
+      return;
+    }
+
+    setCurrentHighlight({
+      itemId,
+      field,
+      startIndex,
+      endIndex
+    });
+
+    // Focus on the cell
     const cellKey = `${itemId}-${field}`;
     const cellElement = props.cellRefs.current[cellKey];
     if (cellElement) {
@@ -33,6 +48,9 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     }
 
     props.onUpdateItem(itemId, field, newValue);
+    
+    // Clear highlight after replace
+    setCurrentHighlight(null);
   };
 
   return (
@@ -70,6 +88,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       visibleColumns={props.visibleColumns}
       onHighlightMatch={handleHighlightMatch}
       onReplaceText={handleReplaceText}
+      currentHighlight={currentHighlight}
     />
   );
 };

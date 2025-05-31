@@ -6,6 +6,13 @@ export interface SearchMatch {
   length: number;
 }
 
+export interface SearchHighlight {
+  itemId: string;
+  field: string;
+  startIndex: number;
+  endIndex: number;
+}
+
 export interface SearchBarProps {
   items: any[];
   visibleColumns: any[];

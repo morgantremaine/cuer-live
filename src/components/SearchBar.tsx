@@ -28,7 +28,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     currentMatchIndex,
     setCurrentMatchIndex,
     performSearch
-  } = useSearch(items, visibleColumns);
+  } = useSearch(items, visibleColumns, onHighlightMatch);
 
   const { navigateMatch } = useSearchNavigation();
 
@@ -52,6 +52,8 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     setSearchText('');
     setReplaceText('');
     setShowReplace(false);
+    // Clear highlights when closing
+    onHighlightMatch('', '', 0, 0);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

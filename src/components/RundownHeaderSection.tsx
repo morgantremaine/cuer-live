@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
@@ -37,6 +36,7 @@ interface RundownHeaderSectionProps {
   visibleColumns?: any[];
   onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
+  currentHighlight?: any;
 }
 
 const RundownHeaderSection = ({
@@ -72,7 +72,8 @@ const RundownHeaderSection = ({
   items = [],
   visibleColumns = [],
   onHighlightMatch = () => {},
-  onReplaceText = () => {}
+  onReplaceText = () => {},
+  currentHighlight
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -91,6 +92,7 @@ const RundownHeaderSection = ({
         visibleColumns={visibleColumns}
         onHighlightMatch={onHighlightMatch}
         onReplaceText={onReplaceText}
+        currentHighlight={currentHighlight}
       />
       <RundownToolbar
         onAddRow={onAddRow}

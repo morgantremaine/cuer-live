@@ -2,7 +2,11 @@
 import { useState, useEffect } from 'react';
 import { SearchMatch } from '@/types/search';
 
-export const useSearch = (items: any[], visibleColumns: any[]) => {
+export const useSearch = (
+  items: any[], 
+  visibleColumns: any[], 
+  onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void
+) => {
   const [searchText, setSearchText] = useState('');
   const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
@@ -11,6 +15,8 @@ export const useSearch = (items: any[], visibleColumns: any[]) => {
     if (!text.trim()) {
       setMatches([]);
       setCurrentMatchIndex(-1);
+      // Clear any existing highlights
+      onHighlightMatch('', '', 0, 0);
       return;
     }
 
@@ -44,8 +50,19 @@ export const useSearch = (items: any[], visibleColumns: any[]) => {
     setMatches(foundMatches);
     if (foundMatches.length > 0) {
       setCurrentMatchIndex(0);
+      const firstMatch = foundMatches[0];
+      onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
     } else {
       setCurrentMatchIndex(-1);
+      onHighlightMatch('', '', 0, 0);
+    }
+  };
+
+  const updateCurrentMatch = (newIndex: number) => {
+    setCurrentMatchIndex(newIndex);
+    if (newIndex >= 0 && newIndex < matches.length) {
+      const match = matches[newIndex];
+      onHighlightMatch(match.itemId, match.field, match.index, match.index + match.length);
     }
   };
 
@@ -58,7 +75,7 @@ export const useSearch = (items: any[], visibleColumns: any[]) => {
     setSearchText,
     matches,
     currentMatchIndex,
-    setCurrentMatchIndex,
+    setCurrentMatchIndex: updateCurrentMatch,
     performSearch
   };
 };
