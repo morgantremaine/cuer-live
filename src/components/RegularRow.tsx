@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -127,7 +126,15 @@ const RegularRow = ({
   };
 
   const handleContextMenuFloat = () => {
-    onToggleFloat(item.id);
+    if (isSelected && selectedRowsCount > 1 && selectedRows) {
+      // Toggle float for all selected rows
+      selectedRows.forEach(selectedId => {
+        onToggleFloat(selectedId);
+      });
+    } else {
+      // Toggle float for single row
+      onToggleFloat(item.id);
+    }
   };
 
   const handleContextMenuColor = () => {

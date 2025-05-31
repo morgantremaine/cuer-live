@@ -58,6 +58,19 @@ const RundownContextMenu = ({
     }
   };
 
+  // Handle float toggle for multiple rows
+  const handleContextMenuFloat = () => {
+    if (isMultipleSelection && selectedRows) {
+      // Toggle float for all selected rows
+      selectedRows.forEach(selectedId => {
+        onToggleFloat();
+      });
+    } else {
+      // Toggle float for single row
+      onToggleFloat();
+    }
+  };
+
   console.log('RundownContextMenu render - hasClipboardData:', hasClipboardData, 'onPaste:', !!onPaste);
 
   return (
@@ -80,7 +93,7 @@ const RundownContextMenu = ({
         
         <ContextMenuSeparator />
         
-        <ContextMenuItem onClick={onToggleFloat}>
+        <ContextMenuItem onClick={handleContextMenuFloat}>
           <Anchor className="mr-2 h-4 w-4" />
           {isFloated ? 
             (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
