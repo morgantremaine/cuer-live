@@ -1,117 +1,92 @@
 
-import React from 'react';
-import RundownContainer from './RundownContainer';
-import { useRundownGridState } from '@/hooks/useRundownGridState';
-import { useRundownGridHandlers } from '@/hooks/useRundownGridHandlers';
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { FileText, Plus } from 'lucide-react'
+import RundownCard from './RundownCard'
+import { RundownItem } from '@/hooks/useRundownItems'
 
-const RundownGrid = () => {
-  const state = useRundownGridState();
-  
-  const handlers = useRundownGridHandlers({
-    updateItem: state.updateItem,
-    addRow: state.addRow,
-    addHeader: state.addHeader,
-    deleteRow: state.deleteRow,
-    toggleFloatRow: state.toggleFloatRow,
-    deleteMultipleRows: state.deleteMultipleRows,
-    addMultipleRows: state.addMultipleRows,
-    handleDeleteColumn: state.handleDeleteColumn,
-    setItems: state.setItems,
-    calculateEndTime: state.calculateEndTime,
-    selectColor: state.selectColor,
-    markAsChanged: state.markAsChanged,
-    selectedRows: state.selectedRows,
-    clearSelection: state.clearSelection,
-    copyItems: state.copyItems,
-    clipboardItems: state.clipboardItems,
-    hasClipboardData: state.hasClipboardData,
-    toggleRowSelection: state.toggleRowSelection,
-    items: state.items,
-    setRundownTitle: state.setRundownTitle
-  });
+interface SavedRundown {
+  id: string
+  title: string
+  items: RundownItem[]
+  created_at: string
+  updated_at: string
+  archived?: boolean
+}
 
-  const selectedCount = state.selectedRows.size;
-  const selectedRowId = selectedCount === 1 ? Array.from(state.selectedRows)[0] : null;
+interface RundownGridProps {
+  title: string
+  rundowns: SavedRundown[]
+  loading: boolean
+  onCreateNew?: () => void
+  onOpen: (id: string) => void
+  onDelete: (id: string, title: string, e: React.MouseEvent) => void
+  onArchive?: (id: string, title: string, e: React.MouseEvent) => void
+  onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  isArchived?: boolean
+  showEmptyState?: boolean
+}
 
-  console.log('RundownGrid render - save state:', {
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    isSaving: state.isSaving
-  });
-
+const RundownGrid = ({ 
+  title, 
+  rundowns, 
+  loading, 
+  onCreateNew, 
+  onOpen, 
+  onDelete, 
+  onArchive, 
+  onUnarchive, 
+  isArchived = false,
+  showEmptyState = true
+}: RundownGridProps) => {
   return (
-    <RundownContainer
-      currentTime={state.currentTime}
-      timezone={state.timezone}
-      onTimezoneChange={state.setTimezone}
-      totalRuntime={state.calculateTotalRuntime()}
-      showColumnManager={state.showColumnManager}
-      setShowColumnManager={state.setShowColumnManager}
-      items={state.items}
-      visibleColumns={state.visibleColumns}
-      columns={state.columns}
-      showColorPicker={state.showColorPicker}
-      cellRefs={state.cellRefs}
-      selectedRows={state.selectedRows}
-      draggedItemIndex={state.draggedItemIndex}
-      currentSegmentId={state.currentSegmentId}
-      getColumnWidth={state.getColumnWidth}
-      updateColumnWidth={state.updateColumnWidth}
-      getRowNumber={state.getRowNumber}
-      getRowStatus={state.getRowStatus}
-      calculateHeaderDuration={state.calculateHeaderDuration}
-      onUpdateItem={handlers.handleUpdateItem}
-      onCellClick={state.handleCellClick}
-      onKeyDown={state.handleKeyDown}
-      onToggleColorPicker={state.handleToggleColorPicker}
-      onColorSelect={handlers.handleColorSelect}
-      onDeleteRow={handlers.handleDeleteRow}
-      onToggleFloat={handlers.handleToggleFloat}
-      onRowSelect={handlers.handleRowSelection}
-      onDragStart={state.handleDragStart}
-      onDragOver={state.handleDragOver}
-      onDrop={state.handleDrop}
-      onAddRow={handlers.handleAddRow}
-      onAddHeader={handlers.handleAddHeader}
-      selectedCount={selectedCount}
-      hasClipboardData={state.hasClipboardData()}
-      onCopySelectedRows={handlers.handleCopySelectedRows}
-      onPasteRows={handlers.handlePasteRows}
-      onDeleteSelectedRows={handlers.handleDeleteSelectedRows}
-      onClearSelection={state.clearSelection}
-      selectedRowId={selectedRowId}
-      isPlaying={state.isPlaying}
-      timeRemaining={state.timeRemaining}
-      onPlay={state.play}
-      onPause={state.pause}
-      onForward={state.forward}
-      onBackward={state.backward}
-      handleAddColumn={(name: string) => {
-        console.log('Adding column:', name);
-        state.handleAddColumn(name);
-        state.markAsChanged();
-      }}
-      handleReorderColumns={(columns) => {
-        console.log('Reordering columns');
-        state.handleReorderColumns(columns);
-        state.markAsChanged();
-      }}
-      handleDeleteColumnWithCleanup={handlers.handleDeleteColumnWithCleanup}
-      handleToggleColumnVisibility={(columnId: string) => {
-        console.log('Toggling column visibility:', columnId);
-        state.handleToggleColumnVisibility(columnId);
-        state.markAsChanged();
-      }}
-      handleLoadLayout={(layoutColumns) => {
-        console.log('Loading layout');
-        state.handleLoadLayout(layoutColumns);
-        state.markAsChanged();
-      }}
-      hasUnsavedChanges={state.hasUnsavedChanges}
-      isSaving={state.isSaving}
-      rundownTitle={state.rundownTitle}
-      onTitleChange={handlers.handleTitleChange}
-    />
-  );
-};
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">{title}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+          // Loading skeleton
+          Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </CardContent>
+            </Card>
+          ))
+        ) : rundowns.length === 0 && showEmptyState ? (
+          // Empty state
+          <div className="col-span-full text-center py-12">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No rundowns yet</h3>
+            <p className="text-gray-600 mb-4">Create your first rundown to get started</p>
+            {onCreateNew && (
+              <Button onClick={onCreateNew}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Rundown
+              </Button>
+            )}
+          </div>
+        ) : (
+          // Rundowns list
+          rundowns.map((rundown) => (
+            <RundownCard
+              key={rundown.id}
+              rundown={rundown}
+              onOpen={onOpen}
+              onDelete={onDelete}
+              onArchive={onArchive}
+              onUnarchive={onUnarchive}
+              isArchived={isArchived}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
 
-export default RundownGrid;
+export default RundownGrid
