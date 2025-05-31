@@ -6,7 +6,7 @@ import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 
-export const useRundownStateIntegration = (markAsChanged: () => void, rundownTitle: string) => {
+export const useRundownStateIntegration = (markAsChanged: () => void, rundownTitle: string, timezone: string) => {
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
   const loadedRef = useRef<string | null>(null);
@@ -36,7 +36,7 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
     handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
-  const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle, columns);
+  const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle, columns, timezone);
 
   // Load rundown data only once when rundown ID changes
   useEffect(() => {

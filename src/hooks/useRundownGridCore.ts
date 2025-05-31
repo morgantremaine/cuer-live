@@ -20,7 +20,7 @@ export const useRundownGridCore = () => {
     markAsChanged
   } = useRundownBasicState();
 
-  // Rundown data integration
+  // Rundown data integration - now passing timezone
   const {
     items,
     setItems,
@@ -43,7 +43,7 @@ export const useRundownGridCore = () => {
     handleLoadLayout,
     hasUnsavedChanges,
     isSaving
-  } = useRundownStateIntegration(markAsChanged, rundownTitle);
+  } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone);
 
   // Playback controls - fix the function call
   const { 

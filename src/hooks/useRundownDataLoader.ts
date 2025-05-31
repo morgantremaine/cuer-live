@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback } from 'react';
 
 interface UseRundownDataLoaderProps {
@@ -25,13 +24,15 @@ export const useRundownDataLoader = ({
     if (rundownId && savedRundowns.length > 0) {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
-        console.log('Loading rundown data:', { id: rundownId, title: existingRundown.title });
+        console.log('Loading rundown data:', { id: rundownId, title: existingRundown.title, timezone: existingRundown.timezone });
         setRundownTitle(existingRundown.title);
         
-        // Load timezone if it exists
+        // Load timezone if it exists, ensuring it actually gets set
         if (existingRundown.timezone) {
-          console.log('Loading timezone:', existingRundown.timezone);
+          console.log('Setting timezone from saved rundown:', existingRundown.timezone);
           setTimezone(existingRundown.timezone);
+        } else {
+          console.log('No timezone found in saved rundown, using default');
         }
         
         // Load column layout if it exists
@@ -43,8 +44,9 @@ export const useRundownDataLoader = ({
         console.log('Rundown not found:', rundownId);
       }
     } else if (!rundownId) {
-      console.log('New rundown, using default title');
+      console.log('New rundown, using default title and timezone');
       setRundownTitle('Live Broadcast Rundown');
+      // Keep default timezone for new rundowns
     }
   }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, handleLoadLayout]);
 

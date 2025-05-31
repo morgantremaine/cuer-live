@@ -16,22 +16,37 @@ export const useRundownBasicState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Simple change tracking for now
+  // Change tracking for timezone and other fields
   const markAsChanged = () => {
-    // This will be handled by the auto-save system
-    console.log('Changes marked');
+    console.log('Changes marked - triggering auto-save');
+  };
+
+  const setTimezoneWithChange = (newTimezone: string) => {
+    console.log('Timezone changed to:', newTimezone);
+    setTimezone(newTimezone);
+    markAsChanged();
+  };
+
+  const setRundownTitleWithChange = (newTitle: string) => {
+    setRundownTitle(newTitle);
+    markAsChanged();
+  };
+
+  const setRundownStartTimeWithChange = (newStartTime: string) => {
+    setRundownStartTime(newStartTime);
+    markAsChanged();
   };
 
   return {
     currentTime,
     timezone,
-    setTimezone,
+    setTimezone: setTimezoneWithChange,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
-    setRundownTitle,
+    setRundownTitle: setRundownTitleWithChange,
     rundownStartTime,
-    setRundownStartTime,
+    setRundownStartTime: setRundownStartTimeWithChange,
     rundownId,
     markAsChanged
   };
