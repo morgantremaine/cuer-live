@@ -31,6 +31,8 @@ interface RundownContentProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onCopySelectedRows: () => void;
+  onDeleteSelectedRows: () => void;
 }
 
 const RundownContent = ({
@@ -58,7 +60,9 @@ const RundownContent = ({
   onRowSelect,
   onDragStart,
   onDragOver,
-  onDrop
+  onDrop,
+  onCopySelectedRows,
+  onDeleteSelectedRows
 }: RundownContentProps) => {
   return (
     <div className="relative">
@@ -90,6 +94,8 @@ const RundownContent = ({
             onDragStart={onDragStart}
             onDragOver={onDragOver}
             onDrop={onDrop}
+            onCopySelectedRows={onCopySelectedRows}
+            onDeleteSelectedRows={onDeleteSelectedRows}
           />
         </div>
         <ScrollBar orientation="horizontal" />

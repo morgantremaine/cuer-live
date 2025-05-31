@@ -16,6 +16,7 @@ interface RundownRowProps {
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
+  selectedRowsCount?: number;
   headerDuration?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -28,6 +29,8 @@ interface RundownRowProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onCopySelectedRows: () => void;
+  onDeleteSelectedRows: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -38,6 +41,7 @@ const RundownRow = (props: RundownRowProps) => {
       <HeaderRow 
         {...props} 
         headerDuration={props.headerDuration || ''}
+        selectedRowsCount={props.selectedRowsCount || 1}
       />
     );
   }
@@ -47,6 +51,7 @@ const RundownRow = (props: RundownRowProps) => {
       {...props} 
       isCurrentlyPlaying={props.isCurrentlyPlaying}
       isDraggingMultiple={props.isDraggingMultiple}
+      selectedRowsCount={props.selectedRowsCount || 1}
       onToggleFloat={props.onToggleFloat || (() => {})}
     />
   );

@@ -1,9 +1,8 @@
 
 import React from 'react';
-import { Trash2, Copy, Clipboard, Anchor, Play } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import ColorPicker from './ColorPicker';
+import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
+import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -19,6 +18,7 @@ interface RegularRowProps {
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
+  selectedRowsCount?: number;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -30,6 +30,8 @@ interface RegularRowProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onCopySelectedRows: () => void;
+  onDeleteSelectedRows: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -45,6 +47,7 @@ const RegularRow = ({
   isSelected = false,
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
+  selectedRowsCount = 1,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -56,6 +59,8 @@ const RegularRow = ({
   onDragStart,
   onDragOver,
   onDrop,
+  onCopySelectedRows,
+  onDeleteSelectedRows,
   isDragging,
   getColumnWidth
 }: RegularRowProps) => {
@@ -74,14 +79,12 @@ const RegularRow = ({
   } else if (item.color && item.color !== '#FFFFFF') {
     rowClass = `hover:opacity-90`;
   } else {
-    // Default styling for regular rows - light mode: white, dark mode: gray-700
     rowClass = 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   }
 
   const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
 
   const handleRowClick = (e: React.MouseEvent) => {
-    // Only handle row selection if the click target is the row itself or the row number cell
     const target = e.target as HTMLElement;
     const isRowNumberCell = target.closest('td')?.classList.contains('row-number-cell');
     const isRowElement = target === e.currentTarget;
@@ -92,76 +95,81 @@ const RegularRow = ({
     }
   };
 
+  const handleContextMenuCopy = () => {
+    if (isSelected && selectedRowsCount > 1) {
+      onCopySelectedRows();
+    } else {
+      // Copy just this row
+      onCopySelectedRows();
+    }
+  };
+
+  const handleContextMenuDelete = () => {
+    if (isSelected && selectedRowsCount > 1) {
+      onDeleteSelectedRows();
+    } else {
+      onDeleteRow(item.id);
+    }
+  };
+
+  const handleContextMenuFloat = () => {
+    onToggleFloat(item.id);
+  };
+
+  const handleContextMenuColor = () => {
+    onToggleColorPicker(item.id);
+  };
+
   return (
-    <tr 
-      className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer select-none`}
-      style={{ 
-        backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
-        color: textColor || undefined
-      }}
-      draggable
-      onClick={handleRowClick}
-      onDragStart={(e) => onDragStart(e, index)}
-      onDragOver={onDragOver}
-      onDrop={(e) => onDrop(e, index)}
+    <RundownContextMenu
+      selectedCount={isSelected ? selectedRowsCount : 1}
+      isFloated={item.isFloating || item.isFloated}
+      onCopy={handleContextMenuCopy}
+      onDelete={handleContextMenuDelete}
+      onToggleFloat={handleContextMenuFloat}
+      onColorPicker={handleContextMenuColor}
     >
-      <td 
-        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
-        style={{ color: textColor || undefined, width: '80px' }}
+      <tr 
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer select-none`}
+        style={{ 
+          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
+          color: textColor || undefined
+        }}
+        draggable
+        onClick={handleRowClick}
+        onDragStart={(e) => onDragStart(e, index)}
+        onDragOver={onDragOver}
+        onDrop={(e) => onDrop(e, index)}
       >
-        <div className="flex items-center space-x-2">
-          {isCurrentlyPlaying && (
-            <Play className="h-4 w-4 text-green-500 fill-green-500" />
-          )}
-          <span>{rowNumber}</span>
-          {isDraggingMultiple && isSelected && (
-            <span className="text-xs bg-blue-500 text-white px-1 rounded">M</span>
-          )}
-        </div>
-      </td>
-      {columns.map((column) => (
-        <CellRenderer
-          key={column.id}
-          column={column}
-          item={item}
-          cellRefs={cellRefs}
-          textColor={textColor}
-          onUpdateItem={onUpdateItem}
-          onCellClick={onCellClick}
-          onKeyDown={onKeyDown}
-          width={getColumnWidth(column)}
-        />
-      ))}
-      <td className="px-4 py-2" onClick={(e) => e.stopPropagation()} style={{ width: '120px' }}>
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onToggleFloat(item.id)}
-            className={`${(item.isFloating || item.isFloated) ? 'text-white hover:bg-red-700' : 'text-gray-500 hover:text-red-500'} hover:bg-red-50 dark:hover:bg-red-900`}
-            title={(item.isFloating || item.isFloated) ? 'Unfloat row' : 'Float row'}
-          >
-            <Anchor className="h-4 w-4" />
-          </Button>
-          
-          <ColorPicker
-            itemId={item.id}
-            showColorPicker={showColorPicker}
-            onToggle={onToggleColorPicker}
-            onColorSelect={onColorSelect}
+        <td 
+          className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
+          style={{ color: textColor || undefined, width: '80px' }}
+        >
+          <div className="flex items-center space-x-2">
+            {isCurrentlyPlaying && (
+              <Play className="h-4 w-4 text-green-500 fill-green-500" />
+            )}
+            <span>{rowNumber}</span>
+            {isDraggingMultiple && isSelected && (
+              <span className="text-xs bg-blue-500 text-white px-1 rounded">M</span>
+            )}
+          </div>
+        </td>
+        {columns.map((column) => (
+          <CellRenderer
+            key={column.id}
+            column={column}
+            item={item}
+            cellRefs={cellRefs}
+            textColor={textColor}
+            onUpdateItem={onUpdateItem}
+            onCellClick={onCellClick}
+            onKeyDown={onKeyDown}
+            width={getColumnWidth(column)}
           />
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDeleteRow(item.id)}
-            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </td>
-    </tr>
+        ))}
+      </tr>
+    </RundownContextMenu>
   );
 };
 

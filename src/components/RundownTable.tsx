@@ -31,6 +31,8 @@ interface RundownTableProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onCopySelectedRows: () => void;
+  onDeleteSelectedRows: () => void;
 }
 
 const RundownTable = ({
@@ -58,7 +60,9 @@ const RundownTable = ({
   onRowSelect,
   onDragStart,
   onDragOver,
-  onDrop
+  onDrop,
+  onCopySelectedRows,
+  onDeleteSelectedRows
 }: RundownTableProps) => {
   return (
     <div className="w-full">
@@ -82,6 +86,7 @@ const RundownTable = ({
               isSelected={selectedRows.has(item.id)}
               isCurrentlyPlaying={!isHeaderItem(item) && currentSegmentId === item.id}
               isDraggingMultiple={isDraggingMultiple && selectedRows.has(item.id)}
+              selectedRowsCount={selectedRows.size}
               headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
@@ -94,6 +99,8 @@ const RundownTable = ({
               onDragStart={onDragStart}
               onDragOver={onDragOver}
               onDrop={onDrop}
+              onCopySelectedRows={onCopySelectedRows}
+              onDeleteSelectedRows={onDeleteSelectedRows}
               isDragging={draggedItemIndex === index}
               getColumnWidth={getColumnWidth}
             />
