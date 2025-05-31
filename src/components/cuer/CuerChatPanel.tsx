@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { X, MessageCircle, Send, Zap, Trash2, Wifi, WifiOff, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -86,18 +87,53 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
     setShowApiKeySetup(true);
   };
 
+  const mapAIDataToRundownItem = (aiData: any) => {
+    // Map AI data structure to RundownItem structure
+    const baseItem = {
+      id: aiData.id || String(Date.now()),
+      type: aiData.type || 'regular',
+      rowNumber: aiData.rowNumber || '',
+      name: aiData.segmentTitle || aiData.name || 'New Segment',
+      startTime: aiData.startTime || '00:00:00',
+      duration: aiData.duration || '00:00:00',
+      endTime: aiData.endTime || '00:00:00',
+      talent: aiData.talent || '',
+      script: aiData.script || aiData.description || '',
+      notes: aiData.notes || '',
+      color: aiData.color || '#FFFFFF',
+      isFloating: aiData.isFloating || false,
+      status: aiData.status || 'upcoming',
+      customFields: aiData.customFields || {},
+    };
+
+    // Handle header-specific fields
+    if (aiData.type === 'header') {
+      return {
+        ...baseItem,
+        segmentName: aiData.segmentName || aiData.segmentTitle || baseItem.name,
+      };
+    }
+
+    return baseItem;
+  };
+
   const applyModifications = (modifications: RundownModification[]) => {
     modifications.forEach(mod => {
+      console.log('Applying modification:', mod);
+      
       switch (mod.type) {
         case 'add':
           if (mod.data) {
-            if (mod.data.type === 'header') {
+            const mappedData = mapAIDataToRundownItem(mod.data);
+            console.log('Mapped data for add:', mappedData);
+            
+            if (mappedData.type === 'header') {
               addHeader();
               // Update the newly added header with the provided data
               setTimeout(() => {
-                Object.keys(mod.data).forEach(key => {
+                Object.keys(mappedData).forEach(key => {
                   if (key !== 'id') {
-                    updateItem(mod.data.id || '', key, mod.data[key]);
+                    updateItem(mappedData.id, key, mappedData[key]);
                   }
                 });
               }, 100);
@@ -105,9 +141,9 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
               addRow(calculateEndTime);
               // Update the newly added row with the provided data
               setTimeout(() => {
-                Object.keys(mod.data).forEach(key => {
+                Object.keys(mappedData).forEach(key => {
                   if (key !== 'id') {
-                    updateItem(mod.data.id || '', key, mod.data[key]);
+                    updateItem(mappedData.id, key, mappedData[key]);
                   }
                 });
               }, 100);
@@ -116,8 +152,9 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
           break;
         case 'update':
           if (mod.itemId && mod.data) {
-            Object.keys(mod.data).forEach(key => {
-              updateItem(mod.itemId!, key, mod.data[key]);
+            const mappedData = mapAIDataToRundownItem(mod.data);
+            Object.keys(mappedData).forEach(key => {
+              updateItem(mod.itemId!, key, mappedData[key]);
             });
           }
           break;
