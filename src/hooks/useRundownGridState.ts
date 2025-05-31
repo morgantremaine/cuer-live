@@ -40,9 +40,9 @@ export const useRundownGridState = () => {
     handleLoadLayout,
     savedRundowns,
     loading,
-  } = useRundownDataManagement();
+  } = useRundownDataManagement(rundownTitle);
 
-  // Get auto-save functionality with the actual rundown title and columns (timezone is saved separately)
+  // Get auto-save functionality with the actual rundown title and columns
   const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
 
   const {

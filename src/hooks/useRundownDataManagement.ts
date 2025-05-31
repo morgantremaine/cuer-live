@@ -3,10 +3,9 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 
-export const useRundownDataManagement = () => {
+export const useRundownDataManagement = (rundownTitle: string) => {
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
 
@@ -35,8 +34,6 @@ export const useRundownDataManagement = () => {
     handleLoadLayout
   } = useColumnsManager();
 
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, 'Live Broadcast Rundown', columns);
-
   return {
     rundownId,
     items,
@@ -51,9 +48,6 @@ export const useRundownDataManagement = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    hasUnsavedChanges,
-    isSaving,
-    markAsChanged,
     columns,
     visibleColumns,
     handleAddColumn,
