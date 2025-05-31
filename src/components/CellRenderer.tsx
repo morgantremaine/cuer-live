@@ -31,26 +31,22 @@ const CellRenderer = ({
     return (item as any)[column.key] || '';
   };
 
-  const getFieldKey = (column: Column) => {
-    // For custom fields, we need to use the format expected by the update handler
-    return column.isCustom ? `customFields.${column.key}` : column.key;
-  };
+  // Use the column key for cell references and navigation
+  const cellRefKey = column.key;
+  // Use the full path for updates
+  const updateFieldKey = column.isCustom ? `customFields.${column.key}` : column.key;
 
-  const fieldKey = getFieldKey(column);
   const value = getCellValue(column);
 
   const handleCellClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row selection when clicking on cells
-    onCellClick(item.id, fieldKey);
+    // Use cellRefKey for navigation
+    onCellClick(item.id, cellRefKey);
   };
 
   const handleUpdateValue = (newValue: string) => {
-    if (column.isCustom) {
-      // For custom fields, pass the field key in the format that updateItem expects
-      onUpdateItem(item.id, `customFields.${column.key}`, newValue);
-    } else {
-      onUpdateItem(item.id, column.key, newValue);
-    }
+    // Use updateFieldKey for actual updates
+    onUpdateItem(item.id, updateFieldKey, newValue);
   };
 
   if (column.key === 'endTime' || column.key === 'startTime') {
@@ -70,10 +66,10 @@ const CellRenderer = ({
     return (
       <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
         <textarea
-          ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
+          ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
           value={value}
           onChange={(e) => handleUpdateValue(e.target.value)}
-          onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
+          onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
           className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
           style={{ color: textColor || undefined }}
           rows={1}
@@ -85,11 +81,11 @@ const CellRenderer = ({
   return (
     <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
       <input
-        ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
+        ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
         type="text"
         value={value}
         onChange={(e) => handleUpdateValue(e.target.value)}
-        onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
+        onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
         className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm ${
           column.key === 'duration' ? 'font-mono' : ''
         }`}
