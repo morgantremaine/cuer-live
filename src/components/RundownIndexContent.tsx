@@ -127,7 +127,7 @@ const RundownIndexContent = () => {
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
       selectedCount={selectedRows.size}
-      hasClipboardData={hasClipboardData()}
+      hasClipboardData={hasClipboardData}
       onCopySelectedRows={handleCopySelectedRows}
       onPasteRows={handlePasteRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
