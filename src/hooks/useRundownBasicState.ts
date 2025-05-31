@@ -4,7 +4,12 @@ import { useParams } from 'react-router-dom';
 
 export const useRundownBasicState = () => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id;
+  // Filter out the literal ":id" string that sometimes comes from route patterns
+  const rawId = params.id;
+  const rundownId = rawId === ':id' ? undefined : rawId;
+  
+  console.log('useRundownBasicState: params.id =', rawId, 'processed rundownId =', rundownId);
+  
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);

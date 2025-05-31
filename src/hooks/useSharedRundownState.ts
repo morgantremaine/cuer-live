@@ -7,7 +7,10 @@ import { format } from 'date-fns';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id;
+  // Filter out the literal ":id" string that sometimes comes from route patterns
+  const rawId = params.id;
+  const rundownId = rawId === ':id' ? undefined : rawId;
+  
   const [rundownData, setRundownData] = useState<{
     title: string;
     items: RundownItem[];

@@ -18,7 +18,12 @@ const normalizeRundownItem = (item: RundownItem): RundownItem => ({
 
 export const useRundownItems = () => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id;
+  // Filter out the literal ":id" string that sometimes comes from route patterns
+  const rawId = params.id;
+  const rundownId = rawId === ':id' ? undefined : rawId;
+  
+  console.log('useRundownItems: params.id =', rawId, 'processed rundownId =', rundownId);
+  
   const { savedRundowns, loading } = useRundownStorage();
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRef = useRef<string | null>(null);

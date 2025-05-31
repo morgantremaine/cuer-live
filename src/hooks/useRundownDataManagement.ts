@@ -7,7 +7,10 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 
 export const useRundownDataManagement = (rundownTitle: string, timezone: string) => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id;
+  // Filter out the literal ":id" string that sometimes comes from route patterns
+  const rawId = params.id;
+  const rundownId = rawId === ':id' ? undefined : rawId;
+  
   const { savedRundowns, loading } = useRundownStorage();
 
   const {

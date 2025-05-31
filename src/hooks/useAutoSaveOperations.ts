@@ -9,7 +9,10 @@ import { Column } from './useColumnsManager';
 export const useAutoSaveOperations = () => {
   const [isSaving, setIsSaving] = useState(false);
   const params = useParams<{ id: string }>();
-  const rundownId = params.id;
+  // Filter out the literal ":id" string that sometimes comes from route patterns
+  const rawId = params.id;
+  const rundownId = rawId === ':id' ? undefined : rawId;
+  
   const { updateRundown, saveRundown } = useRundownStorage();
   const { user } = useAuth();
   const navigate = useNavigate();
