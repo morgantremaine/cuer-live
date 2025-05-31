@@ -73,19 +73,25 @@ const RegularRow = ({
   getColumnWidth
 }: RegularRowProps) => {
   let rowClass = '';
+  let borderClass = '';
   
   if (isDragging) {
     if (isDraggingMultiple && isSelected) {
-      rowClass = 'bg-blue-200 dark:bg-blue-800 opacity-70 border-2 border-blue-400';
+      rowClass = 'opacity-70';
+      borderClass = 'border-2 border-blue-400';
     } else {
-      rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
+      rowClass = 'opacity-50';
+      borderClass = 'border-2 border-blue-300';
     }
   } else if (item.isFloating || item.isFloated) {
-    rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
+    rowClass = 'bg-red-800 text-white';
+    borderClass = 'border-l-4 border-red-600';
   } else if (isSelected) {
-    rowClass = 'bg-blue-100 dark:bg-blue-800 border-l-4 border-blue-500';
+    // For selected rows, use a prominent border instead of background color
+    borderClass = 'border-2 border-blue-500 shadow-lg';
+    rowClass = item.color && item.color !== '#FFFFFF' ? 'hover:opacity-90' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   } else if (item.color && item.color !== '#FFFFFF') {
-    rowClass = `hover:opacity-90`;
+    rowClass = 'hover:opacity-90';
   } else {
     rowClass = 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   }
@@ -145,7 +151,7 @@ const RegularRow = ({
       onClearSelection={onClearSelection}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer select-none`}
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} ${borderClass} transition-all cursor-pointer select-none`}
         style={{ 
           backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
           color: textColor || undefined
