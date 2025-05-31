@@ -102,6 +102,14 @@ const Index = () => {
     window.open(teleprompterUrl, '_blank', 'width=1200,height=800');
   };
 
+  const handleRowSelect = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
+  };
+
+  const handleAddRow = () => {
+    addRow(calculateEndTime);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <RundownContainer
@@ -132,13 +140,11 @@ const Index = () => {
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
-        onRowSelect={(itemId, index, isShiftClick, isCtrlClick) => 
-          toggleRowSelection(itemId, index, isShiftClick, isCtrlClick)
-        }
+        onRowSelect={handleRowSelect}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        onAddRow={addRow}
+        onAddRow={handleAddRow}
         onAddHeader={addHeader}
         selectedCount={selectedRowsSet.size}
         hasClipboardData={hasClipboardData()}

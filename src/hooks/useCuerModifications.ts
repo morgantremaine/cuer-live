@@ -122,7 +122,7 @@ export const useCuerModifications = () => {
                 });
               }, 100);
             } else {
-              addRow();
+              addRow(calculateEndTime);
               // Update the newly added row with the provided data
               setTimeout(() => {
                 Object.keys(mappedData).forEach(key => {
@@ -182,7 +182,7 @@ export const useCuerModifications = () => {
     });
     
     console.log('=== MODIFICATIONS COMPLETE ===\n');
-  }, [findItemByReference, mapAIDataToRundownItem, addHeader, addRow, updateItem, deleteRow, items]);
+  }, [findItemByReference, mapAIDataToRundownItem, addHeader, addRow, updateItem, deleteRow, items, calculateEndTime]);
 
   return {
     applyModifications
