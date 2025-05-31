@@ -18,6 +18,7 @@ export interface RundownContainerProps {
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
+  dropTargetIndex: number | null;
   currentSegmentId: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -34,6 +35,7 @@ export interface RundownContainerProps {
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onAddRow: () => void;
   onAddHeader: () => void;
