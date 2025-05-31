@@ -6,7 +6,7 @@ import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
-export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
+export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
@@ -21,13 +21,13 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   } = useChangeTracking(items, rundownTitle, columns);
 
   // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[]) => {
+  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string) => {
     if (!user || isSaving) {
       return;
     }
 
     try {
-      const success = await performSave(itemsToSave, titleToSave, columnsToSave);
+      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave);
       
       if (success) {
         markAsSaved(itemsToSave, titleToSave, columnsToSave);
@@ -47,7 +47,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     }
 
     // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns });
+    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone });
     
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
@@ -63,11 +63,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
-      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined);
+      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone);
       debounceTimeoutRef.current = null;
     }, 2000);
 
-  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, debouncedSave]);
+  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {

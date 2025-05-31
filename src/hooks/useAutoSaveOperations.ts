@@ -15,7 +15,7 @@ export const useAutoSaveOperations = () => {
 
   const isNewRundown = !rundownId;
 
-  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
+  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string) => {
     if (isSaving) {
       return false;
     }
@@ -40,7 +40,7 @@ export const useAutoSaveOperations = () => {
       setIsSaving(true);
       
       if (isNewRundown) {
-        const result = await saveRundown(rundownTitle, items, columns);
+        const result = await saveRundown(rundownTitle, items, columns, timezone);
         
         if (result?.id) {
           navigate(`/rundown/${result.id}`, { replace: true });
@@ -49,7 +49,7 @@ export const useAutoSaveOperations = () => {
           throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
-        await updateRundown(rundownId, rundownTitle, items, true, false, columns);
+        await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone);
         return true;
       }
       

@@ -74,11 +74,16 @@ const Index = () => {
     markAsChanged();
   };
 
+  const handleTimezoneChange = (newTimezone: string) => {
+    setTimezone(newTimezone);
+    markAsChanged();
+  };
+
   return (
     <RundownContainer
       currentTime={currentTime}
       timezone={timezone}
-      onTimezoneChange={setTimezone}
+      onTimezoneChange={handleTimezoneChange}
       totalRuntime={calculateTotalRuntime()}
       showColumnManager={showColumnManager}
       setShowColumnManager={setShowColumnManager}

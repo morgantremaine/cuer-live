@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from '@/hooks/useRundownBasicState';
 import { useRundownDataManagement } from '@/hooks/useRundownDataManagement';
 import { useRundownInteractions } from '@/hooks/useRundownInteractions';
@@ -40,10 +41,10 @@ export const useRundownGridState = () => {
     handleLoadLayout,
     savedRundowns,
     loading,
-  } = useRundownDataManagement(rundownTitle);
+  } = useRundownDataManagement(rundownTitle, timezone);
 
-  // Get auto-save functionality with the actual rundown title and columns
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
+  // Get auto-save functionality with the actual rundown title, columns, and timezone
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns, timezone);
 
   const {
     columnWidths,

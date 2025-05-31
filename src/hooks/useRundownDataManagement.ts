@@ -5,7 +5,7 @@ import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 
-export const useRundownDataManagement = (rundownTitle: string) => {
+export const useRundownDataManagement = (rundownTitle: string, timezone: string) => {
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
 
