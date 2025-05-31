@@ -40,11 +40,13 @@ export const getCellValue = (item: RundownItem, column: any) => {
   } else {
     switch (column.key) {
       case 'segmentName':
-        // For headers, show the header name in notes, for regular items show name
+        // Show the actual segment name for all items
         if (item.type === 'header') {
-          value = item.notes || '';
+          // For headers, show the segmentName (which is the header title)
+          value = item.segmentName || item.name || '';
         } else {
-          value = (item.name && item.name !== 'New Header' && item.name !== 'New Segment') ? item.name : '';
+          // For regular items, show the name/segmentName
+          value = item.segmentName || item.name || '';
         }
         break;
       case 'duration':
@@ -61,6 +63,9 @@ export const getCellValue = (item: RundownItem, column: any) => {
         break;
       case 'script':
         value = item.script || '';
+        break;
+      case 'talent':
+        value = item.talent || '';
         break;
       default:
         // Handle any other fields that might exist on the item
