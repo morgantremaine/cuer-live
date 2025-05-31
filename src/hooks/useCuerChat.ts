@@ -1,18 +1,20 @@
 
 import { useState, useCallback } from 'react';
-import { openaiService, OpenAIMessage } from '@/services/openaiService';
+import { openaiService, OpenAIMessage, RundownModification } from '@/services/openaiService';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  modifications?: RundownModification[];
 }
 
 export const useCuerChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [pendingModifications, setPendingModifications] = useState<RundownModification[] | null>(null);
 
   const checkConnection = useCallback(async () => {
     const connected = await openaiService.checkConnection();
@@ -39,16 +41,22 @@ export const useCuerChat = () => {
       
       openaiMessages.push({ role: 'user', content });
 
-      const response = await openaiService.sendMessage(openaiMessages);
+      const result = await openaiService.sendMessageWithModifications(openaiMessages);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response,
-        timestamp: new Date()
+        content: result.response,
+        timestamp: new Date(),
+        modifications: result.modifications
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+      // If there are modifications, show them for confirmation
+      if (result.modifications && result.modifications.length > 0) {
+        setPendingModifications(result.modifications);
+      }
     } catch (error) {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -90,6 +98,7 @@ export const useCuerChat = () => {
 
   const clearChat = useCallback(() => {
     setMessages([]);
+    setPendingModifications(null);
   }, []);
 
   const setApiKey = useCallback((apiKey: string) => {
@@ -106,16 +115,22 @@ export const useCuerChat = () => {
     return openaiService.hasApiKey();
   }, []);
 
+  const clearPendingModifications = useCallback(() => {
+    setPendingModifications(null);
+  }, []);
+
   return {
     messages,
     isLoading,
     isConnected,
+    pendingModifications,
     sendMessage,
     analyzeRundown,
     clearChat,
     checkConnection,
     setApiKey,
     clearApiKey,
-    hasApiKey
+    hasApiKey,
+    clearPendingModifications
   };
 };

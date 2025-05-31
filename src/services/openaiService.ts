@@ -13,6 +13,13 @@ interface OpenAIResponse {
   }[];
 }
 
+interface RundownModification {
+  type: 'add' | 'update' | 'delete' | 'reorder';
+  itemId?: string;
+  data?: any;
+  description: string;
+}
+
 const CUER_SYSTEM_PROMPT = `You are Cuer, a professional broadcast production assistant specializing in rundown analysis and optimization. You have extensive knowledge of:
 
 - Broadcast timing and pacing best practices
@@ -34,6 +41,22 @@ When analyzing rundowns, pay attention to:
 - Content flow and pacing issues
 - Script clarity and presentation quality
 - Overall production feasibility
+
+When suggesting rundown modifications, you can respond with JSON objects that describe the changes. Use this format for actionable suggestions:
+
+{
+  "response": "Your regular text response",
+  "modifications": [
+    {
+      "type": "add|update|delete",
+      "itemId": "item-id-for-updates-or-deletes",
+      "data": { rundown item data },
+      "description": "Human readable description of the change"
+    }
+  ]
+}
+
+Only suggest modifications when explicitly asked or when critical issues need fixing. Always explain WHY the change is beneficial.
 
 Respond in a helpful, professional manner and always aim to improve the quality and efficiency of broadcast production.`;
 
@@ -101,6 +124,25 @@ class OpenAIService {
     }
   }
 
+  async sendMessageWithModifications(messages: OpenAIMessage[]): Promise<{
+    response: string;
+    modifications?: RundownModification[];
+  }> {
+    const rawResponse = await this.sendMessage(messages);
+    
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(rawResponse);
+      if (parsed.response && parsed.modifications) {
+        return parsed;
+      }
+    } catch {
+      // If not JSON, return as regular response
+    }
+    
+    return { response: rawResponse };
+  }
+
   async analyzeRundown(rundownData: any): Promise<string> {
     const rundownContext = `
 Current Rundown Analysis Request:
@@ -142,4 +184,4 @@ Please analyze this rundown for timing issues, content flow, missing segments, a
 }
 
 export const openaiService = new OpenAIService();
-export type { OpenAIMessage };
+export type { OpenAIMessage, RundownModification };
