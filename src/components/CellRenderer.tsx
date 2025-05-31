@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import ExpandableScriptCell from './ExpandableScriptCell';
 
 interface CellRendererProps {
