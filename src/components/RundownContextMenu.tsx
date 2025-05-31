@@ -71,19 +71,10 @@ const RundownContextMenu = ({
           }
         </ContextMenuItem>
         
-        <div className="relative">
-          <ContextMenuItem onClick={onColorPicker}>
-            <Palette className="mr-2 h-4 w-4" />
-            {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
-          </ContextMenuItem>
-          
-          <ColorPicker
-            itemId={itemId}
-            showColorPicker={showColorPicker}
-            onToggle={onColorPicker}
-            onColorSelect={onColorSelect}
-          />
-        </div>
+        <ContextMenuItem onClick={onColorPicker}>
+          <Palette className="mr-2 h-4 w-4" />
+          {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
+        </ContextMenuItem>
         
         <ContextMenuSeparator />
         
@@ -99,6 +90,22 @@ const RundownContextMenu = ({
           {isMultipleSelection ? `Delete ${selectedCount} rows` : 'Delete row'}
         </ContextMenuItem>
       </ContextMenuContent>
+      
+      {/* Color picker positioned outside the context menu */}
+      {showColorPicker === itemId && (
+        <div className="fixed z-50" style={{ 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)'
+        }}>
+          <ColorPicker
+            itemId={itemId}
+            showColorPicker={showColorPicker}
+            onToggle={onColorPicker}
+            onColorSelect={onColorSelect}
+          />
+        </div>
+      )}
     </ContextMenu>
   );
 };

@@ -6,7 +6,14 @@ export const useClipboard = () => {
   const [clipboardItems, setClipboardItems] = useState<RundownItem[]>([]);
 
   const copyItems = (items: RundownItem[]) => {
-    setClipboardItems(items.map(item => ({ ...item, id: `copy_${Date.now()}_${Math.random()}` })));
+    // Create clean copies without the random ID suffix in description
+    const cleanItems = items.map(item => {
+      const cleanItem = { ...item };
+      // Generate a new clean ID
+      cleanItem.id = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      return cleanItem;
+    });
+    setClipboardItems(cleanItems);
   };
 
   const hasClipboardData = () => clipboardItems.length > 0;

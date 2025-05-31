@@ -47,12 +47,14 @@ export const useRundownGridState = () => {
     coreState.markAsChanged
   );
 
-  // Simple clipboard functions
+  // Simple clipboard functions with clean data
   const copyItems = useCallback((items: RundownItem[]) => {
-    const copiedItems = items.map(item => ({
-      ...item,
-      id: `copy_${Date.now()}_${Math.random()}`
-    }));
+    const copiedItems = items.map(item => {
+      const cleanItem = { ...item };
+      // Generate a new clean ID without affecting the description
+      cleanItem.id = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      return cleanItem;
+    });
     setClipboardItems(copiedItems);
     console.log('Items copied to clipboard:', copiedItems.length);
   }, []);
@@ -73,7 +75,12 @@ export const useRundownGridState = () => {
   const handlePasteRows = useCallback(() => {
     if (clipboardItems.length > 0) {
       console.log('Pasting items from clipboard:', clipboardItems.length);
-      coreState.addMultipleRows(clipboardItems, coreState.calculateEndTime);
+      // Create clean copies for pasting
+      const itemsToPaste = clipboardItems.map(item => ({
+        ...item,
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }));
+      coreState.addMultipleRows(itemsToPaste, coreState.calculateEndTime);
       coreState.markAsChanged();
     } else {
       console.log('No clipboard data to paste');
