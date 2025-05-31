@@ -65,6 +65,7 @@ interface RundownContainerProps {
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
+  onOpenTeleprompter: () => void;
 }
 
 const RundownContainer = (props: RundownContainerProps) => {
@@ -126,7 +127,8 @@ const RundownContainer = (props: RundownContainerProps) => {
     onTitleChange,
     rundownStartTime,
     onRundownStartTimeChange,
-    rundownId
+    rundownId,
+    onOpenTeleprompter
   } = props;
 
   return (
@@ -160,6 +162,7 @@ const RundownContainer = (props: RundownContainerProps) => {
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
         rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
       />
 
       <RundownMainContent

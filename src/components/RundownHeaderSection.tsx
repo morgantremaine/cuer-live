@@ -32,6 +32,7 @@ interface RundownHeaderSectionProps {
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
+  onOpenTeleprompter: () => void;
 }
 
 const RundownHeaderSection = ({
@@ -62,7 +63,8 @@ const RundownHeaderSection = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
-  rundownId
+  rundownId,
+  onOpenTeleprompter
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -97,6 +99,7 @@ const RundownHeaderSection = ({
         onForward={onForward}
         onBackward={onBackward}
         rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
       />
     </div>
   );
