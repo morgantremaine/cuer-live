@@ -1,4 +1,5 @@
 
+
 import { RundownItem } from '@/types/rundown';
 
 // Note: Direct OpenAI API calls from frontend are blocked by CORS policy
@@ -14,6 +15,7 @@ export interface RundownModification {
   type: 'add' | 'edit' | 'delete' | 'reorder';
   itemId?: string;
   newData?: Partial<RundownItem>;
+  data?: Partial<RundownItem>; // Added for compatibility
   targetIndex?: number;
   description: string;
 }
@@ -88,3 +90,4 @@ The AI chat feature is currently disabled due to browser security restrictions.`
 }
 
 export const openaiService = new OpenAIService();
+

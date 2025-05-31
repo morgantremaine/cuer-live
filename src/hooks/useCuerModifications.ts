@@ -1,4 +1,5 @@
 
+
 import { useCallback } from 'react';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { RundownModification } from '@/services/openaiService';
@@ -107,8 +108,9 @@ export const useCuerModifications = () => {
       
       switch (mod.type) {
         case 'add':
-          if (mod.data) {
-            const mappedData = mapAIDataToRundownItem(mod.data);
+          if (mod.data || mod.newData) {
+            const modData = mod.data || mod.newData;
+            const mappedData = mapAIDataToRundownItem(modData);
             console.log('Adding new item:', mappedData);
             
             if (mappedData.type === 'header') {
@@ -135,10 +137,11 @@ export const useCuerModifications = () => {
           }
           break;
           
-        case 'update':
-          if (mod.itemId && mod.data) {
+        case 'edit':
+          if (mod.itemId && (mod.data || mod.newData)) {
             console.log(`Attempting to update item with reference: "${mod.itemId}"`);
-            console.log('Update data:', mod.data);
+            const modData = mod.data || mod.newData;
+            console.log('Update data:', modData);
             
             // Find the actual item by the reference provided
             const targetItem = findItemByReference(mod.itemId);
@@ -146,8 +149,8 @@ export const useCuerModifications = () => {
               console.log(`✅ Found target item:`, targetItem);
               
               // Apply each field update
-              Object.keys(mod.data).forEach(field => {
-                const value = mod.data[field];
+              Object.keys(modData).forEach(field => {
+                const value = modData[field];
                 console.log(`Updating ${targetItem.id}.${field} = "${value}"`);
                 try {
                   updateItem(targetItem.id, field, value);
@@ -160,7 +163,7 @@ export const useCuerModifications = () => {
               console.error(`❌ Could not find item with reference: ${mod.itemId}`);
             }
           } else {
-            console.error('❌ Update modification missing itemId or data:', mod);
+            console.error('❌ Edit modification missing itemId or data:', mod);
           }
           break;
           
@@ -188,3 +191,4 @@ export const useCuerModifications = () => {
     applyModifications
   };
 };
+
