@@ -77,8 +77,11 @@ export const useRundownGridHandlers = ({
 
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
-    copyItems(selectedItems);
-    clearSelection();
+    if (selectedItems.length > 0) {
+      copyItems(selectedItems);
+      console.log('Copied items to clipboard:', selectedItems.length);
+      clearSelection();
+    }
   }, [items, selectedRows, copyItems, clearSelection]);
 
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
@@ -91,12 +94,22 @@ export const useRundownGridHandlers = ({
   }, [setRundownTitle, markAsChanged]);
 
   const handlePasteRowsWithClipboard = useCallback(() => {
-    handlePasteRows();
-  }, [handlePasteRows]);
+    if (hasClipboardData() && clipboardItems.length > 0) {
+      console.log('Pasting items from clipboard:', clipboardItems.length);
+      addMultipleRows(clipboardItems, calculateEndTime);
+      markAsChanged();
+    } else {
+      console.log('No clipboard data to paste');
+    }
+  }, [hasClipboardData, clipboardItems, addMultipleRows, calculateEndTime, markAsChanged]);
 
   const handleDeleteSelectedRowsWithClear = useCallback(() => {
-    handleDeleteSelectedRows();
-  }, [handleDeleteSelectedRows]);
+    const selectedIds = Array.from(selectedRows);
+    if (selectedIds.length > 0) {
+      deleteMultipleRows(selectedIds);
+      clearSelection();
+    }
+  }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   return {
     handleUpdateItem,
