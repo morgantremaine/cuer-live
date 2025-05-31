@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -119,13 +118,6 @@ const Teleprompter = () => {
         isUppercase={isUppercase}
         getRowNumber={getRowNumber}
       />
-
-      {/* Fullscreen hint */}
-      {isFullscreen && (
-        <div className="fixed bottom-4 right-4 z-10 bg-black bg-opacity-75 px-3 py-2 rounded text-sm">
-          Press ESC to exit fullscreen
-        </div>
-      )}
     </div>
   );
 };
