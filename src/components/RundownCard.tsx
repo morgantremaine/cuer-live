@@ -59,19 +59,23 @@ const RundownCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 z-10"
+                className="h-8 w-8 relative z-20 hover:bg-gray-100"
                 onClick={(e) => e.stopPropagation()}
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className="h-4 w-4 text-gray-600" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-50">
+            <DropdownMenuContent 
+              align="end" 
+              className="z-50 bg-white border shadow-lg rounded-md min-w-[160px]"
+            >
               {isArchived ? (
                 <DropdownMenuItem 
                   onClick={(e) => {
                     e.stopPropagation()
                     onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
                   }}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
                 >
                   <Archive className="h-4 w-4 mr-2" />
                   Unarchive
@@ -82,6 +86,7 @@ const RundownCard = ({
                     e.stopPropagation()
                     onArchive?.(rundown.id, rundown.title, e)
                   }}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
                 >
                   <Archive className="h-4 w-4 mr-2" />
                   Archive
@@ -92,7 +97,7 @@ const RundownCard = ({
                   e.stopPropagation()
                   onDelete(rundown.id, rundown.title, e)
                 }}
-                className="text-red-600 focus:text-red-600"
+                className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 focus:text-red-600 cursor-pointer"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 {isArchived ? 'Delete Permanently' : 'Delete'}
