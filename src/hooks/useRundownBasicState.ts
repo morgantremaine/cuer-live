@@ -1,7 +1,9 @@
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 export const useRundownBasicState = () => {
+  const { id: rundownId } = useParams<{ id: string }>();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
@@ -14,6 +16,12 @@ export const useRundownBasicState = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Simple change tracking for now
+  const markAsChanged = () => {
+    // This will be handled by the auto-save system
+    console.log('Changes marked');
+  };
+
   return {
     currentTime,
     timezone,
@@ -24,5 +32,7 @@ export const useRundownBasicState = () => {
     setRundownTitle,
     rundownStartTime,
     setRundownStartTime,
+    rundownId,
+    markAsChanged
   };
 };

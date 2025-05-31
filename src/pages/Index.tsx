@@ -135,13 +135,13 @@ const Index = () => {
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        onAddRow={() => addRow(calculateEndTime)}
+        onAddRow={addRow}
         onAddHeader={addHeader}
         selectedCount={selectedRowsSet.size}
         hasClipboardData={hasClipboardData()}
-        onCopySelectedRows={() => copyItems(Array.from(selectedRowsSet).map(id => items.find(item => item.id === id)!).filter(Boolean))}
+        onCopySelectedRows={copyItems}
         onPasteRows={handlePasteRows}
-        onDeleteSelectedRows={() => deleteMultipleRows(Array.from(selectedRowsSet))}
+        onDeleteSelectedRows={deleteMultipleRows}
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
