@@ -30,24 +30,30 @@ const RundownContainer = (props: RundownContainerProps) => {
 
   return (
     <RundownLayoutWrapper>
-      <SearchBar
-        searchTerm={searchTerm}
-        replaceTerm={replaceTerm}
-        currentMatchIndex={currentMatchIndex}
-        totalMatches={matches.length}
-        caseSensitive={caseSensitive}
-        showReplaceOptions={showReplaceOptions}
-        onSearchTermChange={handleSearchTermChange}
-        onReplaceTermChange={setReplaceTerm}
-        onCaseSensitiveChange={setCaseSensitive}
-        onShowReplaceOptionsChange={setShowReplaceOptions}
-        onNextMatch={nextMatch}
-        onPreviousMatch={previousMatch}
-        onReplaceCurrent={replaceCurrent}
-        onReplaceAll={replaceAll}
-        onClearSearch={clearSearch}
+      <RundownHeaderPropsAdapter 
+        props={{
+          ...props,
+          searchBar: (
+            <SearchBar
+              searchTerm={searchTerm}
+              replaceTerm={replaceTerm}
+              currentMatchIndex={currentMatchIndex}
+              totalMatches={matches.length}
+              caseSensitive={caseSensitive}
+              showReplaceOptions={showReplaceOptions}
+              onSearchTermChange={handleSearchTermChange}
+              onReplaceTermChange={setReplaceTerm}
+              onCaseSensitiveChange={setCaseSensitive}
+              onShowReplaceOptionsChange={setShowReplaceOptions}
+              onNextMatch={nextMatch}
+              onPreviousMatch={previousMatch}
+              onReplaceCurrent={replaceCurrent}
+              onReplaceAll={replaceAll}
+              onClearSearch={clearSearch}
+            />
+          )
+        }} 
       />
-      <RundownHeaderPropsAdapter props={props} />
       <RundownMainPropsAdapter props={props} />
     </RundownLayoutWrapper>
   );

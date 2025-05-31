@@ -33,6 +33,7 @@ interface RundownHeaderSectionProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
+  searchBar?: React.ReactNode;
 }
 
 const RundownHeaderSection = ({
@@ -64,7 +65,8 @@ const RundownHeaderSection = ({
   rundownStartTime,
   onRundownStartTimeChange,
   rundownId,
-  onOpenTeleprompter
+  onOpenTeleprompter,
+  searchBar
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -80,6 +82,7 @@ const RundownHeaderSection = ({
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
       />
+      {searchBar}
       <RundownToolbar
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
