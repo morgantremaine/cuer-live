@@ -9,16 +9,16 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ userEmail, onSignOut }: DashboardHeaderProps) => {
   return (
-    <div className="bg-white shadow-sm border-b">
+    <div className="bg-gray-800 shadow-sm border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <FileText className="h-8 w-8 text-blue-600 mr-3" />
-            <h1 className="text-xl font-semibold text-gray-900">Cuer</h1>
+            <FileText className="h-8 w-8 text-blue-400 mr-3" />
+            <h1 className="text-xl font-semibold text-white">Cuer</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">Welcome, {userEmail}</span>
-            <Button variant="outline" onClick={onSignOut}>
+            <span className="text-sm text-gray-300">Welcome, {userEmail}</span>
+            <Button variant="outline" onClick={onSignOut} className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>

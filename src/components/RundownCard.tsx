@@ -41,17 +41,17 @@ const RundownCard = ({
 }: RundownCardProps) => {
   return (
     <Card 
-      className={`hover:shadow-lg transition-shadow cursor-pointer relative bg-white border-gray-200 ${isArchived ? 'opacity-75' : ''}`} 
+      className={`hover:shadow-lg transition-shadow cursor-pointer relative bg-gray-800 border-gray-700 ${isArchived ? 'opacity-75' : ''}`} 
       onClick={() => onOpen(rundown.id)}
     >
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg flex items-center text-gray-900">
-              {isArchived && <Archive className="h-4 w-4 mr-2 text-gray-500" />}
+            <CardTitle className="text-lg flex items-center text-white">
+              {isArchived && <Archive className="h-4 w-4 mr-2 text-gray-400" />}
               {rundown.title}
             </CardTitle>
-            <CardDescription className="flex flex-col gap-1 text-sm text-gray-500">
+            <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
                 Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
@@ -67,15 +67,15 @@ const RundownCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 relative z-20 hover:bg-gray-100"
+                className="h-8 w-8 relative z-20 hover:bg-gray-700 text-gray-400 hover:text-white"
                 onClick={(e) => e.stopPropagation()}
               >
-                <MoreVertical className="h-4 w-4 text-gray-600" />
+                <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 
               align="end" 
-              className="z-50 bg-white border shadow-lg rounded-md min-w-[160px]"
+              className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
             >
               {onDuplicate && (
                 <DropdownMenuItem 
@@ -83,7 +83,7 @@ const RundownCard = ({
                     e.stopPropagation()
                     onDuplicate(rundown.id, rundown.title, rundown.items, e)
                   }}
-                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Duplicate
@@ -95,7 +95,7 @@ const RundownCard = ({
                     e.stopPropagation()
                     onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
                   }}
-                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
                 >
                   <Archive className="h-4 w-4 mr-2" />
                   Unarchive
@@ -106,7 +106,7 @@ const RundownCard = ({
                     e.stopPropagation()
                     onArchive?.(rundown.id, rundown.title, e)
                   }}
-                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
                 >
                   <Archive className="h-4 w-4 mr-2" />
                   Archive
@@ -117,7 +117,7 @@ const RundownCard = ({
                   e.stopPropagation()
                   onDelete(rundown.id, rundown.title, e)
                 }}
-                className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 focus:text-red-600 cursor-pointer"
+                className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 {isArchived ? 'Delete Permanently' : 'Delete'}
@@ -128,11 +128,11 @@ const RundownCard = ({
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-400">
             <Clock className="h-4 w-4 mr-1" />
             {rundown.items?.length || 0} items
           </div>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-gray-700">
             Open →
           </Button>
         </div>
