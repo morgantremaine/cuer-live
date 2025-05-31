@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -75,13 +76,43 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
-    // Only update if the columns are actually different
     setColumns(prevColumns => {
-      const isSame = prevColumns.length === layoutColumns.length && 
+      // Define essential built-in columns that should always be preserved
+      const essentialBuiltInColumns = [
+        { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: 'min-w-48', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'duration', name: 'Duration', key: 'duration', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'startTime', name: 'Start Time', key: 'startTime', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'endTime', name: 'End Time', key: 'endTime', width: 'w-24', isCustom: false, isEditable: false, isVisible: true },
+        { id: 'script', name: 'Script', key: 'script', width: 'min-w-64', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true, isVisible: true }
+      ];
+
+      // Merge layout columns with essential built-in columns
+      const mergedColumns: Column[] = [];
+      const layoutColumnIds = new Set(layoutColumns.map(col => col.id));
+
+      // First, add all columns from layout (preserving order and custom columns)
+      layoutColumns.forEach(layoutCol => {
+        mergedColumns.push(layoutCol);
+      });
+
+      // Then, add any missing essential built-in columns
+      essentialBuiltInColumns.forEach(essentialCol => {
+        if (!layoutColumnIds.has(essentialCol.id)) {
+          console.log('Adding missing essential column:', essentialCol.name);
+          mergedColumns.push(essentialCol);
+        }
+      });
+
+      console.log('Merged columns after load layout:', mergedColumns);
+      console.log('Script column in merged:', mergedColumns.find(col => col.key === 'script'));
+
+      // Only mark as changed if columns are actually different
+      const isSame = prevColumns.length === mergedColumns.length && 
         prevColumns.every((col, index) => 
-          col.id === layoutColumns[index]?.id && 
-          col.name === layoutColumns[index]?.name &&
-          col.isVisible === layoutColumns[index]?.isVisible
+          col.id === mergedColumns[index]?.id && 
+          col.name === mergedColumns[index]?.name &&
+          col.isVisible === mergedColumns[index]?.isVisible
         );
       
       if (isSame) {
@@ -91,7 +122,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       if (markAsChanged) {
         markAsChanged();
       }
-      return layoutColumns;
+      return mergedColumns;
     });
   }, [markAsChanged]);
 
