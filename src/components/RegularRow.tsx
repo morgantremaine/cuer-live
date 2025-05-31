@@ -94,7 +94,7 @@ const RegularRow = ({
 
   return (
     <tr 
-      className={`border-b border-gray-200 dark:border-gray-700 ${rowClass} transition-colors cursor-pointer select-none`}
+      className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer select-none`}
       style={{ 
         backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
         color: textColor || undefined
@@ -106,7 +106,7 @@ const RegularRow = ({
       onDrop={(e) => onDrop(e, index)}
     >
       <td 
-        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
+        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell border-r border-gray-300 dark:border-gray-600" 
         style={{ color: textColor || undefined, width: '80px' }}
       >
         <div className="flex items-center space-x-2">
