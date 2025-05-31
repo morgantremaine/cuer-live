@@ -42,10 +42,20 @@ interface RundownRowProps {
 }
 
 const RundownRow = (props: RundownRowProps) => {
+  // Add debug logging to see what's passed to RundownRow
+  console.log('RundownRow - itemId:', props.item.id, 'isHeader:', isHeaderItem(props.item), 'isSelected prop:', props.isSelected, 'selectedRows:', props.selectedRows);
+  
+  // Calculate if this row is selected based on selectedRows Set
+  const isActuallySelected = props.selectedRows ? props.selectedRows.has(props.item.id) : false;
+  
+  // Debug the calculated selection
+  console.log('RundownRow - calculated isSelected:', isActuallySelected, 'for item:', props.item.id);
+
   if (isHeaderItem(props.item)) {
     return (
       <HeaderRow 
         {...props} 
+        isSelected={isActuallySelected}  // Use calculated selection instead of props.isSelected
         headerDuration={props.headerDuration || ''}
         selectedRowsCount={props.selectedRowsCount || 1}
         selectedRows={props.selectedRows}
@@ -59,6 +69,7 @@ const RundownRow = (props: RundownRowProps) => {
   return (
     <RegularRow 
       {...props} 
+      isSelected={isActuallySelected}  // Use calculated selection instead of props.isSelected
       isCurrentlyPlaying={props.isCurrentlyPlaying}
       isDraggingMultiple={props.isDraggingMultiple}
       selectedRowsCount={props.selectedRowsCount || 1}
