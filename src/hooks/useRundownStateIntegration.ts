@@ -5,6 +5,7 @@ import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 
 export const useRundownStateIntegration = (markAsChanged: () => void, rundownTitle: string, timezone: string) => {
   const { id: rundownId } = useParams<{ id: string }>();
@@ -36,7 +37,21 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
     handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
-  const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle, columns, timezone);
+  // Use the data loader hook to handle rundown data loading
+  useRundownDataLoader({
+    rundownId,
+    savedRundowns,
+    loading,
+    setRundownTitle: (title: string) => {
+      // This should use the direct setter, not the one with change tracking
+      // to avoid triggering auto-save during initial load
+    },
+    setTimezone: (timezone: string) => {
+      // This should use the direct setter, not the one with change tracking
+      // to avoid triggering auto-save during initial load
+    },
+    handleLoadLayout
+  });
 
   // Load rundown data only once when rundown ID changes
   useEffect(() => {
@@ -69,6 +84,8 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
       setItems([]);
     }
   }, [rundownId, savedRundowns, loading, setItems, handleLoadLayout]);
+
+  const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle, columns, timezone);
 
   return {
     items,

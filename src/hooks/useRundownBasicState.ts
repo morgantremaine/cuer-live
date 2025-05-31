@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -6,7 +7,7 @@ export const useRundownBasicState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
-  // Only set default title if this is a new rundown (no ID)
+  // Always start with empty title for existing rundowns, default for new ones
   const [rundownTitle, setRundownTitle] = useState(rundownId ? '' : 'Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
 
@@ -15,17 +16,6 @@ export const useRundownBasicState = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // Reset title when switching between new/existing rundowns
-  useEffect(() => {
-    if (!rundownId) {
-      // New rundown - use default title
-      setRundownTitle('Live Broadcast Rundown');
-    } else {
-      // Existing rundown - title will be loaded by data loader
-      setRundownTitle('');
-    }
-  }, [rundownId]);
 
   // Change tracking for timezone and other fields
   const markAsChanged = () => {

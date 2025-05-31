@@ -3,6 +3,8 @@ import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
+import { useRundownDataLoader } from './useRundownDataLoader';
+import { useRundownStorage } from './useRundownStorage';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -19,6 +21,9 @@ export const useRundownGridCore = () => {
     rundownId,
     markAsChanged
   } = useRundownBasicState();
+
+  // Get storage data for the data loader
+  const { savedRundowns, loading } = useRundownStorage();
 
   // Rundown data integration - now passing timezone
   const {
@@ -44,6 +49,16 @@ export const useRundownGridCore = () => {
     hasUnsavedChanges,
     isSaving
   } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone);
+
+  // Use data loader to properly set title and timezone
+  useRundownDataLoader({
+    rundownId,
+    savedRundowns,
+    loading,
+    setRundownTitle,
+    setTimezone,
+    handleLoadLayout
+  });
 
   // Playback controls - fix the function call
   const { 
