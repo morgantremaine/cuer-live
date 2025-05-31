@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,7 @@ const HeaderRow = ({
 }: HeaderRowProps) => {
   const rowClass = isDragging 
     ? 'bg-blue-100 dark:bg-blue-900 opacity-50'
-    : 'bg-white dark:bg-gray-800 border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700';
+    : 'bg-gray-200 dark:bg-gray-800 border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:bg-gray-300 dark:hover:bg-gray-700';
 
   return (
     <tr 
