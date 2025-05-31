@@ -111,6 +111,12 @@ const Teleprompter = () => {
     );
   }
 
+  // Filter items to only show those with script content
+  const itemsWithScript = rundownData.items.map((item, originalIndex) => ({
+    ...item,
+    originalIndex
+  })).filter(item => item.script && item.script.trim() !== '');
+
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
       {/* Controls */}
@@ -175,15 +181,15 @@ const Teleprompter = () => {
         style={{ paddingTop: '20vh', paddingBottom: '80vh' }}
       >
         <div className="max-w-4xl mx-auto px-8">
-          {rundownData.items.map((item, index) => {
+          {itemsWithScript.map((item, index) => {
             if (isHeaderItem(item)) {
               return (
                 <div key={item.id} className="mb-12">
                   <h2 
-                    className="font-bold text-center mb-8"
+                    className="font-bold text-left mb-8"
                     style={{ fontSize: `${fontSize + 8}px` }}
                   >
-                    [{getRowNumber(index)} {item.name?.toUpperCase() || 'HEADER'}]
+                    [{getRowNumber(item.originalIndex)} {item.name?.toUpperCase() || 'HEADER'}]
                   </h2>
                 </div>
               );
@@ -193,16 +199,16 @@ const Teleprompter = () => {
               <div key={item.id} className="mb-16">
                 {/* Segment Title */}
                 <div 
-                  className="text-center mb-6"
+                  className="text-left mb-6"
                   style={{ fontSize: `${fontSize + 4}px` }}
                 >
-                  [{getRowNumber(index)} {item.name?.toUpperCase() || 'SEGMENT'}]
+                  [{getRowNumber(item.originalIndex)} {item.name?.toUpperCase() || 'SEGMENT'}]
                 </div>
 
                 {/* Talent */}
                 {item.talent && (
                   <div 
-                    className="text-center mb-8 bg-white text-black py-2 px-4 inline-block rounded mx-auto block"
+                    className="text-left mb-8 bg-white text-black py-2 px-4 inline-block rounded"
                     style={{ fontSize: `${fontSize}px` }}
                   >
                     {item.talent}
@@ -210,17 +216,15 @@ const Teleprompter = () => {
                 )}
 
                 {/* Script */}
-                {item.script && (
-                  <div 
-                    className="leading-relaxed text-center whitespace-pre-wrap"
-                    style={{ 
-                      fontSize: `${fontSize}px`,
-                      lineHeight: '1.6'
-                    }}
-                  >
-                    {item.script}
-                  </div>
-                )}
+                <div 
+                  className="leading-relaxed text-left whitespace-pre-wrap"
+                  style={{ 
+                    fontSize: `${fontSize}px`,
+                    lineHeight: '1.6'
+                  }}
+                >
+                  {item.script}
+                </div>
               </div>
             );
           })}
