@@ -89,6 +89,46 @@ export const useSharedRundownState = () => {
     loadRundownData();
   }, [rundownId]);
 
+  // Set up real-time subscription for rundown updates
+  useEffect(() => {
+    if (!rundownId) return;
+
+    console.log('Setting up real-time subscription for rundown:', rundownId);
+
+    const subscription = supabase
+      .channel(`rundown-${rundownId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rundowns',
+          filter: `id=eq.${rundownId}`
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          const updatedRundown = payload.new;
+          
+          if (updatedRundown) {
+            setRundownData({
+              title: updatedRundown.title || 'Untitled Rundown',
+              items: updatedRundown.items || [],
+              columns: updatedRundown.columns || [],
+              startTime: '09:00' // Default start time
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up real-time subscription');
+      subscription.unsubscribe();
+    };
+  }, [rundownId]);
+
   // Calculate current segment based on time
   useEffect(() => {
     if (!rundownData) return;
