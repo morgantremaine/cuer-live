@@ -7,9 +7,14 @@ import { useAutoSave } from '@/hooks/useAutoSave';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 
-export const useRundownStateIntegration = (markAsChanged: () => void, rundownTitle: string, timezone: string) => {
+export const useRundownStateIntegration = (
+  markAsChanged: () => void, 
+  rundownTitle: string, 
+  timezone: string, 
+  setRundownTitleDirectly: (title: string) => void,
+  setTimezoneDirectly: (timezone: string) => void
+) => {
   const params = useParams<{ id: string }>();
-  // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
@@ -42,23 +47,17 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
     handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
-  // Use the data loader hook to handle rundown data loading
+  // Use the data loader hook with direct setters to prevent change tracking during load
   useRundownDataLoader({
     rundownId,
     savedRundowns,
     loading,
-    setRundownTitle: (title: string) => {
-      // This should use the direct setter, not the one with change tracking
-      // to avoid triggering auto-save during initial load
-    },
-    setTimezone: (timezone: string) => {
-      // This should use the direct setter, not the one with change tracking
-      // to avoid triggering auto-save during initial load
-    },
+    setRundownTitle: setRundownTitleDirectly,
+    setTimezone: setTimezoneDirectly,
     handleLoadLayout
   });
 
-  // Load rundown data only once when rundown ID changes - with better coordination
+  // Load rundown data only once when rundown ID changes
   useEffect(() => {
     if (loading || initRef.current) return;
     
@@ -72,7 +71,7 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
         loadedRef.current = rundownId;
         initRef.current = true;
         
-        // Set items first
+        // Set items
         if (existingRundown.items) {
           setItems(existingRundown.items);
         }
@@ -89,7 +88,6 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
         console.log('Resetting for new rundown');
         loadedRef.current = null;
         initRef.current = true;
-        setItems([]);
       }
     }
   }, [rundownId, savedRundowns, loading, setItems, handleLoadLayout]);

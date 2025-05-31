@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom';
 
 export const useRundownBasicState = () => {
   const params = useParams<{ id: string }>();
-  // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
@@ -35,6 +34,18 @@ export const useRundownBasicState = () => {
     console.log('Changes marked - triggering auto-save');
   };
 
+  // Direct setters without change tracking (for initial load)
+  const setTimezoneDirectly = (newTimezone: string) => {
+    console.log('Setting timezone directly:', newTimezone);
+    setTimezone(newTimezone);
+  };
+
+  const setRundownTitleDirectly = (newTitle: string) => {
+    console.log('Setting title directly:', newTitle);
+    setRundownTitle(newTitle);
+  };
+
+  // Change-tracking setters (for user interactions)
   const setTimezoneWithChange = (newTimezone: string) => {
     console.log('Timezone changed to:', newTimezone);
     setTimezone(newTimezone);
@@ -56,10 +67,12 @@ export const useRundownBasicState = () => {
     currentTime,
     timezone,
     setTimezone: setTimezoneWithChange,
+    setTimezoneDirectly,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
     setRundownTitle: setRundownTitleWithChange,
+    setRundownTitleDirectly,
     rundownStartTime,
     setRundownStartTime: setRundownStartTimeWithChange,
     rundownId,

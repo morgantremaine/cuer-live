@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 
 interface UseRundownDataLoaderProps {
   rundownId: string | undefined;
@@ -18,27 +18,31 @@ export const useRundownDataLoader = ({
   setTimezone,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
+  const loadedRef = useRef<string | null>(null);
+
   // Memoize the loading logic to prevent infinite loops
   const loadRundownData = useCallback(() => {
     if (loading) return;
+    
+    // Prevent duplicate loading
+    if (loadedRef.current === rundownId) return;
     
     if (rundownId && savedRundowns.length > 0) {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
         console.log('Loading rundown data:', { id: rundownId, title: existingRundown.title, timezone: existingRundown.timezone });
         
-        // Always set the title from the saved rundown
+        loadedRef.current = rundownId;
+        
+        // Use direct setters without change tracking for initial load
         if (existingRundown.title) {
           console.log('Setting title from saved rundown:', existingRundown.title);
           setRundownTitle(existingRundown.title);
         }
         
-        // Load timezone if it exists, ensuring it actually gets set
         if (existingRundown.timezone) {
           console.log('Setting timezone from saved rundown:', existingRundown.timezone);
           setTimezone(existingRundown.timezone);
-        } else {
-          console.log('No timezone found in saved rundown, using default');
         }
         
         // Load column layout if it exists
@@ -51,8 +55,8 @@ export const useRundownDataLoader = ({
       }
     } else if (!rundownId) {
       console.log('New rundown, using default title and timezone');
+      loadedRef.current = null;
       setRundownTitle('Live Broadcast Rundown');
-      // Keep default timezone for new rundowns
     }
   }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, handleLoadLayout]);
 
@@ -65,4 +69,13 @@ export const useRundownDataLoader = ({
     
     loadRundownData();
   }, [rundownId, savedRundowns.length, loading, loadRundownData]);
+
+  // Reset when rundown changes
+  useEffect(() => {
+    return () => {
+      if (rundownId !== loadedRef.current) {
+        loadedRef.current = null;
+      }
+    };
+  }, [rundownId]);
 };
