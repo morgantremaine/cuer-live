@@ -21,6 +21,7 @@ const Index = () => {
     cellRefs,
     selectedRows,
     draggedItemIndex,
+    isDraggingMultiple,
     currentSegmentId,
     getColumnWidth,
     updateColumnWidth,
@@ -87,6 +88,7 @@ const Index = () => {
       cellRefs={cellRefs}
       selectedRows={selectedRowsSet}
       draggedItemIndex={draggedItemIndex}
+      isDraggingMultiple={isDraggingMultiple}
       currentSegmentId={currentSegmentId}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}

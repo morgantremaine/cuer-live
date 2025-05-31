@@ -55,6 +55,7 @@ export const useRundownGridState = () => {
     handleCellClick,
     handleKeyDown,
     draggedItemIndex,
+    isDraggingMultiple,
     handleDragStart,
     handleDragOver,
     handleDrop,
@@ -141,6 +142,7 @@ export const useRundownGridState = () => {
     
     // Drag and drop state
     draggedItemIndex,
+    isDraggingMultiple,
     handleDragStart,
     handleDragOver,
     handleDrop,

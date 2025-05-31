@@ -18,6 +18,7 @@ interface RegularRowProps {
   columns: Column[];
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
+  isDraggingMultiple?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -43,6 +44,7 @@ const RegularRow = ({
   columns,
   isSelected = false,
   isCurrentlyPlaying = false,
+  isDraggingMultiple = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -60,7 +62,11 @@ const RegularRow = ({
   let rowClass = '';
   
   if (isDragging) {
-    rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
+    if (isDraggingMultiple && isSelected) {
+      rowClass = 'bg-blue-200 dark:bg-blue-800 opacity-70 border-2 border-blue-400';
+    } else {
+      rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
+    }
   } else if (item.isFloating || item.isFloated) {
     rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
   } else if (isSelected) {
@@ -108,6 +114,9 @@ const RegularRow = ({
             <Play className="h-4 w-4 text-green-500 fill-green-500" />
           )}
           <span>{rowNumber}</span>
+          {isDraggingMultiple && isSelected && (
+            <span className="text-xs bg-blue-500 text-white px-1 rounded">M</span>
+          )}
         </div>
       </td>
       {columns.map((column) => (

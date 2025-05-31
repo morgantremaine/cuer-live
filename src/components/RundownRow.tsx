@@ -15,6 +15,7 @@ interface RundownRowProps {
   columns: Column[];
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
+  isDraggingMultiple?: boolean;
   headerDuration?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -45,6 +46,7 @@ const RundownRow = (props: RundownRowProps) => {
     <RegularRow 
       {...props} 
       isCurrentlyPlaying={props.isCurrentlyPlaying}
+      isDraggingMultiple={props.isDraggingMultiple}
       onToggleFloat={props.onToggleFloat || (() => {})}
     />
   );

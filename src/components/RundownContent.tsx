@@ -13,6 +13,7 @@ interface RundownContentProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
+  isDraggingMultiple: boolean;
   currentSegmentId: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -40,6 +41,7 @@ const RundownContent = ({
   cellRefs,
   selectedRows,
   draggedItemIndex,
+  isDraggingMultiple,
   currentSegmentId,
   getColumnWidth,
   updateColumnWidth,
@@ -70,6 +72,7 @@ const RundownContent = ({
             cellRefs={cellRefs}
             selectedRows={selectedRows}
             draggedItemIndex={draggedItemIndex}
+            isDraggingMultiple={isDraggingMultiple}
             currentSegmentId={currentSegmentId}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}

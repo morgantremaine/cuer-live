@@ -13,6 +13,7 @@ interface RundownTableProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
+  isDraggingMultiple: boolean;
   currentSegmentId: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -40,6 +41,7 @@ const RundownTable = ({
   cellRefs,
   selectedRows,
   draggedItemIndex,
+  isDraggingMultiple,
   currentSegmentId,
   getColumnWidth,
   updateColumnWidth,
@@ -79,6 +81,7 @@ const RundownTable = ({
               columns={visibleColumns}
               isSelected={selectedRows.has(item.id)}
               isCurrentlyPlaying={!isHeaderItem(item) && currentSegmentId === item.id}
+              isDraggingMultiple={isDraggingMultiple && selectedRows.has(item.id)}
               headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}

@@ -31,11 +31,18 @@ export const useRundownInteractions = (
   } = useCellNavigation(visibleColumns, items);
 
   const {
+    selectedRows,
+    toggleRowSelection,
+    clearSelection
+  } = useMultiRowSelection();
+
+  const {
     draggedItemIndex,
+    isDraggingMultiple,
     handleDragStart,
     handleDragOver,
     handleDrop
-  } = useDragAndDrop(items, setItems);
+  } = useDragAndDrop(items, setItems, selectedRows);
 
   const {
     calculateEndTime,
@@ -47,12 +54,6 @@ export const useRundownInteractions = (
     handleToggleColorPicker,
     handleColorSelect: selectColor
   } = useColorPicker();
-
-  const {
-    selectedRows,
-    toggleRowSelection,
-    clearSelection
-  } = useMultiRowSelection();
 
   const {
     clipboardItems,
@@ -79,6 +80,7 @@ export const useRundownInteractions = (
     handleCellClick,
     handleKeyDown,
     draggedItemIndex,
+    isDraggingMultiple,
     handleDragStart,
     handleDragOver,
     handleDrop,
