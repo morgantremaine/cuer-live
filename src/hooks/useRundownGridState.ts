@@ -15,6 +15,7 @@ export const useRundownGridState = () => {
   console.log('useRundownGridState: items count:', coreState.items.length);
 
   // Memoize the core functions to prevent re-creation on every render
+  // Only depend on items array and primitive values, not functions
   const stableCoreState = useMemo(() => ({
     items: coreState.items,
     setItems: coreState.setItems,
@@ -29,21 +30,7 @@ export const useRundownGridState = () => {
     calculateEndTime: coreState.calculateEndTime,
     markAsChanged: coreState.markAsChanged,
     setRundownTitle: coreState.setRundownTitle
-  }), [
-    coreState.items,
-    coreState.setItems,
-    coreState.updateItem,
-    coreState.addRow,
-    coreState.addHeader,
-    coreState.deleteRow,
-    coreState.toggleFloatRow,
-    coreState.deleteMultipleRows,
-    coreState.addMultipleRows,
-    coreState.handleDeleteColumn,
-    coreState.calculateEndTime,
-    coreState.markAsChanged,
-    coreState.setRundownTitle
-  ]);
+  }), [coreState.items]); // Only depend on items array
 
   // Stable color select function
   const selectColor = useCallback((id: string, color: string) => {
