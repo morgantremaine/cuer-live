@@ -13,6 +13,7 @@ import {
 interface TimezoneSelectorProps {
   currentTimezone: string;
   onTimezoneChange: (timezone: string) => void;
+  showLabel?: boolean;
 }
 
 const timezones = [
@@ -29,11 +30,17 @@ const timezones = [
   { value: 'UTC', label: 'UTC (UTC+0)' }
 ];
 
-const TimezoneSelector = ({ currentTimezone, onTimezoneChange }: TimezoneSelectorProps) => {
+const TimezoneSelector = ({ currentTimezone, onTimezoneChange, showLabel = false }: TimezoneSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const currentTimezoneLabel = timezones.find(tz => tz.value === currentTimezone)?.label || currentTimezone;
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-2">
+      {showLabel && (
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {currentTimezoneLabel}
+        </span>
+      )}
       <Button
         variant="ghost"
         size="sm"

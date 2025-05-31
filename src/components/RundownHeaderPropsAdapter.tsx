@@ -39,6 +39,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onRundownStartTimeChange={props.onRundownStartTimeChange}
       rundownId={props.rundownId}
       onOpenTeleprompter={props.onOpenTeleprompter}
+      items={props.items}
+      onUpdateItem={props.onUpdateItem}
     />
   );
 };
