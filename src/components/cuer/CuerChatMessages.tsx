@@ -31,9 +31,6 @@ const CuerChatMessages = ({ messages, isLoading, isConnected }: CuerChatMessages
             <div className="text-center text-gray-500 text-sm">
               <p>👋 Hi! I'm Cuer, your broadcast production assistant.</p>
               <p className="mt-2">Ask me about rundown optimization, timing issues, or script improvements!</p>
-              <p className="mt-2 text-xs bg-blue-50 p-2 rounded border border-blue-200 text-blue-800">
-                💡 I can now modify your rundown! Try saying "Add a 2-minute weather segment" or "Fix the timing issues"
-              </p>
             </div>
           )}
           
