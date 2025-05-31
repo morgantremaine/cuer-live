@@ -22,12 +22,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
-  console.log('useColumnsManager - All columns:', columns);
-  console.log('useColumnsManager - Script column:', columns.find(col => col.key === 'script'));
-
   const visibleColumns = columns.filter(col => col.isVisible !== false);
-  console.log('useColumnsManager - Visible columns:', visibleColumns);
-  console.log('useColumnsManager - Script in visible columns:', visibleColumns.find(col => col.key === 'script'));
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -101,13 +96,9 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       // Then, add any missing essential built-in columns
       essentialBuiltInColumns.forEach(essentialCol => {
         if (!layoutColumnIds.has(essentialCol.id)) {
-          console.log('Adding missing essential column:', essentialCol.name);
           mergedColumns.push(essentialCol);
         }
       });
-
-      console.log('Merged columns after load layout:', mergedColumns);
-      console.log('Script column in merged:', mergedColumns.find(col => col.key === 'script'));
 
       // Only mark as changed if columns are actually different
       const isSame = prevColumns.length === mergedColumns.length && 
