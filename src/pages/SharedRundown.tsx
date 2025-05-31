@@ -7,7 +7,7 @@ import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 
 const SharedRundown = () => {
-  const { rundownData, currentTime, currentSegmentId, loading } = useSharedRundownState();
+  const { rundownData, currentTime, currentSegmentId, loading, error } = useSharedRundownState();
 
   if (loading) {
     return (
@@ -17,10 +17,29 @@ const SharedRundown = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="text-lg text-red-600 mb-2">Error loading rundown</div>
+          <div className="text-sm text-gray-600">{error}</div>
+          <div className="text-xs text-gray-500 mt-4">
+            This rundown may be private or the link may be incorrect.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!rundownData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-lg text-gray-600">Rundown not found</div>
+        <div className="text-center">
+          <div className="text-lg text-gray-600 mb-2">Rundown not found</div>
+          <div className="text-sm text-gray-500">
+            This rundown may be private or the link may be incorrect.
+          </div>
+        </div>
       </div>
     );
   }

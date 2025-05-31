@@ -16,6 +16,7 @@ export const useSharedRundownState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Update current time every second
   useEffect(() => {
@@ -30,35 +31,44 @@ export const useSharedRundownState = () => {
     const loadRundownData = async () => {
       if (!rundownId) {
         setLoading(false);
+        setError('No rundown ID provided');
         return;
       }
 
       console.log('Loading shared rundown with ID:', rundownId);
+      setError(null);
 
       try {
-        const { data, error } = await supabase
+        // First try to get the rundown with public access
+        const { data, error: queryError } = await supabase
           .from('rundowns')
-          .select('*')
+          .select('id, title, items, columns, created_at, updated_at')
           .eq('id', rundownId)
           .single();
 
-        if (error) {
-          console.error('Error loading shared rundown:', error);
+        console.log('Supabase query result:', { data, error: queryError });
+
+        if (queryError) {
+          console.error('Supabase error details:', queryError);
+          setError(`Database error: ${queryError.message}`);
           setRundownData(null);
         } else if (data) {
-          console.log('Loaded shared rundown data:', data);
+          console.log('Successfully loaded shared rundown data:', data);
           setRundownData({
-            title: data.title,
+            title: data.title || 'Untitled Rundown',
             items: data.items || [],
             columns: data.columns || [],
             startTime: '09:00' // Default start time
           });
+          setError(null);
         } else {
           console.log('No rundown found with ID:', rundownId);
+          setError('Rundown not found');
           setRundownData(null);
         }
       } catch (error) {
         console.error('Error fetching rundown:', error);
+        setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setRundownData(null);
       }
 
@@ -94,6 +104,7 @@ export const useSharedRundownState = () => {
     rundownData,
     currentTime,
     currentSegmentId,
-    loading
+    loading,
+    error
   };
 };
