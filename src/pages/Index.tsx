@@ -69,7 +69,10 @@ const Index = () => {
     calculateEndTime,
     markAsChanged,
     clipboardItems,
-    handlePasteRows
+    // Get the proper handlers
+    handleCopySelectedRows,
+    handlePasteRows,
+    handleDeleteSelectedRows
   } = useRundownGridState();
 
   const selectedRowsArray = Array.from(selectedRowsSet);
@@ -139,9 +142,9 @@ const Index = () => {
         onAddHeader={addHeader}
         selectedCount={selectedRowsSet.size}
         hasClipboardData={hasClipboardData()}
-        onCopySelectedRows={copyItems}
+        onCopySelectedRows={handleCopySelectedRows}
         onPasteRows={handlePasteRows}
-        onDeleteSelectedRows={deleteMultipleRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
