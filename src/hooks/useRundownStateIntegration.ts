@@ -33,27 +33,36 @@ export const useRundownStateIntegration = ({ rundownTitle, rundownStartTime }: U
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle);
+  // Create markAsChanged function that will be passed to columns manager
+  const markAsChangedCallback = () => {
+    // This will be replaced by the actual markAsChanged from useAutoSave
+  };
 
   const {
     columns,
     visibleColumns,
     handleAddColumn,
     handleUpdateColumnName
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager(markAsChangedCallback);
+
+  // Now pass columns to useAutoSave
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
+
+  // Update the columns manager to use the real markAsChanged
+  const columnsManager = useColumnsManager(markAsChanged);
 
   const {
     columnWidths,
     updateColumnWidth,
     getColumnWidth
-  } = useResizableColumns(visibleColumns);
+  } = useResizableColumns(columnsManager.visibleColumns);
 
   const {
     selectedCell,
     cellRefs,
     handleCellClick,
     handleKeyDown
-  } = useCellNavigation(visibleColumns, items);
+  } = useCellNavigation(columnsManager.visibleColumns, items);
 
   const {
     draggedItemIndex,
@@ -115,11 +124,11 @@ export const useRundownStateIntegration = ({ rundownTitle, rundownStartTime }: U
     isSaving,
     markAsChanged,
     
-    // Columns state
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleUpdateColumnName,
+    // Columns state (use the properly initialized columns manager)
+    columns: columnsManager.columns,
+    visibleColumns: columnsManager.visibleColumns,
+    handleAddColumn: columnsManager.handleAddColumn,
+    handleUpdateColumnName: columnsManager.handleUpdateColumnName,
     
     // Resizable columns state
     columnWidths,
