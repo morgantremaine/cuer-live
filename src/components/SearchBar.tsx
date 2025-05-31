@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, MoreHorizontal, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -69,11 +68,9 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     });
 
     setMatches(foundMatches);
+    // Don't automatically focus the first match - only set the index
     if (foundMatches.length > 0) {
       setCurrentMatchIndex(0);
-      // Only focus the cell, don't try to set selection
-      const firstMatch = foundMatches[0];
-      focusCell(firstMatch.itemId, firstMatch.field);
     } else {
       setCurrentMatchIndex(-1);
     }
@@ -106,6 +103,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
 
     setCurrentMatchIndex(newIndex);
     const match = matches[newIndex];
+    // Only focus cell when explicitly navigating
     focusCell(match.itemId, match.field);
   };
 
@@ -128,6 +126,17 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     setShowReplace(false);
     setMatches([]);
     setCurrentMatchIndex(-1);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchText(value);
+    // Keep focus on search input after updating search
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
   };
 
   useEffect(() => {
@@ -169,7 +178,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
               ref={searchInputRef}
               placeholder="Search in rundown..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={handleSearchChange}
               className="pr-8"
             />
             <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
