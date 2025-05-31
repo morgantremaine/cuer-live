@@ -14,47 +14,29 @@ export const useRundownGridState = () => {
 
   console.log('useRundownGridState: items count:', coreState.items.length);
 
-  // Memoize the core functions to prevent re-creation on every render
-  // Only depend on items array and primitive values, not functions
-  const stableCoreState = useMemo(() => ({
-    items: coreState.items,
-    setItems: coreState.setItems,
-    updateItem: coreState.updateItem,
-    addRow: coreState.addRow,
-    addHeader: coreState.addHeader,
-    deleteRow: coreState.deleteRow,
-    toggleFloatRow: coreState.toggleFloatRow,
-    deleteMultipleRows: coreState.deleteMultipleRows,
-    addMultipleRows: coreState.addMultipleRows,
-    handleDeleteColumn: coreState.handleDeleteColumn,
-    calculateEndTime: coreState.calculateEndTime,
-    markAsChanged: coreState.markAsChanged,
-    setRundownTitle: coreState.setRundownTitle
-  }), [coreState.items]); // Only depend on items array
-
   // Stable color select function
   const selectColor = useCallback((id: string, color: string) => {
     console.log('Selecting color for item:', id, color);
-    stableCoreState.updateItem(id, 'color', color);
-    stableCoreState.markAsChanged();
-  }, [stableCoreState.updateItem, stableCoreState.markAsChanged]);
+    coreState.updateItem(id, 'color', color);
+    coreState.markAsChanged();
+  }, [coreState.updateItem, coreState.markAsChanged]);
 
-  // Get interaction handlers - use stable core functions
+  // Get interaction handlers - pass functions directly without memoization
   const interactions = useRundownGridInteractions(
-    stableCoreState.items,
-    stableCoreState.setItems,
-    stableCoreState.updateItem,
-    stableCoreState.addRow,
-    stableCoreState.addHeader,
-    stableCoreState.deleteRow,
-    stableCoreState.toggleFloatRow,
-    stableCoreState.deleteMultipleRows,
-    stableCoreState.addMultipleRows,
-    stableCoreState.handleDeleteColumn,
-    stableCoreState.calculateEndTime,
+    coreState.items,
+    coreState.setItems,
+    coreState.updateItem,
+    coreState.addRow,
+    coreState.addHeader,
+    coreState.deleteRow,
+    coreState.toggleFloatRow,
+    coreState.deleteMultipleRows,
+    coreState.addMultipleRows,
+    coreState.handleDeleteColumn,
+    coreState.calculateEndTime,
     selectColor,
-    stableCoreState.markAsChanged,
-    stableCoreState.setRundownTitle
+    coreState.markAsChanged,
+    coreState.setRundownTitle
   );
 
   // Get UI state
@@ -84,31 +66,31 @@ export const useRundownGridState = () => {
 
   // Direct copy/paste handlers
   const handleCopySelectedRows = useCallback(() => {
-    const selectedItems = stableCoreState.items.filter(item => interactions.selectedRows.has(item.id));
+    const selectedItems = coreState.items.filter(item => interactions.selectedRows.has(item.id));
     if (selectedItems.length > 0) {
       copyItems(selectedItems);
       interactions.clearSelection();
     }
-  }, [stableCoreState.items, interactions.selectedRows, copyItems, interactions.clearSelection]);
+  }, [coreState.items, interactions.selectedRows, copyItems, interactions.clearSelection]);
 
   const handlePasteRows = useCallback(() => {
     if (clipboardItems.length > 0) {
       console.log('Pasting items from clipboard:', clipboardItems.length);
-      stableCoreState.addMultipleRows(clipboardItems, stableCoreState.calculateEndTime);
-      stableCoreState.markAsChanged();
+      coreState.addMultipleRows(clipboardItems, coreState.calculateEndTime);
+      coreState.markAsChanged();
     } else {
       console.log('No clipboard data to paste');
     }
-  }, [clipboardItems, stableCoreState.addMultipleRows, stableCoreState.calculateEndTime, stableCoreState.markAsChanged]);
+  }, [clipboardItems, coreState.addMultipleRows, coreState.calculateEndTime, coreState.markAsChanged]);
 
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(interactions.selectedRows);
     if (selectedIds.length > 0) {
       console.log('Deleting selected rows:', selectedIds);
-      stableCoreState.deleteMultipleRows(selectedIds);
+      coreState.deleteMultipleRows(selectedIds);
       interactions.clearSelection();
     }
-  }, [interactions.selectedRows, stableCoreState.deleteMultipleRows, interactions.clearSelection]);
+  }, [interactions.selectedRows, coreState.deleteMultipleRows, interactions.clearSelection]);
 
   // Wrapped add functions with proper logging
   const wrappedAddRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {

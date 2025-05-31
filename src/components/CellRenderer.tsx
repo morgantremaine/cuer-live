@@ -29,12 +29,23 @@ const CellRenderer = ({
     if (column.isCustom) {
       return item.customFields?.[column.key] || '';
     }
+    
+    // Special handling for headers and segment name field
+    if (column.key === 'segmentName') {
+      // For headers, use segmentName or name field
+      if (item.type === 'header') {
+        return item.segmentName || item.name || '';
+      }
+      // For regular items, use segmentName or name
+      return item.segmentName || item.name || '';
+    }
+    
     return (item as any)[column.key] || '';
   };
 
   // Use the column key for cell references and navigation
   const cellRefKey = column.key;
-  // Use the full path for updates
+  // Use the proper field key for updates
   const updateFieldKey = column.isCustom ? `customFields.${column.key}` : column.key;
 
   const value = getCellValue(column);
