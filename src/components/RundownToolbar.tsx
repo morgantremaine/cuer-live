@@ -1,12 +1,12 @@
-
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Columns } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
   onAddHeader: () => void;
+  onAddColumn?: () => void;
   onShowColumnManager: () => void;
   selectedCount: number;
   hasClipboardData: boolean;
@@ -28,6 +28,7 @@ interface RundownToolbarProps {
 const RundownToolbar = ({
   onAddRow,
   onAddHeader,
+  onAddColumn,
   onShowColumnManager,
   selectedCount,
   hasClipboardData,
@@ -63,6 +64,12 @@ const RundownToolbar = ({
     }
   };
 
+  const handleAddColumn = () => {
+    if (onAddColumn) {
+      onAddColumn();
+    }
+  };
+
   return (
     <div className="p-4 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
@@ -73,6 +80,10 @@ const RundownToolbar = ({
         <Button onClick={onAddHeader} variant="outline" className="flex items-center space-x-2">
           <Plus className="h-4 w-4" />
           <span>Add Header</span>
+        </Button>
+        <Button onClick={handleAddColumn} variant="outline" className="flex items-center space-x-2">
+          <Columns className="h-4 w-4" />
+          <span>Add Column</span>
         </Button>
         <Button onClick={onShowColumnManager} variant="outline" className="flex items-center space-x-2">
           <Settings className="h-4 w-4" />

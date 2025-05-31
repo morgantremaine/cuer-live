@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownContent from './RundownContent';
@@ -122,6 +121,11 @@ const RundownContainer = ({
   rundownStartTime,
   onRundownStartTimeChange
 }: RundownContainerProps) => {
+  const handleQuickAddColumn = () => {
+    const columnName = `Column ${columns.filter(col => col.isCustom).length + 1}`;
+    handleAddColumn(columnName);
+  };
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
       <div className="max-w-none mx-auto">
@@ -133,6 +137,7 @@ const RundownContainer = ({
             totalRuntime={totalRuntime}
             onAddRow={onAddRow}
             onAddHeader={onAddHeader}
+            onAddColumn={handleQuickAddColumn}
             onShowColumnManager={() => setShowColumnManager(true)}
             selectedCount={selectedCount}
             hasClipboardData={hasClipboardData}
