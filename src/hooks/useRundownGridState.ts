@@ -12,22 +12,13 @@ export const useRundownGridState = () => {
   // Local clipboard state
   const [clipboardItems, setClipboardItems] = useState<RundownItem[]>([]);
 
-  // Wrap addRow and addHeader to match expected signatures
-  const wrappedAddRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
-    coreState.addRow(calculateEndTime, insertAfterIndex);
-  }, [coreState.addRow]);
-
-  const wrappedAddHeader = useCallback((insertAfterIndex?: number) => {
-    coreState.addHeader(insertAfterIndex);
-  }, [coreState.addHeader]);
-
-  // Get interaction handlers with wrapped functions
+  // Get interaction handlers - use core functions directly
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
     coreState.updateItem,
-    wrappedAddRow,
-    wrappedAddHeader,
+    coreState.addRow,
+    coreState.addHeader,
     coreState.deleteRow,
     coreState.toggleFloatRow,
     coreState.deleteMultipleRows,
@@ -96,9 +87,6 @@ export const useRundownGridState = () => {
 
   return {
     ...coreState,
-    // Override with wrapped versions
-    addRow: wrappedAddRow,
-    addHeader: wrappedAddHeader,
     ...interactions,
     ...uiState,
     // Override with our direct implementations
