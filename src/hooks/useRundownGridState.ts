@@ -14,7 +14,7 @@ export const useRundownGridState = () => {
 
   // Stable color selection function
   const handleColorSelection = useCallback((id: string, color: string) => {
-    console.log('Selecting color for item:', id, color);
+    console.log('Applying color to item:', id, color);
     coreState.updateItem(id, 'color', color);
     coreState.markAsChanged();
   }, [coreState.updateItem, coreState.markAsChanged]);
@@ -61,12 +61,15 @@ export const useRundownGridState = () => {
   }, []);
 
   const hasClipboardData = useMemo(() => {
-    return clipboardItems.length > 0;
+    const hasData = clipboardItems.length > 0;
+    console.log('Clipboard has data:', hasData, 'items:', clipboardItems.length);
+    return hasData;
   }, [clipboardItems]);
 
   // Direct copy/paste handlers
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = coreState.items.filter(item => interactions.selectedRows.has(item.id));
+    console.log('Copying selected rows:', selectedItems.length);
     if (selectedItems.length > 0) {
       copyItems(selectedItems);
       interactions.clearSelection();
@@ -74,13 +77,14 @@ export const useRundownGridState = () => {
   }, [coreState.items, interactions.selectedRows, copyItems, interactions.clearSelection]);
 
   const handlePasteRows = useCallback(() => {
+    console.log('Attempting to paste rows, clipboard items:', clipboardItems.length);
     if (clipboardItems.length > 0) {
-      console.log('Pasting items from clipboard:', clipboardItems.length);
       // Create clean copies for pasting
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
+      console.log('Pasting items:', itemsToPaste.length);
       coreState.addMultipleRows(itemsToPaste, coreState.calculateEndTime);
       coreState.markAsChanged();
     } else {
@@ -108,11 +112,17 @@ export const useRundownGridState = () => {
     coreState.addHeader(insertAfterIndex);
   }, [coreState.addHeader]);
 
+  // Override the UI state's selectColor with our stable version
+  const stableUIState = useMemo(() => ({
+    ...uiState,
+    selectColor: handleColorSelection
+  }), [uiState, handleColorSelection]);
+
   // Memoize the return object to prevent unnecessary re-renders
   const returnValue = useMemo(() => ({
     ...coreState,
     ...interactions,
-    ...uiState,
+    ...stableUIState,
     // Override with wrapped functions
     addRow: wrappedAddRow,
     addHeader: wrappedAddHeader,
@@ -126,7 +136,7 @@ export const useRundownGridState = () => {
   }), [
     coreState,
     interactions,
-    uiState,
+    stableUIState,
     wrappedAddRow,
     wrappedAddHeader,
     clipboardItems,

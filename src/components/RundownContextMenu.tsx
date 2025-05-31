@@ -43,6 +43,8 @@ const RundownContextMenu = ({
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
+  console.log('RundownContextMenu render - hasClipboardData:', hasClipboardData, 'onPaste:', !!onPaste);
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -103,6 +105,7 @@ const RundownContextMenu = ({
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
             onColorSelect={(id, color) => {
+              console.log('Color selected from picker:', id, color);
               onColorSelect(id, color);
               onColorPicker(); // Close the color picker after selection
             }}

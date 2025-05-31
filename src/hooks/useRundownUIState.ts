@@ -38,9 +38,10 @@ export const useRundownUIState = (
     return currentTimeForComparison > itemStartTime ? 'completed' : 'upcoming';
   }, [currentSegmentId, currentTime]);
 
-  // Color selection function
+  // Color selection function - FIX: correct the parameter order
   const selectColor = useCallback((id: string, color: string) => {
-    updateItem(id, color, color);
+    console.log('Selecting color for item:', id, color);
+    updateItem(id, 'color', color);
     markAsChanged();
   }, [updateItem, markAsChanged]);
 
