@@ -10,7 +10,7 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  // Rundown items management
+  // Rundown items management - call without arguments as per hook definition
   const {
     items,
     setItems,
@@ -24,9 +24,9 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  } = useRundownItems();
 
-  // Column management - pass markAsChanged to ensure proper change tracking
+  // Column management - call without arguments as per hook definition
   const {
     columns,
     visibleColumns,
@@ -36,7 +36,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager();
 
   // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone
   const { hasUnsavedChanges, isSaving } = useAutoSave(
