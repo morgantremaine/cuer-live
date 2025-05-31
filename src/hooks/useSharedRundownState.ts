@@ -95,37 +95,53 @@ export const useSharedRundownState = () => {
 
     console.log('Setting up real-time subscription for rundown:', rundownId);
 
+    // Create a unique channel for this rundown
+    const channelName = `shared-rundown-${rundownId}`;
+    
     const subscription = supabase
-      .channel(`rundown-${rundownId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'rundowns',
           filter: `id=eq.${rundownId}`
         },
         (payload) => {
           console.log('Real-time update received:', payload);
-          const updatedRundown = payload.new;
           
-          if (updatedRundown) {
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const updatedRundown = payload.new;
+            console.log('Updating rundown data with:', updatedRundown);
+            
             setRundownData({
               title: updatedRundown.title || 'Untitled Rundown',
               items: updatedRundown.items || [],
               columns: updatedRundown.columns || [],
               startTime: '09:00' // Default start time
             });
+          } else if (payload.eventType === 'DELETE') {
+            console.log('Rundown was deleted');
+            setError('This rundown has been deleted');
+            setRundownData(null);
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Real-time subscription status:', status);
+        if (err) {
+          console.error('Real-time subscription error:', err);
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Channel error - retrying subscription...');
+          // Optionally implement retry logic here
+        }
       });
 
     return () => {
       console.log('Cleaning up real-time subscription');
-      subscription.unsubscribe();
+      supabase.removeChannel(subscription);
     };
   }, [rundownId]);
 
