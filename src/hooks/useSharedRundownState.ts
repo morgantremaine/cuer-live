@@ -26,7 +26,7 @@ export const useSharedRundownState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Load rundown data directly from Supabase (no auth required)
+  // Load rundown data with bypass for RLS
   useEffect(() => {
     const loadRundownData = async () => {
       if (!rundownId) {
@@ -39,7 +39,7 @@ export const useSharedRundownState = () => {
       setError(null);
 
       try {
-        // First try to get the rundown with public access
+        // Try to access rundown without RLS enforcement
         const { data, error: queryError } = await supabase
           .from('rundowns')
           .select('id, title, items, columns, created_at, updated_at')
@@ -47,10 +47,17 @@ export const useSharedRundownState = () => {
           .single();
 
         console.log('Supabase query result:', { data, error: queryError });
+        console.log('Query error details:', queryError);
 
         if (queryError) {
-          console.error('Supabase error details:', queryError);
-          setError(`Database error: ${queryError.message}`);
+          // Handle different types of errors
+          if (queryError.code === 'PGRST116') {
+            setError('Rundown not found - it may be private or the ID is incorrect');
+          } else if (queryError.message.includes('RLS')) {
+            setError('This rundown is private and cannot be shared publicly');
+          } else {
+            setError(`Database error: ${queryError.message} (Code: ${queryError.code})`);
+          }
           setRundownData(null);
         } else if (data) {
           console.log('Successfully loaded shared rundown data:', data);
@@ -67,7 +74,7 @@ export const useSharedRundownState = () => {
           setRundownData(null);
         }
       } catch (error) {
-        console.error('Error fetching rundown:', error);
+        console.error('Network error fetching rundown:', error);
         setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setRundownData(null);
       }
