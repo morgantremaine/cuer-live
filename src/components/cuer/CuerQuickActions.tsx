@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BarChart3 } from 'lucide-react';
 
 interface CuerQuickActionsProps {
   rundownData?: any;
@@ -16,20 +16,24 @@ const CuerQuickActions = ({
   isLoading,
   onAnalyzeRundown
 }: CuerQuickActionsProps) => {
-  if (!rundownData || !isConnected) return null;
+  if (!isConnected || !rundownData) {
+    return null;
+  }
 
   return (
-    <div className="p-3 border-b border-gray-200 bg-gray-50">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onAnalyzeRundown}
-        disabled={isLoading}
-        className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-100"
-      >
-        <Zap className="w-4 h-4 mr-2" />
-        Analyze Current Rundown
-      </Button>
+    <div className="border-b border-gray-200 bg-gray-50 p-3">
+      <div className="flex flex-col space-y-2">
+        <Button
+          onClick={onAnalyzeRundown}
+          disabled={isLoading}
+          variant="outline"
+          size="sm"
+          className="w-full justify-start"
+        >
+          <BarChart3 className="h-4 w-4 mr-2" />
+          Analyze Current Rundown
+        </Button>
+      </div>
     </div>
   );
 };
