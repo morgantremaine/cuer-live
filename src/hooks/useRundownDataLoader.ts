@@ -1,3 +1,4 @@
+
 import { useEffect, useCallback } from 'react';
 
 interface UseRundownDataLoaderProps {
@@ -25,7 +26,12 @@ export const useRundownDataLoader = ({
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
         console.log('Loading rundown data:', { id: rundownId, title: existingRundown.title, timezone: existingRundown.timezone });
-        setRundownTitle(existingRundown.title);
+        
+        // Always set the title from the saved rundown
+        if (existingRundown.title) {
+          console.log('Setting title from saved rundown:', existingRundown.title);
+          setRundownTitle(existingRundown.title);
+        }
         
         // Load timezone if it exists, ensuring it actually gets set
         if (existingRundown.timezone) {
