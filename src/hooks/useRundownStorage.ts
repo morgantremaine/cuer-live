@@ -1,16 +1,13 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { RundownItem } from '@/hooks/useRundownItems'
-import { Column } from '@/hooks/useColumnsManager'
 import { useToast } from '@/hooks/use-toast'
 
 interface SavedRundown {
   id: string
   title: string
   items: RundownItem[]
-  column_layout?: Column[]
   created_at: string
   updated_at: string
   archived?: boolean
@@ -45,11 +42,13 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[], columnLayout?: Column[]) => {
+  const saveRundown = async (title: string, items: RundownItem[]) => {
     if (!user) {
       console.error('Cannot save: no user')
       return
     }
+
+    console.log('Saving new rundown to database:', { title, itemsCount: items.length, userId: user.id })
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -57,7 +56,6 @@ export const useRundownStorage = () => {
         user_id: user.id,
         title,
         items,
-        column_layout: columnLayout,
         archived: false
       })
       .select()
@@ -72,6 +70,7 @@ export const useRundownStorage = () => {
       })
       throw error
     } else {
+      console.log('Successfully saved new rundown:', data)
       toast({
         title: 'Success',
         description: 'Rundown saved successfully!',
@@ -81,19 +80,29 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columnLayout?: Column[]) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
     }
 
+    console.log('Updating rundown in database:', {
+      id,
+      title,
+      itemsCount: items.length,
+      userId: user.id,
+      silent,
+      archived
+    })
+
     const updateData = {
       title: title,
       items: items,
-      column_layout: columnLayout,
       updated_at: new Date().toISOString(),
       archived: archived
     }
+
+    console.log('Update payload (cleaned):', updateData)
 
     const { error, data } = await supabase
       .from('rundowns')
@@ -103,7 +112,15 @@ export const useRundownStorage = () => {
       .select()
 
     if (error) {
-      console.error('Database error updating rundown:', error)
+      console.error('Database error updating rundown:', {
+        error,
+        errorMessage: error.message,
+        errorDetails: error.details,
+        errorHint: error.hint,
+        id,
+        userId: user.id,
+        updateData
+      })
       if (!silent) {
         toast({
           title: 'Error',
@@ -113,6 +130,7 @@ export const useRundownStorage = () => {
       }
       throw error
     } else {
+      console.log('Successfully updated rundown:', { id, updatedData: data })
       if (!silent) {
         const message = archived ? 'Rundown archived successfully!' : 'Rundown updated successfully!'
         toast({

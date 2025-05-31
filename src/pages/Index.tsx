@@ -8,6 +8,8 @@ const Index = () => {
     currentTime,
     timezone,
     setTimezone,
+    showColumnManager,
+    setShowColumnManager,
     rundownTitle,
     setRundownTitle,
     rundownStartTime,
@@ -51,7 +53,10 @@ const Index = () => {
     forward,
     backward,
     handleAddColumn,
-    handleUpdateColumnName,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
     hasUnsavedChanges,
     isSaving,
     calculateTotalRuntime,
@@ -73,6 +78,8 @@ const Index = () => {
       timezone={timezone}
       onTimezoneChange={setTimezone}
       totalRuntime={calculateTotalRuntime()}
+      showColumnManager={showColumnManager}
+      setShowColumnManager={setShowColumnManager}
       items={items}
       visibleColumns={visibleColumns}
       columns={columns}
@@ -115,6 +122,10 @@ const Index = () => {
       onForward={forward}
       onBackward={backward}
       handleAddColumn={handleAddColumn}
+      handleReorderColumns={handleReorderColumns}
+      handleDeleteColumnWithCleanup={handleDeleteColumn}
+      handleToggleColumnVisibility={handleToggleColumnVisibility}
+      handleLoadLayout={handleLoadLayout}
       hasUnsavedChanges={hasUnsavedChanges}
       isSaving={isSaving}
       rundownTitle={rundownTitle}

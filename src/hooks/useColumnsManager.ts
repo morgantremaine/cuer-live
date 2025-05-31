@@ -1,8 +1,5 @@
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useRundownStorage } from './useRundownStorage';
-import { useColumnLayoutStorage } from './useColumnLayoutStorage';
+import { useState } from 'react';
 
 export interface Column {
   id: string;
@@ -14,43 +11,14 @@ export interface Column {
   isVisible?: boolean;
 }
 
-const defaultColumns: Column[] = [
-  { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: 'min-w-48', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'duration', name: 'Duration', key: 'duration', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'startTime', name: 'Start Time', key: 'startTime', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'endTime', name: 'End Time', key: 'endTime', width: 'w-24', isCustom: false, isEditable: false, isVisible: true },
-  { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true, isVisible: true }
-];
-
 export const useColumnsManager = (markAsChanged?: () => void) => {
-  const [columns, setColumns] = useState<Column[]>(defaultColumns);
-  const { id: rundownId } = useParams<{ id: string }>();
-  const { savedRundowns, loading: rundownLoading } = useRundownStorage();
-  const { savedLayouts, loading: layoutLoading } = useColumnLayoutStorage();
-
-  // Load columns from rundown or default layout
-  useEffect(() => {
-    if (rundownLoading || layoutLoading) return;
-
-    if (rundownId && savedRundowns.length > 0) {
-      const existingRundown = savedRundowns.find(r => r.id === rundownId);
-      if (existingRundown && existingRundown.column_layout) {
-        console.log('Loading columns from saved rundown');
-        setColumns(existingRundown.column_layout);
-        return;
-      }
-    }
-
-    // Check for default layout
-    const defaultLayout = savedLayouts.find(layout => layout.is_default);
-    if (defaultLayout) {
-      console.log('Loading default column layout');
-      setColumns(defaultLayout.columns);
-    } else {
-      console.log('Using built-in default columns');
-      setColumns(defaultColumns);
-    }
-  }, [rundownId, savedRundowns, savedLayouts, rundownLoading, layoutLoading]);
+  const [columns, setColumns] = useState<Column[]>([
+    { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: 'min-w-48', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'duration', name: 'Duration', key: 'duration', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'startTime', name: 'Start Time', key: 'startTime', width: 'w-24', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'endTime', name: 'End Time', key: 'endTime', width: 'w-24', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'notes', name: 'Notes', key: 'notes', width: 'min-w-64', isCustom: false, isEditable: true, isVisible: true }
+  ]);
 
   const visibleColumns = columns.filter(col => col.isVisible !== false);
 
@@ -78,10 +46,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   };
 
-  const handleUpdateColumnName = (columnId: string, newName: string) => {
-    setColumns(prev => prev.map(col => 
-      col.id === columnId ? { ...col, name: newName } : col
-    ));
+  const handleReorderColumns = (newColumns: Column[]) => {
+    setColumns(newColumns);
     if (markAsChanged) {
       markAsChanged();
     }
@@ -94,11 +60,29 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   };
 
+  const handleToggleColumnVisibility = (columnId: string) => {
+    setColumns(prev => prev.map(col => 
+      col.id === columnId ? { ...col, isVisible: col.isVisible !== false ? false : true } : col
+    ));
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  };
+
+  const handleLoadLayout = (layoutColumns: Column[]) => {
+    setColumns(layoutColumns);
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  };
+
   return {
     columns,
     visibleColumns,
     handleAddColumn,
-    handleUpdateColumnName,
-    handleDeleteColumn
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout
   };
 };

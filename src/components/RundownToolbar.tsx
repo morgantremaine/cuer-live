@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Columns } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Columns } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 
@@ -7,6 +7,7 @@ interface RundownToolbarProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onAddColumn?: () => void;
+  onShowColumnManager: () => void;
   selectedCount: number;
   hasClipboardData: boolean;
   onCopySelectedRows: () => void;
@@ -28,6 +29,7 @@ const RundownToolbar = ({
   onAddRow,
   onAddHeader,
   onAddColumn,
+  onShowColumnManager,
   selectedCount,
   hasClipboardData,
   onCopySelectedRows,
@@ -82,6 +84,10 @@ const RundownToolbar = ({
         <Button onClick={handleAddColumn} variant="outline" className="flex items-center space-x-2">
           <Columns className="h-4 w-4" />
           <span>Add Column</span>
+        </Button>
+        <Button onClick={onShowColumnManager} variant="outline" className="flex items-center space-x-2">
+          <Settings className="h-4 w-4" />
+          <span>Manage Columns</span>
         </Button>
       </div>
 

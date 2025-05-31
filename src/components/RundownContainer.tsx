@@ -2,6 +2,7 @@
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownContent from './RundownContent';
+import ColumnManager from './ColumnManager';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -10,6 +11,8 @@ interface RundownContainerProps {
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
+  showColumnManager: boolean;
+  setShowColumnManager: (show: boolean) => void;
   items: RundownItem[];
   visibleColumns: Column[];
   columns: Column[];
@@ -50,6 +53,10 @@ interface RundownContainerProps {
   onForward: () => void;
   onBackward: () => void;
   handleAddColumn: (name: string) => void;
+  handleReorderColumns: (columns: Column[]) => void;
+  handleDeleteColumnWithCleanup: (columnId: string) => void;
+  handleToggleColumnVisibility: (columnId: string) => void;
+  handleLoadLayout: (layoutColumns: Column[]) => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   rundownTitle: string;
@@ -63,6 +70,8 @@ const RundownContainer = ({
   timezone,
   onTimezoneChange,
   totalRuntime,
+  showColumnManager,
+  setShowColumnManager,
   items,
   visibleColumns,
   columns,
@@ -103,6 +112,9 @@ const RundownContainer = ({
   onForward,
   onBackward,
   handleAddColumn,
+  handleReorderColumns,
+  handleDeleteColumnWithCleanup,
+  handleToggleColumnVisibility,
   hasUnsavedChanges,
   isSaving,
   rundownTitle,
@@ -126,6 +138,7 @@ const RundownContainer = ({
             onAddRow={onAddRow}
             onAddHeader={onAddHeader}
             onAddColumn={handleQuickAddColumn}
+            onShowColumnManager={() => setShowColumnManager(true)}
             selectedCount={selectedCount}
             hasClipboardData={hasClipboardData}
             onCopySelectedRows={onCopySelectedRows}
@@ -176,6 +189,20 @@ const RundownContainer = ({
           />
         </div>
       </div>
+
+      {showColumnManager && (
+        <ColumnManager
+          columns={columns}
+          onAddColumn={handleAddColumn}
+          onReorderColumns={handleReorderColumns}
+          onDeleteColumn={handleDeleteColumnWithCleanup}
+          onToggleColumnVisibility={handleToggleColumnVisibility}
+          onLoadLayout={(layoutColumns) => {
+            handleReorderColumns(layoutColumns);
+          }}
+          onClose={() => setShowColumnManager(false)}
+        />
+      )}
     </div>
   );
 };
