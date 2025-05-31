@@ -29,6 +29,7 @@ interface HeaderRowProps {
   onColorSelect: (itemId: string, color: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -58,6 +59,7 @@ const HeaderRow = ({
   onColorSelect,
   onPasteRows,
   onClearSelection,
+  onRowSelect,
   isDragging,
   getColumnWidth
 }: HeaderRowProps) => {
@@ -100,6 +102,18 @@ const HeaderRow = ({
     onToggleColorPicker(item.id);
   };
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    console.log('HeaderRow - Row clicked:', item.id, 'onRowSelect exists:', !!onRowSelect);
+    if (onRowSelect) {
+      const isShiftClick = e.shiftKey;
+      const isCtrlClick = e.ctrlKey || e.metaKey;
+      console.log('HeaderRow - Calling onRowSelect with:', { itemId: item.id, index, isShiftClick, isCtrlClick });
+      onRowSelect(item.id, index, isShiftClick, isCtrlClick);
+    } else {
+      console.log('HeaderRow - onRowSelect not provided!');
+    }
+  };
+
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -122,6 +136,7 @@ const HeaderRow = ({
         onDragStart={(e) => onDragStart(e, index)}
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
+        onClick={handleRowClick}
       >
         <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ width: '50px' }}>
           <span className="text-xl font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
@@ -134,7 +149,10 @@ const HeaderRow = ({
                 type="text"
                 value={item.notes}
                 onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
-                onClick={() => onCellClick(item.id, 'notes')}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent row selection when clicking input
+                  onCellClick(item.id, 'notes');
+                }}
                 onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
                 className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-2 py-1 text-sm w-full"
               />

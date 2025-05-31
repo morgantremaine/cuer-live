@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTableHeader from './RundownTableHeader';
 import RundownRow from './RundownRow';
@@ -76,6 +77,15 @@ const RundownTable = ({
   onClearSelection,
   currentHighlight
 }: RundownTableProps) => {
+  
+  // Add debugging for the onRowSelect function
+  const debugOnRowSelect = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    console.log('RundownTable - onRowSelect called with:', { itemId, index, isShiftClick, isCtrlClick });
+    console.log('RundownTable - current selectedRows before selection:', selectedRows);
+    onRowSelect(itemId, index, isShiftClick, isCtrlClick);
+    console.log('RundownTable - selectedRows after onRowSelect call:', selectedRows);
+  };
+  
   return (
     <div 
       className="w-full"
@@ -122,7 +132,7 @@ const RundownTable = ({
                 onColorSelect={(id, color) => onColorSelect(id, color)}
                 onDeleteRow={onDeleteRow}
                 onToggleFloat={onToggleFloat}
-                onRowSelect={onRowSelect}
+                onRowSelect={debugOnRowSelect}
                 onDragStart={onDragStart}
                 onDragOver={(e) => onDragOver(e, index)}
                 onDrop={onDrop}
