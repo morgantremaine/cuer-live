@@ -86,31 +86,12 @@ const RundownContainer = ({
         timezone={timezone}
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
-        showColumnManager={showColumnManager}
-        setShowColumnManager={setShowColumnManager}
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
-        selectedCount={selectedCount}
-        hasClipboardData={hasClipboardData}
-        onCopySelectedRows={onCopySelectedRows}
-        onPasteRows={onPasteRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onClearSelection={onClearSelection}
-        selectedRowId={selectedRowId}
-        isPlaying={isPlaying}
-        timeRemaining={timeRemaining}
-        onPlay={onPlay}
-        onPause={onPause}
-        onForward={onForward}
-        onBackward={onBackward}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
-        rundownTitle={rundownTitle}
+        title={rundownTitle}
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
-        rundownId={rundownId}
-        onOpenTeleprompter={onOpenTeleprompter}
       />
 
       <SearchBar
