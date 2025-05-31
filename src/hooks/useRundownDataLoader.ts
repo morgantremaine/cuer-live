@@ -23,7 +23,7 @@ export const useRundownDataLoader = ({
     if (rundownId && savedRundowns.length > 0) {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
-        console.log('Loading rundown title:', existingRundown.title);
+        console.log('Loading rundown data:', { id: rundownId, title: existingRundown.title });
         setRundownTitle(existingRundown.title);
         
         // Load column layout if it exists
@@ -31,6 +31,8 @@ export const useRundownDataLoader = ({
           console.log('Loading column layout:', existingRundown.columns);
           handleLoadLayout(existingRundown.columns);
         }
+      } else {
+        console.log('Rundown not found:', rundownId);
       }
     } else if (!rundownId) {
       console.log('New rundown, using default title');
@@ -38,11 +40,13 @@ export const useRundownDataLoader = ({
     }
   }, [rundownId, savedRundowns, loading, setRundownTitle, handleLoadLayout]);
 
-  // Only run when the rundown ID changes or when savedRundowns are first loaded
+  // Load data when rundown ID changes or when savedRundowns are first loaded
   useEffect(() => {
-    // Add a check to prevent running multiple times for the same rundown
-    if (loading || savedRundowns.length === 0) return;
+    if (loading) return;
+    
+    // For existing rundowns, wait for savedRundowns to be loaded
+    if (rundownId && savedRundowns.length === 0) return;
     
     loadRundownData();
-  }, [rundownId, savedRundowns.length > 0, loading]); // Simplified dependencies
+  }, [rundownId, savedRundowns.length, loading, loadRundownData]);
 };

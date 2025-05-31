@@ -11,12 +11,14 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
   // Initialize tracking after first load
   useEffect(() => {
-    if (!initialLoadRef.current && items.length >= 0) {
+    // Only initialize once we have meaningful data (either items or a non-default title)
+    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
       const signature = JSON.stringify({ items, title: rundownTitle, columns });
       lastSavedDataRef.current = signature;
       initialLoadRef.current = true;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
+      console.log('Change tracking initialized with title:', rundownTitle);
     }
   }, [items, rundownTitle, columns]);
 
@@ -28,6 +30,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
     if (hasChanges !== hasUnsavedChanges) {
+      console.log('Change detected:', { title: rundownTitle, hasChanges });
       setHasUnsavedChanges(hasChanges);
     }
   }, [items, rundownTitle, columns, isInitialized, hasUnsavedChanges]);
@@ -36,9 +39,11 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const signature = JSON.stringify({ items: savedItems, title: savedTitle, columns: savedColumns });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
+    console.log('Marked as saved with title:', savedTitle);
   };
 
   const markAsChanged = () => {
+    console.log('Manually marked as changed');
     setHasUnsavedChanges(true);
   };
 
