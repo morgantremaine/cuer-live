@@ -8,7 +8,8 @@ import { Column } from './useColumnsManager';
 
 export const useAutoSaveOperations = () => {
   const [isSaving, setIsSaving] = useState(false);
-  const { id: rundownId } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id;
   const { updateRundown, saveRundown } = useRundownStorage();
   const { user } = useAuth();
   const navigate = useNavigate();

@@ -6,7 +6,8 @@ import { RundownItem } from '@/types/rundown';
 import { format } from 'date-fns';
 
 export const useSharedRundownState = () => {
-  const { id: rundownId } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id;
   const [rundownData, setRundownData] = useState<{
     title: string;
     items: RundownItem[];

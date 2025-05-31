@@ -17,7 +17,8 @@ const normalizeRundownItem = (item: RundownItem): RundownItem => ({
 });
 
 export const useRundownItems = () => {
-  const { id: rundownId } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id;
   const { savedRundowns, loading } = useRundownStorage();
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRef = useRef<string | null>(null);
@@ -47,7 +48,7 @@ export const useRundownItems = () => {
         const normalizedItems = existingRundown.items.map(normalizeRundownItem);
         setItems(normalizedItems);
       } else if (!existingRundown && loadedRef.current !== rundownId) {
-        console.log('useRundownItems: Rundown not found, using defaults');
+        console.log('useRundownItems: Rundown not found, using defaults for ID:', rundownId);
         loadedRef.current = rundownId;
         setItems(defaultRundownItems);
       }

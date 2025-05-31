@@ -8,7 +8,8 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 
 export const useRundownStateIntegration = (markAsChanged: () => void, rundownTitle: string, timezone: string) => {
-  const { id: rundownId } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id;
   const { savedRundowns, loading } = useRundownStorage();
   const loadedRef = useRef<string | null>(null);
 

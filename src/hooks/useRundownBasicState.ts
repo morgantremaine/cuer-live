@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 export const useRundownBasicState = () => {
-  const { id: rundownId } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id;
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
