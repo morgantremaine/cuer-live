@@ -12,6 +12,8 @@ export const useRundownGridState = () => {
   // Local clipboard state
   const [clipboardItems, setClipboardItems] = useState<RundownItem[]>([]);
 
+  console.log('useRundownGridState: items count:', coreState.items.length);
+
   // Get interaction handlers - use core functions directly
   const interactions = useRundownGridInteractions(
     coreState.items,
@@ -26,6 +28,7 @@ export const useRundownGridState = () => {
     coreState.handleDeleteColumn,
     coreState.calculateEndTime,
     (id: string, color: string) => {
+      console.log('Selecting color for item:', id, color);
       coreState.updateItem(id, 'color', color);
       coreState.markAsChanged();
     },
@@ -80,15 +83,30 @@ export const useRundownGridState = () => {
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(interactions.selectedRows);
     if (selectedIds.length > 0) {
+      console.log('Deleting selected rows:', selectedIds);
       coreState.deleteMultipleRows(selectedIds);
       interactions.clearSelection();
     }
   }, [interactions.selectedRows, coreState.deleteMultipleRows, interactions.clearSelection]);
 
+  // Wrapped add functions with proper logging
+  const wrappedAddRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
+    console.log('Adding new row at index:', insertAfterIndex);
+    coreState.addRow(calculateEndTime, insertAfterIndex);
+  }, [coreState.addRow]);
+
+  const wrappedAddHeader = useCallback((insertAfterIndex?: number) => {
+    console.log('Adding new header at index:', insertAfterIndex);
+    coreState.addHeader(insertAfterIndex);
+  }, [coreState.addHeader]);
+
   return {
     ...coreState,
     ...interactions,
     ...uiState,
+    // Override with wrapped functions
+    addRow: wrappedAddRow,
+    addHeader: wrappedAddHeader,
     // Override with our direct implementations
     clipboardItems,
     copyItems,

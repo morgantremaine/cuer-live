@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
@@ -9,6 +9,7 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 export const useRundownStateIntegration = (markAsChanged: () => void, rundownTitle: string) => {
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
+  const loadedRef = useRef<string | null>(null);
 
   const {
     items,
@@ -35,26 +36,36 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
     handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
-  const { hasUnsavedChanges, isSaving, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(items, rundownTitle, columns);
+  const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle, columns);
 
-  // Load rundown data including columns when rundown ID changes
+  // Load rundown data only once when rundown ID changes
   useEffect(() => {
     if (loading) return;
     
+    // Prevent duplicate loading
+    if (loadedRef.current === rundownId) return;
+    
     if (rundownId && savedRundowns.length > 0) {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
-      if (existingRundown) {
-        console.log('Loading rundown with columns:', existingRundown);
-        setItems(existingRundown.items || []);
+      if (existingRundown && loadedRef.current !== rundownId) {
+        console.log('Loading rundown once:', rundownId);
+        loadedRef.current = rundownId;
         
-        // Load columns if they exist in the saved rundown
+        // Set items first
+        if (existingRundown.items) {
+          setItems(existingRundown.items);
+        }
+        
+        // Load columns if they exist
         if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
-          console.log('Loading saved columns:', existingRundown.columns);
+          console.log('Loading saved columns once:', existingRundown.columns.length);
           handleLoadLayout(existingRundown.columns);
         }
       }
-    } else if (!rundownId) {
-      // New rundown - reset to default items
+    } else if (!rundownId && loadedRef.current !== null) {
+      // New rundown - reset state
+      console.log('Resetting for new rundown');
+      loadedRef.current = null;
       setItems([]);
     }
   }, [rundownId, savedRundowns, loading, setItems, handleLoadLayout]);
@@ -81,6 +92,6 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
     handleLoadLayout,
     hasUnsavedChanges,
     isSaving,
-    markAsChanged: autoSaveMarkAsChanged
+    markAsChanged
   };
 };
