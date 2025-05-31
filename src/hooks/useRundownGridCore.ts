@@ -7,6 +7,7 @@ import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useUndoRedo } from './useUndoRedo';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
+import { useRundownItemActions } from './useRundownItemActions';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -33,14 +34,6 @@ export const useRundownGridCore = () => {
   const {
     items,
     setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
     columns,
@@ -52,11 +45,23 @@ export const useRundownGridCore = () => {
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving
+    isSaving,
+    getRowNumber
   } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone, setRundownTitleDirectly, setTimezoneDirectly);
 
   // Undo/Redo functionality
   const { saveState, undo, redo, canUndo, canRedo } = useUndoRedo(items, setItems, markAsChanged);
+
+  // Item actions with undo support
+  const {
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    toggleFloatRow
+  } = useRundownItemActions(setItems, saveState);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
