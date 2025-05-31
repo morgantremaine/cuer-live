@@ -37,7 +37,7 @@ export const useTeleprompterControls = () => {
   };
 
   const adjustFontSize = (delta: number) => {
-    setFontSize(prev => Math.max(12, Math.min(72, prev + delta)));
+    setFontSize(prev => Math.max(12, Math.min(120, prev + delta)));
   };
 
   const adjustScrollSpeed = (delta: number) => {
