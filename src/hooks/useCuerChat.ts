@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { ollamaService, OllamaMessage } from '@/services/ollamaService';
+import { openaiService, OpenAIMessage } from '@/services/openaiService';
 
 interface ChatMessage {
   id: string;
@@ -15,7 +15,7 @@ export const useCuerChat = () => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
   const checkConnection = useCallback(async () => {
-    const connected = await ollamaService.checkConnection();
+    const connected = await openaiService.checkConnection();
     setIsConnected(connected);
     return connected;
   }, []);
@@ -32,14 +32,14 @@ export const useCuerChat = () => {
     setIsLoading(true);
 
     try {
-      const ollamaMessages: OllamaMessage[] = messages.map(msg => ({
+      const openaiMessages: OpenAIMessage[] = messages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
       
-      ollamaMessages.push({ role: 'user', content });
+      openaiMessages.push({ role: 'user', content });
 
-      const response = await ollamaService.sendMessage(ollamaMessages);
+      const response = await openaiService.sendMessage(openaiMessages);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -65,7 +65,7 @@ export const useCuerChat = () => {
   const analyzeRundown = useCallback(async (rundownData: any) => {
     setIsLoading(true);
     try {
-      const analysis = await ollamaService.analyzeRundown(rundownData);
+      const analysis = await openaiService.analyzeRundown(rundownData);
       
       const analysisMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -92,6 +92,20 @@ export const useCuerChat = () => {
     setMessages([]);
   }, []);
 
+  const setApiKey = useCallback((apiKey: string) => {
+    openaiService.setApiKey(apiKey);
+    checkConnection();
+  }, [checkConnection]);
+
+  const clearApiKey = useCallback(() => {
+    openaiService.clearApiKey();
+    setIsConnected(false);
+  }, []);
+
+  const hasApiKey = useCallback(() => {
+    return openaiService.hasApiKey();
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -99,6 +113,9 @@ export const useCuerChat = () => {
     sendMessage,
     analyzeRundown,
     clearChat,
-    checkConnection
+    checkConnection,
+    setApiKey,
+    clearApiKey,
+    hasApiKey
   };
 };

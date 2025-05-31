@@ -1,10 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, MessageCircle, Send, Zap, Trash2, Wifi, WifiOff } from 'lucide-react';
+import { X, MessageCircle, Send, Zap, Trash2, Wifi, WifiOff, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCuerChat } from '@/hooks/useCuerChat';
+import ApiKeySetup from './ApiKeySetup';
 
 interface CuerChatPanelProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface CuerChatPanelProps {
 
 const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => {
   const [inputValue, setInputValue] = useState('');
+  const [showApiKeySetup, setShowApiKeySetup] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -24,14 +26,21 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
     sendMessage,
     analyzeRundown,
     clearChat,
-    checkConnection
+    checkConnection,
+    setApiKey,
+    clearApiKey,
+    hasApiKey
   } = useCuerChat();
 
   useEffect(() => {
-    if (isOpen && isConnected === null) {
-      checkConnection();
+    if (isOpen) {
+      if (!hasApiKey()) {
+        setShowApiKeySetup(true);
+      } else {
+        checkConnection();
+      }
     }
-  }, [isOpen, isConnected, checkConnection]);
+  }, [isOpen, hasApiKey, checkConnection]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,6 +67,15 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
     }
   };
 
+  const handleApiKeySet = (apiKey: string) => {
+    setApiKey(apiKey);
+    setShowApiKeySetup(false);
+  };
+
+  const handleSettingsClick = () => {
+    setShowApiKeySetup(true);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -77,6 +95,14 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
           <Button
             variant="ghost"
             size="sm"
+            onClick={handleSettingsClick}
+            title="API Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={clearChat}
             disabled={messages.length === 0}
           >
@@ -88,15 +114,25 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
         </div>
       </div>
 
+      {/* API Key Setup */}
+      {showApiKeySetup && (
+        <div className="border-b border-gray-200">
+          <ApiKeySetup
+            onApiKeySet={handleApiKeySet}
+            onCancel={hasApiKey() ? () => setShowApiKeySetup(false) : undefined}
+          />
+        </div>
+      )}
+
       {/* Connection Status */}
-      {isConnected === false && (
+      {!showApiKeySetup && isConnected === false && hasApiKey() && (
         <div className="p-3 bg-red-50 border-b border-red-200 text-sm text-red-700">
-          ⚠️ Cannot connect to Ollama. Make sure it's running on localhost:11434
+          ⚠️ Connection failed. Check your API key or try again.
         </div>
       )}
 
       {/* Quick Actions */}
-      {rundownData && isConnected && (
+      {!showApiKeySetup && rundownData && isConnected && (
         <div className="p-3 border-b border-gray-200 bg-gray-50">
           <Button
             variant="outline"
@@ -112,78 +148,82 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
       )}
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.length === 0 && isConnected && (
-            <div className="text-center text-gray-500 text-sm">
-              <p>👋 Hi! I'm Cuer, your broadcast production assistant.</p>
-              <p className="mt-2">Ask me about rundown optimization, timing issues, or script improvements!</p>
-            </div>
-          )}
-          
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+      {!showApiKeySetup && (
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {messages.length === 0 && isConnected && (
+              <div className="text-center text-gray-500 text-sm">
+                <p>👋 Hi! I'm Cuer, your broadcast production assistant.</p>
+                <p className="mt-2">Ask me about rundown optimization, timing issues, or script improvements!</p>
+              </div>
+            )}
+            
+            {messages.map((message) => (
               <div
-                className={`max-w-[80%] rounded-lg p-3 text-sm ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
+                key={message.id}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className="whitespace-pre-wrap">{message.content}</div>
                 <div
-                  className={`text-xs mt-1 ${
-                    message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                  className={`max-w-[80%] rounded-lg p-3 text-sm ${
+                    message.role === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  {message.timestamp.toLocaleTimeString()}
-                </div>
-              </div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-lg p-3 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <div className="animate-pulse">Cuer is thinking...</div>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div
+                    className={`text-xs mt-1 ${
+                      message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                    }`}
+                  >
+                    {message.timestamp.toLocaleTimeString()}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+            ))}
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 rounded-lg p-3 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-pulse">Cuer is thinking...</div>
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      )}
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex space-x-2">
-          <Textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask Cuer about your rundown..."
-            disabled={!isConnected || isLoading}
-            className="flex-1 min-h-[40px] max-h-[100px] resize-none"
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || !isConnected || isLoading}
-            size="sm"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+      {!showApiKeySetup && (
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex space-x-2">
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask Cuer about your rundown..."
+              disabled={!isConnected || isLoading}
+              className="flex-1 min-h-[40px] max-h-[100px] resize-none"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || !isConnected || isLoading}
+              size="sm"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
