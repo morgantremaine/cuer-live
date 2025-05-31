@@ -1,3 +1,4 @@
+
 interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -59,8 +60,7 @@ Only suggest modifications when explicitly asked or when critical issues need fi
 
 Respond in a helpful, professional manner and always aim to improve the quality and efficiency of broadcast production.`;
 
-// TODO: Replace with your actual OpenAI API key
-const HARDCODED_API_KEY = 'your-api-key-here';
+const HARDCODED_API_KEY = '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';
 
 class OpenAIService {
   private apiKey: string = HARDCODED_API_KEY;
