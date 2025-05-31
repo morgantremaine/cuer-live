@@ -1,29 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useRundownItems } from '@/hooks/useRundownItems';
-import { useColumnsManager } from '@/hooks/useColumnsManager';
-import { useResizableColumns } from '@/hooks/useResizableColumns';
-import { useCellNavigation } from '@/hooks/useCellNavigation';
-import { useDragAndDrop } from '@/hooks/useDragAndDrop';
-import { useTimeCalculations } from '@/hooks/useTimeCalculations';
-import { useColorPicker } from '@/hooks/useColorPicker';
-import { useMultiRowSelection } from '@/hooks/useMultiRowSelection';
-import { useClipboard } from '@/hooks/useClipboard';
-import { usePlaybackControls } from '@/hooks/usePlaybackControls';
-import { useAutoSave } from '@/hooks/useAutoSave';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
+
+import { useRundownBasicState } from '@/hooks/useRundownBasicState';
+import { useRundownDataManagement } from '@/hooks/useRundownDataManagement';
+import { useRundownInteractions } from '@/hooks/useRundownInteractions';
+import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 
 export const useRundownGridState = () => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [timezone, setTimezone] = useState('America/New_York');
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
-  const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
+  const {
+    currentTime,
+    timezone,
+    setTimezone,
+    showColumnManager,
+    setShowColumnManager,
+    rundownTitle,
+    setRundownTitle,
+    rundownStartTime,
+    setRundownStartTime,
+  } = useRundownBasicState();
 
-  const { id: rundownId } = useParams<{ id: string }>();
-  const { savedRundowns, loading } = useRundownStorage();
+  // Create markAsChanged function to pass to data management
+  const markAsChanged = () => {
+    // This will be provided by the auto-save system
+  };
 
   const {
+    rundownId,
     items,
     setItems,
     updateItem,
@@ -35,101 +35,63 @@ export const useRundownGridState = () => {
     getRowNumber,
     toggleFloatRow,
     calculateTotalRuntime,
-    calculateHeaderDuration
-  } = useRundownItems();
-
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle);
-
-  const {
+    calculateHeaderDuration,
+    hasUnsavedChanges,
+    isSaving,
     columns,
     visibleColumns,
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
     handleToggleColumnVisibility,
-    handleLoadLayout
-  } = useColumnsManager(markAsChanged);
-
-  // Load the title and columns from existing rundown
-  useEffect(() => {
-    if (loading) return;
-    
-    if (rundownId && savedRundowns.length > 0) {
-      const existingRundown = savedRundowns.find(r => r.id === rundownId);
-      if (existingRundown) {
-        console.log('Loading rundown title:', existingRundown.title);
-        setRundownTitle(existingRundown.title);
-        
-        // Load column layout if it exists
-        if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
-          console.log('Loading column layout:', existingRundown.columns);
-          handleLoadLayout(existingRundown.columns);
-        }
-      }
-    } else if (!rundownId) {
-      console.log('New rundown, using default title');
-      setRundownTitle('Live Broadcast Rundown');
-    }
-  }, [rundownId, savedRundowns, loading, handleLoadLayout]);
+    handleLoadLayout,
+    savedRundowns,
+    loading,
+  } = useRundownDataManagement(rundownTitle, markAsChanged);
 
   const {
     columnWidths,
     updateColumnWidth,
-    getColumnWidth
-  } = useResizableColumns(visibleColumns);
-
-  const {
+    getColumnWidth,
     selectedCell,
     cellRefs,
     handleCellClick,
-    handleKeyDown
-  } = useCellNavigation(visibleColumns, items);
-
-  const {
+    handleKeyDown,
     draggedItemIndex,
     handleDragStart,
     handleDragOver,
-    handleDrop
-  } = useDragAndDrop(items, setItems);
-
-  const {
+    handleDrop,
     calculateEndTime,
-    getRowStatus
-  } = useTimeCalculations(items, updateItem, rundownStartTime);
-
-  const {
+    getRowStatus,
     showColorPicker,
     handleToggleColorPicker,
-    handleColorSelect: selectColor
-  } = useColorPicker();
-
-  const {
+    selectColor,
     selectedRows,
     toggleRowSelection,
-    clearSelection
-  } = useMultiRowSelection();
-
-  const {
+    clearSelection,
     clipboardItems,
     copyItems,
-    hasClipboardData
-  } = useClipboard();
-
-  const {
+    hasClipboardData,
     isPlaying,
     currentSegmentId,
     timeRemaining,
     play,
     pause,
     forward,
-    backward
-  } = usePlaybackControls(items, updateItem);
+    backward,
+  } = useRundownInteractions(visibleColumns, items, setItems, updateItem, rundownStartTime);
 
-  // Timer effect for current time
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // Load data when rundown changes
+  useRundownDataLoader({
+    rundownId,
+    savedRundowns,
+    loading,
+    setRundownTitle,
+    handleLoadLayout
+  });
+
+  // Get the actual markAsChanged from auto-save
+  const { markAsChanged: actualMarkAsChanged } = useRundownDataManagement(rundownTitle, () => {});
 
   return {
     // Basic state
@@ -161,7 +123,7 @@ export const useRundownGridState = () => {
     // Auto-save state
     hasUnsavedChanges,
     isSaving,
-    markAsChanged,
+    markAsChanged: actualMarkAsChanged,
     
     // Columns state
     columns,
