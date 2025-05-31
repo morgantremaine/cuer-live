@@ -192,6 +192,8 @@ const RundownContainer = (props: RundownContainerProps) => {
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        onCopySelectedRows={onCopySelectedRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
         showColumnManager={showColumnManager}
         handleAddColumn={handleAddColumn}
         handleReorderColumns={handleReorderColumns}
