@@ -2,6 +2,7 @@
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import TeleprompterItem from './TeleprompterItem';
+import { ChevronRight } from 'lucide-react';
 
 interface TeleprompterContentProps {
   containerRef: React.RefObject<HTMLDivElement>;
@@ -19,23 +20,40 @@ const TeleprompterContent = ({
   getRowNumber
 }: TeleprompterContentProps) => {
   return (
-    <div
-      ref={containerRef}
-      className="h-screen overflow-y-auto scrollbar-hide"
-      style={{ 
-        paddingTop: isFullscreen ? '20vh' : '120px', 
-        paddingBottom: '80vh' 
-      }}
-    >
-      <div className="w-full">
-        {itemsWithScript.map((item) => (
-          <TeleprompterItem
-            key={item.id}
-            item={item}
-            fontSize={fontSize}
-            getRowNumber={getRowNumber}
-          />
-        ))}
+    <div className="relative">
+      {/* Speaking Indicator Arrow - Fixed Position */}
+      <div 
+        className="fixed left-4 z-20 pointer-events-none"
+        style={{ 
+          top: '75%',
+          transform: 'translateY(-50%)'
+        }}
+      >
+        <ChevronRight 
+          className="text-red-500 drop-shadow-lg" 
+          size={48}
+          strokeWidth={3}
+        />
+      </div>
+
+      <div
+        ref={containerRef}
+        className="h-screen overflow-y-auto scrollbar-hide"
+        style={{ 
+          paddingTop: isFullscreen ? '20vh' : '120px', 
+          paddingBottom: '80vh' 
+        }}
+      >
+        <div className="w-full">
+          {itemsWithScript.map((item) => (
+            <TeleprompterItem
+              key={item.id}
+              item={item}
+              fontSize={fontSize}
+              getRowNumber={getRowNumber}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
