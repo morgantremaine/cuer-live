@@ -44,17 +44,17 @@ const ResizableColumnHeader = ({
 
   return (
     <th 
-      className="px-4 py-3 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
+      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider relative select-none border-b border-gray-300 dark:border-gray-600"
       style={{ width }}
     >
       {showLeftSeparator && (
-        <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
+        <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-300 dark:bg-gray-600" />
       )}
       {children}
       <div 
-        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors"
+        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         onMouseDown={handleMouseDown}
-        style={{ backgroundColor: isResizing ? '#60a5fa' : 'transparent' }}
+        style={{ backgroundColor: isResizing ? '#d1d5db' : 'transparent' }}
       />
     </th>
   );
