@@ -1,10 +1,8 @@
-
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownItemActions = (
-  setItems: React.Dispatch<React.SetStateAction<RundownItem[]>>,
-  saveUndoState?: (type: string, previousState: RundownItem[], currentState: RundownItem[], description: string) => void
+  setItems: React.Dispatch<React.SetStateAction<RundownItem[]>>
 ) => {
   const renumberItems = useCallback((items: RundownItem[]) => {
     let headerIndex = 0;
@@ -20,16 +18,19 @@ export const useRundownItemActions = (
           segmentName: newHeaderLetter
         };
       } else {
+        // For regular items, we'll let the getRowNumber function handle the numbering
+        // since it calculates based on position relative to headers
         return item;
       }
     });
   }, []);
 
   const updateItem = useCallback((id: string, field: string, value: string) => {
-    setItems(prevItems => {
-      const newItems = prevItems.map(item => {
+    setItems(prevItems =>
+      prevItems.map(item => {
         if (item.id !== id) return item;
         
+        // Handle custom fields with dot notation
         if (field.startsWith('customFields.')) {
           const customFieldKey = field.replace('customFields.', '');
           return {
@@ -41,16 +42,11 @@ export const useRundownItemActions = (
           };
         }
         
+        // Handle regular fields
         return { ...item, [field]: value };
-      });
-
-      if (saveUndoState) {
-        saveUndoState('UPDATE_ITEM', prevItems, newItems, `Update ${field}`);
-      }
-
-      return newItems;
-    });
-  }, [setItems, saveUndoState]);
+      })
+    );
+  }, [setItems]);
 
   const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
     setItems(prevItems => {
@@ -58,9 +54,11 @@ export const useRundownItemActions = (
       
       let newStartTime: string;
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
+        // Insert after the selected row
         const itemAtIndex = prevItems[insertAfterIndex];
         newStartTime = calculateEndTime(itemAtIndex.startTime, itemAtIndex.duration);
       } else {
+        // Insert at the end (default behavior)
         const lastItem = prevItems[prevItems.length - 1];
         newStartTime = lastItem ? calculateEndTime(lastItem.startTime, lastItem.duration) : '00:00:00';
       }
@@ -83,21 +81,17 @@ export const useRundownItemActions = (
         customFields: {},
       };
 
-      let newItems;
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
-        newItems = [...prevItems];
+        // Insert after the specified index
+        const newItems = [...prevItems];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
+        return newItems;
       } else {
-        newItems = [...prevItems, newItem];
+        // Add to the end (default behavior)
+        return [...prevItems, newItem];
       }
-
-      if (saveUndoState) {
-        saveUndoState('ADD_ROW', prevItems, newItems, 'Add row');
-      }
-
-      return newItems;
     });
-  }, [setItems, saveUndoState]);
+  }, [setItems]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
     setItems(prevItems => {
@@ -105,9 +99,11 @@ export const useRundownItemActions = (
       
       let newStartTime: string;
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
+        // Insert after the selected row
         const itemAtIndex = prevItems[insertAfterIndex];
         newStartTime = itemAtIndex.endTime;
       } else {
+        // Insert at the end (default behavior)
         const lastItem = prevItems[prevItems.length - 1];
         newStartTime = lastItem ? lastItem.endTime : '00:00:00';
       }
@@ -132,36 +128,32 @@ export const useRundownItemActions = (
 
       let newItems;
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
+        // Insert after the specified index
         newItems = [...prevItems];
         newItems.splice(insertAfterIndex + 1, 0, newHeader);
       } else {
+        // Add to the end (default behavior)
         newItems = [...prevItems, newHeader];
       }
 
-      const finalItems = renumberItems(newItems);
-
-      if (saveUndoState) {
-        saveUndoState('ADD_HEADER', prevItems, finalItems, 'Add header');
-      }
-
-      return finalItems;
+      // Renumber all headers after adding
+      return renumberItems(newItems);
     });
-  }, [setItems, renumberItems, saveUndoState]);
+  }, [setItems, renumberItems]);
 
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
       const itemToDelete = prevItems.find(item => item.id === id);
       const filteredItems = prevItems.filter(item => item.id !== id);
       
-      const finalItems = itemToDelete?.type === 'header' ? renumberItems(filteredItems) : filteredItems;
-
-      if (saveUndoState) {
-        saveUndoState('DELETE_ROW', prevItems, finalItems, 'Delete row');
+      // If we deleted a header, renumber all remaining headers
+      if (itemToDelete?.type === 'header') {
+        return renumberItems(filteredItems);
       }
       
-      return finalItems;
+      return filteredItems;
     });
-  }, [setItems, renumberItems, saveUndoState]);
+  }, [setItems, renumberItems]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prevItems => {
@@ -169,15 +161,14 @@ export const useRundownItemActions = (
       const hasHeaderDeleted = itemsToDelete.some(item => item.type === 'header');
       const filteredItems = prevItems.filter(item => !ids.includes(item.id));
       
-      const finalItems = hasHeaderDeleted ? renumberItems(filteredItems) : filteredItems;
-
-      if (saveUndoState) {
-        saveUndoState('DELETE_MULTIPLE_ROWS', prevItems, finalItems, `Delete ${ids.length} rows`);
+      // If any deleted item was a header, renumber all remaining headers
+      if (hasHeaderDeleted) {
+        return renumberItems(filteredItems);
       }
       
-      return finalItems;
+      return filteredItems;
     });
-  }, [setItems, renumberItems, saveUndoState]);
+  }, [setItems, renumberItems]);
 
   const addMultipleRows = useCallback((items: any[], calculateEndTime: (startTime: string, duration: string) => string) => {
     setItems(prevItems => {
@@ -196,30 +187,17 @@ export const useRundownItemActions = (
         customFields: item.customFields || {},
         script: item.script || '',
       }));
-
-      const finalItems = [...prevItems, ...newItems];
-
-      if (saveUndoState) {
-        saveUndoState('ADD_MULTIPLE_ROWS', prevItems, finalItems, `Add ${items.length} rows`);
-      }
-
-      return finalItems;
+      return [...prevItems, ...newItems];
     });
-  }, [setItems, saveUndoState]);
+  }, [setItems]);
 
   const toggleFloatRow = useCallback((id: string) => {
-    setItems(prevItems => {
-      const newItems = prevItems.map(item =>
+    setItems(prevItems =>
+      prevItems.map(item =>
         item.id === id ? { ...item, isFloating: !item.isFloating, isFloated: !item.isFloated } : item
-      );
-
-      if (saveUndoState) {
-        saveUndoState('TOGGLE_FLOAT', prevItems, newItems, 'Toggle float');
-      }
-
-      return newItems;
-    });
-  }, [setItems, saveUndoState]);
+      )
+    );
+  }, [setItems]);
 
   return {
     updateItem,

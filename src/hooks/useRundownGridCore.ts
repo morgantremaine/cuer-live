@@ -5,9 +5,6 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
-import { useUndoRedo } from './useUndoRedo';
-import { useKeyboardShortcuts } from './useKeyboardShortcuts';
-import { useRundownItemActions } from './useRundownItemActions';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -30,10 +27,18 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration
+  // Rundown data integration - now passing all required arguments
   const {
     items,
     setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
     columns,
@@ -45,31 +50,8 @@ export const useRundownGridCore = () => {
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving,
-    getRowNumber
+    isSaving
   } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone, setRundownTitleDirectly, setTimezoneDirectly);
-
-  // Undo/Redo functionality
-  const { saveState, undo, redo, canUndo, canRedo } = useUndoRedo(items, setItems, markAsChanged);
-
-  // Item actions with undo support
-  const {
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    toggleFloatRow
-  } = useRundownItemActions(setItems, saveState);
-
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
-    onUndo: undo,
-    onRedo: redo,
-    canUndo,
-    canRedo
-  });
 
   // Use data loader to properly set title and timezone
   useRundownDataLoader({
@@ -81,7 +63,7 @@ export const useRundownGridCore = () => {
     handleLoadLayout
   });
 
-  // Playback controls
+  // Playback controls - fix the function call
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -92,7 +74,7 @@ export const useRundownGridCore = () => {
     backward 
   } = usePlaybackControls(items, updateItem);
 
-  // Time calculations
+  // Time calculations - fix the function call
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   return {
@@ -145,13 +127,6 @@ export const useRundownGridCore = () => {
     // Save state
     hasUnsavedChanges,
     isSaving,
-    calculateEndTime,
-
-    // Undo/Redo
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    saveUndoState: saveState
+    calculateEndTime
   };
 };

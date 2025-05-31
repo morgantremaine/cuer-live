@@ -2,7 +2,6 @@
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
-import { useCallback } from 'react';
 
 export const useRundownStateIntegration = (
   markAsChanged: () => void,
@@ -11,23 +10,65 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  const rundownData = useRundownItems();
-  const columnsData = useColumnsManager();
-  
-  // Auto-save functionality
-  const { hasUnsavedChanges, isSaving } = useAutoSave({
+  // Rundown items management - call without arguments as per hook definition
+  const {
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration
+  } = useRundownItems();
+
+  // Column management - call without arguments as per hook definition
+  const {
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth
+  } = useColumnsManager();
+
+  // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone
+  const { hasUnsavedChanges, isSaving } = useAutoSave(
+    items,
     rundownTitle,
-    timezone,
-    items: rundownData.items,
-    columns: columnsData.columns,
-    setRundownTitle: setRundownTitleDirectly,
-    setTimezone: setTimezoneDirectly
-  });
+    columns,
+    timezone
+  );
 
   return {
-    ...rundownData,
-    ...columnsData,
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving
+    isSaving,
+    markAsChanged
   };
 };
