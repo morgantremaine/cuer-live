@@ -30,6 +30,7 @@ interface RundownTableProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onUpdateColumnName?: (columnId: string, newName: string) => void;
 }
 
 const RundownTable = ({
@@ -56,7 +57,8 @@ const RundownTable = ({
   onRowSelect,
   onDragStart,
   onDragOver,
-  onDrop
+  onDrop,
+  onUpdateColumnName
 }: RundownTableProps) => {
   return (
     <div className="w-full">
@@ -65,6 +67,7 @@ const RundownTable = ({
           visibleColumns={visibleColumns}
           getColumnWidth={getColumnWidth}
           updateColumnWidth={updateColumnWidth}
+          onUpdateColumnName={onUpdateColumnName}
         />
         <tbody>
           {items.map((item, index) => (

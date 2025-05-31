@@ -22,7 +22,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const visibleColumns = columns.filter(col => col.isVisible !== false);
 
-  const handleAddColumn = (name: string) => {
+  const handleAddColumn = (name: string = '') => {
     const newColumn: Column = {
       id: `custom_${Date.now()}`,
       name,

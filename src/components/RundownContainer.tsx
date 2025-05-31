@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownContent from './RundownContent';
@@ -122,8 +123,7 @@ const RundownContainer = ({
   onRundownStartTimeChange
 }: RundownContainerProps) => {
   const handleQuickAddColumn = () => {
-    const columnName = `Column ${columns.filter(col => col.isCustom).length + 1}`;
-    handleAddColumn(columnName);
+    handleAddColumn(''); // Create column with blank name
   };
 
   return (
