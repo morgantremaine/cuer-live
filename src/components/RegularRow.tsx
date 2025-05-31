@@ -87,7 +87,7 @@ const RegularRow = ({
     rowClass = 'bg-red-800 text-white';
     borderClass = 'border-l-4 border-red-600';
   } else if (isSelected) {
-    // For selected rows, use a prominent border instead of background color
+    // For selected rows, use a prominent blue border
     borderClass = 'border-2 border-blue-500 shadow-lg';
     rowClass = item.color && item.color !== '#FFFFFF' ? 'hover:opacity-90' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   } else if (item.color && item.color !== '#FFFFFF') {
