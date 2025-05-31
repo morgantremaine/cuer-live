@@ -15,27 +15,31 @@ const RundownTableHeader = ({
   updateColumnWidth
 }: RundownTableHeaderProps) => {
   return (
-    <thead className="bg-gray-700 dark:bg-gray-800 sticky top-0 z-10">
-      <tr className="border-b-4 border-blue-900">
-        <th className="px-4 py-3 text-left text-sm font-semibold text-white border-r border-gray-300 dark:border-gray-600" style={{ width: '60px' }}>
-          #
-        </th>
-        {visibleColumns.map((column, index) => (
-          <ResizableColumnHeader
-            key={column.id}
-            column={column}
-            width={getColumnWidth(column)}
-            onWidthChange={updateColumnWidth}
-            showLeftSeparator={index > 0}
-          >
-            {column.name}
-          </ResizableColumnHeader>
-        ))}
-        <th className="px-4 py-3 text-left text-sm font-semibold text-white border-l border-gray-300 dark:border-gray-600" style={{ width: '120px' }}>
-          Actions
-        </th>
-      </tr>
-    </thead>
+    <>
+      <thead className="bg-gray-700 dark:bg-gray-800 sticky top-0 z-10">
+        <tr>
+          <th className="px-4 py-3 text-left text-sm font-semibold text-white border-r border-gray-300 dark:border-gray-600" style={{ width: '60px' }}>
+            #
+          </th>
+          {visibleColumns.map((column, index) => (
+            <ResizableColumnHeader
+              key={column.id}
+              column={column}
+              width={getColumnWidth(column)}
+              onWidthChange={updateColumnWidth}
+              showLeftSeparator={index > 0}
+            >
+              {column.name}
+            </ResizableColumnHeader>
+          ))}
+          <th className="px-4 py-3 text-left text-sm font-semibold text-white border-l border-gray-300 dark:border-gray-600" style={{ width: '120px' }}>
+            Actions
+          </th>
+        </tr>
+      </thead>
+      {/* Fixed blue line that stays in place when scrolling */}
+      <div className="sticky top-[52px] z-20 h-1 bg-blue-900 w-full pointer-events-none"></div>
+    </>
   );
 };
 
