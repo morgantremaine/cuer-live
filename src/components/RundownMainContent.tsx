@@ -15,6 +15,7 @@ interface RundownMainContentProps {
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
+  dropTargetIndex: number | null;
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
   getColumnWidth: (column: Column) => string;
@@ -32,6 +33,7 @@ interface RundownMainContentProps {
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
@@ -56,6 +58,7 @@ const RundownMainContent = ({
   selectedRows,
   draggedItemIndex,
   isDraggingMultiple,
+  dropTargetIndex,
   currentSegmentId,
   hasClipboardData = false,
   getColumnWidth,
@@ -73,6 +76,7 @@ const RundownMainContent = ({
   onRowSelect,
   onDragStart,
   onDragOver,
+  onDragLeave,
   onDrop,
   onCopySelectedRows,
   onDeleteSelectedRows,
@@ -97,6 +101,7 @@ const RundownMainContent = ({
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}
         isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
         hasClipboardData={hasClipboardData}
         getColumnWidth={getColumnWidth}
@@ -114,6 +119,7 @@ const RundownMainContent = ({
         onRowSelect={onRowSelect}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
         onDrop={onDrop}
         onCopySelectedRows={onCopySelectedRows}
         onDeleteSelectedRows={onDeleteSelectedRows}
