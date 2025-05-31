@@ -119,13 +119,10 @@ const RundownHeader = ({
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
-          <div className="flex items-center space-x-2">
-            <TimezoneSelector 
-              currentTimezone={timezone}
-              onTimezoneChange={onTimezoneChange}
-            />
-            <span className="text-sm opacity-75">{timezone.replace('_', ' ')}</span>
-          </div>
+          <TimezoneSelector 
+            currentTimezone={timezone}
+            onTimezoneChange={onTimezoneChange}
+          />
           {user ? (
             <div className="flex items-center space-x-2">
               <span className="text-sm">{user.email}</span>
