@@ -1,110 +1,39 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MoreHorizontal, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { Search, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-interface SearchMatch {
-  itemId: string;
-  field: string;
-  index: number;
-  length: number;
-}
-
-interface SearchBarProps {
-  items: any[];
-  visibleColumns: any[];
-  onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
-  onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
-}
+import SearchInput from './SearchInput';
+import SearchControls from './SearchControls';
+import ReplaceControls from './ReplaceControls';
+import { useSearch } from '@/hooks/useSearch';
+import { useSearchNavigation } from '@/hooks/useSearchNavigation';
+import { SearchBarProps } from '@/types/search';
 
 const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: SearchBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchText, setSearchText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [showReplace, setShowReplace] = useState(false);
-  const [matches, setMatches] = useState<SearchMatch[]>([]);
-  const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Search through all cells
-  const performSearch = (text: string) => {
-    if (!text.trim()) {
-      setMatches([]);
-      setCurrentMatchIndex(-1);
-      return;
-    }
+  const {
+    searchText,
+    setSearchText,
+    matches,
+    currentMatchIndex,
+    setCurrentMatchIndex,
+    performSearch
+  } = useSearch(items, visibleColumns);
 
-    const foundMatches: SearchMatch[] = [];
-    const searchLower = text.toLowerCase();
+  const { navigateMatch } = useSearchNavigation();
 
-    items.forEach((item) => {
-      if (item.type === 'header') return;
-
-      visibleColumns.forEach((column) => {
-        const cellValue = item[column.id] || '';
-        const cellValueLower = cellValue.toLowerCase();
-        let index = 0;
-
-        while (index < cellValue.length) {
-          const foundIndex = cellValueLower.indexOf(searchLower, index);
-          if (foundIndex === -1) break;
-
-          foundMatches.push({
-            itemId: item.id,
-            field: column.id,
-            index: foundIndex,
-            length: text.length
-          });
-
-          index = foundIndex + 1;
-        }
-      });
-    });
-
-    setMatches(foundMatches);
-    // Don't automatically focus the first match - only set the index
-    if (foundMatches.length > 0) {
-      setCurrentMatchIndex(0);
-    } else {
-      setCurrentMatchIndex(-1);
-    }
-  };
-
-  // Helper function to focus a cell without modifying its content
-  const focusCell = (itemId: string, field: string) => {
-    try {
-      const cellKey = `${itemId}-${field}`;
-      const cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
-      if (cellElement) {
-        cellElement.focus();
-        // Only scroll into view, don't modify text selection
-        cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    } catch (error) {
-      console.log('Could not focus cell:', error);
-    }
-  };
-
-  const navigateMatch = (direction: 'next' | 'prev') => {
-    if (matches.length === 0) return;
-
-    let newIndex;
-    if (direction === 'next') {
-      newIndex = currentMatchIndex < matches.length - 1 ? currentMatchIndex + 1 : 0;
-    } else {
-      newIndex = currentMatchIndex > 0 ? currentMatchIndex - 1 : matches.length - 1;
-    }
-
-    setCurrentMatchIndex(newIndex);
-    const match = matches[newIndex];
-    // Only focus cell when explicitly navigating
-    focusCell(match.itemId, match.field);
+  const handleNavigate = (direction: 'next' | 'prev') => {
+    navigateMatch(matches, currentMatchIndex, setCurrentMatchIndex, direction);
   };
 
   const handleReplace = (replaceAll: boolean = false) => {
@@ -113,7 +42,6 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     const currentMatch = matches[currentMatchIndex];
     onReplaceText(currentMatch.itemId, currentMatch.field, searchText, replaceText, replaceAll);
 
-    // Refresh search after replace
     setTimeout(() => {
       performSearch(searchText);
     }, 100);
@@ -124,24 +52,17 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     setSearchText('');
     setReplaceText('');
     setShowReplace(false);
-    setMatches([]);
-    setCurrentMatchIndex(-1);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchText(value);
-    // Keep focus on search input after updating search
     setTimeout(() => {
       if (searchInputRef.current) {
         searchInputRef.current.focus();
       }
     }, 0);
   };
-
-  useEffect(() => {
-    performSearch(searchText);
-  }, [searchText, items]);
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -173,16 +94,11 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
 
       <div className="space-y-3">
         <div className="flex items-center space-x-2">
-          <div className="flex-1 relative">
-            <Input
-              ref={searchInputRef}
-              placeholder="Search in rundown..."
-              value={searchText}
-              onChange={handleSearchChange}
-              className="pr-8"
-            />
-            <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </div>
+          <SearchInput
+            ref={searchInputRef}
+            value={searchText}
+            onChange={handleSearchChange}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -198,39 +114,20 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
         </div>
 
         {showReplace && (
-          <Input
-            placeholder="Replace with..."
-            value={replaceText}
-            onChange={(e) => setReplaceText(e.target.value)}
+          <ReplaceControls
+            replaceText={replaceText}
+            onReplaceTextChange={setReplaceText}
+            onReplace={() => handleReplace(false)}
+            onReplaceAll={() => handleReplace(true)}
+            hasMatches={matches.length > 0}
           />
         )}
 
-        {matches.length > 0 && (
-          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-            <span>
-              {currentMatchIndex + 1} of {matches.length} matches
-            </span>
-            <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={() => navigateMatch('prev')}>
-                <ChevronUp className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigateMatch('next')}>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {showReplace && matches.length > 0 && (
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={() => handleReplace(false)}>
-              Replace
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleReplace(true)}>
-              Replace All
-            </Button>
-          </div>
-        )}
+        <SearchControls
+          currentMatchIndex={currentMatchIndex}
+          totalMatches={matches.length}
+          onNavigate={handleNavigate}
+        />
 
         {searchText && matches.length === 0 && (
           <div className="text-sm text-gray-500 dark:text-gray-400">
