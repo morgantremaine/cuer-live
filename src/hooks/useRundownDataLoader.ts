@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 interface UseRundownDataLoaderProps {
   rundownId: string | undefined;
@@ -16,8 +16,8 @@ export const useRundownDataLoader = ({
   setRundownTitle,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
-  // Load the title and columns from existing rundown
-  useEffect(() => {
+  // Memoize the loading logic to prevent infinite loops
+  const loadRundownData = useCallback(() => {
     if (loading) return;
     
     if (rundownId && savedRundowns.length > 0) {
@@ -36,5 +36,13 @@ export const useRundownDataLoader = ({
       console.log('New rundown, using default title');
       setRundownTitle('Live Broadcast Rundown');
     }
-  }, [rundownId, savedRundowns, loading, handleLoadLayout, setRundownTitle]);
+  }, [rundownId, savedRundowns, loading, setRundownTitle, handleLoadLayout]);
+
+  // Only run when the rundown ID changes or when savedRundowns are first loaded
+  useEffect(() => {
+    // Add a check to prevent running multiple times for the same rundown
+    if (loading || savedRundowns.length === 0) return;
+    
+    loadRundownData();
+  }, [rundownId, savedRundowns.length > 0, loading]); // Simplified dependencies
 };

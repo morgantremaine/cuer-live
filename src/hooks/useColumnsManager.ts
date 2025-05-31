@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export interface Column {
   id: string;
@@ -22,7 +22,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const visibleColumns = columns.filter(col => col.isVisible !== false);
 
-  const handleAddColumn = (name: string) => {
+  const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
       id: `custom_${Date.now()}`,
       name,
@@ -44,37 +44,51 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     if (markAsChanged) {
       markAsChanged();
     }
-  };
+  }, [markAsChanged]);
 
-  const handleReorderColumns = (newColumns: Column[]) => {
+  const handleReorderColumns = useCallback((newColumns: Column[]) => {
     setColumns(newColumns);
     if (markAsChanged) {
       markAsChanged();
     }
-  };
+  }, [markAsChanged]);
 
-  const handleDeleteColumn = (columnId: string) => {
+  const handleDeleteColumn = useCallback((columnId: string) => {
     setColumns(prev => prev.filter(col => col.id !== columnId));
     if (markAsChanged) {
       markAsChanged();
     }
-  };
+  }, [markAsChanged]);
 
-  const handleToggleColumnVisibility = (columnId: string) => {
+  const handleToggleColumnVisibility = useCallback((columnId: string) => {
     setColumns(prev => prev.map(col => 
       col.id === columnId ? { ...col, isVisible: col.isVisible !== false ? false : true } : col
     ));
     if (markAsChanged) {
       markAsChanged();
     }
-  };
+  }, [markAsChanged]);
 
-  const handleLoadLayout = (layoutColumns: Column[]) => {
-    setColumns(layoutColumns);
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  };
+  const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
+    // Only update if the columns are actually different
+    setColumns(prevColumns => {
+      const isSame = prevColumns.length === layoutColumns.length && 
+        prevColumns.every((col, index) => 
+          col.id === layoutColumns[index]?.id && 
+          col.name === layoutColumns[index]?.name &&
+          col.isVisible === layoutColumns[index]?.isVisible
+        );
+      
+      if (isSame) {
+        return prevColumns; // Don't update if columns are the same
+      }
+      
+      if (markAsChanged) {
+        markAsChanged();
+      }
+      return layoutColumns;
+    });
+  }, [markAsChanged]);
 
   return {
     columns,
