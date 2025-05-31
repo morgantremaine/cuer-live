@@ -36,36 +36,21 @@ export const useCuerChat = () => {
     setIsLoading(true);
 
     try {
-      const openaiMessages: OpenAIMessage[] = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-      
-      openaiMessages.push({ role: 'user', content });
-
-      console.log('📤 useCuerChat - Calling openaiService.sendMessageWithModifications');
-      const result = await openaiService.sendMessageWithModifications(openaiMessages);
-      
-      console.log('📥 useCuerChat - Received result:', result);
-      console.log('📥 useCuerChat - Modifications in result:', result.modifications);
-      
-      const assistantMessage: ChatMessage = {
+      // Since direct API calls are blocked, show a helpful message
+      const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: result.response,
-        timestamp: new Date(),
-        modifications: result.modifications
+        content: `I'm sorry, but the AI chat feature is currently unavailable due to browser security restrictions (CORS policy). 
+
+To enable AI features, you would need to:
+1. **Recommended**: Create a Supabase Edge Function to proxy OpenAI API calls
+2. Or implement a backend service to handle API requests
+
+This ensures secure handling of API keys and avoids browser CORS restrictions.`,
+        timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // If there are modifications, show them for confirmation
-      if (result.modifications && result.modifications.length > 0) {
-        console.log('✅ useCuerChat - Setting pending modifications:', result.modifications);
-        setPendingModifications(result.modifications);
-      } else {
-        console.log('❌ useCuerChat - No modifications found in result');
-      }
+      setMessages(prev => [...prev, errorMessage]);
     } catch (error) {
       console.error('❌ useCuerChat - Error sending message:', error);
       const errorMessage: ChatMessage = {
@@ -78,18 +63,19 @@ export const useCuerChat = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages]);
+  }, []);
 
   const analyzeRundown = useCallback(async (rundownData: any) => {
     console.log('🔍 useCuerChat - Analyzing rundown:', rundownData);
     setIsLoading(true);
     try {
-      const analysis = await openaiService.analyzeRundown(rundownData);
+      // Use the mock analysis instead of the real API
+      const analysis = await openaiService.mockAnalyzeRundown(rundownData);
       
       const analysisMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `📊 **Rundown Analysis Complete**\n\n${analysis}`,
+        content: analysis,
         timestamp: new Date()
       };
 
@@ -115,16 +101,16 @@ export const useCuerChat = () => {
 
   // These methods are kept for backward compatibility but do nothing
   const setApiKey = useCallback((apiKey: string) => {
-    console.log('API key setting ignored - using hardcoded key');
+    console.log('API key setting ignored - CORS restrictions prevent direct API calls');
     checkConnection();
   }, [checkConnection]);
 
   const clearApiKey = useCallback(() => {
-    console.log('API key clearing ignored - using hardcoded key');
+    console.log('API key clearing ignored - CORS restrictions prevent direct API calls');
   }, []);
 
   const hasApiKey = useCallback(() => {
-    return openaiService.hasApiKey();
+    return false; // Always false due to CORS restrictions
   }, []);
 
   const clearPendingModifications = useCallback(() => {
