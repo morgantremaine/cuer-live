@@ -25,7 +25,7 @@ const CuerQuickActions = ({
         size="sm"
         onClick={onAnalyzeRundown}
         disabled={isLoading}
-        className="w-full"
+        className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-100"
       >
         <Zap className="w-4 h-4 mr-2" />
         Analyze Current Rundown

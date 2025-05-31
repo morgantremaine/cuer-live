@@ -38,6 +38,7 @@ const CuerChatHeader = ({
             size="sm"
             onClick={onSettingsClick}
             title="API Settings"
+            className="hover:bg-gray-200 text-gray-700"
           >
             <Settings className="w-4 h-4" />
           </Button>
@@ -47,10 +48,16 @@ const CuerChatHeader = ({
           size="sm"
           onClick={onClearChat}
           disabled={messagesLength === 0}
+          className="hover:bg-gray-200 text-gray-700 disabled:text-gray-400"
         >
           <Trash2 className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={onClose}>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onClose}
+          className="hover:bg-gray-200 text-gray-700"
+        >
           <X className="w-4 h-4" />
         </Button>
       </div>

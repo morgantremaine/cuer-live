@@ -94,7 +94,7 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
         />
 
         {showApiKeySetup && needsApiKeySetup && (
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 bg-white">
             <ApiKeySetup
               onApiKeySet={handleApiKeySet}
               onCancel={() => setShowApiKeySetup(false)}
