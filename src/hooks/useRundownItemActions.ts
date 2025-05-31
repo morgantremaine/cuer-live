@@ -4,6 +4,27 @@ import { RundownItem } from '@/types/rundown';
 export const useRundownItemActions = (
   setItems: React.Dispatch<React.SetStateAction<RundownItem[]>>
 ) => {
+  const renumberItems = useCallback((items: RundownItem[]) => {
+    let headerIndex = 0;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    return items.map(item => {
+      if (item.type === 'header') {
+        const newHeaderLetter = letters[headerIndex] || 'A';
+        headerIndex++;
+        return {
+          ...item,
+          rowNumber: newHeaderLetter,
+          segmentName: newHeaderLetter
+        };
+      } else {
+        // For regular items, we'll let the getRowNumber function handle the numbering
+        // since it calculates based on position relative to headers
+        return item;
+      }
+    });
+  }, []);
+
   const updateItem = useCallback((id: string, field: string, value: string) => {
     setItems(prevItems =>
       prevItems.map(item => {
@@ -105,25 +126,49 @@ export const useRundownItemActions = (
         customFields: {},
       };
 
+      let newItems;
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prevItems.length) {
         // Insert after the specified index
-        const newItems = [...prevItems];
+        newItems = [...prevItems];
         newItems.splice(insertAfterIndex + 1, 0, newHeader);
-        return newItems;
       } else {
         // Add to the end (default behavior)
-        return [...prevItems, newHeader];
+        newItems = [...prevItems, newHeader];
       }
+
+      // Renumber all headers after adding
+      return renumberItems(newItems);
     });
-  }, [setItems]);
+  }, [setItems, renumberItems]);
 
   const deleteRow = useCallback((id: string) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== id));
-  }, [setItems]);
+    setItems(prevItems => {
+      const itemToDelete = prevItems.find(item => item.id === id);
+      const filteredItems = prevItems.filter(item => item.id !== id);
+      
+      // If we deleted a header, renumber all remaining headers
+      if (itemToDelete?.type === 'header') {
+        return renumberItems(filteredItems);
+      }
+      
+      return filteredItems;
+    });
+  }, [setItems, renumberItems]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
-    setItems(prevItems => prevItems.filter(item => !ids.includes(item.id)));
-  }, [setItems]);
+    setItems(prevItems => {
+      const itemsToDelete = prevItems.filter(item => ids.includes(item.id));
+      const hasHeaderDeleted = itemsToDelete.some(item => item.type === 'header');
+      const filteredItems = prevItems.filter(item => !ids.includes(item.id));
+      
+      // If any deleted item was a header, renumber all remaining headers
+      if (hasHeaderDeleted) {
+        return renumberItems(filteredItems);
+      }
+      
+      return filteredItems;
+    });
+  }, [setItems, renumberItems]);
 
   const addMultipleRows = useCallback((items: any[], calculateEndTime: (startTime: string, duration: string) => string) => {
     setItems(prevItems => {
