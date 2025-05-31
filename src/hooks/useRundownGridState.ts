@@ -79,18 +79,47 @@ export const useRundownGridState = () => {
   const handlePasteRows = useCallback(() => {
     console.log('Attempting to paste rows, clipboard items:', clipboardItems.length);
     if (clipboardItems.length > 0) {
+      // Find the last selected row index
+      const selectedIds = Array.from(interactions.selectedRows);
+      let insertAfterIndex: number | undefined;
+      
+      if (selectedIds.length > 0) {
+        // Find the highest index among selected rows
+        const selectedIndices = selectedIds.map(id => 
+          coreState.items.findIndex(item => item.id === id)
+        ).filter(index => index !== -1);
+        
+        if (selectedIndices.length > 0) {
+          insertAfterIndex = Math.max(...selectedIndices);
+          console.log('Inserting after index:', insertAfterIndex);
+        }
+      }
+
       // Create clean copies for pasting
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
+      
       console.log('Pasting items:', itemsToPaste.length);
-      coreState.addMultipleRows(itemsToPaste, coreState.calculateEndTime);
+      
+      if (insertAfterIndex !== undefined) {
+        // Insert items after the selected row
+        coreState.setItems(prevItems => {
+          const newItems = [...prevItems];
+          newItems.splice(insertAfterIndex! + 1, 0, ...itemsToPaste);
+          return newItems;
+        });
+      } else {
+        // Fallback to adding at the end
+        coreState.addMultipleRows(itemsToPaste, coreState.calculateEndTime);
+      }
+      
       coreState.markAsChanged();
     } else {
       console.log('No clipboard data to paste');
     }
-  }, [clipboardItems, coreState.addMultipleRows, coreState.calculateEndTime, coreState.markAsChanged]);
+  }, [clipboardItems, interactions.selectedRows, coreState.items, coreState.setItems, coreState.addMultipleRows, coreState.calculateEndTime, coreState.markAsChanged]);
 
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(interactions.selectedRows);
