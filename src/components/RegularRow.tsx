@@ -177,7 +177,7 @@ const RegularRow = ({
       >
         <td 
           className={`px-4 py-2 text-sm font-mono cursor-move row-number-cell`}
-          style={{ color: textColor || undefined, width: '80px' }}
+          style={{ color: textColor || undefined, width: '60px' }}
         >
           <div className="flex items-center space-x-2">
             {isCurrentlyPlaying && (
