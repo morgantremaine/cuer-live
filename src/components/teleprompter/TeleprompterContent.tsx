@@ -25,7 +25,7 @@ const TeleprompterContent = ({
       <div 
         className="fixed left-4 z-20 pointer-events-none"
         style={{ 
-          top: '75%',
+          top: '25%',
           transform: 'translateY(-50%)'
         }}
       >
