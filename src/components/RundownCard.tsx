@@ -51,9 +51,15 @@ const RundownCard = ({
               {isArchived && <Archive className="h-4 w-4 mr-2 text-gray-500" />}
               {rundown.title}
             </CardTitle>
-            <CardDescription className="flex items-center text-sm text-gray-500">
-              <Calendar className="h-4 w-4 mr-1" />
-              {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
+            <CardDescription className="flex flex-col gap-1 text-sm text-gray-500">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
+              </div>
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                Modified: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
+              </div>
             </CardDescription>
           </div>
           <DropdownMenu>
