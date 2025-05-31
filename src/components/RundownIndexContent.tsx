@@ -24,6 +24,7 @@ const RundownIndexContent = () => {
     selectedRows,
     draggedItemIndex,
     isDraggingMultiple,
+    dropTargetIndex,
     currentSegmentId,
     getColumnWidth,
     updateColumnWidth,
@@ -40,6 +41,7 @@ const RundownIndexContent = () => {
     toggleRowSelection,
     handleDragStart,
     handleDragOver,
+    handleDragLeave,
     handleDrop,
     addRow,
     addHeader,
@@ -107,6 +109,7 @@ const RundownIndexContent = () => {
       selectedRows={selectedRows}
       draggedItemIndex={draggedItemIndex}
       isDraggingMultiple={isDraggingMultiple}
+      dropTargetIndex={dropTargetIndex}
       currentSegmentId={currentSegmentId}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}
@@ -123,6 +126,7 @@ const RundownIndexContent = () => {
       onRowSelect={handleRowSelect}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
