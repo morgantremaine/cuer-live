@@ -39,10 +39,10 @@ export const useRundownUIState = (
   }, [currentSegmentId, currentTime]);
 
   // Color selection function
-  const selectColor = useCallback((id: string, color: string, updateItemFn: (id: string, field: string, value: string) => void) => {
-    updateItemFn(id, 'color', color);
+  const selectColor = useCallback((id: string, color: string) => {
+    updateItem(id, 'color', color);
     markAsChanged();
-  }, [markAsChanged]);
+  }, [updateItem, markAsChanged]);
 
   return {
     showColorPicker,

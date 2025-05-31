@@ -13,7 +13,7 @@ interface UseRundownGridHandlersProps {
   handleDeleteColumn: (columnId: string) => void;
   setItems: (updater: (prev: any[]) => any[]) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
-  selectColor: (id: string, color: string, updateItem: (id: string, field: string, value: string) => void) => void;
+  selectColor: (id: string, color: string) => void;
   markAsChanged: () => void;
   selectedRows: Set<string>;
   clearSelection: () => void;
@@ -69,7 +69,9 @@ export const useRundownGridHandlers = ({
     handleDeleteColumn,
     setItems,
     calculateEndTime,
-    selectColor,
+    selectColor: (id: string, color: string, updateItemFn: (id: string, field: string, value: string) => void) => {
+      selectColor(id, color);
+    },
     markAsChanged
   });
 

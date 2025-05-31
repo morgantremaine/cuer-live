@@ -17,7 +17,7 @@ export const useRundownInteractionHandlers = (
   addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void,
   handleDeleteColumn: (columnId: string) => void,
   calculateEndTime: (startTime: string, duration: string) => string,
-  selectColor: (id: string, color: string, updateItem: (id: string, field: string, value: string) => void) => void,
+  selectColor: (id: string, color: string) => void,
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void
 ) => {
