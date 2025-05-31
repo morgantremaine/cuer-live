@@ -66,15 +66,12 @@ const SharedRundown = () => {
     return rundownData.columns.filter(col => col.isVisible !== false);
   };
 
-  const getRowStatus = (item: RundownItem) => {
-    const now = currentTime;
-    const todayDateStr = format(now, 'yyyy-MM-dd');
-    const startDateTime = new Date(`${todayDateStr}T${item.startTime}`);
-    const endDateTime = new Date(`${todayDateStr}T${item.endTime}`);
-
-    if (now < startDateTime) return 'upcoming';
-    if (now >= startDateTime && now <= endDateTime) return 'current';
-    return 'completed';
+  const getRowNumber = (index: number) => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const letterIndex = Math.floor(index / 99);
+    const number = (index % 99) + 1;
+    const letter = letters[letterIndex % 26];
+    return `${letter}${number}`;
   };
 
   if (loading) {
@@ -137,14 +134,10 @@ const SharedRundown = () => {
                   {column.name}
                 </th>
               ))}
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400">
-                Status
-              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
             {rundownData.items.map((item, index) => {
-              const status = item.type === 'regular' ? getRowStatus(item) : 'header';
               const isCurrentSegment = currentSegmentId === item.id;
               
               return (
@@ -153,7 +146,6 @@ const SharedRundown = () => {
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                     ${isCurrentSegment ? 'bg-red-50 border-l-4 border-red-500' : ''}
-                    ${status === 'completed' ? 'opacity-60' : ''}
                     print:break-inside-avoid
                   `}
                   style={{ backgroundColor: item.color !== '#ffffff' && item.color ? item.color : undefined }}
@@ -162,7 +154,7 @@ const SharedRundown = () => {
                     {isCurrentSegment && (
                       <span className="text-red-600 mr-1">▶</span>
                     )}
-                    {item.rowNumber || index + 1}
+                    {getRowNumber(index)}
                   </td>
                   
                   {visibleColumns.map((column) => {
@@ -196,19 +188,6 @@ const SharedRundown = () => {
                       </td>
                     );
                   })}
-                  
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
-                    {item.type === 'header' ? 'HEADER' : (
-                      <span className={`
-                        px-2 py-1 rounded-full text-xs font-medium
-                        ${status === 'upcoming' ? 'bg-blue-100 text-blue-800' : ''}
-                        ${status === 'current' ? 'bg-red-100 text-red-800' : ''}
-                        ${status === 'completed' ? 'bg-gray-100 text-gray-800' : ''}
-                      `}>
-                        {status.toUpperCase()}
-                      </span>
-                    )}
-                  </td>
                 </tr>
               );
             })}
