@@ -4,9 +4,7 @@ import RundownHeaderSection from './RundownHeaderSection';
 import { RundownContainerProps } from '@/types/rundownContainer';
 
 interface RundownHeaderPropsAdapterProps {
-  props: RundownContainerProps & {
-    searchBar?: React.ReactNode;
-  };
+  props: RundownContainerProps;
 }
 
 const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
@@ -41,7 +39,6 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onRundownStartTimeChange={props.onRundownStartTimeChange}
       rundownId={props.rundownId}
       onOpenTeleprompter={props.onOpenTeleprompter}
-      searchBar={props.searchBar}
     />
   );
 };
