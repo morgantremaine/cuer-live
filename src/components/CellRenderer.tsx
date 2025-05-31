@@ -2,6 +2,7 @@
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/hooks/useRundownItems';
+import ExpandableScriptCell from './ExpandableScriptCell';
 
 interface CellRendererProps {
   column: Column;
@@ -55,6 +56,22 @@ const CellRenderer = ({
         <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
           {value}
         </span>
+      </td>
+    );
+  }
+
+  if (column.key === 'script') {
+    return (
+      <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
+        <ExpandableScriptCell
+          value={value}
+          itemId={item.id}
+          cellRefKey={cellRefKey}
+          cellRefs={cellRefs}
+          textColor={textColor}
+          onUpdateValue={handleUpdateValue}
+          onKeyDown={onKeyDown}
+        />
       </td>
     );
   }

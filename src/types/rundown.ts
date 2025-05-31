@@ -8,6 +8,7 @@ export interface RundownItem {
   duration: string;
   endTime: string;
   talent: string;
+  script: string;
   notes: string;
   color: string;
   isFloating: boolean;
