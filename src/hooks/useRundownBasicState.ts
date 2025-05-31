@@ -7,8 +7,8 @@ export const useRundownBasicState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
-  // Always start with empty title for existing rundowns, default for new ones
-  const [rundownTitle, setRundownTitle] = useState(rundownId ? '' : 'Live Broadcast Rundown');
+  // Start with default title for all cases - let data loader handle existing rundowns
+  const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
 
   // Timer effect for current time
@@ -29,6 +29,7 @@ export const useRundownBasicState = () => {
   };
 
   const setRundownTitleWithChange = (newTitle: string) => {
+    console.log('Title changed to:', newTitle);
     setRundownTitle(newTitle);
     markAsChanged();
   };
