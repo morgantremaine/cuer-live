@@ -22,6 +22,15 @@ export const useRundownItems = () => {
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRef = useRef<string | null>(null);
 
+  // Initialize with defaults for new rundowns immediately
+  useEffect(() => {
+    if (!rundownId && loadedRef.current !== null) {
+      console.log('useRundownItems: New rundown, setting default items immediately');
+      loadedRef.current = null;
+      setItems(defaultRundownItems);
+    }
+  }, [rundownId]);
+
   // Load existing rundown data when rundownId changes - but only once
   useEffect(() => {
     if (loading) return;
@@ -42,12 +51,13 @@ export const useRundownItems = () => {
         loadedRef.current = rundownId;
         setItems(defaultRundownItems);
       }
-    } else if (!rundownId && loadedRef.current !== null) {
+    } else if (!rundownId && items.length === 0) {
+      // Only set defaults if we don't already have them
       console.log('useRundownItems: New rundown, using defaults');
       loadedRef.current = null;
       setItems(defaultRundownItems);
     }
-  }, [rundownId, savedRundowns, loading]);
+  }, [rundownId, savedRundowns, loading, items.length]);
 
   const actions = useRundownItemActions(setItems);
   const calculations = useRundownCalculations(items);
