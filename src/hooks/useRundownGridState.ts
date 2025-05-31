@@ -3,6 +3,7 @@ import { useRundownBasicState } from '@/hooks/useRundownBasicState';
 import { useRundownDataManagement } from '@/hooks/useRundownDataManagement';
 import { useRundownInteractions } from '@/hooks/useRundownInteractions';
 import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 export const useRundownGridState = () => {
   const {
@@ -16,11 +17,6 @@ export const useRundownGridState = () => {
     rundownStartTime,
     setRundownStartTime,
   } = useRundownBasicState();
-
-  // Create markAsChanged function to pass to data management
-  const markAsChanged = () => {
-    // This will be provided by the auto-save system
-  };
 
   const {
     rundownId,
@@ -36,8 +32,6 @@ export const useRundownGridState = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    hasUnsavedChanges,
-    isSaving,
     columns,
     visibleColumns,
     handleAddColumn,
@@ -47,7 +41,10 @@ export const useRundownGridState = () => {
     handleLoadLayout,
     savedRundowns,
     loading,
-  } = useRundownDataManagement(rundownTitle, markAsChanged);
+  } = useRundownDataManagement();
+
+  // Get auto-save functionality with the actual rundown title
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
 
   const {
     columnWidths,
@@ -90,9 +87,6 @@ export const useRundownGridState = () => {
     handleLoadLayout
   });
 
-  // Get the actual markAsChanged from auto-save
-  const { markAsChanged: actualMarkAsChanged } = useRundownDataManagement(rundownTitle, () => {});
-
   return {
     // Basic state
     currentTime,
@@ -123,7 +117,7 @@ export const useRundownGridState = () => {
     // Auto-save state
     hasUnsavedChanges,
     isSaving,
-    markAsChanged: actualMarkAsChanged,
+    markAsChanged,
     
     // Columns state
     columns,

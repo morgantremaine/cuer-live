@@ -6,7 +6,7 @@ import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 
-export const useRundownDataManagement = (rundownTitle: string, markAsChanged: () => void) => {
+export const useRundownDataManagement = () => {
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
 
@@ -25,8 +25,6 @@ export const useRundownDataManagement = (rundownTitle: string, markAsChanged: ()
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle);
-
   const {
     columns,
     visibleColumns,
@@ -35,7 +33,9 @@ export const useRundownDataManagement = (rundownTitle: string, markAsChanged: ()
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager();
+
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, 'Live Broadcast Rundown', columns);
 
   return {
     rundownId,
@@ -53,6 +53,7 @@ export const useRundownDataManagement = (rundownTitle: string, markAsChanged: ()
     calculateHeaderDuration,
     hasUnsavedChanges,
     isSaving,
+    markAsChanged,
     columns,
     visibleColumns,
     handleAddColumn,
