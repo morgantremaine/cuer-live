@@ -12,10 +12,12 @@ export const useRundownGridCore = () => {
     currentTime,
     timezone,
     setTimezone,
+    setTimezoneDirectly,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
     setRundownTitle,
+    setRundownTitleDirectly,
     rundownStartTime,
     setRundownStartTime,
     rundownId,
@@ -25,7 +27,7 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration - now passing timezone
+  // Rundown data integration - now passing all required arguments
   const {
     items,
     setItems,
@@ -48,15 +50,15 @@ export const useRundownGridCore = () => {
     handleLoadLayout,
     hasUnsavedChanges,
     isSaving
-  } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone);
+  } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone, setRundownTitleDirectly, setTimezoneDirectly);
 
   // Use data loader to properly set title and timezone
   useRundownDataLoader({
     rundownId,
     savedRundowns,
     loading,
-    setRundownTitle,
-    setTimezone,
+    setRundownTitle: setRundownTitleDirectly,
+    setTimezone: setTimezoneDirectly,
     handleLoadLayout
   });
 
