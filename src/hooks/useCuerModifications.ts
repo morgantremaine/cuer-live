@@ -1,8 +1,14 @@
 
 import { useCallback } from 'react';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
-import { RundownModification } from '@/services/openaiService';
 import { RundownItem } from '@/types/rundown';
+
+// Define the type locally
+interface RundownModification {
+  type: 'add' | 'update' | 'delete';
+  itemId?: string;
+  data?: any;
+}
 
 export const useCuerModifications = () => {
   const {
