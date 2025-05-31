@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/types/rundown';
 
 export const getVisibleColumns = (columns: any[]) => {
@@ -39,10 +40,9 @@ export const getCellValue = (item: RundownItem, column: any) => {
   } else {
     switch (column.key) {
       case 'segmentName':
-        // Show the actual segment name for all items
+        // For headers, show the notes (description) instead of just the letter
         if (item.type === 'header') {
-          // For headers, show the segmentName (which is the header title)
-          value = item.segmentName || item.name || '';
+          value = item.notes || item.name || '';
         } else {
           // For regular items, show the name/segmentName
           value = item.segmentName || item.name || '';
