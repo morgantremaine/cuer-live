@@ -5,6 +5,8 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
+import { useUndoRedo } from './useUndoRedo';
+import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -27,7 +29,7 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration - now passing all required arguments
+  // Rundown data integration
   const {
     items,
     setItems,
@@ -53,6 +55,17 @@ export const useRundownGridCore = () => {
     isSaving
   } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone, setRundownTitleDirectly, setTimezoneDirectly);
 
+  // Undo/Redo functionality
+  const { saveState, undo, redo, canUndo, canRedo } = useUndoRedo(items, setItems, markAsChanged);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onUndo: undo,
+    onRedo: redo,
+    canUndo,
+    canRedo
+  });
+
   // Use data loader to properly set title and timezone
   useRundownDataLoader({
     rundownId,
@@ -63,7 +76,7 @@ export const useRundownGridCore = () => {
     handleLoadLayout
   });
 
-  // Playback controls - fix the function call
+  // Playback controls
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -74,7 +87,7 @@ export const useRundownGridCore = () => {
     backward 
   } = usePlaybackControls(items, updateItem);
 
-  // Time calculations - fix the function call
+  // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   return {
@@ -127,6 +140,13 @@ export const useRundownGridCore = () => {
     // Save state
     hasUnsavedChanges,
     isSaving,
-    calculateEndTime
+    calculateEndTime,
+
+    // Undo/Redo
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    saveUndoState: saveState
   };
 };

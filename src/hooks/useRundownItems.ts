@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -18,7 +17,6 @@ const normalizeRundownItem = (item: RundownItem): RundownItem => ({
 
 export const useRundownItems = () => {
   const params = useParams<{ id: string }>();
-  // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
@@ -43,7 +41,6 @@ export const useRundownItems = () => {
   useEffect(() => {
     if (loading || initRef.current) return;
     
-    // Prevent duplicate loading
     if (loadedRef.current === rundownId) return;
     
     if (rundownId && savedRundowns.length > 0) {
@@ -62,7 +59,6 @@ export const useRundownItems = () => {
         initRef.current = true;
       }
     } else if (!rundownId && items.length === 0) {
-      // Only set defaults if we don't already have them
       console.log('useRundownItems: New rundown, using defaults');
       loadedRef.current = null;
       setItems(defaultRundownItems);
