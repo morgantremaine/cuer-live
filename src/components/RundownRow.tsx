@@ -44,10 +44,6 @@ interface RundownRowProps {
 const RundownRow = (props: RundownRowProps) => {
   // Calculate if this row is selected based on selectedRows Set
   const isActuallySelected = props.selectedRows ? props.selectedRows.has(props.item.id) : false;
-  
-  // Debug the calculated selection
-  console.log('RundownRow - itemId:', props.item.id, 'isHeader:', isHeaderItem(props.item), 'isSelected prop:', props.isSelected, 'selectedRows:', props.selectedRows);
-  console.log('RundownRow - calculated isSelected:', isActuallySelected, 'for item:', props.item.id);
 
   if (isHeaderItem(props.item)) {
     return (

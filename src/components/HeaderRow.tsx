@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -63,9 +62,6 @@ const HeaderRow = ({
   isDragging,
   getColumnWidth
 }: HeaderRowProps) => {
-  // Debug logging to see what's happening
-  console.log('HeaderRow - itemId:', item.id, 'isSelected:', isSelected, 'selectedRows:', selectedRows);
-  
   let rowClass = '';
   
   if (isDragging) {
@@ -103,14 +99,10 @@ const HeaderRow = ({
   };
 
   const handleRowClick = (e: React.MouseEvent) => {
-    console.log('HeaderRow - Row clicked:', item.id, 'onRowSelect exists:', !!onRowSelect);
     if (onRowSelect) {
       const isShiftClick = e.shiftKey;
       const isCtrlClick = e.ctrlKey || e.metaKey;
-      console.log('HeaderRow - Calling onRowSelect with:', { itemId: item.id, index, isShiftClick, isCtrlClick });
       onRowSelect(item.id, index, isShiftClick, isCtrlClick);
-    } else {
-      console.log('HeaderRow - onRowSelect not provided!');
     }
   };
 
