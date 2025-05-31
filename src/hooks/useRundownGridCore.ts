@@ -54,10 +54,10 @@ export const useRundownGridCore = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(items, rundownStartTime);
+  } = usePlaybackControls(items, updateItem);
 
   // Time calculations - fix the function call
-  const { calculateEndTime } = useTimeCalculations();
+  const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   return {
     // Basic state
