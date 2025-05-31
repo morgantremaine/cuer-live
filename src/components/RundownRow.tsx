@@ -17,6 +17,7 @@ interface RundownRowProps {
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
   selectedRowsCount?: number;
+  selectedRows?: Set<string>;
   headerDuration?: string;
   hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
@@ -45,6 +46,7 @@ const RundownRow = (props: RundownRowProps) => {
         {...props} 
         headerDuration={props.headerDuration || ''}
         selectedRowsCount={props.selectedRowsCount || 1}
+        selectedRows={props.selectedRows}
         hasClipboardData={props.hasClipboardData}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
@@ -58,6 +60,7 @@ const RundownRow = (props: RundownRowProps) => {
       isCurrentlyPlaying={props.isCurrentlyPlaying}
       isDraggingMultiple={props.isDraggingMultiple}
       selectedRowsCount={props.selectedRowsCount || 1}
+      selectedRows={props.selectedRows}
       hasClipboardData={props.hasClipboardData}
       onToggleFloat={props.onToggleFloat || (() => {})}
       onPasteRows={props.onPasteRows}

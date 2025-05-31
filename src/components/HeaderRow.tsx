@@ -12,6 +12,7 @@ interface HeaderRowProps {
   columns: Column[];
   headerDuration: string;
   selectedRowsCount?: number;
+  selectedRows?: Set<string>;
   isSelected?: boolean;
   showColorPicker: string | null;
   hasClipboardData?: boolean;
@@ -40,6 +41,7 @@ const HeaderRow = ({
   columns,
   headerDuration,
   selectedRowsCount = 1,
+  selectedRows,
   isSelected = false,
   showColorPicker,
   hasClipboardData = false,
@@ -90,6 +92,7 @@ const HeaderRow = ({
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
+      selectedRows={selectedRows}
       isFloated={false}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}

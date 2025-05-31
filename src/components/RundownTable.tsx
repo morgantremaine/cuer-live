@@ -93,6 +93,7 @@ const RundownTable = ({
               isCurrentlyPlaying={!isHeaderItem(item) && currentSegmentId === item.id}
               isDraggingMultiple={isDraggingMultiple && selectedRows.has(item.id)}
               selectedRowsCount={selectedRows.size}
+              selectedRows={selectedRows}
               headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
               hasClipboardData={hasClipboardData}
               onUpdateItem={onUpdateItem}

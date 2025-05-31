@@ -13,6 +13,7 @@ import ColorPicker from './ColorPicker';
 interface RundownContextMenuProps {
   children: React.ReactNode;
   selectedCount: number;
+  selectedRows?: Set<string>;
   isFloated?: boolean;
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
@@ -29,6 +30,7 @@ interface RundownContextMenuProps {
 const RundownContextMenu = ({
   children,
   selectedCount,
+  selectedRows,
   isFloated = false,
   hasClipboardData = false,
   showColorPicker,
@@ -42,6 +44,19 @@ const RundownContextMenu = ({
   onClearSelection
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
+
+  // Handle color selection for multiple rows
+  const handleColorSelect = (id: string, color: string) => {
+    if (isMultipleSelection && selectedRows) {
+      // Apply color to all selected rows
+      selectedRows.forEach(selectedId => {
+        onColorSelect(selectedId, color);
+      });
+    } else {
+      // Apply color to single row
+      onColorSelect(id, color);
+    }
+  };
 
   console.log('RundownContextMenu render - hasClipboardData:', hasClipboardData, 'onPaste:', !!onPaste);
 
@@ -106,7 +121,7 @@ const RundownContextMenu = ({
             onToggle={onColorPicker}
             onColorSelect={(id, color) => {
               console.log('Color selected from picker:', id, color);
-              onColorSelect(id, color);
+              handleColorSelect(id, color);
               onColorPicker(); // Close the color picker after selection
             }}
           />

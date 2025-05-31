@@ -19,6 +19,7 @@ interface RegularRowProps {
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
   selectedRowsCount?: number;
+  selectedRows?: Set<string>;
   hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -51,6 +52,7 @@ const RegularRow = ({
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
   selectedRowsCount = 1,
+  selectedRows,
   hasClipboardData = false,
   onUpdateItem,
   onCellClick,
@@ -129,6 +131,7 @@ const RegularRow = ({
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
+      selectedRows={selectedRows}
       isFloated={item.isFloating || item.isFloated}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
