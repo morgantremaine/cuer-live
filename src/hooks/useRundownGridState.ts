@@ -53,14 +53,22 @@ export const useRundownGridState = () => {
     calculateHeaderDuration
   } = useRundownItems();
 
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle);
+  // Create a temporary markAsChanged function that will be replaced
+  const [tempMarkAsChanged, setTempMarkAsChanged] = useState<(() => void) | null>(null);
 
   const {
     columns,
     visibleColumns,
     handleAddColumn,
     handleUpdateColumnName
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager(tempMarkAsChanged || (() => {}));
+
+  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns);
+
+  // Update the temp function once the real one is available
+  useEffect(() => {
+    setTempMarkAsChanged(() => markAsChanged);
+  }, [markAsChanged]);
 
   // Timer effect for current time
   useEffect(() => {
