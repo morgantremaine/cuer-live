@@ -1,5 +1,3 @@
-
-
 import { RundownItem } from '@/types/rundown';
 
 // Note: Direct OpenAI API calls from frontend are blocked by CORS policy
@@ -46,21 +44,21 @@ class OpenAIService {
     console.log('🤖 openaiService - analyzeRundown called with:', rundownData);
     
     // Return a helpful error message about CORS
-    throw new Error('OpenAI API calls are blocked by CORS policy. Please implement a backend proxy or use Supabase Edge Functions to enable AI features.');
+    throw new Error('OpenAI API calls are blocked by CORS policy. Please use the browser AI instead.');
   }
 
   async sendMessage(messages: OpenAIMessage[]): Promise<string> {
     console.log('🤖 openaiService - sendMessage called');
     
     // Return a helpful error message about CORS
-    throw new Error('OpenAI API calls are blocked by CORS policy. Please implement a backend proxy or use Supabase Edge Functions to enable AI features.');
+    throw new Error('OpenAI API calls are blocked by CORS policy. Please use the browser AI instead.');
   }
 
   async sendMessageWithModifications(messages: OpenAIMessage[]): Promise<OpenAIResponse> {
     console.log('🤖 openaiService - sendMessageWithModifications called');
     
     // Return a helpful error message about CORS
-    throw new Error('OpenAI API calls are blocked by CORS policy. Please implement a backend proxy or use Supabase Edge Functions to enable AI features.');
+    throw new Error('OpenAI API calls are blocked by CORS policy. Please use the browser AI instead.');
   }
 
   // Mock implementation for development/testing
@@ -90,4 +88,3 @@ The AI chat feature is currently disabled due to browser security restrictions.`
 }
 
 export const openaiService = new OpenAIService();
-

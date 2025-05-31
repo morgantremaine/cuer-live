@@ -1,6 +1,5 @@
-
 import { useState, useCallback } from 'react';
-import { openaiService, OpenAIMessage, RundownModification } from '@/services/openaiService';
+import { browserAIService } from '@/services/browserAIService';
 
 interface ChatMessage {
   id: string;
@@ -17,13 +16,14 @@ export const useCuerChat = () => {
   const [pendingModifications, setPendingModifications] = useState<RundownModification[] | null>(null);
 
   const checkConnection = useCallback(async () => {
-    const connected = await openaiService.checkConnection();
-    setIsConnected(connected);
-    return connected;
+    console.log('🔍 Checking browser AI connection...');
+    const initialized = await browserAIService.initialize();
+    setIsConnected(initialized);
+    return initialized;
   }, []);
 
   const sendMessage = useCallback(async (content: string) => {
-    console.log('🚀 useCuerChat - Sending message:', content);
+    console.log('🚀 useCuerChat - Sending message to browser AI:', content);
     
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -36,27 +36,22 @@ export const useCuerChat = () => {
     setIsLoading(true);
 
     try {
-      // Since direct API calls are blocked, show a helpful message
-      const errorMessage: ChatMessage = {
+      const aiResponse = await browserAIService.sendMessage(content);
+      
+      const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I'm sorry, but the AI chat feature is currently unavailable due to browser security restrictions (CORS policy). 
-
-To enable AI features, you would need to:
-1. **Recommended**: Create a Supabase Edge Function to proxy OpenAI API calls
-2. Or implement a backend service to handle API requests
-
-This ensures secure handling of API keys and avoids browser CORS restrictions.`,
+        content: aiResponse.response,
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('❌ useCuerChat - Error sending message:', error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. The browser AI model may still be loading.`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -66,11 +61,10 @@ This ensures secure handling of API keys and avoids browser CORS restrictions.`,
   }, []);
 
   const analyzeRundown = useCallback(async (rundownData: any) => {
-    console.log('🔍 useCuerChat - Analyzing rundown:', rundownData);
+    console.log('🔍 useCuerChat - Analyzing rundown with browser AI:', rundownData);
     setIsLoading(true);
     try {
-      // Use the mock analysis instead of the real API
-      const analysis = await openaiService.mockAnalyzeRundown(rundownData);
+      const analysis = await browserAIService.analyzeRundown(rundownData);
       
       const analysisMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -99,8 +93,7 @@ This ensures secure handling of API keys and avoids browser CORS restrictions.`,
     setPendingModifications(null);
   }, []);
 
-  // These methods are kept for backward compatibility but do nothing
-  const setApiKey = useCallback((apiKey: string) => {
+  const setApiKey = useCallback(() => {
     console.log('API key setting ignored - CORS restrictions prevent direct API calls');
     checkConnection();
   }, [checkConnection]);
@@ -110,7 +103,7 @@ This ensures secure handling of API keys and avoids browser CORS restrictions.`,
   }, []);
 
   const hasApiKey = useCallback(() => {
-    return false; // Always false due to CORS restrictions
+    return true; // Always true for browser AI
   }, []);
 
   const clearPendingModifications = useCallback(() => {
