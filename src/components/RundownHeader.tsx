@@ -132,6 +132,14 @@ const RundownHeader = ({
             currentTimezone={timezone}
             onTimezoneChange={onTimezoneChange}
           />
+          <div className="relative">
+            <SearchBar
+              items={items}
+              visibleColumns={visibleColumns}
+              onHighlightMatch={onHighlightMatch}
+              onReplaceText={onReplaceText}
+            />
+          </div>
           {user ? (
             <div className="flex items-center space-x-2 relative">
               <span className="text-sm">{user.email}</span>
@@ -155,18 +163,6 @@ const RundownHeader = ({
               Sign In
             </Button>
           )}
-        </div>
-      </div>
-      
-      {/* Search bar positioned under the user menu */}
-      <div className="flex justify-end mb-2">
-        <div className="relative">
-          <SearchBar
-            items={items}
-            visibleColumns={visibleColumns}
-            onHighlightMatch={onHighlightMatch}
-            onReplaceText={onReplaceText}
-          />
         </div>
       </div>
 
