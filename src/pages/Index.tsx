@@ -1,8 +1,8 @@
-
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { useToast } from '@/hooks/use-toast';
+import CuerChatButton from '@/components/cuer/CuerChatButton';
 
 const Index = () => {
   const { toast } = useToast();
@@ -97,69 +97,80 @@ const Index = () => {
   };
 
   return (
-    <RundownContainer
-      currentTime={currentTime}
-      timezone={timezone}
-      onTimezoneChange={handleTimezoneChange}
-      totalRuntime={calculateTotalRuntime()}
-      showColumnManager={showColumnManager}
-      setShowColumnManager={setShowColumnManager}
-      items={items}
-      visibleColumns={visibleColumns}
-      columns={columns}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRowsSet}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      currentSegmentId={currentSegmentId}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={updateColumnWidth}
-      getRowNumber={getRowNumber}
-      getRowStatus={getRowStatus}
-      calculateHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={updateItem}
-      onCellClick={handleCellClick}
-      onKeyDown={handleKeyDown}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={(id, color) => selectColor(id, color, updateItem)}
-      onDeleteRow={deleteRow}
-      onToggleFloat={toggleFloatRow}
-      onRowSelect={(itemId, index, isShiftClick, isCtrlClick) => 
-        toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items)
-      }
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      onAddRow={() => addRow(calculateEndTime)}
-      onAddHeader={addHeader}
-      selectedCount={selectedRowsSet.size}
-      hasClipboardData={hasClipboardData()}
-      onCopySelectedRows={() => copyItems(Array.from(selectedRowsSet).map(id => items.find(item => item.id === id)!).filter(Boolean))}
-      onPasteRows={() => addMultipleRows([], calculateEndTime)}
-      onDeleteSelectedRows={() => deleteMultipleRows(Array.from(selectedRowsSet))}
-      onClearSelection={clearSelection}
-      selectedRowId={selectedRowId}
-      isPlaying={isPlaying}
-      timeRemaining={timeRemaining}
-      onPlay={play}
-      onPause={pause}
-      onForward={forward}
-      onBackward={backward}
-      handleAddColumn={handleAddColumn}
-      handleReorderColumns={handleReorderColumns}
-      handleDeleteColumnWithCleanup={handleDeleteColumn}
-      handleToggleColumnVisibility={handleToggleColumnVisibility}
-      handleLoadLayout={handleLoadLayout}
-      hasUnsavedChanges={hasUnsavedChanges}
-      isSaving={isSaving}
-      rundownTitle={rundownTitle}
-      onTitleChange={setRundownTitle}
-      rundownStartTime={rundownStartTime}
-      onRundownStartTimeChange={handleRundownStartTimeChange}
-      rundownId={rundownId}
-      onOpenTeleprompter={handleOpenTeleprompter}
-    />
+    <div className="min-h-screen bg-gray-50">
+      <RundownContainer
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={handleTimezoneChange}
+        totalRuntime={calculateTotalRuntime()}
+        showColumnManager={showColumnManager}
+        setShowColumnManager={setShowColumnManager}
+        items={items}
+        visibleColumns={visibleColumns}
+        columns={columns}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRowsSet}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        currentSegmentId={currentSegmentId}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={updateColumnWidth}
+        getRowNumber={getRowNumber}
+        getRowStatus={getRowStatus}
+        calculateHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={updateItem}
+        onCellClick={handleCellClick}
+        onKeyDown={handleKeyDown}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={(id, color) => selectColor(id, color, updateItem)}
+        onDeleteRow={deleteRow}
+        onToggleFloat={toggleFloatRow}
+        onRowSelect={(itemId, index, isShiftClick, isCtrlClick) => 
+          toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items)
+        }
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onAddRow={() => addRow(calculateEndTime)}
+        onAddHeader={addHeader}
+        selectedCount={selectedRowsSet.size}
+        hasClipboardData={hasClipboardData()}
+        onCopySelectedRows={() => copyItems(Array.from(selectedRowsSet).map(id => items.find(item => item.id === id)!).filter(Boolean))}
+        onPasteRows={() => addMultipleRows([], calculateEndTime)}
+        onDeleteSelectedRows={() => deleteMultipleRows(Array.from(selectedRowsSet))}
+        onClearSelection={clearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        timeRemaining={timeRemaining}
+        onPlay={play}
+        onPause={pause}
+        onForward={forward}
+        onBackward={backward}
+        handleAddColumn={handleAddColumn}
+        handleReorderColumns={handleReorderColumns}
+        handleDeleteColumnWithCleanup={handleDeleteColumn}
+        handleToggleColumnVisibility={handleToggleColumnVisibility}
+        handleLoadLayout={handleLoadLayout}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={setRundownTitle}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={handleRundownStartTimeChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={handleOpenTeleprompter}
+      />
+      
+      {/* Add Cuer Chat Button */}
+      <CuerChatButton 
+        rundownData={{
+          title: rundownTitle,
+          startTime: rundownStartTime,
+          items: items
+        }}
+      />
+    </div>
   );
 };
 
