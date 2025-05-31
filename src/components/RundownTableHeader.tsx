@@ -27,7 +27,7 @@ const RundownTableHeader = ({
             width={getColumnWidth(column)}
             onWidthChange={(width) => updateColumnWidth(column.id, width)}
           >
-            {column.label}
+            {column.name}
           </ResizableColumnHeader>
         ))}
       </tr>
