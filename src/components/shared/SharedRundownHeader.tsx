@@ -9,6 +9,7 @@ interface SharedRundownHeaderProps {
   startTime: string;
   currentSegmentId: string | null;
   items: RundownItem[];
+  timezone?: string;
 }
 
 const SharedRundownHeader = ({ 
@@ -16,8 +17,21 @@ const SharedRundownHeader = ({
   currentTime, 
   startTime, 
   currentSegmentId, 
-  items 
+  items,
+  timezone = 'UTC'
 }: SharedRundownHeaderProps) => {
+  const formatTime = (time: Date, tz: string) => {
+    try {
+      const timeString = time.toLocaleTimeString('en-US', { 
+        hour12: false,
+        timeZone: tz
+      });
+      return timeString;
+    } catch {
+      return time.toLocaleTimeString('en-US', { hour12: false });
+    }
+  };
+
   return (
     <div className="mb-6 print:mb-4">
       <div className="flex justify-between items-start mb-2">
@@ -25,7 +39,7 @@ const SharedRundownHeader = ({
           {title}
         </h1>
         <div className="text-right text-sm text-gray-600">
-          <div>Live at {format(currentTime, 'HH:mm:ss')}</div>
+          <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           <div>Start: {startTime}</div>
         </div>
       </div>
