@@ -19,6 +19,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       selectedRows={props.selectedRows}
       draggedItemIndex={props.draggedItemIndex}
       isDraggingMultiple={props.isDraggingMultiple}
+      dropTargetIndex={props.dropTargetIndex}
       currentSegmentId={props.currentSegmentId}
       hasClipboardData={props.hasClipboardData}
       getColumnWidth={props.getColumnWidth}
@@ -36,6 +37,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       onRowSelect={props.onRowSelect}
       onDragStart={props.onDragStart}
       onDragOver={props.onDragOver}
+      onDragLeave={props.onDragLeave}
       onDrop={props.onDrop}
       onCopySelectedRows={props.onCopySelectedRows}
       onDeleteSelectedRows={props.onDeleteSelectedRows}
