@@ -106,7 +106,7 @@ const RegularRow = ({
       onDrop={(e) => onDrop(e, index)}
     >
       <td 
-        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell border-r border-gray-300 dark:border-gray-600" 
+        className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
         style={{ color: textColor || undefined, width: '80px' }}
       >
         <div className="flex items-center space-x-2">
