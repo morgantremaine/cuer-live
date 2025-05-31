@@ -2,6 +2,7 @@
 import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
+import { useResizableColumns } from './useResizableColumns';
 import { useCallback, useState, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -26,6 +27,12 @@ export const useRundownGridState = () => {
     stableUpdateItemRef.current(id, 'color', color);
     stableMarkAsChangedRef.current();
   }, []);
+
+  // Use resizable columns with width change handler
+  const { getColumnWidth, updateColumnWidth } = useResizableColumns(
+    coreState.columns, 
+    coreState.handleUpdateColumnWidth
+  );
 
   // Get interaction handlers - use stable references
   const interactions = useRundownGridInteractions(
@@ -133,8 +140,10 @@ export const useRundownGridState = () => {
   // Override the UI state's selectColor with our stable version
   const stableUIState = useMemo(() => ({
     ...uiState,
-    selectColor: handleColorSelection
-  }), [uiState, handleColorSelection]);
+    selectColor: handleColorSelection,
+    getColumnWidth,
+    updateColumnWidth
+  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth]);
 
   // Memoize the return object with stable references
   return useMemo(() => ({

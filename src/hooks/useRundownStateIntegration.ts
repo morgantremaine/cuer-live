@@ -1,27 +1,16 @@
 
-import { useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { useRundownItems } from '@/hooks/useRundownItems';
-import { useColumnsManager } from '@/hooks/useColumnsManager';
-import { useAutoSave } from '@/hooks/useAutoSave';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
-import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
+import { useRundownItems } from './useRundownItems';
+import { useColumnsManager } from './useColumnsManager';
+import { useAutoSave } from './useAutoSave';
 
 export const useRundownStateIntegration = (
-  markAsChanged: () => void, 
-  rundownTitle: string, 
-  timezone: string, 
+  markAsChanged: () => void,
+  rundownTitle: string,
+  timezone: string,
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  const params = useParams<{ id: string }>();
-  const rawId = params.id;
-  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
-  
-  const { savedRundowns, loading } = useRundownStorage();
-  const loadedRef = useRef<string | null>(null);
-  const initRef = useRef(false);
-
+  // Rundown items management
   const {
     items,
     setItems,
@@ -35,8 +24,9 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems();
+  } = useRundownItems(markAsChanged);
 
+  // Column management
   const {
     columns,
     visibleColumns,
@@ -44,62 +34,19 @@ export const useRundownStateIntegration = (
     handleReorderColumns,
     handleDeleteColumn,
     handleToggleColumnVisibility,
-    handleLoadLayout
+    handleLoadLayout,
+    handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Use the data loader hook with direct setters to prevent change tracking during load
-  useRundownDataLoader({
-    rundownId,
-    savedRundowns,
-    loading,
-    setRundownTitle: setRundownTitleDirectly,
-    setTimezone: setTimezoneDirectly,
-    handleLoadLayout
+  // Auto-save functionality
+  const { hasUnsavedChanges, isSaving } = useAutoSave({
+    items,
+    rundownTitle,
+    timezone,
+    columns,
+    setRundownTitleDirectly,
+    setTimezoneDirectly
   });
-
-  // Load rundown data only once when rundown ID changes
-  useEffect(() => {
-    if (loading || initRef.current) return;
-    
-    // Prevent duplicate loading
-    if (loadedRef.current === rundownId) return;
-    
-    if (rundownId && savedRundowns.length > 0) {
-      const existingRundown = savedRundowns.find(r => r.id === rundownId);
-      if (existingRundown && loadedRef.current !== rundownId) {
-        console.log('Loading rundown state integration for:', rundownId);
-        loadedRef.current = rundownId;
-        initRef.current = true;
-        
-        // Set items
-        if (existingRundown.items) {
-          setItems(existingRundown.items);
-        }
-        
-        // Load columns if they exist
-        if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
-          console.log('Loading saved columns:', existingRundown.columns.length);
-          handleLoadLayout(existingRundown.columns);
-        }
-      }
-    } else if (!rundownId && loadedRef.current !== null) {
-      // New rundown - reset state only once
-      if (!initRef.current) {
-        console.log('Resetting for new rundown');
-        loadedRef.current = null;
-        initRef.current = true;
-      }
-    }
-  }, [rundownId, savedRundowns, loading, setItems, handleLoadLayout]);
-
-  // Reset when rundown changes
-  useEffect(() => {
-    return () => {
-      initRef.current = false;
-    };
-  }, [rundownId]);
-
-  const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle, columns, timezone);
 
   return {
     items,
@@ -121,6 +68,7 @@ export const useRundownStateIntegration = (
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
+    handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving,
     markAsChanged
