@@ -11,6 +11,7 @@ interface RundownModification {
   type: 'add' | 'update' | 'delete';
   itemId?: string;
   data?: any;
+  description: string; // Added required description property
 }
 
 interface ChatMessage {
@@ -130,8 +131,8 @@ export const useCuerChat = () => {
     setPendingModifications(null);
   }, []);
 
-  // These methods are kept for backward compatibility
-  const setApiKey = useCallback(() => {
+  // Updated to accept apiKey parameter
+  const setApiKey = useCallback((apiKey: string) => {
     console.log('API key setting not needed - using Supabase Edge Function');
     checkConnection();
   }, [checkConnection]);

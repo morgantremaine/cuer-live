@@ -3,11 +3,12 @@ import { useCallback } from 'react';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { RundownItem } from '@/types/rundown';
 
-// Define the type locally
+// Define the type locally to match the one in useCuerChat
 interface RundownModification {
   type: 'add' | 'update' | 'delete';
   itemId?: string;
   data?: any;
+  description: string; // Added required description property
 }
 
 export const useCuerModifications = () => {
