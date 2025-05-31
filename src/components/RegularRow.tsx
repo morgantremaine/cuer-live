@@ -73,23 +73,15 @@ const RegularRow = ({
   getColumnWidth
 }: RegularRowProps) => {
   let rowClass = '';
-  let borderClass = '';
   
   if (isDragging) {
     if (isDraggingMultiple && isSelected) {
       rowClass = 'opacity-70';
-      borderClass = 'border-2 border-blue-400';
     } else {
       rowClass = 'opacity-50';
-      borderClass = 'border-2 border-blue-300';
     }
   } else if (item.isFloating || item.isFloated) {
-    rowClass = 'bg-red-800 text-white';
-    borderClass = 'border-l-4 border-red-600';
-  } else if (isSelected) {
-    // For selected rows, use a very prominent blue outline that will show over any background
-    borderClass = 'border-4 border-blue-500 shadow-lg ring-4 ring-blue-300 ring-opacity-50';
-    rowClass = item.color && item.color !== '#FFFFFF' ? 'hover:opacity-90' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
+    rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
   } else if (item.color && item.color !== '#FFFFFF') {
     rowClass = 'hover:opacity-90';
   } else {
@@ -97,6 +89,14 @@ const RegularRow = ({
   }
 
   const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
+
+  // Create cell selection styling
+  const getCellSelectionClass = () => {
+    if (isSelected) {
+      return 'ring-2 ring-inset ring-blue-500 border-blue-500';
+    }
+    return '';
+  };
 
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -151,11 +151,10 @@ const RegularRow = ({
       onClearSelection={onClearSelection}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} ${borderClass} transition-all cursor-pointer select-none relative`}
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
           backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
-          color: textColor || undefined,
-          position: 'relative'
+          color: textColor || undefined
         }}
         draggable
         onClick={handleRowClick}
@@ -164,7 +163,7 @@ const RegularRow = ({
         onDrop={(e) => onDrop(e, index)}
       >
         <td 
-          className="px-4 py-2 text-sm font-mono cursor-move row-number-cell" 
+          className={`px-4 py-2 text-sm font-mono cursor-move row-number-cell ${getCellSelectionClass()}`}
           style={{ color: textColor || undefined, width: '80px' }}
         >
           <div className="flex items-center space-x-2">
@@ -188,6 +187,7 @@ const RegularRow = ({
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}
             width={getColumnWidth(column)}
+            className={getCellSelectionClass()}
           />
         ))}
       </tr>
