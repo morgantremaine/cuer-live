@@ -87,7 +87,6 @@ const ExpandableScriptCell = ({
             textOverflow: isExpanded ? 'unset' : 'ellipsis'
           }}
           rows={isExpanded ? undefined : 1}
-          placeholder="Enter script content..."
         />
         {currentHighlight && (
           <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
