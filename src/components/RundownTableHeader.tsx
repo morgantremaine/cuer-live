@@ -18,7 +18,7 @@ const RundownTableHeader = ({
   console.log('RundownTableHeader - Script column in visible:', visibleColumns.find(col => col.key === 'script'));
 
   return (
-    <thead className="bg-gray-700 dark:bg-gray-800 sticky top-0 z-10">
+    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-10">
       <tr>
         <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '60px' }}>
           #
