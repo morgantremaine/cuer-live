@@ -87,8 +87,8 @@ const RegularRow = ({
     rowClass = 'bg-red-800 text-white';
     borderClass = 'border-l-4 border-red-600';
   } else if (isSelected) {
-    // For selected rows, use a thick blue border with box shadow for visibility
-    borderClass = 'border-4 border-blue-500 shadow-lg ring-2 ring-blue-300';
+    // For selected rows, use a very prominent blue outline that will show over any background
+    borderClass = 'border-4 border-blue-500 shadow-lg ring-4 ring-blue-300 ring-opacity-50';
     rowClass = item.color && item.color !== '#FFFFFF' ? 'hover:opacity-90' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   } else if (item.color && item.color !== '#FFFFFF') {
     rowClass = 'hover:opacity-90';
@@ -151,10 +151,11 @@ const RegularRow = ({
       onClearSelection={onClearSelection}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} ${borderClass} transition-all cursor-pointer select-none`}
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} ${borderClass} transition-all cursor-pointer select-none relative`}
         style={{ 
           backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
-          color: textColor || undefined
+          color: textColor || undefined,
+          position: 'relative'
         }}
         draggable
         onClick={handleRowClick}
