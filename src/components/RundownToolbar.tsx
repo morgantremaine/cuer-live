@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
+import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Share2, Monitor, Palette, Anchor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,10 @@ interface RundownToolbarProps {
   rundownId: string | undefined;
   // Teleprompter functionality
   onOpenTeleprompter: () => void;
+  // Row actions for selected rows
+  onToggleFloat?: (id: string) => void;
+  onShowColorPicker?: (id: string) => void;
+  selectedRowIds?: string[];
 }
 
 const RundownToolbar = ({
@@ -49,7 +53,10 @@ const RundownToolbar = ({
   onForward,
   onBackward,
   rundownId,
-  onOpenTeleprompter
+  onOpenTeleprompter,
+  onToggleFloat,
+  onShowColorPicker,
+  selectedRowIds = []
 }: RundownToolbarProps) => {
   const { toast } = useToast();
   
@@ -90,6 +97,18 @@ const RundownToolbar = ({
         variant: "default"
       });
     });
+  };
+
+  const handleToggleFloat = () => {
+    if (onToggleFloat && selectedRowIds.length > 0) {
+      selectedRowIds.forEach(id => onToggleFloat(id));
+    }
+  };
+
+  const handleShowColorPicker = () => {
+    if (onShowColorPicker && selectedRowIds.length === 1) {
+      onShowColorPicker(selectedRowIds[0]);
+    }
   };
 
   return (
@@ -162,17 +181,44 @@ const RundownToolbar = ({
             <span className="text-sm text-gray-600 dark:text-gray-300">
               {selectedCount} selected
             </span>
-            <Button onClick={onCopySelectedRows} variant="outline" size="sm">
+            
+            {/* Row-specific actions */}
+            {onToggleFloat && (
+              <Button 
+                onClick={handleToggleFloat} 
+                variant="outline" 
+                size="sm"
+                title="Toggle float for selected rows"
+              >
+                <Anchor className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {onShowColorPicker && selectedCount === 1 && (
+              <Button 
+                onClick={handleShowColorPicker} 
+                variant="outline" 
+                size="sm"
+                title="Change color"
+              >
+                <Palette className="h-4 w-4" />
+              </Button>
+            )}
+            
+            <Button onClick={onCopySelectedRows} variant="outline" size="sm" title="Copy selected rows">
               <Copy className="h-4 w-4" />
             </Button>
+            
             {hasClipboardData && (
-              <Button onClick={onPasteRows} variant="outline" size="sm">
+              <Button onClick={onPasteRows} variant="outline" size="sm" title="Paste rows">
                 <Clipboard className="h-4 w-4" />
               </Button>
             )}
-            <Button onClick={onDeleteSelectedRows} variant="outline" size="sm">
+            
+            <Button onClick={onDeleteSelectedRows} variant="outline" size="sm" title="Delete selected rows">
               <Trash2 className="h-4 w-4" />
             </Button>
+            
             <Button onClick={onClearSelection} variant="ghost" size="sm">
               Clear
             </Button>

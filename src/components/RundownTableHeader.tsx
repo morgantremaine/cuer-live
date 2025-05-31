@@ -15,25 +15,19 @@ const RundownTableHeader = ({
   updateColumnWidth
 }: RundownTableHeaderProps) => {
   return (
-    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-10">
+    <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
       <tr>
-        <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '60px' }}>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-300 dark:border-gray-600" style={{ width: '80px' }}>
           #
         </th>
-        {visibleColumns.map((column, index) => (
+        {visibleColumns.map((column) => (
           <ResizableColumnHeader
             key={column.id}
             column={column}
             width={getColumnWidth(column)}
-            onWidthChange={updateColumnWidth}
-            showLeftSeparator={index > 0}
-          >
-            {column.name}
-          </ResizableColumnHeader>
+            onWidthChange={(width) => updateColumnWidth(column.id, width)}
+          />
         ))}
-        <th className="px-4 py-3 text-left text-sm font-semibold text-white" style={{ width: '120px' }}>
-          Actions
-        </th>
       </tr>
     </thead>
   );
