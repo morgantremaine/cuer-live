@@ -6,6 +6,7 @@ interface UseRundownDataLoaderProps {
   savedRundowns: any[];
   loading: boolean;
   setRundownTitle: (title: string) => void;
+  setTimezone: (timezone: string) => void;
   handleLoadLayout: (columns: any[]) => void;
 }
 
@@ -14,6 +15,7 @@ export const useRundownDataLoader = ({
   savedRundowns,
   loading,
   setRundownTitle,
+  setTimezone,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
   // Memoize the loading logic to prevent infinite loops
@@ -25,6 +27,12 @@ export const useRundownDataLoader = ({
       if (existingRundown) {
         console.log('Loading rundown data:', { id: rundownId, title: existingRundown.title });
         setRundownTitle(existingRundown.title);
+        
+        // Load timezone if it exists
+        if (existingRundown.timezone) {
+          console.log('Loading timezone:', existingRundown.timezone);
+          setTimezone(existingRundown.timezone);
+        }
         
         // Load column layout if it exists
         if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
@@ -38,7 +46,7 @@ export const useRundownDataLoader = ({
       console.log('New rundown, using default title');
       setRundownTitle('Live Broadcast Rundown');
     }
-  }, [rundownId, savedRundowns, loading, setRundownTitle, handleLoadLayout]);
+  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, handleLoadLayout]);
 
   // Load data when rundown ID changes or when savedRundowns are first loaded
   useEffect(() => {
