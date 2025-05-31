@@ -1,0 +1,87 @@
+
+import { useRundownInteractionHandlers } from './useRundownInteractionHandlers';
+import { RundownItem } from '@/types/rundown';
+
+export const useRundownGridInteractions = (
+  items: RundownItem[],
+  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
+  updateItem: (id: string, field: string, value: string) => void,
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string) => void,
+  addHeader: () => void,
+  deleteRow: (id: string) => void,
+  toggleFloatRow: (id: string) => void,
+  deleteMultipleRows: (ids: string[]) => void,
+  addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void,
+  handleDeleteColumn: (columnId: string) => void,
+  calculateEndTime: (startTime: string, duration: string) => string,
+  selectColor: (id: string, color: string) => void,
+  markAsChanged: () => void,
+  setRundownTitle: (title: string) => void
+) => {
+  const {
+    selectedRows,
+    toggleRowSelection,
+    clearSelection,
+    draggedItemIndex,
+    isDraggingMultiple,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    clipboardItems,
+    copyItems,
+    hasClipboardData,
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleDeleteColumnWithCleanup,
+    handleCopySelectedRows,
+    handleRowSelection,
+    handleTitleChange
+  } = useRundownInteractionHandlers(
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    toggleFloatRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    handleDeleteColumn,
+    calculateEndTime,
+    selectColor,
+    markAsChanged,
+    setRundownTitle
+  );
+
+  return {
+    selectedRows,
+    toggleRowSelection,
+    clearSelection,
+    draggedItemIndex,
+    isDraggingMultiple,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    clipboardItems,
+    copyItems,
+    hasClipboardData,
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleDeleteColumnWithCleanup,
+    handleCopySelectedRows,
+    handleRowSelection,
+    handleTitleChange
+  };
+};
