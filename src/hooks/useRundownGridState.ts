@@ -60,7 +60,7 @@ export const useRundownGridState = () => {
     console.log('Items copied to clipboard:', copiedItems.length);
   }, []);
 
-  const hasClipboardData = useCallback(() => {
+  const hasClipboardData = useMemo(() => {
     return clipboardItems.length > 0;
   }, [clipboardItems]);
 
