@@ -32,6 +32,8 @@ interface RundownMainContentProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onCopySelectedRows: () => void;
+  onDeleteSelectedRows: () => void;
   showColumnManager: boolean;
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
@@ -68,6 +70,8 @@ const RundownMainContent = ({
   onDragStart,
   onDragOver,
   onDrop,
+  onCopySelectedRows,
+  onDeleteSelectedRows,
   showColumnManager,
   handleAddColumn,
   handleReorderColumns,
@@ -104,6 +108,8 @@ const RundownMainContent = ({
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        onCopySelectedRows={onCopySelectedRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
       />
 
       {showColumnManager && (
