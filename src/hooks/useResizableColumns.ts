@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Column } from './useColumnsManager';
 
-export const useResizableColumns = (initialColumns: Column[]) => {
+export const useResizableColumns = (initialColumns: Column[], onColumnWidthChange?: (columnId: string, width: number) => void) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
 
   // Initialize column widths from the columns data
@@ -20,11 +20,18 @@ export const useResizableColumns = (initialColumns: Column[]) => {
   }, [initialColumns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
+    console.log('Updating column width in useResizableColumns:', columnId, width);
     setColumnWidths(prev => ({
       ...prev,
       [columnId]: width
     }));
-  }, []);
+    
+    // Notify the parent component about the width change
+    if (onColumnWidthChange) {
+      console.log('Calling onColumnWidthChange callback');
+      onColumnWidthChange(columnId, width);
+    }
+  }, [onColumnWidthChange]);
 
   const getColumnWidth = useCallback((column: Column) => {
     if (columnWidths[column.id]) {

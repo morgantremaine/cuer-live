@@ -48,6 +48,7 @@ export const useRundownGridCore = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
+    handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving
   } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone, setRundownTitleDirectly, setTimezoneDirectly);
@@ -121,6 +122,7 @@ export const useRundownGridCore = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
+    handleUpdateColumnWidth,
 
     // Save state
     hasUnsavedChanges,

@@ -29,6 +29,7 @@ const ResizableColumnHeader = ({
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(80, startWidth.current + diff); // Minimum width of 80px
+      console.log('ResizableColumnHeader calling onWidthChange:', column.id, newWidth);
       onWidthChange(column.id, newWidth);
     };
 
