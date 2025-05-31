@@ -32,7 +32,8 @@ const CellRenderer = ({
   };
 
   const getFieldKey = (column: Column) => {
-    return column.isCustom ? column.key : column.key;
+    // For custom fields, we need to use the format expected by the update handler
+    return column.isCustom ? `customFields.${column.key}` : column.key;
   };
 
   const fieldKey = getFieldKey(column);
@@ -41,6 +42,15 @@ const CellRenderer = ({
   const handleCellClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row selection when clicking on cells
     onCellClick(item.id, fieldKey);
+  };
+
+  const handleUpdateValue = (newValue: string) => {
+    if (column.isCustom) {
+      // For custom fields, pass the field key in the format that updateItem expects
+      onUpdateItem(item.id, `customFields.${column.key}`, newValue);
+    } else {
+      onUpdateItem(item.id, column.key, newValue);
+    }
   };
 
   if (column.key === 'endTime' || column.key === 'startTime') {
@@ -62,7 +72,7 @@ const CellRenderer = ({
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
           value={value}
-          onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
+          onChange={(e) => handleUpdateValue(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
           className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
           style={{ color: textColor || undefined }}
@@ -78,7 +88,7 @@ const CellRenderer = ({
         ref={el => el && (cellRefs.current[`${item.id}-${fieldKey}`] = el)}
         type="text"
         value={value}
-        onChange={(e) => onUpdateItem(item.id, fieldKey, e.target.value)}
+        onChange={(e) => handleUpdateValue(e.target.value)}
         onKeyDown={(e) => onKeyDown(e, item.id, fieldKey)}
         className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm ${
           column.key === 'duration' ? 'font-mono' : ''
