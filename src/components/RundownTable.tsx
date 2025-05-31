@@ -63,13 +63,11 @@ const RundownTable = ({
   return (
     <div className="w-full">
       <table className="w-full min-w-max">
-        <div className="sticky top-0 z-10">
-          <RundownTableHeader
-            visibleColumns={visibleColumns}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-          />
-        </div>
+        <RundownTableHeader
+          visibleColumns={visibleColumns}
+          getColumnWidth={getColumnWidth}
+          updateColumnWidth={updateColumnWidth}
+        />
         <tbody>
           {items.map((item, index) => (
             <RundownRow
