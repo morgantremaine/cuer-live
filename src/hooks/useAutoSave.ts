@@ -20,39 +20,22 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     isInitialized 
   } = useChangeTracking(items, rundownTitle);
 
-  console.log('🚀 AutoSave render:', {
-    itemsCount: items.length,
-    title: rundownTitle,
-    columnsCount: columns?.length || 0,
-    hasUnsavedChanges,
-    isSaving,
-    initialized: isInitialized,
-    userLoggedIn: !!user,
-    userId: user?.id || 'none'
-  });
-
   // Create a debounced save function that's stable across renders
   const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[]) => {
-    console.log('🎯 Debounced save triggered');
-    
     if (!user || isSaving) {
-      console.log('⏸️ Skipping save - no user or already saving');
       return;
     }
 
     try {
       const success = await performSave(itemsToSave, titleToSave, columnsToSave);
-      console.log('💾 Save operation result:', success);
       
       if (success) {
-        console.log('✅ Auto-save successful, marking as saved');
         markAsSaved(itemsToSave, titleToSave);
       } else {
-        console.log('❌ Auto-save failed, keeping unsaved state');
         setHasUnsavedChanges(true);
       }
     } catch (error) {
-      console.error('💥 Auto-save threw an error:', error);
+      console.error('Auto-save error:', error);
       setHasUnsavedChanges(true);
     }
   }, [user, isSaving, performSave, markAsSaved, setHasUnsavedChanges]);
@@ -60,11 +43,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   // Main effect that schedules saves
   useEffect(() => {
     if (!hasUnsavedChanges || !isInitialized || !user) {
-      console.log('⏸️ Skipping auto-save scheduling:', { 
-        hasUnsavedChanges, 
-        isInitialized, 
-        hasUser: !!user
-      });
       return;
     }
 
@@ -73,22 +51,18 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
-      console.log('📋 Same data signature, skipping schedule');
       return;
     }
 
-    console.log('⏰ Scheduling debounced auto-save...');
     lastSaveDataRef.current = currentDataSignature;
 
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
-      console.log('🚫 Clearing existing debounce timeout');
       clearTimeout(debounceTimeoutRef.current);
     }
 
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
-      console.log('⚡ Executing debounced auto-save');
       debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined);
       debounceTimeoutRef.current = null;
     }, 2000);
@@ -99,7 +73,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   useEffect(() => {
     return () => {
       if (debounceTimeoutRef.current) {
-        console.log('🧹 Cleanup: clearing debounce timeout');
         clearTimeout(debounceTimeoutRef.current);
       }
     };

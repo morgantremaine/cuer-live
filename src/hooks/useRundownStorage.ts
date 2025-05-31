@@ -51,8 +51,6 @@ export const useRundownStorage = () => {
       return
     }
 
-    console.log('Saving new rundown to database:', { title, itemsCount: items.length, userId: user.id })
-
     const { data, error } = await supabase
       .from('rundowns')
       .insert({
@@ -74,7 +72,6 @@ export const useRundownStorage = () => {
       })
       throw error
     } else {
-      console.log('Successfully saved new rundown:', data)
       toast({
         title: 'Success',
         description: 'Rundown saved successfully!',
@@ -90,15 +87,6 @@ export const useRundownStorage = () => {
       return
     }
 
-    console.log('Updating rundown in database:', {
-      id,
-      title,
-      itemsCount: items.length,
-      userId: user.id,
-      silent,
-      archived
-    })
-
     const updateData = {
       title: title,
       items: items,
@@ -106,8 +94,6 @@ export const useRundownStorage = () => {
       updated_at: new Date().toISOString(),
       archived: archived
     }
-
-    console.log('Update payload (cleaned):', updateData)
 
     const { error, data } = await supabase
       .from('rundowns')
@@ -117,15 +103,7 @@ export const useRundownStorage = () => {
       .select()
 
     if (error) {
-      console.error('Database error updating rundown:', {
-        error,
-        errorMessage: error.message,
-        errorDetails: error.details,
-        errorHint: error.hint,
-        id,
-        userId: user.id,
-        updateData
-      })
+      console.error('Database error updating rundown:', error)
       if (!silent) {
         toast({
           title: 'Error',
@@ -135,7 +113,6 @@ export const useRundownStorage = () => {
       }
       throw error
     } else {
-      console.log('Successfully updated rundown:', { id, updatedData: data })
       if (!silent) {
         const message = archived ? 'Rundown archived successfully!' : 'Rundown updated successfully!'
         toast({

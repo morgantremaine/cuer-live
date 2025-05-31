@@ -16,18 +16,7 @@ export const useAutoSaveOperations = () => {
   const isNewRundown = !rundownId;
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
-    console.log('🔧 performSave called with:', {
-      itemsCount: items.length,
-      title: rundownTitle,
-      columnsCount: columns?.length || 0,
-      isNewRundown,
-      rundownId,
-      userId: user?.id || 'none',
-      isSaving
-    });
-
     if (isSaving) {
-      console.log('Save already in progress, skipping...');
       return false;
     }
 
@@ -48,52 +37,27 @@ export const useAutoSaveOperations = () => {
     }
 
     try {
-      console.log('Starting save operation...', { isNewRundown, itemsCount: items.length, title: rundownTitle });
       setIsSaving(true);
       
       if (isNewRundown) {
-        console.log('Saving new rundown...');
         const result = await saveRundown(rundownTitle, items, columns);
-        console.log('Save result:', result);
         
         if (result?.id) {
-          console.log('New rundown saved with ID:', result.id);
-          // Use replace: true to avoid navigation issues
           navigate(`/rundown/${result.id}`, { replace: true });
           return true;
         } else {
           throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
-        console.log('Updating existing rundown:', rundownId);
-        console.log('Update data:', {
-          id: rundownId,
-          title: rundownTitle,
-          itemsCount: items.length,
-          columnsCount: columns?.length || 0,
-          silent: true
-        });
-        
-        // Call updateRundown with proper parameters and error handling
         await updateRundown(rundownId, rundownTitle, items, true, false, columns);
-        console.log('Rundown updated successfully');
         return true;
       }
       
-      console.error('No valid save path found');
       return false;
     } catch (error) {
-      console.error('Save failed with detailed error:', {
-        error,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        rundownId,
-        title: rundownTitle,
-        itemsCount: items.length,
-        isNewRundown
-      });
+      console.error('Save failed:', error);
       return false;
     } finally {
-      console.log('Save operation completed, setting isSaving to false');
       setIsSaving(false);
     }
   }, [isSaving, user, isNewRundown, rundownId, saveRundown, updateRundown, navigate]);
