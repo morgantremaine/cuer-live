@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -24,8 +25,8 @@ export const useRundownItemActions = (
         rowNumber: newRowNumber,
         name: 'New Segment',
         startTime: newStartTime,
-        duration: '00:05:00',
-        endTime: calculateEndTime(newStartTime, '00:05:00'),
+        duration: '00:00:00',
+        endTime: calculateEndTime(newStartTime, '00:00:00'),
         talent: '',
         notes: '',
         color: '#FFFFFF',
