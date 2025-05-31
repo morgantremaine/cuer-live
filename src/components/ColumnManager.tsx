@@ -51,6 +51,7 @@ const ColumnManager = ({
   const handleSaveLayout = async () => {
     if (layoutName.trim()) {
       try {
+        // Save columns with their current widths
         await saveLayout(layoutName.trim(), columns);
         setLayoutName('');
         setShowSaveLayout(false);
@@ -61,6 +62,7 @@ const ColumnManager = ({
   };
 
   const handleLoadLayout = (layout: any) => {
+    // Load layout columns with preserved widths
     onLoadLayout(layout.columns);
     setShowLoadLayout(false);
   };
@@ -212,7 +214,10 @@ const ColumnManager = ({
                 >
                   <div className="flex items-center space-x-2">
                     <GripVertical className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    <span className="text-sm text-gray-900 dark:text-white">{column.name}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-900 dark:text-white">{column.name}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Width: {column.width}</span>
+                    </div>
                     {!column.isCustom && (
                       <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
                         Built-in

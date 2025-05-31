@@ -1,9 +1,23 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Column } from './useColumnsManager';
 
 export const useResizableColumns = (initialColumns: Column[]) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
+
+  // Initialize column widths from the columns data
+  useEffect(() => {
+    const widthsFromColumns: { [key: string]: number } = {};
+    initialColumns.forEach(column => {
+      if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
+        const widthValue = parseInt(column.width.replace('px', ''));
+        if (!isNaN(widthValue)) {
+          widthsFromColumns[column.id] = widthValue;
+        }
+      }
+    });
+    setColumnWidths(widthsFromColumns);
+  }, [initialColumns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumnWidths(prev => ({
@@ -15,6 +29,11 @@ export const useResizableColumns = (initialColumns: Column[]) => {
   const getColumnWidth = useCallback((column: Column) => {
     if (columnWidths[column.id]) {
       return `${columnWidths[column.id]}px`;
+    }
+    
+    // Parse existing width if it's in pixels
+    if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
+      return column.width;
     }
     
     // Default widths based on column type
@@ -30,9 +49,14 @@ export const useResizableColumns = (initialColumns: Column[]) => {
     return '150px'; // Default for custom columns
   }, [columnWidths]);
 
+  const getColumnWidthsForSaving = useCallback(() => {
+    return columnWidths;
+  }, [columnWidths]);
+
   return {
     columnWidths,
     updateColumnWidth,
-    getColumnWidth
+    getColumnWidth,
+    getColumnWidthsForSaving
   };
 };
