@@ -1,11 +1,19 @@
 
-import { useRundownBasicState } from '@/hooks/useRundownBasicState';
-import { useRundownDataManagement } from '@/hooks/useRundownDataManagement';
-import { useRundownInteractions } from '@/hooks/useRundownInteractions';
-import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
-import { useAutoSave } from '@/hooks/useAutoSave';
+import { useCallback } from 'react';
+import { useRundownBasicState } from './useRundownBasicState';
+import { useRundownStateIntegration } from './useRundownStateIntegration';
+import { useClipboard } from './useClipboard';
+import { useMultiRowSelection } from './useMultiRowSelection';
+import { useDragAndDrop } from './useDragAndDrop';
+import { usePlaybackControls } from './usePlaybackControls';
+import { useColorPicker } from './useColorPicker';
+import { useCellNavigation } from './useCellNavigation';
+import { useResizableColumns } from './useResizableColumns';
+import { useTimeCalculations } from './useTimeCalculations';
+import { useRundownGridHandlers } from './useRundownGridHandlers';
 
 export const useRundownGridState = () => {
+  // Core state management
   const {
     currentTime,
     timezone,
@@ -16,10 +24,12 @@ export const useRundownGridState = () => {
     setRundownTitle,
     rundownStartTime,
     setRundownStartTime,
+    rundownId,
+    markAsChanged
   } = useRundownBasicState();
 
+  // Rundown data integration
   const {
-    rundownId,
     items,
     setItems,
     updateItem,
@@ -39,54 +49,105 @@ export const useRundownGridState = () => {
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    savedRundowns,
-    loading,
-  } = useRundownDataManagement(rundownTitle, timezone);
+    hasUnsavedChanges,
+    isSaving
+  } = useRundownStateIntegration(markAsChanged, rundownTitle);
 
-  // Get auto-save functionality with the actual rundown title, columns, and timezone
-  const { hasUnsavedChanges, isSaving, markAsChanged } = useAutoSave(items, rundownTitle, columns, timezone);
+  // Clipboard functionality
+  const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
 
+  // Multi-row selection
+  const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
+
+  // Drag and drop
+  const { 
+    draggedItemIndex, 
+    isDraggingMultiple, 
+    handleDragStart, 
+    handleDragOver, 
+    handleDrop 
+  } = useDragAndDrop(items, setItems, selectedRows, markAsChanged);
+
+  // Playback controls
+  const { 
+    isPlaying, 
+    currentSegmentId, 
+    timeRemaining, 
+    play, 
+    pause, 
+    forward, 
+    backward 
+  } = usePlaybackControls(items, rundownStartTime);
+
+  // Color picker
+  const { showColorPicker, handleToggleColorPicker } = useColorPicker();
+
+  // Cell navigation
+  const { cellRefs, handleCellClick, handleKeyDown } = useCellNavigation(
+    items, 
+    visibleColumns, 
+    updateItem, 
+    handleToggleColorPicker
+  );
+
+  // Resizable columns
+  const { getColumnWidth, updateColumnWidth } = useResizableColumns(columns);
+
+  // Time calculations
+  const { calculateEndTime } = useTimeCalculations();
+
+  // Status calculations
+  const getRowStatus = useCallback((item: any) => {
+    if (item.id === currentSegmentId) return 'current';
+    
+    const now = currentTime;
+    const itemStartTime = new Date(`1970-01-01T${item.startTime}`);
+    const currentTimeForComparison = new Date(`1970-01-01T${now.toTimeString().split(' ')[0]}`);
+    
+    return currentTimeForComparison > itemStartTime ? 'completed' : 'upcoming';
+  }, [currentSegmentId, currentTime]);
+
+  // Color selection function
+  const selectColor = useCallback((id: string, color: string, updateItemFn: (id: string, field: string, value: string) => void) => {
+    updateItemFn(id, 'color', color);
+    markAsChanged();
+  }, [markAsChanged]);
+
+  // Grid handlers
   const {
-    columnWidths,
-    updateColumnWidth,
-    getColumnWidth,
-    selectedCell,
-    cellRefs,
-    handleCellClick,
-    handleKeyDown,
-    draggedItemIndex,
-    isDraggingMultiple,
-    handleDragStart,
-    handleDragOver,
-    handleDrop,
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleDeleteColumnWithCleanup,
+    handleCopySelectedRows,
+    handleRowSelection,
+    handleTitleChange
+  } = useRundownGridHandlers({
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    toggleFloatRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    handleDeleteColumn,
+    setItems,
     calculateEndTime,
-    getRowStatus,
-    showColorPicker,
-    handleToggleColorPicker,
     selectColor,
+    markAsChanged,
     selectedRows,
-    toggleRowSelection,
     clearSelection,
-    clipboardItems,
     copyItems,
+    clipboardItems,
     hasClipboardData,
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
-  } = useRundownInteractions(visibleColumns, items, setItems, updateItem, rundownStartTime);
-
-  // Load data when rundown changes
-  useRundownDataLoader({
-    rundownId,
-    savedRundowns,
-    loading,
-    setRundownTitle,
-    setTimezone,
-    handleLoadLayout
+    toggleRowSelection,
+    items,
+    setRundownTitle
   });
 
   return {
@@ -101,79 +162,70 @@ export const useRundownGridState = () => {
     rundownStartTime,
     setRundownStartTime,
     rundownId,
-    
-    // Items state
+    markAsChanged,
+
+    // Items and data
     items,
     setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    
-    // Auto-save state
-    hasUnsavedChanges,
-    isSaving,
-    markAsChanged,
-    
-    // Columns state
-    columns,
     visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    
-    // Resizable columns state
-    columnWidths,
-    updateColumnWidth,
-    getColumnWidth,
-    
-    // Cell navigation state
-    selectedCell,
+    columns,
+
+    // UI state
+    showColorPicker,
     cellRefs,
-    handleCellClick,
-    handleKeyDown,
-    
-    // Drag and drop state
+    selectedRows,
     draggedItemIndex,
     isDraggingMultiple,
+    currentSegmentId,
+
+    // Functions
+    getColumnWidth,
+    updateColumnWidth,
+    getRowNumber,
+    getRowStatus,
+    calculateHeaderDuration,
+    updateItem: handleUpdateItem,
+    handleCellClick,
+    handleKeyDown,
+    handleToggleColorPicker,
+    selectColor,
+    deleteRow: handleDeleteRow,
+    toggleFloatRow: handleToggleFloat,
+    toggleRowSelection: handleRowSelection,
     handleDragStart,
     handleDragOver,
     handleDrop,
-    
-    // Time calculations
-    calculateEndTime,
-    getRowStatus,
-    
-    // Color picker state
-    showColorPicker,
-    handleToggleColorPicker,
-    selectColor,
-    
-    // Row selection state
-    selectedRows,
-    toggleRowSelection,
-    clearSelection,
-    
-    // Clipboard state
-    clipboardItems,
-    copyItems,
+    addRow: handleAddRow,
+    addHeader: handleAddHeader,
+
+    // Multi-selection actions
     hasClipboardData,
-    
-    // Playback state
+    copyItems: handleCopySelectedRows,
+    addMultipleRows,
+    deleteMultipleRows: handleDeleteSelectedRows,
+    clearSelection,
+    clipboardItems,
+    handlePasteRows,
+
+    // Playback
     isPlaying,
-    currentSegmentId,
     timeRemaining,
     play,
     pause,
     forward,
-    backward
+    backward,
+
+    // Column management
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn: handleDeleteColumnWithCleanup,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+
+    // Save state
+    hasUnsavedChanges,
+    isSaving,
+    calculateTotalRuntime,
+    calculateEndTime
   };
 };

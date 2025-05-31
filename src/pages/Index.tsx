@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -66,7 +67,9 @@ const Index = () => {
     isSaving,
     calculateTotalRuntime,
     calculateEndTime,
-    markAsChanged
+    markAsChanged,
+    clipboardItems,
+    handlePasteRows
   } = useRundownGridState();
 
   const selectedRowsArray = Array.from(selectedRowsSet);
@@ -137,7 +140,7 @@ const Index = () => {
         selectedCount={selectedRowsSet.size}
         hasClipboardData={hasClipboardData()}
         onCopySelectedRows={() => copyItems(Array.from(selectedRowsSet).map(id => items.find(item => item.id === id)!).filter(Boolean))}
-        onPasteRows={() => addMultipleRows([], calculateEndTime)}
+        onPasteRows={handlePasteRows}
         onDeleteSelectedRows={() => deleteMultipleRows(Array.from(selectedRowsSet))}
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
