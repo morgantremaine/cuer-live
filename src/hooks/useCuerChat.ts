@@ -23,6 +23,8 @@ export const useCuerChat = () => {
   }, []);
 
   const sendMessage = useCallback(async (content: string) => {
+    console.log('🚀 useCuerChat - Sending message:', content);
+    
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -41,7 +43,11 @@ export const useCuerChat = () => {
       
       openaiMessages.push({ role: 'user', content });
 
+      console.log('📤 useCuerChat - Calling openaiService.sendMessageWithModifications');
       const result = await openaiService.sendMessageWithModifications(openaiMessages);
+      
+      console.log('📥 useCuerChat - Received result:', result);
+      console.log('📥 useCuerChat - Modifications in result:', result.modifications);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -55,9 +61,13 @@ export const useCuerChat = () => {
 
       // If there are modifications, show them for confirmation
       if (result.modifications && result.modifications.length > 0) {
+        console.log('✅ useCuerChat - Setting pending modifications:', result.modifications);
         setPendingModifications(result.modifications);
+      } else {
+        console.log('❌ useCuerChat - No modifications found in result');
       }
     } catch (error) {
+      console.error('❌ useCuerChat - Error sending message:', error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -71,6 +81,7 @@ export const useCuerChat = () => {
   }, [messages]);
 
   const analyzeRundown = useCallback(async (rundownData: any) => {
+    console.log('🔍 useCuerChat - Analyzing rundown:', rundownData);
     setIsLoading(true);
     try {
       const analysis = await openaiService.analyzeRundown(rundownData);
@@ -84,6 +95,7 @@ export const useCuerChat = () => {
 
       setMessages(prev => [...prev, analysisMessage]);
     } catch (error) {
+      console.error('❌ useCuerChat - Error analyzing rundown:', error);
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -116,6 +128,7 @@ export const useCuerChat = () => {
   }, []);
 
   const clearPendingModifications = useCallback(() => {
+    console.log('🧹 useCuerChat - Clearing pending modifications');
     setPendingModifications(null);
   }, []);
 
