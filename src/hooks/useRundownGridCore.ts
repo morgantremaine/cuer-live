@@ -45,7 +45,7 @@ export const useRundownGridCore = () => {
     isSaving
   } = useRundownStateIntegration(markAsChanged, rundownTitle);
 
-  // Playback controls
+  // Playback controls - fix the function call
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -56,7 +56,7 @@ export const useRundownGridCore = () => {
     backward 
   } = usePlaybackControls(items, rundownStartTime);
 
-  // Time calculations
+  // Time calculations - fix the function call
   const { calculateEndTime } = useTimeCalculations();
 
   return {
