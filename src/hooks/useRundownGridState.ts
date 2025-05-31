@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -24,7 +23,7 @@ export const useRundownGridState = () => {
   const { id: rundownId } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Load the title from existing rundown
+  // Load the title and columns from existing rundown
   useEffect(() => {
     if (loading) return;
     
@@ -33,12 +32,18 @@ export const useRundownGridState = () => {
       if (existingRundown) {
         console.log('Loading rundown title:', existingRundown.title);
         setRundownTitle(existingRundown.title);
+        
+        // Load column layout if it exists
+        if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
+          console.log('Loading column layout:', existingRundown.columns);
+          handleLoadLayout(existingRundown.columns);
+        }
       }
     } else if (!rundownId) {
       console.log('New rundown, using default title');
       setRundownTitle('Live Broadcast Rundown');
     }
-  }, [rundownId, savedRundowns, loading]);
+  }, [rundownId, savedRundowns, loading, handleLoadLayout]);
 
   const {
     items,
