@@ -1,8 +1,8 @@
 
 import { RundownItem } from '@/types/rundown';
 
-// Hardcoded API key - this should remain constant
-const API_KEY = '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';
+// Updated API key - properly formatted
+const API_KEY = 'sk-proj-sEOYElJeDWS6H-XA7N8_hQlBGdFDXxq4VOrxRVSJ7_wKxT2v-PGTfMqZZlT3BlbkFJnX9uK6o7kGOQLjHx8VHOu0w1zPaW1l5qfQK4O2D7Rm8M3lS6vY8J';
 
 export interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
@@ -22,14 +22,14 @@ export const openaiService = {
   },
 
   hasApiKey(): boolean {
-    return !!API_KEY && API_KEY.length > 0;
+    return !!API_KEY && API_KEY.length > 0 && API_KEY.startsWith('sk-');
   },
 
   async sendMessageWithModifications(messages: OpenAIMessage[]): Promise<{ response: string; modifications?: RundownModification[] }> {
     console.log('🤖 openaiService - sendMessageWithModifications called with messages:', messages);
     
-    if (!API_KEY) {
-      throw new Error('OpenAI API key is not configured');
+    if (!API_KEY || !API_KEY.startsWith('sk-')) {
+      throw new Error('OpenAI API key is not properly configured');
     }
     
     try {
@@ -51,7 +51,8 @@ Current context: You are helping manage a broadcast rundown.`;
       };
 
       console.log('🤖 openaiService - Making request to OpenAI with body:', requestBody);
-      console.log('🤖 openaiService - Using API key (first 10 chars):', API_KEY.substring(0, 10) + '...');
+      console.log('🤖 openaiService - Using API key (length):', API_KEY.length);
+      console.log('🤖 openaiService - API key starts with sk-:', API_KEY.startsWith('sk-'));
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -63,11 +64,16 @@ Current context: You are helping manage a broadcast rundown.`;
       });
 
       console.log('🤖 openaiService - Response status:', response.status);
-      console.log('🤖 openaiService - Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('🤖 openaiService - Response ok:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('🤖 openaiService - Error response:', errorText);
+        console.error('🤖 openaiService - Error response text:', errorText);
+        
+        if (response.status === 401) {
+          throw new Error('OpenAI API authentication failed. Please check your API key.');
+        }
+        
         throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
       }
 
@@ -98,8 +104,8 @@ Current context: You are helping manage a broadcast rundown.`;
   async analyzeRundown(rundownData: any): Promise<string> {
     console.log('🤖 openaiService - analyzeRundown called with:', rundownData);
     
-    if (!API_KEY) {
-      throw new Error('OpenAI API key is not configured');
+    if (!API_KEY || !API_KEY.startsWith('sk-')) {
+      throw new Error('OpenAI API key is not properly configured');
     }
     
     try {
@@ -125,7 +131,8 @@ Be concise but thorough. Format your analysis with markdown headings and bullet 
       };
 
       console.log('🤖 openaiService - Making analyze request to OpenAI');
-      console.log('🤖 openaiService - Using API key (first 10 chars):', API_KEY.substring(0, 10) + '...');
+      console.log('🤖 openaiService - Using API key (length):', API_KEY.length);
+      console.log('🤖 openaiService - API key starts with sk-:', API_KEY.startsWith('sk-'));
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -137,10 +144,16 @@ Be concise but thorough. Format your analysis with markdown headings and bullet 
       });
 
       console.log('🤖 openaiService - Analyze response status:', response.status);
+      console.log('🤖 openaiService - Analyze response ok:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('🤖 openaiService - Analyze error response:', errorText);
+        
+        if (response.status === 401) {
+          throw new Error('OpenAI API authentication failed. Please check your API key.');
+        }
+        
         throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
       }
 
