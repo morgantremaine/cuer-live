@@ -2,7 +2,7 @@
 import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridState = () => {
@@ -12,7 +12,12 @@ export const useRundownGridState = () => {
   // Local clipboard state
   const [clipboardItems, setClipboardItems] = useState<RundownItem[]>([]);
 
-  console.log('useRundownGridState: items count:', coreState.items.length);
+  // Stable color selection function
+  const handleColorSelection = useCallback((id: string, color: string) => {
+    console.log('Selecting color for item:', id, color);
+    coreState.updateItem(id, 'color', color);
+    coreState.markAsChanged();
+  }, [coreState.updateItem, coreState.markAsChanged]);
 
   // Get interaction handlers - use core functions directly
   const interactions = useRundownGridInteractions(
@@ -27,11 +32,7 @@ export const useRundownGridState = () => {
     coreState.addMultipleRows,
     coreState.handleDeleteColumn,
     coreState.calculateEndTime,
-    (id: string, color: string) => {
-      console.log('Selecting color for item:', id, color);
-      coreState.updateItem(id, 'color', color);
-      coreState.markAsChanged();
-    },
+    handleColorSelection,
     coreState.markAsChanged,
     coreState.setRundownTitle
   );
@@ -107,7 +108,8 @@ export const useRundownGridState = () => {
     coreState.addHeader(insertAfterIndex);
   }, [coreState.addHeader]);
 
-  return {
+  // Memoize the return object to prevent unnecessary re-renders
+  const returnValue = useMemo(() => ({
     ...coreState,
     ...interactions,
     ...uiState,
@@ -121,5 +123,19 @@ export const useRundownGridState = () => {
     handleCopySelectedRows,
     handlePasteRows,
     handleDeleteSelectedRows
-  };
+  }), [
+    coreState,
+    interactions,
+    uiState,
+    wrappedAddRow,
+    wrappedAddHeader,
+    clipboardItems,
+    copyItems,
+    hasClipboardData,
+    handleCopySelectedRows,
+    handlePasteRows,
+    handleDeleteSelectedRows
+  ]);
+
+  return returnValue;
 };

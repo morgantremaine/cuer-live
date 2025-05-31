@@ -102,7 +102,10 @@ const RundownContextMenu = ({
             itemId={itemId}
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
-            onColorSelect={onColorSelect}
+            onColorSelect={(id, color) => {
+              onColorSelect(id, color);
+              onColorPicker(); // Close the color picker after selection
+            }}
           />
         </div>
       )}
