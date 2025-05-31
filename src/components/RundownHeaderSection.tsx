@@ -65,7 +65,7 @@ const RundownHeaderSection = ({
   rundownId
 }: RundownHeaderSectionProps) => {
   return (
-    <div className="border-b-4 border-blue-900">
+    <div>
       <RundownHeader
         currentTime={currentTime}
         timezone={timezone}
