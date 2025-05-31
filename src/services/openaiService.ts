@@ -66,6 +66,7 @@ class OpenAIService {
   setApiKey(apiKey: string) {
     this.apiKey = apiKey;
     localStorage.setItem('openai_api_key', apiKey);
+    console.log('OpenAI API key set:', apiKey.substring(0, 10) + '...');
   }
 
   getApiKey(): string | null {
@@ -91,6 +92,12 @@ class OpenAIService {
       throw new Error('OpenAI API key not set. Please configure your API key first.');
     }
 
+    console.log('Sending request to OpenAI with:', {
+      model: 'gpt-4o-mini',
+      messageCount: messages.length,
+      apiKeyPrefix: apiKey.substring(0, 10) + '...'
+    });
+
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -109,17 +116,39 @@ class OpenAIService {
         })
       });
 
+      console.log('OpenAI response status:', response.status);
+      console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenAI API error response:', errorText);
+        
         if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your OpenAI API key.');
+          throw new Error('Invalid API key. Please check your OpenAI API key and make sure it has sufficient credits.');
         }
-        throw new Error(`OpenAI API error: ${response.statusText}`);
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        }
+        if (response.status === 402) {
+          throw new Error('Insufficient credits. Please add credits to your OpenAI account.');
+        }
+        throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
       }
 
       const data: OpenAIResponse = await response.json();
-      return data.choices[0]?.message?.content || 'No response received';
+      console.log('OpenAI response data:', data);
+      
+      const content = data.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No response content received from OpenAI');
+      }
+      
+      return content;
     } catch (error) {
       console.error('OpenAI service error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to connect to OpenAI. Check your internet connection.');
+      }
       throw error;
     }
   }
@@ -134,10 +163,12 @@ class OpenAIService {
       // Try to parse as JSON first
       const parsed = JSON.parse(rawResponse);
       if (parsed.response && parsed.modifications) {
+        console.log('Received modifications from OpenAI:', parsed.modifications);
         return parsed;
       }
     } catch {
       // If not JSON, return as regular response
+      console.log('Received regular text response from OpenAI');
     }
     
     return { response: rawResponse };
@@ -164,22 +195,40 @@ Please analyze this rundown for timing issues, content flow, missing segments, a
 
   async checkConnection(): Promise<boolean> {
     const apiKey = this.getApiKey();
-    if (!apiKey) return false;
+    if (!apiKey) {
+      console.log('No API key found for connection check');
+      return false;
+    }
 
+    console.log('Checking OpenAI connection...');
+    
     try {
       const response = await fetch('https://api.openai.com/v1/models', {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
       });
-      return response.ok;
-    } catch {
+      
+      console.log('Connection check response:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Connection check failed:', errorText);
+        return false;
+      }
+      
+      console.log('OpenAI connection successful');
+      return true;
+    } catch (error) {
+      console.error('Connection check error:', error);
       return false;
     }
   }
 
   hasApiKey(): boolean {
-    return !!this.getApiKey();
+    const hasKey = !!this.getApiKey();
+    console.log('Has API key:', hasKey);
+    return hasKey;
   }
 }
 
