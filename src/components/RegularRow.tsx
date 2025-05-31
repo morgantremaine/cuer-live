@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -87,6 +88,11 @@ const RegularRow = ({
     rowClass = 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   }
 
+  // Add selection styling to the row class
+  if (isSelected) {
+    rowClass += ' ring-2 ring-inset ring-blue-500 border-blue-500';
+  }
+
   const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
 
   // Create cell selection styling
@@ -170,7 +176,7 @@ const RegularRow = ({
         onDrop={(e) => onDrop(e, index)}
       >
         <td 
-          className={`px-4 py-2 text-sm font-mono cursor-move row-number-cell ${getCellSelectionClass()}`}
+          className={`px-4 py-2 text-sm font-mono cursor-move row-number-cell`}
           style={{ color: textColor || undefined, width: '80px' }}
         >
           <div className="flex items-center space-x-2">
@@ -194,7 +200,6 @@ const RegularRow = ({
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}
             width={getColumnWidth(column)}
-            className={getCellSelectionClass()}
           />
         ))}
       </tr>
