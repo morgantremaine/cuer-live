@@ -7,6 +7,7 @@ import TimezoneSelector from './TimezoneSelector';
 import AuthModal from './AuthModal';
 import SearchBar from './SearchBar';
 import { useAuth } from '@/hooks/useAuth';
+import { SearchHighlight } from '@/types/search';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -23,6 +24,7 @@ interface RundownHeaderProps {
   visibleColumns?: any[];
   onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
+  currentHighlight?: SearchHighlight | null;
 }
 
 const RundownHeader = ({ 
