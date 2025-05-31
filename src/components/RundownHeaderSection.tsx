@@ -2,8 +2,6 @@
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
-import SearchBar from './SearchBar';
-import { RundownItem } from '@/hooks/useRundownItems';
 
 interface RundownHeaderSectionProps {
   currentTime: Date;
@@ -35,8 +33,6 @@ interface RundownHeaderSectionProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
-  items: RundownItem[];
-  onUpdateItem: (id: string, field: string, value: string) => void;
 }
 
 const RundownHeaderSection = ({
@@ -68,9 +64,7 @@ const RundownHeaderSection = ({
   rundownStartTime,
   onRundownStartTimeChange,
   rundownId,
-  onOpenTeleprompter,
-  items,
-  onUpdateItem
+  onOpenTeleprompter
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -86,33 +80,27 @@ const RundownHeaderSection = ({
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
       />
-      <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <RundownToolbar
-          onAddRow={onAddRow}
-          onAddHeader={onAddHeader}
-          onShowColumnManager={onShowColumnManager}
-          selectedCount={selectedCount}
-          hasClipboardData={hasClipboardData}
-          onCopySelectedRows={onCopySelectedRows}
-          onPasteRows={onPasteRows}
-          onDeleteSelectedRows={onDeleteSelectedRows}
-          onClearSelection={onClearSelection}
-          selectedRowId={selectedRowId}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          rundownId={rundownId}
-          onOpenTeleprompter={onOpenTeleprompter}
-        />
-        <SearchBar
-          items={items}
-          onUpdateItem={onUpdateItem}
-        />
-      </div>
+      <RundownToolbar
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
+        onShowColumnManager={onShowColumnManager}
+        selectedCount={selectedCount}
+        hasClipboardData={hasClipboardData}
+        onCopySelectedRows={onCopySelectedRows}
+        onPasteRows={onPasteRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
+        onClearSelection={onClearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+      />
     </div>
   );
 };
