@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Clock, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,8 @@ const timezones = [
   { value: 'Europe/London', label: 'London (UTC+0)' },
   { value: 'Europe/Paris', label: 'Paris (UTC+1)' },
   { value: 'Europe/Berlin', label: 'Berlin (UTC+1)' },
+  { value: 'Asia/Riyadh', label: 'Riyadh (UTC+3)' },
+  { value: 'Asia/Dubai', label: 'Dubai (UTC+4)' },
   { value: 'Asia/Tokyo', label: 'Tokyo (UTC+9)' },
   { value: 'Asia/Shanghai', label: 'Shanghai (UTC+8)' },
   { value: 'Australia/Sydney', label: 'Sydney (UTC+10)' },
