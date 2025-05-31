@@ -68,10 +68,28 @@ const SharedRundown = () => {
 
   const getRowNumber = (index: number) => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const letterIndex = Math.floor(index / 99);
-    const number = (index % 99) + 1;
-    const letter = letters[letterIndex % 26];
-    return `${letter}${number}`;
+    let letterIndex = 0;
+    let numberIndex = 0;
+    
+    // Count actual rows (both headers and regular items)
+    for (let i = 0; i <= index; i++) {
+      if (rundownData?.items[i]?.type === 'header') {
+        letterIndex++;
+        numberIndex = 0; // Reset number for new section
+      } else {
+        numberIndex++;
+      }
+    }
+    
+    const currentItem = rundownData?.items[index];
+    if (currentItem?.type === 'header') {
+      // For headers, just return the letter
+      return letters[letterIndex - 1] || 'A';
+    } else {
+      // For regular items, return letter + number
+      const letter = letters[letterIndex - 1] || 'A';
+      return `${letter}${numberIndex}`;
+    }
   };
 
   if (loading) {
@@ -161,7 +179,8 @@ const SharedRundown = () => {
                     let value = '';
                     switch (column.key) {
                       case 'segmentName':
-                        value = item.name || '';
+                        // Only show name if it's not the default placeholder text
+                        value = (item.name && item.name !== 'New Header' && item.name !== 'New Segment') ? item.name : '';
                         break;
                       case 'duration':
                         value = item.duration || '';
