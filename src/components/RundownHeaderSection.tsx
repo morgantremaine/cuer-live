@@ -10,6 +10,7 @@ interface RundownHeaderSectionProps {
   totalRuntime: string;
   onAddRow: () => void;
   onAddHeader: () => void;
+  onAddColumn: () => void;
   onShowColumnManager: () => void;
   selectedCount: number;
   hasClipboardData: boolean;
@@ -40,6 +41,7 @@ const RundownHeaderSection = ({
   totalRuntime,
   onAddRow,
   onAddHeader,
+  onAddColumn,
   onShowColumnManager,
   selectedCount,
   hasClipboardData,
@@ -80,6 +82,7 @@ const RundownHeaderSection = ({
       <RundownToolbar
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
+        onAddColumn={onAddColumn}
         onShowColumnManager={onShowColumnManager}
         selectedCount={selectedCount}
         hasClipboardData={hasClipboardData}
