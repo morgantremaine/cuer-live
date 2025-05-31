@@ -226,7 +226,7 @@ const Teleprompter = () => {
           paddingBottom: '80vh' 
         }}
       >
-        <div className="max-w-4xl mx-auto px-8">
+        <div className="w-full px-8">
           {itemsWithScript.map((item, index) => {
             if (isHeaderItem(item)) {
               return (
