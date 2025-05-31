@@ -1,9 +1,9 @@
-
 import React from 'react';
 import RundownTableHeader from './RundownTableHeader';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchHighlight } from '@/types/search';
 
 interface RundownTableProps {
   items: RundownItem[];
@@ -38,6 +38,7 @@ interface RundownTableProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  currentHighlight?: SearchHighlight | null;
 }
 
 const RundownTable = ({
@@ -72,7 +73,8 @@ const RundownTable = ({
   onCopySelectedRows,
   onDeleteSelectedRows,
   onPasteRows,
-  onClearSelection
+  onClearSelection,
+  currentHighlight
 }: RundownTableProps) => {
   return (
     <div 
@@ -112,6 +114,7 @@ const RundownTable = ({
                 selectedRows={selectedRows}
                 headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
                 hasClipboardData={hasClipboardData}
+                currentHighlight={currentHighlight}
                 onUpdateItem={onUpdateItem}
                 onCellClick={onCellClick}
                 onKeyDown={onKeyDown}

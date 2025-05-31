@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import HighlightedText from './HighlightedText';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -8,6 +9,10 @@ interface ExpandableScriptCellProps {
   cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
+  currentHighlight?: {
+    startIndex: number;
+    endIndex: number;
+  } | null;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -18,6 +23,7 @@ const ExpandableScriptCell = ({
   cellRefKey,
   cellRefs,
   textColor,
+  currentHighlight,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
@@ -53,35 +59,42 @@ const ExpandableScriptCell = ({
           <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         )}
       </button>
-      <textarea
-        ref={(el) => {
-          if (el) {
-            cellRefs.current[`${itemId}-${cellRefKey}`] = el;
-            textareaRef.current = el;
-          }
-        }}
-        value={value}
-        onChange={(e) => {
-          onUpdateValue(e.target.value);
-          // Trigger resize on content change
-          if (isExpanded && e.target) {
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.max(e.target.scrollHeight, 120) + 'px';
-          }
-        }}
-        onKeyDown={(e) => onKeyDown(e, itemId, cellRefKey)}
-        className="flex-1 border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
-        style={{ 
-          color: textColor || undefined,
-          minHeight: isExpanded ? '120px' : '24px',
-          height: isExpanded ? 'auto' : '24px',
-          overflow: isExpanded ? 'visible' : 'hidden',
-          whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
-          textOverflow: isExpanded ? 'unset' : 'ellipsis'
-        }}
-        rows={isExpanded ? undefined : 1}
-        placeholder="Enter script content..."
-      />
+      <div className="flex-1 relative">
+        <textarea
+          ref={(el) => {
+            if (el) {
+              cellRefs.current[`${itemId}-${cellRefKey}`] = el;
+              textareaRef.current = el;
+            }
+          }}
+          value={value}
+          onChange={(e) => {
+            onUpdateValue(e.target.value);
+            // Trigger resize on content change
+            if (isExpanded && e.target) {
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.max(e.target.scrollHeight, 120) + 'px';
+            }
+          }}
+          onKeyDown={(e) => onKeyDown(e, itemId, cellRefKey)}
+          className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
+          style={{ 
+            color: textColor || undefined,
+            minHeight: isExpanded ? '120px' : '24px',
+            height: isExpanded ? 'auto' : '24px',
+            overflow: isExpanded ? 'visible' : 'hidden',
+            whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
+            textOverflow: isExpanded ? 'unset' : 'ellipsis'
+          }}
+          rows={isExpanded ? undefined : 1}
+          placeholder="Enter script content..."
+        />
+        {currentHighlight && (
+          <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
+            <HighlightedText text={value} highlight={currentHighlight} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
