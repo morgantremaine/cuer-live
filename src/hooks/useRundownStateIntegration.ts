@@ -38,7 +38,7 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager();
 
-  // Auto-save functionality - fix: useAutoSave expects items, rundownTitle, columns, timezone
+  // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     items,
     rundownTitle,
