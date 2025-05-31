@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -60,9 +61,18 @@ const HeaderRow = ({
   isDragging,
   getColumnWidth
 }: HeaderRowProps) => {
-  const rowClass = isDragging 
-    ? 'bg-blue-100 dark:bg-blue-900 opacity-50'
-    : 'bg-gray-200 dark:bg-gray-800 border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:bg-gray-300 dark:hover:bg-gray-700';
+  let rowClass = '';
+  
+  if (isDragging) {
+    rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
+  } else {
+    rowClass = 'bg-gray-200 dark:bg-gray-800 border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:bg-gray-300 dark:hover:bg-gray-700';
+  }
+
+  // Add selection styling to match regular rows
+  if (isSelected) {
+    rowClass += ' ring-2 ring-inset ring-blue-500 border-blue-500';
+  }
 
   const handleContextMenuCopy = () => {
     if (isSelected && selectedRowsCount > 1) {
