@@ -8,6 +8,35 @@ interface RundownHeaderPropsAdapterProps {
 }
 
 const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
+  // Create handlers for search functionality
+  const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
+    // Focus on the cell and highlight the match
+    const cellKey = `${itemId}-${field}`;
+    const cellElement = props.cellRefs.current[cellKey];
+    if (cellElement) {
+      cellElement.focus();
+      if (cellElement.setSelectionRange) {
+        cellElement.setSelectionRange(startIndex, endIndex);
+      }
+    }
+  };
+
+  const handleReplaceText = (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
+    const item = props.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const currentValue = item[field] || '';
+    let newValue;
+
+    if (replaceAll) {
+      newValue = currentValue.replaceAll(searchText, replaceText);
+    } else {
+      newValue = currentValue.replace(searchText, replaceText);
+    }
+
+    props.onUpdateItem(itemId, field, newValue);
+  };
+
   return (
     <RundownHeaderSection
       currentTime={props.currentTime}
@@ -39,6 +68,10 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onRundownStartTimeChange={props.onRundownStartTimeChange}
       rundownId={props.rundownId}
       onOpenTeleprompter={props.onOpenTeleprompter}
+      items={props.items}
+      visibleColumns={props.visibleColumns}
+      onHighlightMatch={handleHighlightMatch}
+      onReplaceText={handleReplaceText}
     />
   );
 };

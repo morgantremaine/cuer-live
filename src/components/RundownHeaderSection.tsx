@@ -33,6 +33,10 @@ interface RundownHeaderSectionProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
+  items?: any[];
+  visibleColumns?: any[];
+  onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
+  onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
 }
 
 const RundownHeaderSection = ({
@@ -64,7 +68,11 @@ const RundownHeaderSection = ({
   rundownStartTime,
   onRundownStartTimeChange,
   rundownId,
-  onOpenTeleprompter
+  onOpenTeleprompter,
+  items = [],
+  visibleColumns = [],
+  onHighlightMatch = () => {},
+  onReplaceText = () => {}
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -79,6 +87,10 @@ const RundownHeaderSection = ({
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
+        items={items}
+        visibleColumns={visibleColumns}
+        onHighlightMatch={onHighlightMatch}
+        onReplaceText={onReplaceText}
       />
       <RundownToolbar
         onAddRow={onAddRow}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import TimezoneSelector from './TimezoneSelector';
 import AuthModal from './AuthModal';
+import SearchBar from './SearchBar';
 import { useAuth } from '@/hooks/useAuth';
 
 interface RundownHeaderProps {
@@ -18,6 +19,10 @@ interface RundownHeaderProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  items?: any[];
+  visibleColumns?: any[];
+  onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
+  onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
 }
 
 const RundownHeader = ({ 
@@ -30,7 +35,11 @@ const RundownHeader = ({
   title,
   onTitleChange,
   rundownStartTime,
-  onRundownStartTimeChange
+  onRundownStartTimeChange,
+  items = [],
+  visibleColumns = [],
+  onHighlightMatch = () => {},
+  onReplaceText = () => {}
 }: RundownHeaderProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -124,7 +133,7 @@ const RundownHeader = ({
             onTimezoneChange={onTimezoneChange}
           />
           {user ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 relative">
               <span className="text-sm">{user.email}</span>
               <Button
                 variant="ghost"
@@ -148,6 +157,19 @@ const RundownHeader = ({
           )}
         </div>
       </div>
+      
+      {/* Search bar positioned under the user menu */}
+      <div className="flex justify-end mb-2">
+        <div className="relative">
+          <SearchBar
+            items={items}
+            visibleColumns={visibleColumns}
+            onHighlightMatch={onHighlightMatch}
+            onReplaceText={onReplaceText}
+          />
+        </div>
+      </div>
+
       <div className="flex justify-between items-center text-sm">
         <div className="flex items-center space-x-4">
           <span className="opacity-75">Total Runtime: {totalRuntime}</span>
