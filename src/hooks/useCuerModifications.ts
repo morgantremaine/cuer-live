@@ -15,17 +15,29 @@ export const useCuerModifications = () => {
   } = useRundownGridState();
 
   const findItemByReference = useCallback((reference: string): RundownItem | null => {
+    console.log(`Looking for item with reference: "${reference}"`);
+    console.log('Available items:', items.map(item => ({ id: item.id, rowNumber: item.rowNumber, name: item.name, type: item.type })));
+    
     // First try to find by exact ID match
     let item = items.find(item => item.id === reference);
-    if (item) return item;
+    if (item) {
+      console.log('Found by ID:', item);
+      return item;
+    }
 
     // Try to find by row number (like "A2", "1", "2", etc.)
     item = items.find(item => item.rowNumber === reference);
-    if (item) return item;
+    if (item) {
+      console.log('Found by rowNumber:', item);
+      return item;
+    }
 
     // Try to find by name
     item = items.find(item => item.name.toLowerCase().includes(reference.toLowerCase()));
-    if (item) return item;
+    if (item) {
+      console.log('Found by name:', item);
+      return item;
+    }
 
     // Try to find by index (convert A, B, C to indices for headers)
     if (reference.match(/^[A-Z]\d*$/)) {
@@ -33,12 +45,20 @@ export const useCuerModifications = () => {
       const headerLetter = reference.charAt(0);
       const headerIndex = headerLetter.charCodeAt(0) - 65; // A=0, B=1, etc.
       const headers = items.filter(item => item.type === 'header');
-      if (headers[headerIndex]) return headers[headerIndex];
+      console.log(`Looking for header index ${headerIndex} (letter ${headerLetter}), available headers:`, headers);
+      if (headers[headerIndex]) {
+        console.log('Found header by index:', headers[headerIndex]);
+        return headers[headerIndex];
+      }
     } else if (reference.match(/^\d+$/)) {
       // Regular row reference like "1", "2", etc.
       const rowIndex = parseInt(reference) - 1;
       const regularItems = items.filter(item => item.type === 'regular');
-      if (regularItems[rowIndex]) return regularItems[rowIndex];
+      console.log(`Looking for regular item index ${rowIndex}, available regular items:`, regularItems);
+      if (regularItems[rowIndex]) {
+        console.log('Found regular item by index:', regularItems[rowIndex]);
+        return regularItems[rowIndex];
+      }
     }
 
     console.warn(`Could not find item with reference: ${reference}`);
@@ -76,11 +96,14 @@ export const useCuerModifications = () => {
   }, []);
 
   const applyModifications = useCallback((modifications: RundownModification[]) => {
-    console.log('Applying modifications:', modifications);
-    console.log('Current items:', items);
+    console.log('=== APPLYING MODIFICATIONS ===');
+    console.log('Modifications received:', modifications);
+    console.log('Current items count:', items.length);
+    console.log('Current items:', items.map(item => ({ id: item.id, rowNumber: item.rowNumber, name: item.name, type: item.type })));
 
-    modifications.forEach(mod => {
-      console.log('Processing modification:', mod);
+    modifications.forEach((mod, index) => {
+      console.log(`\n--- Processing modification ${index + 1}/${modifications.length} ---`);
+      console.log('Modification:', mod);
       
       switch (mod.type) {
         case 'add':
@@ -114,20 +137,30 @@ export const useCuerModifications = () => {
           
         case 'update':
           if (mod.itemId && mod.data) {
+            console.log(`Attempting to update item with reference: "${mod.itemId}"`);
+            console.log('Update data:', mod.data);
+            
             // Find the actual item by the reference provided
             const targetItem = findItemByReference(mod.itemId);
             if (targetItem) {
-              console.log(`Found item for reference "${mod.itemId}":`, targetItem);
+              console.log(`✅ Found target item:`, targetItem);
               
               // Apply each field update
               Object.keys(mod.data).forEach(field => {
                 const value = mod.data[field];
-                console.log(`Updating ${targetItem.id}.${field} = ${value}`);
-                updateItem(targetItem.id, field, value);
+                console.log(`Updating ${targetItem.id}.${field} = "${value}"`);
+                try {
+                  updateItem(targetItem.id, field, value);
+                  console.log(`✅ Successfully updated ${field}`);
+                } catch (error) {
+                  console.error(`❌ Failed to update ${field}:`, error);
+                }
               });
             } else {
-              console.error(`Could not find item with reference: ${mod.itemId}`);
+              console.error(`❌ Could not find item with reference: ${mod.itemId}`);
             }
+          } else {
+            console.error('❌ Update modification missing itemId or data:', mod);
           }
           break;
           
@@ -142,9 +175,14 @@ export const useCuerModifications = () => {
             }
           }
           break;
+          
+        default:
+          console.warn(`Unknown modification type: ${mod.type}`);
       }
     });
-  }, [findItemByReference, mapAIDataToRundownItem, addHeader, addRow, updateItem, deleteRow, calculateEndTime]);
+    
+    console.log('=== MODIFICATIONS COMPLETE ===\n');
+  }, [findItemByReference, mapAIDataToRundownItem, addHeader, addRow, updateItem, deleteRow, calculateEndTime, items]);
 
   return {
     applyModifications

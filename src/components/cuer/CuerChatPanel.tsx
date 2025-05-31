@@ -41,6 +41,14 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
     }
   }, [isOpen, checkConnection]);
 
+  // Debug effect to track pending modifications
+  useEffect(() => {
+    console.log('Pending modifications changed:', pendingModifications);
+    if (pendingModifications && pendingModifications.length > 0) {
+      console.log('Should show modification dialog');
+    }
+  }, [pendingModifications]);
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
     
@@ -71,10 +79,16 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
   };
 
   const handleConfirmModifications = () => {
+    console.log('Confirming modifications:', pendingModifications);
     if (pendingModifications) {
       applyModifications(pendingModifications);
       clearPendingModifications();
     }
+  };
+
+  const handleCancelModifications = () => {
+    console.log('Canceling modifications');
+    clearPendingModifications();
   };
 
   if (!isOpen) return null;
@@ -140,12 +154,12 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
         )}
       </div>
 
-      {pendingModifications && (
+      {pendingModifications && pendingModifications.length > 0 && (
         <RundownModificationDialog
           isOpen={true}
           modifications={pendingModifications}
           onConfirm={handleConfirmModifications}
-          onCancel={clearPendingModifications}
+          onCancel={handleCancelModifications}
         />
       )}
     </>
