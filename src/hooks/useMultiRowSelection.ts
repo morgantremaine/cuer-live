@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 export const useMultiRowSelection = () => {
@@ -28,10 +29,17 @@ export const useMultiRowSelection = () => {
         }
         setLastSelectedIndex(index);
       } else {
-        // Single selection - clear others and select this one
-        newSelection.clear();
-        newSelection.add(itemId);
-        setLastSelectedIndex(index);
+        // Single selection logic - check if clicking on already selected row(s)
+        if (newSelection.has(itemId)) {
+          // If clicking on a selected row, clear all selections
+          newSelection.clear();
+          setLastSelectedIndex(null);
+        } else {
+          // Clear others and select this one
+          newSelection.clear();
+          newSelection.add(itemId);
+          setLastSelectedIndex(index);
+        }
       }
       
       return newSelection;
