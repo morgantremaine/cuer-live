@@ -81,8 +81,8 @@ const RundownHeaderSection = ({
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
+        searchBar={searchBar}
       />
-      {searchBar}
       <RundownToolbar
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
