@@ -89,8 +89,8 @@ export const useRundownGridHandlers = ({
   }, [setRundownTitle, markAsChanged]);
 
   const handlePasteRowsWithClipboard = useCallback(() => {
-    handlePasteRows(clipboardItems, hasClipboardData);
-  }, [handlePasteRows, clipboardItems, hasClipboardData]);
+    handlePasteRows(clipboardItems, hasClipboardData, selectedRows);
+  }, [handlePasteRows, clipboardItems, hasClipboardData, selectedRows]);
 
   const handleDeleteSelectedRowsWithClear = useCallback(() => {
     handleDeleteSelectedRows(selectedRows, clearSelection);
