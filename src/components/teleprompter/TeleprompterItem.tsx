@@ -16,7 +16,7 @@ const TeleprompterItem = ({ item, fontSize, getRowNumber }: TeleprompterItemProp
           className="font-bold text-left mb-8"
           style={{ fontSize: `${fontSize + 8}px` }}
         >
-          [{getRowNumber(item.originalIndex)} {item.name?.toUpperCase() || 'HEADER'}]
+          [{getRowNumber(item.originalIndex)} {(item.segmentName || item.name)?.toUpperCase() || 'HEADER'}]
         </h2>
       </div>
     );
@@ -29,7 +29,7 @@ const TeleprompterItem = ({ item, fontSize, getRowNumber }: TeleprompterItemProp
         className="text-left mb-6"
         style={{ fontSize: `${fontSize + 4}px` }}
       >
-        [{getRowNumber(item.originalIndex)} {item.name?.toUpperCase() || 'UNTITLED'}]
+        [{getRowNumber(item.originalIndex)} {(item.segmentName || item.name)?.toUpperCase() || 'UNTITLED'}]
       </div>
 
       {/* Talent */}
