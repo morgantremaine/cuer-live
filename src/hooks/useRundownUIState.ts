@@ -21,9 +21,7 @@ export const useRundownUIState = (
   // Cell navigation - fix the function call to match expected signature
   const { cellRefs, handleCellClick, handleKeyDown } = useCellNavigation(
     items, 
-    visibleColumns, 
-    updateItem, 
-    handleToggleColorPicker
+    visibleColumns
   );
 
   // Resizable columns
