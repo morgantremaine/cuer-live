@@ -17,7 +17,6 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 export const useRundownGridState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
 
@@ -61,10 +60,7 @@ export const useRundownGridState = () => {
     columns,
     visibleColumns,
     handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout
+    handleUpdateColumnName
   } = useColumnsManager(markAsChanged);
 
   const {
@@ -131,8 +127,6 @@ export const useRundownGridState = () => {
     currentTime,
     timezone,
     setTimezone,
-    showColumnManager,
-    setShowColumnManager,
     rundownTitle,
     setRundownTitle,
     rundownStartTime,
@@ -162,10 +156,7 @@ export const useRundownGridState = () => {
     columns,
     visibleColumns,
     handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
+    handleUpdateColumnName,
     
     // Resizable columns state
     columnWidths,

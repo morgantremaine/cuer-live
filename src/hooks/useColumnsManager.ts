@@ -46,31 +46,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   };
 
-  const handleReorderColumns = (newColumns: Column[]) => {
-    setColumns(newColumns);
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  };
-
-  const handleDeleteColumn = (columnId: string) => {
-    setColumns(prev => prev.filter(col => col.id !== columnId));
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  };
-
-  const handleToggleColumnVisibility = (columnId: string) => {
+  const handleUpdateColumnName = (columnId: string, newName: string) => {
     setColumns(prev => prev.map(col => 
-      col.id === columnId ? { ...col, isVisible: col.isVisible !== false ? false : true } : col
+      col.id === columnId ? { ...col, name: newName } : col
     ));
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  };
-
-  const handleLoadLayout = (layoutColumns: Column[]) => {
-    setColumns(layoutColumns);
     if (markAsChanged) {
       markAsChanged();
     }
@@ -80,9 +59,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     columns,
     visibleColumns,
     handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout
+    handleUpdateColumnName
   };
 };

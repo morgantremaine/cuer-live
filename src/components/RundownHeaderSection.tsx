@@ -11,7 +11,6 @@ interface RundownHeaderSectionProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onAddColumn: () => void;
-  onShowColumnManager: () => void;
   selectedCount: number;
   hasClipboardData: boolean;
   onCopySelectedRows: () => void;
@@ -42,7 +41,6 @@ const RundownHeaderSection = ({
   onAddRow,
   onAddHeader,
   onAddColumn,
-  onShowColumnManager,
   selectedCount,
   hasClipboardData,
   onCopySelectedRows,
@@ -83,7 +81,6 @@ const RundownHeaderSection = ({
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
         onAddColumn={onAddColumn}
-        onShowColumnManager={onShowColumnManager}
         selectedCount={selectedCount}
         hasClipboardData={hasClipboardData}
         onCopySelectedRows={onCopySelectedRows}
