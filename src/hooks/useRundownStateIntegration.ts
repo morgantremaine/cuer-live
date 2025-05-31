@@ -26,7 +26,7 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems(markAsChanged);
 
-  // Column management - call without arguments as expected by TypeScript
+  // Column management - call without arguments as the hook doesn't expect markAsChanged
   const {
     columns,
     visibleColumns,
