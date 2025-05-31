@@ -1,8 +1,8 @@
 
-import RundownGrid from '@/components/RundownGrid';
+import RundownContainer from '@/components/RundownContainer'
 
 const Index = () => {
-  return <RundownGrid />;
-};
+  return <RundownContainer />
+}
 
-export default Index;
+export default Index
