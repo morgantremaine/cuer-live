@@ -5,7 +5,7 @@ import { Column } from '@/hooks/useColumnsManager';
 interface ResizableColumnHeaderProps {
   column: Column;
   width: string;
-  onWidthChange: (columnId: string, width: number) => void;
+  onWidthChange: (width: number) => void;
   children: React.ReactNode;
   showLeftSeparator?: boolean;
 }
@@ -29,7 +29,7 @@ const ResizableColumnHeader = ({
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(80, startWidth.current + diff); // Minimum width of 80px
-      onWidthChange(column.id, newWidth);
+      onWidthChange(newWidth);
     };
 
     const handleMouseUp = () => {
