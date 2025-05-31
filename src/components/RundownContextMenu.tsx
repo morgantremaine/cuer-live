@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Trash2, Copy, Anchor, Palette, ClipboardPaste, X } from 'lucide-react';
 import {
   ContextMenu,
@@ -27,7 +27,7 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
 }
 
-const RundownContextMenu = ({
+const RundownContextMenu = memo(({
   children,
   selectedCount,
   selectedRows,
@@ -70,8 +70,6 @@ const RundownContextMenu = ({
       onToggleFloat();
     }
   };
-
-  console.log('RundownContextMenu render - hasClipboardData:', hasClipboardData, 'onPaste:', !!onPaste);
 
   return (
     <ContextMenu>
@@ -133,7 +131,6 @@ const RundownContextMenu = ({
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
             onColorSelect={(id, color) => {
-              console.log('Color selected from picker:', id, color);
               handleColorSelect(id, color);
               onColorPicker(); // Close the color picker after selection
             }}
@@ -142,6 +139,8 @@ const RundownContextMenu = ({
       )}
     </ContextMenu>
   );
-};
+});
+
+RundownContextMenu.displayName = 'RundownContextMenu';
 
 export default RundownContextMenu;

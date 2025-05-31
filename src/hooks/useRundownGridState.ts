@@ -2,7 +2,7 @@
 import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridState = () => {
@@ -11,15 +11,23 @@ export const useRundownGridState = () => {
   
   // Local clipboard state
   const [clipboardItems, setClipboardItems] = useState<RundownItem[]>([]);
+  
+  // Stable refs to prevent infinite loops
+  const stableUpdateItemRef = useRef(coreState.updateItem);
+  const stableMarkAsChangedRef = useRef(coreState.markAsChanged);
+  
+  // Update refs when core functions change
+  stableUpdateItemRef.current = coreState.updateItem;
+  stableMarkAsChangedRef.current = coreState.markAsChanged;
 
   // Stable color selection function
   const handleColorSelection = useCallback((id: string, color: string) => {
     console.log('Applying color to item:', id, color);
-    coreState.updateItem(id, 'color', color);
-    coreState.markAsChanged();
-  }, [coreState.updateItem, coreState.markAsChanged]);
+    stableUpdateItemRef.current(id, 'color', color);
+    stableMarkAsChangedRef.current();
+  }, []);
 
-  // Get interaction handlers - use core functions directly
+  // Get interaction handlers - use stable references
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
@@ -37,7 +45,7 @@ export const useRundownGridState = () => {
     coreState.setRundownTitle
   );
 
-  // Get UI state
+  // Get UI state with stable color function
   const uiState = useRundownGridUI(
     coreState.items,
     coreState.visibleColumns,
@@ -52,24 +60,19 @@ export const useRundownGridState = () => {
   const copyItems = useCallback((items: RundownItem[]) => {
     const copiedItems = items.map(item => {
       const cleanItem = { ...item };
-      // Generate a new clean ID without affecting the description
       cleanItem.id = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       return cleanItem;
     });
     setClipboardItems(copiedItems);
-    console.log('Items copied to clipboard:', copiedItems.length);
   }, []);
 
   const hasClipboardData = useMemo(() => {
-    const hasData = clipboardItems.length > 0;
-    console.log('Clipboard has data:', hasData, 'items:', clipboardItems.length);
-    return hasData;
-  }, [clipboardItems]);
+    return clipboardItems.length > 0;
+  }, [clipboardItems.length]);
 
-  // Direct copy/paste handlers
+  // Direct copy/paste handlers with stable dependencies
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = coreState.items.filter(item => interactions.selectedRows.has(item.id));
-    console.log('Copying selected rows:', selectedItems.length);
     if (selectedItems.length > 0) {
       copyItems(selectedItems);
       interactions.clearSelection();
@@ -77,67 +80,53 @@ export const useRundownGridState = () => {
   }, [coreState.items, interactions.selectedRows, copyItems, interactions.clearSelection]);
 
   const handlePasteRows = useCallback(() => {
-    console.log('Attempting to paste rows, clipboard items:', clipboardItems.length);
     if (clipboardItems.length > 0) {
-      // Find the last selected row index
       const selectedIds = Array.from(interactions.selectedRows);
       let insertAfterIndex: number | undefined;
       
       if (selectedIds.length > 0) {
-        // Find the highest index among selected rows
         const selectedIndices = selectedIds.map(id => 
           coreState.items.findIndex(item => item.id === id)
         ).filter(index => index !== -1);
         
         if (selectedIndices.length > 0) {
           insertAfterIndex = Math.max(...selectedIndices);
-          console.log('Inserting after index:', insertAfterIndex);
         }
       }
 
-      // Create clean copies for pasting
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
       
-      console.log('Pasting items:', itemsToPaste.length);
-      
       if (insertAfterIndex !== undefined) {
-        // Insert items after the selected row
         coreState.setItems(prevItems => {
           const newItems = [...prevItems];
           newItems.splice(insertAfterIndex! + 1, 0, ...itemsToPaste);
           return newItems;
         });
       } else {
-        // Fallback to adding at the end
         coreState.addMultipleRows(itemsToPaste, coreState.calculateEndTime);
       }
       
       coreState.markAsChanged();
-    } else {
-      console.log('No clipboard data to paste');
     }
   }, [clipboardItems, interactions.selectedRows, coreState.items, coreState.setItems, coreState.addMultipleRows, coreState.calculateEndTime, coreState.markAsChanged]);
 
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(interactions.selectedRows);
     if (selectedIds.length > 0) {
-      console.log('Deleting selected rows:', selectedIds);
       coreState.deleteMultipleRows(selectedIds);
       interactions.clearSelection();
     }
   }, [interactions.selectedRows, coreState.deleteMultipleRows, interactions.clearSelection]);
 
-  // Wrapped add functions with proper logging
+  // Wrapped add functions
   const wrappedAddRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
-    console.log('Adding new row at index:', insertAfterIndex);
     coreState.addRow(calculateEndTime, insertAfterIndex);
   }, [coreState.addRow]);
 
   const wrappedAddHeader = useCallback((insertAfterIndex?: number) => {
-    console.log('Adding new header at index:', insertAfterIndex);
     coreState.addHeader(insertAfterIndex);
   }, [coreState.addHeader]);
 
@@ -147,15 +136,15 @@ export const useRundownGridState = () => {
     selectColor: handleColorSelection
   }), [uiState, handleColorSelection]);
 
-  // Memoize the return object to prevent unnecessary re-renders
-  const returnValue = useMemo(() => ({
+  // Memoize the return object with stable references
+  return useMemo(() => ({
     ...coreState,
     ...interactions,
     ...stableUIState,
     // Override with wrapped functions
     addRow: wrappedAddRow,
     addHeader: wrappedAddHeader,
-    // Override with our direct implementations
+    // Clipboard functionality
     clipboardItems,
     copyItems,
     hasClipboardData,
@@ -175,6 +164,4 @@ export const useRundownGridState = () => {
     handlePasteRows,
     handleDeleteSelectedRows
   ]);
-
-  return returnValue;
 };
