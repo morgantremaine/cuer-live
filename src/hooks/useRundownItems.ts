@@ -20,26 +20,28 @@ export const useRundownItems = () => {
   const params = useParams<{ id: string }>();
   // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
-  const rundownId = rawId === ':id' ? undefined : rawId;
-  
-  console.log('useRundownItems: params.id =', rawId, 'processed rundownId =', rundownId);
+  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { savedRundowns, loading } = useRundownStorage();
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRef = useRef<string | null>(null);
+  const initRef = useRef(false);
 
-  // Initialize with defaults for new rundowns immediately
+  // Initialize with defaults for new rundowns only once
   useEffect(() => {
+    if (initRef.current) return;
+    
     if (!rundownId && loadedRef.current !== null) {
-      console.log('useRundownItems: New rundown, setting default items immediately');
+      console.log('useRundownItems: New rundown, setting default items');
       loadedRef.current = null;
       setItems(defaultRundownItems);
+      initRef.current = true;
     }
   }, [rundownId]);
 
   // Load existing rundown data when rundownId changes - but only once
   useEffect(() => {
-    if (loading) return;
+    if (loading || initRef.current) return;
     
     // Prevent duplicate loading
     if (loadedRef.current === rundownId) return;
@@ -48,22 +50,32 @@ export const useRundownItems = () => {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       
       if (existingRundown?.items && loadedRef.current !== rundownId) {
-        console.log('useRundownItems: Loading rundown items once:', rundownId, existingRundown.items.length);
+        console.log('useRundownItems: Loading rundown items for:', rundownId);
         loadedRef.current = rundownId;
         const normalizedItems = existingRundown.items.map(normalizeRundownItem);
         setItems(normalizedItems);
+        initRef.current = true;
       } else if (!existingRundown && loadedRef.current !== rundownId) {
         console.log('useRundownItems: Rundown not found, using defaults for ID:', rundownId);
         loadedRef.current = rundownId;
         setItems(defaultRundownItems);
+        initRef.current = true;
       }
     } else if (!rundownId && items.length === 0) {
       // Only set defaults if we don't already have them
       console.log('useRundownItems: New rundown, using defaults');
       loadedRef.current = null;
       setItems(defaultRundownItems);
+      initRef.current = true;
     }
   }, [rundownId, savedRundowns, loading, items.length]);
+
+  // Reset initialization when rundown changes
+  useEffect(() => {
+    return () => {
+      initRef.current = false;
+    };
+  }, [rundownId]);
 
   const actions = useRundownItemActions(setItems);
   const calculations = useRundownCalculations(items);

@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
@@ -9,9 +9,15 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
   const params = useParams<{ id: string }>();
   // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
-  const rundownId = rawId === ':id' ? undefined : rawId;
+  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { savedRundowns, loading } = useRundownStorage();
+  const initializationRef = useRef<{ [key: string]: boolean }>({});
+
+  // Add a callback to prevent multiple initializations
+  const markAsChanged = useCallback(() => {
+    console.log('Changes marked - triggering auto-save');
+  }, []);
 
   const {
     items,
@@ -36,7 +42,42 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
     handleDeleteColumn,
     handleToggleColumnVisibility,
     handleLoadLayout
-  } = useColumnsManager();
+  } = useColumnsManager(markAsChanged);
+
+  // Only initialize once per rundownId to prevent loops
+  useEffect(() => {
+    const initKey = rundownId || 'new';
+    
+    if (initializationRef.current[initKey] || loading) {
+      return;
+    }
+
+    console.log('Initializing rundown data management for:', initKey);
+    initializationRef.current[initKey] = true;
+
+    // For existing rundowns, load the data
+    if (rundownId && savedRundowns.length > 0) {
+      const existingRundown = savedRundowns.find(r => r.id === rundownId);
+      if (existingRundown) {
+        console.log('Loading existing rundown data:', rundownId);
+        if (existingRundown.items) {
+          setItems(existingRundown.items);
+        }
+        if (existingRundown.columns) {
+          handleLoadLayout(existingRundown.columns);
+        }
+      }
+    }
+  }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout]);
+
+  // Clear initialization when rundown ID changes
+  useEffect(() => {
+    return () => {
+      if (rundownId) {
+        delete initializationRef.current[rundownId];
+      }
+    };
+  }, [rundownId]);
 
   return {
     rundownId,
@@ -61,5 +102,6 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
     handleLoadLayout,
     savedRundowns,
     loading,
+    markAsChanged,
   };
 };

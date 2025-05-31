@@ -11,10 +11,11 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
   const params = useParams<{ id: string }>();
   // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
-  const rundownId = rawId === ':id' ? undefined : rawId;
+  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { savedRundowns, loading } = useRundownStorage();
   const loadedRef = useRef<string | null>(null);
+  const initRef = useRef(false);
 
   const {
     items,
@@ -57,9 +58,9 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
     handleLoadLayout
   });
 
-  // Load rundown data only once when rundown ID changes
+  // Load rundown data only once when rundown ID changes - with better coordination
   useEffect(() => {
-    if (loading) return;
+    if (loading || initRef.current) return;
     
     // Prevent duplicate loading
     if (loadedRef.current === rundownId) return;
@@ -67,8 +68,9 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
     if (rundownId && savedRundowns.length > 0) {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown && loadedRef.current !== rundownId) {
-        console.log('Loading rundown once:', rundownId);
+        console.log('Loading rundown state integration for:', rundownId);
         loadedRef.current = rundownId;
+        initRef.current = true;
         
         // Set items first
         if (existingRundown.items) {
@@ -77,17 +79,27 @@ export const useRundownStateIntegration = (markAsChanged: () => void, rundownTit
         
         // Load columns if they exist
         if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
-          console.log('Loading saved columns once:', existingRundown.columns.length);
+          console.log('Loading saved columns:', existingRundown.columns.length);
           handleLoadLayout(existingRundown.columns);
         }
       }
     } else if (!rundownId && loadedRef.current !== null) {
-      // New rundown - reset state
-      console.log('Resetting for new rundown');
-      loadedRef.current = null;
-      setItems([]);
+      // New rundown - reset state only once
+      if (!initRef.current) {
+        console.log('Resetting for new rundown');
+        loadedRef.current = null;
+        initRef.current = true;
+        setItems([]);
+      }
     }
   }, [rundownId, savedRundowns, loading, setItems, handleLoadLayout]);
+
+  // Reset when rundown changes
+  useEffect(() => {
+    return () => {
+      initRef.current = false;
+    };
+  }, [rundownId]);
 
   const { hasUnsavedChanges, isSaving } = useAutoSave(items, rundownTitle, columns, timezone);
 

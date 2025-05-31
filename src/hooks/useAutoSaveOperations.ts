@@ -11,7 +11,7 @@ export const useAutoSaveOperations = () => {
   const params = useParams<{ id: string }>();
   // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
-  const rundownId = rawId === ':id' ? undefined : rawId;
+  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { updateRundown, saveRundown } = useRundownStorage();
   const { user } = useAuth();
@@ -21,6 +21,7 @@ export const useAutoSaveOperations = () => {
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string) => {
     if (isSaving) {
+      console.log('Save already in progress, skipping');
       return false;
     }
 

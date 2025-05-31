@@ -1,27 +1,34 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 export const useRundownBasicState = () => {
   const params = useParams<{ id: string }>();
   // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
-  const rundownId = rawId === ':id' ? undefined : rawId;
-  
-  console.log('useRundownBasicState: params.id =', rawId, 'processed rundownId =', rundownId);
+  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
-  // Start with default title for all cases - let data loader handle existing rundowns
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
+  
+  const initRef = useRef(false);
 
   // Timer effect for current time
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Prevent multiple initializations
+  useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+    
+    console.log('useRundownBasicState initialized for rundownId:', rundownId);
+  }, [rundownId]);
 
   // Change tracking for timezone and other fields
   const markAsChanged = () => {
