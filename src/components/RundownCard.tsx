@@ -39,13 +39,13 @@ const RundownCard = ({
 }: RundownCardProps) => {
   return (
     <Card 
-      className={`hover:shadow-lg transition-shadow cursor-pointer relative ${isArchived ? 'opacity-75' : ''}`} 
+      className={`hover:shadow-lg transition-shadow cursor-pointer relative bg-white border-gray-200 ${isArchived ? 'opacity-75' : ''}`} 
       onClick={() => onOpen(rundown.id)}
     >
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg flex items-center">
+            <CardTitle className="text-lg flex items-center text-gray-900">
               {isArchived && <Archive className="h-4 w-4 mr-2 text-gray-500" />}
               {rundown.title}
             </CardTitle>
