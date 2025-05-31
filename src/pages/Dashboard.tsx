@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,15 +13,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
 import { useNavigate } from 'react-router-dom'
-import { Plus, FileText, LogOut, Calendar, Clock, Trash2, Archive } from 'lucide-react'
+import { Plus, FileText, LogOut, Calendar, Clock, Trash2, Archive, MoreVertical } from 'lucide-react'
 import { format } from 'date-fns'
 
 const Dashboard = () => {
@@ -152,43 +153,55 @@ const Dashboard = () => {
             ) : (
               // Active rundowns list
               activeRundowns.map((rundown) => (
-                <ContextMenu key={rundown.id}>
-                  <ContextMenuTrigger>
-                    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleOpenRundown(rundown.id)}>
-                      <CardHeader>
+                <Card key={rundown.id} className="hover:shadow-lg transition-shadow cursor-pointer relative" onClick={() => handleOpenRundown(rundown.id)}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
                         <CardTitle className="text-lg">{rundown.title}</CardTitle>
                         <CardDescription className="flex items-center text-sm text-gray-500">
                           <Calendar className="h-4 w-4 mr-1" />
                           {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
                         </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {rundown.items?.length || 0} items
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            Open →
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent>
-                    <ContextMenuItem onClick={(e) => handleArchiveClick(rundown.id, rundown.title, e)}>
-                      <Archive className="h-4 w-4 mr-2" />
-                      Archive
-                    </ContextMenuItem>
-                    <ContextMenuItem 
-                      onClick={(e) => handleDeleteClick(rundown.id, rundown.title, e)}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => handleArchiveClick(rundown.id, rundown.title, e)}>
+                            <Archive className="h-4 w-4 mr-2" />
+                            Archive
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => handleDeleteClick(rundown.id, rundown.title, e)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {rundown.items?.length || 0} items
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        Open →
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               ))
             )}
           </div>
@@ -200,10 +213,10 @@ const Dashboard = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Archived Rundowns</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {archivedRundowns.map((rundown) => (
-                <ContextMenu key={rundown.id}>
-                  <ContextMenuTrigger>
-                    <Card className="hover:shadow-lg transition-shadow cursor-pointer opacity-75" onClick={() => handleOpenRundown(rundown.id)}>
-                      <CardHeader>
+                <Card key={rundown.id} className="hover:shadow-lg transition-shadow cursor-pointer opacity-75 relative" onClick={() => handleOpenRundown(rundown.id)}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
                         <CardTitle className="text-lg flex items-center">
                           <Archive className="h-4 w-4 mr-2 text-gray-500" />
                           {rundown.title}
@@ -212,39 +225,51 @@ const Dashboard = () => {
                           <Calendar className="h-4 w-4 mr-1" />
                           {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
                         </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {rundown.items?.length || 0} items
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            Open →
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent>
-                    <ContextMenuItem 
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        await updateRundown(rundown.id, rundown.title, rundown.items, false, false)
-                      }}
-                    >
-                      <Archive className="h-4 w-4 mr-2" />
-                      Unarchive
-                    </ContextMenuItem>
-                    <ContextMenuItem 
-                      onClick={(e) => handleDeleteClick(rundown.id, rundown.title, e)}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Permanently
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              await updateRundown(rundown.id, rundown.title, rundown.items, false, false)
+                            }}
+                          >
+                            <Archive className="h-4 w-4 mr-2" />
+                            Unarchive
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => handleDeleteClick(rundown.id, rundown.title, e)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Permanently
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {rundown.items?.length || 0} items
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        Open →
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
