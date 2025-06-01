@@ -11,48 +11,34 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
   
   const values = new Set<string>();
   
-  // Special handling for headers overview - this is the ONLY case where we want header data
+  // Special handling for headers overview - extract descriptions from header ROWS
   if (columnKey === 'headers') {
-    console.log('*** SPECIAL HEADERS PROCESSING ***');
+    console.log('*** PROCESSING HEADERS OVERVIEW ***');
     const headerItems = items.filter(item => item.type === 'header');
     console.log('Found', headerItems.length, 'header items');
     
-    if (headerItems.length === 0) {
-      console.log('WARNING: No header items found for headers column');
-      return [];
-    }
-    
     headerItems.forEach((item, index) => {
-      console.log(`Processing header ${index + 1}:`, {
+      console.log(`Processing header row ${index + 1}:`, {
         id: item.id,
-        type: item.type,
-        rowNumber: item.rowNumber,
-        segmentName: item.segmentName,
+        name: item.name,
         notes: item.notes,
-        name: item.name
+        rowNumber: item.rowNumber
       });
       
-      // For headers, we want to create a meaningful overview entry
-      const identifier = item.rowNumber || item.segmentName || '';
-      const description = item.notes || item.name || '';
+      // Extract meaningful description from header row
+      const description = item.notes || item.name || item.rowNumber || '';
+      const cleanDescription = description.trim();
       
-      if (identifier && description) {
-        const entry = `${identifier}: ${description}`;
-        console.log('Adding header entry:', entry);
-        values.add(entry);
-      } else if (identifier) {
-        console.log('Adding identifier only:', identifier);
-        values.add(identifier);
-      } else if (description) {
-        console.log('Adding description only:', description);
-        values.add(description);
+      if (cleanDescription && cleanDescription !== '') {
+        console.log('Adding header description:', cleanDescription);
+        values.add(cleanDescription);
       } else {
-        console.log('No useful data found for this header item');
+        console.log('No description found for this header row');
       }
     });
     
     const result = Array.from(values).sort();
-    console.log('*** HEADERS RESULT:', result);
+    console.log('*** HEADERS OVERVIEW RESULT:', result);
     return result;
   }
   
@@ -133,7 +119,7 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
   
   const result = DEFAULT_BLUEPRINT_LISTS.map((listConfig, configIndex) => {
     console.log(`=== PROCESSING LIST ${configIndex + 1}/${DEFAULT_BLUEPRINT_LISTS.length}: "${listConfig.name}" ===`);
-    console.log(`Creating list "${listConfig.name}" from column "${listConfig.sourceColumn}"`);
+    console.log(`Creating list "${listConfig.name}" from source "${listConfig.sourceColumn}"`);
     
     const generatedItems = generateListFromColumn(items, listConfig.sourceColumn);
     console.log(`Generated ${generatedItems.length} items for "${listConfig.name}":`, generatedItems);
