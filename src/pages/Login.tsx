@@ -69,6 +69,7 @@ const Login = () => {
       <Card className="w-full max-w-md bg-gray-800 border-gray-700">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-white">Welcome to Cuer</CardTitle>
+          <div className="text-lg text-gray-300 mt-2">Your AI rundown pilot.</div>
           <CardDescription className="text-gray-300">Sign in to your account or create a new one</CardDescription>
         </CardHeader>
         <CardContent>
