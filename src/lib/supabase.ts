@@ -41,6 +41,8 @@ export type Database = {
           created_at: string
           updated_at: string
           archived: boolean
+          team_id?: string | null
+          visibility: 'private' | 'team'
         }
         Insert: {
           id?: string
@@ -52,6 +54,8 @@ export type Database = {
           created_at?: string
           updated_at?: string
           archived?: boolean
+          team_id?: string | null
+          visibility?: 'private' | 'team'
         }
         Update: {
           id?: string
@@ -63,6 +67,83 @@ export type Database = {
           created_at?: string
           updated_at?: string
           archived?: boolean
+          team_id?: string | null
+          visibility?: 'private' | 'team'
+        }
+      }
+      teams: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      team_members: {
+        Row: {
+          id: string
+          team_id: string
+          user_id: string
+          role: 'owner' | 'admin' | 'member'
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          user_id: string
+          role?: 'owner' | 'admin' | 'member'
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          user_id?: string
+          role?: 'owner' | 'admin' | 'member'
+          joined_at?: string
+        }
+      }
+      team_invitations: {
+        Row: {
+          id: string
+          team_id: string
+          email: string
+          invited_by: string
+          token: string
+          accepted: boolean
+          created_at: string
+          expires_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          email: string
+          invited_by: string
+          token: string
+          accepted?: boolean
+          created_at?: string
+          expires_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          email?: string
+          invited_by?: string
+          token?: string
+          accepted?: boolean
+          created_at?: string
+          expires_at?: string
         }
       }
       column_layouts: {
