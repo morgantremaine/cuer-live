@@ -19,7 +19,7 @@ interface TextareaCellProps {
     startIndex: number;
     endIndex: number;
   } | null;
-  onCellClick: () => void;
+  onCellClick: (e: React.MouseEvent) => void;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }

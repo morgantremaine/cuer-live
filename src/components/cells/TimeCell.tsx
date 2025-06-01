@@ -10,7 +10,7 @@ interface TimeCellProps {
     startIndex: number;
     endIndex: number;
   } | null;
-  onCellClick: () => void;
+  onCellClick: (e: React.MouseEvent) => void;
 }
 
 const TimeCell = ({ columnId, value, width, highlight, onCellClick }: TimeCellProps) => {
