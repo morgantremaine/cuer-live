@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
@@ -98,12 +99,6 @@ const RundownHeaderSection = ({
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
         onShowColumnManager={onShowColumnManager}
-        selectedCount={selectedCount}
-        hasClipboardData={hasClipboardData}
-        onCopySelectedRows={onCopySelectedRows}
-        onPasteRows={onPasteRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onClearSelection={onClearSelection}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
