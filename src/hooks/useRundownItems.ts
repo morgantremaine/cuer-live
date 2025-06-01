@@ -14,6 +14,8 @@ const normalizeRundownItem = (item: RundownItem): RundownItem => ({
   status: item.status || 'upcoming',
   customFields: item.customFields || {},
   segmentName: isHeaderItem(item) ? item.segmentName || item.rowNumber : item.segmentName,
+  gfx: item.gfx || '',
+  video: item.video || '',
 });
 
 export const useRundownItems = () => {
