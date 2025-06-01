@@ -133,11 +133,11 @@ const HeaderRow = ({
         onDrop={(e) => onDrop(e, index)}
         onClick={handleRowClick}
       >
-        <td className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ width: '40px' }}>
+        <td className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" style={{ width: '40px' }}>
           <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
         </td>
         {columns.map((column, columnIndex) => (
-          <td key={column.id} className="px-1 py-2" style={{ width: getColumnWidth(column) }}>
+          <td key={column.id} className="px-1 py-2 align-middle" style={{ width: getColumnWidth(column) }}>
             {column.key === 'segmentName' ? (
               <input
                 ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}

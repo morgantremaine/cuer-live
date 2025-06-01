@@ -91,7 +91,7 @@ const CellRenderer = ({
 
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
-      <td key={column.id} className="px-1 py-1" onClick={handleCellClick} style={{ width }}>
+      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
         <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
           <HighlightedText text={value} highlight={highlight} />
         </span>
@@ -101,7 +101,7 @@ const CellRenderer = ({
 
   if (column.key === 'script' || column.key === 'notes') {
     return (
-      <td key={column.id} className="px-1 py-1" onClick={handleCellClick} style={{ width }}>
+      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
         <ExpandableScriptCell
           value={value}
           itemId={item.id}
@@ -118,7 +118,7 @@ const CellRenderer = ({
 
   if (column.isCustom) {
     return (
-      <td key={column.id} className="px-1 py-1 align-top" onClick={handleCellClick} style={{ width }}>
+      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
         <div className="relative">
           <textarea
             ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
@@ -151,7 +151,7 @@ const CellRenderer = ({
   }
 
   return (
-    <td key={column.id} className="px-1 py-1 align-top" onClick={handleCellClick} style={{ width }}>
+    <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
       <div className="relative">
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
