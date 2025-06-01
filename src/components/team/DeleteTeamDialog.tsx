@@ -8,13 +8,14 @@ import { Team } from '@/hooks/useTeamManagement'
 interface DeleteTeamDialogProps {
   currentTeam: Team | null
   onDeleteTeam: (teamId: string) => Promise<void>
+  isOwner: boolean
 }
 
-const DeleteTeamDialog = ({ currentTeam, onDeleteTeam }: DeleteTeamDialogProps) => {
+const DeleteTeamDialog = ({ currentTeam, onDeleteTeam, isOwner }: DeleteTeamDialogProps) => {
   const [deletingTeam, setDeletingTeam] = useState(false)
 
   const handleDeleteTeam = async () => {
-    if (!currentTeam) return
+    if (!currentTeam || !isOwner) return
     
     setDeletingTeam(true)
     await onDeleteTeam(currentTeam.id)
@@ -26,7 +27,12 @@ const DeleteTeamDialog = ({ currentTeam, onDeleteTeam }: DeleteTeamDialogProps) 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button size="sm" variant="destructive">
+        <Button 
+          size="sm" 
+          variant="destructive"
+          disabled={!isOwner}
+          className={!isOwner ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           <Trash2 className="h-4 w-4 mr-2" />
           Delete Team
         </Button>
@@ -42,7 +48,7 @@ const DeleteTeamDialog = ({ currentTeam, onDeleteTeam }: DeleteTeamDialogProps) 
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleDeleteTeam}
-            disabled={deletingTeam}
+            disabled={deletingTeam || !isOwner}
             className="bg-red-600 hover:bg-red-700"
           >
             {deletingTeam ? 'Deleting...' : 'Delete Team'}

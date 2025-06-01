@@ -60,8 +60,12 @@ const TeamManagement = () => {
           </CardTitle>
           <div className="flex gap-2">
             <CreateTeamDialog onCreateTeam={createTeam} />
-            {isOwner && currentTeam && (
-              <DeleteTeamDialog currentTeam={currentTeam} onDeleteTeam={deleteTeam} />
+            {currentTeam && (
+              <DeleteTeamDialog 
+                currentTeam={currentTeam} 
+                onDeleteTeam={deleteTeam}
+                isOwner={isOwner}
+              />
             )}
           </div>
         </div>
@@ -86,9 +90,10 @@ const TeamManagement = () => {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium">Team Members ({teamMembers.length})</h4>
-                    {isAdmin && (
-                      <InviteUserDialog onInviteUser={handleInviteUser} />
-                    )}
+                    <InviteUserDialog 
+                      onInviteUser={handleInviteUser}
+                      isOwner={isOwner}
+                    />
                   </div>
                   <TeamMembersList 
                     teamMembers={teamMembers}
