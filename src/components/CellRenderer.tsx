@@ -64,15 +64,6 @@ const CellRenderer = ({
     onUpdateItem(item.id, updateFieldKey, newValue);
   };
 
-  // Helper function to determine if content needs two lines
-  const needsTwoLines = (text: string) => {
-    // Rough estimation: if text is longer than ~40 characters, it might need two lines
-    // This can be adjusted based on your typical column widths
-    return text.length > 40 || text.includes('\n');
-  };
-
-  const shouldExpandRow = needsTwoLines(value);
-
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
     // Check if textColor is set (indicating a colored row)
@@ -142,7 +133,13 @@ const CellRenderer = ({
       <td key={column.id} className="px-4 py-2 align-top" onClick={handleCellClick} style={{ width }}>
         <div className="relative">
           <textarea
-            ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
+            ref={el => {
+              if (el) {
+                cellRefs.current[`${item.id}-${cellRefKey}`] = el;
+                // Initialize height based on current content
+                autoResize(el);
+              }
+            }}
             value={value}
             onChange={(e) => {
               const newValue = e.target.value;
@@ -153,10 +150,8 @@ const CellRenderer = ({
             className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden`}
             style={{ 
               color: textColor || undefined,
-              minHeight: '24px',
-              height: shouldExpandRow ? '48px' : '24px'
+              minHeight: '24px'
             }}
-            rows={shouldExpandRow ? 2 : 1}
             onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
           />
           {highlight && (
@@ -173,7 +168,13 @@ const CellRenderer = ({
     <td key={column.id} className="px-4 py-2 align-top" onClick={handleCellClick} style={{ width }}>
       <div className="relative">
         <textarea
-          ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
+          ref={el => {
+            if (el) {
+              cellRefs.current[`${item.id}-${cellRefKey}`] = el;
+              // Initialize height based on current content
+              autoResize(el);
+            }
+          }}
           value={value}
           onChange={(e) => {
             const newValue = e.target.value;
@@ -186,10 +187,8 @@ const CellRenderer = ({
           }`}
           style={{ 
             color: textColor || undefined,
-            minHeight: '24px',
-            height: shouldExpandRow ? '48px' : '24px'
+            minHeight: '24px'
           }}
-          rows={shouldExpandRow ? 2 : 1}
           placeholder={column.key === 'duration' ? '00:00:00' : ''}
           onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
         />
