@@ -91,8 +91,8 @@ const CellRenderer = ({
 
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
-      <td key={column.id} className="px-2 py-2" onClick={handleCellClick} style={{ width }}>
-        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+      <td key={column.id} className="px-1 py-1" onClick={handleCellClick} style={{ width }}>
+        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
           <HighlightedText text={value} highlight={highlight} />
         </span>
       </td>
@@ -101,7 +101,7 @@ const CellRenderer = ({
 
   if (column.key === 'script' || column.key === 'notes') {
     return (
-      <td key={column.id} className="px-2 py-2" onClick={handleCellClick} style={{ width }}>
+      <td key={column.id} className="px-1 py-1" onClick={handleCellClick} style={{ width }}>
         <ExpandableScriptCell
           value={value}
           itemId={item.id}
@@ -118,18 +118,18 @@ const CellRenderer = ({
 
   if (column.isCustom) {
     return (
-      <td key={column.id} className="px-2 py-2 align-top" onClick={handleCellClick} style={{ width }}>
+      <td key={column.id} className="px-1 py-1 align-top" onClick={handleCellClick} style={{ width }}>
         <div className="relative">
           <textarea
             ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
             value={value}
             onChange={(e) => handleUpdateValue(e.target.value)}
             onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden`}
+            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden`}
             style={{ 
               color: textColor || undefined,
-              minHeight: '24px',
-              height: shouldExpandRow ? '48px' : '24px'
+              minHeight: '20px',
+              height: shouldExpandRow ? '40px' : '20px'
             }}
             rows={shouldExpandRow ? 2 : 1}
             onInput={(e) => {
@@ -137,11 +137,11 @@ const CellRenderer = ({
               target.style.height = 'auto';
               const scrollHeight = target.scrollHeight;
               // Dynamically adjust height based on content, max 2 lines
-              target.style.height = Math.min(scrollHeight, 48) + 'px';
+              target.style.height = Math.min(scrollHeight, 40) + 'px';
             }}
           />
           {highlight && (
-            <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
+            <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm" style={{ color: 'transparent' }}>
               <HighlightedText text={value} highlight={highlight} />
             </div>
           )}
@@ -151,20 +151,20 @@ const CellRenderer = ({
   }
 
   return (
-    <td key={column.id} className="px-2 py-2 align-top" onClick={handleCellClick} style={{ width }}>
+    <td key={column.id} className="px-1 py-1 align-top" onClick={handleCellClick} style={{ width }}>
       <div className="relative">
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
           value={value}
           onChange={(e) => handleUpdateValue(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden ${
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden ${
             column.key === 'duration' ? 'font-mono' : ''
           }`}
           style={{ 
             color: textColor || undefined,
-            minHeight: '24px',
-            height: shouldExpandRow ? '48px' : '24px'
+            minHeight: '20px',
+            height: shouldExpandRow ? '40px' : '20px'
           }}
           rows={shouldExpandRow ? 2 : 1}
           placeholder={column.key === 'duration' ? '00:00:00' : ''}
@@ -173,11 +173,11 @@ const CellRenderer = ({
             target.style.height = 'auto';
             const scrollHeight = target.scrollHeight;
             // Dynamically adjust height based on content, max 2 lines
-            target.style.height = Math.min(scrollHeight, 48) + 'px';
+            target.style.height = Math.min(scrollHeight, 40) + 'px';
           }}
         />
         {highlight && (
-          <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
+          <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm" style={{ color: 'transparent' }}>
             <HighlightedText text={value} highlight={highlight} />
           </div>
         )}

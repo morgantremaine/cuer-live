@@ -176,12 +176,12 @@ const RegularRow = ({
         onDrop={(e) => onDrop(e, index)}
       >
         <td 
-          className={`px-4 py-2 text-sm font-mono cursor-move row-number-cell`}
-          style={{ color: textColor || undefined, width: '50px' }}
+          className={`px-2 py-1 text-sm font-mono cursor-move row-number-cell`}
+          style={{ color: textColor || undefined, width: '40px' }}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             {isCurrentlyPlaying && (
-              <Play className="h-4 w-4 text-green-500 fill-green-500" />
+              <Play className="h-3 w-3 text-green-500 fill-green-500" />
             )}
             <span>{rowNumber}</span>
             {isDraggingMultiple && isSelected && (

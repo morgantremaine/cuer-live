@@ -133,11 +133,11 @@ const HeaderRow = ({
         onDrop={(e) => onDrop(e, index)}
         onClick={handleRowClick}
       >
-        <td className="px-2 py-2 text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ width: '50px' }}>
-          <span className="text-xl font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
+        <td className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ width: '40px' }}>
+          <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
         </td>
         {columns.map((column, columnIndex) => (
-          <td key={column.id} className="px-2 py-3" style={{ width: getColumnWidth(column) }}>
+          <td key={column.id} className="px-1 py-2" style={{ width: getColumnWidth(column) }}>
             {column.key === 'segmentName' ? (
               <input
                 ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
@@ -149,7 +149,7 @@ const HeaderRow = ({
                   onCellClick(item.id, 'notes');
                 }}
                 onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
-                className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-2 py-1 text-sm w-full"
+                className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-sm w-full"
               />
             ) : column.key === 'duration' ? (
               <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">({headerDuration})</span>
