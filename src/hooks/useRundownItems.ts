@@ -9,9 +9,6 @@ import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export type { RundownItem } from '@/types/rundown';
 
-// Simplified global tracker
-let globalItemsInitialized = new Set<string>();
-
 const normalizeRundownItem = (item: RundownItem): RundownItem => ({
   ...item,
   status: item.status || 'upcoming',
@@ -26,23 +23,23 @@ export const useRundownItems = () => {
   
   const { savedRundowns, loading } = useRundownStorage();
   const [items, setItems] = useState<RundownItem[]>([]);
-  const initRef = useRef(false);
+  const loadedRundownIdRef = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
 
   // Load rundown data when conditions are met
   useEffect(() => {
-    const currentKey = rundownId || 'new';
-    
-    // Prevent multiple initializations
-    if (initRef.current || globalItemsInitialized.has(currentKey)) {
+    // Prevent loading if already loading or already loaded this rundown
+    if (isLoadingRef.current || loadedRundownIdRef.current === (rundownId || 'new')) {
       return;
     }
 
     // For new rundowns (no ID)
     if (!rundownId) {
-      console.log('useRundownItems: New rundown, setting default items');
-      initRef.current = true;
-      globalItemsInitialized.add(currentKey);
-      setItems(defaultRundownItems);
+      if (loadedRundownIdRef.current !== 'new') {
+        console.log('useRundownItems: New rundown, setting default items');
+        loadedRundownIdRef.current = 'new';
+        setItems(defaultRundownItems);
+      }
       return;
     }
 
@@ -55,24 +52,25 @@ export const useRundownItems = () => {
     const existingRundown = savedRundowns.find(r => r.id === rundownId);
     if (existingRundown?.items) {
       console.log('useRundownItems: Loading rundown items for:', rundownId);
-      initRef.current = true;
-      globalItemsInitialized.add(currentKey);
+      isLoadingRef.current = true;
+      loadedRundownIdRef.current = rundownId;
       const normalizedItems = existingRundown.items.map(normalizeRundownItem);
       setItems(normalizedItems);
+      isLoadingRef.current = false;
     } else if (!existingRundown) {
       console.log('useRundownItems: Rundown not found, using defaults for ID:', rundownId);
-      initRef.current = true;
-      globalItemsInitialized.add(currentKey);
+      loadedRundownIdRef.current = rundownId;
       setItems(defaultRundownItems);
     }
   }, [rundownId, savedRundowns, loading]);
 
-  // Cleanup on unmount
+  // Reset when rundownId changes
   useEffect(() => {
     return () => {
-      const currentKey = rundownId || 'new';
-      globalItemsInitialized.delete(currentKey);
-      initRef.current = false;
+      if (loadedRundownIdRef.current && loadedRundownIdRef.current !== (rundownId || 'new')) {
+        loadedRundownIdRef.current = null;
+        isLoadingRef.current = false;
+      }
     };
   }, [rundownId]);
 

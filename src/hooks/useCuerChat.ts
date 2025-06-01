@@ -1,46 +1,131 @@
+import { useState, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 
-import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { ChatMessage } from './useCuerChat/types';
-import { useTableChecker } from './useCuerChat/useTableChecker';
-import { useChatHistory } from './useCuerChat/useChatHistory';
-import { useMessageDatabase } from './useCuerChat/useMessageDatabase';
-import { useConnectionChecker } from './useCuerChat/useConnectionChecker';
-import { useChatOperations } from './useCuerChat/useChatOperations';
+// Define the types locally since we're not using the openaiService anymore
+interface OpenAIMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 export const useCuerChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
-  const { tableExists, checkTableExists } = useTableChecker(user);
-  const { loadChatHistory } = useChatHistory(user, checkTableExists);
-  const { saveMessageToDb, clearChatFromDb } = useMessageDatabase(user, tableExists);
-  const { isConnected, checkConnection } = useConnectionChecker();
-  const { sendMessage, analyzeRundown } = useChatOperations(setMessages, setIsLoading, saveMessageToDb);
-
-  useEffect(() => {
-    if (user) {
-      loadChatHistory().then(setMessages);
-    } else {
-      setMessages([]);
+  const checkConnection = useCallback(async () => {
+    try {
+      // Test if we can reach the edge function
+      const { error } = await supabase.functions.invoke('chat', {
+        body: { message: 'test', rundownData: null }
+      });
+      
+      const connected = !error || !error.message.includes('not found');
+      setIsConnected(connected);
+      return connected;
+    } catch (error) {
+      console.error('Connection check failed:', error);
+      setIsConnected(false);
+      return false;
     }
-  }, [user, loadChatHistory]);
+  }, []);
 
-  const clearChat = useCallback(async () => {
-    if (!user || !tableExists) {
-      setMessages([]);
-      return;
-    }
+  const sendMessage = useCallback(async (content: string, rundownData?: any) => {
+    console.log('🚀 useCuerChat - Sending message:', content);
+    console.log('🚀 useCuerChat - With rundown data:', rundownData);
+    
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
 
     try {
-      await clearChatFromDb();
-      setMessages([]);
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: {
+          message: content,
+          rundownData: rundownData || null
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to send message');
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.message || 'Sorry, I could not generate a response.',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
     } catch (error) {
-      console.error('Error clearing chat history:', error);
-      setMessages([]);
+      console.error('❌ useCuerChat - Error sending message:', error);
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please make sure your OpenAI API key is configured in Supabase secrets.`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user, tableExists, clearChatFromDb]);
+  }, []);
+
+  const analyzeRundown = useCallback(async (rundownData: any) => {
+    console.log('🔍 useCuerChat - Analyzing rundown:', rundownData);
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: {
+          message: `Can you review the current rundown and suggest any improvements to spelling, grammar, timing, or structure in plain English?`,
+          rundownData
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to analyze rundown');
+      }
+
+      const analysisMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: data.message || 'Analysis completed.',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, analysisMessage]);
+
+    } catch (error) {
+      console.error('❌ useCuerChat - Error analyzing rundown:', error);
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `I couldn't analyze the rundown: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const clearChat = useCallback(() => {
+    setMessages([]);
+  }, []);
 
   const setApiKey = useCallback((apiKey: string) => {
     console.log('API key should be set in Supabase secrets, not client-side');
@@ -52,7 +137,7 @@ export const useCuerChat = () => {
   }, []);
 
   const hasApiKey = useCallback(() => {
-    return isConnected === true;
+    return isConnected === true; // If connected, assume API key is configured
   }, [isConnected]);
 
   return {
@@ -65,7 +150,6 @@ export const useCuerChat = () => {
     checkConnection,
     setApiKey,
     clearApiKey,
-    hasApiKey,
-    loadChatHistory: () => loadChatHistory().then(setMessages)
+    hasApiKey
   };
 };

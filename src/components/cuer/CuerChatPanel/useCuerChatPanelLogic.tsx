@@ -1,8 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { useCuerChat } from '@/hooks/useCuerChat';
-import { useParams } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -15,7 +13,6 @@ export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
   const [inputValue, setInputValue] = useState('');
   const [showApiKeySetup, setShowApiKeySetup] = useState(false);
   const [needsApiKeySetup, setNeedsApiKeySetup] = useState(false);
-  const { id: rundownId } = useParams();
 
   const {
     messages,
@@ -35,7 +32,7 @@ export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
-    sendMessage(inputValue.trim(), rundownData, rundownId);
+    sendMessage(inputValue.trim(), rundownData);
     setInputValue('');
   };
 
@@ -47,7 +44,7 @@ export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
   };
 
   const handleAnalyzeRundown = () => {
-    analyzeRundown(rundownData, rundownId);
+    analyzeRundown(rundownData);
   };
 
   const handleSettingsClick = () => {

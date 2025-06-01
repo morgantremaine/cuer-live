@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -15,9 +16,6 @@ interface SavedRundown {
   updated_at: string
   archived?: boolean
   startTime?: string
-  team_id?: string | null
-  visibility: 'private' | 'team'
-  user_id: string
 }
 
 export const useRundownStorage = () => {
@@ -33,6 +31,7 @@ export const useRundownStorage = () => {
     const { data, error } = await supabase
       .from('rundowns')
       .select('*')
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
 
     if (error) {
@@ -48,28 +47,13 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (
-    title: string, 
-    items: RundownItem[], 
-    columns?: Column[], 
-    timezone?: string,
-    teamId?: string | null,
-    visibility: 'private' | 'team' = 'private'
-  ) => {
+  const saveRundown = async (title: string, items: RundownItem[], columns?: Column[], timezone?: string) => {
     if (!user) {
       console.error('Cannot save: no user')
       return
     }
 
-    console.log('Saving new rundown to database:', { 
-      title, 
-      itemsCount: items.length, 
-      columnsCount: columns?.length || 0, 
-      timezone, 
-      userId: user.id,
-      teamId,
-      visibility
-    })
+    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, userId: user.id })
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -79,9 +63,7 @@ export const useRundownStorage = () => {
         items,
         columns: columns || null,
         timezone: timezone || null,
-        archived: false,
-        team_id: teamId,
-        visibility
+        archived: false
       })
       .select()
       .single()
@@ -105,17 +87,7 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (
-    id: string, 
-    title: string, 
-    items: RundownItem[], 
-    silent = false, 
-    archived = false, 
-    columns?: Column[], 
-    timezone?: string,
-    teamId?: string | null,
-    visibility?: 'private' | 'team'
-  ) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
@@ -129,12 +101,10 @@ export const useRundownStorage = () => {
       timezone,
       userId: user.id,
       silent,
-      archived,
-      teamId,
-      visibility
+      archived
     })
 
-    const updateData: any = {
+    const updateData = {
       title: title,
       items: items,
       columns: columns || null,
@@ -143,20 +113,13 @@ export const useRundownStorage = () => {
       archived: archived
     }
 
-    if (teamId !== undefined) {
-      updateData.team_id = teamId
-    }
-
-    if (visibility !== undefined) {
-      updateData.visibility = visibility
-    }
-
     console.log('Update payload (cleaned):', updateData)
 
     const { error, data } = await supabase
       .from('rundowns')
       .update(updateData)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
 
     if (error) {
@@ -186,38 +149,6 @@ export const useRundownStorage = () => {
           description: message,
         })
       }
-      loadRundowns()
-    }
-  }
-
-  const updateRundownVisibility = async (id: string, visibility: 'private' | 'team', teamId?: string | null) => {
-    if (!user) return
-
-    const updateData: any = { visibility }
-    if (visibility === 'team' && teamId) {
-      updateData.team_id = teamId
-    } else if (visibility === 'private') {
-      updateData.team_id = null
-    }
-
-    const { error } = await supabase
-      .from('rundowns')
-      .update(updateData)
-      .eq('id', id)
-      .eq('user_id', user.id)
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update rundown visibility',
-        variant: 'destructive',
-      })
-      throw error
-    } else {
-      toast({
-        title: 'Success',
-        description: `Rundown is now ${visibility}`,
-      })
       loadRundowns()
     }
   }
@@ -257,7 +188,6 @@ export const useRundownStorage = () => {
     loading,
     saveRundown,
     updateRundown,
-    updateRundownVisibility,
     deleteRundown,
     loadRundowns,
   }

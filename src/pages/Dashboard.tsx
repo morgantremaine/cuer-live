@@ -7,7 +7,6 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CreateNewButton from '@/components/CreateNewButton'
 import RundownGrid from '@/components/RundownGrid'
 import ConfirmationDialogs from '@/components/ConfirmationDialogs'
-import TeamManagement from '@/components/TeamManagement'
 import { RundownItem } from '@/hooks/useRundownItems'
 
 const Dashboard = () => {
@@ -72,10 +71,6 @@ const Dashboard = () => {
     }
   }
 
-  const handleVisibilityChange = () => {
-    loadRundowns()
-  }
-
   const confirmDelete = async () => {
     if (deleteDialog.rundownId) {
       await deleteRundown(deleteDialog.rundownId)
@@ -93,13 +88,8 @@ const Dashboard = () => {
     }
   }
 
-  // Filter rundowns by visibility and archive status
-  const privateActiveRundowns = savedRundowns.filter(rundown => 
-    !rundown.archived && rundown.visibility === 'private'
-  )
-  const teamActiveRundowns = savedRundowns.filter(rundown => 
-    !rundown.archived && rundown.visibility === 'team'
-  )
+  // Filter rundowns to show only non-archived ones
+  const activeRundowns = savedRundowns.filter(rundown => !rundown.archived)
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived)
 
   return (
@@ -109,36 +99,18 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <CreateNewButton onClick={handleCreateNew} />
 
-        {/* Private Rundowns */}
         <RundownGrid
-          title="My Private Rundowns"
-          rundowns={privateActiveRundowns}
+          title="Active Rundowns"
+          rundowns={activeRundowns}
           loading={loading}
           onCreateNew={handleCreateNew}
           onOpen={handleOpenRundown}
           onDelete={handleDeleteClick}
           onArchive={handleArchiveClick}
           onDuplicate={handleDuplicateClick}
-          onVisibilityChange={handleVisibilityChange}
-          showEmptyState={privateActiveRundowns.length === 0 && teamActiveRundowns.length === 0}
+          showEmptyState={true}
         />
 
-        {/* Team Rundowns */}
-        {teamActiveRundowns.length > 0 && (
-          <RundownGrid
-            title="Team Rundowns"
-            rundowns={teamActiveRundowns}
-            loading={false}
-            onOpen={handleOpenRundown}
-            onDelete={handleDeleteClick}
-            onArchive={handleArchiveClick}
-            onDuplicate={handleDuplicateClick}
-            onVisibilityChange={handleVisibilityChange}
-            showEmptyState={false}
-          />
-        )}
-
-        {/* Archived Rundowns */}
         {archivedRundowns.length > 0 && (
           <RundownGrid
             title="Archived Rundowns"
@@ -148,16 +120,10 @@ const Dashboard = () => {
             onDelete={handleDeleteClick}
             onUnarchive={handleUnarchiveClick}
             onDuplicate={handleDuplicateClick}
-            onVisibilityChange={handleVisibilityChange}
             isArchived={true}
             showEmptyState={false}
           />
         )}
-
-        {/* Team Management Section - moved below rundowns */}
-        <div className="mt-8">
-          <TeamManagement />
-        </div>
       </div>
 
       <ConfirmationDialogs
