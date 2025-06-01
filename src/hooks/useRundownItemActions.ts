@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -74,7 +73,6 @@ export const useRundownItemActions = (
         endTime: calculateEndTime(newStartTime, '00:00:00'),
         talent: '',
         script: '',
-        element: '',
         notes: '',
         color: '#FFFFFF',
         isFloating: false,
@@ -120,7 +118,6 @@ export const useRundownItemActions = (
         endTime: newStartTime,
         talent: '',
         script: '',
-        element: '',
         notes: '',
         color: '#888888',
         isFloating: false,
