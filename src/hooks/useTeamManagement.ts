@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -95,11 +93,9 @@ export const useTeamManagement = () => {
             email = profileData[0].email
             fullName = profileData[0].full_name
           } else {
-            // No profile found, try to get auth user data
-            const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(member.user_id)
-            
-            if (authUser?.user?.email && !authError) {
-              email = authUser.user.email
+            // No profile found, check if this is the current user
+            if (user && member.user_id === user.id && user.email) {
+              email = user.email
             }
           }
           
