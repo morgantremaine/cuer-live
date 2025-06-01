@@ -57,6 +57,7 @@ const RundownIndexContent = () => {
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
+    handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
     hasUnsavedChanges,
@@ -159,6 +160,7 @@ const RundownIndexContent = () => {
         handleAddColumn={handleAddColumn}
         handleReorderColumns={handleReorderColumns}
         handleDeleteColumnWithCleanup={handleDeleteColumn}
+        handleRenameColumn={handleRenameColumn}
         handleToggleColumnVisibility={handleToggleColumnVisibility}
         handleLoadLayout={handleLoadLayout}
         hasUnsavedChanges={hasUnsavedChanges}
