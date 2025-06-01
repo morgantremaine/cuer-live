@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Bot, User } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessage {
   id: string;
@@ -70,7 +71,13 @@ const CuerChatMessages = ({
                 ? 'bg-gray-100 text-gray-800' 
                 : 'bg-blue-100 text-blue-800'
             }`}>
-              <div className="whitespace-pre-wrap">{message.content}</div>
+              {message.role === 'assistant' ? (
+                <div className="prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap">{message.content}</div>
+              )}
             </div>
           </div>
         </div>
