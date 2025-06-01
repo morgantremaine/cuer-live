@@ -60,6 +60,7 @@ Present each suggestion clearly:
 - "In segment 4, the timing is set to 10:00 but the script is very short — you might want to reduce it."
 - "I notice several segments starting at the same time - you may want to stagger these to avoid confusion."
 
+You cannot directly modify the rundown so do notm present any modifications in JSON format
 ---
 
 Current rundown data:  
