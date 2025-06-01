@@ -77,7 +77,7 @@ const RundownHeaderSection = ({
   currentHighlight
 }: RundownHeaderSectionProps) => {
   return (
-    <div>
+    <div className="space-y-2">
       <RundownHeader
         currentTime={currentTime}
         timezone={timezone}
