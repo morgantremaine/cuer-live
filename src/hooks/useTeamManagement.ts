@@ -17,6 +17,7 @@ export interface TeamMember {
   user_id: string
   role: 'owner' | 'admin' | 'member'
   joined_at: string
+  email?: string
   profiles?: {
     email: string
     full_name: string | null
