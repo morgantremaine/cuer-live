@@ -25,7 +25,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   const visibleColumns = columns.filter(col => col.isVisible !== false);
 
   const handleAddColumn = useCallback((name: string) => {
-    console.log('Adding column:', name);
     const newColumn: Column = {
       id: `custom_${Date.now()}`,
       name,
@@ -40,45 +39,36 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     setColumns(prev => {
       const newColumns = [...prev];
       newColumns.splice(1, 0, newColumn);
-      console.log('New columns after add:', newColumns.length);
       return newColumns;
     });
     
     // Mark as changed when adding a column
     if (markAsChanged) {
-      console.log('Marking as changed after adding column');
       markAsChanged();
     }
   }, [markAsChanged]);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
-    console.log('Reordering columns:', newColumns.length);
     setColumns(newColumns);
     if (markAsChanged) {
-      console.log('Marking as changed after reordering columns');
       markAsChanged();
     }
   }, [markAsChanged]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
-    console.log('Deleting column:', columnId);
     setColumns(prev => {
       const filtered = prev.filter(col => col.id !== columnId);
-      console.log('Columns after delete:', filtered.length);
       return filtered;
     });
     if (markAsChanged) {
-      console.log('Marking as changed after deleting column');
       markAsChanged();
     }
   }, [markAsChanged]);
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
-    console.log('handleRenameColumn called in useColumnsManager:', columnId, 'to:', newName);
     setColumns(prev => {
       const updated = prev.map(col => {
         if (col.id === columnId) {
-          console.log('Renaming column:', col.name, '->', newName);
           return { ...col, name: newName };
         }
         return col;
@@ -86,18 +76,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return updated;
     });
     if (markAsChanged) {
-      console.log('Marking as changed after renaming column');
       markAsChanged();
     }
   }, [markAsChanged]);
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
-    console.log('Toggling column visibility:', columnId);
     setColumns(prev => {
       const updated = prev.map(col => {
         if (col.id === columnId) {
           const newVisibility = col.isVisible !== false ? false : true;
-          console.log(`Column ${columnId} visibility changed to:`, newVisibility);
           return { ...col, isVisible: newVisibility };
         }
         return col;
@@ -105,13 +92,11 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return updated;
     });
     if (markAsChanged) {
-      console.log('Marking as changed after toggling column visibility');
       markAsChanged();
     }
   }, [markAsChanged]);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
-    console.log('Updating column width:', columnId, width);
     setColumns(prev => {
       const updated = prev.map(col => {
         if (col.id === columnId) {
@@ -122,13 +107,11 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return updated;
     });
     if (markAsChanged) {
-      console.log('Marking as changed after updating column width');
       markAsChanged();
     }
   }, [markAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
-    console.log('Loading layout with columns:', layoutColumns.length);
     setColumns(prevColumns => {
       // Define essential built-in columns that should always be preserved
       const essentialBuiltInColumns = [
@@ -172,20 +155,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         );
       
       if (isSame) {
-        console.log('Layout is the same, not updating');
         return prevColumns; // Don't update if columns are the same
       }
       
-      console.log('Layout loaded, new column count:', mergedColumns.length);
       if (markAsChanged) {
-        console.log('Marking as changed after loading layout');
         markAsChanged();
       }
       return mergedColumns;
     });
   }, [markAsChanged]);
-
-  console.log('useColumnsManager: handleRenameColumn function created:', !!handleRenameColumn);
 
   return {
     columns,
