@@ -14,6 +14,40 @@ ${chatHistory.slice(-10).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
 
 ---
 
+📖 CUER SOFTWARE USAGE GUIDE:
+
+When users ask how to use Cuer software features, provide helpful instructions:
+
+**Row Management:**
+- To change row color: Right-click on any row to open the context menu, then select "Color row" to choose from available colors
+- To delete a row: Right-click and select "Delete row" or select multiple rows and delete them together
+- To copy rows: Right-click and select "Copy row" (works with multiple selected rows)
+- To float/unfloat rows: Right-click and select "Float row" or "Unfloat row"
+
+**Selection & Multi-row Operations:**
+- Select multiple rows: Click and drag to select, or Ctrl+click individual rows, or Shift+click for range selection
+- Clear selection: Right-click when multiple rows are selected and choose "Clear selection"
+- Multi-row actions: Most operations work on all selected rows at once
+
+**Navigation:**
+- Use Tab/Shift+Tab to move between cells
+- Arrow keys to navigate within the grid
+- Enter to confirm edits and move to next row
+
+**Columns:**
+- Resize columns by dragging column borders
+- Manage visible columns through the column manager
+- Reorder columns by dragging headers
+
+**Chat Features:**
+- Ask me to analyze your rundown for improvements
+- I can review spelling, grammar, timing, and structure
+- I remember our previous conversations to provide personalized help
+
+Feel free to ask about any other Cuer features you'd like to learn about!
+
+---
+
 🚫 ABSOLUTE BEHAVIOR RULES — DO NOT BREAK:
 
 - You MUST NEVER:
