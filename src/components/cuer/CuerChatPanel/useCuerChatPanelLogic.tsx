@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useCuerChat } from '@/hooks/useCuerChat';
 
 interface Message {
   id: string;
@@ -9,65 +10,29 @@ interface Message {
 }
 
 export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [showApiKeySetup, setShowApiKeySetup] = useState(false);
   const [needsApiKeySetup, setNeedsApiKeySetup] = useState(false);
 
+  const {
+    messages,
+    isLoading,
+    isConnected,
+    sendMessage,
+    analyzeRundown,
+    clearChat,
+    checkConnection
+  } = useCuerChat();
+
   useEffect(() => {
     if (isOpen) {
-      setIsConnected(true); // Simulate connection established
+      checkConnection();
     }
-  }, [isOpen]);
-
-  const addMessage = (role: 'user' | 'assistant', content: string) => {
-    setMessages(prev => [
-      ...prev,
-      {
-        id: uuidv4(),
-        role,
-        content,
-        timestamp: new Date(),
-      },
-    ]);
-  };
-
-  const sendMessage = async (userMessage: string) => {
-    addMessage('user', userMessage);
-    setIsLoading(true);
-
-    try {
-      const res = await fetch('/functions/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          rundownData,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data?.message) {
-        addMessage('assistant', data.message);
-      } else if (data?.error) {
-        addMessage('assistant', `Error: ${data.error}`);
-      } else {
-        addMessage('assistant', 'Sorry, I couldn’t generate a response.');
-      }
-    } catch (err) {
-      console.error(err);
-      addMessage('assistant', 'Something went wrong.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [isOpen, checkConnection]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
-    sendMessage(inputValue.trim());
+    sendMessage(inputValue.trim(), rundownData);
     setInputValue('');
   };
 
@@ -79,17 +44,11 @@ export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
   };
 
   const handleAnalyzeRundown = () => {
-    sendMessage(
-    "Can you analyze the current rundown and suggest any improvements to spelling, grammar, segment timing, or structure using plain English? Do not use JSON, code blocks, or structured formatting. Just write naturally like you're giving editorial feedback."
-    );
+    analyzeRundown(rundownData);
   };
 
   const handleSettingsClick = () => {
     setShowApiKeySetup(true);
-  };
-
-  const clearChat = () => {
-    setMessages([]);
   };
 
   return {
