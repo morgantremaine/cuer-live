@@ -109,11 +109,6 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <CreateNewButton onClick={handleCreateNew} />
 
-        {/* Team Management Section */}
-        <div className="mb-8">
-          <TeamManagement />
-        </div>
-
         {/* Private Rundowns */}
         <RundownGrid
           title="My Private Rundowns"
@@ -158,6 +153,11 @@ const Dashboard = () => {
             showEmptyState={false}
           />
         )}
+
+        {/* Team Management Section - moved below rundowns */}
+        <div className="mt-8">
+          <TeamManagement />
+        </div>
       </div>
 
       <ConfirmationDialogs
