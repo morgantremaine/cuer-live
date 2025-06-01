@@ -4,8 +4,7 @@ import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
 import { SearchHighlight } from '@/types/search';
 import ExpandableScriptCell from './ExpandableScriptCell';
-import TimeCell from './cells/TimeCell';
-import TextareaCell from './cells/TextareaCell';
+import HighlightedText from './HighlightedText';
 
 interface CellRendererProps {
   column: Column;
@@ -65,6 +64,15 @@ const CellRenderer = ({
     onUpdateItem(item.id, updateFieldKey, newValue);
   };
 
+  // Helper function to determine if content needs two lines
+  const needsTwoLines = (text: string) => {
+    // Rough estimation: if text is longer than ~40 characters, it might need two lines
+    // This can be adjusted based on your typical column widths
+    return text.length > 40 || text.includes('\n');
+  };
+
+  const shouldExpandRow = needsTwoLines(value);
+
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
     // Check if textColor is set (indicating a colored row)
@@ -83,13 +91,11 @@ const CellRenderer = ({
 
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
-      <TimeCell
-        columnId={column.id}
-        value={value}
-        width={width}
-        highlight={highlight}
-        onCellClick={handleCellClick}
-      />
+      <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
+        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+          <HighlightedText text={value} highlight={highlight} />
+        </span>
+      </td>
     );
   }
 
@@ -112,42 +118,71 @@ const CellRenderer = ({
 
   if (column.key === 'notes' || column.isCustom) {
     return (
-      <TextareaCell
-        columnId={column.id}
-        columnKey={column.key}
-        value={value}
-        width={width}
-        textColor={textColor}
-        itemId={item.id}
-        cellRefKey={cellRefKey}
-        cellRefs={cellRefs}
-        focusStyles={focusStyles}
-        highlight={highlight}
-        onCellClick={handleCellClick}
-        onUpdateValue={handleUpdateValue}
-        onKeyDown={onKeyDown}
-      />
+      <td key={column.id} className="px-4 py-2 align-top" onClick={handleCellClick} style={{ width }}>
+        <div className="relative">
+          <textarea
+            ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
+            value={value}
+            onChange={(e) => handleUpdateValue(e.target.value)}
+            onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
+            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden`}
+            style={{ 
+              color: textColor || undefined,
+              minHeight: '24px',
+              height: shouldExpandRow ? '48px' : '24px'
+            }}
+            rows={shouldExpandRow ? 2 : 1}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              const scrollHeight = target.scrollHeight;
+              // Dynamically adjust height based on content, max 2 lines
+              target.style.height = Math.min(scrollHeight, 48) + 'px';
+            }}
+          />
+          {highlight && (
+            <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
+              <HighlightedText text={value} highlight={highlight} />
+            </div>
+          )}
+        </div>
+      </td>
     );
   }
 
   return (
-    <TextareaCell
-      columnId={column.id}
-      columnKey={column.key}
-      value={value}
-      width={width}
-      textColor={textColor}
-      itemId={item.id}
-      cellRefKey={cellRefKey}
-      cellRefs={cellRefs}
-      focusStyles={focusStyles}
-      placeholder={column.key === 'duration' ? '00:00:00' : ''}
-      isMonospace={column.key === 'duration'}
-      highlight={highlight}
-      onCellClick={handleCellClick}
-      onUpdateValue={handleUpdateValue}
-      onKeyDown={onKeyDown}
-    />
+    <td key={column.id} className="px-4 py-2 align-top" onClick={handleCellClick} style={{ width }}>
+      <div className="relative">
+        <textarea
+          ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
+          value={value}
+          onChange={(e) => handleUpdateValue(e.target.value)}
+          onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden ${
+            column.key === 'duration' ? 'font-mono' : ''
+          }`}
+          style={{ 
+            color: textColor || undefined,
+            minHeight: '24px',
+            height: shouldExpandRow ? '48px' : '24px'
+          }}
+          rows={shouldExpandRow ? 2 : 1}
+          placeholder={column.key === 'duration' ? '00:00:00' : ''}
+          onInput={(e) => {
+            const target = e.target as HTMLTextAreaElement;
+            target.style.height = 'auto';
+            const scrollHeight = target.scrollHeight;
+            // Dynamically adjust height based on content, max 2 lines
+            target.style.height = Math.min(scrollHeight, 48) + 'px';
+          }}
+        />
+        {highlight && (
+          <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
+            <HighlightedText text={value} highlight={highlight} />
+          </div>
+        )}
+      </div>
+    </td>
   );
 };
 
