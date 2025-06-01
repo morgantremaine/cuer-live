@@ -14,6 +14,7 @@ export const useRundownBasicState = () => {
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   
   const initRef = useRef(false);
+  const lastRundownIdRef = useRef<string | undefined>(undefined);
 
   // Timer effect for current time
   useEffect(() => {
@@ -21,39 +22,44 @@ export const useRundownBasicState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Prevent multiple initializations
+  // Prevent multiple initializations with better checking
   useEffect(() => {
-    if (initRef.current) return;
+    // Only initialize if rundownId has actually changed
+    if (lastRundownIdRef.current === rundownId && initRef.current) {
+      return;
+    }
+    
+    lastRundownIdRef.current = rundownId;
     initRef.current = true;
     
-    console.log('useRundownBasicState initialized for rundownId:', rundownId);
+    // Only log once per actual rundown change
+    if (rundownId) {
+      console.log('useRundownBasicState initialized for rundownId:', rundownId);
+    }
   }, [rundownId]);
 
   // Change tracking for timezone and other fields
   const markAsChanged = () => {
+    // Reduced logging frequency
     console.log('Changes marked - triggering auto-save');
   };
 
   // Direct setters without change tracking (for initial load)
   const setTimezoneDirectly = (newTimezone: string) => {
-    console.log('Setting timezone directly:', newTimezone);
     setTimezone(newTimezone);
   };
 
   const setRundownTitleDirectly = (newTitle: string) => {
-    console.log('Setting title directly:', newTitle);
     setRundownTitle(newTitle);
   };
 
   // Change-tracking setters (for user interactions)
   const setTimezoneWithChange = (newTimezone: string) => {
-    console.log('Timezone changed to:', newTimezone);
     setTimezone(newTimezone);
     markAsChanged();
   };
 
   const setRundownTitleWithChange = (newTitle: string) => {
-    console.log('Title changed to:', newTitle);
     setRundownTitle(newTitle);
     markAsChanged();
   };

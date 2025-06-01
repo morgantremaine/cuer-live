@@ -48,11 +48,15 @@ export const useCuerChat = () => {
     setIsLoading(true);
 
     try {
-      // Call your Supabase Edge Function here
-      const response = await fetch('/functions/v1/openai-chat', {
+      // Use the correct Supabase Edge Function URL format
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const functionUrl = `${supabaseUrl}/functions/v1/openai-chat`;
+      
+      const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           messages: messages.map(msg => ({
