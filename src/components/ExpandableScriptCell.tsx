@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import HighlightedText from './HighlightedText';
@@ -46,9 +45,8 @@ const ExpandableScriptCell = ({
         // Set minimum height of 120px when expanded, but allow it to grow
         textarea.style.height = Math.max(scrollHeight, 120) + 'px';
       } else {
-        // When collapsed, allow multiple lines but with reasonable height
-        const minHeight = value.includes('\n') ? 48 : 24; // 2 lines if has line breaks, 1 line otherwise
-        textarea.style.height = Math.max(Math.min(scrollHeight, 72), minHeight) + 'px'; // Max 3 lines when collapsed
+        // When collapsed, keep it at single line height (24px) regardless of content
+        textarea.style.height = '24px';
       }
     }
   }, [value, isExpanded]);
@@ -113,8 +111,8 @@ const ExpandableScriptCell = ({
               if (isExpanded) {
                 e.target.style.height = Math.max(scrollHeight, 120) + 'px';
               } else {
-                const minHeight = e.target.value.includes('\n') ? 48 : 24;
-                e.target.style.height = Math.max(Math.min(scrollHeight, 72), minHeight) + 'px';
+                // Keep collapsed height at 24px regardless of content
+                e.target.style.height = '24px';
               }
             }
           }}
@@ -123,10 +121,11 @@ const ExpandableScriptCell = ({
           style={{ 
             color: textColor || undefined,
             minHeight: isExpanded ? '120px' : '24px',
-            height: 'auto',
-            overflow: 'hidden',
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word'
+            height: isExpanded ? 'auto' : '24px',
+            overflow: isExpanded ? 'hidden' : 'hidden',
+            whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
+            wordWrap: isExpanded ? 'break-word' : 'normal',
+            textOverflow: isExpanded ? 'unset' : 'ellipsis'
           }}
           placeholder="Enter script content..."
         />
