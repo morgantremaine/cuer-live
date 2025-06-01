@@ -89,6 +89,27 @@ const CellRenderer = ({
 
   const focusStyles = getFocusStyles();
 
+  // Auto-resize function that properly handles height changes
+  const autoResize = (target: HTMLTextAreaElement, newValue?: string) => {
+    const textToMeasure = newValue !== undefined ? newValue : target.value;
+    
+    // Reset height to auto to get accurate scrollHeight
+    target.style.height = 'auto';
+    const scrollHeight = target.scrollHeight;
+    
+    // Determine if we need multiple lines based on content
+    const hasLineBreaks = textToMeasure.includes('\n');
+    const isLongText = textToMeasure.length > 40;
+    
+    if (hasLineBreaks || isLongText) {
+      // Allow up to 2 lines (48px max)
+      target.style.height = Math.min(scrollHeight, 48) + 'px';
+    } else {
+      // Single line height
+      target.style.height = '24px';
+    }
+  };
+
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
       <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
@@ -123,7 +144,11 @@ const CellRenderer = ({
           <textarea
             ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
             value={value}
-            onChange={(e) => handleUpdateValue(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              handleUpdateValue(newValue);
+              autoResize(e.target, newValue);
+            }}
             onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
             className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden`}
             style={{ 
@@ -132,13 +157,7 @@ const CellRenderer = ({
               height: shouldExpandRow ? '48px' : '24px'
             }}
             rows={shouldExpandRow ? 2 : 1}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              const scrollHeight = target.scrollHeight;
-              // Dynamically adjust height based on content, max 2 lines
-              target.style.height = Math.min(scrollHeight, 48) + 'px';
-            }}
+            onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
           />
           {highlight && (
             <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
@@ -156,7 +175,11 @@ const CellRenderer = ({
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
           value={value}
-          onChange={(e) => handleUpdateValue(e.target.value)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            handleUpdateValue(newValue);
+            autoResize(e.target, newValue);
+          }}
           onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
           className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden ${
             column.key === 'duration' ? 'font-mono' : ''
@@ -168,13 +191,7 @@ const CellRenderer = ({
           }}
           rows={shouldExpandRow ? 2 : 1}
           placeholder={column.key === 'duration' ? '00:00:00' : ''}
-          onInput={(e) => {
-            const target = e.target as HTMLTextAreaElement;
-            target.style.height = 'auto';
-            const scrollHeight = target.scrollHeight;
-            // Dynamically adjust height based on content, max 2 lines
-            target.style.height = Math.min(scrollHeight, 48) + 'px';
-          }}
+          onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
         />
         {highlight && (
           <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
