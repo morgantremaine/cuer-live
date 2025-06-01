@@ -32,6 +32,9 @@ export interface TeamInvitation {
   accepted: boolean
   created_at: string
   expires_at: string
+  teams?: {
+    name: string
+  }
 }
 
 export const useTeamManagement = () => {
@@ -45,10 +48,12 @@ export const useTeamManagement = () => {
     setTeamMembers,
     pendingInvitations,
     setPendingInvitations,
+    userPendingInvitations,
     loading,
     loadTeams,
     loadTeamMembers,
     loadPendingInvitations,
+    loadUserPendingInvitations,
   } = useTeamData()
 
   const {
@@ -76,8 +81,9 @@ export const useTeamManagement = () => {
 
   const acceptInvitation = async (invitationId: string) => {
     await acceptInvitationAction(invitationId)
-    // Reload teams and switch to the newly joined team
+    // Reload teams and user pending invitations
     await loadTeams()
+    await loadUserPendingInvitations()
     if (currentTeam) {
       loadPendingInvitations(currentTeam.id)
     }
@@ -101,6 +107,7 @@ export const useTeamManagement = () => {
     setCurrentTeam,
     teamMembers,
     pendingInvitations,
+    userPendingInvitations,
     loading,
     createTeam,
     inviteUserToTeam,

@@ -1,3 +1,4 @@
+
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users } from 'lucide-react'
@@ -16,6 +17,7 @@ const TeamManagement = () => {
     setCurrentTeam,
     teamMembers,
     pendingInvitations,
+    userPendingInvitations,
     loading,
     createTeam,
     inviteUserToTeam,
@@ -75,45 +77,56 @@ const TeamManagement = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {teams.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No teams yet</h3>
-            <p className="text-gray-500 mb-4">Create a team to collaborate with others</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <TeamSelector 
-              teams={teams} 
-              currentTeam={currentTeam} 
-              onTeamChange={setCurrentTeam} 
+        <div className="space-y-6">
+          {/* User pending invitations - show at the top */}
+          {userPendingInvitations.length > 0 && (
+            <PendingInvitationsList 
+              pendingInvitations={userPendingInvitations} 
+              onAcceptInvitation={handleAcceptInvitation}
+              showTeamNames={true}
             />
+          )}
 
-            {currentTeam && (
-              <>
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium">Team Members ({teamMembers.length})</h4>
-                    <InviteUserDialog 
-                      onInviteUser={handleInviteUser}
+          {teams.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No teams yet</h3>
+              <p className="text-gray-500 mb-4">Create a team to collaborate with others</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <TeamSelector 
+                teams={teams} 
+                currentTeam={currentTeam} 
+                onTeamChange={setCurrentTeam} 
+              />
+
+              {currentTeam && (
+                <>
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Team Members ({teamMembers.length})</h4>
+                      <InviteUserDialog 
+                        onInviteUser={handleInviteUser}
+                        isOwner={isOwner}
+                      />
+                    </div>
+                    <TeamMembersList 
+                      teamMembers={teamMembers}
                       isOwner={isOwner}
+                      onRemoveMember={removeTeamMember}
                     />
                   </div>
-                  <TeamMembersList 
-                    teamMembers={teamMembers}
-                    isOwner={isOwner}
-                    onRemoveMember={removeTeamMember}
-                  />
-                </div>
 
-                <PendingInvitationsList 
-                  pendingInvitations={pendingInvitations} 
-                  onAcceptInvitation={handleAcceptInvitation}
-                />
-              </>
-            )}
-          </div>
-        )}
+                  <PendingInvitationsList 
+                    pendingInvitations={pendingInvitations} 
+                    onAcceptInvitation={handleAcceptInvitation}
+                  />
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

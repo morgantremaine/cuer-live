@@ -10,6 +10,7 @@ export const useTeamData = () => {
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [pendingInvitations, setPendingInvitations] = useState<TeamInvitation[]>([])
+  const [userPendingInvitations, setUserPendingInvitations] = useState<TeamInvitation[]>([])
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
@@ -137,9 +138,33 @@ export const useTeamData = () => {
     }
   }
 
+  const loadUserPendingInvitations = async () => {
+    if (!user?.email) return
+
+    console.log('Loading pending invitations for user email:', user.email)
+
+    const { data, error } = await supabase
+      .from('team_invitations')
+      .select(`
+        *,
+        teams(name)
+      `)
+      .eq('email', user.email.toLowerCase())
+      .eq('accepted', false)
+      .gt('expires_at', new Date().toISOString())
+
+    if (error) {
+      console.error('Error loading user pending invitations:', error)
+    } else {
+      console.log('Found pending invitations:', data)
+      setUserPendingInvitations(data || [])
+    }
+  }
+
   useEffect(() => {
     if (user) {
       loadTeams()
+      loadUserPendingInvitations()
     }
   }, [user])
 
@@ -159,9 +184,12 @@ export const useTeamData = () => {
     setTeamMembers,
     pendingInvitations,
     setPendingInvitations,
+    userPendingInvitations,
+    setUserPendingInvitations,
     loading,
     loadTeams,
     loadTeamMembers,
     loadPendingInvitations,
+    loadUserPendingInvitations,
   }
 }

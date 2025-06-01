@@ -9,16 +9,23 @@ import { useAuth } from '@/hooks/useAuth'
 interface PendingInvitationsListProps {
   pendingInvitations: TeamInvitation[]
   onAcceptInvitation?: (invitationId: string) => Promise<void>
+  showTeamNames?: boolean
 }
 
-const PendingInvitationsList = ({ pendingInvitations, onAcceptInvitation }: PendingInvitationsListProps) => {
+const PendingInvitationsList = ({ 
+  pendingInvitations, 
+  onAcceptInvitation,
+  showTeamNames = false 
+}: PendingInvitationsListProps) => {
   const { user } = useAuth()
   
   if (pendingInvitations.length === 0) return null
 
   return (
     <div>
-      <h4 className="font-medium mb-3">Pending Invitations</h4>
+      <h4 className="font-medium mb-3">
+        {showTeamNames ? 'Team Invitations' : 'Pending Invitations'}
+      </h4>
       <div className="space-y-2">
         {pendingInvitations.map((invitation) => {
           const isForCurrentUser = user?.email === invitation.email
@@ -27,7 +34,16 @@ const PendingInvitationsList = ({ pendingInvitations, onAcceptInvitation }: Pend
             <div key={invitation.id} className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <div className="flex items-center">
                 <Mail className="h-4 w-4 text-yellow-600 mr-2" />
-                <span>{invitation.email}</span>
+                <div>
+                  {showTeamNames && invitation.teams ? (
+                    <div>
+                      <div className="font-medium">{invitation.teams.name}</div>
+                      <div className="text-sm text-gray-500">{invitation.email}</div>
+                    </div>
+                  ) : (
+                    <span>{invitation.email}</span>
+                  )}
+                </div>
               </div>
               {isForCurrentUser && onAcceptInvitation ? (
                 <Button 
