@@ -73,6 +73,21 @@ const CellRenderer = ({
 
   const shouldExpandRow = needsTwoLines(value);
 
+  // Get the appropriate focus styles for colored rows in dark mode
+  const getFocusStyles = () => {
+    const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF';
+    
+    if (hasCustomColor) {
+      // For colored rows, ensure good contrast on focus
+      return 'focus:bg-white dark:focus:bg-gray-800 focus:text-gray-900 dark:focus:text-white';
+    } else {
+      // For normal rows, use standard focus styles
+      return 'focus:bg-white dark:focus:bg-gray-700';
+    }
+  };
+
+  const focusStyles = getFocusStyles();
+
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
       <td key={column.id} className="px-4 py-2" onClick={handleCellClick} style={{ width }}>
@@ -109,7 +124,7 @@ const CellRenderer = ({
             value={value}
             onChange={(e) => handleUpdateValue(e.target.value)}
             onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-            className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden"
+            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden`}
             style={{ 
               color: textColor || undefined,
               minHeight: '24px',
@@ -142,7 +157,7 @@ const CellRenderer = ({
           value={value}
           onChange={(e) => handleUpdateValue(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-          className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden ${
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden ${
             column.key === 'duration' ? 'font-mono' : ''
           }`}
           style={{ 

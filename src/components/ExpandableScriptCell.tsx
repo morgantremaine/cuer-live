@@ -46,6 +46,22 @@ const ExpandableScriptCell = ({
     }
   }, [value, isExpanded]);
 
+  // Get the appropriate focus styles for colored rows in dark mode
+  const getFocusStyles = () => {
+    // Check if this is likely a colored row by checking if textColor is set
+    const hasCustomColor = textColor && textColor !== '';
+    
+    if (hasCustomColor) {
+      // For colored rows, ensure good contrast on focus
+      return 'focus:bg-white dark:focus:bg-gray-800 focus:text-gray-900 dark:focus:text-white';
+    } else {
+      // For normal rows, use standard focus styles
+      return 'focus:bg-white dark:focus:bg-gray-700';
+    }
+  };
+
+  const focusStyles = getFocusStyles();
+
   return (
     <div className="flex items-start space-x-2 w-full">
       <button
@@ -77,7 +93,7 @@ const ExpandableScriptCell = ({
             }
           }}
           onKeyDown={(e) => onKeyDown(e, itemId, cellRefKey)}
-          className="w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none"
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
           style={{ 
             color: textColor || undefined,
             minHeight: isExpanded ? '120px' : '24px',
