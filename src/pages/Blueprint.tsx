@@ -20,6 +20,7 @@ const Blueprint = () => {
     availableColumns,
     addNewList,
     deleteList,
+    renameList,
     refreshList,
     refreshAllLists
   } = useBlueprintState(
@@ -102,6 +103,7 @@ const Blueprint = () => {
                 <BlueprintListCard
                   list={list}
                   onDelete={deleteList}
+                  onRename={renameList}
                   onRefresh={refreshList}
                 />
               </div>

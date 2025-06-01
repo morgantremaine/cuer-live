@@ -52,6 +52,22 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     saveBlueprint(rundownTitle, updatedLists);
   }, [lists, rundownTitle, saveBlueprint]);
 
+  const renameList = useCallback((listId: string, newName: string) => {
+    const updatedLists = lists.map(list => {
+      if (list.id === listId) {
+        return {
+          ...list,
+          name: newName
+        };
+      }
+      return list;
+    });
+    setLists(updatedLists);
+    
+    // Save to database
+    saveBlueprint(rundownTitle, updatedLists);
+  }, [lists, rundownTitle, saveBlueprint]);
+
   const refreshList = useCallback((listId: string) => {
     const updatedLists = lists.map(list => {
       if (list.id === listId) {
@@ -84,6 +100,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     availableColumns,
     addNewList,
     deleteList,
+    renameList,
     refreshList,
     refreshAllLists
   };
