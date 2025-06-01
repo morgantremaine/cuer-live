@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,6 @@ interface RundownToolbarProps {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
-  isFlashing?: boolean;
   onPlay: (selectedSegmentId?: string) => void;
   onPause: () => void;
   onForward: () => void;
@@ -32,7 +32,6 @@ const RundownToolbar = ({
   isPlaying,
   currentSegmentId,
   timeRemaining,
-  isFlashing = false,
   onPlay,
   onPause,
   onForward,
@@ -81,14 +80,6 @@ const RundownToolbar = ({
     });
   };
 
-  const getClockClasses = () => {
-    const baseClasses = "px-3 py-1 rounded font-mono text-sm border";
-    if (isFlashing) {
-      return `${baseClasses} bg-green-500 text-white animate-pulse`;
-    }
-    return `${baseClasses} bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800`;
-  };
-
   return (
     <div className="p-3 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
@@ -118,7 +109,7 @@ const RundownToolbar = ({
         {/* Playback Controls */}
         <div className="flex items-center space-x-2 px-2 border-r border-gray-300 dark:border-gray-600">
           {currentSegmentId && (
-            <div className={getClockClasses()}>
+            <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-3 py-1 rounded font-mono text-sm border">
               {formatTime(timeRemaining)}
             </div>
           )}
