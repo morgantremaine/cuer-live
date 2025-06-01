@@ -72,7 +72,7 @@ const CuerChatMessages = ({
                 : 'bg-blue-100 text-blue-800'
             }`}>
               {message.role === 'assistant' ? (
-                <div className="prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
+                <div className="prose prose-sm max-w-none prose-headings:mt-3 prose-headings:mb-2 prose-p:mb-3 prose-ul:mb-3 prose-ol:mb-3 prose-li:mb-1">
                   <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
               ) : (

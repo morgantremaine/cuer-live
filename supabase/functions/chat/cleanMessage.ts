@@ -7,6 +7,11 @@ export function cleanMessage(message: string): string {
     /Shall I (?:implement|apply) these suggestions\?/gi,
     /Do you want me to (?:apply|make) (?:these )?(?:changes|modifications)\?/gi,
     /Let me know if you(?:'d| would) like me to (?:apply|implement) (?:these )?(?:changes|modifications)/gi,
+    /Would you like me to (?:implement|apply) (?:these )?(?:changes|modifications|suggestions)\?/gi,
+    /I can help (?:implement|apply) these (?:changes|modifications|suggestions)/gi,
+    /These changes would enhance.*\. Would you like me to make specific modifications/gi,
+    /Implementing these changes would enhance.*\. Would you like me to/gi,
+    /\. Would you like me to make specific modifications based on these suggestions\?/gi,
   ];
 
   let cleanedMessage = message;
