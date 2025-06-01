@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -84,18 +83,19 @@ export const useTeamManagement = () => {
             .from('profiles')
             .select('email, full_name')
             .eq('id', member.user_id)
-            .single()
           
           if (profileError) {
             console.error('Error loading profile for user:', member.user_id, profileError)
           }
           
+          const profile = profileData && profileData.length > 0 ? profileData[0] : null
+          
           return {
             ...member,
-            email: profileData?.email || member.user_id,
-            profiles: profileData ? {
-              email: profileData.email,
-              full_name: profileData.full_name
+            email: profile?.email || member.user_id,
+            profiles: profile ? {
+              email: profile.email,
+              full_name: profile.full_name
             } : undefined
           }
         })
