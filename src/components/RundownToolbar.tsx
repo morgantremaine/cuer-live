@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ interface RundownToolbarProps {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
+  isFlashing?: boolean;
   onPlay: (selectedSegmentId?: string) => void;
   onPause: () => void;
   onForward: () => void;
@@ -32,6 +32,7 @@ const RundownToolbar = ({
   isPlaying,
   currentSegmentId,
   timeRemaining,
+  isFlashing = false,
   onPlay,
   onPause,
   onForward,
@@ -82,7 +83,7 @@ const RundownToolbar = ({
 
   const getClockClasses = () => {
     const baseClasses = "px-3 py-1 rounded font-mono text-sm border";
-    if (timeRemaining === 0) {
+    if (isFlashing) {
       return `${baseClasses} bg-green-500 text-white animate-pulse`;
     }
     return `${baseClasses} bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800`;

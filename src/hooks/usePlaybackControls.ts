@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -8,7 +9,9 @@ export const usePlaybackControls = (
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isFlashing, setIsFlashing] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Set default current segment to first non-header item (A1) on mount
   useEffect(() => {
@@ -67,6 +70,16 @@ export const usePlaybackControls = (
     return null;
   };
 
+  const triggerFlash = () => {
+    setIsFlashing(true);
+    if (flashTimeoutRef.current) {
+      clearTimeout(flashTimeoutRef.current);
+    }
+    flashTimeoutRef.current = setTimeout(() => {
+      setIsFlashing(false);
+    }, 2000); // Flash for 2 seconds
+  };
+
   const startTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -75,7 +88,10 @@ export const usePlaybackControls = (
     timerRef.current = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
-          // Time's up, mark current as completed and move to next segment
+          // Time's up, trigger flash effect
+          triggerFlash();
+          
+          // Mark current as completed and move to next segment
           if (currentSegmentId) {
             updateItem(currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(currentSegmentId);
@@ -158,6 +174,9 @@ export const usePlaybackControls = (
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (flashTimeoutRef.current) {
+        clearTimeout(flashTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -175,6 +194,7 @@ export const usePlaybackControls = (
     isPlaying,
     currentSegmentId,
     timeRemaining,
+    isFlashing,
     play,
     pause,
     forward,

@@ -21,6 +21,7 @@ interface RundownHeaderSectionProps {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
+  isFlashing?: boolean;
   onPlay: (selectedSegmentId?: string) => void;
   onPause: () => void;
   onForward: () => void;
@@ -58,6 +59,7 @@ const RundownHeaderSection = ({
   isPlaying,
   currentSegmentId,
   timeRemaining,
+  isFlashing = false,
   onPlay,
   onPause,
   onForward,
@@ -103,6 +105,7 @@ const RundownHeaderSection = ({
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
+        isFlashing={isFlashing}
         onPlay={onPlay}
         onPause={onPause}
         onForward={onForward}
