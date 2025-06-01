@@ -8,12 +8,14 @@ interface RundownMainPropsAdapterProps {
 }
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
+  console.log('RundownMainPropsAdapter: handleRenameColumn available:', !!props.handleRenameColumn);
+  
   return (
     <RundownMainContent
+      currentTime={props.currentTime}
       items={props.items}
       visibleColumns={props.visibleColumns}
       columns={props.columns}
-      currentTime={props.currentTime}
       showColorPicker={props.showColorPicker}
       cellRefs={props.cellRefs}
       selectedRows={props.selectedRows}
@@ -44,12 +46,13 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}
       showColumnManager={props.showColumnManager}
+      setShowColumnManager={props.setShowColumnManager}
       handleAddColumn={props.handleAddColumn}
       handleReorderColumns={props.handleReorderColumns}
       handleDeleteColumnWithCleanup={props.handleDeleteColumnWithCleanup}
+      handleRenameColumn={props.handleRenameColumn}
       handleToggleColumnVisibility={props.handleToggleColumnVisibility}
       handleLoadLayout={props.handleLoadLayout}
-      onCloseColumnManager={() => props.setShowColumnManager(false)}
     />
   );
 };

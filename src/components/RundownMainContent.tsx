@@ -6,10 +6,10 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownMainContentProps {
+  currentTime: Date;
   items: RundownItem[];
   visibleColumns: Column[];
   columns: Column[];
-  currentTime: Date;
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
@@ -32,7 +32,7 @@ interface RundownMainContentProps {
   onToggleFloat: (id: string) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, index?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
@@ -40,20 +40,20 @@ interface RundownMainContentProps {
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   showColumnManager: boolean;
+  setShowColumnManager: (show: boolean) => void;
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
-  handleRenameColumn?: (columnId: string, newName: string) => void;
+  handleRenameColumn: (columnId: string, newName: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
-  onCloseColumnManager: () => void;
 }
 
 const RundownMainContent = ({
+  currentTime,
   items,
   visibleColumns,
   columns,
-  currentTime,
   showColorPicker,
   cellRefs,
   selectedRows,
@@ -84,14 +84,16 @@ const RundownMainContent = ({
   onPasteRows,
   onClearSelection,
   showColumnManager,
+  setShowColumnManager,
   handleAddColumn,
   handleReorderColumns,
   handleDeleteColumnWithCleanup,
   handleRenameColumn,
   handleToggleColumnVisibility,
-  handleLoadLayout,
-  onCloseColumnManager
+  handleLoadLayout
 }: RundownMainContentProps) => {
+  console.log('RundownMainContent: handleRenameColumn available:', !!handleRenameColumn);
+
   return (
     <>
       <RundownContent
@@ -128,17 +130,17 @@ const RundownMainContent = ({
         onPasteRows={onPasteRows}
         onClearSelection={onClearSelection}
       />
-
+      
       {showColumnManager && (
         <ColumnManager
           columns={columns}
           onAddColumn={handleAddColumn}
           onReorderColumns={handleReorderColumns}
           onDeleteColumn={handleDeleteColumnWithCleanup}
-          onRenameColumn={handleRenameColumn}
           onToggleColumnVisibility={handleToggleColumnVisibility}
           onLoadLayout={handleLoadLayout}
-          onClose={onCloseColumnManager}
+          onRenameColumn={handleRenameColumn}
+          onClose={() => setShowColumnManager(false)}
         />
       )}
     </>
