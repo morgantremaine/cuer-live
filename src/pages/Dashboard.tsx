@@ -7,6 +7,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CreateNewButton from '@/components/CreateNewButton'
 import RundownGrid from '@/components/RundownGrid'
 import ConfirmationDialogs from '@/components/ConfirmationDialogs'
+import TeamManagement from '@/components/TeamManagement'
 import { RundownItem } from '@/hooks/useRundownItems'
 
 const Dashboard = () => {
@@ -88,8 +89,13 @@ const Dashboard = () => {
     }
   }
 
-  // Filter rundowns to show only non-archived ones
-  const activeRundowns = savedRundowns.filter(rundown => !rundown.archived)
+  // Filter rundowns by visibility and archive status
+  const privateActiveRundowns = savedRundowns.filter(rundown => 
+    !rundown.archived && rundown.visibility === 'private'
+  )
+  const teamActiveRundowns = savedRundowns.filter(rundown => 
+    !rundown.archived && rundown.visibility === 'team'
+  )
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived)
 
   return (
@@ -99,18 +105,39 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <CreateNewButton onClick={handleCreateNew} />
 
+        {/* Team Management Section */}
+        <div className="mb-8">
+          <TeamManagement />
+        </div>
+
+        {/* Private Rundowns */}
         <RundownGrid
-          title="Active Rundowns"
-          rundowns={activeRundowns}
+          title="My Private Rundowns"
+          rundowns={privateActiveRundowns}
           loading={loading}
           onCreateNew={handleCreateNew}
           onOpen={handleOpenRundown}
           onDelete={handleDeleteClick}
           onArchive={handleArchiveClick}
           onDuplicate={handleDuplicateClick}
-          showEmptyState={true}
+          showEmptyState={privateActiveRundowns.length === 0 && teamActiveRundowns.length === 0}
         />
 
+        {/* Team Rundowns */}
+        {teamActiveRundowns.length > 0 && (
+          <RundownGrid
+            title="Team Rundowns"
+            rundowns={teamActiveRundowns}
+            loading={false}
+            onOpen={handleOpenRundown}
+            onDelete={handleDeleteClick}
+            onArchive={handleArchiveClick}
+            onDuplicate={handleDuplicateClick}
+            showEmptyState={false}
+          />
+        )}
+
+        {/* Archived Rundowns */}
         {archivedRundowns.length > 0 && (
           <RundownGrid
             title="Archived Rundowns"

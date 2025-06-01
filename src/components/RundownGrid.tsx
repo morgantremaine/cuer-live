@@ -12,6 +12,9 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
+  visibility: 'private' | 'team'
+  team_id?: string | null
+  user_id: string
 }
 
 interface RundownGridProps {
