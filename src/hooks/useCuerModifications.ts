@@ -105,7 +105,14 @@ export const useCuerModifications = () => {
     console.log('📝 Modifications received:', modifications);
     console.log('📊 Current items count:', items.length);
 
+    // Prevent modifications if items are empty (still loading)
+    if (items.length === 0) {
+      console.warn('⚠️ Items still loading, delaying modifications');
+      return false;
+    }
+
     let changesMade = false;
+    let appliedChanges: string[] = [];
 
     modifications.forEach((mod, index) => {
       console.log(`\n🔧 --- Processing modification ${index + 1}/${modifications.length} ---`);
@@ -123,6 +130,7 @@ export const useCuerModifications = () => {
                 addRow(calculateEndTime);
               }
               changesMade = true;
+              appliedChanges.push(`Added ${mod.data.type} item`);
               console.log('✅ Item added successfully');
             } else {
               console.error('❌ Add modification missing data');
@@ -142,19 +150,23 @@ export const useCuerModifications = () => {
                   type: targetItem.type 
                 });
                 
-                // Apply each field update
-                Object.keys(mod.data).forEach(field => {
+                // Apply each field update with a small delay to prevent race conditions
+                Object.keys(mod.data).forEach((field, fieldIndex) => {
                   const value = mod.data[field];
                   console.log(`🖊️ Updating ${targetItem.id}.${field} = "${value}"`);
                   
-                  try {
-                    updateItem(targetItem.id, field, String(value));
-                    console.log(`✅ Successfully updated ${field}`);
-                    changesMade = true;
-                  } catch (error) {
-                    console.error(`❌ Failed to update ${field}:`, error);
-                  }
+                  setTimeout(() => {
+                    try {
+                      updateItem(targetItem.id, field, String(value));
+                      console.log(`✅ Successfully updated ${field}`);
+                    } catch (error) {
+                      console.error(`❌ Failed to update ${field}:`, error);
+                    }
+                  }, fieldIndex * 50); // Small delay between field updates
                 });
+                
+                changesMade = true;
+                appliedChanges.push(`Updated ${targetItem.name || targetItem.rowNumber}`);
               } else {
                 console.error(`❌ Could not find item with reference: ${mod.itemId}`);
                 console.log('💡 Available items for reference:');
@@ -175,6 +187,7 @@ export const useCuerModifications = () => {
                 console.log(`✅ Found item to delete:`, targetItem);
                 deleteRow(targetItem.id);
                 changesMade = true;
+                appliedChanges.push(`Deleted ${targetItem.name || targetItem.rowNumber}`);
                 console.log('✅ Item deleted successfully');
               } else {
                 console.error(`❌ Could not find item to delete with reference: ${mod.itemId}`);
@@ -194,7 +207,11 @@ export const useCuerModifications = () => {
 
     if (changesMade) {
       console.log('💾 Marking changes for auto-save');
-      markAsChanged();
+      console.log('📋 Applied changes:', appliedChanges);
+      // Delay the markAsChanged call to ensure all updates are processed
+      setTimeout(() => {
+        markAsChanged();
+      }, 200);
     }
     
     console.log('🏁 === MODIFICATIONS COMPLETE ===\n');

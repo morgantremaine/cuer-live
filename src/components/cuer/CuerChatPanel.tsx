@@ -46,7 +46,7 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
   useEffect(() => {
     console.log('🔔 Pending modifications changed:', pendingModifications);
     if (pendingModifications && pendingModifications.length > 0) {
-      console.log('📋 Should show modification dialog');
+      console.log('📋 Should show modification dialog for:', pendingModifications);
     }
   }, [pendingModifications]);
 
@@ -95,14 +95,17 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
 
   const handleConfirmModifications = () => {
     console.log('✅ Confirming modifications:', pendingModifications);
-    if (pendingModifications) {
-      const success = applyModifications(pendingModifications);
-      if (success) {
-        toast.success(`Applied ${pendingModifications.length} modification(s) to the rundown`);
-      } else {
-        toast.error('Failed to apply some modifications');
-      }
-      clearPendingModifications();
+    if (pendingModifications && pendingModifications.length > 0) {
+      // Add a small delay to ensure items are loaded
+      setTimeout(() => {
+        const success = applyModifications(pendingModifications);
+        if (success) {
+          toast.success(`Applied ${pendingModifications.length} modification(s) to the rundown`);
+        } else {
+          toast.error('Failed to apply some modifications - items may still be loading');
+        }
+        clearPendingModifications();
+      }, 100);
     }
   };
 

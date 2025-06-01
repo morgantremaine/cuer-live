@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
@@ -73,57 +74,55 @@ Your expertise is in:
 
 THOROUGH CONTENT ANALYSIS REQUIREMENTS:
 When asked to check spelling, grammar, or analyze content, you MUST:
-1. Examine EVERY SINGLE ITEM in the rundown data
+1. Examine EVERY SINGLE ITEM in the rundown data systematically
 2. Check ALL text fields for each item: name, script, notes, talent, and any custom fields
-3. Look at both regular items AND header items
-4. Report ALL issues found, not just the first few
-5. Be systematic - go through each item one by one
+3. Look at both regular items AND header items - don't skip any
+4. Report ALL issues found in a comprehensive list
+5. Go through each item one by one and announce what you're checking
 6. Double-check your work to ensure nothing is missed
+7. Provide a complete summary of ALL findings
 
-MODIFICATION FORMATTING - CRITICAL:
-When you want to make changes to the rundown, you MUST format them exactly like this:
+SYSTEMATIC CHECKING PROCESS - MANDATORY:
+When doing spelling/grammar checks, you MUST follow this exact process:
+1. Start by saying "I will systematically check each item in your rundown:"
+2. For each item, state: "Item [number/letter] ([item name]): Checking name, script, notes, talent fields..."
+3. Report findings for each field: "✓ Name: correct" or "⚠️ Name: found issue - [describe]"
+4. Continue through ALL items without skipping
+5. Provide a final summary: "Summary: Found X issues across Y items"
+6. If you find corrections needed, offer to fix them
 
-MODIFICATIONS: [{"type": "update", "itemId": "EXACT_ITEM_ID", "data": {"fieldName": "new value"}, "description": "Clear description of what you're changing"}]
+MODIFICATION FORMATTING - ABSOLUTELY CRITICAL:
+When you want to make changes to the rundown, you MUST format them EXACTLY like this:
 
-IMPORTANT RULES FOR MODIFICATIONS:
-1. Use the EXACT item ID from the rundown data
-2. For spelling corrections, use: {"type": "update", "itemId": "exact_id", "data": {"name": "corrected spelling"}, "description": "Fixed spelling in segment name"}
-3. For script changes, use: {"type": "update", "itemId": "exact_id", "data": {"script": "new script content"}, "description": "Updated script content"}
-4. Always include a clear description of what you're changing
-5. Make sure the JSON is valid and properly formatted
-6. Never leave the modifications array empty if you're making changes
+MODIFICATIONS: [{"type": "update", "itemId": "EXACT_ITEM_ID_FROM_DATA", "data": {"fieldName": "corrected value"}, "description": "Clear description"}]
 
-Available modification types:
-- "add": Add new rundown item
-- "update": Update existing item (provide exact itemId from rundown data)
-- "delete": Delete item (provide exact itemId)
+CRITICAL MODIFICATION RULES:
+1. NEVER return empty arrays [] - if you want to make changes, include the actual modifications
+2. Use the EXACT item ID from the rundown data (the "id" field, not rowNumber)
+3. For spelling corrections: {"type": "update", "itemId": "1734567890123", "data": {"name": "TITLE SEQUENCE"}, "description": "Fixed spelling from SEQNCE to SEQUENCE"}
+4. For script changes: {"type": "update", "itemId": "1734567890123", "data": {"script": "corrected script"}, "description": "Updated script content"}
+5. Always include a clear description of what you're changing
+6. The JSON must be valid and properly formatted
+7. If you identify issues but return empty JSON, the user will see no changes
 
-FINDING ITEM IDs - ENHANCED:
-The system can find items by multiple reference methods:
-1. EXACT ID: Use the "id" field from rundown data (e.g., "1734567890123")
-2. ROW NUMBER: Use the "rowNumber" field (e.g., "A", "B", "1", "2", "3")
-3. NAME MATCHING: Use part of the segment name (e.g., "TITLE SEQUENCE")
+ITEM REFERENCE METHODS:
+The system can find items by:
+1. EXACT ID: Use the "id" field from rundown data (recommended, most reliable)
+2. ROW NUMBER: Use the "rowNumber" field (e.g., "A", "B", "1", "2")
+3. NAME MATCHING: Use part of the segment name for partial matching
 4. INDEX POSITION: For headers use letters (A, B, C), for regular items use numbers (1, 2, 3)
 
-EXAMPLES OF VALID ITEM REFERENCES:
-- By ID: "1734567890123"
-- By row number: "A" (for first header), "1" (for first regular item)
-- By name: "TITLE SEQUENCE" or even "TITLE" (partial match)
-- By position: "2" (second regular item)
+EXAMPLE VALID MODIFICATIONS:
+- Spelling fix: MODIFICATIONS: [{"type": "update", "itemId": "1734567890123", "data": {"name": "TITLE SEQUENCE"}, "description": "Fixed spelling: SEQNCE → SEQUENCE"}]
+- Script update: MODIFICATIONS: [{"type": "update", "itemId": "1734567890456", "data": {"script": "Welcome to our show"}, "description": "Updated opening script"}]
+- Multiple fixes: MODIFICATIONS: [{"type": "update", "itemId": "123", "data": {"name": "WEATHER"}, "description": "Fixed spelling"}, {"type": "update", "itemId": "456", "data": {"script": "Good evening"}, "description": "Updated greeting"}]
 
-SYSTEMATIC CHECKING PROCESS:
-When doing spelling/grammar checks:
-1. Start with "I will now check each item systematically:"
-2. Go through each item by index: "Item 1: [name] - checking all fields..."
-3. Report what you found in each item
-4. Provide a summary of ALL issues found
-5. Offer to fix ALL issues at once or individually
-
-MODIFICATION SUCCESS TIPS:
-- Always examine the rundown data structure first
-- Use the most reliable reference (ID > rowNumber > name)
-- Double-check that your itemId matches something in the data
-- Test your JSON formatting before including it
+VALIDATION BEFORE RESPONDING:
+Before sending your response, verify:
+1. Did I check EVERY item systematically?
+2. If I found issues, did I include valid MODIFICATIONS with actual JSON (not empty [])?
+3. Are my itemId references correct from the rundown data?
+4. Is my JSON properly formatted?
 
 Current rundown context: ${rundownData ? JSON.stringify(rundownData, null, 2) : 'No rundown data provided'}`
       },
@@ -144,7 +143,7 @@ Current rundown context: ${rundownData ? JSON.stringify(rundownData, null, 2) : 
         model: 'gpt-4o-mini',
         messages,
         temperature: 0.3,
-        max_tokens: 1000,
+        max_tokens: 1500,
       }),
     })
 
@@ -163,13 +162,20 @@ Current rundown context: ${rundownData ? JSON.stringify(rundownData, null, 2) : 
     const data = await openaiResponse.json()
     const aiMessage = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.'
 
-    // Extract modifications if present
+    // Extract modifications if present - improved parsing
     let modifications: RundownModification[] = []
     const modificationMatch = aiMessage.match(/MODIFICATIONS:\s*(\[.*?\])/s)
     if (modificationMatch) {
       try {
-        modifications = JSON.parse(modificationMatch[1])
-        console.log('Parsed modifications:', modifications)
+        const modificationText = modificationMatch[1].trim()
+        console.log('Raw modification text:', modificationText)
+        
+        if (modificationText !== '[]' && modificationText.length > 2) {
+          modifications = JSON.parse(modificationText)
+          console.log('Successfully parsed modifications:', modifications)
+        } else {
+          console.log('Empty modification array detected')
+        }
       } catch (e) {
         console.error('Failed to parse modifications:', e)
         console.error('Raw modification text:', modificationMatch[1])
