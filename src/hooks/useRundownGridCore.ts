@@ -53,7 +53,7 @@ export const useRundownGridCore = () => {
     isSaving
   } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone, setRundownTitleDirectly, setTimezoneDirectly);
 
-  // Use data loader to properly set title and timezone
+  // Use data loader to properly set title and timezone - using direct setters to avoid change tracking during load
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -81,11 +81,11 @@ export const useRundownGridCore = () => {
     // Basic state
     currentTime,
     timezone,
-    setTimezone,
+    setTimezone, // This is the change-tracking version for user interactions
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
-    setRundownTitle,
+    setRundownTitle, // This is the change-tracking version for user interactions
     rundownStartTime,
     setRundownStartTime,
     rundownId,

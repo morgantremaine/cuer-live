@@ -66,9 +66,10 @@ export const useRundownDataLoader = ({
           }
         }
       } else if (!rundownId) {
-        console.log('New rundown, using default title and timezone');
+        console.log('New rundown, using default title');
         loadedDataRef.current[currentKey] = true;
         setRundownTitle('Live Broadcast Rundown');
+        // Don't set default timezone for new rundowns - let it use the default from useRundownBasicState
       }
     } finally {
       isProcessingRef.current = false;
