@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/types/rundown';
 import { BlueprintList, DEFAULT_BLUEPRINT_LISTS } from '@/types/blueprint';
 
@@ -111,6 +112,15 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
   console.log('Generating default blueprint with', DEFAULT_BLUEPRINT_LISTS.length, 'default lists');
   console.log('Default blueprint lists:', DEFAULT_BLUEPRINT_LISTS);
+  console.log('All items in rundown:', items.map((item, index) => ({
+    index,
+    id: item.id,
+    type: item.type,
+    isHeader: item.isHeader,
+    rowNumber: item.rowNumber,
+    name: item.name,
+    notes: item.notes
+  })));
   
   return DEFAULT_BLUEPRINT_LISTS.map(listConfig => {
     console.log(`Creating list "${listConfig.name}" from column "${listConfig.sourceColumn}"`);
