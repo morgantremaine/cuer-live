@@ -37,6 +37,7 @@ const AppRoutes = () => {
       {/* Public routes */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+      {/* Make teleprompter public - no authentication required */}
       <Route path="/teleprompter/:id" element={<Teleprompter />} />
       
       {/* Protected routes */}
