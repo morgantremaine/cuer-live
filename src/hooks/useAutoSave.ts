@@ -19,7 +19,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     markAsChanged,
     isInitialized,
     setIsLoading
-  } = useChangeTracking(items, rundownTitle, columns);
+  } = useChangeTracking(items, rundownTitle, columns, timezone);
 
   // Create a debounced save function that's stable across renders
   const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string) => {
@@ -36,8 +36,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave);
       
       if (success) {
-        console.log('Auto-save: Save successful, marking as saved');
-        markAsSaved(itemsToSave, titleToSave, columnsToSave);
+        console.log('Auto-save: Save successful, marking as saved with timezone:', timezoneToSave);
+        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave);
       } else {
         console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
