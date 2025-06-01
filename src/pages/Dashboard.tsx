@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
@@ -6,6 +7,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CreateNewButton from '@/components/CreateNewButton'
 import RundownGrid from '@/components/RundownGrid'
 import ConfirmationDialogs from '@/components/ConfirmationDialogs'
+import Footer from '@/components/Footer'
 import { RundownItem } from '@/hooks/useRundownItems'
 
 const Dashboard = () => {
@@ -117,10 +119,10 @@ const Dashboard = () => {
   console.log('Dashboard render - archivedRundowns count:', archivedRundowns.length)
 
   return (
-    <div className="dark min-h-screen bg-gray-900">
+    <div className="dark min-h-screen bg-gray-900 flex flex-col">
       <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         <CreateNewButton onClick={handleCreateNew} />
 
         <RundownGrid
@@ -149,6 +151,8 @@ const Dashboard = () => {
           />
         )}
       </div>
+
+      <Footer />
 
       <ConfirmationDialogs
         deleteDialog={deleteDialog}

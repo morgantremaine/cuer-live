@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
+import Footer from '@/components/Footer'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -65,7 +66,7 @@ const Login = () => {
   }
 
   return (
-    <div className="dark min-h-screen flex items-center justify-center bg-gray-900 p-4">
+    <div className="dark min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
       <Card className="w-full max-w-md bg-gray-800 border-gray-700">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-white">Welcome to Cuer</CardTitle>
@@ -160,6 +161,7 @@ const Login = () => {
           </Tabs>
         </CardContent>
       </Card>
+      <Footer />
     </div>
   )
 }
