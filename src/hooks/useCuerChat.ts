@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -92,7 +91,7 @@ export const useCuerChat = () => {
     try {
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
-          message: `Please analyze this rundown and provide suggestions for improvement, timing optimization, and any issues you notice.`,
+          message: `Can you review the current rundown and suggest any improvements to spelling, grammar, timing, or structure in plain English?`,
           rundownData
         }
       });
