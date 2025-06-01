@@ -56,6 +56,7 @@ export const useTeamManagement = () => {
     inviteUserToTeam,
     removeTeamMember: removeTeamMemberAction,
     deleteTeam: deleteTeamAction,
+    acceptInvitation: acceptInvitationAction,
   } = useTeamActions(loadTeams, loadTeamMembers, loadPendingInvitations)
 
   const removeTeamMember = async (memberId: string) => {
@@ -70,6 +71,15 @@ export const useTeamManagement = () => {
     if (currentTeam?.id === teamId) {
       const remainingTeams = teams.filter(t => t.id !== teamId)
       setCurrentTeam(remainingTeams.length > 0 ? remainingTeams[0] : null)
+    }
+  }
+
+  const acceptInvitation = async (invitationId: string) => {
+    await acceptInvitationAction(invitationId)
+    // Reload teams and switch to the newly joined team
+    await loadTeams()
+    if (currentTeam) {
+      loadPendingInvitations(currentTeam.id)
     }
   }
 
@@ -90,6 +100,7 @@ export const useTeamManagement = () => {
     inviteUserToTeam,
     removeTeamMember,
     deleteTeam,
+    acceptInvitation,
     getCurrentUserRole,
     loadTeams,
   }

@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users } from 'lucide-react'
@@ -23,6 +22,7 @@ const TeamManagement = () => {
     removeTeamMember,
     deleteTeam,
     getCurrentUserRole,
+    acceptInvitation,
   } = useTeamManagement()
 
   const currentUserRole = getCurrentUserRole()
@@ -32,6 +32,10 @@ const TeamManagement = () => {
   const handleInviteUser = async (email: string) => {
     if (!currentTeam) return
     await inviteUserToTeam(currentTeam.id, email)
+  }
+
+  const handleAcceptInvitation = async (invitationId: string) => {
+    await acceptInvitation(invitationId)
   }
 
   if (loading) {
@@ -102,7 +106,10 @@ const TeamManagement = () => {
                   />
                 </div>
 
-                <PendingInvitationsList pendingInvitations={pendingInvitations} />
+                <PendingInvitationsList 
+                  pendingInvitations={pendingInvitations} 
+                  onAcceptInvitation={handleAcceptInvitation}
+                />
               </>
             )}
           </div>

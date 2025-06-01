@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
@@ -174,10 +173,78 @@ export const useTeamActions = (
     await loadTeams()
   }
 
+  const acceptInvitation = async (invitationId: string) => {
+    if (!user) return
+
+    // Get the invitation details first
+    const { data: invitation, error: fetchError } = await supabase
+      .from('team_invitations')
+      .select('*')
+      .eq('id', invitationId)
+      .single()
+
+    if (fetchError || !invitation) {
+      toast({
+        title: 'Error',
+        description: 'Invitation not found',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Check if invitation is still valid
+    if (new Date(invitation.expires_at) < new Date()) {
+      toast({
+        title: 'Error',
+        description: 'Invitation has expired',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Add user to team
+    const { error: memberError } = await supabase
+      .from('team_members')
+      .insert({
+        team_id: invitation.team_id,
+        user_id: user.id,
+        role: 'member'
+      })
+
+    if (memberError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to join team',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Mark invitation as accepted
+    const { error: updateError } = await supabase
+      .from('team_invitations')
+      .update({ accepted: true })
+      .eq('id', invitationId)
+
+    if (updateError) {
+      console.warn('Failed to mark invitation as accepted:', updateError)
+    }
+
+    toast({
+      title: 'Success',
+      description: 'Successfully joined the team!',
+    })
+
+    // Reload data
+    await loadTeams()
+    loadPendingInvitations(invitation.team_id)
+  }
+
   return {
     createTeam,
     inviteUserToTeam,
     removeTeamMember,
     deleteTeam,
+    acceptInvitation,
   }
 }
