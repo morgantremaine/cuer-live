@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Anchor, Palette, ClipboardPaste, X } from 'lucide-react';
+import { Trash2, Copy, Anchor, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,6 +18,7 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
+  itemIndex: number;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -25,6 +26,8 @@ interface RundownContextMenuProps {
   onColorSelect: (itemId: string, color: string) => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
+  onInsertSegment?: (afterIndex: number) => void;
+  onInsertHeader?: (afterIndex: number) => void;
 }
 
 const RundownContextMenu = memo(({
@@ -35,13 +38,16 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
+  itemIndex,
   onCopy,
   onDelete,
   onToggleFloat,
   onColorPicker,
   onColorSelect,
   onPaste,
-  onClearSelection
+  onClearSelection,
+  onInsertSegment,
+  onInsertHeader
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -71,6 +77,18 @@ const RundownContextMenu = memo(({
     }
   };
 
+  const handleInsertSegment = () => {
+    if (onInsertSegment) {
+      onInsertSegment(itemIndex);
+    }
+  };
+
+  const handleInsertHeader = () => {
+    if (onInsertHeader) {
+      onInsertHeader(itemIndex);
+    }
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -86,6 +104,22 @@ const RundownContextMenu = memo(({
           <ContextMenuItem onClick={onPaste}>
             <ClipboardPaste className="mr-2 h-4 w-4" />
             Paste rows
+          </ContextMenuItem>
+        )}
+        
+        <ContextMenuSeparator />
+        
+        {onInsertSegment && (
+          <ContextMenuItem onClick={handleInsertSegment}>
+            <Plus className="mr-2 h-4 w-4" />
+            Insert segment below
+          </ContextMenuItem>
+        )}
+        
+        {onInsertHeader && (
+          <ContextMenuItem onClick={handleInsertHeader}>
+            <Plus className="mr-2 h-4 w-4" />
+            Insert header below
           </ContextMenuItem>
         )}
         
