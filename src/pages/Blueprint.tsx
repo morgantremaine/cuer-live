@@ -96,10 +96,7 @@ const Blueprint = () => {
             />
           </div>
         ) : (
-          <div 
-            className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6"
-            style={{ columnFill: 'auto' }}
-          >
+          <div className="columns-2 gap-6">
             {lists.map((list) => (
               <div key={list.id} className="break-inside-avoid mb-6">
                 <BlueprintListCard
