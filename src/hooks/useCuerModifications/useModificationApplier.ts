@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { RundownModification } from './types';
 import { useItemFinder } from './useItemFinder';
 import { RundownItem } from '@/types/rundown';
+import { toast } from 'sonner';
 
 interface UseModificationApplierProps {
   items: RundownItem[];
@@ -33,6 +34,7 @@ export const useModificationApplier = ({
     // Prevent modifications if items are empty (still loading)
     if (items.length === 0) {
       console.warn('⚠️ Items still loading, delaying modifications');
+      toast.error('Rundown is still loading. Please try again in a moment.');
       return false;
     }
 
@@ -135,10 +137,12 @@ export const useModificationApplier = ({
       // Force immediate re-render by marking changes
       markAsChanged();
       
-      // Force a second update to ensure UI refreshes
-      setTimeout(() => {
-        markAsChanged();
-      }, 50);
+      // Show success message and prompt user to refresh if changes don't appear
+      toast.success(`Applied ${modifications.length} modification(s). If changes don't appear immediately, please refresh the page.`, {
+        duration: 5000
+      });
+    } else {
+      toast.error('No modifications were applied successfully.');
     }
     
     console.log('🏁 === MODIFICATIONS COMPLETE ===\n');
