@@ -75,7 +75,7 @@ export const useModificationApplier = ({
                   type: targetItem.type 
                 });
                 
-                // Apply each field update immediately without setTimeout
+                // Apply each field update immediately
                 Object.keys(mod.data).forEach((field) => {
                   const value = mod.data[field];
                   console.log(`🖊️ Updating ${targetItem.id}.${field} = "${value}"`);
@@ -131,8 +131,14 @@ export const useModificationApplier = ({
     if (changesMade) {
       console.log('💾 Marking changes for auto-save');
       console.log('📋 Applied changes:', appliedChanges);
-      // Mark changes immediately to trigger re-render and auto-save
+      
+      // Force immediate re-render by marking changes
       markAsChanged();
+      
+      // Force a second update to ensure UI refreshes
+      setTimeout(() => {
+        markAsChanged();
+      }, 50);
     }
     
     console.log('🏁 === MODIFICATIONS COMPLETE ===\n');
