@@ -80,7 +80,7 @@ export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
 
   const handleAnalyzeRundown = () => {
     sendMessage(
-      "Can you review the current rundown and suggest any improvements to spelling, grammar, timing, or structure in plain English? Please do not use JSON, code blocks, or formatting instructions."
+    "Can you analyze the current rundown and suggest any improvements to spelling, grammar, segment timing, or structure using plain English? Do not use JSON, code blocks, or structured formatting. Just write naturally like you're giving editorial feedback."
     );
   };
 
