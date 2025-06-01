@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -40,6 +40,7 @@ const RundownToolbar = ({
   onOpenTeleprompter
 }: RundownToolbarProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -80,6 +81,80 @@ const RundownToolbar = ({
     });
   };
 
+  if (isMobile) {
+    return (
+      <div className="p-3 border-b bg-gray-50 dark:bg-gray-700">
+        {/* First row - Main action buttons */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          <Button onClick={onAddRow} variant="outline" size="sm" className="flex items-center space-x-1">
+            <Plus className="h-4 w-4" />
+            <span>Segment</span>
+          </Button>
+          <Button onClick={onAddHeader} variant="outline" size="sm" className="flex items-center space-x-1">
+            <Plus className="h-4 w-4" />
+            <span>Header</span>
+          </Button>
+          <Button onClick={onShowColumnManager} variant="outline" size="sm" className="flex items-center space-x-1">
+            <Settings className="h-4 w-4" />
+            <span>Columns</span>
+          </Button>
+          <Button onClick={handleShareRundown} variant="outline" size="sm" className="flex items-center space-x-1">
+            <Share2 className="h-4 w-4" />
+            <span>Share</span>
+          </Button>
+          <Button onClick={onOpenTeleprompter} variant="outline" size="sm" className="flex items-center space-x-1">
+            <Monitor className="h-4 w-4" />
+            <span>Teleprompter</span>
+          </Button>
+        </div>
+
+        {/* Second row - Playback controls and theme toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {currentSegmentId && (
+              <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border">
+                {formatTime(timeRemaining)}
+              </div>
+            )}
+            
+            <Button
+              onClick={onBackward}
+              variant="outline"
+              size="sm"
+              disabled={!currentSegmentId}
+              title="Previous segment"
+            >
+              <SkipBack className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              onClick={handlePlayPause}
+              variant="outline"
+              size="sm"
+              disabled={!currentSegmentId && !selectedRowId}
+              title={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+            
+            <Button
+              onClick={onForward}
+              variant="outline"
+              size="sm"
+              disabled={!currentSegmentId}
+              title="Next segment"
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <ThemeToggle />
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop layout (unchanged)
   return (
     <div className="p-3 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
