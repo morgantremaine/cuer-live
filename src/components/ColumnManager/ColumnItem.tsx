@@ -30,17 +30,28 @@ const ColumnItem = ({
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnName, setEditingColumnName] = useState('');
 
+  console.log('ColumnItem render:', {
+    columnId: column.id,
+    columnName: column.name,
+    isCustom: column.isCustom,
+    hasRenameFunction: !!onRenameColumn,
+    isEditing: editingColumnId === column.id
+  });
+
   const startEditingColumn = (column: Column) => {
+    console.log('Starting to edit column:', column.id, column.name);
     setEditingColumnId(column.id);
     setEditingColumnName(column.name);
   };
 
   const cancelEditingColumn = () => {
+    console.log('Canceling edit for column:', editingColumnId);
     setEditingColumnId(null);
     setEditingColumnName('');
   };
 
   const handleRenameColumnSubmit = (columnId: string) => {
+    console.log('Submitting rename for column:', columnId, 'new name:', editingColumnName);
     if (editingColumnName.trim() && onRenameColumn) {
       onRenameColumn(columnId, editingColumnName.trim());
       setEditingColumnId(null);
@@ -101,7 +112,10 @@ const ColumnItem = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => startEditingColumn(column)}
+                  onClick={() => {
+                    console.log('Edit button clicked for column:', column.id);
+                    startEditingColumn(column);
+                  }}
                   className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 h-6 w-6 p-0"
                   title="Rename column"
                 >
