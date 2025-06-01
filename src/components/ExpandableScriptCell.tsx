@@ -52,8 +52,8 @@ const ExpandableScriptCell = ({
     const hasCustomColor = textColor && textColor !== '';
     
     if (hasCustomColor) {
-      // For colored rows, ensure good contrast on focus
-      return 'focus:bg-white dark:focus:bg-gray-800 focus:text-gray-900 dark:focus:text-white';
+      // For colored rows, force white text on focus in dark mode and black in light mode
+      return 'focus:bg-white dark:focus:bg-gray-800 focus:!text-gray-900 dark:focus:!text-white';
     } else {
       // For normal rows, use standard focus styles
       return 'focus:bg-white dark:focus:bg-gray-700';
