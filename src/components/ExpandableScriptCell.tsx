@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import HighlightedText from './HighlightedText';
@@ -127,7 +128,6 @@ const ExpandableScriptCell = ({
             wordWrap: isExpanded ? 'break-word' : 'normal',
             textOverflow: isExpanded ? 'unset' : 'ellipsis'
           }}
-          placeholder="Enter script content..."
         />
         {currentHighlight && (
           <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
