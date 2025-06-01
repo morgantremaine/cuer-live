@@ -27,6 +27,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       return;
     }
 
+    console.log('Auto-save: Starting save with timezone:', timezoneToSave);
+
     // Mark as loading to prevent change detection during save
     setIsLoading(true);
 
@@ -34,8 +36,10 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave);
       
       if (success) {
+        console.log('Auto-save: Save successful, marking as saved');
         markAsSaved(itemsToSave, titleToSave, columnsToSave);
       } else {
+        console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
       }
     } catch (error) {
@@ -55,11 +59,15 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     // Create a unique signature for this data
     const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone });
     
+    console.log('Auto-save: Checking if data changed. Current timezone:', timezone);
+    
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
+      console.log('Auto-save: Data signature unchanged, skipping save');
       return;
     }
 
+    console.log('Auto-save: Data changed, scheduling save with timezone:', timezone);
     lastSaveDataRef.current = currentDataSignature;
 
     // Clear existing timeout
@@ -69,6 +77,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
+      console.log('Auto-save: Executing save with timezone:', timezone);
       debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone);
       debounceTimeoutRef.current = null;
     }, 2000);

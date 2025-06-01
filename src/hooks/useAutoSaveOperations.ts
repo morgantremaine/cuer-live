@@ -41,10 +41,13 @@ export const useAutoSaveOperations = () => {
       return false;
     }
 
+    console.log('performSave: Saving with timezone:', timezone);
+
     try {
       setIsSaving(true);
       
       if (isNewRundown) {
+        console.log('performSave: Saving new rundown with timezone:', timezone);
         const result = await saveRundown(rundownTitle, items, columns, timezone);
         
         if (result?.id) {
@@ -54,6 +57,7 @@ export const useAutoSaveOperations = () => {
           throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
+        console.log('performSave: Updating existing rundown with timezone:', timezone);
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone);
         return true;
       }
