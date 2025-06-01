@@ -73,6 +73,69 @@ export const useColumnLayoutStorage = () => {
     }
   }
 
+  const updateLayout = async (id: string, name: string, columns: Column[]) => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('column_layouts')
+      .update({
+        name,
+        columns,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update column layout',
+        variant: 'destructive',
+      })
+      throw error
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Column layout updated successfully!',
+      })
+      loadLayouts()
+      return data
+    }
+  }
+
+  const renameLayout = async (id: string, newName: string) => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('column_layouts')
+      .update({
+        name: newName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to rename column layout',
+        variant: 'destructive',
+      })
+      throw error
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Column layout renamed successfully!',
+      })
+      loadLayouts()
+      return data
+    }
+  }
+
   const deleteLayout = async (id: string) => {
     if (!user) return
 
@@ -107,6 +170,8 @@ export const useColumnLayoutStorage = () => {
     savedLayouts,
     loading,
     saveLayout,
+    updateLayout,
+    renameLayout,
     deleteLayout,
     loadLayouts,
   }

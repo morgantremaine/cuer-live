@@ -67,6 +67,7 @@ export type Database = {
           created_at: string | null
           id: string
           items: Json
+          start_time: string | null
           team_id: string | null
           timezone: string | null
           title: string
@@ -80,6 +81,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           items: Json
+          start_time?: string | null
           team_id?: string | null
           timezone?: string | null
           title: string
@@ -93,6 +95,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           items?: Json
+          start_time?: string | null
           team_id?: string | null
           timezone?: string | null
           title?: string

@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { X, Plus, GripVertical, Trash2, Eye, EyeOff, Save, FolderOpen } from 'lucide-react';
+import { X, Plus, GripVertical, Trash2, Eye, EyeOff, Save, FolderOpen, Edit, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
@@ -38,8 +37,10 @@ const ColumnManager = ({
   const [layoutName, setLayoutName] = useState('');
   const [showSaveLayout, setShowSaveLayout] = useState(false);
   const [showLoadLayout, setShowLoadLayout] = useState(false);
+  const [editingLayoutId, setEditingLayoutId] = useState<string | null>(null);
+  const [editingLayoutName, setEditingLayoutName] = useState('');
   
-  const { savedLayouts, loading, saveLayout, deleteLayout } = useColumnLayoutStorage();
+  const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout } = useColumnLayoutStorage();
 
   const handleAddColumn = () => {
     if (newColumnName.trim()) {
@@ -51,7 +52,6 @@ const ColumnManager = ({
   const handleSaveLayout = async () => {
     if (layoutName.trim()) {
       try {
-        // Save columns with their current widths
         await saveLayout(layoutName.trim(), columns);
         setLayoutName('');
         setShowSaveLayout(false);
@@ -61,10 +61,39 @@ const ColumnManager = ({
     }
   };
 
+  const handleUpdateLayout = async (layoutId: string, layoutNameToUpdate: string) => {
+    try {
+      await updateLayout(layoutId, layoutNameToUpdate, columns);
+    } catch (error) {
+      // Error handled by the hook
+    }
+  };
+
+  const handleRenameLayout = async (layoutId: string, newName: string) => {
+    if (newName.trim()) {
+      try {
+        await renameLayout(layoutId, newName.trim());
+        setEditingLayoutId(null);
+        setEditingLayoutName('');
+      } catch (error) {
+        // Error handled by the hook
+      }
+    }
+  };
+
   const handleLoadLayout = (layout: any) => {
-    // Load layout columns with preserved widths
     onLoadLayout(layout.columns);
     setShowLoadLayout(false);
+  };
+
+  const startEditingLayout = (layout: any) => {
+    setEditingLayoutId(layout.id);
+    setEditingLayoutName(layout.name);
+  };
+
+  const cancelEditingLayout = () => {
+    setEditingLayoutId(null);
+    setEditingLayoutName('');
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -97,7 +126,7 @@ const ColumnManager = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Manage Columns</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -147,7 +176,7 @@ const ColumnManager = ({
             )}
 
             {showLoadLayout && (
-              <div className="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
+              <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
                 {loading ? (
                   <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading...</div>
                 ) : savedLayouts.length === 0 ? (
@@ -158,20 +187,78 @@ const ColumnManager = ({
                       key={layout.id}
                       className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
-                      <button
-                        onClick={() => handleLoadLayout(layout)}
-                        className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                      >
-                        {layout.name}
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteLayout(layout.id)}
-                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      {editingLayoutId === layout.id ? (
+                        <div className="flex-1 flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={editingLayoutName}
+                            onChange={(e) => setEditingLayoutName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleRenameLayout(layout.id, editingLayoutName);
+                              } else if (e.key === 'Escape') {
+                                cancelEditingLayout();
+                              }
+                            }}
+                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            autoFocus
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRenameLayout(layout.id, editingLayoutName)}
+                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                          >
+                            ✓
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={cancelEditingLayout}
+                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleLoadLayout(layout)}
+                            className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                          >
+                            {layout.name}
+                          </button>
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEditingLayout(layout)}
+                              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                              title="Rename layout"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleUpdateLayout(layout.id, layout.name)}
+                              className="text-orange-500 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                              title="Update layout with current columns"
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteLayout(layout.id)}
+                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                              title="Delete layout"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))
                 )}
