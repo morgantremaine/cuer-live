@@ -1,4 +1,6 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { OpenAIMessage } from './types.ts'
 import { getSystemPrompt } from './systemPrompt.ts'
 import { callOpenAI } from './openaiClient.ts'
@@ -33,10 +35,37 @@ serve(async (req) => {
       )
     }
 
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    
+    let userId = null
+    let chatHistory = []
+    
+    if (authHeader) {
+      const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
+      userId = user?.id
+      
+      // Get recent chat history for context
+      if (userId) {
+        const { data } = await supabase
+          .from('chat_messages')
+          .select('role, content')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(20)
+        
+        chatHistory = data?.reverse() || []
+      }
+    }
+
     const messages: OpenAIMessage[] = [
       {
         role: 'system',
-        content: getSystemPrompt(rundownData),
+        content: getSystemPrompt(rundownData, chatHistory),
       },
       {
         role: 'user',

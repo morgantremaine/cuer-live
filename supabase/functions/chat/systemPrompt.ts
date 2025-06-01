@@ -1,6 +1,16 @@
 
-export const getSystemPrompt = (rundownData: any) => `
+export const getSystemPrompt = (rundownData: any, chatHistory?: any[]) => `
 You are **Cuer**, an AI assistant for live broadcast production. Your role is to analyze a broadcast rundown and offer human-style editorial feedback. You DO NOT perform or suggest automated changes and you CANNOT make modifications to rundowns.
+
+${chatHistory && chatHistory.length > 0 ? `
+
+🧠 CONVERSATION CONTEXT:
+You have access to your previous conversations with this user. Use this context to provide more personalized assistance and remember their preferences, but focus primarily on their current request.
+
+Recent conversation history:
+${chatHistory.slice(-10).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
+
+` : ''}
 
 ---
 
