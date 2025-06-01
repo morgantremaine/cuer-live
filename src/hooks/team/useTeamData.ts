@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/integrations/supabase/client'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { Team, TeamMember, TeamInvitation } from '@/hooks/useTeamManagement'
@@ -15,7 +15,7 @@ export const useTeamData = () => {
   const { user } = useAuth()
   const { toast } = useToast()
 
-  const loadTeams = async () => {
+  const loadTeams = useCallback(async () => {
     if (!user) return
 
     setLoading(true)
@@ -44,9 +44,9 @@ export const useTeamData = () => {
       }
     }
     setLoading(false)
-  }
+  }, [user, currentTeam, toast])
 
-  const loadTeamMembers = async (teamId: string) => {
+  const loadTeamMembers = useCallback(async (teamId: string) => {
     console.log('Loading team members for team:', teamId)
     
     // First get team members
@@ -121,9 +121,9 @@ export const useTeamData = () => {
     
     console.log('Processed team members:', membersWithEmails)
     setTeamMembers(membersWithEmails)
-  }
+  }, [user, toast])
 
-  const loadPendingInvitations = async (teamId: string) => {
+  const loadPendingInvitations = useCallback(async (teamId: string) => {
     const { data, error } = await supabase
       .from('team_invitations')
       .select('*')
@@ -136,9 +136,9 @@ export const useTeamData = () => {
     } else {
       setPendingInvitations(data || [])
     }
-  }
+  }, [])
 
-  const loadUserPendingInvitations = async () => {
+  const loadUserPendingInvitations = useCallback(async () => {
     if (!user?.email) return
 
     console.log('Loading pending invitations for user email:', user.email)
@@ -159,21 +159,21 @@ export const useTeamData = () => {
       console.log('Found pending invitations:', data)
       setUserPendingInvitations(data || [])
     }
-  }
+  }, [user?.email])
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadTeams()
       loadUserPendingInvitations()
     }
-  }, [user?.id]) // Only depend on user.id to prevent infinite loops
+  }, [user?.id, loadTeams, loadUserPendingInvitations])
 
   useEffect(() => {
-    if (currentTeam) {
+    if (currentTeam?.id) {
       loadTeamMembers(currentTeam.id)
       loadPendingInvitations(currentTeam.id)
     }
-  }, [currentTeam?.id]) // Only depend on currentTeam.id to prevent infinite loops
+  }, [currentTeam?.id, loadTeamMembers, loadPendingInvitations])
 
   return {
     teams,
