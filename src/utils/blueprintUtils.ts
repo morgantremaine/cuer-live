@@ -1,4 +1,3 @@
-
 import { RundownItem } from '@/types/rundown';
 import { BlueprintList, DEFAULT_BLUEPRINT_LISTS } from '@/types/blueprint';
 
@@ -11,6 +10,7 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
     notes: item.notes,
     segmentName: item.segmentName,
     isHeader: item.isHeader,
+    rowNumber: item.rowNumber,
     // Show all keys to understand the structure
     allKeys: Object.keys(item)
   })));
@@ -19,16 +19,22 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
   
   // Special handling for headers overview
   if (columnKey === 'headers') {
+    console.log('Processing headers column - looking for header items...');
     items.forEach((item, index) => {
-      if (item.type === 'header') {
+      console.log(`Item ${index}: type="${item.type}", isHeader="${item.isHeader}", rowNumber="${item.rowNumber}", segmentName="${item.segmentName}", notes="${item.notes}", name="${item.name}"`);
+      
+      if (item.type === 'header' || item.isHeader) {
         const letter = item.rowNumber || item.segmentName || '';
         const description = item.notes || item.name || '';
+        console.log(`Found header item ${index}: letter="${letter}", description="${description}"`);
+        
         if (letter && description) {
           values.add(`${letter}: ${description}`);
         } else if (letter) {
           values.add(letter);
+        } else if (description) {
+          values.add(description);
         }
-        console.log(`Header ${index}: ${letter}: ${description}`);
       }
     });
     
@@ -39,7 +45,7 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
   
   items.forEach((item, index) => {
     // Skip header items for all columns except the special 'headers' column
-    if (item.type === 'header') {
+    if (item.type === 'header' || item.isHeader) {
       return;
     }
     
@@ -103,12 +109,21 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
 };
 
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
-  return DEFAULT_BLUEPRINT_LISTS.map(listConfig => ({
-    id: `${listConfig.sourceColumn}_${Date.now()}`,
-    name: listConfig.name,
-    sourceColumn: listConfig.sourceColumn,
-    items: generateListFromColumn(items, listConfig.sourceColumn)
-  }));
+  console.log('Generating default blueprint with', DEFAULT_BLUEPRINT_LISTS.length, 'default lists');
+  console.log('Default blueprint lists:', DEFAULT_BLUEPRINT_LISTS);
+  
+  return DEFAULT_BLUEPRINT_LISTS.map(listConfig => {
+    console.log(`Creating list "${listConfig.name}" from column "${listConfig.sourceColumn}"`);
+    const generatedItems = generateListFromColumn(items, listConfig.sourceColumn);
+    console.log(`Generated ${generatedItems.length} items for "${listConfig.name}":`, generatedItems);
+    
+    return {
+      id: `${listConfig.sourceColumn}_${Date.now()}`,
+      name: listConfig.name,
+      sourceColumn: listConfig.sourceColumn,
+      items: generatedItems
+    };
+  });
 };
 
 export const getAvailableColumns = (items: RundownItem[]) => {
