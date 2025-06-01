@@ -1,9 +1,11 @@
+
 import React from 'react';
-import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
+import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -41,6 +43,7 @@ const RundownToolbar = ({
 }: RundownToolbarProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -81,6 +84,19 @@ const RundownToolbar = ({
     });
   };
 
+  const handleOpenBlueprint = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot open blueprint",
+        description: "Save this rundown first before opening blueprint.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    navigate(`/blueprint/${rundownId}`);
+  };
+
   if (isMobile) {
     return (
       <div className="p-3 border-b bg-gray-50 dark:bg-gray-700">
@@ -105,6 +121,10 @@ const RundownToolbar = ({
           <Button onClick={onOpenTeleprompter} variant="outline" size="sm" className="flex items-center space-x-1">
             <Monitor className="h-4 w-4" />
             <span>Teleprompter</span>
+          </Button>
+          <Button onClick={handleOpenBlueprint} variant="outline" size="sm" className="flex items-center space-x-1">
+            <FileText className="h-4 w-4" />
+            <span>Blueprint</span>
           </Button>
         </div>
 
@@ -154,7 +174,7 @@ const RundownToolbar = ({
     );
   }
 
-  // Desktop layout (unchanged)
+  // Desktop layout
   return (
     <div className="p-3 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-2">
@@ -177,6 +197,10 @@ const RundownToolbar = ({
         <Button onClick={onOpenTeleprompter} variant="outline" className="flex items-center space-x-2">
           <Monitor className="h-4 w-4" />
           <span>Teleprompter</span>
+        </Button>
+        <Button onClick={handleOpenBlueprint} variant="outline" className="flex items-center space-x-2">
+          <FileText className="h-4 w-4" />
+          <span>Blueprint</span>
         </Button>
       </div>
 
