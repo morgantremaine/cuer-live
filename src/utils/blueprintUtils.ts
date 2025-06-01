@@ -10,13 +10,14 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
     return acc;
   }, {} as Record<string, number>));
   
-  const values = new Set<string>();
-  
   // Special handling for headers overview - extract descriptions from header ROWS
   if (columnKey === 'headers') {
     console.log('*** PROCESSING HEADERS OVERVIEW ***');
     const headerItems = items.filter(item => item.type === 'header');
     console.log('Found', headerItems.length, 'header items');
+    
+    const orderedValues: string[] = [];
+    const seenValues = new Set<string>();
     
     headerItems.forEach((item, index) => {
       console.log(`Processing header row ${index + 1}:`, {
@@ -30,23 +31,26 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
       const description = item.notes || item.name || item.rowNumber || '';
       const cleanDescription = description.trim();
       
-      if (cleanDescription && cleanDescription !== '') {
+      if (cleanDescription && cleanDescription !== '' && !seenValues.has(cleanDescription)) {
         console.log('Adding header description:', cleanDescription);
-        values.add(cleanDescription);
+        orderedValues.push(cleanDescription);
+        seenValues.add(cleanDescription);
       } else {
-        console.log('No description found for this header row');
+        console.log('Skipping duplicate or empty description:', cleanDescription);
       }
     });
     
-    const result = Array.from(values).sort();
-    console.log('*** HEADERS OVERVIEW RESULT:', result);
-    return result;
+    console.log('*** HEADERS OVERVIEW RESULT:', orderedValues);
+    return orderedValues;
   }
   
-  // For all other columns, explicitly exclude header items
+  // For all other columns, explicitly exclude header items and maintain order
   console.log('Processing regular column:', columnKey);
   const regularItems = items.filter(item => item.type !== 'header');
   console.log(`Processing ${regularItems.length} regular items for column: ${columnKey}`);
+  
+  const orderedValues: string[] = [];
+  const seenValues = new Set<string>();
   
   regularItems.forEach((item, index) => {
     let value = '';
@@ -93,16 +97,16 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
       }
     }
     
-    // Clean and add non-empty values
+    // Clean and add non-empty values in order, only first instance
     const cleanValue = value.trim();
-    if (cleanValue && cleanValue !== '') {
-      values.add(cleanValue);
+    if (cleanValue && cleanValue !== '' && !seenValues.has(cleanValue)) {
+      orderedValues.push(cleanValue);
+      seenValues.add(cleanValue);
     }
   });
   
-  const result = Array.from(values).sort();
-  console.log('Final values for column', columnKey, ':', result);
-  return result;
+  console.log('Final ordered values for column', columnKey, ':', orderedValues);
+  return orderedValues;
 };
 
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
