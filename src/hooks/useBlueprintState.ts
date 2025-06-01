@@ -1,15 +1,20 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn, generateDefaultBlueprint, getAvailableColumns } from '@/utils/blueprintUtils';
 
 export const useBlueprintState = (rundownId: string, rundownTitle: string, items: RundownItem[]) => {
-  const [lists, setLists] = useState<BlueprintList[]>(() => 
-    generateDefaultBlueprint(rundownId, rundownTitle, items)
-  );
+  const [lists, setLists] = useState<BlueprintList[]>([]);
 
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
+
+  // Initialize lists when items are loaded or changed
+  useEffect(() => {
+    if (items.length > 0) {
+      setLists(generateDefaultBlueprint(rundownId, rundownTitle, items));
+    }
+  }, [rundownId, rundownTitle, items]);
 
   const addNewList = useCallback((name: string, sourceColumn: string) => {
     const newList: BlueprintList = {
