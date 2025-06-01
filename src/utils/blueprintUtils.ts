@@ -1,4 +1,3 @@
-
 import { RundownItem } from '@/types/rundown';
 import { BlueprintList, DEFAULT_BLUEPRINT_LISTS } from '@/types/blueprint';
 
@@ -131,8 +130,9 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
 };
 
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
-  console.log('Generating default blueprint with', DEFAULT_BLUEPRINT_LISTS.length, 'default lists');
-  console.log('Default blueprint lists:', DEFAULT_BLUEPRINT_LISTS);
+  console.log('=== GENERATING DEFAULT BLUEPRINT ===');
+  console.log('generateDefaultBlueprint called with:', { rundownId, rundownTitle, itemsCount: items.length });
+  console.log('DEFAULT_BLUEPRINT_LISTS:', DEFAULT_BLUEPRINT_LISTS);
   console.log('All items in rundown:', items.map((item, index) => ({
     index,
     id: item.id,
@@ -143,18 +143,28 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
     notes: item.notes
   })));
   
-  return DEFAULT_BLUEPRINT_LISTS.map(listConfig => {
+  const result = DEFAULT_BLUEPRINT_LISTS.map((listConfig, configIndex) => {
+    console.log(`=== PROCESSING LIST ${configIndex + 1}/4: "${listConfig.name}" ===`);
     console.log(`Creating list "${listConfig.name}" from column "${listConfig.sourceColumn}"`);
     const generatedItems = generateListFromColumn(items, listConfig.sourceColumn);
     console.log(`Generated ${generatedItems.length} items for "${listConfig.name}":`, generatedItems);
     
-    return {
-      id: `${listConfig.sourceColumn}_${Date.now()}`,
+    const list: BlueprintList = {
+      id: `${listConfig.sourceColumn}_${Date.now()}_${configIndex}`,
       name: listConfig.name,
       sourceColumn: listConfig.sourceColumn,
       items: generatedItems
     };
+    
+    console.log(`Created list object:`, list);
+    return list;
   });
+  
+  console.log('=== FINAL RESULT ===');
+  console.log('Generated blueprint lists:', result);
+  console.log('Number of lists created:', result.length);
+  
+  return result;
 };
 
 export const getAvailableColumns = (items: RundownItem[]) => {
