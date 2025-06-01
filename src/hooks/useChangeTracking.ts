@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
 
+// Global tracker to prevent multiple change tracking initializations
+let globalChangeTrackingInit: { [key: string]: boolean } = {};
+
 export const useChangeTracking = (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -10,7 +13,6 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const initialLoadRef = useRef(false);
   const isLoadingRef = useRef(false);
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasLoggedInitRef = useRef<{ [key: string]: boolean }>({});
 
   // Initialize tracking after first meaningful load with delay
   useEffect(() => {
@@ -21,6 +23,15 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
     // Only initialize once we have meaningful data
     if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+      const initKey = `${rundownTitle}-${items.length}`;
+      
+      // Check if this initialization is already in progress globally
+      if (globalChangeTrackingInit[initKey]) {
+        return;
+      }
+      
+      globalChangeTrackingInit[initKey] = true;
+      
       // Add a small delay to prevent initialization during rapid state changes
       initializationTimeoutRef.current = setTimeout(() => {
         const signature = JSON.stringify({ items, title: rundownTitle, columns });
@@ -29,12 +40,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
         setIsInitialized(true);
         setHasUnsavedChanges(false);
         
-        // Prevent duplicate logging
-        const logKey = `${rundownTitle}-${items.length}`;
-        if (!hasLoggedInitRef.current[logKey]) {
-          console.log('Change tracking initialized with title:', rundownTitle);
-          hasLoggedInitRef.current[logKey] = true;
-        }
+        console.log('Change tracking initialized with title:', rundownTitle);
       }, 100);
     }
 

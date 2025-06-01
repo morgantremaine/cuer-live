@@ -9,6 +9,9 @@ import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export type { RundownItem } from '@/types/rundown';
 
+// Global tracker to prevent multiple rundown items initializations
+let globalRundownItemsInit: { [key: string]: boolean } = {};
+
 const normalizeRundownItem = (item: RundownItem): RundownItem => ({
   ...item,
   status: item.status || 'upcoming',
@@ -25,7 +28,6 @@ export const useRundownItems = () => {
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRundownIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
-  const hasLoggedNewRundownRef = useRef<{ [key: string]: boolean }>({});
 
   // Load rundown data when conditions are met
   useEffect(() => {
@@ -38,10 +40,13 @@ export const useRundownItems = () => {
     if (!rundownId) {
       if (loadedRundownIdRef.current !== 'new') {
         const logKey = 'new';
-        if (!hasLoggedNewRundownRef.current[logKey]) {
+        
+        // Check global initialization status
+        if (!globalRundownItemsInit[logKey]) {
           console.log('useRundownItems: New rundown, setting default items');
-          hasLoggedNewRundownRef.current[logKey] = true;
+          globalRundownItemsInit[logKey] = true;
         }
+        
         loadedRundownIdRef.current = 'new';
         setItems(defaultRundownItems);
       }

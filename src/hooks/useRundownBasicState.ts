@@ -2,6 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
+// Global initialization tracker to prevent multiple hooks from initializing simultaneously
+let globalInitTracker: { [key: string]: boolean } = {};
+
 export const useRundownBasicState = () => {
   const params = useParams<{ id: string }>();
   const rawId = params.id;
@@ -16,7 +19,6 @@ export const useRundownBasicState = () => {
   // Single initialization flag shared across the entire app session
   const initRef = useRef<{ [key: string]: boolean }>({});
   const currentRundownRef = useRef<string | undefined>(undefined);
-  const hasLoggedInitRef = useRef<{ [key: string]: boolean }>({});
 
   // Timer effect for current time
   useEffect(() => {
@@ -28,14 +30,17 @@ export const useRundownBasicState = () => {
   useEffect(() => {
     const currentKey = rundownId || 'new';
     
-    // Only initialize if this is truly a new rundown and we haven't logged it yet
-    if (currentRundownRef.current !== rundownId && !initRef.current[currentKey]) {
-      if (!hasLoggedInitRef.current[currentKey]) {
-        console.log('New rundown, using default title and timezone');
-        hasLoggedInitRef.current[currentKey] = true;
-      }
+    // Check both local and global initialization status
+    if (currentRundownRef.current !== rundownId && 
+        !initRef.current[currentKey] && 
+        !globalInitTracker[currentKey]) {
+      
+      console.log('New rundown, using default title and timezone');
+      
+      // Mark as initialized both locally and globally
       currentRundownRef.current = rundownId;
       initRef.current[currentKey] = true;
+      globalInitTracker[currentKey] = true;
     }
   }, [rundownId]);
 
