@@ -24,7 +24,8 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
     items.forEach((item, index) => {
       console.log(`Item ${index}: type="${item.type}", isHeader="${item.isHeader}", rowNumber="${item.rowNumber}", segmentName="${item.segmentName}", notes="${item.notes}", name="${item.name}"`);
       
-      if (item.type === 'header' || item.isHeader) {
+      // Check for both type === 'header' AND isHeader === true (legacy support)
+      if (item.type === 'header' || item.isHeader === true) {
         const letter = item.rowNumber || item.segmentName || '';
         const description = item.notes || item.name || '';
         console.log(`Found header item ${index}: letter="${letter}", description="${description}"`);
@@ -38,6 +39,26 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
         }
       }
     });
+    
+    // If no headers found, let's see if there are items that look like headers based on their content
+    if (values.size === 0) {
+      console.log('No explicit headers found, checking for header-like items...');
+      items.forEach((item, index) => {
+        // Check if rowNumber looks like a single letter (A, B, C, etc.)
+        const hasLetterRowNumber = item.rowNumber && /^[A-Z]$/.test(item.rowNumber);
+        // Check if name or notes contain header-like content
+        const hasHeaderContent = (item.name && item.name.length > 0) || (item.notes && item.notes.length > 0);
+        
+        console.log(`Item ${index} header check: rowNumber="${item.rowNumber}" hasLetterRowNumber=${hasLetterRowNumber}, hasHeaderContent=${hasHeaderContent}`);
+        
+        if (hasLetterRowNumber && hasHeaderContent) {
+          const letter = item.rowNumber;
+          const description = item.notes || item.name || '';
+          console.log(`Found potential header based on pattern: ${letter}: ${description}`);
+          values.add(`${letter}: ${description}`);
+        }
+      });
+    }
     
     const result = Array.from(values).sort();
     console.log('Final header overview values:', result);
