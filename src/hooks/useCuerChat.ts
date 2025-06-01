@@ -25,13 +25,13 @@ interface ChatMessage {
 export const useCuerChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(true); // Always connected for Supabase
+  const [isConnected, setIsConnected] = useState<boolean | null>(false); // Set to false since no backend
   const [pendingModifications, setPendingModifications] = useState<RundownModification[] | null>(null);
 
   const checkConnection = useCallback(async () => {
-    // Always return true since we're using Supabase Edge Functions
-    setIsConnected(true);
-    return true;
+    // No backend available, return false
+    setIsConnected(false);
+    return false;
   }, []);
 
   const sendMessage = useCallback(async (content: string) => {
@@ -48,45 +48,17 @@ export const useCuerChat = () => {
     setIsLoading(true);
 
     try {
-      // Fix the API endpoint to use the correct Supabase edge function URL
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/openai-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          messages: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })).concat([{ role: 'user', content }])
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      console.log('📥 useCuerChat - Received result:', result);
-      
+      // Since there's no backend configured, provide a helpful response
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: result.response || 'I received your message but couldn\'t generate a response.',
+        content: `I received your message: "${content}"\n\nHowever, I'm currently not connected to any backend AI service. To use Cuer AI features, you'll need to:\n\n1. Set up a Supabase project with edge functions\n2. Configure an OpenAI API key\n3. Deploy the chat function to handle AI requests\n\nFor now, I can only echo your messages and provide basic information about the rundown interface.`,
         timestamp: new Date(),
-        modifications: result.modifications || []
+        modifications: []
       };
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // If there are modifications, show them for confirmation
-      if (result.modifications && result.modifications.length > 0) {
-        console.log('✅ useCuerChat - Setting pending modifications:', result.modifications);
-        setPendingModifications(result.modifications);
-      }
     } catch (error) {
       console.error('❌ useCuerChat - Error sending message:', error);
       const errorMessage: ChatMessage = {
@@ -105,11 +77,11 @@ export const useCuerChat = () => {
     console.log('🔍 useCuerChat - Analyzing rundown:', rundownData);
     setIsLoading(true);
     try {
-      // You can implement rundown analysis via the same edge function
+      // Provide basic analysis without backend
       const analysisMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `📊 **Rundown Analysis Complete**\n\nI can see your rundown has ${rundownData?.items?.length || 0} items. How can I help you optimize it?`,
+        content: `📊 **Rundown Analysis**\n\nI can see your rundown "${rundownData?.title || 'Untitled'}" has ${rundownData?.items?.length || 0} items.\n\nTo get AI-powered analysis and suggestions, you'll need to configure the backend AI service. For now, I can tell you:\n\n• Total items: ${rundownData?.items?.length || 0}\n• Timezone: ${rundownData?.timezone || 'Not set'}\n• Start time: ${rundownData?.startTime || 'Not set'}`,
         timestamp: new Date()
       };
 
@@ -135,16 +107,16 @@ export const useCuerChat = () => {
 
   // Updated to accept apiKey parameter
   const setApiKey = useCallback((apiKey: string) => {
-    console.log('API key setting not needed - using Supabase Edge Function');
+    console.log('API key setting not available - backend not configured');
     checkConnection();
   }, [checkConnection]);
 
   const clearApiKey = useCallback(() => {
-    console.log('API key clearing not needed - using Supabase Edge Function');
+    console.log('API key clearing not needed - no backend configured');
   }, []);
 
   const hasApiKey = useCallback(() => {
-    return true; // Always true since we're using Supabase
+    return false; // No backend configured
   }, []);
 
   const clearPendingModifications = useCallback(() => {

@@ -16,6 +16,7 @@ export const useRundownBasicState = () => {
   const initRef = useRef(false);
   const lastRundownIdRef = useRef<string | undefined>(undefined);
   const isInitializedRef = useRef<{ [key: string]: boolean }>({});
+  const initializationInProgressRef = useRef<{ [key: string]: boolean }>({});
 
   // Timer effect for current time
   useEffect(() => {
@@ -27,18 +28,24 @@ export const useRundownBasicState = () => {
   useEffect(() => {
     const initKey = rundownId || 'new';
     
-    // Skip if already initialized for this specific rundown
-    if (isInitializedRef.current[initKey]) {
+    // Skip if already initialized or initialization in progress
+    if (isInitializedRef.current[initKey] || initializationInProgressRef.current[initKey]) {
       return;
     }
     
     // Only initialize once per rundown change
     if (lastRundownIdRef.current !== rundownId) {
+      initializationInProgressRef.current[initKey] = true;
       lastRundownIdRef.current = rundownId;
       isInitializedRef.current[initKey] = true;
       initRef.current = true;
       
       console.log('useRundownBasicState initialized for rundownId:', rundownId);
+      
+      // Clear the in-progress flag after a short delay
+      setTimeout(() => {
+        initializationInProgressRef.current[initKey] = false;
+      }, 100);
     }
   }, [rundownId]);
 

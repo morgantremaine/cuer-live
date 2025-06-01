@@ -18,7 +18,6 @@ const normalizeRundownItem = (item: RundownItem): RundownItem => ({
 
 export const useRundownItems = () => {
   const params = useParams<{ id: string }>();
-  // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
@@ -26,12 +25,14 @@ export const useRundownItems = () => {
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRef = useRef<string | null>(null);
   const initRef = useRef<{ [key: string]: boolean }>({});
+  const loadingRef = useRef<{ [key: string]: boolean }>({});
 
   // Initialize with defaults for new rundowns only once
   useEffect(() => {
     const initKey = rundownId || 'new';
     
-    if (initRef.current[initKey]) return;
+    // Skip if already initialized or currently loading
+    if (initRef.current[initKey] || loadingRef.current[initKey]) return;
     
     if (!rundownId && loadedRef.current !== null) {
       console.log('useRundownItems: New rundown, setting default items');
@@ -45,7 +46,8 @@ export const useRundownItems = () => {
   useEffect(() => {
     const initKey = rundownId || 'new';
     
-    if (loading || initRef.current[initKey]) return;
+    // Skip if loading, already initialized, or currently loading this specific rundown
+    if (loading || initRef.current[initKey] || loadingRef.current[initKey]) return;
     
     // Prevent duplicate loading
     if (loadedRef.current === rundownId) return;
@@ -55,10 +57,12 @@ export const useRundownItems = () => {
       
       if (existingRundown?.items && loadedRef.current !== rundownId) {
         console.log('useRundownItems: Loading rundown items for:', rundownId);
+        loadingRef.current[initKey] = true;
         loadedRef.current = rundownId;
         const normalizedItems = existingRundown.items.map(normalizeRundownItem);
         setItems(normalizedItems);
         initRef.current[initKey] = true;
+        loadingRef.current[initKey] = false;
       } else if (!existingRundown && loadedRef.current !== rundownId) {
         console.log('useRundownItems: Rundown not found, using defaults for ID:', rundownId);
         loadedRef.current = rundownId;
