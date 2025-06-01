@@ -91,8 +91,8 @@ const RundownHeader = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-4 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-2">
+    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-3 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between mb-1">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
