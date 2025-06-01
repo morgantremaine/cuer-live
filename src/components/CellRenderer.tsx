@@ -100,7 +100,10 @@ const CellRenderer = ({
               onChange={(e) => handleUpdateValue(e.target.value)}
               onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
               className={`w-full text-sm bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100 border-none ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400`}
-              style={{ color: textColor || undefined }}
+              style={{ 
+                // Only apply textColor in light mode, let dark mode classes handle dark mode
+                color: document.documentElement.classList.contains('dark') ? undefined : (textColor || undefined)
+              }}
             />
           ) : (
             <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
