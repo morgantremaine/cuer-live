@@ -9,18 +9,33 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const lastSavedDataRef = useRef<string>('');
   const initialLoadRef = useRef(false);
   const isLoadingRef = useRef(false);
+  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize tracking after first load
+  // Initialize tracking after first meaningful load with delay
   useEffect(() => {
-    // Only initialize once we have meaningful data (either items or a non-default title)
-    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
-      const signature = JSON.stringify({ items, title: rundownTitle, columns });
-      lastSavedDataRef.current = signature;
-      initialLoadRef.current = true;
-      setIsInitialized(true);
-      setHasUnsavedChanges(false);
-      console.log('Change tracking initialized with title:', rundownTitle);
+    // Clear any pending initialization
+    if (initializationTimeoutRef.current) {
+      clearTimeout(initializationTimeoutRef.current);
     }
+
+    // Only initialize once we have meaningful data
+    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+      // Add a small delay to prevent initialization during rapid state changes
+      initializationTimeoutRef.current = setTimeout(() => {
+        const signature = JSON.stringify({ items, title: rundownTitle, columns });
+        lastSavedDataRef.current = signature;
+        initialLoadRef.current = true;
+        setIsInitialized(true);
+        setHasUnsavedChanges(false);
+        console.log('Change tracking initialized with title:', rundownTitle);
+      }, 100);
+    }
+
+    return () => {
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+    };
   }, [items, rundownTitle, columns]);
 
   // Track changes after initialization - but only if not loading
