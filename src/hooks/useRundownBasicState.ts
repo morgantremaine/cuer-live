@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
-// Global initialization tracker to prevent multiple hooks from initializing simultaneously
-let globalInitTracker: { [key: string]: boolean } = {};
+// Simplified global initialization tracker
+let globalInitialized = new Set<string>();
 
 export const useRundownBasicState = () => {
   const params = useParams<{ id: string }>();
@@ -16,9 +16,7 @@ export const useRundownBasicState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   
-  // Single initialization flag shared across the entire app session
-  const initRef = useRef<{ [key: string]: boolean }>({});
-  const currentRundownRef = useRef<string | undefined>(undefined);
+  const initRef = useRef(false);
 
   // Timer effect for current time
   useEffect(() => {
@@ -26,22 +24,24 @@ export const useRundownBasicState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Initialize only once per rundown change with proper logging control
+  // Initialize only once per component mount
   useEffect(() => {
     const currentKey = rundownId || 'new';
     
-    // Check both local and global initialization status
-    if (currentRundownRef.current !== rundownId && 
-        !initRef.current[currentKey] && 
-        !globalInitTracker[currentKey]) {
-      
+    if (!initRef.current && !globalInitialized.has(currentKey)) {
       console.log('New rundown, using default title and timezone');
-      
-      // Mark as initialized both locally and globally
-      currentRundownRef.current = rundownId;
-      initRef.current[currentKey] = true;
-      globalInitTracker[currentKey] = true;
+      initRef.current = true;
+      globalInitialized.add(currentKey);
     }
+  }, [rundownId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      const currentKey = rundownId || 'new';
+      globalInitialized.delete(currentKey);
+      initRef.current = false;
+    };
   }, [rundownId]);
 
   // Change tracking for timezone and other fields

@@ -3,52 +3,33 @@ import { useState, useEffect, useRef } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
 
-// Global tracker to prevent multiple change tracking initializations
-let globalChangeTrackingInit: { [key: string]: boolean } = {};
+// Simplified global tracker for change tracking
+let globalChangeTrackingInitialized = new Set<string>();
 
 export const useChangeTracking = (items: RundownItem[], rundownTitle: string, columns?: Column[]) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedDataRef = useRef<string>('');
-  const initialLoadRef = useRef(false);
+  const initRef = useRef(false);
   const isLoadingRef = useRef(false);
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize tracking after first meaningful load with delay
+  // Initialize tracking after first meaningful load
   useEffect(() => {
-    // Clear any pending initialization
-    if (initializationTimeoutRef.current) {
-      clearTimeout(initializationTimeoutRef.current);
+    const initKey = `${rundownTitle}-${items.length}`;
+    
+    // Only initialize once we have meaningful data and haven't initialized yet
+    if (!initRef.current && !globalChangeTrackingInitialized.has(initKey) && 
+        (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+      
+      console.log('Change tracking initialized with title:', rundownTitle);
+      
+      const signature = JSON.stringify({ items, title: rundownTitle, columns });
+      lastSavedDataRef.current = signature;
+      initRef.current = true;
+      globalChangeTrackingInitialized.add(initKey);
+      setIsInitialized(true);
+      setHasUnsavedChanges(false);
     }
-
-    // Only initialize once we have meaningful data
-    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
-      const initKey = `${rundownTitle}-${items.length}`;
-      
-      // Check if this initialization is already in progress globally
-      if (globalChangeTrackingInit[initKey]) {
-        return;
-      }
-      
-      globalChangeTrackingInit[initKey] = true;
-      
-      // Add a small delay to prevent initialization during rapid state changes
-      initializationTimeoutRef.current = setTimeout(() => {
-        const signature = JSON.stringify({ items, title: rundownTitle, columns });
-        lastSavedDataRef.current = signature;
-        initialLoadRef.current = true;
-        setIsInitialized(true);
-        setHasUnsavedChanges(false);
-        
-        console.log('Change tracking initialized with title:', rundownTitle);
-      }, 100);
-    }
-
-    return () => {
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
-    };
   }, [items, rundownTitle, columns]);
 
   // Track changes after initialization - but only if not loading

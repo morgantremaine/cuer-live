@@ -3,8 +3,9 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
-// Global cache to prevent multiple checks
-let globalTableCheckCache: { [userId: string]: boolean | null } = {};
+// Simplified global cache
+let globalTableCheckResult: boolean | null = null;
+let globalTableCheckPromise: Promise<boolean> | null = null;
 
 export const useTableChecker = (user: User | null) => {
   const [tableExists, setTableExists] = useState<boolean | null>(null);
@@ -12,45 +13,51 @@ export const useTableChecker = (user: User | null) => {
   const checkTableExists = useCallback(async () => {
     if (!user) return false;
 
-    const userId = user.id;
-    
-    // Check global cache first
-    if (globalTableCheckCache[userId] !== undefined) {
-      const cachedResult = globalTableCheckCache[userId];
-      if (tableExists !== cachedResult) {
-        setTableExists(cachedResult);
+    // Return cached result if available
+    if (globalTableCheckResult !== null) {
+      if (tableExists !== globalTableCheckResult) {
+        setTableExists(globalTableCheckResult);
       }
-      return cachedResult || false;
+      return globalTableCheckResult;
     }
 
-    // If we already know locally that the table doesn't exist, don't check again
-    if (tableExists === false) {
-      return false;
+    // If a check is already in progress, wait for it
+    if (globalTableCheckPromise) {
+      const result = await globalTableCheckPromise;
+      setTableExists(result);
+      return result;
     }
 
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .select('id')
-        .limit(1);
+    // Start new check
+    globalTableCheckPromise = (async () => {
+      try {
+        const { error } = await supabase
+          .from('chat_messages')
+          .select('id')
+          .limit(1);
 
-      const exists = !error || error.code !== '42P01';
-      
-      // Cache the result globally and locally
-      globalTableCheckCache[userId] = exists;
-      setTableExists(exists);
-      
-      if (!exists) {
-        console.log('Chat messages table does not exist, skipping chat history load');
+        const exists = !error || error.code !== '42P01';
+        
+        // Cache the result globally
+        globalTableCheckResult = exists;
+        setTableExists(exists);
+        
+        if (!exists) {
+          console.log('Chat messages table does not exist, skipping chat history load');
+        }
+        
+        return exists;
+      } catch (error) {
+        console.log('Chat messages table not available');
+        globalTableCheckResult = false;
+        setTableExists(false);
+        return false;
+      } finally {
+        globalTableCheckPromise = null;
       }
-      
-      return exists;
-    } catch (error) {
-      console.log('Chat messages table not available');
-      globalTableCheckCache[userId] = false;
-      setTableExists(false);
-      return false;
-    }
+    })();
+
+    return await globalTableCheckPromise;
   }, [user, tableExists]);
 
   return { tableExists, checkTableExists };
