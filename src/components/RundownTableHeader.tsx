@@ -18,7 +18,7 @@ const RundownTableHeader = ({
     <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-10">
       <tr>
         <th className="px-1 py-2 text-left text-sm font-semibold text-white" style={{ width: '40px' }}>
-          <span className="pl-1">#</span>
+          #
         </th>
         {visibleColumns.map((column, index) => (
           <ResizableColumnHeader
