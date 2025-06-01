@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Copy, Edit2, Check, X } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
+import { useToast } from '@/hooks/use-toast';
 
 interface BlueprintListCardProps {
   list: BlueprintList;
@@ -15,11 +15,17 @@ interface BlueprintListCardProps {
 const BlueprintListCard = ({ list, onDelete, onRename }: BlueprintListCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
+  const { toast } = useToast();
 
   const copyToClipboard = async () => {
     const text = list.items.join('\n');
     try {
       await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied to clipboard!",
+        description: `${list.name} has been copied to your clipboard.`,
+        variant: "default"
+      });
     } catch (err) {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
@@ -28,6 +34,12 @@ const BlueprintListCard = ({ list, onDelete, onRename }: BlueprintListCardProps)
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
+      
+      toast({
+        title: "Copied to clipboard!",
+        description: `${list.name} has been copied to your clipboard.`,
+        variant: "default"
+      });
     }
   };
 
