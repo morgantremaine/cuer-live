@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -69,16 +70,28 @@ export const useTeamManagement = () => {
   const loadTeamMembers = async (teamId: string) => {
     const { data, error } = await supabase
       .from('team_members')
-      .select(`
-        *,
-        profiles(email, full_name)
-      `)
+      .select('*')
       .eq('team_id', teamId)
 
     if (error) {
       console.error('Error loading team members:', error)
     } else {
-      setTeamMembers(data || [])
+      // Get user emails for each member
+      const membersWithEmails = await Promise.all(
+        (data || []).map(async (member) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', member.user_id)
+            .single()
+          
+          return {
+            ...member,
+            email: profileData?.email || member.user_id
+          }
+        })
+      )
+      setTeamMembers(membersWithEmails)
     }
   }
 
@@ -209,6 +222,79 @@ export const useTeamManagement = () => {
     }
   }
 
+  const deleteTeam = async (teamId: string) => {
+    if (!user) return
+
+    // Check if user is owner of the team
+    const currentUserMembership = teamMembers.find(member => member.user_id === user.id)
+    if (currentUserMembership?.role !== 'owner') {
+      toast({
+        title: 'Error',
+        description: 'Only team owners can delete teams',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // First delete all team members
+    const { error: membersError } = await supabase
+      .from('team_members')
+      .delete()
+      .eq('team_id', teamId)
+
+    if (membersError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to remove team members',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Delete all pending invitations
+    const { error: invitationsError } = await supabase
+      .from('team_invitations')
+      .delete()
+      .eq('team_id', teamId)
+
+    if (invitationsError) {
+      console.warn('Error deleting invitations:', invitationsError)
+    }
+
+    // Finally delete the team
+    const { error: teamError } = await supabase
+      .from('teams')
+      .delete()
+      .eq('id', teamId)
+
+    if (teamError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete team',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    toast({
+      title: 'Success',
+      description: 'Team deleted successfully',
+    })
+
+    // Reload teams and reset current team if deleted
+    await loadTeams()
+    if (currentTeam?.id === teamId) {
+      const remainingTeams = teams.filter(t => t.id !== teamId)
+      setCurrentTeam(remainingTeams.length > 0 ? remainingTeams[0] : null)
+    }
+  }
+
+  const getCurrentUserRole = () => {
+    if (!user || !currentTeam) return null
+    const currentUserMembership = teamMembers.find(member => member.user_id === user.id)
+    return currentUserMembership?.role || null
+  }
+
   useEffect(() => {
     if (user) {
       loadTeams()
@@ -232,6 +318,8 @@ export const useTeamManagement = () => {
     createTeam,
     inviteUserToTeam,
     removeTeamMember,
+    deleteTeam,
+    getCurrentUserRole,
     loadTeams,
   }
 }
