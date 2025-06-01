@@ -1,7 +1,6 @@
+import { OpenAIMessage } from './types.ts'
 
-import { OpenAIMessage } from './types.ts';
-
-export async function callOpenAI(messages: OpenAIMessage[], apiKey: string) {
+export async function callOpenAI(messages: OpenAIMessage[], apiKey: string): Promise<string> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -9,9 +8,9 @@ export async function callOpenAI(messages: OpenAIMessage[], apiKey: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o-mini', // Optimized for fast responses
       messages,
-      temperature: 0.3,
+      temperature: 0.3,     // Low temperature = more consistent, editorial tone
       max_tokens: 1500,
     }),
   });
@@ -19,9 +18,9 @@ export async function callOpenAI(messages: OpenAIMessage[], apiKey: string) {
   if (!response.ok) {
     const error = await response.text();
     console.error('OpenAI API error:', error);
-    throw new Error('Failed to get AI response');
+    throw new Error('Failed to get AI response from OpenAI');
   }
 
   const data = await response.json();
-  return data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+  return data.choices[0]?.message?.content?.trim() || 'Sorry, I could not generate a response.';
 }
