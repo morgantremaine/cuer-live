@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -12,10 +13,10 @@ export interface Column {
 
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>([
+    { id: 'element', name: 'Element', key: 'element', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'element', name: 'Element', key: 'element', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'startTime', name: 'Start Time', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'endTime', name: 'End Time', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
@@ -39,7 +40,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     // Insert the new column right after the segment name column (index 1)
     setColumns(prev => {
       const newColumns = [...prev];
-      newColumns.splice(1, 0, newColumn);
+      newColumns.splice(2, 0, newColumn); // Insert after element (0) and segmentName (1)
       console.log('New columns after add:', newColumns.length);
       return newColumns;
     });
@@ -132,10 +133,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     setColumns(prevColumns => {
       // Define essential built-in columns that should always be preserved
       const essentialBuiltInColumns = [
+        { id: 'element', name: 'Element', key: 'element', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'element', name: 'Element', key: 'element', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'startTime', name: 'Start Time', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'endTime', name: 'End Time', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
