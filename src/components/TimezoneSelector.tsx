@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Clock, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,12 @@ const timezones = [
 const TimezoneSelector = ({ currentTimezone, onTimezoneChange }: TimezoneSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleTimezoneChange = (value: string) => {
+    console.log('TimezoneSelector: Changing timezone from', currentTimezone, 'to', value);
+    onTimezoneChange(value);
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative">
       <Button
@@ -46,10 +53,7 @@ const TimezoneSelector = ({ currentTimezone, onTimezoneChange }: TimezoneSelecto
       
       {isOpen && (
         <div className="absolute top-full right-0 mt-1 z-50">
-          <Select value={currentTimezone} onValueChange={(value) => {
-            onTimezoneChange(value);
-            setIsOpen(false);
-          }}>
+          <Select value={currentTimezone} onValueChange={handleTimezoneChange}>
             <SelectTrigger className="w-48 bg-white dark:bg-gray-800">
               <SelectValue />
             </SelectTrigger>

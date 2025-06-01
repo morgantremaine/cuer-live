@@ -42,6 +42,7 @@ export const useRundownBasicState = () => {
 
   // Direct setters without change tracking (for initial load)
   const setTimezoneDirectly = (newTimezone: string) => {
+    console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
     setTimezone(newTimezone);
   };
 
@@ -51,6 +52,7 @@ export const useRundownBasicState = () => {
 
   // Change-tracking setters (for user interactions)
   const setTimezoneWithChange = (newTimezone: string) => {
+    console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
     setTimezone(newTimezone);
     markAsChanged();
   };
