@@ -51,7 +51,7 @@ const ResizableColumnHeader = ({
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
       )}
-      {children}
+      <span className="pl-1">{children}</span>
       <div 
         className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors"
         onMouseDown={handleMouseDown}
