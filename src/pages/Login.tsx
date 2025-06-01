@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -68,7 +69,7 @@ const Login = () => {
       <Card className="w-full max-w-md bg-gray-800 border-gray-700">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-white">Welcome to Cuer</CardTitle>
-          <div className="text-lg text-gray-300 mt-2">Your AI rundown pilot.</div>
+          <div className="text-lg text-gray-300 mt-2">Your AI rundown pilot</div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
