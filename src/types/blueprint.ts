@@ -16,6 +16,7 @@ export interface Blueprint {
 }
 
 export const DEFAULT_BLUEPRINT_LISTS = [
+  { name: 'Rundown Overview', sourceColumn: 'headers' },
   { name: 'GFX Assets', sourceColumn: 'gfx' },
   { name: 'Video Assets', sourceColumn: 'video' },
   { name: 'Talent List', sourceColumn: 'talent' }

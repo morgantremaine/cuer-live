@@ -17,7 +17,32 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
   
   const values = new Set<string>();
   
+  // Special handling for headers overview
+  if (columnKey === 'headers') {
+    items.forEach((item, index) => {
+      if (item.type === 'header') {
+        const letter = item.rowNumber || item.segmentName || '';
+        const description = item.notes || item.name || '';
+        if (letter && description) {
+          values.add(`${letter}: ${description}`);
+        } else if (letter) {
+          values.add(letter);
+        }
+        console.log(`Header ${index}: ${letter}: ${description}`);
+      }
+    });
+    
+    const result = Array.from(values).sort();
+    console.log('Final header overview values:', result);
+    return result;
+  }
+  
   items.forEach((item, index) => {
+    // Skip header items for all columns except the special 'headers' column
+    if (item.type === 'header') {
+      return;
+    }
+    
     let value = '';
     
     // Handle custom fields
@@ -44,13 +69,7 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
           value = item.video || '';
           break;
         case 'notes':
-          // Make sure we're getting the actual notes field, not a description from headers
           value = item.notes || '';
-          // Additional check - skip header items if they're using notes for descriptions
-          if (item.type === 'header' && value) {
-            console.log(`Skipping header item ${index} with notes value: "${value}"`);
-            return; // Skip this iteration for header items
-          }
           break;
         case 'startTime':
           value = item.startTime || '';
@@ -94,6 +113,9 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
 
 export const getAvailableColumns = (items: RundownItem[]) => {
   const columns = new Set<{ key: string; name: string }>();
+  
+  // Add the special headers column first
+  columns.add({ key: 'headers', name: 'Rundown Overview' });
   
   // Add standard columns that exist on RundownItem
   const standardColumns = [
