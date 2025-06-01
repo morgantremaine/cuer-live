@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
@@ -99,8 +98,18 @@ Available modification types:
 - "update": Update existing item (provide exact itemId from rundown data)
 - "delete": Delete item (provide exact itemId)
 
-FINDING ITEM IDs:
-Look carefully at the rundown data provided. Each item has an "id" field - use that exact value as the itemId.
+FINDING ITEM IDs - ENHANCED:
+The system can find items by multiple reference methods:
+1. EXACT ID: Use the "id" field from rundown data (e.g., "1734567890123")
+2. ROW NUMBER: Use the "rowNumber" field (e.g., "A", "B", "1", "2", "3")
+3. NAME MATCHING: Use part of the segment name (e.g., "TITLE SEQUENCE")
+4. INDEX POSITION: For headers use letters (A, B, C), for regular items use numbers (1, 2, 3)
+
+EXAMPLES OF VALID ITEM REFERENCES:
+- By ID: "1734567890123"
+- By row number: "A" (for first header), "1" (for first regular item)
+- By name: "TITLE SEQUENCE" or even "TITLE" (partial match)
+- By position: "2" (second regular item)
 
 SYSTEMATIC CHECKING PROCESS:
 When doing spelling/grammar checks:
@@ -109,6 +118,12 @@ When doing spelling/grammar checks:
 3. Report what you found in each item
 4. Provide a summary of ALL issues found
 5. Offer to fix ALL issues at once or individually
+
+MODIFICATION SUCCESS TIPS:
+- Always examine the rundown data structure first
+- Use the most reliable reference (ID > rowNumber > name)
+- Double-check that your itemId matches something in the data
+- Test your JSON formatting before including it
 
 Current rundown context: ${rundownData ? JSON.stringify(rundownData, null, 2) : 'No rundown data provided'}`
       },

@@ -8,6 +8,7 @@ import CuerChatHeader from './CuerChatHeader';
 import CuerQuickActions from './CuerQuickActions';
 import CuerChatMessages from './CuerChatMessages';
 import CuerChatInput from './CuerChatInput';
+import { toast } from 'sonner';
 
 interface CuerChatPanelProps {
   isOpen: boolean;
@@ -43,14 +44,20 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
 
   // Debug effect to track pending modifications
   useEffect(() => {
-    console.log('Pending modifications changed:', pendingModifications);
+    console.log('🔔 Pending modifications changed:', pendingModifications);
     if (pendingModifications && pendingModifications.length > 0) {
-      console.log('Should show modification dialog');
+      console.log('📋 Should show modification dialog');
     }
   }, [pendingModifications]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
+    
+    console.log('💬 Sending message with rundown data:', {
+      messageLength: inputValue.length,
+      hasRundownData: !!rundownData,
+      itemsCount: rundownData?.items?.length || 0
+    });
     
     // Pass the rundown data with the message
     await sendMessage(inputValue, rundownData);
@@ -66,7 +73,14 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
 
   const handleAnalyzeRundown = () => {
     if (rundownData) {
+      console.log('🔍 Analyzing rundown with data:', {
+        itemsCount: rundownData.items?.length || 0,
+        hasTitle: !!rundownData.title
+      });
       analyzeRundown(rundownData);
+    } else {
+      console.warn('⚠️ No rundown data available for analysis');
+      toast.error('No rundown data available for analysis');
     }
   };
 
@@ -80,15 +94,21 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
   };
 
   const handleConfirmModifications = () => {
-    console.log('Confirming modifications:', pendingModifications);
+    console.log('✅ Confirming modifications:', pendingModifications);
     if (pendingModifications) {
-      applyModifications(pendingModifications);
+      const success = applyModifications(pendingModifications);
+      if (success) {
+        toast.success(`Applied ${pendingModifications.length} modification(s) to the rundown`);
+      } else {
+        toast.error('Failed to apply some modifications');
+      }
       clearPendingModifications();
     }
   };
 
   const handleCancelModifications = () => {
-    console.log('Canceling modifications');
+    console.log('❌ Canceling modifications');
+    toast.info('Modifications canceled');
     clearPendingModifications();
   };
 
