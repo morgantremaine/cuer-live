@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -66,12 +67,14 @@ const HeaderRow = ({
   
   if (isDragging) {
     rowClass = 'bg-blue-100 dark:bg-blue-900 opacity-50';
-  } else if (isSelected) {
-    // Selected header styling with stronger visual indicators
-    rowClass = 'bg-blue-200 dark:bg-blue-800 border-l-4 border-blue-600 font-semibold hover:bg-blue-300 dark:hover:bg-blue-700 ring-2 ring-blue-600 ring-inset';
   } else {
-    // Default header styling
+    // Default header styling without selection background
     rowClass = 'bg-gray-200 dark:bg-gray-800 border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:bg-gray-300 dark:hover:bg-gray-700';
+  }
+
+  // Add selection styling with ring like regular rows
+  if (isSelected) {
+    rowClass += ' ring-2 ring-inset ring-blue-500 border-blue-500';
   }
 
   const handleContextMenuCopy = () => {
