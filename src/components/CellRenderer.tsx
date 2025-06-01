@@ -92,9 +92,11 @@ const CellRenderer = ({
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
       <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
-          <HighlightedText text={value} highlight={highlight} />
-        </span>
+        <div className="flex items-center h-full min-h-[20px]">
+          <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
+            <HighlightedText text={value} highlight={highlight} />
+          </span>
+        </div>
       </td>
     );
   }
@@ -119,7 +121,7 @@ const CellRenderer = ({
   if (column.isCustom) {
     return (
       <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <div className="relative">
+        <div className="relative flex items-center">
           <textarea
             ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
             value={value}
@@ -151,15 +153,15 @@ const CellRenderer = ({
   }
 
   return (
-    <td key={column.id} className={`px-1 py-1 align-middle ${column.key === 'duration' ? 'text-center' : ''}`} onClick={handleCellClick} style={{ width }}>
-      <div className="relative">
+    <td key={column.id} className={`px-1 py-1 align-middle`} onClick={handleCellClick} style={{ width }}>
+      <div className="relative flex items-center">
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
           value={value}
           onChange={(e) => handleUpdateValue(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
           className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden ${
-            column.key === 'duration' ? 'font-mono' : ''
+            column.key === 'duration' ? 'font-mono text-center' : ''
           }`}
           style={{ 
             color: textColor || undefined,
