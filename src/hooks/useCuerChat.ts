@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -45,8 +46,9 @@ export const useCuerChat = () => {
     }
   }, []);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, rundownData?: any) => {
     console.log('🚀 useCuerChat - Sending message:', content);
+    console.log('🚀 useCuerChat - With rundown data:', rundownData);
     
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -62,7 +64,7 @@ export const useCuerChat = () => {
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
           message: content,
-          rundownData: null // This could be passed from the parent component
+          rundownData: rundownData || null
         }
       });
 

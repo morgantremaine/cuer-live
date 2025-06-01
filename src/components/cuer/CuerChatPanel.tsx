@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useCuerChat } from '@/hooks/useCuerChat';
 import { useCuerModifications } from '@/hooks/useCuerModifications';
@@ -51,7 +52,8 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
     
-    await sendMessage(inputValue);
+    // Pass the rundown data with the message
+    await sendMessage(inputValue, rundownData);
     setInputValue('');
   };
 
