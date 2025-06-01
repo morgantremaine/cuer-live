@@ -10,6 +10,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const initialLoadRef = useRef(false);
   const isLoadingRef = useRef(false);
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasLoggedInitRef = useRef<{ [key: string]: boolean }>({});
 
   // Initialize tracking after first meaningful load with delay
   useEffect(() => {
@@ -27,7 +28,13 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
         initialLoadRef.current = true;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
-        console.log('Change tracking initialized with title:', rundownTitle);
+        
+        // Prevent duplicate logging
+        const logKey = `${rundownTitle}-${items.length}`;
+        if (!hasLoggedInitRef.current[logKey]) {
+          console.log('Change tracking initialized with title:', rundownTitle);
+          hasLoggedInitRef.current[logKey] = true;
+        }
       }, 100);
     }
 

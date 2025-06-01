@@ -25,6 +25,7 @@ export const useRundownItems = () => {
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRundownIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
+  const hasLoggedNewRundownRef = useRef<{ [key: string]: boolean }>({});
 
   // Load rundown data when conditions are met
   useEffect(() => {
@@ -36,7 +37,11 @@ export const useRundownItems = () => {
     // For new rundowns (no ID)
     if (!rundownId) {
       if (loadedRundownIdRef.current !== 'new') {
-        console.log('useRundownItems: New rundown, setting default items');
+        const logKey = 'new';
+        if (!hasLoggedNewRundownRef.current[logKey]) {
+          console.log('useRundownItems: New rundown, setting default items');
+          hasLoggedNewRundownRef.current[logKey] = true;
+        }
         loadedRundownIdRef.current = 'new';
         setItems(defaultRundownItems);
       }
