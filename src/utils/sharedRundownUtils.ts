@@ -57,6 +57,9 @@ export const getCellValue = (item: RundownItem, column: any) => {
       case 'endTime':
         value = item.endTime || '';
         break;
+      case 'element':
+        value = item.element || '';
+        break;
       case 'notes':
         value = item.notes || '';
         break;

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
@@ -88,13 +89,25 @@ const CellRenderer = ({
 
   const focusStyles = getFocusStyles();
 
-  if (column.key === 'endTime' || column.key === 'startTime') {
+  if (column.key === 'endTime' || column.key === 'startTime' || column.key === 'element') {
     return (
       <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
         <div className="flex items-center justify-start h-full min-h-[28px]">
-          <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
-            <HighlightedText text={value} highlight={highlight} />
-          </span>
+          {column.key === 'element' ? (
+            <input
+              ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
+              type="text"
+              value={value}
+              onChange={(e) => handleUpdateValue(e.target.value)}
+              onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
+              className={`w-full text-sm bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100 border-none ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400`}
+              style={{ color: textColor || undefined }}
+            />
+          ) : (
+            <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
+              <HighlightedText text={value} highlight={highlight} />
+            </span>
+          )}
         </div>
       </td>
     );
