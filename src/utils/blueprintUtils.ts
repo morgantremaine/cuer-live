@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/types/rundown';
 import { BlueprintList, DEFAULT_BLUEPRINT_LISTS } from '@/types/blueprint';
 
@@ -116,6 +117,9 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
     name: item.name,
     notes: item.notes
   })));
+  
+  // Ensure we process ALL lists from DEFAULT_BLUEPRINT_LISTS
+  console.log('About to process', DEFAULT_BLUEPRINT_LISTS.length, 'blueprint lists');
   
   const result = DEFAULT_BLUEPRINT_LISTS.map((listConfig, configIndex) => {
     console.log(`=== PROCESSING LIST ${configIndex + 1}/${DEFAULT_BLUEPRINT_LISTS.length}: "${listConfig.name}" ===`);
