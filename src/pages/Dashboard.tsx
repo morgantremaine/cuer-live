@@ -28,7 +28,7 @@ const Dashboard = () => {
     if (user) {
       loadRundowns()
     }
-  }, [user])
+  }, [user, loadRundowns])
 
   const handleSignOut = async () => {
     await signOut()
@@ -73,8 +73,12 @@ const Dashboard = () => {
 
   const confirmDelete = async () => {
     if (deleteDialog.rundownId) {
-      await deleteRundown(deleteDialog.rundownId)
-      setDeleteDialog({ open: false, rundownId: '', title: '' })
+      try {
+        await deleteRundown(deleteDialog.rundownId)
+        setDeleteDialog({ open: false, rundownId: '', title: '' })
+      } catch (error) {
+        console.error('Failed to delete rundown:', error)
+      }
     }
   }
 
@@ -82,9 +86,13 @@ const Dashboard = () => {
     if (archiveDialog.rundownId) {
       const rundown = savedRundowns.find(r => r.id === archiveDialog.rundownId)
       if (rundown) {
-        await updateRundown(archiveDialog.rundownId, rundown.title, rundown.items, false, true)
+        try {
+          await updateRundown(archiveDialog.rundownId, rundown.title, rundown.items, false, true)
+          setArchiveDialog({ open: false, rundownId: '', title: '' })
+        } catch (error) {
+          console.error('Failed to archive rundown:', error)
+        }
       }
-      setArchiveDialog({ open: false, rundownId: '', title: '' })
     }
   }
 

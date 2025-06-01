@@ -51,11 +51,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (data.user && !error) {
       // Create profile
-      await supabase.from('profiles').insert({
+      const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         email,
         full_name: fullName,
       })
+      
+      if (profileError) {
+        console.error('Error creating profile:', profileError)
+      }
     }
 
     return { error }
