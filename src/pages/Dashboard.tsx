@@ -1,11 +1,10 @@
-
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
 import { useNavigate } from 'react-router-dom'
 import DashboardHeader from '@/components/DashboardHeader'
 import CreateNewButton from '@/components/CreateNewButton'
-import RundownCard from '@/components/RundownCard'
+import RundownGrid from '@/components/RundownGrid'
 import ConfirmationDialogs from '@/components/ConfirmationDialogs'
 import { RundownItem } from '@/hooks/useRundownItems'
 
@@ -124,45 +123,30 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <CreateNewButton onClick={handleCreateNew} />
 
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">Active Rundowns</h2>
-          {loading ? (
-            <div className="text-gray-400">Loading...</div>
-          ) : activeRundowns.length === 0 ? (
-            <div className="text-gray-400">No active rundowns found. Create your first rundown to get started.</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activeRundowns.map((rundown) => (
-                <RundownCard
-                  key={rundown.id}
-                  rundown={rundown}
-                  onOpen={handleOpenRundown}
-                  onDelete={handleDeleteClick}
-                  onArchive={handleArchiveClick}
-                  onDuplicate={handleDuplicateClick}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <RundownGrid
+          title="Active Rundowns"
+          rundowns={activeRundowns}
+          loading={loading}
+          onCreateNew={handleCreateNew}
+          onOpen={handleOpenRundown}
+          onDelete={handleDeleteClick}
+          onArchive={handleArchiveClick}
+          onDuplicate={handleDuplicateClick}
+          showEmptyState={true}
+        />
 
         {archivedRundowns.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">Archived Rundowns</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {archivedRundowns.map((rundown) => (
-                <RundownCard
-                  key={rundown.id}
-                  rundown={rundown}
-                  onOpen={handleOpenRundown}
-                  onDelete={handleDeleteClick}
-                  onUnarchive={handleUnarchiveClick}
-                  onDuplicate={handleDuplicateClick}
-                  isArchived={true}
-                />
-              ))}
-            </div>
-          </div>
+          <RundownGrid
+            title="Archived Rundowns"
+            rundowns={archivedRundowns}
+            loading={false}
+            onOpen={handleOpenRundown}
+            onDelete={handleDeleteClick}
+            onUnarchive={handleUnarchiveClick}
+            onDuplicate={handleDuplicateClick}
+            isArchived={true}
+            showEmptyState={false}
+          />
         )}
       </div>
 

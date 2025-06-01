@@ -1,106 +1,95 @@
 
-import React from 'react';
-import { useRundownGridState } from '@/hooks/useRundownGridState';
-import { useGlobalKeyboardControls } from '@/hooks/useGlobalKeyboardControls';
-import RundownHeader from './RundownHeader';
-import RundownMainContent from './RundownMainContent';
-import RundownFooter from './RundownFooter';
-import ColumnManager from './ColumnManager';
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { FileText, Plus } from 'lucide-react'
+import RundownCard from './RundownCard'
+import { RundownItem } from '@/hooks/useRundownItems'
 
-const RundownGrid = () => {
-  const state = useRundownGridState();
+interface SavedRundown {
+  id: string
+  title: string
+  items: RundownItem[]
+  created_at: string
+  updated_at: string
+  archived?: boolean
+}
 
-  // Add global keyboard controls
-  useGlobalKeyboardControls({
-    isPlaying: state.isPlaying,
-    onPlay: () => {
-      if (state.currentSegmentId) {
-        state.play();
-      }
-    },
-    onPause: state.pause,
-    onForward: state.forward,
-    onBackward: state.backward
-  });
+interface RundownGridProps {
+  title: string
+  rundowns: SavedRundown[]
+  loading: boolean
+  onCreateNew?: () => void
+  onOpen: (id: string) => void
+  onDelete: (id: string, title: string, e: React.MouseEvent) => void
+  onArchive?: (id: string, title: string, e: React.MouseEvent) => void
+  onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  isArchived?: boolean
+  showEmptyState?: boolean
+}
 
+const RundownGrid = ({ 
+  title, 
+  rundowns, 
+  loading, 
+  onCreateNew, 
+  onOpen, 
+  onDelete, 
+  onArchive, 
+  onUnarchive, 
+  onDuplicate,
+  isArchived = false,
+  showEmptyState = true
+}: RundownGridProps) => {
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      <RundownHeader
-        currentTime={state.currentTime}
-        timezone={state.timezone}
-        onTimezoneChange={state.setTimezone}
-        totalRuntime={state.calculateTotalRuntime()}
-        hasUnsavedChanges={state.hasUnsavedChanges}
-        isSaving={state.isSaving}
-        title={state.rundownTitle}
-        onTitleChange={state.setRundownTitle}
-        rundownStartTime={state.rundownStartTime}
-        onRundownStartTimeChange={state.setRundownStartTime}
-        items={state.items}
-        visibleColumns={state.visibleColumns}
-        onHighlightMatch={state.onHighlightMatch}
-        onReplaceText={state.onReplaceText}
-        currentHighlight={state.currentHighlight}
-      />
-      
-      <RundownMainContent
-        items={state.items}
-        visibleColumns={state.visibleColumns}
-        columns={state.columns}
-        currentTime={state.currentTime}
-        showColorPicker={state.showColorPicker}
-        cellRefs={state.cellRefs}
-        selectedRows={state.selectedRows}
-        draggedItemIndex={state.draggedItemIndex}
-        isDraggingMultiple={state.isDraggingMultiple}
-        dropTargetIndex={state.dropTargetIndex}
-        currentSegmentId={state.currentSegmentId}
-        hasClipboardData={state.hasClipboardData}
-        getColumnWidth={state.getColumnWidth}
-        updateColumnWidth={state.updateColumnWidth}
-        getRowNumber={state.getRowNumber}
-        getRowStatus={state.getRowStatus}
-        calculateHeaderDuration={state.calculateHeaderDuration}
-        onUpdateItem={state.updateItem}
-        onCellClick={state.handleCellClick}
-        onKeyDown={state.handleKeyDown}
-        onToggleColorPicker={state.handleToggleColorPicker}
-        onColorSelect={state.selectColor}
-        onDeleteRow={state.deleteRow}
-        onToggleFloat={state.toggleFloatRow}
-        onRowSelect={state.handleRowSelect}
-        onDragStart={state.handleDragStart}
-        onDragOver={state.handleDragOver}
-        onDragLeave={state.handleDragLeave}
-        onDrop={state.handleDrop}
-        onCopySelectedRows={state.handleCopySelectedRows}
-        onDeleteSelectedRows={state.handleDeleteSelectedRows}
-        onPasteRows={state.handlePasteRows}
-        onClearSelection={state.clearSelection}
-        showColumnManager={state.showColumnManager}
-        handleAddColumn={state.handleAddColumn}
-        handleReorderColumns={state.handleReorderColumns}
-        handleDeleteColumnWithCleanup={state.handleDeleteColumnWithCleanup}
-        handleToggleColumnVisibility={state.handleToggleColumnVisibility}
-        handleLoadLayout={state.handleLoadLayout}
-        onCloseColumnManager={() => state.setShowColumnManager(false)}
-      />
-      
-      <RundownFooter totalSegments={state.items.length} />
-      
-      {state.showColumnManager && (
-        <ColumnManager
-          columns={state.columns}
-          onAddColumn={state.handleAddColumn}
-          onReorderColumns={state.handleReorderColumns}
-          onDeleteColumn={state.handleDeleteColumnWithCleanup}
-          onToggleColumnVisibility={state.handleToggleColumnVisibility}
-          onLoadLayout={state.handleLoadLayout}
-          onClose={() => state.setShowColumnManager(false)}
-        />
-      )}
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+          // Loading skeleton
+          Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </CardContent>
+            </Card>
+          ))
+        ) : rundowns.length === 0 && showEmptyState ? (
+          // Empty state
+          <div className="col-span-full text-center py-12">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No rundowns yet</h3>
+            <p className="text-gray-400 mb-4">Create your first rundown to get started</p>
+            {onCreateNew && (
+              <Button onClick={onCreateNew}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Rundown
+              </Button>
+            )}
+          </div>
+        ) : (
+          // Rundowns list
+          rundowns.map((rundown) => (
+            <RundownCard
+              key={rundown.id}
+              rundown={rundown}
+              onOpen={onOpen}
+              onDelete={onDelete}
+              onArchive={onArchive}
+              onUnarchive={onUnarchive}
+              onDuplicate={onDuplicate}
+              isArchived={isArchived}
+            />
+          ))
+        )}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default RundownGrid;
+export default RundownGrid
