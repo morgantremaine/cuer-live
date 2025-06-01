@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
@@ -24,8 +23,13 @@ const Dashboard = () => {
     title: ''
   })
 
+  // Debug logging
+  console.log('Dashboard render - user:', !!user, 'loading:', loading, 'savedRundowns count:', savedRundowns.length)
+  console.log('Dashboard render - savedRundowns:', savedRundowns)
+
   useEffect(() => {
     if (user) {
+      console.log('Dashboard useEffect - calling loadRundowns for user:', user.id)
       loadRundowns()
     }
   }, [user, loadRundowns])
@@ -99,6 +103,10 @@ const Dashboard = () => {
   // Fix the filtering logic to handle undefined archived field
   const activeRundowns = savedRundowns.filter(rundown => rundown.archived !== true)
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived === true)
+
+  console.log('Dashboard render - activeRundowns count:', activeRundowns.length)
+  console.log('Dashboard render - activeRundowns:', activeRundowns)
+  console.log('Dashboard render - archivedRundowns count:', archivedRundowns.length)
 
   return (
     <div className="dark min-h-screen bg-gray-900">
