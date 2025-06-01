@@ -47,13 +47,13 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[], columns?: Column[], timezone?: string) => {
+  const saveRundown = async (title: string, items: RundownItem[], columns?: Column[], timezone?: string, startTime?: string) => {
     if (!user) {
       console.error('Cannot save: no user')
       return
     }
 
-    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, userId: user.id })
+    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, startTime, userId: user.id })
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -63,6 +63,7 @@ export const useRundownStorage = () => {
         items,
         columns: columns || null,
         timezone: timezone || null,
+        start_time: startTime || null,
         archived: false
       })
       .select()
@@ -87,7 +88,7 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string, startTime?: string) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
@@ -99,6 +100,7 @@ export const useRundownStorage = () => {
       itemsCount: items.length,
       columnsCount: columns?.length || 0,
       timezone,
+      startTime,
       userId: user.id,
       silent,
       archived
@@ -109,6 +111,7 @@ export const useRundownStorage = () => {
       items: items,
       columns: columns || null,
       timezone: timezone || null,
+      start_time: startTime || null,
       updated_at: new Date().toISOString(),
       archived: archived
     }

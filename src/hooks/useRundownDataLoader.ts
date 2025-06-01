@@ -7,6 +7,7 @@ interface UseRundownDataLoaderProps {
   loading: boolean;
   setRundownTitle: (title: string) => void;
   setTimezone: (timezone: string) => void;
+  setRundownStartTime: (startTime: string) => void;
   handleLoadLayout: (columns: any[]) => void;
 }
 
@@ -16,6 +17,7 @@ export const useRundownDataLoader = ({
   loading,
   setRundownTitle,
   setTimezone,
+  setRundownStartTime,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
   // Track what we've already loaded to prevent re-loading
@@ -44,7 +46,8 @@ export const useRundownDataLoader = ({
           console.log('Loading rundown data:', { 
             id: rundownId, 
             title: existingRundown.title, 
-            timezone: existingRundown.timezone 
+            timezone: existingRundown.timezone,
+            startTime: existingRundown.start_time
           });
           
           // Mark as loaded before setting data to prevent loops
@@ -58,6 +61,11 @@ export const useRundownDataLoader = ({
           if (existingRundown.timezone) {
             console.log('Setting timezone from saved rundown:', existingRundown.timezone);
             setTimezone(existingRundown.timezone);
+          }
+
+          if (existingRundown.start_time) {
+            console.log('Setting start time from saved rundown:', existingRundown.start_time);
+            setRundownStartTime(existingRundown.start_time);
           }
           
           if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
@@ -74,7 +82,7 @@ export const useRundownDataLoader = ({
     } finally {
       isProcessingRef.current = false;
     }
-  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, handleLoadLayout]);
+  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
   // Load data when conditions are met
   useEffect(() => {

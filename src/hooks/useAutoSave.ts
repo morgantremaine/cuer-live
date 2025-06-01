@@ -6,7 +6,7 @@ import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
-export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string) => {
+export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
@@ -19,25 +19,25 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     markAsChanged,
     isInitialized,
     setIsLoading
-  } = useChangeTracking(items, rundownTitle, columns, timezone);
+  } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
   // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string) => {
+  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
     if (!user || isSaving) {
       return;
     }
 
-    console.log('Auto-save: Starting save with timezone:', timezoneToSave);
+    console.log('Auto-save: Starting save with timezone:', timezoneToSave, 'startTime:', startTimeToSave);
 
     // Mark as loading to prevent change detection during save
     setIsLoading(true);
 
     try {
-      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave);
+      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
       
       if (success) {
-        console.log('Auto-save: Save successful, marking as saved with timezone:', timezoneToSave);
-        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave);
+        console.log('Auto-save: Save successful, marking as saved with timezone:', timezoneToSave, 'startTime:', startTimeToSave);
+        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
       } else {
         console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
@@ -57,9 +57,9 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     }
 
     // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone });
+    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
     
-    console.log('Auto-save: Checking if data changed. Current timezone:', timezone);
+    console.log('Auto-save: Checking if data changed. Current timezone:', timezone, 'startTime:', startTime);
     
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
@@ -67,7 +67,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       return;
     }
 
-    console.log('Auto-save: Data changed, scheduling save with timezone:', timezone);
+    console.log('Auto-save: Data changed, scheduling save with timezone:', timezone, 'startTime:', startTime);
     lastSaveDataRef.current = currentDataSignature;
 
     // Clear existing timeout
@@ -77,12 +77,12 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
-      console.log('Auto-save: Executing save with timezone:', timezone);
-      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone);
+      console.log('Auto-save: Executing save with timezone:', timezone, 'startTime:', startTime);
+      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       debounceTimeoutRef.current = null;
     }, 2000);
 
-  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, debouncedSave]);
+  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {

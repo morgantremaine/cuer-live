@@ -7,6 +7,7 @@ export const useRundownStateIntegration = (
   markAsChanged: () => void,
   rundownTitle: string,
   timezone: string,
+  rundownStartTime: string,
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
@@ -38,12 +39,13 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager();
 
-  // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone
+  // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone, startTime
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     items,
     rundownTitle,
     columns,
-    timezone
+    timezone,
+    rundownStartTime
   );
 
   return {
