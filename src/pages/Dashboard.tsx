@@ -35,8 +35,16 @@ const Dashboard = () => {
   }, [user])
 
   const handleSignOut = async () => {
-    await signOut()
-    navigate('/login')
+    try {
+      console.log('Dashboard: Starting sign out process')
+      await signOut()
+      console.log('Dashboard: Sign out completed, navigating to login')
+      navigate('/login')
+    } catch (error) {
+      console.error('Dashboard: Sign out error, but still navigating to login:', error)
+      // Even if signOut fails, navigate to login page
+      navigate('/login')
+    }
   }
 
   const handleCreateNew = () => {
