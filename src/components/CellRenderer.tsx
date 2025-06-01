@@ -1,9 +1,13 @@
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
 import { SearchHighlight } from '@/types/search';
-import ExpandableScriptCell from './ExpandableScriptCell';
-import HighlightedText from './HighlightedText';
+import TimeCell from './cells/TimeCell';
+import ElementCell from './cells/ElementCell';
+import ScriptNotesCell from './cells/ScriptNotesCell';
+import CustomFieldCell from './cells/CustomFieldCell';
+import StandardCell from './cells/StandardCell';
 
 interface CellRendererProps {
   column: Column;
@@ -53,152 +57,93 @@ const CellRenderer = ({
   } : null;
 
   const handleCellClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row selection when clicking on cells
-    // Use cellRefKey for navigation
+    e.stopPropagation();
     onCellClick(item.id, cellRefKey);
   };
 
   const handleUpdateValue = (newValue: string) => {
-    // Use updateFieldKey for actual updates
     onUpdateItem(item.id, updateFieldKey, newValue);
   };
 
-  // Helper function to determine if content needs two lines
-  const needsTwoLines = (text: string) => {
-    // Rough estimation: if text is longer than ~40 characters, it might need two lines
-    // This can be adjusted based on your typical column widths
-    return text.length > 40 || text.includes('\n');
-  };
-
-  const shouldExpandRow = needsTwoLines(value);
-
-  // Get the appropriate focus styles for colored rows in dark mode
-  const getFocusStyles = () => {
-    // Check if textColor is set (indicating a colored row)
-    const hasCustomColor = textColor && textColor !== '';
-    
-    if (hasCustomColor) {
-      // For colored rows, force white text on focus in dark mode and black in light mode
-      return 'focus:bg-white dark:focus:bg-gray-800 focus:!text-gray-900 dark:focus:!text-white';
-    } else {
-      // For normal rows, use standard focus styles
-      return 'focus:bg-white dark:focus:bg-gray-700';
-    }
-  };
-
-  const focusStyles = getFocusStyles();
-
-  if (column.key === 'endTime' || column.key === 'startTime' || column.key === 'element') {
+  // Time display cells (read-only)
+  if (column.key === 'endTime' || column.key === 'startTime') {
     return (
-      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <div className="flex items-center justify-start h-full min-h-[28px]">
-          {column.key === 'element' ? (
-            <input
-              ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
-              type="text"
-              value={value}
-              onChange={(e) => handleUpdateValue(e.target.value)}
-              onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-              className={`w-full text-sm bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100 border-none ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400`}
-              style={{ 
-                // Only apply textColor in light mode, let dark mode classes handle dark mode
-                color: document.documentElement.classList.contains('dark') ? undefined : (textColor || undefined)
-              }}
-            />
-          ) : (
-            <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
-              <HighlightedText text={value} highlight={highlight} />
-            </span>
-          )}
-        </div>
-      </td>
+      <TimeCell
+        value={value}
+        highlight={highlight}
+        width={width}
+      />
     );
   }
 
+  // Element input cell
+  if (column.key === 'element') {
+    return (
+      <ElementCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={cellRefKey}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        onUpdateValue={handleUpdateValue}
+        onCellClick={handleCellClick}
+        onKeyDown={onKeyDown}
+        width={width}
+      />
+    );
+  }
+
+  // Script and notes cells (expandable)
   if (column.key === 'script' || column.key === 'notes') {
     return (
-      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <ExpandableScriptCell
-          value={value}
-          itemId={item.id}
-          cellRefKey={cellRefKey}
-          cellRefs={cellRefs}
-          textColor={textColor}
-          currentHighlight={highlight}
-          onUpdateValue={handleUpdateValue}
-          onKeyDown={onKeyDown}
-        />
-      </td>
+      <ScriptNotesCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={cellRefKey}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        currentHighlight={highlight}
+        onUpdateValue={handleUpdateValue}
+        onCellClick={handleCellClick}
+        onKeyDown={onKeyDown}
+        width={width}
+      />
     );
   }
 
+  // Custom field cells
   if (column.isCustom) {
     return (
-      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <div className="relative">
-          <textarea
-            ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
-            value={value}
-            onChange={(e) => handleUpdateValue(e.target.value)}
-            onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden`}
-            style={{ 
-              color: textColor || undefined,
-              minHeight: '20px',
-              height: shouldExpandRow ? '40px' : '20px'
-            }}
-            rows={shouldExpandRow ? 2 : 1}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              const scrollHeight = target.scrollHeight;
-              // Dynamically adjust height based on content, max 2 lines
-              target.style.height = Math.min(scrollHeight, 40) + 'px';
-            }}
-          />
-          {highlight && (
-            <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm" style={{ color: 'transparent' }}>
-              <HighlightedText text={value} highlight={highlight} />
-            </div>
-          )}
-        </div>
-      </td>
+      <CustomFieldCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={cellRefKey}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        highlight={highlight}
+        onUpdateValue={handleUpdateValue}
+        onCellClick={handleCellClick}
+        onKeyDown={onKeyDown}
+        width={width}
+      />
     );
   }
 
+  // Standard cells (duration, talent, etc.)
   return (
-    <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-      <div className="relative">
-        <textarea
-          ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
-          value={value}
-          onChange={(e) => handleUpdateValue(e.target.value)}
-          onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden ${
-            column.key === 'duration' ? 'font-mono text-center' : ''
-          }`}
-          style={{ 
-            color: textColor || undefined,
-            minHeight: '20px',
-            height: shouldExpandRow ? '40px' : '20px'
-          }}
-          rows={shouldExpandRow ? 2 : 1}
-          placeholder={column.key === 'duration' ? '00:00:00' : ''}
-          onInput={(e) => {
-            const target = e.target as HTMLTextAreaElement;
-            target.style.height = 'auto';
-            const scrollHeight = target.scrollHeight;
-            // Dynamically adjust height based on content, max 2 lines
-            target.style.height = Math.min(scrollHeight, 40) + 'px';
-          }}
-        />
-        {highlight && (
-          <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm" style={{ color: 'transparent' }}>
-            <HighlightedText text={value} highlight={highlight} />
-          </div>
-        )}
-      </div>
-    </td>
+    <StandardCell
+      value={value}
+      itemId={item.id}
+      cellRefKey={cellRefKey}
+      cellRefs={cellRefs}
+      textColor={textColor}
+      highlight={highlight}
+      columnKey={column.key}
+      onUpdateValue={handleUpdateValue}
+      onCellClick={handleCellClick}
+      onKeyDown={onKeyDown}
+      width={width}
+    />
   );
 };
 
