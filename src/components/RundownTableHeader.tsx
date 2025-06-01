@@ -17,7 +17,7 @@ const RundownTableHeader = ({
   return (
     <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-10">
       <tr>
-        <th className="px-2 py-3 text-left text-sm font-semibold text-white" style={{ width: '40px' }}>
+        <th className="px-1 py-2 text-left text-sm font-semibold text-white" style={{ width: '40px' }}>
           #
         </th>
         {visibleColumns.map((column, index) => (
@@ -28,7 +28,7 @@ const RundownTableHeader = ({
             onWidthChange={updateColumnWidth}
             showLeftSeparator={index > 0}
           >
-            <span className="pl-2">{column.name}</span>
+            {column.name}
           </ResizableColumnHeader>
         ))}
       </tr>
