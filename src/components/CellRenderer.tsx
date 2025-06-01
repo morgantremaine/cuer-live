@@ -92,7 +92,7 @@ const CellRenderer = ({
   if (column.key === 'endTime' || column.key === 'startTime') {
     return (
       <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
+        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
           <HighlightedText text={value} highlight={highlight} />
         </span>
       </td>
