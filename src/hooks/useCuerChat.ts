@@ -21,11 +21,39 @@ export const useCuerChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [tableExists, setTableExists] = useState<boolean | null>(null);
   const { user } = useAuth();
+
+  // Check if chat_messages table exists
+  const checkTableExists = useCallback(async () => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .select('id')
+        .limit(1);
+
+      const exists = !error || error.code !== '42P01';
+      setTableExists(exists);
+      return exists;
+    } catch (error) {
+      console.log('Chat messages table not available');
+      setTableExists(false);
+      return false;
+    }
+  }, [user]);
 
   // Load chat history when user logs in
   const loadChatHistory = useCallback(async () => {
     if (!user) return;
+
+    // Check if table exists first
+    const exists = await checkTableExists();
+    if (!exists) {
+      console.log('Chat messages table does not exist, skipping chat history load');
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -52,11 +80,11 @@ export const useCuerChat = () => {
     } catch (error) {
       console.error('Error loading chat history:', error);
     }
-  }, [user]);
+  }, [user, checkTableExists]);
 
   // Save message to database
   const saveMessageToDb = useCallback(async (message: ChatMessage) => {
-    if (!user) return;
+    if (!user || !tableExists) return;
 
     try {
       await supabase
@@ -70,7 +98,7 @@ export const useCuerChat = () => {
     } catch (error) {
       console.error('Error saving message to database:', error);
     }
-  }, [user]);
+  }, [user, tableExists]);
 
   useEffect(() => {
     if (user) {
@@ -195,7 +223,10 @@ export const useCuerChat = () => {
   }, [saveMessageToDb]);
 
   const clearChat = useCallback(async () => {
-    if (!user) return;
+    if (!user || !tableExists) {
+      setMessages([]);
+      return;
+    }
 
     try {
       await supabase
@@ -206,8 +237,10 @@ export const useCuerChat = () => {
       setMessages([]);
     } catch (error) {
       console.error('Error clearing chat history:', error);
+      // Still clear local messages even if DB clear fails
+      setMessages([]);
     }
-  }, [user]);
+  }, [user, tableExists]);
 
   const setApiKey = useCallback((apiKey: string) => {
     console.log('API key should be set in Supabase secrets, not client-side');
