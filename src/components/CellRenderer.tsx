@@ -99,7 +99,7 @@ const CellRenderer = ({
     );
   }
 
-  if (column.key === 'script') {
+  if (column.key === 'script' || column.key === 'notes') {
     return (
       <td key={column.id} className="px-2 py-2" onClick={handleCellClick} style={{ width }}>
         <ExpandableScriptCell
@@ -116,7 +116,7 @@ const CellRenderer = ({
     );
   }
 
-  if (column.key === 'notes' || column.isCustom) {
+  if (column.isCustom) {
     return (
       <td key={column.id} className="px-2 py-2 align-top" onClick={handleCellClick} style={{ width }}>
         <div className="relative">
