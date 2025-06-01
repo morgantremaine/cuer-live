@@ -88,7 +88,11 @@ export const useTeamManagement = () => {
           
           return {
             ...member,
-            email: profileData?.email || member.user_id
+            email: profileData?.email || member.user_id,
+            profiles: profileData ? {
+              email: profileData.email,
+              full_name: profileData.full_name
+            } : undefined
           }
         })
       )
