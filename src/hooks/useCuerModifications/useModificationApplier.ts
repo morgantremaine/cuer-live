@@ -75,19 +75,17 @@ export const useModificationApplier = ({
                   type: targetItem.type 
                 });
                 
-                // Apply each field update with a small delay to prevent race conditions
-                Object.keys(mod.data).forEach((field, fieldIndex) => {
+                // Apply each field update immediately without setTimeout
+                Object.keys(mod.data).forEach((field) => {
                   const value = mod.data[field];
                   console.log(`🖊️ Updating ${targetItem.id}.${field} = "${value}"`);
                   
-                  setTimeout(() => {
-                    try {
-                      updateItem(targetItem.id, field, String(value));
-                      console.log(`✅ Successfully updated ${field}`);
-                    } catch (error) {
-                      console.error(`❌ Failed to update ${field}:`, error);
-                    }
-                  }, fieldIndex * 50);
+                  try {
+                    updateItem(targetItem.id, field, String(value));
+                    console.log(`✅ Successfully updated ${field}`);
+                  } catch (error) {
+                    console.error(`❌ Failed to update ${field}:`, error);
+                  }
                 });
                 
                 changesMade = true;
@@ -133,9 +131,8 @@ export const useModificationApplier = ({
     if (changesMade) {
       console.log('💾 Marking changes for auto-save');
       console.log('📋 Applied changes:', appliedChanges);
-      setTimeout(() => {
-        markAsChanged();
-      }, 200);
+      // Mark changes immediately to trigger re-render and auto-save
+      markAsChanged();
     }
     
     console.log('🏁 === MODIFICATIONS COMPLETE ===\n');

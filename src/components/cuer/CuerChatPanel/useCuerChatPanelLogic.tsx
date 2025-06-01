@@ -82,15 +82,15 @@ export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
   const handleConfirmModifications = () => {
     console.log('✅ Confirming modifications:', pendingModifications);
     if (pendingModifications && pendingModifications.length > 0) {
-      setTimeout(() => {
-        const success = applyModifications(pendingModifications);
-        if (success) {
-          toast.success(`Applied ${pendingModifications.length} modification(s) to the rundown`);
-        } else {
-          toast.error('Failed to apply some modifications - items may still be loading');
-        }
+      // Apply modifications immediately without setTimeout
+      const success = applyModifications(pendingModifications);
+      if (success) {
+        toast.success(`Applied ${pendingModifications.length} modification(s) to the rundown`);
+        // Clear pending modifications immediately after successful application
         clearPendingModifications();
-      }, 100);
+      } else {
+        toast.error('Failed to apply some modifications - items may still be loading');
+      }
     }
   };
 
