@@ -56,7 +56,10 @@ export const getAvailableColumns = (items: RundownItem[]) => {
   items.forEach(item => {
     if (item.customFields) {
       Object.keys(item.customFields).forEach(fieldName => {
-        customFieldNames.add(fieldName);
+        // Filter out auto-generated field names that look like "custom_12345..."
+        if (!fieldName.match(/^custom_\d+/)) {
+          customFieldNames.add(fieldName);
+        }
       });
     }
   });
