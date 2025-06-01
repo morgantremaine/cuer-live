@@ -50,6 +50,10 @@ export const useRundownBasicState = () => {
     setRundownTitle(newTitle);
   };
 
+  const setRundownStartTimeDirectly = (newStartTime: string) => {
+    setRundownStartTime(newStartTime);
+  };
+
   // Change-tracking setters (for user interactions)
   const setTimezoneWithChange = (newTimezone: string) => {
     console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
@@ -79,6 +83,7 @@ export const useRundownBasicState = () => {
     setRundownTitleDirectly,
     rundownStartTime,
     setRundownStartTime: setRundownStartTimeWithChange,
+    setRundownStartTimeDirectly,
     rundownId,
     markAsChanged
   };
