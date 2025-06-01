@@ -26,20 +26,67 @@ const RundownGrid = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       <RundownHeader
-        rundownTitle={state.rundownTitle}
-        setRundownTitle={state.handleTitleChange}
-        rundownStartTime={state.rundownStartTime}
-        setRundownStartTime={state.setRundownStartTime}
+        currentTime={state.currentTime}
         timezone={state.timezone}
-        setTimezone={state.setTimezone}
+        onTimezoneChange={state.setTimezone}
+        totalRuntime={state.calculateTotalRuntime()}
         hasUnsavedChanges={state.hasUnsavedChanges}
         isSaving={state.isSaving}
-        calculateTotalRuntime={state.calculateTotalRuntime}
+        title={state.rundownTitle}
+        onTitleChange={state.setRundownTitle}
+        rundownStartTime={state.rundownStartTime}
+        onRundownStartTimeChange={state.setRundownStartTime}
+        items={state.items}
+        visibleColumns={state.visibleColumns}
+        onHighlightMatch={state.onHighlightMatch}
+        onReplaceText={state.onReplaceText}
+        currentHighlight={state.currentHighlight}
       />
       
-      <RundownMainContent />
+      <RundownMainContent
+        items={state.items}
+        visibleColumns={state.visibleColumns}
+        columns={state.columns}
+        currentTime={state.currentTime}
+        showColorPicker={state.showColorPicker}
+        cellRefs={state.cellRefs}
+        selectedRows={state.selectedRows}
+        draggedItemIndex={state.draggedItemIndex}
+        isDraggingMultiple={state.isDraggingMultiple}
+        dropTargetIndex={state.dropTargetIndex}
+        currentSegmentId={state.currentSegmentId}
+        hasClipboardData={state.hasClipboardData}
+        getColumnWidth={state.getColumnWidth}
+        updateColumnWidth={state.updateColumnWidth}
+        getRowNumber={state.getRowNumber}
+        getRowStatus={state.getRowStatus}
+        calculateHeaderDuration={state.calculateHeaderDuration}
+        onUpdateItem={state.updateItem}
+        onCellClick={state.handleCellClick}
+        onKeyDown={state.handleKeyDown}
+        onToggleColorPicker={state.handleToggleColorPicker}
+        onColorSelect={state.selectColor}
+        onDeleteRow={state.deleteRow}
+        onToggleFloat={state.toggleFloatRow}
+        onRowSelect={state.handleRowSelect}
+        onDragStart={state.handleDragStart}
+        onDragOver={state.handleDragOver}
+        onDragLeave={state.handleDragLeave}
+        onDrop={state.handleDrop}
+        onCopySelectedRows={state.handleCopySelectedRows}
+        onDeleteSelectedRows={state.handleDeleteSelectedRows}
+        onPasteRows={state.handlePasteRows}
+        onClearSelection={state.clearSelection}
+        showColumnManager={state.showColumnManager}
+        handleAddColumn={state.handleAddColumn}
+        handleReorderColumns={state.handleReorderColumns}
+        handleDeleteColumnWithCleanup={state.handleDeleteColumnWithCleanup}
+        handleToggleColumnVisibility={state.handleToggleColumnVisibility}
+        handleLoadLayout={state.handleLoadLayout}
+        onCloseColumnManager={() => state.setShowColumnManager(false)}
+      />
       
-      <RundownFooter />
+      <RundownFooter totalSegments={state.items.length} />
       
       {state.showColumnManager && (
         <ColumnManager
@@ -47,7 +94,8 @@ const RundownGrid = () => {
           onAddColumn={state.handleAddColumn}
           onReorderColumns={state.handleReorderColumns}
           onDeleteColumn={state.handleDeleteColumnWithCleanup}
-          onToggleVisibility={state.handleToggleColumnVisibility}
+          onToggleColumnVisibility={state.handleToggleColumnVisibility}
+          onLoadLayout={state.handleLoadLayout}
           onClose={() => state.setShowColumnManager(false)}
         />
       )}
