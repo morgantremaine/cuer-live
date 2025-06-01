@@ -1,44 +1,77 @@
-
 import { useState, useEffect } from 'react';
-import { useCuerChat } from '@/hooks/useCuerChat';
-import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [showApiKeySetup, setShowApiKeySetup] = useState(false);
-  
-  const {
-    messages,
-    isLoading,
-    isConnected,
-    sendMessage,
-    analyzeRundown,
-    clearChat,
-    checkConnection,
-    setApiKey,
-    hasApiKey
-  } = useCuerChat();
+  const [needsApiKeySetup, setNeedsApiKeySetup] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      checkConnection();
+      setIsConnected(true); // Simulate connection established
     }
-  }, [isOpen, checkConnection]);
+  }, [isOpen]);
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
-    
-    console.log('💬 Sending message with rundown data:', {
-      messageLength: inputValue.length,
-      hasRundownData: !!rundownData,
-      itemsCount: rundownData?.items?.length || 0
-    });
-    
-    await sendMessage(inputValue, rundownData);
+  const addMessage = (role: 'user' | 'assistant', content: string) => {
+    setMessages(prev => [
+      ...prev,
+      {
+        id: uuidv4(),
+        role,
+        content,
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
+  const sendMessage = async (userMessage: string) => {
+    addMessage('user', userMessage);
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('/functions/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          rundownData,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data?.message) {
+        addMessage('assistant', data.message);
+      } else if (data?.error) {
+        addMessage('assistant', `Error: ${data.error}`);
+      } else {
+        addMessage('assistant', 'Sorry, I couldn’t generate a response.');
+      }
+    } catch (err) {
+      console.error(err);
+      addMessage('assistant', 'Something went wrong.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return;
+    sendMessage(inputValue.trim());
     setInputValue('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -46,43 +79,32 @@ export const useCuerChatPanelLogic = (isOpen: boolean, rundownData?: any) => {
   };
 
   const handleAnalyzeRundown = () => {
-    if (rundownData) {
-      console.log('🔍 Analyzing rundown with data:', {
-        itemsCount: rundownData.items?.length || 0,
-        hasTitle: !!rundownData.title
-      });
-      analyzeRundown(rundownData);
-    } else {
-      console.warn('⚠️ No rundown data available for analysis');
-      toast.error('No rundown data available for analysis');
-    }
-  };
-
-  const handleApiKeySet = (apiKey: string) => {
-    setApiKey(apiKey);
-    setShowApiKeySetup(false);
+    sendMessage(
+      "Can you review the current rundown and suggest any improvements to spelling, grammar, timing, or structure in plain English? Please do not use JSON, code blocks, or formatting instructions."
+    );
   };
 
   const handleSettingsClick = () => {
     setShowApiKeySetup(true);
   };
 
-  const needsApiKeySetup = !hasApiKey() && isConnected === false;
+  const clearChat = () => {
+    setMessages([]);
+  };
 
   return {
     inputValue,
     setInputValue,
-    showApiKeySetup,
-    setShowApiKeySetup,
     messages,
     isLoading,
     isConnected,
+    showApiKeySetup,
+    setShowApiKeySetup,
     needsApiKeySetup,
     handleSendMessage,
     handleKeyDown,
     handleAnalyzeRundown,
-    handleApiKeySet,
     handleSettingsClick,
-    clearChat
+    clearChat,
   };
 };
