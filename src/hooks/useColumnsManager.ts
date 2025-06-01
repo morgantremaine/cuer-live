@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -140,12 +141,17 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
-      // Merge layout columns with essential built-in columns
-      const mergedColumns: Column[] = [];
-      const layoutColumnIds = new Set(layoutColumns.map(col => col.id));
+      // Filter out the "Element" column from layout columns
+      const filteredLayoutColumns = layoutColumns.filter(col => 
+        col.id !== 'element' && col.key !== 'element'
+      );
 
-      // First, add all columns from layout (preserving order, custom columns, and widths)
-      layoutColumns.forEach(layoutCol => {
+      // Merge filtered layout columns with essential built-in columns
+      const mergedColumns: Column[] = [];
+      const layoutColumnIds = new Set(filteredLayoutColumns.map(col => col.id));
+
+      // First, add all columns from filtered layout (preserving order, custom columns, and widths)
+      filteredLayoutColumns.forEach(layoutCol => {
         mergedColumns.push(layoutCol);
       });
 
