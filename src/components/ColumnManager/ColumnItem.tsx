@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GripVertical, Eye, EyeOff, Trash2, Edit, Check, XIcon } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, Trash2, Edit, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -74,14 +74,14 @@ const ColumnItem = ({
                     cancelEditingColumn();
                   }
                 }}
-                className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleRenameColumnSubmit(column.id)}
-                className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 h-6 w-6 p-0"
               >
                 <Check className="h-3 w-3" />
               </Button>
@@ -89,9 +89,9 @@ const ColumnItem = ({
                 variant="ghost"
                 size="sm"
                 onClick={cancelEditingColumn}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-6 w-6 p-0"
               >
-                <XIcon className="h-3 w-3" />
+                <X className="h-3 w-3" />
               </Button>
             </div>
           ) : (
@@ -102,7 +102,7 @@ const ColumnItem = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => startEditingColumn(column)}
-                  className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 h-6 w-6 p-0"
                   title="Rename column"
                 >
                   <Edit className="h-3 w-3" />
@@ -123,7 +123,7 @@ const ColumnItem = ({
           variant="ghost"
           size="sm"
           onClick={() => onToggleVisibility(column.id)}
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 h-6 w-6 p-0"
         >
           {column.isVisible !== false ? (
             <Eye className="h-3 w-3" />
@@ -136,7 +136,7 @@ const ColumnItem = ({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteColumn(column.id)}
-            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 h-6 w-6 p-0"
           >
             <Trash2 className="h-3 w-3" />
           </Button>
