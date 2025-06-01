@@ -20,6 +20,7 @@ export const useRundownGridCore = () => {
     setRundownTitleDirectly,
     rundownStartTime,
     setRundownStartTime,
+    setRundownStartTimeDirectly,
     rundownId,
     markAsChanged
   } = useRundownBasicState();
@@ -27,7 +28,7 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration - now passing all required arguments
+  // Rundown data integration - now passing all required arguments including rundownStartTime
   const {
     items,
     setItems,
@@ -51,15 +52,23 @@ export const useRundownGridCore = () => {
     handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving
-  } = useRundownStateIntegration(markAsChanged, rundownTitle, timezone, setRundownTitleDirectly, setTimezoneDirectly);
+  } = useRundownStateIntegration(
+    markAsChanged, 
+    rundownTitle, 
+    timezone, 
+    rundownStartTime,
+    setRundownTitleDirectly, 
+    setTimezoneDirectly
+  );
 
-  // Use data loader to properly set title and timezone - using direct setters to avoid change tracking during load
+  // Use data loader to properly set title, timezone, and start time - using direct setters to avoid change tracking during load
   useRundownDataLoader({
     rundownId,
     savedRundowns,
     loading,
     setRundownTitle: setRundownTitleDirectly,
     setTimezone: setTimezoneDirectly,
+    setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout
   });
 
