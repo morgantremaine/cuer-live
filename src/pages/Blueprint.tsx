@@ -73,7 +73,7 @@ const Blueprint = () => {
             <Button
               variant="outline"
               onClick={refreshAllLists}
-              className="text-gray-300 border-gray-600 hover:bg-gray-800"
+              className="text-white border-gray-500 hover:bg-gray-700 hover:text-white hover:border-gray-400"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh All
