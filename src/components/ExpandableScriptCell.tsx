@@ -48,7 +48,7 @@ const ExpandableScriptCell = ({
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
-    // Check if this is likely a colored row by checking if textColor is set
+    // Check if textColor is set (indicating a colored row)
     const hasCustomColor = textColor && textColor !== '';
     
     if (hasCustomColor) {

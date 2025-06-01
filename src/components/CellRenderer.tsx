@@ -75,7 +75,8 @@ const CellRenderer = ({
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
-    const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF';
+    // Check if textColor is set (indicating a colored row)
+    const hasCustomColor = textColor && textColor !== '';
     
     if (hasCustomColor) {
       // For colored rows, ensure good contrast on focus
