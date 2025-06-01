@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Copy, Clipboard, Trash2, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
+import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
@@ -9,12 +9,6 @@ interface RundownToolbarProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
-  selectedCount: number;
-  hasClipboardData: boolean;
-  onCopySelectedRows: () => void;
-  onPasteRows: () => void;
-  onDeleteSelectedRows: () => void;
-  onClearSelection: () => void;
   // Playback controls
   selectedRowId: string | null;
   isPlaying: boolean;
@@ -34,12 +28,6 @@ const RundownToolbar = ({
   onAddRow,
   onAddHeader,
   onShowColumnManager,
-  selectedCount,
-  hasClipboardData,
-  onCopySelectedRows,
-  onPasteRows,
-  onDeleteSelectedRows,
-  onClearSelection,
   selectedRowId,
   isPlaying,
   currentSegmentId,
@@ -64,7 +52,7 @@ const RundownToolbar = ({
       onPause();
     } else {
       // If a row is selected, play that row, otherwise play current segment
-      if (selectedRowId && selectedCount === 1) {
+      if (selectedRowId) {
         onPlay(selectedRowId);
       } else if (currentSegmentId) {
         onPlay();
@@ -140,7 +128,7 @@ const RundownToolbar = ({
             onClick={handlePlayPause}
             variant="outline"
             size="sm"
-            disabled={!currentSegmentId && (!selectedRowId || selectedCount !== 1)}
+            disabled={!currentSegmentId && !selectedRowId}
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -157,27 +145,6 @@ const RundownToolbar = ({
           </Button>
         </div>
 
-        {selectedCount > 0 && (
-          <>
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {selectedCount} selected
-            </span>
-            <Button onClick={onCopySelectedRows} variant="outline" size="sm">
-              <Copy className="h-4 w-4" />
-            </Button>
-            {hasClipboardData && (
-              <Button onClick={onPasteRows} variant="outline" size="sm">
-                <Clipboard className="h-4 w-4" />
-              </Button>
-            )}
-            <Button onClick={onDeleteSelectedRows} variant="outline" size="sm">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button onClick={onClearSelection} variant="ghost" size="sm">
-              Clear
-            </Button>
-          </>
-        )}
         <ThemeToggle />
       </div>
     </div>
