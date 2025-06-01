@@ -15,6 +15,7 @@ export const useRundownBasicState = () => {
   
   const initRef = useRef(false);
   const lastRundownIdRef = useRef<string | undefined>(undefined);
+  const isInitializedRef = useRef<{ [key: string]: boolean }>({});
 
   // Timer effect for current time
   useEffect(() => {
@@ -24,16 +25,19 @@ export const useRundownBasicState = () => {
 
   // Prevent multiple initializations with better checking
   useEffect(() => {
-    // Only initialize if rundownId has actually changed
-    if (lastRundownIdRef.current === rundownId && initRef.current) {
+    const initKey = rundownId || 'new';
+    
+    // Skip if already initialized for this specific rundown
+    if (isInitializedRef.current[initKey]) {
       return;
     }
     
-    lastRundownIdRef.current = rundownId;
-    initRef.current = true;
-    
-    // Only log once per actual rundown change
-    if (rundownId) {
+    // Only initialize once per rundown change
+    if (lastRundownIdRef.current !== rundownId) {
+      lastRundownIdRef.current = rundownId;
+      isInitializedRef.current[initKey] = true;
+      initRef.current = true;
+      
       console.log('useRundownBasicState initialized for rundownId:', rundownId);
     }
   }, [rundownId]);

@@ -25,23 +25,27 @@ export const useRundownItems = () => {
   const { savedRundowns, loading } = useRundownStorage();
   const [items, setItems] = useState<RundownItem[]>([]);
   const loadedRef = useRef<string | null>(null);
-  const initRef = useRef(false);
+  const initRef = useRef<{ [key: string]: boolean }>({});
 
   // Initialize with defaults for new rundowns only once
   useEffect(() => {
-    if (initRef.current) return;
+    const initKey = rundownId || 'new';
+    
+    if (initRef.current[initKey]) return;
     
     if (!rundownId && loadedRef.current !== null) {
       console.log('useRundownItems: New rundown, setting default items');
       loadedRef.current = null;
       setItems(defaultRundownItems);
-      initRef.current = true;
+      initRef.current[initKey] = true;
     }
   }, [rundownId]);
 
   // Load existing rundown data when rundownId changes - but only once
   useEffect(() => {
-    if (loading || initRef.current) return;
+    const initKey = rundownId || 'new';
+    
+    if (loading || initRef.current[initKey]) return;
     
     // Prevent duplicate loading
     if (loadedRef.current === rundownId) return;
@@ -54,28 +58,21 @@ export const useRundownItems = () => {
         loadedRef.current = rundownId;
         const normalizedItems = existingRundown.items.map(normalizeRundownItem);
         setItems(normalizedItems);
-        initRef.current = true;
+        initRef.current[initKey] = true;
       } else if (!existingRundown && loadedRef.current !== rundownId) {
         console.log('useRundownItems: Rundown not found, using defaults for ID:', rundownId);
         loadedRef.current = rundownId;
         setItems(defaultRundownItems);
-        initRef.current = true;
+        initRef.current[initKey] = true;
       }
-    } else if (!rundownId && items.length === 0) {
+    } else if (!rundownId && items.length === 0 && !initRef.current[initKey]) {
       // Only set defaults if we don't already have them
       console.log('useRundownItems: New rundown, using defaults');
       loadedRef.current = null;
       setItems(defaultRundownItems);
-      initRef.current = true;
+      initRef.current[initKey] = true;
     }
   }, [rundownId, savedRundowns, loading, items.length]);
-
-  // Reset initialization when rundown changes
-  useEffect(() => {
-    return () => {
-      initRef.current = false;
-    };
-  }, [rundownId]);
 
   const actions = useRundownItemActions(setItems);
   const calculations = useRundownCalculations(items);

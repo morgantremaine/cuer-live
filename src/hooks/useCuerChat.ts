@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 // Define the types locally since we're not using the openaiService anymore
@@ -47,8 +48,9 @@ export const useCuerChat = () => {
     setIsLoading(true);
 
     try {
-      // Use the correct relative path for Supabase Edge Functions
-      const response = await fetch('/functions/v1/openai-chat', {
+      // Fix the API endpoint to use the correct Supabase edge function URL
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/openai-chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,7 +92,7 @@ export const useCuerChat = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please check if your Supabase edge function is properly configured.`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
