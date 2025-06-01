@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Users, Plus, Mail, Trash2, UserPlus } from 'lucide-react'
@@ -95,6 +94,9 @@ const TeamManagement = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Team</DialogTitle>
+                <DialogDescription>
+                  Create a new team to collaborate with others on rundowns.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -167,6 +169,9 @@ const TeamManagement = () => {
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Invite User to Team</DialogTitle>
+                          <DialogDescription>
+                            Send an invitation to a user to join your team.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>
@@ -196,9 +201,9 @@ const TeamManagement = () => {
                       <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <div className="font-medium">
-                            {member.profiles?.full_name || member.profiles?.email}
+                            Member {member.user_id.substring(0, 8)}...
                           </div>
-                          <div className="text-sm text-gray-500">{member.profiles?.email}</div>
+                          <div className="text-sm text-gray-500">User ID: {member.user_id}</div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge className={getRoleBadgeColor(member.role)}>

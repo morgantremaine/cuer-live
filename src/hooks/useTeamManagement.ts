@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -17,10 +16,6 @@ export interface TeamMember {
   user_id: string
   role: 'owner' | 'admin' | 'member'
   joined_at: string
-  profiles?: {
-    email: string
-    full_name: string | null
-  }
 }
 
 export interface TeamInvitation {
@@ -49,11 +44,7 @@ export const useTeamManagement = () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('teams')
-      .select(`
-        *,
-        team_members!inner(role)
-      `)
-      .eq('team_members.user_id', user.id)
+      .select('*')
 
     if (error) {
       console.error('Error loading teams:', error)
@@ -74,10 +65,7 @@ export const useTeamManagement = () => {
   const loadTeamMembers = async (teamId: string) => {
     const { data, error } = await supabase
       .from('team_members')
-      .select(`
-        *,
-        profiles(email, full_name)
-      `)
+      .select('*')
       .eq('team_id', teamId)
 
     if (error) {
