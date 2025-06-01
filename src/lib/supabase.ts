@@ -1,11 +1,17 @@
-
 import { createClient } from '@supabase/supabase-js'
 
 // Temporarily hardcoded values - these should come from environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://khdiwrkgahsbjszlwnob.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoZGl3cmtnYWhzYmpzemx3bm9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2MzcwNTYsImV4cCI6MjA2NDIxMzA1Nn0.__Z_HYaLyyvYa5yNHwjsln3ti6sQoflRoEYCq6Agedk'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Create a single Supabase client instance
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined
+  }
+})
 
 export type Database = {
   public: {

@@ -166,14 +166,14 @@ export const useTeamData = () => {
       loadTeams()
       loadUserPendingInvitations()
     }
-  }, [user])
+  }, [user?.id]) // Only depend on user.id to prevent infinite loops
 
   useEffect(() => {
     if (currentTeam) {
       loadTeamMembers(currentTeam.id)
       loadPendingInvitations(currentTeam.id)
     }
-  }, [currentTeam])
+  }, [currentTeam?.id]) // Only depend on currentTeam.id to prevent infinite loops
 
   return {
     teams,
