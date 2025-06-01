@@ -72,6 +72,10 @@ const Dashboard = () => {
     }
   }
 
+  const handleVisibilityChange = () => {
+    loadRundowns()
+  }
+
   const confirmDelete = async () => {
     if (deleteDialog.rundownId) {
       await deleteRundown(deleteDialog.rundownId)
@@ -120,6 +124,7 @@ const Dashboard = () => {
           onDelete={handleDeleteClick}
           onArchive={handleArchiveClick}
           onDuplicate={handleDuplicateClick}
+          onVisibilityChange={handleVisibilityChange}
           showEmptyState={privateActiveRundowns.length === 0 && teamActiveRundowns.length === 0}
         />
 
@@ -133,6 +138,7 @@ const Dashboard = () => {
             onDelete={handleDeleteClick}
             onArchive={handleArchiveClick}
             onDuplicate={handleDuplicateClick}
+            onVisibilityChange={handleVisibilityChange}
             showEmptyState={false}
           />
         )}
@@ -147,6 +153,7 @@ const Dashboard = () => {
             onDelete={handleDeleteClick}
             onUnarchive={handleUnarchiveClick}
             onDuplicate={handleDuplicateClick}
+            onVisibilityChange={handleVisibilityChange}
             isArchived={true}
             showEmptyState={false}
           />

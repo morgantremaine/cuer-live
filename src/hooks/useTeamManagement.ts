@@ -16,6 +16,10 @@ export interface TeamMember {
   user_id: string
   role: 'owner' | 'admin' | 'member'
   joined_at: string
+  profiles?: {
+    email: string
+    full_name: string | null
+  }
 }
 
 export interface TeamInvitation {
@@ -65,7 +69,10 @@ export const useTeamManagement = () => {
   const loadTeamMembers = async (teamId: string) => {
     const { data, error } = await supabase
       .from('team_members')
-      .select('*')
+      .select(`
+        *,
+        profiles(email, full_name)
+      `)
       .eq('team_id', teamId)
 
     if (error) {

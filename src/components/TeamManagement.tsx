@@ -201,9 +201,11 @@ const TeamManagement = () => {
                       <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <div className="font-medium">
-                            Member {member.user_id.substring(0, 8)}...
+                            {member.profiles?.full_name || member.profiles?.email || `User ${member.user_id.substring(0, 8)}...`}
                           </div>
-                          <div className="text-sm text-gray-500">User ID: {member.user_id}</div>
+                          <div className="text-sm text-gray-500">
+                            {member.profiles?.email || `User ID: ${member.user_id}`}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge className={getRoleBadgeColor(member.role)}>
