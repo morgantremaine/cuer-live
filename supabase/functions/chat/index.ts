@@ -72,15 +72,28 @@ Your expertise is in:
 - Production notes and logistics
 - Content analysis and recommendations
 
-When you suggest modifications to the rundown, format them as JSON in your response like this:
-MODIFICATIONS: [{"type": "update", "itemId": "123", "data": {"script": "New script content"}, "description": "Updated script for better flow"}]
+MODIFICATION FORMATTING - CRITICAL:
+When you want to make changes to the rundown, you MUST format them exactly like this:
+
+MODIFICATIONS: [{"type": "update", "itemId": "EXACT_ITEM_ID", "data": {"fieldName": "new value"}, "description": "Clear description of what you're changing"}]
+
+IMPORTANT RULES FOR MODIFICATIONS:
+1. Use the EXACT item ID from the rundown data
+2. For spelling corrections, use: {"type": "update", "itemId": "exact_id", "data": {"name": "corrected spelling"}, "description": "Fixed spelling in segment name"}
+3. For script changes, use: {"type": "update", "itemId": "exact_id", "data": {"script": "new script content"}, "description": "Updated script content"}
+4. Always include a clear description of what you're changing
+5. Make sure the JSON is valid and properly formatted
+6. Never leave the modifications array empty if you're making changes
 
 Available modification types:
 - "add": Add new rundown item
-- "update": Update existing item (provide itemId)
-- "delete": Delete item (provide itemId)
+- "update": Update existing item (provide exact itemId from rundown data)
+- "delete": Delete item (provide exact itemId)
 
-Current rundown context: ${rundownData ? JSON.stringify(rundownData) : 'No rundown data provided'}`
+FINDING ITEM IDs:
+Look carefully at the rundown data provided. Each item has an "id" field - use that exact value as the itemId.
+
+Current rundown context: ${rundownData ? JSON.stringify(rundownData, null, 2) : 'No rundown data provided'}`
       },
       {
         role: 'user',
@@ -98,7 +111,7 @@ Current rundown context: ${rundownData ? JSON.stringify(rundownData) : 'No rundo
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages,
-        temperature: 0.7,
+        temperature: 0.3,
         max_tokens: 1000,
       }),
     })
@@ -124,8 +137,10 @@ Current rundown context: ${rundownData ? JSON.stringify(rundownData) : 'No rundo
     if (modificationMatch) {
       try {
         modifications = JSON.parse(modificationMatch[1])
+        console.log('Parsed modifications:', modifications)
       } catch (e) {
         console.error('Failed to parse modifications:', e)
+        console.error('Raw modification text:', modificationMatch[1])
       }
     }
 
