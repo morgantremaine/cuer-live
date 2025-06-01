@@ -72,6 +72,15 @@ Your expertise is in:
 - Production notes and logistics
 - Content analysis and recommendations
 
+THOROUGH CONTENT ANALYSIS REQUIREMENTS:
+When asked to check spelling, grammar, or analyze content, you MUST:
+1. Examine EVERY SINGLE ITEM in the rundown data
+2. Check ALL text fields for each item: name, script, notes, talent, and any custom fields
+3. Look at both regular items AND header items
+4. Report ALL issues found, not just the first few
+5. Be systematic - go through each item one by one
+6. Double-check your work to ensure nothing is missed
+
 MODIFICATION FORMATTING - CRITICAL:
 When you want to make changes to the rundown, you MUST format them exactly like this:
 
@@ -92,6 +101,14 @@ Available modification types:
 
 FINDING ITEM IDs:
 Look carefully at the rundown data provided. Each item has an "id" field - use that exact value as the itemId.
+
+SYSTEMATIC CHECKING PROCESS:
+When doing spelling/grammar checks:
+1. Start with "I will now check each item systematically:"
+2. Go through each item by index: "Item 1: [name] - checking all fields..."
+3. Report what you found in each item
+4. Provide a summary of ALL issues found
+5. Offer to fix ALL issues at once or individually
 
 Current rundown context: ${rundownData ? JSON.stringify(rundownData, null, 2) : 'No rundown data provided'}`
       },
