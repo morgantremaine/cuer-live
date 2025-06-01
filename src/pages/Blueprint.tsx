@@ -21,7 +21,6 @@ const Blueprint = () => {
     addNewList,
     deleteList,
     renameList,
-    refreshList,
     refreshAllLists
   } = useBlueprintState(
     id || '',
@@ -104,7 +103,6 @@ const Blueprint = () => {
                   list={list}
                   onDelete={deleteList}
                   onRename={renameList}
-                  onRefresh={refreshList}
                 />
               </div>
             ))}

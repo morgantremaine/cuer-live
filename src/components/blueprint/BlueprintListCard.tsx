@@ -3,17 +3,16 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, RefreshCw, Copy, Edit2, Check, X } from 'lucide-react';
+import { Trash2, Copy, Edit2, Check, X } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
 
 interface BlueprintListCardProps {
   list: BlueprintList;
   onDelete: (listId: string) => void;
-  onRefresh: (listId: string) => void;
   onRename: (listId: string, newName: string) => void;
 }
 
-const BlueprintListCard = ({ list, onDelete, onRefresh, onRename }: BlueprintListCardProps) => {
+const BlueprintListCard = ({ list, onDelete, onRename }: BlueprintListCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
 
@@ -94,15 +93,6 @@ const BlueprintListCard = ({ list, onDelete, onRefresh, onRename }: BlueprintLis
                   title="Rename list"
                 >
                   <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onRefresh(list.id)}
-                  className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
-                  title="Refresh list"
-                >
-                  <RefreshCw className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
