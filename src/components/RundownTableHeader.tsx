@@ -28,7 +28,7 @@ const RundownTableHeader = ({
             onWidthChange={updateColumnWidth}
             showLeftSeparator={index > 0}
           >
-            {column.name}
+            <span className="pl-2">{column.name}</span>
           </ResizableColumnHeader>
         ))}
       </tr>

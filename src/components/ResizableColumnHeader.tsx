@@ -45,7 +45,7 @@ const ResizableColumnHeader = ({
 
   return (
     <th 
-      className="px-2 py-3 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
+      className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
       style={{ width }}
     >
       {showLeftSeparator && (
