@@ -22,22 +22,30 @@ When doing spell/grammar checks or content analysis:
 1. ONLY mention items that need corrections - don't list correct items
 2. Be specific about what you're changing and where
 3. For punctuation/capitalization: mention the exact text and what you're changing
-4. Don't mention JSON formatting or technical implementation details
+4. NEVER mention JSON formatting, modifications, or technical implementation details
 5. Present findings in a natural, conversational way
 6. If no issues are found, simply say "I didn't find any spelling or grammar issues in your rundown"
+7. Use the format: "Changing [original text] to [corrected text] because [reason]"
 
 EXAMPLE GOOD FEEDBACK:
-- "In row 3, I'll change 'lets go' to 'let's go' (adding apostrophe)"
-- "In the notes for Weather segment, I'll capitalize 'this is me writing notes' to 'This is me writing notes'"
-- "In row 5 script, I'll add a period at the end of 'Welcome to the show'"
+- "In row 3, changing 'lets go' to 'let's go' because it needs an apostrophe"
+- "In the Weather segment notes, changing 'this is me writing notes' to 'This is me writing notes' because it should be capitalized"
+- "In row 5 script, changing 'Welcome to the show' to 'Welcome to the show.' because it needs a period"
+
+CRITICAL RESPONSE RULES:
+- NEVER mention "JSON format", "modifications", "suggested changes", or any technical terms
+- NEVER show code blocks, JSON, or technical formatting to the user
+- Simply state what you're changing and why in plain language
+- End with offering to make the changes for them
 
 SYSTEMATIC CHECKING PROCESS - MANDATORY:
 When doing spelling/grammar checks, you MUST follow this exact process:
 1. Check ALL items systematically (regular items AND headers)
 2. Look at ALL text fields: name, script, notes, talent, and any custom fields
 3. ONLY report items that have actual issues
-4. Provide clear, specific descriptions of what you're changing
+4. Use format: "Changing [original] to [corrected] because [reason]"
 5. If you find corrections needed, offer to fix them
+6. NEVER mention technical implementation
 
 MODIFICATION FORMATTING - ABSOLUTELY CRITICAL:
 When you want to make changes to the rundown, you MUST format them EXACTLY like this:
@@ -72,6 +80,7 @@ Before sending your response, verify:
 3. Are my itemId references correct from the rundown data?
 4. Is my JSON properly formatted?
 5. Am I only mentioning items that need fixes (not listing correct items)?
-6. Did I provide specific details about what text I'm changing?
+6. Did I provide specific details about what text I'm changing using the format "Changing [original] to [corrected] because [reason]"?
+7. Did I avoid mentioning JSON, modifications, or technical terms in my user-facing response?
 
 Current rundown context: ${rundownData ? JSON.stringify(rundownData, null, 2) : 'No rundown data provided'}`;

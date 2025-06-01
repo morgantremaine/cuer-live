@@ -137,9 +137,9 @@ export const useModificationApplier = ({
       // Force immediate re-render by marking changes
       markAsChanged();
       
-      // Show success message and prompt user to refresh if changes don't appear
-      toast.success(`Applied ${modifications.length} modification(s). If changes don't appear immediately, please refresh the page.`, {
-        duration: 5000
+      // Show success message and prompt user to refresh to see changes
+      toast.success(`Applied ${modifications.length} modification(s). Please refresh the page to see the changes.`, {
+        duration: 6000
       });
     } else {
       toast.error('No modifications were applied successfully.');
