@@ -43,17 +43,17 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
       return column.width;
     }
     
-    // Default widths based on column type
+    // Reduced default widths based on column type
     if (column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime') {
-      return '120px'; // Wide enough for 00:00:00
+      return '100px'; // Reduced from 120px
     }
     if (column.key === 'segmentName') {
-      return '200px';
+      return '150px'; // Reduced from 200px
     }
     if (column.key === 'notes') {
-      return '300px';
+      return '200px'; // Reduced from 300px
     }
-    return '150px'; // Default for custom columns
+    return '120px'; // Reduced from 150px for custom columns
   }, [columnWidths]);
 
   const getColumnWidthsForSaving = useCallback(() => {

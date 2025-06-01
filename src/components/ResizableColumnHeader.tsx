@@ -28,7 +28,7 @@ const ResizableColumnHeader = ({
     
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
-      const newWidth = Math.max(80, startWidth.current + diff); // Minimum width of 80px
+      const newWidth = Math.max(50, startWidth.current + diff); // Reduced minimum width from 80px to 50px
       console.log('ResizableColumnHeader calling onWidthChange:', column.id, newWidth);
       onWidthChange(column.id, newWidth);
     };
@@ -45,7 +45,7 @@ const ResizableColumnHeader = ({
 
   return (
     <th 
-      className="px-4 py-3 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
+      className="px-2 py-3 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
       style={{ width }}
     >
       {showLeftSeparator && (
