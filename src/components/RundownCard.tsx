@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -77,6 +76,16 @@ const RundownCard = ({
               align="end" 
               className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
             >
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.location.href = `/blueprint/${rundown.id}`
+                }}
+                className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Blueprint
+              </DropdownMenuItem>
               {onDuplicate && (
                 <DropdownMenuItem 
                   onClick={(e) => {

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SharedRundown from "./pages/SharedRundown";
 import Teleprompter from "./pages/Teleprompter";
+import Blueprint from "./pages/Blueprint";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +62,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Index />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/blueprint/:id" 
+        element={
+          <ProtectedRoute>
+            <Blueprint />
           </ProtectedRoute>
         } 
       />

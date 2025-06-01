@@ -1,0 +1,22 @@
+
+export interface BlueprintList {
+  id: string;
+  name: string;
+  sourceColumn: string;
+  items: string[];
+}
+
+export interface Blueprint {
+  id: string;
+  rundownId: string;
+  rundownTitle: string;
+  lists: BlueprintList[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const DEFAULT_BLUEPRINT_LISTS = [
+  { name: 'GFX Assets', sourceColumn: 'gfx' },
+  { name: 'Video Assets', sourceColumn: 'video' },
+  { name: 'Talent List', sourceColumn: 'talent' }
+];
