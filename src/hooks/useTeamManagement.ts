@@ -85,7 +85,13 @@ export const useTeamManagement = () => {
 
   const getCurrentUserRole = () => {
     if (!user || !currentTeam) return null
+    
+    console.log('Getting current user role for user:', user.id)
+    console.log('Team members:', teamMembers)
+    
     const currentUserMembership = teamMembers.find(member => member.user_id === user.id)
+    console.log('Found membership:', currentUserMembership)
+    
     return currentUserMembership?.role || null
   }
 

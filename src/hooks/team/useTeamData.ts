@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { Team, TeamMember, TeamInvitation } from '@/hooks/useTeamManagement'
@@ -18,65 +18,86 @@ export const useTeamData = () => {
     if (!user) return
 
     setLoading(true)
-    const { data, error } = await supabase
-      .from('teams')
-      .select('*')
+    
+    // Get teams where user is a member
+    const { data: memberTeams, error: memberError } = await supabase
+      .from('team_members')
+      .select(`
+        team_id,
+        teams!inner(*)
+      `)
+      .eq('user_id', user.id)
 
-    if (error) {
-      console.error('Error loading teams:', error)
+    if (memberError) {
+      console.error('Error loading teams:', memberError)
       toast({
         title: 'Error',
         description: 'Failed to load teams',
         variant: 'destructive',
       })
     } else {
-      setTeams(data || [])
-      if (data && data.length > 0 && !currentTeam) {
-        setCurrentTeam(data[0])
+      const teams = memberTeams?.map(mt => mt.teams).filter(Boolean) || []
+      setTeams(teams)
+      if (teams.length > 0 && !currentTeam) {
+        setCurrentTeam(teams[0])
       }
     }
     setLoading(false)
   }
 
   const loadTeamMembers = async (teamId: string) => {
+    console.log('Loading team members for team:', teamId)
+    
     const { data, error } = await supabase
       .from('team_members')
-      .select('*')
+      .select(`
+        *,
+        profiles(email, full_name)
+      `)
       .eq('team_id', teamId)
 
     if (error) {
       console.error('Error loading team members:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load team members',
+        variant: 'destructive',
+      })
     } else {
-      const membersWithEmails = await Promise.all(
-        (data || []).map(async (member) => {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('email, full_name')
-            .eq('id', member.user_id)
-          
-          let email = member.user_id
-          let fullName = null
-          
-          if (profileData && profileData.length > 0) {
-            email = profileData[0].email
-            fullName = profileData[0].full_name
-          } else {
-            if (user && member.user_id === user.id && user.email) {
-              email = user.email
-            }
-          }
-          
-          return {
-            ...member,
-            email,
-            profiles: profileData && profileData.length > 0 ? {
-              email: profileData[0].email,
-              full_name: profileData[0].full_name
-            } : undefined
-          }
-        })
-      )
+      console.log('Raw team members data:', data)
       
+      const membersWithEmails = (data || []).map((member) => {
+        let email = member.user_id
+        let fullName = null
+        
+        // Try to get email from profiles
+        if (member.profiles) {
+          email = member.profiles.email
+          fullName = member.profiles.full_name
+        } else if (user && member.user_id === user.id && user.email) {
+          // Fallback to current user's email if it's the current user
+          email = user.email
+        }
+        
+        console.log('Processing member:', {
+          id: member.id,
+          user_id: member.user_id,
+          role: member.role,
+          email,
+          fullName
+        })
+        
+        return {
+          ...member,
+          email,
+          profiles: member.profiles ? {
+            email: member.profiles.email,
+            full_name: member.profiles.full_name
+          } : undefined
+        }
+      })
+      
+      console.log('Processed team members:', membersWithEmails)
       setTeamMembers(membersWithEmails)
     }
   }
