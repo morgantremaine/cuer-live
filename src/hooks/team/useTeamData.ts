@@ -48,58 +48,78 @@ export const useTeamData = () => {
   const loadTeamMembers = async (teamId: string) => {
     console.log('Loading team members for team:', teamId)
     
-    const { data, error } = await supabase
+    // First get team members
+    const { data: teamMembersData, error: membersError } = await supabase
       .from('team_members')
-      .select(`
-        *,
-        profiles(email, full_name)
-      `)
+      .select('*')
       .eq('team_id', teamId)
 
-    if (error) {
-      console.error('Error loading team members:', error)
+    if (membersError) {
+      console.error('Error loading team members:', membersError)
       toast({
         title: 'Error',
         description: 'Failed to load team members',
         variant: 'destructive',
       })
-    } else {
-      console.log('Raw team members data:', data)
+      return
+    }
+
+    // Then get profiles for each member
+    const memberIds = teamMembersData?.map(member => member.user_id).filter(Boolean) || []
+    
+    let profilesData: any[] = []
+    if (memberIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', memberIds)
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError)
+      } else {
+        profilesData = profiles || []
+      }
+    }
+
+    // Combine the data
+    const membersWithEmails = (teamMembersData || []).map((member) => {
+      let email = member.user_id || ''
+      let fullName = null
       
-      const membersWithEmails = (data || []).map((member) => {
-        let email = member.user_id
-        let fullName = null
-        
-        // Try to get email from profiles
-        if (member.profiles) {
-          email = member.profiles.email
-          fullName = member.profiles.full_name
-        } else if (user && member.user_id === user.id && user.email) {
-          // Fallback to current user's email if it's the current user
-          email = user.email
-        }
-        
-        console.log('Processing member:', {
-          id: member.id,
-          user_id: member.user_id,
-          role: member.role,
-          email,
-          fullName
-        })
-        
-        return {
-          ...member,
-          email,
-          profiles: member.profiles ? {
-            email: member.profiles.email,
-            full_name: member.profiles.full_name
-          } : undefined
-        }
+      // Find matching profile
+      const profile = profilesData.find(p => p.id === member.user_id)
+      if (profile) {
+        email = profile.email || member.user_id || ''
+        fullName = profile.full_name
+      } else if (user && member.user_id === user.id && user.email) {
+        // Fallback to current user's email if it's the current user
+        email = user.email
+      }
+      
+      console.log('Processing member:', {
+        id: member.id,
+        user_id: member.user_id,
+        role: member.role,
+        email,
+        fullName
       })
       
-      console.log('Processed team members:', membersWithEmails)
-      setTeamMembers(membersWithEmails)
-    }
+      return {
+        ...member,
+        role: (member.role || 'member') as 'owner' | 'admin' | 'member',
+        team_id: member.team_id || '',
+        user_id: member.user_id || '',
+        joined_at: member.joined_at || '',
+        email,
+        profiles: profile ? {
+          email: profile.email || '',
+          full_name: profile.full_name
+        } : undefined
+      }
+    })
+    
+    console.log('Processed team members:', membersWithEmails)
+    setTeamMembers(membersWithEmails)
   }
 
   const loadPendingInvitations = async (teamId: string) => {
