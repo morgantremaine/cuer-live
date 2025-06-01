@@ -51,13 +51,22 @@ export const getAvailableColumns = (items: RundownItem[]) => {
   
   standardColumns.forEach(col => columns.add(col));
   
-  // Add custom fields
+  // Add custom fields by examining the actual data in items
+  const customFieldNames = new Set<string>();
   items.forEach(item => {
     if (item.customFields) {
-      Object.keys(item.customFields).forEach(key => {
-        columns.add({ key: `customFields.${key}`, name: key });
+      Object.keys(item.customFields).forEach(fieldName => {
+        customFieldNames.add(fieldName);
       });
     }
+  });
+  
+  // Convert custom field names to column format
+  customFieldNames.forEach(fieldName => {
+    columns.add({ 
+      key: `customFields.${fieldName}`, 
+      name: fieldName 
+    });
   });
   
   return Array.from(columns);
