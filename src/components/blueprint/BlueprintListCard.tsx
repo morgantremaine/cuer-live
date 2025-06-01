@@ -28,16 +28,16 @@ const BlueprintListCard = ({ list, onDelete, onRefresh }: BlueprintListCardProps
   };
 
   return (
-    <Card className="h-fit">
+    <Card className="h-fit bg-gray-800 border-gray-700">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{list.name}</CardTitle>
+          <CardTitle className="text-lg text-white">{list.name}</CardTitle>
           <div className="flex gap-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onRefresh(list.id)}
-              className="h-8 w-8"
+              className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
               title="Refresh list"
             >
               <RefreshCw className="h-4 w-4" />
@@ -46,7 +46,7 @@ const BlueprintListCard = ({ list, onDelete, onRefresh }: BlueprintListCardProps
               variant="ghost"
               size="icon"
               onClick={copyToClipboard}
-              className="h-8 w-8"
+              className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
               title="Copy to clipboard"
             >
               <Copy className="h-4 w-4" />
@@ -55,14 +55,14 @@ const BlueprintListCard = ({ list, onDelete, onRefresh }: BlueprintListCardProps
               variant="ghost"
               size="icon"
               onClick={() => onDelete(list.id)}
-              className="h-8 w-8 text-red-600 hover:text-red-700"
+              className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50"
               title="Delete list"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-400">
           From: {list.sourceColumn} • {list.items.length} items
         </p>
       </CardHeader>
@@ -74,7 +74,7 @@ const BlueprintListCard = ({ list, onDelete, onRefresh }: BlueprintListCardProps
             list.items.map((item, index) => (
               <div
                 key={index}
-                className="p-2 bg-gray-50 rounded text-sm border"
+                className="p-2 bg-gray-700 rounded text-sm border border-gray-600 text-gray-200"
               >
                 {item}
               </div>
