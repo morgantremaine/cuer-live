@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 // Define the types locally since we're not using the openaiService anymore
@@ -48,11 +47,8 @@ export const useCuerChat = () => {
     setIsLoading(true);
 
     try {
-      // Use the correct Supabase Edge Function URL format
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const functionUrl = `${supabaseUrl}/functions/v1/openai-chat`;
-      
-      const response = await fetch(functionUrl, {
+      // Use the correct relative path for Supabase Edge Functions
+      const response = await fetch('/functions/v1/openai-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -17,7 +17,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setHasUnsavedChanges, 
     markAsSaved, 
     markAsChanged,
-    isInitialized 
+    isInitialized,
+    setIsLoading
   } = useChangeTracking(items, rundownTitle, columns);
 
   // Create a debounced save function that's stable across renders
@@ -25,6 +26,9 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     if (!user || isSaving) {
       return;
     }
+
+    // Mark as loading to prevent change detection during save
+    setIsLoading(true);
 
     try {
       const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave);
@@ -37,8 +41,10 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     } catch (error) {
       console.error('Auto-save error:', error);
       setHasUnsavedChanges(true);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user, isSaving, performSave, markAsSaved, setHasUnsavedChanges]);
+  }, [user, isSaving, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
   // Main effect that schedules saves
   useEffect(() => {

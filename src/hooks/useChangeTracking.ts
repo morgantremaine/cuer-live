@@ -8,6 +8,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedDataRef = useRef<string>('');
   const initialLoadRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
   // Initialize tracking after first load
   useEffect(() => {
@@ -22,9 +23,9 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     }
   }, [items, rundownTitle, columns]);
 
-  // Track changes after initialization
+  // Track changes after initialization - but only if not loading
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || isLoadingRef.current) return;
 
     const currentSignature = JSON.stringify({ items, title: rundownTitle, columns });
     const hasChanges = lastSavedDataRef.current !== currentSignature;
@@ -43,8 +44,14 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   };
 
   const markAsChanged = () => {
-    console.log('Manually marked as changed');
-    setHasUnsavedChanges(true);
+    if (!isLoadingRef.current) {
+      console.log('Manually marked as changed');
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const setIsLoading = (loading: boolean) => {
+    isLoadingRef.current = loading;
   };
 
   return {
@@ -52,6 +59,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     setHasUnsavedChanges,
     markAsSaved,
     markAsChanged,
-    isInitialized
+    isInitialized,
+    setIsLoading
   };
 };
