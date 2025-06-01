@@ -1,32 +1,24 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Bot, User } from 'lucide-react';
-import InlineModificationRequest from './CuerChatMessages/InlineModificationRequest';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  modifications?: any[];
 }
 
 interface CuerChatMessagesProps {
   messages: ChatMessage[];
   isLoading: boolean;
   isConnected: boolean | null;
-  pendingModifications?: any[] | null;
-  onConfirmModifications?: () => void;
-  onCancelModifications?: () => void;
 }
 
 const CuerChatMessages = ({ 
   messages, 
   isLoading, 
-  isConnected,
-  pendingModifications,
-  onConfirmModifications,
-  onCancelModifications
+  isConnected
 }: CuerChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +28,7 @@ const CuerChatMessages = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading, pendingModifications]);
+  }, [messages, isLoading]);
 
   if (isConnected === null) {
     return (
@@ -55,7 +47,7 @@ const CuerChatMessages = ({
         <div className="text-center text-gray-500">
           <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">Hi! I'm Cuer, your AI rundown assistant.</p>
-          <p className="text-xs mt-1">Ask me anything about your rundown!</p>
+          <p className="text-xs mt-1">I can analyze your rundown and provide suggestions!</p>
         </div>
       </div>
     );
@@ -83,22 +75,6 @@ const CuerChatMessages = ({
           </div>
         </div>
       ))}
-
-      {/* Show pending modifications inline */}
-      {pendingModifications && pendingModifications.length > 0 && onConfirmModifications && onCancelModifications && (
-        <div className="flex space-x-2">
-          <div className="flex-shrink-0">
-            <Bot className="w-6 h-6 text-blue-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <InlineModificationRequest
-              modifications={pendingModifications}
-              onConfirm={onConfirmModifications}
-              onCancel={onCancelModifications}
-            />
-          </div>
-        </div>
-      )}
 
       {isLoading && (
         <div className="flex space-x-2">

@@ -19,14 +19,11 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
     messages,
     isLoading,
     isConnected,
-    pendingModifications,
     needsApiKeySetup,
     handleSendMessage,
     handleKeyDown,
     handleAnalyzeRundown,
     handleSettingsClick,
-    handleConfirmModifications,
-    handleCancelModifications,
     clearChat
   } = useCuerChatPanelLogic(isOpen, rundownData);
 
@@ -45,15 +42,12 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
           setInputValue={setInputValue}
           isLoading={isLoading}
           rundownData={rundownData}
-          pendingModifications={pendingModifications}
           onSettingsClick={handleSettingsClick}
           onClearChat={clearChat}
           onClose={onClose}
           onSendMessage={handleSendMessage}
           onKeyDown={handleKeyDown}
           onAnalyzeRundown={handleAnalyzeRundown}
-          onConfirmModifications={handleConfirmModifications}
-          onCancelModifications={handleCancelModifications}
         />
       )}
     </div>

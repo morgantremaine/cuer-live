@@ -8,26 +8,17 @@ interface OpenAIMessage {
   content: string;
 }
 
-interface RundownModification {
-  type: 'add' | 'update' | 'delete';
-  itemId?: string;
-  data?: any;
-  description: string; // Added required description property
-}
-
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  modifications?: RundownModification[];
 }
 
 export const useCuerChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [pendingModifications, setPendingModifications] = useState<RundownModification[] | null>(null);
 
   const checkConnection = useCallback(async () => {
     try {
@@ -76,16 +67,10 @@ export const useCuerChat = () => {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: data.message || 'Sorry, I could not generate a response.',
-        timestamp: new Date(),
-        modifications: data.modifications || []
+        timestamp: new Date()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-
-      // Set pending modifications if any
-      if (data.modifications && data.modifications.length > 0) {
-        setPendingModifications(data.modifications);
-      }
 
     } catch (error) {
       console.error('❌ useCuerChat - Error sending message:', error);
@@ -120,15 +105,11 @@ export const useCuerChat = () => {
         id: Date.now().toString(),
         role: 'assistant',
         content: data.message || 'Analysis completed.',
-        timestamp: new Date(),
-        modifications: data.modifications || []
+        timestamp: new Date()
       };
 
       setMessages(prev => [...prev, analysisMessage]);
 
-      if (data.modifications && data.modifications.length > 0) {
-        setPendingModifications(data.modifications);
-      }
     } catch (error) {
       console.error('❌ useCuerChat - Error analyzing rundown:', error);
       const errorMessage: ChatMessage = {
@@ -145,7 +126,6 @@ export const useCuerChat = () => {
 
   const clearChat = useCallback(() => {
     setMessages([]);
-    setPendingModifications(null);
   }, []);
 
   const setApiKey = useCallback((apiKey: string) => {
@@ -161,23 +141,16 @@ export const useCuerChat = () => {
     return isConnected === true; // If connected, assume API key is configured
   }, [isConnected]);
 
-  const clearPendingModifications = useCallback(() => {
-    console.log('🧹 useCuerChat - Clearing pending modifications');
-    setPendingModifications(null);
-  }, []);
-
   return {
     messages,
     isLoading,
     isConnected,
-    pendingModifications,
     sendMessage,
     analyzeRundown,
     clearChat,
     checkConnection,
     setApiKey,
     clearApiKey,
-    hasApiKey,
-    clearPendingModifications
+    hasApiKey
   };
 };
