@@ -85,28 +85,32 @@ const Blueprint = () => {
           </div>
         </div>
 
-        {/* Lists Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lists.map((list) => (
-            <BlueprintListCard
-              key={list.id}
-              list={list}
-              onDelete={deleteList}
-              onRefresh={refreshList}
+        {/* Lists in Column Layout */}
+        {lists.length === 0 ? (
+          <div className="text-center py-12">
+            <h3 className="text-lg font-medium text-white mb-2">No Lists Created</h3>
+            <p className="text-gray-400 mb-4">Create your first asset list to get started</p>
+            <AddListDialog
+              availableColumns={availableColumns}
+              onAddList={addNewList}
             />
-          ))}
-          
-          {lists.length === 0 && (
-            <div className="col-span-full text-center py-12">
-              <h3 className="text-lg font-medium text-white mb-2">No Lists Created</h3>
-              <p className="text-gray-400 mb-4">Create your first asset list to get started</p>
-              <AddListDialog
-                availableColumns={availableColumns}
-                onAddList={addNewList}
-              />
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div 
+            className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6"
+            style={{ columnFill: 'auto' }}
+          >
+            {lists.map((list) => (
+              <div key={list.id} className="break-inside-avoid mb-6">
+                <BlueprintListCard
+                  list={list}
+                  onDelete={deleteList}
+                  onRefresh={refreshList}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
