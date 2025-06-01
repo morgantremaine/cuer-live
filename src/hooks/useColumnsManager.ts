@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -74,10 +73,11 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
-    console.log('Renaming column:', columnId, 'to:', newName);
+    console.log('handleRenameColumn called in useColumnsManager:', columnId, 'to:', newName);
     setColumns(prev => {
       const updated = prev.map(col => {
         if (col.id === columnId) {
+          console.log('Renaming column:', col.name, '->', newName);
           return { ...col, name: newName };
         }
         return col;
@@ -178,6 +178,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return mergedColumns;
     });
   }, [markAsChanged]);
+
+  console.log('useColumnsManager: handleRenameColumn function created:', !!handleRenameColumn);
 
   return {
     columns,

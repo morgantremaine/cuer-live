@@ -38,6 +38,8 @@ const ColumnManager = ({
   onRenameColumn,
   onClose 
 }: ColumnManagerProps) => {
+  console.log('ColumnManager: onRenameColumn function available:', !!onRenameColumn);
+  
   const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout } = useColumnLayoutStorage();
 
   return (

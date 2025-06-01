@@ -6,6 +6,8 @@ import RundownMainPropsAdapter from './RundownMainPropsAdapter';
 import { RundownContainerProps } from '@/types/rundownContainer';
 
 const RundownContainer = (props: RundownContainerProps) => {
+  console.log('RundownContainer: handleRenameColumn available:', !!props.handleRenameColumn);
+  
   return (
     <RundownLayoutWrapper>
       <RundownHeaderPropsAdapter props={props} />
