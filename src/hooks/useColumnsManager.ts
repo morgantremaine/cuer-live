@@ -73,6 +73,23 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   }, [markAsChanged]);
 
+  const handleRenameColumn = useCallback((columnId: string, newName: string) => {
+    console.log('Renaming column:', columnId, 'to:', newName);
+    setColumns(prev => {
+      const updated = prev.map(col => {
+        if (col.id === columnId) {
+          return { ...col, name: newName };
+        }
+        return col;
+      });
+      return updated;
+    });
+    if (markAsChanged) {
+      console.log('Marking as changed after renaming column');
+      markAsChanged();
+    }
+  }, [markAsChanged]);
+
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
     console.log('Toggling column visibility:', columnId);
     setColumns(prev => {
@@ -168,6 +185,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
+    handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth

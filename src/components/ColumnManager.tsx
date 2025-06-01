@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { X, Plus, GripVertical, Trash2, Eye, EyeOff, Save, FolderOpen, Edit, RefreshCw } from 'lucide-react';
+import { X, Plus, GripVertical, Trash2, Eye, EyeOff, Save, FolderOpen, Edit, RefreshCw, Check, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
@@ -20,6 +21,7 @@ interface ColumnManagerProps {
   onDeleteColumn: (columnId: string) => void;
   onToggleColumnVisibility: (columnId: string) => void;
   onLoadLayout: (columns: Column[]) => void;
+  onRenameColumn?: (columnId: string, newName: string) => void;
   onClose: () => void;
 }
 
@@ -30,6 +32,7 @@ const ColumnManager = ({
   onDeleteColumn, 
   onToggleColumnVisibility,
   onLoadLayout,
+  onRenameColumn,
   onClose 
 }: ColumnManagerProps) => {
   const [newColumnName, setNewColumnName] = useState('');
@@ -39,6 +42,8 @@ const ColumnManager = ({
   const [showLoadLayout, setShowLoadLayout] = useState(false);
   const [editingLayoutId, setEditingLayoutId] = useState<string | null>(null);
   const [editingLayoutName, setEditingLayoutName] = useState('');
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingColumnName, setEditingColumnName] = useState('');
   
   const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout } = useColumnLayoutStorage();
 
@@ -94,6 +99,24 @@ const ColumnManager = ({
   const cancelEditingLayout = () => {
     setEditingLayoutId(null);
     setEditingLayoutName('');
+  };
+
+  const startEditingColumn = (column: Column) => {
+    setEditingColumnId(column.id);
+    setEditingColumnName(column.name);
+  };
+
+  const cancelEditingColumn = () => {
+    setEditingColumnId(null);
+    setEditingColumnName('');
+  };
+
+  const handleRenameColumnSubmit = (columnId: string) => {
+    if (editingColumnName.trim() && onRenameColumn) {
+      onRenameColumn(columnId, editingColumnName.trim());
+      setEditingColumnId(null);
+      setEditingColumnName('');
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -209,7 +232,7 @@ const ColumnManager = ({
                             onClick={() => handleRenameLayout(layout.id, editingLayoutName)}
                             className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                           >
-                            ✓
+                            <Check className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -217,7 +240,7 @@ const ColumnManager = ({
                             onClick={cancelEditingLayout}
                             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                           >
-                            ✕
+                            <XIcon className="h-3 w-3" />
                           </Button>
                         </div>
                       ) : (
@@ -299,10 +322,58 @@ const ColumnManager = ({
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, index)}
                 >
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-1">
                     <GripVertical className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-900 dark:text-white">{column.name}</span>
+                    <div className="flex flex-col flex-1">
+                      {editingColumnId === column.id ? (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={editingColumnName}
+                            onChange={(e) => setEditingColumnName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleRenameColumnSubmit(column.id);
+                              } else if (e.key === 'Escape') {
+                                cancelEditingColumn();
+                              }
+                            }}
+                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            autoFocus
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRenameColumnSubmit(column.id)}
+                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={cancelEditingColumn}
+                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          >
+                            <XIcon className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-900 dark:text-white">{column.name}</span>
+                          {column.isCustom && onRenameColumn && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEditingColumn(column)}
+                              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                              title="Rename column"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                       <span className="text-xs text-gray-500 dark:text-gray-400">Width: {column.width}</span>
                     </div>
                     {!column.isCustom && (

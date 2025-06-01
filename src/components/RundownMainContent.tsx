@@ -43,6 +43,7 @@ interface RundownMainContentProps {
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
+  handleRenameColumn?: (columnId: string, newName: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
   onCloseColumnManager: () => void;
@@ -86,6 +87,7 @@ const RundownMainContent = ({
   handleAddColumn,
   handleReorderColumns,
   handleDeleteColumnWithCleanup,
+  handleRenameColumn,
   handleToggleColumnVisibility,
   handleLoadLayout,
   onCloseColumnManager
@@ -133,10 +135,9 @@ const RundownMainContent = ({
           onAddColumn={handleAddColumn}
           onReorderColumns={handleReorderColumns}
           onDeleteColumn={handleDeleteColumnWithCleanup}
+          onRenameColumn={handleRenameColumn}
           onToggleColumnVisibility={handleToggleColumnVisibility}
-          onLoadLayout={(layoutColumns) => {
-            handleReorderColumns(layoutColumns);
-          }}
+          onLoadLayout={handleLoadLayout}
           onClose={onCloseColumnManager}
         />
       )}
