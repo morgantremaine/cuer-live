@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -79,16 +80,22 @@ export const useTeamManagement = () => {
       // Get user emails for each member
       const membersWithEmails = await Promise.all(
         (data || []).map(async (member) => {
+          console.log('Looking up profile for user_id:', member.user_id)
+          
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('email, full_name')
             .eq('id', member.user_id)
+          
+          console.log('Profile data for', member.user_id, ':', profileData)
+          console.log('Profile error for', member.user_id, ':', profileError)
           
           if (profileError) {
             console.error('Error loading profile for user:', member.user_id, profileError)
           }
           
           const profile = profileData && profileData.length > 0 ? profileData[0] : null
+          console.log('Final profile for', member.user_id, ':', profile)
           
           return {
             ...member,
@@ -100,6 +107,8 @@ export const useTeamManagement = () => {
           }
         })
       )
+      
+      console.log('Final members with emails:', membersWithEmails)
       setTeamMembers(membersWithEmails)
     }
   }
