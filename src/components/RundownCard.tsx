@@ -44,10 +44,14 @@ const RundownCard = ({
     window.location.href = `/blueprint/${rundown.id}`
   }
 
+  const handleOpenClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onOpen(rundown.id)
+  }
+
   return (
     <Card 
-      className={`hover:shadow-lg transition-shadow cursor-pointer relative bg-gray-800 border-gray-700 ${isArchived ? 'opacity-75' : ''}`} 
-      onClick={() => onOpen(rundown.id)}
+      className={`hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 ${isArchived ? 'opacity-75' : ''}`}
     >
       <CardHeader>
         <div className="flex items-start justify-between">
@@ -147,7 +151,12 @@ const RundownCard = ({
               <FileText className="h-4 w-4 mr-1" />
               Blueprint
             </Button>
-            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-gray-700">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-300 hover:text-white hover:bg-gray-700"
+              onClick={handleOpenClick}
+            >
               Open →
             </Button>
           </div>
