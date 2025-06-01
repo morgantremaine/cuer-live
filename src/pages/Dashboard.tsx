@@ -96,9 +96,9 @@ const Dashboard = () => {
     }
   }
 
-  // Filter rundowns to show only non-archived ones
-  const activeRundowns = savedRundowns.filter(rundown => !rundown.archived)
-  const archivedRundowns = savedRundowns.filter(rundown => rundown.archived)
+  // Fix the filtering logic to handle undefined archived field
+  const activeRundowns = savedRundowns.filter(rundown => rundown.archived !== true)
+  const archivedRundowns = savedRundowns.filter(rundown => rundown.archived === true)
 
   return (
     <div className="dark min-h-screen bg-gray-900">
