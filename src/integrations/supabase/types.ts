@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      blueprints: {
+        Row: {
+          created_at: string
+          id: string
+          lists: Json
+          rundown_id: string
+          rundown_title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lists?: Json
+          rundown_id: string
+          rundown_title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lists?: Json
+          rundown_id?: string
+          rundown_title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       column_layouts: {
         Row: {
           columns: Json
