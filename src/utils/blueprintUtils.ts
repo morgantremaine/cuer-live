@@ -3,82 +3,60 @@ import { BlueprintList, DEFAULT_BLUEPRINT_LISTS } from '@/types/blueprint';
 
 export const generateListFromColumn = (items: RundownItem[], columnKey: string): string[] => {
   console.log('Generating list from column:', columnKey, 'with items:', items.length);
-  console.log('First few items structure:', items.slice(0, 3).map(item => ({
-    id: item.id,
-    type: item.type,
-    name: item.name,
-    notes: item.notes,
-    segmentName: item.segmentName,
-    isHeader: item.isHeader,
-    rowNumber: item.rowNumber,
-    // Show all keys to understand the structure
-    allKeys: Object.keys(item)
-  })));
+  console.log('Items by type:', items.reduce((acc, item) => {
+    acc[item.type] = (acc[item.type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>));
   
   const values = new Set<string>();
   
-  // Special handling for headers overview
+  // Special handling for headers overview - this is the ONLY case where we want header data
   if (columnKey === 'headers') {
     console.log('Processing headers column - looking for header items...');
-    items.forEach((item, index) => {
-      console.log(`Item ${index}: type="${item.type}", isHeader="${item.isHeader}", rowNumber="${item.rowNumber}", segmentName="${item.segmentName}", notes="${item.notes}", name="${item.name}"`);
+    const headerItems = items.filter(item => item.type === 'header');
+    console.log('Found', headerItems.length, 'header items:', headerItems.map(item => ({
+      id: item.id,
+      type: item.type,
+      rowNumber: item.rowNumber,
+      segmentName: item.segmentName,
+      notes: item.notes,
+      name: item.name
+    })));
+    
+    headerItems.forEach((item, index) => {
+      console.log(`Processing header item ${index}: rowNumber="${item.rowNumber}", segmentName="${item.segmentName}", notes="${item.notes}", name="${item.name}"`);
       
-      // Check for both type === 'header' AND isHeader === true (legacy support)
-      if (item.type === 'header' || item.isHeader === true) {
-        const letter = item.rowNumber || item.segmentName || '';
-        const description = item.notes || item.name || '';
-        console.log(`Found header item ${index}: letter="${letter}", description="${description}"`);
-        
-        if (letter && description) {
-          values.add(`${letter}: ${description}`);
-        } else if (letter) {
-          values.add(letter);
-        } else if (description) {
-          values.add(description);
-        }
+      // For headers, we want to create a meaningful overview entry
+      const identifier = item.rowNumber || item.segmentName || '';
+      const description = item.notes || item.name || '';
+      
+      if (identifier && description) {
+        values.add(`${identifier}: ${description}`);
+      } else if (identifier) {
+        values.add(identifier);
+      } else if (description) {
+        values.add(description);
       }
     });
-    
-    // If no headers found, let's see if there are items that look like headers based on their content
-    if (values.size === 0) {
-      console.log('No explicit headers found, checking for header-like items...');
-      items.forEach((item, index) => {
-        // Check if rowNumber looks like a single letter (A, B, C, etc.)
-        const hasLetterRowNumber = item.rowNumber && /^[A-Z]$/.test(item.rowNumber);
-        // Check if name or notes contain header-like content
-        const hasHeaderContent = (item.name && item.name.length > 0) || (item.notes && item.notes.length > 0);
-        
-        console.log(`Item ${index} header check: rowNumber="${item.rowNumber}" hasLetterRowNumber=${hasLetterRowNumber}, hasHeaderContent=${hasHeaderContent}`);
-        
-        if (hasLetterRowNumber && hasHeaderContent) {
-          const letter = item.rowNumber;
-          const description = item.notes || item.name || '';
-          console.log(`Found potential header based on pattern: ${letter}: ${description}`);
-          values.add(`${letter}: ${description}`);
-        }
-      });
-    }
     
     const result = Array.from(values).sort();
     console.log('Final header overview values:', result);
     return result;
   }
   
-  items.forEach((item, index) => {
-    // Skip header items for all columns except the special 'headers' column
-    if (item.type === 'header' || item.isHeader) {
-      return;
-    }
-    
+  // For all other columns, explicitly exclude header items to avoid the previous issue
+  const regularItems = items.filter(item => item.type !== 'header');
+  console.log(`Processing ${regularItems.length} regular items for column: ${columnKey}`);
+  
+  regularItems.forEach((item, index) => {
     let value = '';
     
     // Handle custom fields
     if (columnKey.startsWith('customFields.')) {
       const customFieldKey = columnKey.replace('customFields.', '');
       value = item.customFields?.[customFieldKey] || '';
-      console.log(`Item ${index} custom field ${customFieldKey}:`, value);
     } else {
-      // Handle regular fields - be more explicit about field access
+      // Handle regular fields
       switch (columnKey) {
         case 'name':
           value = item.name || '';
@@ -111,10 +89,8 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
           value = item.rowNumber || '';
           break;
         default:
-          // Fallback for any other fields
           value = (item as any)[columnKey] || '';
       }
-      console.log(`Item ${index} (type: ${item.type}) field ${columnKey}:`, value);
     }
     
     // Clean and add non-empty values
