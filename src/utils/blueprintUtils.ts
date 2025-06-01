@@ -4,6 +4,17 @@ import { BlueprintList, DEFAULT_BLUEPRINT_LISTS } from '@/types/blueprint';
 
 export const generateListFromColumn = (items: RundownItem[], columnKey: string): string[] => {
   console.log('Generating list from column:', columnKey, 'with items:', items.length);
+  console.log('First few items structure:', items.slice(0, 3).map(item => ({
+    id: item.id,
+    type: item.type,
+    name: item.name,
+    notes: item.notes,
+    segmentName: item.segmentName,
+    isHeader: item.isHeader,
+    // Show all keys to understand the structure
+    allKeys: Object.keys(item)
+  })));
+  
   const values = new Set<string>();
   
   items.forEach((item, index) => {
@@ -33,7 +44,13 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
           value = item.video || '';
           break;
         case 'notes':
+          // Make sure we're getting the actual notes field, not a description from headers
           value = item.notes || '';
+          // Additional check - skip header items if they're using notes for descriptions
+          if (item.type === 'header' && value) {
+            console.log(`Skipping header item ${index} with notes value: "${value}"`);
+            return; // Skip this iteration for header items
+          }
           break;
         case 'startTime':
           value = item.startTime || '';
@@ -51,7 +68,7 @@ export const generateListFromColumn = (items: RundownItem[], columnKey: string):
           // Fallback for any other fields
           value = (item as any)[columnKey] || '';
       }
-      console.log(`Item ${index} field ${columnKey}:`, value);
+      console.log(`Item ${index} (type: ${item.type}) field ${columnKey}:`, value);
     }
     
     // Clean and add non-empty values
