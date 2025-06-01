@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -35,8 +36,6 @@ interface RegularRowProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onInsertSegment?: (afterIndex: number) => void;
-  onInsertHeader?: (afterIndex: number) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -70,8 +69,6 @@ const RegularRow = ({
   onDeleteSelectedRows,
   onPasteRows,
   onClearSelection,
-  onInsertSegment,
-  onInsertHeader,
   isDragging,
   getColumnWidth
 }: RegularRowProps) => {
@@ -158,7 +155,6 @@ const RegularRow = ({
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
-      itemIndex={index}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
@@ -166,8 +162,6 @@ const RegularRow = ({
       onColorSelect={onColorSelect}
       onPaste={onPasteRows}
       onClearSelection={onClearSelection}
-      onInsertSegment={onInsertSegment}
-      onInsertHeader={onInsertHeader}
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}

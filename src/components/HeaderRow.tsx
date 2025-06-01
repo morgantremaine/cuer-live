@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -29,8 +30,6 @@ interface HeaderRowProps {
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
-  onInsertSegment?: (afterIndex: number) => void;
-  onInsertHeader?: (afterIndex: number) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -61,8 +60,6 @@ const HeaderRow = ({
   onPasteRows,
   onClearSelection,
   onRowSelect,
-  onInsertSegment,
-  onInsertHeader,
   isDragging,
   getColumnWidth
 }: HeaderRowProps) => {
@@ -120,7 +117,6 @@ const HeaderRow = ({
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
-      itemIndex={index}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
@@ -128,8 +124,6 @@ const HeaderRow = ({
       onColorSelect={onColorSelect}
       onPaste={onPasteRows}
       onClearSelection={onClearSelection}
-      onInsertSegment={onInsertSegment}
-      onInsertHeader={onInsertHeader}
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-move`}
