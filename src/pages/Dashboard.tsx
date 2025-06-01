@@ -32,7 +32,7 @@ const Dashboard = () => {
       console.log('Dashboard useEffect - calling loadRundowns for user:', user.id)
       loadRundowns()
     }
-  }, [user, loadRundowns])
+  }, [user])
 
   const handleSignOut = async () => {
     await signOut()
