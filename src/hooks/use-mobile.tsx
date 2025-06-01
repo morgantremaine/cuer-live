@@ -14,15 +14,15 @@ export function useIsMobile() {
       
       // Consider it mobile/tablet if:
       // 1. Width is less than 1024px (tablet breakpoint)
-      // 2. OR if it's a touch device with width less than 1200px
-      // 3. OR if height > width (portrait orientation) and width < 1200px
+      // 2. OR if it's a touch device with width less than 1100px (but not iPad horizontal at 1112px)
+      // 3. OR if height > width (portrait orientation) and width < 1100px
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
       const isPortrait = height > width
       
       const shouldUseMobileLayout = 
         width < TABLET_BREAKPOINT || 
-        (isTouchDevice && width < 1200) ||
-        (isPortrait && width < 1200)
+        (isTouchDevice && width < 1100) ||
+        (isPortrait && width < 1100)
       
       setIsMobile(shouldUseMobileLayout)
     }
