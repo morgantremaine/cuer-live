@@ -35,10 +35,13 @@ const CellRenderer = ({
       return item.customFields?.[column.key] || '';
     }
     
-    // Special handling for duration column - default to '00:00' if empty
+    // Special handling for duration column - default to '00:00' if empty or if it's '00:00:00'
     if (column.key === 'duration') {
       const durationValue = (item as any)[column.key] || '';
-      return durationValue === '' ? '00:00' : durationValue;
+      if (durationValue === '' || durationValue === '00:00:00') {
+        return '00:00';
+      }
+      return durationValue;
     }
     
     return (item as any)[column.key] || '';
@@ -199,4 +202,3 @@ const CellRenderer = ({
 };
 
 export default CellRenderer;
-
