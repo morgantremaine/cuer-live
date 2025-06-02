@@ -75,8 +75,15 @@ export const useTimeCalculations = (
     return result;
   };
 
+  // New function to get current playback position in seconds since rundown start
+  const getCurrentPlaybackSeconds = () => {
+    // For now, return 0 - this will be enhanced when we add actual playback controls
+    // This should eventually track actual playback time from when "play" is pressed
+    return 0;
+  };
+
   const getRowStatus = (item: RundownItem, currentTime: Date) => {
-    console.log('🔴 getRowStatus called for item:', item.id, 'with rundown-based timing');
+    console.log('🔴 getRowStatus called for item:', item.id, 'using playback-based timing');
     console.log('🔴 getRowStatus item details:', { 
       id: item.id, 
       name: item.name,
@@ -98,34 +105,30 @@ export const useTimeCalculations = (
       return 'upcoming';
     }
     
-    // Use elapsed time from rundown start (not real clock time)
-    const currentElapsedSeconds = timeToSeconds(item.elapsedTime);
-    const itemStartSeconds = timeToSeconds(item.startTime);
-    const itemEndSeconds = timeToSeconds(item.endTime);
-    const rundownStartSeconds = timeToSeconds(rundownStartTime);
+    // Use playback position instead of real time
+    const currentPlaybackSeconds = getCurrentPlaybackSeconds();
+    const itemStartSeconds = timeToSeconds(item.elapsedTime); // Use elapsed time as the position in rundown
+    const itemDurationSeconds = timeToSeconds(item.startTime) - timeToSeconds(rundownStartTime) + timeToSeconds(item.duration || '00:00');
+    const itemEndSeconds = itemStartSeconds + timeToSeconds(item.duration || '00:00');
     
-    // Calculate how far we are into the rundown
-    const rundownElapsed = currentElapsedSeconds + rundownStartSeconds;
-    
-    console.log('🔴 getRowStatus rundown-based comparison:', { 
-      rundownElapsed,
+    console.log('🔴 getRowStatus playback-based comparison:', { 
+      currentPlaybackSeconds,
       itemStartSeconds,
       itemEndSeconds,
-      currentElapsedSeconds,
-      rundownStartSeconds,
-      isInRange: rundownElapsed >= itemStartSeconds && rundownElapsed < itemEndSeconds
+      itemDuration: item.duration,
+      isInRange: currentPlaybackSeconds >= itemStartSeconds && currentPlaybackSeconds < itemEndSeconds
     });
     
     // Handle invalid conversions
-    if (isNaN(rundownElapsed) || isNaN(itemStartSeconds) || isNaN(itemEndSeconds)) {
+    if (isNaN(currentPlaybackSeconds) || isNaN(itemStartSeconds) || isNaN(itemEndSeconds)) {
       console.log('🔴 getRowStatus: Invalid time conversion, returning upcoming');
       return 'upcoming';
     }
     
-    if (rundownElapsed >= itemStartSeconds && rundownElapsed < itemEndSeconds) {
+    if (currentPlaybackSeconds >= itemStartSeconds && currentPlaybackSeconds < itemEndSeconds) {
       console.log('🔴 getRowStatus: Item is CURRENT/LIVE');
       return 'current';
-    } else if (rundownElapsed >= itemEndSeconds) {
+    } else if (currentPlaybackSeconds >= itemEndSeconds) {
       console.log('🔴 getRowStatus: Item is completed');
       return 'completed';
     }
@@ -134,7 +137,7 @@ export const useTimeCalculations = (
   };
 
   const findCurrentItem = (currentTime: Date) => {
-    console.log('🟢 findCurrentItem called - using rundown elapsed time');
+    console.log('🟢 findCurrentItem called - using playback timer');
     console.log('🟢 findCurrentItem checking', items.length, 'items');
     
     for (let i = 0; i < items.length; i++) {

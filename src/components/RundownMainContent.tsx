@@ -1,6 +1,7 @@
 
 import React from 'react';
 import RundownContent from './RundownContent';
+import ShowCaller from './ShowCaller';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -56,6 +57,7 @@ const RundownMainContent = ({
   updateColumnWidth,
   getRowNumber,
   getRowStatus,
+  findCurrentItem,
   calculateHeaderDuration,
   onUpdateItem,
   onCellClick,
@@ -76,6 +78,15 @@ const RundownMainContent = ({
 }: RundownMainContentProps) => {
   return (
     <div className="flex-1 flex flex-col h-full">
+      {/* Show caller display */}
+      <div className="mb-4">
+        <ShowCaller 
+          findCurrentItem={findCurrentItem}
+          currentTime={currentTime}
+        />
+      </div>
+
+      {/* Rundown content */}
       <RundownContent
         items={items}
         visibleColumns={visibleColumns}
