@@ -28,6 +28,7 @@ export const useRundownDataLoader = ({
 
   // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
+    // Don't proceed if not initialized, loading, already processing, or already loaded
     if (!isInitialized || loading || isProcessingRef.current || loadedRundownRef.current === rundownId) {
       return;
     }
@@ -80,13 +81,15 @@ export const useRundownDataLoader = ({
     }
   }, [rundownId, savedRundowns, loading, isInitialized, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
-  // Load data when conditions are met
+  // Load data when conditions are met - only depend on initialization and basic props
   useEffect(() => {
-    if (!isInitialized || loading) return;
-    if (rundownId && savedRundowns.length === 0) return;
+    if (!isInitialized) return;
+    
+    // For existing rundowns, wait for savedRundowns to load
+    if (rundownId && savedRundowns.length === 0 && !loading) return;
     
     loadRundownData();
-  }, [loadRundownData]);
+  }, [isInitialized, rundownId, savedRundowns.length, loading, loadRundownData]);
 
   // Reset when rundown changes
   useEffect(() => {

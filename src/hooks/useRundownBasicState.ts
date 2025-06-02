@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 
 export const useRundownBasicState = () => {
@@ -12,10 +12,11 @@ export const useRundownBasicState = () => {
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Single initialization flag per rundown ID
   const initRef = useRef<string | undefined>(undefined);
-  const isInitialized = initRef.current === rundownId;
+  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Timer effect for current time
   useEffect(() => {
@@ -28,44 +29,60 @@ export const useRundownBasicState = () => {
     if (rundownId !== initRef.current) {
       console.log('useRundownBasicState initialized for rundownId:', rundownId);
       initRef.current = rundownId;
+      
+      // Clear any pending initialization
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+      
+      // Mark as initialized after a brief delay to ensure all hooks are ready
+      initializationTimeoutRef.current = setTimeout(() => {
+        setIsInitialized(true);
+      }, 50);
     }
+
+    return () => {
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+    };
   }, [rundownId]);
 
-  // Change tracking
-  const markAsChanged = () => {
+  // Memoized change tracking
+  const markAsChanged = useCallback(() => {
     console.log('Changes marked - triggering auto-save');
-  };
+  }, []);
 
-  // Direct setters without change tracking (for initial load)
-  const setTimezoneDirectly = (newTimezone: string) => {
+  // Direct setters without change tracking (for initial load) - memoized
+  const setTimezoneDirectly = useCallback((newTimezone: string) => {
     console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
     setTimezone(newTimezone);
-  };
+  }, []);
 
-  const setRundownTitleDirectly = (newTitle: string) => {
+  const setRundownTitleDirectly = useCallback((newTitle: string) => {
     setRundownTitle(newTitle);
-  };
+  }, []);
 
-  const setRundownStartTimeDirectly = (newStartTime: string) => {
+  const setRundownStartTimeDirectly = useCallback((newStartTime: string) => {
     setRundownStartTime(newStartTime);
-  };
+  }, []);
 
-  // Change-tracking setters (for user interactions)
-  const setTimezoneWithChange = (newTimezone: string) => {
+  // Change-tracking setters (for user interactions) - memoized
+  const setTimezoneWithChange = useCallback((newTimezone: string) => {
     console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
     setTimezone(newTimezone);
     markAsChanged();
-  };
+  }, [markAsChanged]);
 
-  const setRundownTitleWithChange = (newTitle: string) => {
+  const setRundownTitleWithChange = useCallback((newTitle: string) => {
     setRundownTitle(newTitle);
     markAsChanged();
-  };
+  }, [markAsChanged]);
 
-  const setRundownStartTimeWithChange = (newStartTime: string) => {
+  const setRundownStartTimeWithChange = useCallback((newStartTime: string) => {
     setRundownStartTime(newStartTime);
     markAsChanged();
-  };
+  }, [markAsChanged]);
 
   return {
     currentTime,

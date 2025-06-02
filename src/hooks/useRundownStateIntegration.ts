@@ -2,7 +2,7 @@
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 
 export const useRundownStateIntegration = (
   markAsChanged: () => void,
@@ -28,6 +28,11 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems();
 
+  // Memoize markAsChanged to prevent infinite loops
+  const stableMarkAsChanged = useCallback(() => {
+    markAsChanged();
+  }, [markAsChanged]);
+
   // Column management with stable markAsChanged reference
   const {
     columns,
@@ -39,7 +44,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager(stableMarkAsChanged);
 
   // Auto-save functionality
   const { hasUnsavedChanges, isSaving } = useAutoSave(
@@ -75,7 +80,7 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving,
-    markAsChanged
+    markAsChanged: stableMarkAsChanged
   }), [
     items,
     setItems,
@@ -100,6 +105,6 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving,
-    markAsChanged
+    stableMarkAsChanged
   ]);
 };

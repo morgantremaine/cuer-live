@@ -5,9 +5,12 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
+import { useMemo } from 'react';
 
 export const useRundownGridCore = () => {
   // Core state management
+  const basicState = useRundownBasicState();
+  
   const {
     currentTime,
     timezone,
@@ -24,12 +27,21 @@ export const useRundownGridCore = () => {
     rundownId,
     markAsChanged,
     isInitialized
-  } = useRundownBasicState();
+  } = basicState;
 
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
   // Rundown data integration
+  const stateIntegration = useRundownStateIntegration(
+    markAsChanged, 
+    rundownTitle, 
+    timezone, 
+    rundownStartTime,
+    setRundownTitleDirectly, 
+    setTimezoneDirectly
+  );
+
   const {
     items,
     setItems,
@@ -54,14 +66,7 @@ export const useRundownGridCore = () => {
     handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving
-  } = useRundownStateIntegration(
-    markAsChanged, 
-    rundownTitle, 
-    timezone, 
-    rundownStartTime,
-    setRundownTitleDirectly, 
-    setTimezoneDirectly
-  );
+  } = stateIntegration;
 
   // Use data loader to properly set title, timezone, and start time
   useRundownDataLoader({
@@ -89,7 +94,8 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  return {
+  // Memoize the entire return object to prevent unnecessary re-renders
+  return useMemo(() => ({
     // Basic state
     currentTime,
     timezone,
@@ -141,5 +147,48 @@ export const useRundownGridCore = () => {
     hasUnsavedChanges,
     isSaving,
     calculateEndTime
-  };
+  }), [
+    currentTime,
+    timezone,
+    setTimezone,
+    showColumnManager,
+    setShowColumnManager,
+    rundownTitle,
+    setRundownTitle,
+    rundownStartTime,
+    setRundownStartTime,
+    rundownId,
+    markAsChanged,
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    visibleColumns,
+    columns,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
+    hasUnsavedChanges,
+    isSaving,
+    calculateEndTime
+  ]);
 };
