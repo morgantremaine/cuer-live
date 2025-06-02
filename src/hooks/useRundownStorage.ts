@@ -1,23 +1,17 @@
+
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
 import { useToast } from '@/hooks/use-toast'
-
-interface SavedRundown {
-  id: string
-  title: string
-  items: RundownItem[]
-  columns?: Column[]
-  timezone?: string
-  created_at: string
-  updated_at: string
-  archived?: boolean
-  startTime?: string
-  start_time?: string // Also include the database field name
-  icon?: string
-}
+import { SavedRundown } from './useRundownStorage/types'
+import { mapRundownsFromDatabase } from './useRundownStorage/dataMapper'
+import {
+  loadRundownsFromDatabase,
+  saveRundownToDatabase,
+  updateRundownInDatabase,
+  deleteRundownFromDatabase
+} from './useRundownStorage/operations'
 
 export const useRundownStorage = () => {
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([])
@@ -29,11 +23,7 @@ export const useRundownStorage = () => {
     if (!user) return
 
     setLoading(true)
-    const { data, error } = await supabase
-      .from('rundowns')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
+    const { data, error } = await loadRundownsFromDatabase(user.id)
 
     if (error) {
       console.error('Error loading rundowns:', error)
@@ -43,12 +33,7 @@ export const useRundownStorage = () => {
         variant: 'destructive',
       })
     } else {
-      // Map the database field name to the expected field name for compatibility
-      const mappedData = (data || []).map(rundown => ({
-        ...rundown,
-        startTime: rundown.start_time // Map start_time to startTime for consistency
-      }))
-      console.log('Loaded rundowns with icons:', mappedData.map(r => ({ id: r.id, title: r.title, hasIcon: !!r.icon })))
+      const mappedData = mapRundownsFromDatabase(data)
       setSavedRundowns(mappedData)
     }
     setLoading(false)
@@ -60,22 +45,7 @@ export const useRundownStorage = () => {
       return
     }
 
-    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, startTime, icon, userId: user.id })
-
-    const { data, error } = await supabase
-      .from('rundowns')
-      .insert({
-        user_id: user.id,
-        title,
-        items,
-        columns: columns || null,
-        timezone: timezone || null,
-        start_time: startTime || null,
-        icon: icon || null,
-        archived: false
-      })
-      .select()
-      .single()
+    const { data, error } = await saveRundownToDatabase(user.id, title, items, columns, timezone, startTime, icon)
 
     if (error) {
       console.error('Database error saving rundown:', error)
@@ -102,45 +72,7 @@ export const useRundownStorage = () => {
       return
     }
 
-    console.log('Updating rundown in database:', {
-      id,
-      title,
-      itemsCount: items.length,
-      columnsCount: columns?.length || 0,
-      timezone,
-      startTime,
-      icon: icon ? 'Icon provided' : 'No icon',
-      userId: user.id,
-      silent,
-      archived
-    })
-
-    const updateData = {
-      title: title,
-      items: items,
-      columns: columns || null,
-      timezone: timezone || null,
-      start_time: startTime || null, // Use start_time to match database column
-      icon: icon !== undefined ? (icon || null) : undefined, // Only include icon in update if explicitly provided
-      updated_at: new Date().toISOString(),
-      archived: archived
-    }
-
-    // Remove undefined values to avoid overwriting with undefined
-    Object.keys(updateData).forEach(key => {
-      if (updateData[key] === undefined) {
-        delete updateData[key]
-      }
-    })
-
-    console.log('Update payload (cleaned):', updateData)
-
-    const { error, data } = await supabase
-      .from('rundowns')
-      .update(updateData)
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
+    const { error, data } = await updateRundownInDatabase(id, user.id, title, items, archived, columns, timezone, startTime, icon)
 
     if (error) {
       console.error('Database error updating rundown:', {
@@ -149,8 +81,7 @@ export const useRundownStorage = () => {
         errorDetails: error.details,
         errorHint: error.hint,
         id,
-        userId: user.id,
-        updateData
+        userId: user.id
       })
       if (!silent) {
         toast({
@@ -176,11 +107,7 @@ export const useRundownStorage = () => {
   const deleteRundown = async (id: string) => {
     if (!user) return
 
-    const { error } = await supabase
-      .from('rundowns')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
+    const { error } = await deleteRundownFromDatabase(id, user.id)
 
     if (error) {
       toast({
