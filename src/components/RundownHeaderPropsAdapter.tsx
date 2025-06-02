@@ -55,8 +55,12 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
 
   return (
     <RundownHeaderSection
+      rundownTitle={props.rundownTitle}
       currentTime={props.currentTime}
       timezone={props.timezone}
+      startTime={props.rundownStartTime}
+      currentSegmentId={props.currentSegmentId}
+      items={props.items}
       onTimezoneChange={props.onTimezoneChange}
       totalRuntime={props.totalRuntime}
       onAddRow={props.onAddRow}
@@ -70,7 +74,6 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onClearSelection={props.onClearSelection}
       selectedRowId={props.selectedRowId}
       isPlaying={props.isPlaying}
-      currentSegmentId={props.currentSegmentId}
       timeRemaining={props.timeRemaining}
       onPlay={props.onPlay}
       onPause={props.onPause}
@@ -78,13 +81,11 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onBackward={props.onBackward}
       hasUnsavedChanges={props.hasUnsavedChanges}
       isSaving={props.isSaving}
-      rundownTitle={props.rundownTitle}
       onTitleChange={props.onTitleChange}
       rundownStartTime={props.rundownStartTime}
       onRundownStartTimeChange={props.onRundownStartTimeChange}
       rundownId={props.rundownId}
       onOpenTeleprompter={props.onOpenTeleprompter}
-      items={props.items}
       visibleColumns={props.visibleColumns}
       onHighlightMatch={handleHighlightMatch}
       onReplaceText={handleReplaceText}
