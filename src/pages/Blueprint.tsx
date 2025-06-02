@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useBlueprintState } from '@/hooks/useBlueprintState';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import DashboardHeader from '@/components/DashboardHeader';
 import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
@@ -12,6 +13,7 @@ import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
@@ -94,6 +96,18 @@ const Blueprint = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      console.log('Blueprint: Starting sign out process')
+      await signOut()
+      console.log('Blueprint: Sign out completed, navigating to login')
+      navigate('/login')
+    } catch (error) {
+      console.error('Blueprint: Sign out error, but still navigating to login:', error)
+      navigate('/login')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -104,12 +118,15 @@ const Blueprint = () => {
 
   if (!rundown) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
-          <Button onClick={() => navigate('/dashboard')}>
-            Return to Dashboard
-          </Button>
+      <div className="min-h-screen bg-gray-900">
+        <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
+            <Button onClick={() => navigate('/dashboard')}>
+              Return to Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -117,6 +134,7 @@ const Blueprint = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
+      <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
           rundown={{
