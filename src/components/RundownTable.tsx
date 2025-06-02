@@ -91,7 +91,7 @@ const RundownTable = ({
         />
         <tbody>
           {items.map((item, index) => (
-            <React.Fragment key={item.id}>
+            <React.Fragment key={`item-${item.id}`}>
               {/* Drop indicator above current row */}
               {dropTargetIndex === index && (
                 <tr>
@@ -105,7 +105,7 @@ const RundownTable = ({
                 item={item}
                 index={index}
                 rowNumber={getRowNumber(index)}
-                status={item.status}
+                status={getRowStatus(item, currentTime)}
                 showColorPicker={showColorPicker}
                 cellRefs={cellRefs}
                 columns={visibleColumns}

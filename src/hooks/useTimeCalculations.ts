@@ -79,7 +79,13 @@ export const useTimeCalculations = (
     // Get current time in HH:MM:SS format
     const now = currentTime.toTimeString().substring(0, 8); // Gets HH:MM:SS
     console.log('getRowStatus current time:', now);
-    console.log('getRowStatus item times:', { startTime: item.startTime, endTime: item.endTime });
+    console.log('getRowStatus item:', { id: item.id, startTime: item.startTime, endTime: item.endTime });
+    
+    // Ensure we have valid times
+    if (!item.startTime || !item.endTime) {
+      console.log('getRowStatus: Missing start or end time, returning upcoming');
+      return 'upcoming';
+    }
     
     const currentSeconds = timeToSeconds(now);
     const startSeconds = timeToSeconds(item.startTime);
@@ -87,11 +93,20 @@ export const useTimeCalculations = (
     
     console.log('getRowStatus seconds:', { currentSeconds, startSeconds, endSeconds });
     
+    // Handle invalid conversions
+    if (isNaN(currentSeconds) || isNaN(startSeconds) || isNaN(endSeconds)) {
+      console.log('getRowStatus: Invalid time conversion, returning upcoming');
+      return 'upcoming';
+    }
+    
     if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
+      console.log('getRowStatus: Item is current');
       return 'current';
     } else if (currentSeconds >= endSeconds) {
+      console.log('getRowStatus: Item is completed');
       return 'completed';
     }
+    console.log('getRowStatus: Item is upcoming');
     return 'upcoming';
   };
 
