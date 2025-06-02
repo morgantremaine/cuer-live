@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -18,9 +19,9 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'startTime', name: 'Start Time', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'endTime', name: 'End Time', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-    { id: 'elapsedTime', name: 'Elapsed Time', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
     { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
@@ -123,9 +124,9 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'startTime', name: 'Start Time', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'endTime', name: 'End Time', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-        { id: 'elapsedTime', name: 'Elapsed Time', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+        { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+        { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
@@ -134,12 +135,26 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         col.id !== 'element' && col.key !== 'element'
       );
 
-      // Merge filtered layout columns with essential built-in columns
-      const mergedColumns: Column[] = [];
-      const layoutColumnIds = new Set(filteredLayoutColumns.map(col => col.id));
+      // Update column names for backward compatibility with old saved layouts
+      const updatedLayoutColumns = filteredLayoutColumns.map(col => {
+        if (col.id === 'startTime' && col.name === 'Start Time') {
+          return { ...col, name: 'Start' };
+        }
+        if (col.id === 'endTime' && col.name === 'End Time') {
+          return { ...col, name: 'End' };
+        }
+        if (col.id === 'elapsedTime' && col.name === 'Elapsed Time') {
+          return { ...col, name: 'Elapsed' };
+        }
+        return col;
+      });
 
-      // First, add all columns from filtered layout (preserving order, custom columns, and widths)
-      filteredLayoutColumns.forEach(layoutCol => {
+      // Merge updated layout columns with essential built-in columns
+      const mergedColumns: Column[] = [];
+      const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
+
+      // First, add all columns from updated layout (preserving order, custom columns, and widths)
+      updatedLayoutColumns.forEach(layoutCol => {
         mergedColumns.push(layoutCol);
       });
 
