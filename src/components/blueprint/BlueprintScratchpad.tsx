@@ -1,11 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, List, Underline } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
-import { useBlueprintState } from '@/hooks/useBlueprintState';
 
 interface BlueprintScratchpadProps {
   rundownId: string;
@@ -30,6 +28,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
   }, [savedBlueprint, initialNotes]);
 
   const handleNotesChange = (value: string) => {
+    console.log('Notes changed:', value);
     setNotes(value);
     onNotesChange?.(value);
 
@@ -45,13 +44,21 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
   };
 
   const autoSaveNotes = async (notesToSave: string) => {
+    console.log('Starting auto-save with notes:', notesToSave);
     setIsSaving(true);
+    
     try {
-      // If we have a saved blueprint, use its data, otherwise use empty lists
+      // Get current blueprint data or use defaults
       const listsToSave = savedBlueprint?.lists || [];
       const showDate = savedBlueprint?.show_date;
       
-      console.log('Auto-saving notes:', { notesToSave, rundownTitle, listsToSave });
+      console.log('Saving blueprint with:', {
+        rundownId,
+        rundownTitle,
+        listsCount: listsToSave.length,
+        showDate,
+        notesLength: notesToSave.length
+      });
       
       await saveBlueprint(
         rundownTitle,
@@ -60,6 +67,8 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
         true, // silent save
         notesToSave
       );
+      
+      console.log('Notes auto-saved successfully');
     } catch (error) {
       console.error('Failed to auto-save notes:', error);
     } finally {
