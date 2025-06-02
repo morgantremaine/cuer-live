@@ -66,6 +66,8 @@ const RundownCard = ({
     
     if (fileInputRef.current) {
       console.log('RundownCard: Triggering file input click')
+      // Reset the input value to ensure onChange fires even for the same file
+      fileInputRef.current.value = ''
       fileInputRef.current.click()
     } else {
       console.error('RundownCard: fileInputRef.current is null')
@@ -110,10 +112,6 @@ const RundownCard = ({
       })
     } finally {
       setIsUploadingIcon(false)
-      // Reset the input so the same file can be selected again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
     }
   }
 
@@ -195,16 +193,6 @@ const RundownCard = ({
                     <Image className="h-4 w-4 mr-2" />
                     {isUploadingIcon ? 'Uploading...' : rundown.icon ? 'Change Icon' : 'Add Icon'}
                   </DropdownMenuItem>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    onClick={(e) => {
-                      console.log('RundownCard: File input clicked event triggered')
-                    }}
-                  />
                 </>
               )}
               {onDuplicate && (
@@ -283,6 +271,17 @@ const RundownCard = ({
           </div>
         </div>
       </CardContent>
+      
+      {/* Hidden file input - moved outside dropdown to avoid re-rendering issues */}
+      {onIconUpdate && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+      )}
     </Card>
   )
 }
