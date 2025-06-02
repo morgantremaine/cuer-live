@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import RundownContent from './RundownContent';
 import ColumnManager from './ColumnManager';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -49,7 +49,7 @@ interface RundownMainContentProps {
   handleLoadLayout: (layoutColumns: Column[]) => void;
 }
 
-const RundownMainContent = ({
+const RundownMainContent = memo(({
   currentTime,
   items,
   visibleColumns,
@@ -92,8 +92,6 @@ const RundownMainContent = ({
   handleToggleColumnVisibility,
   handleLoadLayout
 }: RundownMainContentProps) => {
-  console.log('RundownMainContent: handleRenameColumn available:', !!handleRenameColumn);
-
   return (
     <>
       <RundownContent
@@ -145,6 +143,8 @@ const RundownMainContent = ({
       )}
     </>
   );
-};
+});
+
+RundownMainContent.displayName = 'RundownMainContent';
 
 export default RundownMainContent;

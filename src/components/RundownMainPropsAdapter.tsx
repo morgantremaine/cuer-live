@@ -53,6 +53,9 @@ const RundownMainPropsAdapter = memo(({ props }: RundownMainPropsAdapterProps) =
       handleLoadLayout={props.handleLoadLayout}
     />
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return prevProps.props === nextProps.props;
 });
 
 RundownMainPropsAdapter.displayName = 'RundownMainPropsAdapter';
