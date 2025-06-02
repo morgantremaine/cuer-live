@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
@@ -33,6 +34,13 @@ const CellRenderer = ({
     if (column.isCustom) {
       return item.customFields?.[column.key] || '';
     }
+    
+    // Special handling for duration column - default to '00:00' if empty
+    if (column.key === 'duration') {
+      const durationValue = (item as any)[column.key] || '';
+      return durationValue === '' ? '00:00' : durationValue;
+    }
+    
     return (item as any)[column.key] || '';
   };
 
@@ -191,3 +199,4 @@ const CellRenderer = ({
 };
 
 export default CellRenderer;
+
