@@ -10,6 +10,7 @@ import {
 import { Calendar, Clock, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
+import IconDisplay from './IconDisplay'
 
 interface SavedRundown {
   id: string
@@ -18,6 +19,7 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
+  icon?: string
 }
 
 interface RundownCardProps {
@@ -58,6 +60,13 @@ const RundownCard = ({
           <div className="flex-1">
             <CardTitle className="text-lg flex items-center text-white">
               {isArchived && <Archive className="h-4 w-4 mr-2 text-gray-400" />}
+              {rundown.icon && (
+                <IconDisplay 
+                  iconName={rundown.icon} 
+                  size="sm" 
+                  className="text-gray-300 mr-2" 
+                />
+              )}
               {rundown.title}
             </CardTitle>
             <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
