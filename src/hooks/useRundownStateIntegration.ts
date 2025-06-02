@@ -28,11 +28,6 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems();
 
-  // Memoize markAsChanged to prevent infinite loops
-  const stableMarkAsChanged = useCallback(() => {
-    markAsChanged();
-  }, [markAsChanged]);
-
   // Column management with stable markAsChanged reference
   const {
     columns,
@@ -44,7 +39,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  } = useColumnsManager(stableMarkAsChanged);
+  } = useColumnsManager(markAsChanged);
 
   // Auto-save functionality
   const { hasUnsavedChanges, isSaving } = useAutoSave(
@@ -80,7 +75,7 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving,
-    markAsChanged: stableMarkAsChanged
+    markAsChanged
   }), [
     items,
     setItems,
@@ -105,6 +100,6 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving,
-    stableMarkAsChanged
+    markAsChanged
   ]);
 };

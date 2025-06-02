@@ -8,6 +8,7 @@ import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 const RundownIndexContent = () => {
   const gridState = useRundownGridState();
   
+  // Extract only the values we need to prevent dependency loops
   const {
     currentTime,
     timezone,

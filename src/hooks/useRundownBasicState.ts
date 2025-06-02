@@ -16,7 +16,6 @@ export const useRundownBasicState = () => {
   
   // Single initialization flag per rundown ID
   const initRef = useRef<string | undefined>(undefined);
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Timer effect for current time
   useEffect(() => {
@@ -29,31 +28,16 @@ export const useRundownBasicState = () => {
     if (rundownId !== initRef.current) {
       console.log('useRundownBasicState initialized for rundownId:', rundownId);
       initRef.current = rundownId;
-      
-      // Clear any pending initialization
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
-      
-      // Mark as initialized after a brief delay to ensure all hooks are ready
-      initializationTimeoutRef.current = setTimeout(() => {
-        setIsInitialized(true);
-      }, 50);
+      setIsInitialized(true);
     }
-
-    return () => {
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
-    };
   }, [rundownId]);
 
-  // Memoized change tracking
+  // Stable change tracking function
   const markAsChanged = useCallback(() => {
     console.log('Changes marked - triggering auto-save');
   }, []);
 
-  // Direct setters without change tracking (for initial load) - memoized
+  // Direct setters without change tracking (for initial load) - stable references
   const setTimezoneDirectly = useCallback((newTimezone: string) => {
     console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
     setTimezone(newTimezone);
@@ -67,7 +51,7 @@ export const useRundownBasicState = () => {
     setRundownStartTime(newStartTime);
   }, []);
 
-  // Change-tracking setters (for user interactions) - memoized
+  // Change-tracking setters (for user interactions) - stable references
   const setTimezoneWithChange = useCallback((newTimezone: string) => {
     console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
     setTimezone(newTimezone);

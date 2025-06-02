@@ -32,7 +32,7 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration
+  // Rundown data integration - only run when initialized
   const stateIntegration = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
@@ -68,7 +68,7 @@ export const useRundownGridCore = () => {
     isSaving
   } = stateIntegration;
 
-  // Use data loader to properly set title, timezone, and start time
+  // Use data loader to properly set title, timezone, and start time - only when initialized
   useRundownDataLoader({
     rundownId,
     savedRundowns,
