@@ -22,39 +22,31 @@ export const useRundownDataLoader = ({
   setRundownStartTime,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
-  // Track what we've already loaded to prevent re-loading
-  const loadedRundownRef = useRef<string | undefined>(undefined);
-  const isLoadingRef = useRef(false);
-
-  // Stable function references
-  const stableFunctions = useRef({
-    setRundownTitle,
-    setTimezone,
-    setRundownStartTime,
-    handleLoadLayout
+  // Track what we've loaded globally to prevent any re-loading
+  const loadedStateRef = useRef<{
+    rundownId: string | undefined;
+    isLoaded: boolean;
+    isProcessing: boolean;
+  }>({
+    rundownId: undefined,
+    isLoaded: false,
+    isProcessing: false
   });
-
-  // Update function references
-  useEffect(() => {
-    stableFunctions.current = {
-      setRundownTitle,
-      setTimezone,
-      setRundownStartTime,
-      handleLoadLayout
-    };
-  }, [setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
   // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
-    // Prevent multiple simultaneous loads
-    if (isLoadingRef.current) return;
-    
-    // Don't proceed if not initialized, loading, or already loaded
-    if (!isInitialized || loading || loadedRundownRef.current === rundownId) {
+    // If we're already processing or have loaded this rundown, skip
+    if (loadedStateRef.current.isProcessing || 
+        (loadedStateRef.current.rundownId === rundownId && loadedStateRef.current.isLoaded)) {
       return;
     }
 
-    isLoadingRef.current = true;
+    // Don't proceed if not initialized or still loading data
+    if (!isInitialized || loading) {
+      return;
+    }
+
+    loadedStateRef.current.isProcessing = true;
 
     try {
       if (rundownId && savedRundowns.length > 0) {
@@ -67,56 +59,61 @@ export const useRundownDataLoader = ({
             startTime: existingRundown.start_time
           });
           
-          // Mark as loaded first to prevent loops
-          loadedRundownRef.current = rundownId;
-          
           if (existingRundown.title) {
             console.log('Setting title from saved rundown:', existingRundown.title);
-            stableFunctions.current.setRundownTitle(existingRundown.title);
+            setRundownTitle(existingRundown.title);
           }
           
           if (existingRundown.timezone) {
             console.log('Setting timezone from saved rundown:', existingRundown.timezone);
-            stableFunctions.current.setTimezone(existingRundown.timezone);
+            setTimezone(existingRundown.timezone);
           }
 
           if (existingRundown.start_time) {
             console.log('Setting start time from saved rundown:', existingRundown.start_time);
-            stableFunctions.current.setRundownStartTime(existingRundown.start_time);
+            setRundownStartTime(existingRundown.start_time);
           }
           
           if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
             console.log('Loading column layout:', existingRundown.columns);
-            stableFunctions.current.handleLoadLayout(existingRundown.columns);
+            handleLoadLayout(existingRundown.columns);
           }
-        } else {
-          loadedRundownRef.current = rundownId;
         }
-      } else if (!rundownId && loadedRundownRef.current !== 'new') {
+        
+        // Mark as loaded
+        loadedStateRef.current = {
+          rundownId,
+          isLoaded: true,
+          isProcessing: false
+        };
+      } else if (!rundownId && loadedStateRef.current.rundownId !== 'new') {
         console.log('New rundown, using default title');
-        loadedRundownRef.current = 'new';
-        stableFunctions.current.setRundownTitle('Live Broadcast Rundown');
+        setRundownTitle('Live Broadcast Rundown');
+        loadedStateRef.current = {
+          rundownId: 'new',
+          isLoaded: true,
+          isProcessing: false
+        };
+      } else {
+        loadedStateRef.current.isProcessing = false;
       }
-    } finally {
-      isLoadingRef.current = false;
+    } catch (error) {
+      console.error('Error loading rundown data:', error);
+      loadedStateRef.current.isProcessing = false;
     }
-  }, [rundownId, savedRundowns.length, loading, isInitialized]);
+  }, [rundownId, savedRundowns, loading, isInitialized, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
-  // Load data when conditions are met - use stable dependencies
+  // Load data when conditions are met
   useEffect(() => {
-    if (!isInitialized) return;
-    
-    // For existing rundowns, wait for savedRundowns to load
-    if (rundownId && savedRundowns.length === 0 && !loading) return;
-    
+    // Reset state when rundown changes
+    if (loadedStateRef.current.rundownId !== rundownId) {
+      loadedStateRef.current = {
+        rundownId: undefined,
+        isLoaded: false,
+        isProcessing: false
+      };
+    }
+
     loadRundownData();
-  }, [isInitialized, rundownId, savedRundowns.length, loading, loadRundownData]);
-
-  // Reset when rundown changes
-  useEffect(() => {
-    if (loadedRundownRef.current !== rundownId) {
-      loadedRundownRef.current = undefined;
-      isLoadingRef.current = false;
-    }
-  }, [rundownId]);
+  }, [loadRundownData]);
 };

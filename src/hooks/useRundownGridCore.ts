@@ -5,7 +5,7 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef } from 'react';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -32,21 +32,23 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Store stable references to prevent re-renders
-  const stableRefs = useRef({
+  // Store stable references to prevent re-renders - use ref for true stability
+  const stableSettersRef = useRef({
     setRundownTitleDirectly,
     setTimezoneDirectly,
     setRundownStartTimeDirectly
   });
 
-  // Update refs when functions change
-  useEffect(() => {
-    stableRefs.current = {
-      setRundownTitleDirectly,
-      setTimezoneDirectly,
-      setRundownStartTimeDirectly
-    };
-  }, [setRundownTitleDirectly, setTimezoneDirectly, setRundownStartTimeDirectly]);
+  // Only update if functions actually changed
+  if (stableSettersRef.current.setRundownTitleDirectly !== setRundownTitleDirectly) {
+    stableSettersRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
+  }
+  if (stableSettersRef.current.setTimezoneDirectly !== setTimezoneDirectly) {
+    stableSettersRef.current.setTimezoneDirectly = setTimezoneDirectly;
+  }
+  if (stableSettersRef.current.setRundownStartTimeDirectly !== setRundownStartTimeDirectly) {
+    stableSettersRef.current.setRundownStartTimeDirectly = setRundownStartTimeDirectly;
+  }
 
   // Rundown data integration - only run when initialized
   const stateIntegration = useRundownStateIntegration(
@@ -54,8 +56,8 @@ export const useRundownGridCore = () => {
     rundownTitle, 
     timezone, 
     rundownStartTime,
-    stableRefs.current.setRundownTitleDirectly, 
-    stableRefs.current.setTimezoneDirectly
+    stableSettersRef.current.setRundownTitleDirectly, 
+    stableSettersRef.current.setTimezoneDirectly
   );
 
   // Use data loader to properly set title, timezone, and start time - only when initialized
@@ -64,9 +66,9 @@ export const useRundownGridCore = () => {
     savedRundowns,
     loading,
     isInitialized,
-    setRundownTitle: stableRefs.current.setRundownTitleDirectly,
-    setTimezone: stableRefs.current.setTimezoneDirectly,
-    setRundownStartTime: stableRefs.current.setRundownStartTimeDirectly,
+    setRundownTitle: stableSettersRef.current.setRundownTitleDirectly,
+    setTimezone: stableSettersRef.current.setTimezoneDirectly,
+    setRundownStartTime: stableSettersRef.current.setRundownStartTimeDirectly,
     handleLoadLayout: stateIntegration.handleLoadLayout
   });
 
