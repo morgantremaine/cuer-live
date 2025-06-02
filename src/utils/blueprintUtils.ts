@@ -23,15 +23,15 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
   const availableColumns = getAvailableColumns(items);
   
   return availableColumns.slice(0, 3).map((column, index) => ({
-    id: `${column}_${Date.now()}_${index}`,
-    name: column.charAt(0).toUpperCase() + column.slice(1),
-    sourceColumn: column,
-    items: generateListFromColumn(items, column),
+    id: `${column.key}_${Date.now()}_${index}`,
+    name: column.name,
+    sourceColumn: column.key,
+    items: generateListFromColumn(items, column.key),
     checkedItems: {}
   }));
 };
 
-export const getAvailableColumns = (items: RundownItem[]): string[] => {
+export const getAvailableColumns = (items: RundownItem[]): { key: string; name: string; }[] => {
   const columns = new Set<string>();
   
   // Always include headers
@@ -58,5 +58,9 @@ export const getAvailableColumns = (items: RundownItem[]): string[] => {
     }
   });
   
-  return Array.from(columns);
+  // Convert to the expected format with key and name
+  return Array.from(columns).map(column => ({
+    key: column,
+    name: column === 'headers' ? 'Headers' : column.charAt(0).toUpperCase() + column.slice(1)
+  }));
 };
