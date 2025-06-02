@@ -22,13 +22,14 @@ export const useRundownGridCore = () => {
     setRundownStartTime,
     setRundownStartTimeDirectly,
     rundownId,
-    markAsChanged
+    markAsChanged,
+    isInitialized
   } = useRundownBasicState();
 
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration - now passing all required arguments including rundownStartTime
+  // Rundown data integration
   const {
     items,
     setItems,
@@ -62,18 +63,19 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Use data loader to properly set title, timezone, and start time - using direct setters to avoid change tracking during load
+  // Use data loader to properly set title, timezone, and start time
   useRundownDataLoader({
     rundownId,
     savedRundowns,
     loading,
+    isInitialized,
     setRundownTitle: setRundownTitleDirectly,
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout
   });
 
-  // Playback controls - fix the function call
+  // Playback controls
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -84,18 +86,18 @@ export const useRundownGridCore = () => {
     backward 
   } = usePlaybackControls(items, updateItem);
 
-  // Time calculations - fix the function call
+  // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   return {
     // Basic state
     currentTime,
     timezone,
-    setTimezone, // This is the change-tracking version for user interactions
+    setTimezone,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
-    setRundownTitle, // This is the change-tracking version for user interactions
+    setRundownTitle,
     rundownStartTime,
     setRundownStartTime,
     rundownId,

@@ -25,13 +25,13 @@ export const useRundownBasicState = () => {
 
   // Initialize only once per rundown change
   useEffect(() => {
-    if (!isInitialized) {
+    if (rundownId !== initRef.current) {
       console.log('useRundownBasicState initialized for rundownId:', rundownId);
       initRef.current = rundownId;
     }
-  }, [rundownId, isInitialized]);
+  }, [rundownId]);
 
-  // Change tracking for timezone and other fields
+  // Change tracking
   const markAsChanged = () => {
     console.log('Changes marked - triggering auto-save');
   };
@@ -81,6 +81,7 @@ export const useRundownBasicState = () => {
     setRundownStartTime: setRundownStartTimeWithChange,
     setRundownStartTimeDirectly,
     rundownId,
-    markAsChanged
+    markAsChanged,
+    isInitialized
   };
 };

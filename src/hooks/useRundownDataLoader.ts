@@ -5,6 +5,7 @@ interface UseRundownDataLoaderProps {
   rundownId: string | undefined;
   savedRundowns: any[];
   loading: boolean;
+  isInitialized: boolean;
   setRundownTitle: (title: string) => void;
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
@@ -15,6 +16,7 @@ export const useRundownDataLoader = ({
   rundownId,
   savedRundowns,
   loading,
+  isInitialized,
   setRundownTitle,
   setTimezone,
   setRundownStartTime,
@@ -26,7 +28,7 @@ export const useRundownDataLoader = ({
 
   // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
-    if (loading || isProcessingRef.current || loadedRundownRef.current === rundownId) {
+    if (!isInitialized || loading || isProcessingRef.current || loadedRundownRef.current === rundownId) {
       return;
     }
 
@@ -76,11 +78,11 @@ export const useRundownDataLoader = ({
     } finally {
       isProcessingRef.current = false;
     }
-  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
+  }, [rundownId, savedRundowns, loading, isInitialized, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
   // Load data when conditions are met
   useEffect(() => {
-    if (loading) return;
+    if (!isInitialized || loading) return;
     if (rundownId && savedRundowns.length === 0) return;
     
     loadRundownData();
