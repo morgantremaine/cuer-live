@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
@@ -18,9 +18,10 @@ export const useRundownStorage = () => {
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
+  const hasLoadedRef = useRef(false)
 
   const loadRundowns = async () => {
-    if (!user) return
+    if (!user || loading) return
 
     setLoading(true)
     const { data, error } = await loadRundownsFromDatabase(user.id)
@@ -35,6 +36,7 @@ export const useRundownStorage = () => {
     } else {
       const mappedData = mapRundownsFromDatabase(data)
       setSavedRundowns(mappedData)
+      hasLoadedRef.current = true
     }
     setLoading(false)
   }
@@ -56,7 +58,6 @@ export const useRundownStorage = () => {
       })
       throw error
     } else {
-      console.log('Successfully saved new rundown:', data)
       toast({
         title: 'Success',
         description: 'Rundown saved successfully!',
@@ -78,8 +79,6 @@ export const useRundownStorage = () => {
       console.error('Database error updating rundown:', {
         error,
         errorMessage: error.message,
-        errorDetails: error.details,
-        errorHint: error.hint,
         id,
         userId: user.id
       })
@@ -92,7 +91,6 @@ export const useRundownStorage = () => {
       }
       throw error
     } else {
-      console.log('Successfully updated rundown:', { id, updatedData: data })
       if (!silent) {
         const message = archived ? 'Rundown archived successfully!' : 'Rundown updated successfully!'
         toast({
@@ -100,7 +98,8 @@ export const useRundownStorage = () => {
           description: message,
         })
       }
-      // Don't automatically reload all rundowns to avoid conflicts
+      // Refresh data to ensure consistency
+      loadRundowns()
     }
   }
 
@@ -124,11 +123,20 @@ export const useRundownStorage = () => {
     }
   }
 
+  // Load rundowns only once when user becomes available
   useEffect(() => {
-    if (user) {
+    if (user && !hasLoadedRef.current && !loading) {
       loadRundowns()
     }
-  }, [user])
+  }, [user?.id])
+
+  // Reset loading state when user changes
+  useEffect(() => {
+    if (!user) {
+      hasLoadedRef.current = false
+      setSavedRundowns([])
+    }
+  }, [user?.id])
 
   return {
     savedRundowns,

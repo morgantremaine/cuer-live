@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
 import { useNavigate } from 'react-router-dom'
@@ -25,54 +25,54 @@ const Dashboard = () => {
     title: ''
   })
 
-  // Debug logging
-  console.log('Dashboard render - user:', !!user, 'loading:', loading, 'savedRundowns count:', savedRundowns.length)
-  console.log('Dashboard render - savedRundowns:', savedRundowns)
+  // Memoize filtered rundowns to prevent unnecessary recalculations
+  const { activeRundowns, archivedRundowns } = useMemo(() => {
+    const active = savedRundowns.filter(rundown => rundown.archived !== true)
+    const archived = savedRundowns.filter(rundown => rundown.archived === true)
+    return { activeRundowns: active, archivedRundowns: archived }
+  }, [savedRundowns])
 
+  // Load rundowns only once when user is available
   useEffect(() => {
-    if (user) {
-      console.log('Dashboard useEffect - calling loadRundowns for user:', user.id)
+    if (user && !loading && savedRundowns.length === 0) {
       loadRundowns()
     }
-  }, [user])
+  }, [user?.id]) // Only depend on user ID to prevent multiple calls
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
-      console.log('Dashboard: Starting sign out process')
       await signOut()
-      console.log('Dashboard: Sign out completed, navigating to login')
       navigate('/login')
     } catch (error) {
       console.error('Dashboard: Sign out error, but still navigating to login:', error)
-      // Even if signOut fails, navigate to login page
       navigate('/login')
     }
-  }
+  }, [signOut, navigate])
 
-  const handleCreateNew = () => {
+  const handleCreateNew = useCallback(() => {
     navigate('/rundown')
-  }
+  }, [navigate])
 
-  const handleOpenRundown = (rundownId: string) => {
+  const handleOpenRundown = useCallback((rundownId: string) => {
     navigate(`/rundown/${rundownId}`)
-  }
+  }, [navigate])
 
-  const handleDeleteClick = (rundownId: string, title: string, e: React.MouseEvent) => {
+  const handleDeleteClick = useCallback((rundownId: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setDeleteDialog({ open: true, rundownId, title })
-  }
+  }, [])
 
-  const handleArchiveClick = (rundownId: string, title: string, e: React.MouseEvent) => {
+  const handleArchiveClick = useCallback((rundownId: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setArchiveDialog({ open: true, rundownId, title })
-  }
+  }, [])
 
-  const handleUnarchiveClick = async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
+  const handleUnarchiveClick = useCallback(async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation()
     await updateRundown(rundownId, title, items, false, false)
-  }
+  }, [updateRundown])
 
-  const handleDuplicateClick = async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
+  const handleDuplicateClick = useCallback(async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation()
     const rundown = savedRundowns.find(r => r.id === rundownId)
     if (rundown) {
@@ -83,9 +83,9 @@ const Dashboard = () => {
         console.error('Failed to duplicate rundown:', error)
       }
     }
-  }
+  }, [savedRundowns, saveRundown])
 
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     if (deleteDialog.rundownId) {
       try {
         await deleteRundown(deleteDialog.rundownId)
@@ -94,9 +94,9 @@ const Dashboard = () => {
         console.error('Failed to delete rundown:', error)
       }
     }
-  }
+  }, [deleteDialog.rundownId, deleteRundown])
 
-  const confirmArchive = async () => {
+  const confirmArchive = useCallback(async () => {
     if (archiveDialog.rundownId) {
       const rundown = savedRundowns.find(r => r.id === archiveDialog.rundownId)
       if (rundown) {
@@ -108,15 +108,7 @@ const Dashboard = () => {
         }
       }
     }
-  }
-
-  // Fix the filtering logic to handle undefined archived field
-  const activeRundowns = savedRundowns.filter(rundown => rundown.archived !== true)
-  const archivedRundowns = savedRundowns.filter(rundown => rundown.archived === true)
-
-  console.log('Dashboard render - activeRundowns count:', activeRundowns.length)
-  console.log('Dashboard render - activeRundowns:', activeRundowns)
-  console.log('Dashboard render - archivedRundowns count:', archivedRundowns.length)
+  }, [archiveDialog.rundownId, savedRundowns, updateRundown])
 
   return (
     <div className="dark min-h-screen bg-gray-900 flex flex-col">
