@@ -48,50 +48,63 @@ export const useRundownBasicState = () => {
     console.log('Changes marked - triggering auto-save');
   }, []);
 
-  // Direct setters without change tracking (for initial load) - stable references
-  const setTimezoneDirectly = useCallback((newTimezone: string) => {
-    console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
-    setTimezone(newTimezone);
-  }, []);
+  // Create stable setter functions that don't change reference
+  const stableSetters = useRef({
+    setTimezoneDirectly: (newTimezone: string) => {
+      console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
+      setTimezone(newTimezone);
+    },
+    setRundownTitleDirectly: (newTitle: string) => {
+      setRundownTitle(newTitle);
+    },
+    setRundownStartTimeDirectly: (newStartTime: string) => {
+      setRundownStartTime(newStartTime);
+    },
+    setTimezoneWithChange: (newTimezone: string) => {
+      console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
+      setTimezone(newTimezone);
+      markAsChanged();
+    },
+    setRundownTitleWithChange: (newTitle: string) => {
+      setRundownTitle(newTitle);
+      markAsChanged();
+    },
+    setRundownStartTimeWithChange: (newStartTime: string) => {
+      setRundownStartTime(newStartTime);
+      markAsChanged();
+    }
+  });
 
-  const setRundownTitleDirectly = useCallback((newTitle: string) => {
-    setRundownTitle(newTitle);
-  }, []);
-
-  const setRundownStartTimeDirectly = useCallback((newStartTime: string) => {
-    setRundownStartTime(newStartTime);
-  }, []);
-
-  // Change-tracking setters (for user interactions) - stable references
-  const setTimezoneWithChange = useCallback((newTimezone: string) => {
-    console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
-    setTimezone(newTimezone);
-    markAsChanged();
-  }, [markAsChanged]);
-
-  const setRundownTitleWithChange = useCallback((newTitle: string) => {
-    setRundownTitle(newTitle);
-    markAsChanged();
-  }, [markAsChanged]);
-
-  const setRundownStartTimeWithChange = useCallback((newStartTime: string) => {
-    setRundownStartTime(newStartTime);
-    markAsChanged();
+  // Update the stable setters when markAsChanged changes
+  useEffect(() => {
+    stableSetters.current.setTimezoneWithChange = (newTimezone: string) => {
+      console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
+      setTimezone(newTimezone);
+      markAsChanged();
+    };
+    stableSetters.current.setRundownTitleWithChange = (newTitle: string) => {
+      setRundownTitle(newTitle);
+      markAsChanged();
+    };
+    stableSetters.current.setRundownStartTimeWithChange = (newStartTime: string) => {
+      setRundownStartTime(newStartTime);
+      markAsChanged();
+    };
   }, [markAsChanged]);
 
   return {
     currentTime,
     timezone,
-    setTimezone: setTimezoneWithChange,
-    setTimezoneDirectly,
+    setTimezone: stableSetters.current.setTimezoneWithChange,
+    setTimezoneDirectly: stableSetters.current.setTimezoneDirectly,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
-    setRundownTitle: setRundownTitleWithChange,
-    setRundownTitleDirectly,
+    setRundownTitle: stableSetters.current.setRundownTitleWithChange,
+    setRundownTitleDirectly: stableSetters.current.setRundownTitleDirectly,
     rundownStartTime,
-    setRundownStartTime: setRundownStartTimeWithChange,
-    setRundownStartTimeDirectly,
+    setRundownStartTime: stableSetters.current.setRundownStartTimeWithChange,
+    setRundownStartTimeDirectly: stableSetters.current.setRundownStartTimeDirectly,
     rundownId,
     markAsChanged,
     isInitialized

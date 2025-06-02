@@ -5,7 +5,7 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -32,41 +32,31 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
+  // Store stable references to prevent re-renders
+  const stableRefs = useRef({
+    setRundownTitleDirectly,
+    setTimezoneDirectly,
+    setRundownStartTimeDirectly
+  });
+
+  // Update refs when functions change
+  useEffect(() => {
+    stableRefs.current = {
+      setRundownTitleDirectly,
+      setTimezoneDirectly,
+      setRundownStartTimeDirectly
+    };
+  }, [setRundownTitleDirectly, setTimezoneDirectly, setRundownStartTimeDirectly]);
+
   // Rundown data integration - only run when initialized
   const stateIntegration = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
     timezone, 
     rundownStartTime,
-    setRundownTitleDirectly, 
-    setTimezoneDirectly
+    stableRefs.current.setRundownTitleDirectly, 
+    stableRefs.current.setTimezoneDirectly
   );
-
-  const {
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving
-  } = stateIntegration;
 
   // Use data loader to properly set title, timezone, and start time - only when initialized
   useRundownDataLoader({
@@ -74,25 +64,17 @@ export const useRundownGridCore = () => {
     savedRundowns,
     loading,
     isInitialized,
-    setRundownTitle: setRundownTitleDirectly,
-    setTimezone: setTimezoneDirectly,
-    setRundownStartTime: setRundownStartTimeDirectly,
-    handleLoadLayout
+    setRundownTitle: stableRefs.current.setRundownTitleDirectly,
+    setTimezone: stableRefs.current.setTimezoneDirectly,
+    setRundownStartTime: stableRefs.current.setRundownStartTimeDirectly,
+    handleLoadLayout: stateIntegration.handleLoadLayout
   });
 
   // Playback controls
-  const { 
-    isPlaying, 
-    currentSegmentId, 
-    timeRemaining, 
-    play, 
-    pause, 
-    forward, 
-    backward 
-  } = usePlaybackControls(items, updateItem);
+  const playbackControls = usePlaybackControls(stateIntegration.items, stateIntegration.updateItem);
 
   // Time calculations
-  const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
+  const timeCalculations = useTimeCalculations(stateIntegration.items, stateIntegration.updateItem, rundownStartTime);
 
   // Memoize the entire return object to prevent unnecessary re-renders
   return useMemo(() => ({
@@ -109,44 +91,14 @@ export const useRundownGridCore = () => {
     rundownId,
     markAsChanged,
 
-    // Items and data
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    visibleColumns,
-    columns,
+    // State integration
+    ...stateIntegration,
 
     // Playback
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
+    ...playbackControls,
 
-    // Column management
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-
-    // Save state
-    hasUnsavedChanges,
-    isSaving,
-    calculateEndTime
+    // Time calculations
+    ...timeCalculations
   }), [
     currentTime,
     timezone,
@@ -159,36 +111,8 @@ export const useRundownGridCore = () => {
     setRundownStartTime,
     rundownId,
     markAsChanged,
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    visibleColumns,
-    columns,
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving,
-    calculateEndTime
+    stateIntegration,
+    playbackControls,
+    timeCalculations
   ]);
 };

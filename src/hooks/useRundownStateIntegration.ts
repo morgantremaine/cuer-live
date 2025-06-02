@@ -2,7 +2,7 @@
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 
 export const useRundownStateIntegration = (
   markAsChanged: () => void,
@@ -12,94 +12,46 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
+  // Store stable references
+  const stableRefs = useRef({
+    markAsChanged,
+    setRundownTitleDirectly,
+    setTimezoneDirectly
+  });
+
+  // Update refs when functions change
+  useEffect(() => {
+    stableRefs.current = {
+      markAsChanged,
+      setRundownTitleDirectly,
+      setTimezoneDirectly
+    };
+  }, [markAsChanged, setRundownTitleDirectly, setTimezoneDirectly]);
+
   // Rundown items management
-  const {
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration
-  } = useRundownItems();
+  const itemsHook = useRundownItems();
 
   // Column management with stable markAsChanged reference
-  const {
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+  const columnsHook = useColumnsManager(stableRefs.current.markAsChanged);
 
   // Auto-save functionality
-  const { hasUnsavedChanges, isSaving } = useAutoSave(
-    items,
+  const autoSaveHook = useAutoSave(
+    itemsHook.items,
     rundownTitle,
-    columns,
+    columnsHook.columns,
     timezone,
     rundownStartTime
   );
 
   // Memoize the return object to prevent unnecessary re-renders
   return useMemo(() => ({
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving,
-    markAsChanged
+    ...itemsHook,
+    ...columnsHook,
+    ...autoSaveHook,
+    markAsChanged: stableRefs.current.markAsChanged
   }), [
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving,
-    markAsChanged
+    itemsHook,
+    columnsHook,
+    autoSaveHook
   ]);
 };

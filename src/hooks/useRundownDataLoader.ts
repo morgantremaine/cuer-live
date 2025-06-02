@@ -24,19 +24,37 @@ export const useRundownDataLoader = ({
 }: UseRundownDataLoaderProps) => {
   // Track what we've already loaded to prevent re-loading
   const loadedRundownRef = useRef<string | undefined>(undefined);
-  const loadingRef = useRef(false);
+  const isLoadingRef = useRef(false);
+
+  // Stable function references
+  const stableFunctions = useRef({
+    setRundownTitle,
+    setTimezone,
+    setRundownStartTime,
+    handleLoadLayout
+  });
+
+  // Update function references
+  useEffect(() => {
+    stableFunctions.current = {
+      setRundownTitle,
+      setTimezone,
+      setRundownStartTime,
+      handleLoadLayout
+    };
+  }, [setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
   // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
     // Prevent multiple simultaneous loads
-    if (loadingRef.current) return;
+    if (isLoadingRef.current) return;
     
     // Don't proceed if not initialized, loading, or already loaded
     if (!isInitialized || loading || loadedRundownRef.current === rundownId) {
       return;
     }
 
-    loadingRef.current = true;
+    isLoadingRef.current = true;
 
     try {
       if (rundownId && savedRundowns.length > 0) {
@@ -54,22 +72,22 @@ export const useRundownDataLoader = ({
           
           if (existingRundown.title) {
             console.log('Setting title from saved rundown:', existingRundown.title);
-            setRundownTitle(existingRundown.title);
+            stableFunctions.current.setRundownTitle(existingRundown.title);
           }
           
           if (existingRundown.timezone) {
             console.log('Setting timezone from saved rundown:', existingRundown.timezone);
-            setTimezone(existingRundown.timezone);
+            stableFunctions.current.setTimezone(existingRundown.timezone);
           }
 
           if (existingRundown.start_time) {
             console.log('Setting start time from saved rundown:', existingRundown.start_time);
-            setRundownStartTime(existingRundown.start_time);
+            stableFunctions.current.setRundownStartTime(existingRundown.start_time);
           }
           
           if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
             console.log('Loading column layout:', existingRundown.columns);
-            handleLoadLayout(existingRundown.columns);
+            stableFunctions.current.handleLoadLayout(existingRundown.columns);
           }
         } else {
           loadedRundownRef.current = rundownId;
@@ -77,14 +95,14 @@ export const useRundownDataLoader = ({
       } else if (!rundownId && loadedRundownRef.current !== 'new') {
         console.log('New rundown, using default title');
         loadedRundownRef.current = 'new';
-        setRundownTitle('Live Broadcast Rundown');
+        stableFunctions.current.setRundownTitle('Live Broadcast Rundown');
       }
     } finally {
-      loadingRef.current = false;
+      isLoadingRef.current = false;
     }
-  }, [rundownId, savedRundowns.length, loading, isInitialized, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
+  }, [rundownId, savedRundowns.length, loading, isInitialized]);
 
-  // Load data when conditions are met
+  // Load data when conditions are met - use stable dependencies
   useEffect(() => {
     if (!isInitialized) return;
     
@@ -98,7 +116,7 @@ export const useRundownDataLoader = ({
   useEffect(() => {
     if (loadedRundownRef.current !== rundownId) {
       loadedRundownRef.current = undefined;
-      loadingRef.current = false;
+      isLoadingRef.current = false;
     }
   }, [rundownId]);
 };
