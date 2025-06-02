@@ -49,15 +49,78 @@ const RundownCard = ({
     onOpen(rundown.id)
   }
 
+  // Collapsed view for archived rundowns
+  if (isArchived) {
+    return (
+      <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 opacity-75">
+        <CardHeader className="py-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center text-white">
+              <Archive className="h-4 w-4 mr-2 text-gray-400" />
+              {rundown.title}
+            </CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 relative z-20 hover:bg-gray-700 text-gray-400 hover:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
+              >
+                {onDuplicate && (
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDuplicate(rundown.id, rundown.title, rundown.items, e)
+                    }}
+                    className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Duplicate
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
+                  }}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+                >
+                  <Archive className="h-4 w-4 mr-2" />
+                  Unarchive
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(rundown.id, rundown.title, e)
+                  }}
+                  className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Permanently
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+      </Card>
+    )
+  }
+
+  // Regular view for active rundowns
   return (
-    <Card 
-      className={`hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 ${isArchived ? 'opacity-75' : ''}`}
-    >
+    <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg flex items-center text-white">
-              {isArchived && <Archive className="h-4 w-4 mr-2 text-gray-400" />}
               {rundown.title}
             </CardTitle>
             <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
@@ -98,29 +161,16 @@ const RundownCard = ({
                   Duplicate
                 </DropdownMenuItem>
               )}
-              {isArchived ? (
-                <DropdownMenuItem 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
-                  }}
-                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
-                >
-                  <Archive className="h-4 w-4 mr-2" />
-                  Unarchive
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onArchive?.(rundown.id, rundown.title, e)
-                  }}
-                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
-                >
-                  <Archive className="h-4 w-4 mr-2" />
-                  Archive
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onArchive?.(rundown.id, rundown.title, e)
+                }}
+                className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Archive
+              </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation()
@@ -129,7 +179,7 @@ const RundownCard = ({
                 className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                {isArchived ? 'Delete Permanently' : 'Delete'}
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
