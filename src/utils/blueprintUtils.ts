@@ -1,11 +1,11 @@
-
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 
 export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): any[] => {
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
-    const headerTexts = headerItems.map(item => item.segmentName || item.rowNumber);
+    // Use notes field for header descriptions, fallback to segmentName if notes is empty
+    const headerTexts = headerItems.map(item => item.notes || item.segmentName || item.rowNumber);
     return headerTexts;
   }
   
@@ -58,9 +58,9 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
     }
   });
   
-  // Convert to the expected format with key and name
+  // Convert to the expected format with key and name - change Headers to Blocks
   return Array.from(columns).map(column => ({
     key: column,
-    name: column === 'headers' ? 'Headers' : column.charAt(0).toUpperCase() + column.slice(1)
+    name: column === 'headers' ? 'Blocks' : column.charAt(0).toUpperCase() + column.slice(1)
   }));
 };
