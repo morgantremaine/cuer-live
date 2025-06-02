@@ -34,7 +34,7 @@ const SharedRundownHeader = ({
 
   return (
     <div className="mb-6 print:mb-4">
-      {/* Mobile layout: Stack everything vertically */}
+      {/* Mobile layout: Title only, no logo */}
       <div className="block sm:hidden mb-2">
         <h1 className="text-xl font-bold text-gray-900 print:text-xl break-words mb-2">
           {title}
