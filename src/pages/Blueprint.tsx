@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -11,17 +12,25 @@ import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { savedRundowns, loading, updateRundown } = useRundownStorage();
+  const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
   const [localIcon, setLocalIcon] = useState<string | undefined>();
   
-  // Update local icon when rundown changes, but only if we haven't manually set it
+  // Update local icon when rundown changes or loads
   useEffect(() => {
     if (rundown?.icon !== undefined) {
+      console.log('Blueprint: Setting local icon from rundown:', rundown.icon ? 'Icon present' : 'No icon');
       setLocalIcon(rundown.icon);
     }
   }, [rundown?.icon]);
+
+  // Load rundowns when component mounts to ensure fresh data
+  useEffect(() => {
+    if (!loading && id) {
+      loadRundowns();
+    }
+  }, [id]);
   
   const {
     lists,
@@ -49,12 +58,18 @@ const Blueprint = () => {
   );
 
   const handleIconChange = async (iconData: string | null) => {
-    if (!rundown || !id) return;
+    if (!rundown || !id) {
+      console.error('Blueprint: Cannot update icon - no rundown or id');
+      return;
+    }
 
     try {
+      console.log('Blueprint: Updating icon:', iconData ? 'Setting new icon' : 'Removing icon');
+      
       // Update local state immediately for responsive UI
       setLocalIcon(iconData || undefined);
       
+      // Update in database with explicit icon parameter
       await updateRundown(
         id,
         rundown.title,
@@ -63,13 +78,17 @@ const Blueprint = () => {
         false, // not archived
         rundown.columns,
         rundown.timezone,
-        rundown.startTime,
-        iconData || undefined // Ensure we pass undefined instead of null
+        rundown.startTime || rundown.start_time,
+        iconData || undefined
       );
       
-      console.log('Icon updated successfully:', iconData ? 'Icon set' : 'Icon removed');
+      console.log('Blueprint: Icon update completed successfully');
+      
+      // Reload rundowns to get fresh data from database
+      await loadRundowns();
+      
     } catch (error) {
-      console.error('Error updating icon:', error);
+      console.error('Blueprint: Error updating icon:', error);
       // Revert local state if update fails
       setLocalIcon(rundown.icon);
     }

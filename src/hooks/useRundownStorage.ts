@@ -48,6 +48,7 @@ export const useRundownStorage = () => {
         ...rundown,
         startTime: rundown.start_time // Map start_time to startTime for consistency
       }))
+      console.log('Loaded rundowns with icons:', mappedData.map(r => ({ id: r.id, title: r.title, hasIcon: !!r.icon })))
       setSavedRundowns(mappedData)
     }
     setLoading(false)
@@ -108,7 +109,7 @@ export const useRundownStorage = () => {
       columnsCount: columns?.length || 0,
       timezone,
       startTime,
-      icon,
+      icon: icon ? 'Icon provided' : 'No icon',
       userId: user.id,
       silent,
       archived
@@ -120,10 +121,17 @@ export const useRundownStorage = () => {
       columns: columns || null,
       timezone: timezone || null,
       start_time: startTime || null, // Use start_time to match database column
-      icon: icon !== undefined ? icon : null,
+      icon: icon !== undefined ? (icon || null) : undefined, // Only include icon in update if explicitly provided
       updated_at: new Date().toISOString(),
       archived: archived
     }
+
+    // Remove undefined values to avoid overwriting with undefined
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key]
+      }
+    })
 
     console.log('Update payload (cleaned):', updateData)
 
@@ -161,7 +169,7 @@ export const useRundownStorage = () => {
           description: message,
         })
       }
-      loadRundowns()
+      // Don't automatically reload all rundowns to avoid conflicts
     }
   }
 
