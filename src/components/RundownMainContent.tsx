@@ -2,6 +2,7 @@
 import React from 'react';
 import RundownContent from './RundownContent';
 import ColumnManager from './ColumnManager';
+import ShowCaller from './ShowCaller';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -17,6 +18,10 @@ interface RundownMainContentProps {
   isDraggingMultiple: boolean;
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
+  timeRemaining: number;
+  totalDuration: number;
+  currentSegmentName: string;
+  isPlaying: boolean;
   hasClipboardData?: boolean;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -61,6 +66,10 @@ const RundownMainContent = ({
   isDraggingMultiple,
   dropTargetIndex,
   currentSegmentId,
+  timeRemaining,
+  totalDuration,
+  currentSegmentName,
+  isPlaying,
   hasClipboardData = false,
   getColumnWidth,
   updateColumnWidth,
@@ -94,6 +103,14 @@ const RundownMainContent = ({
 }: RundownMainContentProps) => {
   return (
     <>
+      <ShowCaller
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        totalDuration={totalDuration}
+        isPlaying={isPlaying}
+        currentSegmentName={currentSegmentName}
+      />
+      
       <RundownContent
         items={items}
         visibleColumns={visibleColumns}

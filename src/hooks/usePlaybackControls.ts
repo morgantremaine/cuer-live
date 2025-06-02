@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -8,6 +9,7 @@ export const usePlaybackControls = (
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Set default current segment to first non-header item (A1) on mount
@@ -15,17 +17,24 @@ export const usePlaybackControls = (
     if (!currentSegmentId && items.length > 0) {
       const firstSegment = items.find(item => !isHeaderItem(item));
       if (firstSegment) {
-        setCurrentSegmentId(firstSegment.id);
-        const duration = timeToSeconds(firstSegment.duration);
-        setTimeRemaining(duration);
+        setCurrentSegment(firstSegment.id);
       }
     }
   }, [items, currentSegmentId]);
 
   const timeToSeconds = (timeStr: string) => {
     if (!timeStr) return 0;
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+      // MM:SS format
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+      // HH:MM:SS format
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+    return 0;
   };
 
   const clearCurrentStatus = () => {
@@ -44,7 +53,14 @@ export const usePlaybackControls = (
       setCurrentSegmentId(segmentId);
       const duration = timeToSeconds(segment.duration);
       setTimeRemaining(duration);
+      setTotalDuration(duration);
     }
+  };
+
+  const getCurrentSegmentName = () => {
+    if (!currentSegmentId) return '';
+    const segment = items.find(item => item.id === currentSegmentId);
+    return segment ? segment.name : '';
   };
 
   const getNextSegment = (currentId: string) => {
@@ -175,6 +191,8 @@ export const usePlaybackControls = (
     isPlaying,
     currentSegmentId,
     timeRemaining,
+    totalDuration,
+    currentSegmentName: getCurrentSegmentName(),
     play,
     pause,
     forward,
