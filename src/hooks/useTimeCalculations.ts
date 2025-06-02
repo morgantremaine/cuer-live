@@ -78,8 +78,20 @@ export const useTimeCalculations = (
   const getRowStatus = (item: RundownItem, currentTime: Date) => {
     // Get current time in HH:MM:SS format
     const now = currentTime.toTimeString().substring(0, 8); // Gets HH:MM:SS
-    console.log('getRowStatus current time:', now);
-    console.log('getRowStatus item:', { id: item.id, startTime: item.startTime, endTime: item.endTime });
+    console.log('getRowStatus called for item:', item.id, 'current time:', now);
+    console.log('getRowStatus item details:', { 
+      id: item.id, 
+      name: item.name,
+      startTime: item.startTime, 
+      endTime: item.endTime,
+      type: item.type 
+    });
+    
+    // Skip headers for live status
+    if (isHeaderItem(item)) {
+      console.log('getRowStatus: Skipping header item');
+      return 'upcoming';
+    }
     
     // Ensure we have valid times
     if (!item.startTime || !item.endTime) {
@@ -91,7 +103,12 @@ export const useTimeCalculations = (
     const startSeconds = timeToSeconds(item.startTime);
     const endSeconds = timeToSeconds(item.endTime);
     
-    console.log('getRowStatus seconds:', { currentSeconds, startSeconds, endSeconds });
+    console.log('getRowStatus seconds comparison:', { 
+      currentSeconds, 
+      startSeconds, 
+      endSeconds,
+      isInRange: currentSeconds >= startSeconds && currentSeconds < endSeconds
+    });
     
     // Handle invalid conversions
     if (isNaN(currentSeconds) || isNaN(startSeconds) || isNaN(endSeconds)) {
@@ -100,7 +117,7 @@ export const useTimeCalculations = (
     }
     
     if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
-      console.log('getRowStatus: Item is current');
+      console.log('getRowStatus: Item is CURRENT/LIVE');
       return 'current';
     } else if (currentSeconds >= endSeconds) {
       console.log('getRowStatus: Item is completed');
