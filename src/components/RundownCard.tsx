@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Clock, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
+import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
 
@@ -66,7 +66,7 @@ const RundownCard = ({
                 Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
               </div>
               <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
+                <Calendar className="h-4 w-4 mr-1" />
                 Modified: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
               </div>
             </CardDescription>
@@ -138,7 +138,6 @@ const RundownCard = ({
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="flex items-center text-sm text-gray-400">
-            <Clock className="h-4 w-4 mr-1" />
             {rundown.items?.length || 0} items
           </div>
           <div className="flex gap-2">
