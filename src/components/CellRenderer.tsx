@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
@@ -120,17 +121,18 @@ const CellRenderer = ({
   if (column.isCustom) {
     return (
       <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <div className="relative">
+        <div className="relative flex items-center min-h-[28px]">
           <textarea
             ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
             value={value}
             onChange={(e) => handleUpdateValue(e.target.value)}
             onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden`}
+            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight`}
             style={{ 
               color: textColor || undefined,
               minHeight: '20px',
-              height: shouldExpandRow ? '40px' : '20px'
+              height: shouldExpandRow ? '40px' : '20px',
+              lineHeight: '1.2'
             }}
             rows={shouldExpandRow ? 2 : 1}
             onInput={(e) => {
@@ -142,7 +144,7 @@ const CellRenderer = ({
             }}
           />
           {highlight && (
-            <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm" style={{ color: 'transparent' }}>
+            <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm flex items-center" style={{ color: 'transparent' }}>
               <HighlightedText text={value} highlight={highlight} />
             </div>
           )}
@@ -153,19 +155,20 @@ const CellRenderer = ({
 
   return (
     <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-      <div className="relative">
+      <div className="relative flex items-center min-h-[28px]">
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
           value={value}
           onChange={(e) => handleUpdateValue(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden ${
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight ${
             column.key === 'duration' ? 'font-mono text-center' : ''
           }`}
           style={{ 
             color: textColor || undefined,
             minHeight: '20px',
-            height: shouldExpandRow ? '40px' : '20px'
+            height: shouldExpandRow ? '40px' : '20px',
+            lineHeight: '1.2'
           }}
           rows={shouldExpandRow ? 2 : 1}
           placeholder={column.key === 'duration' ? '00:00:00' : ''}
@@ -178,7 +181,7 @@ const CellRenderer = ({
           }}
         />
         {highlight && (
-          <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm" style={{ color: 'transparent' }}>
+          <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm flex items-center" style={{ color: 'transparent' }}>
             <HighlightedText text={value} highlight={highlight} />
           </div>
         )}
