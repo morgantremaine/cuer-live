@@ -1,7 +1,16 @@
-
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+
+export interface RundownHeaderSectionProps {
+  rundownTitle: string;
+  currentTime: Date;
+  timezone: string;
+  startTime: string;
+  currentSegmentId: string | null;
+  items: RundownItem[];
+  rundownIcon?: string;
+}
 
 export interface RundownContainerProps {
   currentTime: Date;
