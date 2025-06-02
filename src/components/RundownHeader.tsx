@@ -103,6 +103,11 @@ const RundownHeader = ({
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
+          <img 
+            src="/lovable-uploads/80ad38cb-388f-4a21-b9ce-da3da0901c60.png" 
+            alt="Cuer Logo" 
+            className="h-8 w-auto"
+          />
           {isEditingTitle ? (
             <input
               type="text"

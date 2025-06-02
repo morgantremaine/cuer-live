@@ -35,9 +35,16 @@ const SharedRundownHeader = ({
   return (
     <div className="mb-6 print:mb-4">
       <div className="flex justify-between items-start mb-2">
-        <h1 className="text-2xl font-bold text-gray-900 print:text-xl">
-          {title}
-        </h1>
+        <div className="flex items-center space-x-3">
+          <img 
+            src="/lovable-uploads/80ad38cb-388f-4a21-b9ce-da3da0901c60.png" 
+            alt="Cuer Logo" 
+            className="h-8 w-auto"
+          />
+          <h1 className="text-2xl font-bold text-gray-900 print:text-xl">
+            {title}
+          </h1>
+        </div>
         <div className="text-right text-sm text-gray-600">
           <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           <div>Start: {startTime}</div>
