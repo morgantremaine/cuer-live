@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -83,12 +84,8 @@ export const useRundownGridCore = () => {
     backward 
   } = usePlaybackControls(items, updateItem);
 
-  // Time calculations with live item tracking
-  const { calculateEndTime, getRowStatus, findCurrentItem } = useTimeCalculations(
-    items,
-    updateItem,
-    rundownStartTime
-  );
+  // Time calculations - fix the function call
+  const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   return {
     // Basic state
@@ -141,8 +138,6 @@ export const useRundownGridCore = () => {
     // Save state
     hasUnsavedChanges,
     isSaving,
-    calculateEndTime,
-    getRowStatus,
-    findCurrentItem
+    calculateEndTime
   };
 };

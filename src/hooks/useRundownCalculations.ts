@@ -4,14 +4,8 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
   const timeToSeconds = useCallback((timeStr: string) => {
-    if (!timeStr || timeStr === '') return 0;
-    
     // Handle both MM:SS and HH:MM:SS formats
-    const parts = timeStr.split(':').map(str => {
-      const num = parseInt(str, 10);
-      return isNaN(num) ? 0 : num;
-    });
-    
+    const parts = timeStr.split(':').map(Number);
     if (parts.length === 2) {
       // MM:SS format (minutes:seconds)
       const [minutes, seconds] = parts;

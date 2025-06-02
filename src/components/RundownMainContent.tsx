@@ -1,14 +1,15 @@
 
 import React from 'react';
 import RundownContent from './RundownContent';
-import ShowCaller from './ShowCaller';
+import ColumnManager from './ColumnManager';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownMainContentProps {
+  currentTime: Date;
   items: RundownItem[];
   visibleColumns: Column[];
-  currentTime: Date;
+  columns: Column[];
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
@@ -21,7 +22,6 @@ interface RundownMainContentProps {
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
-  findCurrentItem?: (currentTime: Date) => RundownItem | null;
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -39,12 +39,21 @@ interface RundownMainContentProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  showColumnManager: boolean;
+  setShowColumnManager: (show: boolean) => void;
+  handleAddColumn: (name: string) => void;
+  handleReorderColumns: (columns: Column[]) => void;
+  handleDeleteColumnWithCleanup: (columnId: string) => void;
+  handleRenameColumn: (columnId: string, newName: string) => void;
+  handleToggleColumnVisibility: (columnId: string) => void;
+  handleLoadLayout: (layoutColumns: Column[]) => void;
 }
 
 const RundownMainContent = ({
+  currentTime,
   items,
   visibleColumns,
-  currentTime,
+  columns,
   showColorPicker,
   cellRefs,
   selectedRows,
@@ -57,7 +66,6 @@ const RundownMainContent = ({
   updateColumnWidth,
   getRowNumber,
   getRowStatus,
-  findCurrentItem,
   calculateHeaderDuration,
   onUpdateItem,
   onCellClick,
@@ -74,19 +82,18 @@ const RundownMainContent = ({
   onCopySelectedRows,
   onDeleteSelectedRows,
   onPasteRows,
-  onClearSelection
+  onClearSelection,
+  showColumnManager,
+  setShowColumnManager,
+  handleAddColumn,
+  handleReorderColumns,
+  handleDeleteColumnWithCleanup,
+  handleRenameColumn,
+  handleToggleColumnVisibility,
+  handleLoadLayout
 }: RundownMainContentProps) => {
   return (
-    <div className="flex-1 flex flex-col h-full">
-      {/* Show caller display */}
-      <div className="mb-4">
-        <ShowCaller 
-          findCurrentItem={findCurrentItem}
-          currentTime={currentTime}
-        />
-      </div>
-
-      {/* Rundown content */}
+    <>
       <RundownContent
         items={items}
         visibleColumns={visibleColumns}
@@ -121,7 +128,20 @@ const RundownMainContent = ({
         onPasteRows={onPasteRows}
         onClearSelection={onClearSelection}
       />
-    </div>
+      
+      {showColumnManager && (
+        <ColumnManager
+          columns={columns}
+          onAddColumn={handleAddColumn}
+          onReorderColumns={handleReorderColumns}
+          onDeleteColumn={handleDeleteColumnWithCleanup}
+          onToggleColumnVisibility={handleToggleColumnVisibility}
+          onLoadLayout={handleLoadLayout}
+          onRenameColumn={handleRenameColumn}
+          onClose={() => setShowColumnManager(false)}
+        />
+      )}
+    </>
   );
 };
 

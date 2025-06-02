@@ -24,7 +24,6 @@ export interface RundownContainerProps {
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
-  findCurrentItem?: (currentTime: Date) => RundownItem | null;
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -56,7 +55,7 @@ export interface RundownContainerProps {
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
-  handleRenameColumn: (columnId: string, newName: string) => void;
+  handleRenameColumn: (columnId: string, newName: string) => void; // Made required instead of optional
   handleToggleColumnVisibility: (columnId: string) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
   hasUnsavedChanges: boolean;
