@@ -5,7 +5,6 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useBlueprintState } from '@/hooks/useBlueprintState';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
@@ -95,19 +94,6 @@ const Blueprint = () => {
     <div className="min-h-screen bg-gray-900">
       <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/dashboard')}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Dashboard
-            </Button>
-          </div>
-        </div>
-
         <BlueprintHeader
           rundown={rundown}
           showDate={showDate}
