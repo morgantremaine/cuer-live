@@ -15,6 +15,7 @@ interface SavedRundown {
   updated_at: string
   archived?: boolean
   startTime?: string
+  start_time?: string // Also include the database field name
   icon?: string
 }
 
@@ -42,7 +43,12 @@ export const useRundownStorage = () => {
         variant: 'destructive',
       })
     } else {
-      setSavedRundowns(data || [])
+      // Map the database field name to the expected field name for compatibility
+      const mappedData = (data || []).map(rundown => ({
+        ...rundown,
+        startTime: rundown.start_time // Map start_time to startTime for consistency
+      }))
+      setSavedRundowns(mappedData)
     }
     setLoading(false)
   }
@@ -113,8 +119,8 @@ export const useRundownStorage = () => {
       items: items,
       columns: columns || null,
       timezone: timezone || null,
-      start_time: startTime || null,
-      icon: icon !== undefined ? icon : null, // Explicitly handle undefined vs null
+      start_time: startTime || null, // Use start_time to match database column
+      icon: icon !== undefined ? icon : null,
       updated_at: new Date().toISOString(),
       archived: archived
     }

@@ -47,7 +47,7 @@ export const useRundownDataLoader = ({
             id: rundownId, 
             title: existingRundown.title, 
             timezone: existingRundown.timezone,
-            startTime: existingRundown.start_time
+            startTime: existingRundown.startTime || existingRundown.start_time
           });
           
           // Mark as loaded before setting data to prevent loops
@@ -63,9 +63,11 @@ export const useRundownDataLoader = ({
             setTimezone(existingRundown.timezone);
           }
 
-          if (existingRundown.start_time) {
-            console.log('Setting start time from saved rundown:', existingRundown.start_time);
-            setRundownStartTime(existingRundown.start_time);
+          // Handle both startTime and start_time fields for compatibility
+          const startTime = existingRundown.startTime || existingRundown.start_time;
+          if (startTime) {
+            console.log('Setting start time from saved rundown:', startTime);
+            setRundownStartTime(startTime);
           }
           
           if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
