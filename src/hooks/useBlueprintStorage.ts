@@ -60,7 +60,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         rundown_title: rundownTitle,
         lists: lists,
         show_date: showDate,
-        notes: notes,
+        notes: notes || null,
         updated_at: new Date().toISOString()
       };
 

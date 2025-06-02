@@ -14,6 +14,7 @@ export type Database = {
           created_at: string
           id: string
           lists: Json
+          notes: string | null
           rundown_id: string
           rundown_title: string
           show_date: string | null
@@ -24,6 +25,7 @@ export type Database = {
           created_at?: string
           id?: string
           lists?: Json
+          notes?: string | null
           rundown_id: string
           rundown_title: string
           show_date?: string | null
@@ -34,6 +36,7 @@ export type Database = {
           created_at?: string
           id?: string
           lists?: Json
+          notes?: string | null
           rundown_id?: string
           rundown_title?: string
           show_date?: string | null
