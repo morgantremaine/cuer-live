@@ -9,9 +9,7 @@ export const mapRundownFromDatabase = (rundown: any): SavedRundown => ({
 })
 
 export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
-  const mappedData = (data || []).map(mapRundownFromDatabase)
-  console.log('Loaded rundowns with icons:', mappedData.map(r => ({ id: r.id, title: r.title, hasIcon: !!r.icon })))
-  return mappedData
+  return (data || []).map(mapRundownFromDatabase)
 }
 
 export const createUpdatePayload = (
