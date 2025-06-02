@@ -61,23 +61,34 @@ const RundownCard = ({
 
   const handleIconUpload = async (e: React.MouseEvent) => {
     e.stopPropagation()
+    console.log('RundownCard: handleIconUpload clicked')
     fileInputRef.current?.click()
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !onIconUpdate) return
+    console.log('RundownCard: File selected:', file?.name, 'onIconUpdate available:', !!onIconUpdate)
+    
+    if (!file || !onIconUpdate) {
+      console.log('RundownCard: Missing file or onIconUpdate function')
+      return
+    }
 
     setIsUploadingIcon(true)
     try {
+      console.log('RundownCard: Starting file upload for:', file.name)
       const iconUrl = await handleFileUpload(file)
+      console.log('RundownCard: File upload successful, got URL:', iconUrl)
+      
+      console.log('RundownCard: Calling onIconUpdate with rundownId:', rundown.id, 'iconUrl:', iconUrl)
       onIconUpdate(rundown.id, iconUrl)
+      
       toast({
         title: "Success",
         description: "Icon uploaded successfully!",
       })
     } catch (error) {
-      console.error('Failed to upload icon:', error)
+      console.error('RundownCard: Failed to upload icon:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to upload icon",
@@ -94,6 +105,7 @@ const RundownCard = ({
 
   const handleRemoveIcon = async (e: React.MouseEvent) => {
     e.stopPropagation()
+    console.log('RundownCard: handleRemoveIcon clicked for rundownId:', rundown.id)
     if (onIconUpdate) {
       onIconUpdate(rundown.id, null)
       toast({
@@ -102,6 +114,8 @@ const RundownCard = ({
       })
     }
   }
+
+  console.log('RundownCard: Rendering card for rundown:', rundown.id, 'with icon:', rundown.icon)
 
   return (
     <Card 
