@@ -7,17 +7,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, FileText } from 'lucide-react';
 import BlueprintListCard from '@/components/blueprint/BlueprintListCard';
 import AddListDialog from '@/components/blueprint/AddListDialog';
-import { RundownItem } from '@/hooks/useRundownItems';
-
-interface SavedRundown {
-  id: string
-  title: string
-  items: RundownItem[]
-  created_at: string
-  updated_at: string
-  archived?: boolean
-  icon?: string
-}
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
