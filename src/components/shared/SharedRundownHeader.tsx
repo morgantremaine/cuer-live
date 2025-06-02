@@ -35,29 +35,17 @@ const SharedRundownHeader = ({
   return (
     <div className="mb-6 print:mb-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 space-y-2 sm:space-y-0">
-        {/* Mobile: Logo and time info, Desktop: Logo and title */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
-          <div className="flex justify-between items-center sm:block">
-            <img 
-              src="/lovable-uploads/da2200e5-3194-4f43-8ec0-9266a479bbf0.png" 
-              alt="Cuer Logo" 
-              className="h-6 w-auto flex-shrink-0"
-            />
-            {/* Time info only on mobile */}
-            <div className="text-right text-sm text-gray-600 sm:hidden">
-              <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
-              <div>Start: {startTime}</div>
-            </div>
-          </div>
-          
-          {/* Title below logo on mobile, next to logo on desktop */}
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 print:text-xl break-words min-w-0 mt-2 sm:mt-0">
+        <div className="flex items-center space-x-3">
+          <img 
+            src="/lovable-uploads/da2200e5-3194-4f43-8ec0-9266a479bbf0.png" 
+            alt="Cuer Logo" 
+            className="hidden sm:block h-6 w-auto flex-shrink-0"
+          />
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 print:text-xl break-words min-w-0">
             {title}
           </h1>
         </div>
-        
-        {/* Time info only on desktop */}
-        <div className="hidden sm:block text-right text-sm text-gray-600 flex-shrink-0">
+        <div className="text-left sm:text-right text-sm text-gray-600 flex-shrink-0">
           <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           <div>Start: {startTime}</div>
         </div>
