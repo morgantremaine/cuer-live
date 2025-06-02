@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/types/rundown';
 
 export interface BlueprintList {
@@ -114,4 +115,86 @@ export const exportRundownToBlueprint = (
   });
 
   return blueprintLists;
+};
+
+// New functions needed by useBlueprintState
+export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): string[] => {
+  if (sourceColumn === 'headers') {
+    const headerItems = items.filter(item => item.type === 'header');
+    return headerItems.map(item => {
+      if (item.type === 'header' && 'segmentName' in item) {
+        return item.segmentName || item.rowNumber || 'Untitled Header';
+      }
+      return 'Untitled Header';
+    });
+  }
+
+  // For regular columns, get unique non-empty values
+  const regularItems = items.filter(item => item.type !== 'header');
+  const values = new Set<string>();
+  
+  regularItems.forEach(item => {
+    let value = '';
+    
+    if (sourceColumn in item) {
+      value = String(item[sourceColumn as keyof RundownItem] || '').trim();
+    } else if (item.customFields && sourceColumn in item.customFields) {
+      value = String(item.customFields[sourceColumn] || '').trim();
+    }
+    
+    if (value && value !== '') {
+      values.add(value);
+    }
+  });
+
+  return Array.from(values).sort();
+};
+
+export const getAvailableColumns = (items: RundownItem[]) => {
+  const columns = [
+    { key: 'headers', name: 'Headers' },
+    { key: 'gfx', name: 'GFX' },
+    { key: 'video', name: 'Video' },
+    { key: 'talent', name: 'Talent' },
+    { key: 'script', name: 'Script' },
+    { key: 'notes', name: 'Notes' }
+  ];
+
+  // Get custom fields from items
+  const customFields = new Set<string>();
+  items.forEach(item => {
+    if (item.customFields) {
+      Object.keys(item.customFields).forEach(key => {
+        customFields.add(key);
+      });
+    }
+  });
+
+  // Add custom fields as available columns
+  customFields.forEach(field => {
+    if (!columns.find(col => col.key === field)) {
+      columns.push({
+        key: field,
+        name: field.charAt(0).toUpperCase() + field.slice(1)
+      });
+    }
+  });
+
+  return columns;
+};
+
+export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]) => {
+  const defaultLists = [
+    { name: `${rundownTitle} - Headers`, sourceColumn: 'headers' },
+    { name: `${rundownTitle} - GFX`, sourceColumn: 'gfx' },
+    { name: `${rundownTitle} - Video`, sourceColumn: 'video' },
+    { name: `${rundownTitle} - Talent`, sourceColumn: 'talent' }
+  ];
+
+  return defaultLists.map(listConfig => ({
+    id: `${listConfig.sourceColumn}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: listConfig.name,
+    sourceColumn: listConfig.sourceColumn,
+    items: generateListFromColumn(items, listConfig.sourceColumn)
+  }));
 };
