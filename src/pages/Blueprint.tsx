@@ -106,9 +106,6 @@ const Blueprint = () => {
               Dashboard
             </Button>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-green-400">Saved</span>
-          </div>
         </div>
 
         <BlueprintHeader
