@@ -10,7 +10,6 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const initialLoadRef = useRef(false);
   const isLoadingRef = useRef(false);
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSignatureRef = useRef<string>('');
 
   // Initialize tracking after first meaningful load with delay
   useEffect(() => {
@@ -25,12 +24,11 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       initializationTimeoutRef.current = setTimeout(() => {
         const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
         lastSavedDataRef.current = signature;
-        lastSignatureRef.current = signature;
         initialLoadRef.current = true;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
         console.log('Change tracking initialized with title:', rundownTitle, 'timezone:', timezone, 'startTime:', startTime);
-      }, 200); // Increased delay to prevent rapid re-initialization
+      }, 100);
     }
 
     return () => {
@@ -38,30 +36,24 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
         clearTimeout(initializationTimeoutRef.current);
       }
     };
-  }, [items.length, rundownTitle]); // Reduced dependencies to prevent excessive re-runs
+  }, [items, rundownTitle, columns, timezone, startTime]);
 
   // Track changes after initialization - but only if not loading
   useEffect(() => {
     if (!isInitialized || isLoadingRef.current) return;
 
     const currentSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
+    const hasChanges = lastSavedDataRef.current !== currentSignature;
     
-    // Only update if signature actually changed
-    if (lastSignatureRef.current !== currentSignature) {
-      const hasChanges = lastSavedDataRef.current !== currentSignature;
-      lastSignatureRef.current = currentSignature;
-      
-      if (hasChanges !== hasUnsavedChanges) {
-        console.log('Change detected:', { title: rundownTitle, timezone, startTime, hasChanges });
-        setHasUnsavedChanges(hasChanges);
-      }
+    if (hasChanges !== hasUnsavedChanges) {
+      console.log('Change detected:', { title: rundownTitle, timezone, startTime, hasChanges });
+      setHasUnsavedChanges(hasChanges);
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, hasUnsavedChanges]);
 
   const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
     const signature = JSON.stringify({ items: savedItems, title: savedTitle, columns: savedColumns, timezone: savedTimezone, startTime: savedStartTime });
     lastSavedDataRef.current = signature;
-    lastSignatureRef.current = signature;
     setHasUnsavedChanges(false);
     console.log('Marked as saved with title:', savedTitle, 'timezone:', savedTimezone, 'startTime:', savedStartTime);
   };

@@ -23,7 +23,6 @@ export const useRundownDataLoader = ({
   // Track what we've already loaded to prevent re-loading
   const loadedDataRef = useRef<{ [key: string]: boolean }>({});
   const isProcessingRef = useRef(false);
-  const lastRundownIdRef = useRef<string | undefined>(undefined);
 
   // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
@@ -33,15 +32,9 @@ export const useRundownDataLoader = ({
 
     const currentKey = rundownId || 'new';
     
-    // Skip if already loaded for this rundown ID
-    if (loadedDataRef.current[currentKey] && lastRundownIdRef.current === rundownId) {
+    // Skip if already loaded
+    if (loadedDataRef.current[currentKey]) {
       return;
-    }
-
-    // Clear previous rundown data if rundown ID changed
-    if (lastRundownIdRef.current !== rundownId) {
-      loadedDataRef.current = {};
-      lastRundownIdRef.current = rundownId;
     }
 
     isProcessingRef.current = true;
@@ -61,27 +54,32 @@ export const useRundownDataLoader = ({
           loadedDataRef.current[currentKey] = true;
           
           if (existingRundown.title) {
+            console.log('Setting title from saved rundown:', existingRundown.title);
             setRundownTitle(existingRundown.title);
           }
           
           if (existingRundown.timezone) {
+            console.log('Setting timezone from saved rundown:', existingRundown.timezone);
             setTimezone(existingRundown.timezone);
           }
 
           // Handle both startTime and start_time fields for compatibility
           const startTime = existingRundown.startTime || existingRundown.start_time;
           if (startTime) {
+            console.log('Setting start time from saved rundown:', startTime);
             setRundownStartTime(startTime);
           }
           
           if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
+            console.log('Loading column layout:', existingRundown.columns);
             handleLoadLayout(existingRundown.columns);
           }
         }
-      } else if (!rundownId && !loadedDataRef.current[currentKey]) {
+      } else if (!rundownId) {
         console.log('New rundown, using default title');
         loadedDataRef.current[currentKey] = true;
         setRundownTitle('Live Broadcast Rundown');
+        // Don't set default timezone for new rundowns - let it use the default from useRundownBasicState
       }
     } finally {
       isProcessingRef.current = false;

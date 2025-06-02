@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownItemActions } from './useRundownItemActions';
@@ -29,12 +29,6 @@ export const useRundownItems = () => {
   const loadedRundownIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
 
-  // Memoize the current rundown to prevent unnecessary effects
-  const currentRundown = useMemo(() => {
-    if (!rundownId || loading || savedRundowns.length === 0) return null;
-    return savedRundowns.find(r => r.id === rundownId);
-  }, [rundownId, savedRundowns, loading]);
-
   // Load rundown data when conditions are met
   useEffect(() => {
     // Prevent loading if already loading or already loaded this rundown
@@ -58,27 +52,29 @@ export const useRundownItems = () => {
     }
 
     // Load existing rundown
-    if (currentRundown?.items) {
+    const existingRundown = savedRundowns.find(r => r.id === rundownId);
+    if (existingRundown?.items) {
       console.log('useRundownItems: Loading rundown items for:', rundownId);
       isLoadingRef.current = true;
       loadedRundownIdRef.current = rundownId;
-      const normalizedItems = currentRundown.items.map(normalizeRundownItem);
+      const normalizedItems = existingRundown.items.map(normalizeRundownItem);
       setItems(normalizedItems);
       isLoadingRef.current = false;
-    } else if (currentRundown === undefined && savedRundowns.length > 0) {
+    } else if (!existingRundown) {
       console.log('useRundownItems: Rundown not found, using defaults for ID:', rundownId);
       loadedRundownIdRef.current = rundownId;
       setItems(defaultRundownItems);
     }
-  }, [rundownId, currentRundown, loading, savedRundowns.length]);
+  }, [rundownId, savedRundowns, loading]);
 
   // Reset when rundownId changes
   useEffect(() => {
-    const currentId = rundownId || 'new';
-    if (loadedRundownIdRef.current && loadedRundownIdRef.current !== currentId) {
-      loadedRundownIdRef.current = null;
-      isLoadingRef.current = false;
-    }
+    return () => {
+      if (loadedRundownIdRef.current && loadedRundownIdRef.current !== (rundownId || 'new')) {
+        loadedRundownIdRef.current = null;
+        isLoadingRef.current = false;
+      }
+    };
   }, [rundownId]);
 
   const actions = useRundownItemActions(setItems);
