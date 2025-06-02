@@ -24,8 +24,18 @@ export const usePlaybackControls = (
 
   const timeToSeconds = (timeStr: string) => {
     if (!timeStr) return 0;
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
+    const parts = timeStr.split(':').map(Number);
+    
+    if (parts.length === 2) {
+      // MM:SS format (minutes:seconds)
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+      // HH:MM:SS format
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+    return 0;
   };
 
   const clearCurrentStatus = () => {
