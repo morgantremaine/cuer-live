@@ -14,8 +14,9 @@ export const useRundownBasicState = () => {
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Single initialization flag per rundown ID
+  // Single initialization flag per rundown ID to prevent double initialization
   const initRef = useRef<string | undefined>(undefined);
+  const hasInitialized = useRef(false);
 
   // Timer effect for current time
   useEffect(() => {
@@ -23,16 +24,26 @@ export const useRundownBasicState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Initialize only once per rundown change
+  // Initialize only once per rundown change - prevent double initialization
   useEffect(() => {
-    if (rundownId !== initRef.current) {
+    if (rundownId !== initRef.current && !hasInitialized.current) {
       console.log('useRundownBasicState initialized for rundownId:', rundownId);
       initRef.current = rundownId;
+      hasInitialized.current = true;
       setIsInitialized(true);
     }
   }, [rundownId]);
 
-  // Stable change tracking function
+  // Reset initialization when rundown changes
+  useEffect(() => {
+    return () => {
+      if (initRef.current !== rundownId) {
+        hasInitialized.current = false;
+      }
+    };
+  }, [rundownId]);
+
+  // Stable change tracking function - memoized to prevent re-renders
   const markAsChanged = useCallback(() => {
     console.log('Changes marked - triggering auto-save');
   }, []);

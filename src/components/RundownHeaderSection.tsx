@@ -18,14 +18,7 @@ const RundownHeaderSection = (props: RundownHeaderSectionProps) => {
   return (
     <div className="mb-6">
       <div className="flex justify-between items-start mb-2">
-        <h1 className="text-2xl font-bold text-white flex items-center">
-          {props.rundownIcon && (
-            <img 
-              src={props.rundownIcon} 
-              alt="Rundown icon" 
-              className="w-8 h-8 mr-3 rounded object-cover"
-            />
-          )}
+        <h1 className="text-2xl font-bold text-white">
           {props.rundownTitle}
         </h1>
         <div className="text-right text-sm text-gray-400">
