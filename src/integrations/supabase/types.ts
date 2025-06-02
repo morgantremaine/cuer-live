@@ -16,6 +16,7 @@ export type Database = {
           lists: Json
           rundown_id: string
           rundown_title: string
+          show_date: string | null
           updated_at: string
           user_id: string
         }
@@ -25,6 +26,7 @@ export type Database = {
           lists?: Json
           rundown_id: string
           rundown_title: string
+          show_date?: string | null
           updated_at?: string
           user_id: string
         }
@@ -34,6 +36,7 @@ export type Database = {
           lists?: Json
           rundown_id?: string
           rundown_title?: string
+          show_date?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, RefreshCw, FileText, Clock, Calendar } from 'lucide-react';
 import BlueprintListCard from '@/components/blueprint/BlueprintListCard';
 import AddListDialog from '@/components/blueprint/AddListDialog';
+import IconUpload from '@/components/blueprint/IconUpload';
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { savedRundowns, loading } = useRundownStorage();
+  const { savedRundowns, loading, updateRundown } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
   
@@ -39,6 +40,26 @@ const Blueprint = () => {
     rundown?.items || [],
     rundown?.startTime
   );
+
+  const handleIconChange = async (iconData: string | null) => {
+    if (!rundown || !id) return;
+
+    try {
+      await updateRundown(
+        id,
+        rundown.title,
+        rundown.items,
+        true, // silent update
+        false, // not archived
+        rundown.columns,
+        rundown.timezone,
+        rundown.startTime,
+        iconData
+      );
+    } catch (error) {
+      console.error('Error updating icon:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -67,7 +88,20 @@ const Blueprint = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Blueprint</h1>
+            <div className="flex items-center space-x-3 mb-2">
+              {rundown.icon && (
+                <img 
+                  src={rundown.icon} 
+                  alt="Rundown icon" 
+                  className="w-8 h-8 rounded object-cover"
+                />
+              )}
+              <h1 className="text-3xl font-bold text-white">Blueprint</h1>
+              <IconUpload
+                currentIcon={rundown.icon}
+                onIconChange={handleIconChange}
+              />
+            </div>
             <p className="text-gray-400 mb-2">{rundown.title}</p>
             
             {/* Start Time and Date Section */}
