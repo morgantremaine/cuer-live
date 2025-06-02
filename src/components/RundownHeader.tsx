@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { Edit2, User, LogOut, ArrowLeft, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import TimezoneSelector from './TimezoneSelector';
-import AuthModal from './AuthModal';
-import SearchBar from './SearchBar';
-import { useAuth } from '@/hooks/useAuth';
+
+import React from 'react';
+import HeaderLogo from './header/HeaderLogo';
+import HeaderTitle from './header/HeaderTitle';
+import HeaderControls from './header/HeaderControls';
+import HeaderBottomSection from './header/HeaderBottomSection';
 import { SearchHighlight } from '@/types/search';
 
 interface RundownHeaderProps {
@@ -42,156 +40,33 @@ const RundownHeader = ({
   onHighlightMatch = () => {},
   onReplaceText = () => {}
 }: RundownHeaderProps) => {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-
-  const formatTime = (time: Date, tz: string) => {
-    try {
-      const timeString = time.toLocaleTimeString('en-US', { 
-        hour12: false,
-        timeZone: tz
-      });
-      return timeString;
-    } catch {
-      return time.toLocaleTimeString('en-US', { hour12: false });
-    }
-  };
-
-  const handleTitleSubmit = () => {
-    setIsEditingTitle(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleTitleSubmit();
-    } else if (e.key === 'Escape') {
-      setIsEditingTitle(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
-  };
-
-  const getSaveStatus = () => {
-    if (isSaving) {
-      return <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">Saving...</span>;
-    }
-    if (hasUnsavedChanges) {
-      return <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">Unsaved changes</span>;
-    }
-    return <span className="text-xs text-green-600 dark:text-green-400 ml-2">Saved</span>;
-  };
-
   return (
     <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-3 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBackToDashboard}
-            className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-2"
-            title="Back to Dashboard"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <img 
-            src="/lovable-uploads/da2200e5-3194-4f43-8ec0-9266a479bbf0.png" 
-            alt="Cuer Logo" 
-            className="h-6 w-auto"
+          <HeaderLogo />
+          <HeaderTitle
+            title={title}
+            onTitleChange={onTitleChange}
+            hasUnsavedChanges={hasUnsavedChanges}
+            isSaving={isSaving}
           />
-          {isEditingTitle ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              onBlur={handleTitleSubmit}
-              onKeyDown={handleKeyDown}
-              className="text-xl font-bold bg-transparent border-b-2 border-gray-400 dark:border-gray-500 outline-none text-gray-900 dark:text-white placeholder-gray-500"
-              autoFocus
-            />
-          ) : (
-            <div className="flex items-center space-x-2 group">
-              <h1 className="text-xl font-bold">{title}</h1>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditingTitle(true)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              {getSaveStatus()}
-            </div>
-          )}
         </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
-          <TimezoneSelector 
-            currentTimezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-          />
-          <div className="relative">
-            <SearchBar
-              items={items}
-              visibleColumns={visibleColumns}
-              onHighlightMatch={onHighlightMatch}
-              onReplaceText={onReplaceText}
-            />
-          </div>
-          {user ? (
-            <div className="flex items-center space-x-2 relative">
-              <span className="text-sm">{user.email}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAuthModal(true)}
-              className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <User className="h-4 w-4 mr-2" />
-              Sign In
-            </Button>
-          )}
-        </div>
+        <HeaderControls
+          currentTime={currentTime}
+          timezone={timezone}
+          onTimezoneChange={onTimezoneChange}
+          items={items}
+          visibleColumns={visibleColumns}
+          onHighlightMatch={onHighlightMatch}
+          onReplaceText={onReplaceText}
+        />
       </div>
 
-      <div className="flex justify-between items-center text-sm">
-        <div className="flex items-center space-x-4">
-          <span className="opacity-75">Total Runtime: {totalRuntime}</span>
-          <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 opacity-75" />
-            <span className="opacity-75">Start Time:</span>
-            <input
-              type="text"
-              value={rundownStartTime}
-              onChange={(e) => onRundownStartTimeChange(e.target.value)}
-              className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-24 focus:outline-none focus:border-blue-500"
-              placeholder="00:00:00"
-            />
-          </div>
-        </div>
-      </div>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+      <HeaderBottomSection
+        totalRuntime={totalRuntime}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
       />
     </div>
   );
