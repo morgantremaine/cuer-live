@@ -143,7 +143,7 @@ const Blueprint = () => {
             </div>
           </div>
           
-          <div className="flex flex-col gap-2 items-end">
+          <div className="flex gap-2 items-center justify-end">
             <IconUpload
               currentIcon={rundown.icon}
               onIconChange={handleIconChange}

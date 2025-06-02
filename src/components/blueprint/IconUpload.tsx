@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, X } from 'lucide-react';
+import { Upload, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface IconUploadProps {
@@ -77,25 +78,17 @@ const IconUpload = ({ currentIcon, onIconChange, disabled = false }: IconUploadP
     }
   };
 
-  const handleRemoveIcon = () => {
-    onIconChange(null);
-    toast({
-      title: 'Success',
-      description: 'Icon removed successfully!',
-    });
-  };
-
   return (
     <div>
       {currentIcon ? (
         <Button
           variant="outline"
-          onClick={handleRemoveIcon}
-          disabled={disabled}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || isUploading}
           className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
         >
-          <X className="h-4 w-4 mr-2" />
-          Remove Icon
+          <Edit className="h-4 w-4 mr-2" />
+          {isUploading ? 'Uploading...' : 'Update Icon'}
         </Button>
       ) : (
         <Button
