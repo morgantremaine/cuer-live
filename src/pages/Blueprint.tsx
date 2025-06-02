@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -10,6 +9,7 @@ import DashboardHeader from '@/components/DashboardHeader';
 import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
+import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
@@ -122,6 +122,14 @@ const Blueprint = () => {
             onDragEnd={handleDragEnd}
           />
         )}
+
+        <BlueprintScratchpad
+          rundownId={id || ''}
+          onNotesChange={(notes) => {
+            // Notes are automatically handled by the component for now
+            // Can be extended to save to database if needed
+          }}
+        />
       </div>
     </div>
   );
