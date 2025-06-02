@@ -1,6 +1,7 @@
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchHighlight } from '@/types/search';
 
 export interface RundownHeaderSectionProps {
   rundownTitle: string;
@@ -10,6 +11,35 @@ export interface RundownHeaderSectionProps {
   currentSegmentId: string | null;
   items: RundownItem[];
   rundownIcon?: string;
+  onTimezoneChange: (timezone: string) => void;
+  totalRuntime: string;
+  onAddRow: () => void;
+  onAddHeader: () => void;
+  onShowColumnManager: () => void;
+  selectedCount: number;
+  hasClipboardData: boolean;
+  onCopySelectedRows: () => void;
+  onPasteRows: () => void;
+  onDeleteSelectedRows: () => void;
+  onClearSelection: () => void;
+  selectedRowId: string | null;
+  isPlaying: boolean;
+  timeRemaining: number;
+  onPlay: (selectedSegmentId?: string) => void;
+  onPause: () => void;
+  onForward: () => void;
+  onBackward: () => void;
+  hasUnsavedChanges: boolean;
+  isSaving: boolean;
+  onTitleChange: (title: string) => void;
+  rundownStartTime: string;
+  onRundownStartTimeChange: (startTime: string) => void;
+  rundownId?: string;
+  onOpenTeleprompter: () => void;
+  visibleColumns: Column[];
+  onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
+  onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
+  currentHighlight: SearchHighlight | null;
 }
 
 export interface RundownContainerProps {
