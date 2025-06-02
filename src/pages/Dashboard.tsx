@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
@@ -90,11 +89,6 @@ const Dashboard = () => {
     if (rundown) {
       try {
         console.log('Dashboard: Updating icon for rundown:', rundownId, 'with icon:', iconUrl)
-        // Create updated rundown object with new icon
-        const updatedRundown = {
-          ...rundown,
-          icon: iconUrl
-        }
         await updateRundown(rundownId, rundown.title, rundown.items, false, rundown.archived, rundown.columns, rundown.timezone, rundown.startTime, iconUrl)
       } catch (error) {
         console.error('Failed to update rundown icon:', error)
