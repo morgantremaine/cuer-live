@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +11,7 @@ interface SavedBlueprint {
   rundown_id: string;
   rundown_title: string;
   lists: BlueprintList[];
+  show_date?: string;
   created_at: string;
   updated_at: string;
 }
@@ -47,7 +49,7 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
   };
 
-  const saveBlueprint = async (rundownTitle: string, lists: BlueprintList[], silent = false) => {
+  const saveBlueprint = async (rundownTitle: string, lists: BlueprintList[], showDate?: string, silent = false) => {
     if (!user || !rundownId) return;
 
     try {
@@ -56,6 +58,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         rundown_id: rundownId,
         rundown_title: rundownTitle,
         lists: lists,
+        show_date: showDate,
         updated_at: new Date().toISOString()
       };
 

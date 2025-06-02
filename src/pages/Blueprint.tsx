@@ -4,7 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useBlueprintState } from '@/hooks/useBlueprintState';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, FileText } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, RefreshCw, FileText, Clock, Calendar } from 'lucide-react';
 import BlueprintListCard from '@/components/blueprint/BlueprintListCard';
 import AddListDialog from '@/components/blueprint/AddListDialog';
 
@@ -18,6 +19,8 @@ const Blueprint = () => {
   const {
     lists,
     availableColumns,
+    showDate,
+    updateShowDate,
     addNewList,
     deleteList,
     renameList,
@@ -33,7 +36,8 @@ const Blueprint = () => {
   } = useBlueprintState(
     id || '',
     rundown?.title || 'Unknown Rundown',
-    rundown?.items || []
+    rundown?.items || [],
+    rundown?.startTime
   );
 
   if (loading) {
@@ -64,7 +68,29 @@ const Blueprint = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white">Blueprint</h1>
-            <p className="text-gray-400 mb-4">{rundown.title}</p>
+            <p className="text-gray-400 mb-2">{rundown.title}</p>
+            
+            {/* Start Time and Date Section */}
+            <div className="flex items-center space-x-6 mb-4">
+              {rundown.startTime && (
+                <div className="flex items-center space-x-2 text-gray-300">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-sm">Start Time: {rundown.startTime}</span>
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-gray-300" />
+                <label htmlFor="show-date" className="text-sm text-gray-300">Show Date:</label>
+                <Input
+                  id="show-date"
+                  type="date"
+                  value={showDate}
+                  onChange={(e) => updateShowDate(e.target.value)}
+                  className="bg-gray-800 border-gray-600 text-white w-40 h-8 text-sm"
+                />
+              </div>
+            </div>
+            
             <div className="flex gap-2">
               <Button
                 variant="outline"
