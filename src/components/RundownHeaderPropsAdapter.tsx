@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import { RundownContainerProps } from '@/types/rundownContainer';
 import { SearchHighlight } from '@/types/search';
@@ -8,7 +8,7 @@ interface RundownHeaderPropsAdapterProps {
   props: RundownContainerProps;
 }
 
-const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
+const RundownHeaderPropsAdapter = memo(({ props }: RundownHeaderPropsAdapterProps) => {
   const [currentHighlight, setCurrentHighlight] = useState<SearchHighlight | null>(null);
 
   // Create handlers for search functionality
@@ -92,6 +92,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       currentHighlight={currentHighlight}
     />
   );
-};
+});
+
+RundownHeaderPropsAdapter.displayName = 'RundownHeaderPropsAdapter';
 
 export default RundownHeaderPropsAdapter;

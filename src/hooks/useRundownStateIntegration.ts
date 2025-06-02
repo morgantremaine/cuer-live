@@ -2,6 +2,7 @@
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
+import { useMemo } from 'react';
 
 export const useRundownStateIntegration = (
   markAsChanged: () => void,
@@ -11,7 +12,7 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  // Rundown items management - call without arguments as per hook definition
+  // Rundown items management
   const {
     items,
     setItems,
@@ -27,7 +28,7 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems();
 
-  // Column management - call with markAsChanged to ensure proper change tracking
+  // Column management with stable markAsChanged reference
   const {
     columns,
     visibleColumns,
@@ -40,9 +41,7 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  console.log('useRundownStateIntegration: handleRenameColumn available:', !!handleRenameColumn);
-
-  // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone, startTime
+  // Auto-save functionality
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     items,
     rundownTitle,
@@ -51,7 +50,8 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  return {
+  // Memoize the return object to prevent unnecessary re-renders
+  return useMemo(() => ({
     items,
     setItems,
     updateItem,
@@ -76,5 +76,30 @@ export const useRundownStateIntegration = (
     hasUnsavedChanges,
     isSaving,
     markAsChanged
-  };
+  }), [
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
+    hasUnsavedChanges,
+    isSaving,
+    markAsChanged
+  ]);
 };

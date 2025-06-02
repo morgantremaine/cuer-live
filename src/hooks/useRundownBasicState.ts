@@ -13,9 +13,9 @@ export const useRundownBasicState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   
-  // Single initialization flag per app session
-  const initRef = useRef<{ [key: string]: boolean }>({});
-  const currentRundownRef = useRef<string | undefined>(undefined);
+  // Single initialization flag per rundown ID
+  const initRef = useRef<string | undefined>(undefined);
+  const isInitialized = initRef.current === rundownId;
 
   // Timer effect for current time
   useEffect(() => {
@@ -23,17 +23,13 @@ export const useRundownBasicState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Initialize only once per rundown change - use a more robust check
+  // Initialize only once per rundown change
   useEffect(() => {
-    const currentKey = rundownId || 'new';
-    
-    // Only initialize if this is truly a new rundown
-    if (currentRundownRef.current !== rundownId && !initRef.current[currentKey]) {
+    if (!isInitialized) {
       console.log('useRundownBasicState initialized for rundownId:', rundownId);
-      currentRundownRef.current = rundownId;
-      initRef.current[currentKey] = true;
+      initRef.current = rundownId;
     }
-  }, [rundownId]);
+  }, [rundownId, isInitialized]);
 
   // Change tracking for timezone and other fields
   const markAsChanged = () => {

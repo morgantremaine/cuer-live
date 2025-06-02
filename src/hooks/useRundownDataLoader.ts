@@ -21,19 +21,12 @@ export const useRundownDataLoader = ({
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
   // Track what we've already loaded to prevent re-loading
-  const loadedDataRef = useRef<{ [key: string]: boolean }>({});
+  const loadedRundownRef = useRef<string | undefined>(undefined);
   const isProcessingRef = useRef(false);
 
   // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
-    if (loading || isProcessingRef.current) {
-      return;
-    }
-
-    const currentKey = rundownId || 'new';
-    
-    // Skip if already loaded
-    if (loadedDataRef.current[currentKey]) {
+    if (loading || isProcessingRef.current || loadedRundownRef.current === rundownId) {
       return;
     }
 
@@ -50,8 +43,8 @@ export const useRundownDataLoader = ({
             startTime: existingRundown.start_time
           });
           
-          // Mark as loaded before setting data to prevent loops
-          loadedDataRef.current[currentKey] = true;
+          // Mark as loaded first to prevent loops
+          loadedRundownRef.current = rundownId;
           
           if (existingRundown.title) {
             console.log('Setting title from saved rundown:', existingRundown.title);
@@ -72,12 +65,13 @@ export const useRundownDataLoader = ({
             console.log('Loading column layout:', existingRundown.columns);
             handleLoadLayout(existingRundown.columns);
           }
+        } else {
+          loadedRundownRef.current = rundownId;
         }
-      } else if (!rundownId) {
+      } else if (!rundownId && loadedRundownRef.current !== 'new') {
         console.log('New rundown, using default title');
-        loadedDataRef.current[currentKey] = true;
+        loadedRundownRef.current = 'new';
         setRundownTitle('Live Broadcast Rundown');
-        // Don't set default timezone for new rundowns - let it use the default from useRundownBasicState
       }
     } finally {
       isProcessingRef.current = false;
@@ -86,20 +80,17 @@ export const useRundownDataLoader = ({
 
   // Load data when conditions are met
   useEffect(() => {
-    // Don't proceed if still loading
     if (loading) return;
-    
-    // For existing rundowns, wait for savedRundowns to be available
     if (rundownId && savedRundowns.length === 0) return;
     
-    // Load the data
     loadRundownData();
-  }, [rundownId, savedRundowns.length, loading, loadRundownData]);
+  }, [loadRundownData]);
 
-  // Clean up when rundown changes
+  // Reset when rundown changes
   useEffect(() => {
-    return () => {
+    if (loadedRundownRef.current !== rundownId) {
+      loadedRundownRef.current = undefined;
       isProcessingRef.current = false;
-    };
+    }
   }, [rundownId]);
 };
