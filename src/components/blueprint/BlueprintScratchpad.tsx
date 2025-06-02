@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,20 +17,24 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
   const [notes, setNotes] = useState(initialNotes);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
 
   // Load notes from saved blueprint when available
   useEffect(() => {
-    if (savedBlueprint?.notes && notes === initialNotes) {
-      setNotes(savedBlueprint.notes);
+    if (savedBlueprint?.notes !== undefined) {
+      console.log('Loading notes from blueprint:', savedBlueprint.notes);
+      setNotes(savedBlueprint.notes || '');
+      setSaveStatus('saved');
     }
-  }, [savedBlueprint, initialNotes]);
+  }, [savedBlueprint?.notes]);
 
   const handleNotesChange = (value: string) => {
     console.log('Notes changed:', value);
     setNotes(value);
+    setSaveStatus('unsaved');
     onNotesChange?.(value);
 
     // Clear existing timeout
@@ -46,6 +51,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
   const autoSaveNotes = async (notesToSave: string) => {
     console.log('Starting auto-save with notes:', notesToSave);
     setIsSaving(true);
+    setSaveStatus('saving');
     
     try {
       // Get current blueprint data or use defaults
@@ -69,8 +75,10 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
       );
       
       console.log('Notes auto-saved successfully');
+      setSaveStatus('saved');
     } catch (error) {
       console.error('Failed to auto-save notes:', error);
+      setSaveStatus('unsaved');
     } finally {
       setIsSaving(false);
     }
@@ -123,13 +131,26 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
     }, 0);
   };
 
+  const getSaveStatusDisplay = () => {
+    switch (saveStatus) {
+      case 'saving':
+        return <span className="text-xs text-blue-400">Saving...</span>;
+      case 'unsaved':
+        return <span className="text-xs text-orange-400">Unsaved changes</span>;
+      case 'saved':
+        return <span className="text-xs text-green-400">Saved</span>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Card className="w-full mt-8 bg-gray-800 border-gray-700">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="text-xl text-white">Show Scratchpad</CardTitle>
-            {isSaving && <span className="text-xs text-blue-400">Saving...</span>}
+            {getSaveStatusDisplay()}
           </div>
           <div className="flex items-center gap-2">
             {isEditing && (
