@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownMainContent from './RundownMainContent';
 import { RundownContainerProps } from '@/types/rundownContainer';
@@ -51,6 +50,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       handleRenameColumn={props.handleRenameColumn}
       handleToggleColumnVisibility={props.handleToggleColumnVisibility}
       handleLoadLayout={props.handleLoadLayout}
+      findCurrentItem={props.findCurrentItem}
     />
   );
 };

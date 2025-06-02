@@ -57,13 +57,15 @@ export const useRundownStateCoordination = () => {
     coreState.markAsChanged
   );
 
-  // Override the UI state's selectColor with our stable version
+  // Override the UI state's selectColor with our stable version and add live item tracking
   const stableUIState = useMemo(() => ({
     ...uiState,
     selectColor: handleColorSelection,
     getColumnWidth,
-    updateColumnWidth
-  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth]);
+    updateColumnWidth,
+    getRowStatus: coreState.getRowStatus,
+    findCurrentItem: coreState.findCurrentItem
+  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth, coreState.getRowStatus, coreState.findCurrentItem]);
 
   return {
     coreState,
