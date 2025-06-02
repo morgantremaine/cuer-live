@@ -32,25 +32,19 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Store stable references to prevent re-renders - use ref for true stability
+  // Store stable references - use ref for true stability
   const stableSettersRef = useRef({
     setRundownTitleDirectly,
     setTimezoneDirectly,
     setRundownStartTimeDirectly
   });
 
-  // Only update if functions actually changed
-  if (stableSettersRef.current.setRundownTitleDirectly !== setRundownTitleDirectly) {
-    stableSettersRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
-  }
-  if (stableSettersRef.current.setTimezoneDirectly !== setTimezoneDirectly) {
-    stableSettersRef.current.setTimezoneDirectly = setTimezoneDirectly;
-  }
-  if (stableSettersRef.current.setRundownStartTimeDirectly !== setRundownStartTimeDirectly) {
-    stableSettersRef.current.setRundownStartTimeDirectly = setRundownStartTimeDirectly;
-  }
+  // Update refs when functions change
+  stableSettersRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
+  stableSettersRef.current.setTimezoneDirectly = setTimezoneDirectly;
+  stableSettersRef.current.setRundownStartTimeDirectly = setRundownStartTimeDirectly;
 
-  // Rundown data integration - only run when initialized
+  // Rundown data integration
   const stateIntegration = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
@@ -60,7 +54,7 @@ export const useRundownGridCore = () => {
     stableSettersRef.current.setTimezoneDirectly
   );
 
-  // Use data loader to properly set title, timezone, and start time - only when initialized
+  // Use data loader to properly set title, timezone, and start time
   useRundownDataLoader({
     rundownId,
     savedRundowns,

@@ -37,46 +37,50 @@ export const useRundownBasicState = () => {
     console.log('Changes marked - triggering auto-save');
   }, []);
 
-  // Create truly stable setter functions using useMemo
-  const stableSetters = useMemo(() => ({
-    setTimezoneDirectly: (newTimezone: string) => {
-      console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
-      setTimezone(newTimezone);
-    },
-    setRundownTitleDirectly: (newTitle: string) => {
-      setRundownTitle(newTitle);
-    },
-    setRundownStartTimeDirectly: (newStartTime: string) => {
-      setRundownStartTime(newStartTime);
-    },
-    setTimezoneWithChange: (newTimezone: string) => {
-      console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
-      setTimezone(newTimezone);
-      markAsChanged();
-    },
-    setRundownTitleWithChange: (newTitle: string) => {
-      setRundownTitle(newTitle);
-      markAsChanged();
-    },
-    setRundownStartTimeWithChange: (newStartTime: string) => {
-      setRundownStartTime(newStartTime);
-      markAsChanged();
-    }
-  }), [markAsChanged]);
+  // Simple direct setters without change tracking
+  const setTimezoneDirectly = useCallback((newTimezone: string) => {
+    console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
+    setTimezone(newTimezone);
+  }, []);
+
+  const setRundownTitleDirectly = useCallback((newTitle: string) => {
+    setRundownTitle(newTitle);
+  }, []);
+
+  const setRundownStartTimeDirectly = useCallback((newStartTime: string) => {
+    setRundownStartTime(newStartTime);
+  }, []);
+
+  // Setters with change tracking
+  const setTimezoneWithChange = useCallback((newTimezone: string) => {
+    console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
+    setTimezone(newTimezone);
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const setRundownTitleWithChange = useCallback((newTitle: string) => {
+    setRundownTitle(newTitle);
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const setRundownStartTimeWithChange = useCallback((newStartTime: string) => {
+    setRundownStartTime(newStartTime);
+    markAsChanged();
+  }, [markAsChanged]);
 
   return {
     currentTime,
     timezone,
-    setTimezone: stableSetters.setTimezoneWithChange,
-    setTimezoneDirectly: stableSetters.setTimezoneDirectly,
+    setTimezone: setTimezoneWithChange,
+    setTimezoneDirectly,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
-    setRundownTitle: stableSetters.setRundownTitleWithChange,
-    setRundownTitleDirectly: stableSetters.setRundownTitleDirectly,
+    setRundownTitle: setRundownTitleWithChange,
+    setRundownTitleDirectly,
     rundownStartTime,
-    setRundownStartTime: stableSetters.setRundownStartTimeWithChange,
-    setRundownStartTimeDirectly: stableSetters.setRundownStartTimeDirectly,
+    setRundownStartTime: setRundownStartTimeWithChange,
+    setRundownStartTimeDirectly,
     rundownId,
     markAsChanged,
     isInitialized

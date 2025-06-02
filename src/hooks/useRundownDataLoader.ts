@@ -22,31 +22,24 @@ export const useRundownDataLoader = ({
   setRundownStartTime,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
-  // Track what we've loaded globally to prevent any re-loading
-  const loadedStateRef = useRef<{
-    rundownId: string | undefined;
-    isLoaded: boolean;
-    isProcessing: boolean;
-  }>({
-    rundownId: undefined,
-    isLoaded: false,
-    isProcessing: false
-  });
+  // Track what we've loaded to prevent re-loading
+  const hasLoadedRef = useRef<Set<string>>(new Set());
 
-  // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
-    // If we're already processing or have loaded this rundown, skip
-    if (loadedStateRef.current.isProcessing || 
-        (loadedStateRef.current.rundownId === rundownId && loadedStateRef.current.isLoaded)) {
-      return;
-    }
-
     // Don't proceed if not initialized or still loading data
     if (!isInitialized || loading) {
       return;
     }
 
-    loadedStateRef.current.isProcessing = true;
+    const loadKey = rundownId || 'new';
+    
+    // If we've already loaded this rundown, skip
+    if (hasLoadedRef.current.has(loadKey)) {
+      return;
+    }
+
+    // Mark as loading to prevent duplicate calls
+    hasLoadedRef.current.add(loadKey);
 
     try {
       if (rundownId && savedRundowns.length > 0) {
@@ -79,41 +72,28 @@ export const useRundownDataLoader = ({
             handleLoadLayout(existingRundown.columns);
           }
         }
-        
-        // Mark as loaded
-        loadedStateRef.current = {
-          rundownId,
-          isLoaded: true,
-          isProcessing: false
-        };
-      } else if (!rundownId && loadedStateRef.current.rundownId !== 'new') {
+      } else if (!rundownId) {
         console.log('New rundown, using default title');
         setRundownTitle('Live Broadcast Rundown');
-        loadedStateRef.current = {
-          rundownId: 'new',
-          isLoaded: true,
-          isProcessing: false
-        };
-      } else {
-        loadedStateRef.current.isProcessing = false;
       }
     } catch (error) {
       console.error('Error loading rundown data:', error);
-      loadedStateRef.current.isProcessing = false;
+      // Remove from loaded set on error so it can be retried
+      hasLoadedRef.current.delete(loadKey);
     }
   }, [rundownId, savedRundowns, loading, isInitialized, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
+  // Reset loaded state when rundown changes
+  useEffect(() => {
+    // Clear loaded state when rundown ID changes
+    return () => {
+      const loadKey = rundownId || 'new';
+      hasLoadedRef.current.delete(loadKey);
+    };
+  }, [rundownId]);
+
   // Load data when conditions are met
   useEffect(() => {
-    // Reset state when rundown changes
-    if (loadedStateRef.current.rundownId !== rundownId) {
-      loadedStateRef.current = {
-        rundownId: undefined,
-        isLoaded: false,
-        isProcessing: false
-      };
-    }
-
     loadRundownData();
   }, [loadRundownData]);
 };

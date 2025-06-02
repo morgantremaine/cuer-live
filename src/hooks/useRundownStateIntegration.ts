@@ -12,28 +12,22 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  // Store stable references to prevent re-renders
+  // Use refs for stable function references
   const stableRefsRef = useRef({
     markAsChanged,
     setRundownTitleDirectly,
     setTimezoneDirectly
   });
 
-  // Only update refs if the actual functions have changed
-  if (stableRefsRef.current.markAsChanged !== markAsChanged) {
-    stableRefsRef.current.markAsChanged = markAsChanged;
-  }
-  if (stableRefsRef.current.setRundownTitleDirectly !== setRundownTitleDirectly) {
-    stableRefsRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
-  }
-  if (stableRefsRef.current.setTimezoneDirectly !== setTimezoneDirectly) {
-    stableRefsRef.current.setTimezoneDirectly = setTimezoneDirectly;
-  }
+  // Update refs when functions change
+  stableRefsRef.current.markAsChanged = markAsChanged;
+  stableRefsRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
+  stableRefsRef.current.setTimezoneDirectly = setTimezoneDirectly;
 
   // Rundown items management
   const itemsHook = useRundownItems();
 
-  // Column management with stable markAsChanged reference
+  // Column management with stable reference
   const columnsHook = useColumnsManager(stableRefsRef.current.markAsChanged);
 
   // Auto-save functionality
