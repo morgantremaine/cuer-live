@@ -103,39 +103,69 @@ const Blueprint = () => {
           onRefreshAll={refreshAllLists}
         />
 
-        {lists.length === 0 ? (
-          <BlueprintEmptyState
-            availableColumns={availableColumns}
-            onAddList={addNewList}
-          />
-        ) : (
-          <BlueprintListsGrid
-            lists={lists}
-            rundownItems={rundown?.items || []}
-            draggedListId={draggedListId}
-            insertionIndex={insertionIndex}
-            onDeleteList={deleteList}
-            onRenameList={renameList}
-            onUpdateCheckedItems={updateCheckedItems}
+        <div 
+          data-drop-container
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {lists.length === 0 ? (
+            <BlueprintEmptyState
+              availableColumns={availableColumns}
+              onAddList={addNewList}
+            />
+          ) : (
+            <BlueprintListsGrid
+              lists={lists}
+              rundownItems={rundown?.items || []}
+              draggedListId={draggedListId}
+              insertionIndex={insertionIndex}
+              onDeleteList={deleteList}
+              onRenameList={renameList}
+              onUpdateCheckedItems={updateCheckedItems}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnterContainer={handleDragEnterContainer}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+            />
+          )}
+
+          {/* Insertion line for crew list */}
+          {insertionIndex === lists.length + 1 && (
+            <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
+          )}
+
+          <CrewList 
+            isDragging={draggedListId === 'crew-list'}
             onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnterContainer={handleDragEnterContainer}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+            onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 1)}
             onDragEnd={handleDragEnd}
           />
-        )}
 
-        <CrewList />
+          {/* Insertion line for scratchpad */}
+          {insertionIndex === lists.length + 2 && (
+            <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
+          )}
 
-        <BlueprintScratchpad
-          rundownId={id || ''}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
-          initialNotes={savedBlueprint?.notes || ''}
-          onNotesChange={(notes) => {
-            // Notes are automatically handled by the component
-          }}
-        />
+          <div 
+            className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, 'scratchpad')}
+            onDragEnter={(e) => handleDragEnterContainer(e, lists.length + 2)}
+            onDragEnd={handleDragEnd}
+          >
+            <BlueprintScratchpad
+              rundownId={id || ''}
+              rundownTitle={rundown?.title || 'Unknown Rundown'}
+              initialNotes={savedBlueprint?.notes || ''}
+              onNotesChange={(notes) => {
+                // Notes are automatically handled by the component
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
