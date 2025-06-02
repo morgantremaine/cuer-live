@@ -8,6 +8,7 @@ interface UseRundownDataLoaderProps {
   setRundownTitle: (title: string) => void;
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
+  setRundownIcon: (icon: string) => void;
   handleLoadLayout: (columns: any[]) => void;
 }
 
@@ -18,6 +19,7 @@ export const useRundownDataLoader = ({
   setRundownTitle,
   setTimezone,
   setRundownStartTime,
+  setRundownIcon,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
   // Track what we've already loaded to prevent re-loading
@@ -47,7 +49,8 @@ export const useRundownDataLoader = ({
             id: rundownId, 
             title: existingRundown.title, 
             timezone: existingRundown.timezone,
-            startTime: existingRundown.start_time
+            startTime: existingRundown.start_time,
+            icon: existingRundown.icon
           });
           
           // Mark as loaded before setting data to prevent loops
@@ -67,6 +70,11 @@ export const useRundownDataLoader = ({
             console.log('Setting start time from saved rundown:', existingRundown.start_time);
             setRundownStartTime(existingRundown.start_time);
           }
+
+          if (existingRundown.icon) {
+            console.log('Setting icon from saved rundown:', existingRundown.icon);
+            setRundownIcon(existingRundown.icon);
+          }
           
           if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
             console.log('Loading column layout:', existingRundown.columns);
@@ -77,12 +85,12 @@ export const useRundownDataLoader = ({
         console.log('New rundown, using default title');
         loadedDataRef.current[currentKey] = true;
         setRundownTitle('Live Broadcast Rundown');
-        // Don't set default timezone for new rundowns - let it use the default from useRundownBasicState
+        // Don't set default timezone or icon for new rundowns - let them use the defaults from useRundownBasicState
       }
     } finally {
       isProcessingRef.current = false;
     }
-  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
+  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, setRundownIcon, handleLoadLayout]);
 
   // Load data when conditions are met
   useEffect(() => {

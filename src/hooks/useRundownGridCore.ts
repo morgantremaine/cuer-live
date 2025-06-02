@@ -21,6 +21,9 @@ export const useRundownGridCore = () => {
     rundownStartTime,
     setRundownStartTime,
     setRundownStartTimeDirectly,
+    rundownIcon,
+    setRundownIcon,
+    setRundownIconDirectly,
     rundownId,
     markAsChanged
   } = useRundownBasicState();
@@ -28,7 +31,7 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration - now passing all required arguments including rundownStartTime
+  // Rundown data integration - now passing all required arguments including rundownIcon
   const {
     items,
     setItems,
@@ -58,11 +61,13 @@ export const useRundownGridCore = () => {
     rundownTitle, 
     timezone, 
     rundownStartTime,
+    rundownIcon,
     setRundownTitleDirectly, 
-    setTimezoneDirectly
+    setTimezoneDirectly,
+    setRundownIconDirectly
   );
 
-  // Use data loader to properly set title, timezone, and start time - using direct setters to avoid change tracking during load
+  // Use data loader to properly set title, timezone, icon, and start time - using direct setters to avoid change tracking during load
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -70,6 +75,7 @@ export const useRundownGridCore = () => {
     setRundownTitle: setRundownTitleDirectly,
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
+    setRundownIcon: setRundownIconDirectly,
     handleLoadLayout
   });
 
@@ -98,6 +104,8 @@ export const useRundownGridCore = () => {
     setRundownTitle, // This is the change-tracking version for user interactions
     rundownStartTime,
     setRundownStartTime,
+    rundownIcon,
+    setRundownIcon, // This is the change-tracking version for user interactions
     rundownId,
     markAsChanged,
 
