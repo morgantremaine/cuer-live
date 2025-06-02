@@ -8,8 +8,18 @@ export const useTimeCalculations = (
   rundownStartTime: string
 ) => {
   const timeToSeconds = (timeStr: string) => {
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
+    // Handle both HH:MM and HH:MM:SS formats
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+      // HH:MM format
+      const [hours, minutes] = parts;
+      return hours * 3600 + minutes * 60;
+    } else if (parts.length === 3) {
+      // HH:MM:SS format
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+    return 0;
   };
 
   const secondsToTime = (seconds: number) => {

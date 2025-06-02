@@ -3,6 +3,21 @@ import { useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
+  const timeToSeconds = useCallback((timeStr: string) => {
+    // Handle both HH:MM and HH:MM:SS formats
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+      // HH:MM format
+      const [hours, minutes] = parts;
+      return hours * 3600 + minutes * 60;
+    } else if (parts.length === 3) {
+      // HH:MM:SS format
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+    return 0;
+  }, []);
+
   const getRowNumber = useCallback((index: number) => {
     const item = items[index];
     if (!item) return '1';
@@ -46,8 +61,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
 
   const calculateTotalRuntime = useCallback(() => {
     let totalSeconds = items.reduce((acc, item) => {
-      const [hours, minutes, seconds] = item.duration.split(':').map(Number);
-      return acc + (hours * 3600) + (minutes * 60) + seconds;
+      return acc + timeToSeconds(item.duration);
     }, 0);
   
     const hours = Math.floor(totalSeconds / 3600);
@@ -60,7 +74,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     const formattedSeconds = String(seconds).padStart(2, '0');
   
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-  }, [items]);
+  }, [items, timeToSeconds]);
 
   const calculateHeaderDuration = useCallback((index: number) => {
     if (index < 0 || index >= items.length || !isHeaderItem(items[index])) {
@@ -71,8 +85,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     let i = index + 1;
   
     while (i < items.length && !isHeaderItem(items[i])) {
-      const [hours, minutes, seconds] = items[i].duration.split(':').map(Number);
-      totalSeconds += (hours * 3600) + (minutes * 60) + seconds;
+      totalSeconds += timeToSeconds(items[i].duration);
       i++;
     }
   
@@ -86,7 +99,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     const formattedSeconds = String(seconds).padStart(2, '0');
   
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-  }, [items]);
+  }, [items, timeToSeconds]);
 
   return {
     getRowNumber,
