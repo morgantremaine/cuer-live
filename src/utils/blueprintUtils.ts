@@ -6,17 +6,21 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
     const headerItems = items.filter(item => item.type === 'header');
     // Use notes field for header descriptions, fallback to segmentName if notes is empty
     const headerTexts = headerItems.map(item => item.notes || item.segmentName || item.rowNumber);
-    return headerTexts;
+    // Remove duplicates and filter out empty values
+    return [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
   }
   
   // For other columns, return the values from that column
-  return items
+  const values = items
     .filter(item => item.type !== 'header')
     .map(item => {
       const value = item.customFields?.[sourceColumn] || item[sourceColumn as keyof RundownItem];
       return value || '';
     })
     .filter(value => value !== '');
+  
+  // Remove duplicates using Set
+  return [...new Set(values)];
 };
 
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
