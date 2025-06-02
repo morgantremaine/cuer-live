@@ -51,7 +51,7 @@ const SharedRundown = () => {
       <SharedRundownHeader
         title={rundownData.title}
         currentTime={currentTime}
-        startTime={rundownData.startTime}
+        startTime={rundownData.startTime || '09:00:00'}
         currentSegmentId={currentSegmentId}
         items={rundownData.items}
         timezone="America/New_York"
