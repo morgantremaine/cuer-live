@@ -51,6 +51,10 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       handleRenameColumn={props.handleRenameColumn}
       handleToggleColumnVisibility={props.handleToggleColumnVisibility}
       handleLoadLayout={props.handleLoadLayout}
+      timeRemaining={props.timeRemaining}
+      isPlaying={props.isPlaying}
+      currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
+      totalDuration={props.items.find(item => item.id === props.currentSegmentId)?.duration || '00:00'}
     />
   );
 };
