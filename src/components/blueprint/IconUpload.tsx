@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
@@ -87,27 +86,25 @@ const IconUpload = ({ currentIcon, onIconChange, disabled = false }: IconUploadP
   };
 
   return (
-    <div className="flex items-center space-x-2">
+    <div>
       {currentIcon ? (
         <Button
           variant="outline"
-          size="sm"
           onClick={handleRemoveIcon}
           disabled={disabled}
           className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
         >
-          <X className="h-3 w-3 mr-1" />
+          <X className="h-4 w-4 mr-2" />
           Remove Icon
         </Button>
       ) : (
         <Button
           variant="outline"
-          size="sm"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isUploading}
           className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
         >
-          <Upload className="h-3 w-3 mr-1" />
+          <Upload className="h-4 w-4 mr-2" />
           {isUploading ? 'Uploading...' : 'Upload Icon'}
         </Button>
       )}

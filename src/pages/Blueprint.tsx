@@ -86,7 +86,7 @@ const Blueprint = () => {
     <div className="min-h-screen bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-start justify-between mb-8">
           <div>
             <div className="flex items-center space-x-3 mb-2">
               {rundown.icon && (
@@ -143,7 +143,7 @@ const Blueprint = () => {
             </div>
           </div>
           
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-col gap-2 items-end">
             <IconUpload
               currentIcon={rundown.icon}
               onIconChange={handleIconChange}

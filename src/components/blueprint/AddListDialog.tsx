@@ -42,7 +42,10 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button
+          variant="outline"
+          className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add New List
         </Button>
