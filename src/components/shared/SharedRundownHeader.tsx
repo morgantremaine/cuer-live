@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { RundownItem } from '@/types/rundown';
@@ -33,18 +34,18 @@ const SharedRundownHeader = ({
 
   return (
     <div className="mb-6 print:mb-4">
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 space-y-2 sm:space-y-0">
         <div className="flex items-center space-x-3">
           <img 
             src="/lovable-uploads/da2200e5-3194-4f43-8ec0-9266a479bbf0.png" 
             alt="Cuer Logo" 
-            className="h-6 w-auto"
+            className="h-6 w-auto flex-shrink-0"
           />
-          <h1 className="text-2xl font-bold text-gray-900 print:text-xl">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 print:text-xl break-words min-w-0">
             {title}
           </h1>
         </div>
-        <div className="text-right text-sm text-gray-600">
+        <div className="text-left sm:text-right text-sm text-gray-600 flex-shrink-0">
           <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           <div>Start: {startTime}</div>
         </div>
