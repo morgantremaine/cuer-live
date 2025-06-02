@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/types/rundown';
 
 export interface BlueprintList {
@@ -23,13 +24,14 @@ export const generateBlueprintFromRundown = (
         console.log('Processing header item:', {
           id: item.id,
           name: item.name,
+          notes: item.notes,
           script: item.script,
           rowNumber: item.rowNumber,
           segmentName: item.segmentName
         });
         
-        // Try script first, then name, then segmentName, then rowNumber
-        const headerText = item.script || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
+        // Use notes for header descriptions (where descriptions are actually stored)
+        const headerText = item.notes || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
         console.log('Selected header text:', headerText);
         return headerText;
       }
@@ -84,7 +86,7 @@ export const processColumnForBlueprint = (items: RundownItem[], column: any) => 
     
     return headerItems.map(item => {
       if (item.type === 'header') {
-        const headerText = item.script || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
+        const headerText = item.notes || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
         console.log('processColumnForBlueprint - Selected header text:', headerText);
         return headerText;
       }
@@ -144,7 +146,7 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
     
     return headerItems.map(item => {
       if (item.type === 'header') {
-        const headerText = item.script || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
+        const headerText = item.notes || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
         console.log('generateListFromColumn - Selected header text:', headerText);
         return headerText;
       }
