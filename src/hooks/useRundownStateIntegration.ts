@@ -40,8 +40,6 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  console.log('useRundownStateIntegration: handleRenameColumn available:', !!handleRenameColumn);
-
   // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone, startTime
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     items,

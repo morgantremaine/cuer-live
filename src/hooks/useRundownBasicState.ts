@@ -29,7 +29,6 @@ export const useRundownBasicState = () => {
     
     // Only initialize if this is truly a new rundown
     if (currentRundownRef.current !== rundownId && !initRef.current[currentKey]) {
-      console.log('useRundownBasicState initialized for rundownId:', rundownId);
       currentRundownRef.current = rundownId;
       initRef.current[currentKey] = true;
     }
@@ -37,12 +36,11 @@ export const useRundownBasicState = () => {
 
   // Change tracking for timezone and other fields
   const markAsChanged = () => {
-    console.log('Changes marked - triggering auto-save');
+    // Removed console.log to reduce noise
   };
 
   // Direct setters without change tracking (for initial load)
   const setTimezoneDirectly = (newTimezone: string) => {
-    console.log('useRundownBasicState: setTimezoneDirectly called with:', newTimezone);
     setTimezone(newTimezone);
   };
 
@@ -56,7 +54,6 @@ export const useRundownBasicState = () => {
 
   // Change-tracking setters (for user interactions)
   const setTimezoneWithChange = (newTimezone: string) => {
-    console.log('useRundownBasicState: setTimezoneWithChange called with:', newTimezone);
     setTimezone(newTimezone);
     markAsChanged();
   };
