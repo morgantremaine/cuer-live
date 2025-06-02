@@ -18,6 +18,7 @@ interface RundownHeaderProps {
   setRundownIcon: (icon: string) => void;
   timezone: string;
   setTimezone: (timezone: string) => void;
+  onTimezoneChange: (timezone: string) => void;
   currentTime: Date;
   onShowColumnManager: () => void;
   hasUnsavedChanges: boolean;
@@ -37,6 +38,7 @@ const RundownHeader = ({
   setRundownIcon,
   timezone,
   setTimezone,
+  onTimezoneChange,
   currentTime,
   onShowColumnManager,
   hasUnsavedChanges,
@@ -141,8 +143,8 @@ const RundownHeader = ({
             </div>
             
             <TimezoneSelector
-              timezone={timezone}
-              onTimezoneChange={setTimezone}
+              currentTimezone={timezone}
+              onTimezoneChange={onTimezoneChange}
             />
           </div>
 
