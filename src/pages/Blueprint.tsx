@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -17,15 +18,6 @@ const Blueprint = () => {
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
-  const [localIcon, setLocalIcon] = useState<string | undefined>();
-  
-  // Update local icon when rundown changes or loads
-  useEffect(() => {
-    if (rundown?.icon !== undefined) {
-      console.log('Blueprint: Setting local icon from rundown:', rundown.icon ? 'Icon present' : 'No icon');
-      setLocalIcon(rundown.icon);
-    }
-  }, [rundown?.icon]);
 
   // Load rundowns when component mounts to ensure fresh data
   useEffect(() => {
@@ -58,43 +50,6 @@ const Blueprint = () => {
     rundown?.items || [],
     rundown?.startTime
   );
-
-  const handleIconChange = async (iconData: string | null) => {
-    if (!rundown || !id) {
-      console.error('Blueprint: Cannot update icon - no rundown or id');
-      return;
-    }
-
-    try {
-      console.log('Blueprint: Updating icon:', iconData ? 'Setting new icon' : 'Removing icon');
-      
-      // Update local state immediately for responsive UI
-      setLocalIcon(iconData || undefined);
-      
-      // Update in database with explicit icon parameter
-      await updateRundown(
-        id,
-        rundown.title,
-        rundown.items,
-        true, // silent update
-        false, // not archived
-        rundown.columns,
-        rundown.timezone,
-        rundown.startTime || rundown.start_time,
-        iconData || undefined
-      );
-      
-      console.log('Blueprint: Icon update completed successfully');
-      
-      // Reload rundowns to get fresh data from database
-      await loadRundowns();
-      
-    } catch (error) {
-      console.error('Blueprint: Error updating icon:', error);
-      // Revert local state if update fails
-      setLocalIcon(rundown.icon);
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -137,14 +92,10 @@ const Blueprint = () => {
       <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
-          rundown={{
-            ...rundown,
-            icon: localIcon // Use local icon state
-          }}
+          rundown={rundown}
           showDate={showDate}
           availableColumns={availableColumns}
           onShowDateUpdate={updateShowDate}
-          onIconChange={handleIconChange}
           onAddList={addNewList}
           onRefreshAll={refreshAllLists}
         />
