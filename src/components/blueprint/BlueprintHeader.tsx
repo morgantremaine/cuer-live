@@ -34,8 +34,8 @@ const BlueprintHeader = ({
       <div>
         <div className="flex items-center space-x-3 mb-2">
           <div>
-            <h1 className="text-3xl font-bold text-white">Blueprint</h1>
-            <p className="text-gray-400">{rundown.title}</p>
+            <h1 className="text-3xl font-bold text-white">{rundown.title}</h1>
+            <p className="text-gray-400">Blueprint</p>
           </div>
         </div>
         
