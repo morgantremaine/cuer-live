@@ -15,23 +15,18 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const currentIndex = items.findIndex(item => item.id === itemId);
-      const editableColumns = columns.filter(col => col.isEditable);
-      const currentFieldIndex = editableColumns.findIndex(col => col.key === field || `custom_${col.key}` === field);
       
-      if (currentFieldIndex < editableColumns.length - 1) {
-        const nextField = editableColumns[currentFieldIndex + 1];
-        const nextFieldKey = nextField.isCustom ? `custom_${nextField.key}` : nextField.key;
-        setSelectedCell({ itemId, field: nextFieldKey });
+      // Find the next non-header item
+      let nextItemIndex = currentIndex + 1;
+      while (nextItemIndex < items.length && isHeaderItem(items[nextItemIndex])) {
+        nextItemIndex++;
+      }
+      
+      if (nextItemIndex < items.length) {
+        const nextItemId = items[nextItemIndex].id;
+        setSelectedCell({ itemId: nextItemId, field });
         setTimeout(() => {
-          cellRefs.current[`${itemId}-${nextFieldKey}`]?.focus();
-        }, 0);
-      } else if (currentIndex < items.length - 1) {
-        const nextItemId = items[currentIndex + 1].id;
-        const firstField = editableColumns[0];
-        const firstFieldKey = firstField.isCustom ? `custom_${firstField.key}` : firstField.key;
-        setSelectedCell({ itemId: nextItemId, field: firstFieldKey });
-        setTimeout(() => {
-          cellRefs.current[`${nextItemId}-${firstFieldKey}`]?.focus();
+          cellRefs.current[`${nextItemId}-${field}`]?.focus();
         }, 0);
       }
     } else if (e.key === 'ArrowUp') {
