@@ -19,7 +19,7 @@ export const useAutoSave = (
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { performSave, performUpdate } = useAutoSaveOperations();
-  const { hasUnsavedChanges, markAsSaved, markAsChanged } = useChangeTracking(items, title, columns, timezone, startTime);
+  const { hasUnsavedChanges, markAsSaved } = useChangeTracking(items, title, columns, timezone, startTime);
   
   // Add local isSaving state since it's not provided by useChangeTracking
   const [isSaving, setIsSaving] = useState(false);
