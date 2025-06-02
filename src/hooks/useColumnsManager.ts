@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -21,6 +20,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'startTime', name: 'Start Time', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'endTime', name: 'End Time', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'elapsedTime', name: 'Elapsed Time', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
     { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
@@ -125,6 +125,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'startTime', name: 'Start Time', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'endTime', name: 'End Time', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+        { id: 'elapsedTime', name: 'Elapsed Time', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
