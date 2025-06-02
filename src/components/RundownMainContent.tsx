@@ -47,6 +47,10 @@ interface RundownMainContentProps {
   handleRenameColumn: (columnId: string, newName: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
+  timeRemaining: number;
+  isPlaying: boolean;
+  currentSegmentName: string;
+  totalDuration: string;
 }
 
 const RundownMainContent = ({
@@ -90,7 +94,11 @@ const RundownMainContent = ({
   handleDeleteColumnWithCleanup,
   handleRenameColumn,
   handleToggleColumnVisibility,
-  handleLoadLayout
+  handleLoadLayout,
+  timeRemaining,
+  isPlaying,
+  currentSegmentName,
+  totalDuration
 }: RundownMainContentProps) => {
   return (
     <>
