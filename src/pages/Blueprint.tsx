@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -61,8 +62,10 @@ const Blueprint = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col gap-2">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Blueprint</h1>
+            <p className="text-gray-400 mb-4">{rundown.title}</p>
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => navigate('/dashboard')}
@@ -79,10 +82,6 @@ const Blueprint = () => {
                 <FileText className="h-4 w-4 mr-2" />
                 Back to Rundown
               </Button>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Blueprint</h1>
-              <p className="text-gray-400">{rundown.title}</p>
             </div>
           </div>
           
