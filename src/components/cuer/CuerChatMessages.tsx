@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Bot, User } from 'lucide-react';
 import { marked } from 'marked';
@@ -31,11 +30,13 @@ const CuerChatMessages = ({
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Configure marked for safe HTML rendering
+  // Configure marked for better paragraph handling
   useEffect(() => {
     marked.setOptions({
-      breaks: true,
-      gfm: true,
+      breaks: true, // Convert line breaks to <br>
+      gfm: true, // GitHub Flavored Markdown
+      headerIds: false,
+      mangle: false
     });
   }, []);
 
@@ -45,7 +46,7 @@ const CuerChatMessages = ({
       const htmlContent = marked(content);
       return (
         <div 
-          className="prose prose-sm max-w-none prose-p:mb-4 prose-p:last:mb-0"
+          className="prose prose-sm max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0 [&>ul]:mb-4 [&>ol]:mb-4 [&>h1]:mb-3 [&>h2]:mb-3 [&>h3]:mb-3 [&>blockquote]:mb-4"
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
       );
