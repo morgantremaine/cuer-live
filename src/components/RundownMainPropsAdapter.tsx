@@ -8,8 +8,6 @@ interface RundownMainPropsAdapterProps {
 }
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
-  console.log('RundownMainPropsAdapter: handleRenameColumn available:', !!props.handleRenameColumn);
-  
   return (
     <RundownMainContent
       currentTime={props.currentTime}

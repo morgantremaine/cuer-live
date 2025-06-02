@@ -92,8 +92,6 @@ const RundownMainContent = ({
   handleToggleColumnVisibility,
   handleLoadLayout
 }: RundownMainContentProps) => {
-  console.log('RundownMainContent: handleRenameColumn available:', !!handleRenameColumn);
-
   return (
     <>
       <RundownContent
