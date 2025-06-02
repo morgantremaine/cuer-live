@@ -12,6 +12,7 @@ interface SavedBlueprint {
   rundown_title: string;
   lists: BlueprintList[];
   show_date?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +50,7 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
   };
 
-  const saveBlueprint = async (rundownTitle: string, lists: BlueprintList[], showDate?: string, silent = false) => {
+  const saveBlueprint = async (rundownTitle: string, lists: BlueprintList[], showDate?: string, silent = false, notes?: string) => {
     if (!user || !rundownId) return;
 
     try {
@@ -59,6 +60,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         rundown_title: rundownTitle,
         lists: lists,
         show_date: showDate,
+        notes: notes,
         updated_at: new Date().toISOString()
       };
 
@@ -81,6 +83,9 @@ export const useBlueprintStorage = (rundownId: string) => {
           }
           return;
         }
+
+        // Update local state
+        setSavedBlueprint({ ...savedBlueprint, ...blueprintData });
       } else {
         // Create new blueprint
         const { data, error } = await supabase

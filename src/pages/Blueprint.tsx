@@ -10,6 +10,7 @@ import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
+import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +52,8 @@ const Blueprint = () => {
     rundown?.startTime
   );
 
+  const { savedBlueprint } = useBlueprintStorage(id || '');
+
   const handleSignOut = async () => {
     try {
       console.log('Blueprint: Starting sign out process')
@@ -91,6 +94,22 @@ const Blueprint = () => {
     <div className="min-h-screen bg-gray-900">
       <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/dashboard')}
+              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-green-400">Saved</span>
+          </div>
+        </div>
+
         <BlueprintHeader
           rundown={rundown}
           showDate={showDate}
@@ -125,9 +144,9 @@ const Blueprint = () => {
 
         <BlueprintScratchpad
           rundownId={id || ''}
+          initialNotes={savedBlueprint?.notes || ''}
           onNotesChange={(notes) => {
-            // Notes are automatically handled by the component for now
-            // Can be extended to save to database if needed
+            // Notes are automatically handled by the component
           }}
         />
       </div>
