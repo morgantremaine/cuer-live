@@ -91,7 +91,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                     <span className="text-red-600 mr-1">▶</span>
                   )}
                   {isFloated && (
-                    <span className="text-yellow-400 mr-1">⚓</span>
+                    <span className="text-yellow-400 mr-1">🛟</span>
                   )}
                   {getRowNumber(index, items)}
                 </td>

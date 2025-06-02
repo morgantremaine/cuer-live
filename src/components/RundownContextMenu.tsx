@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Anchor, Palette, ClipboardPaste, X } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -92,7 +92,7 @@ const RundownContextMenu = memo(({
         <ContextMenuSeparator />
         
         <ContextMenuItem onClick={handleContextMenuFloat}>
-          <Anchor className="mr-2 h-4 w-4" />
+          <span className="mr-2 h-4 w-4 flex items-center justify-center">🛟</span>
           {isFloated ? 
             (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
             (isMultipleSelection ? `Float ${selectedCount} rows` : 'Float row')
