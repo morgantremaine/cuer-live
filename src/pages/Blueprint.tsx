@@ -24,6 +24,7 @@ const Blueprint = () => {
     addNewList,
     deleteList,
     renameList,
+    updateCheckedItems,
     refreshAllLists,
     draggedListId,
     insertionIndex,
@@ -107,6 +108,7 @@ const Blueprint = () => {
             insertionIndex={insertionIndex}
             onDeleteList={deleteList}
             onRenameList={renameList}
+            onUpdateCheckedItems={updateCheckedItems}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnterContainer={handleDragEnterContainer}

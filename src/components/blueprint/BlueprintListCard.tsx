@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Copy, Edit2, Check, X, GripVertical, Clock } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -13,6 +13,7 @@ interface BlueprintListCardProps {
   rundownItems: RundownItem[];
   onDelete: (listId: string) => void;
   onRename: (listId: string, newName: string) => void;
+  onUpdateCheckedItems: (listId: string, checkedItems: Record<string, boolean>) => void;
   // Drag and drop props
   isDragging?: boolean;
   onDragStart?: (e: React.DragEvent, listId: string) => void;
@@ -26,6 +27,7 @@ const BlueprintListCard = ({
   rundownItems,
   onDelete, 
   onRename,
+  onUpdateCheckedItems,
   isDragging = false,
   onDragStart,
   onDragEnterContainer,
@@ -35,6 +37,14 @@ const BlueprintListCard = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
   const { toast } = useToast();
+
+  const handleCheckboxChange = (itemIndex: number, checked: boolean) => {
+    const updatedCheckedItems = {
+      ...list.checkedItems,
+      [itemIndex]: checked
+    };
+    onUpdateCheckedItems(list.id, updatedCheckedItems);
+  };
 
   const copyToClipboard = async () => {
     const text = list.items.join('\n');
@@ -188,15 +198,21 @@ const BlueprintListCard = ({
           ) : (
             list.items.map((item, index) => {
               const startTime = getHeaderStartTime(item);
+              const isChecked = list.checkedItems?.[index] || false;
               
               return (
                 <div
                   key={index}
-                  className="p-2 bg-gray-700 rounded text-sm border border-gray-600 text-gray-200 flex justify-between items-center"
+                  className="p-2 bg-gray-700 rounded text-sm border border-gray-600 text-gray-200 flex items-center gap-2"
                 >
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => handleCheckboxChange(index, checked as boolean)}
+                    className="flex-shrink-0"
+                  />
                   <span className="flex-1">{item}</span>
                   {startTime && (
-                    <div className="flex items-center gap-1 text-gray-400 text-xs ml-2">
+                    <div className="flex items-center gap-1 text-gray-400 text-xs">
                       <Clock className="h-3 w-3" />
                       <span>{startTime}</span>
                     </div>

@@ -1,9 +1,9 @@
-
 export interface BlueprintList {
   id: string;
   name: string;
   sourceColumn: string;
   items: string[];
+  checkedItems?: Record<string, boolean>;
 }
 
 export interface Blueprint {

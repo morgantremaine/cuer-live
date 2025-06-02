@@ -32,7 +32,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         // Load saved lists and refresh their content based on current items
         const refreshedLists = savedBlueprint.lists.map(list => ({
           ...list,
-          items: generateListFromColumn(items, list.sourceColumn)
+          items: generateListFromColumn(items, list.sourceColumn),
+          checkedItems: list.checkedItems || {}
         }));
         setLists(refreshedLists);
         
@@ -53,7 +54,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       id: `${sourceColumn}_${Date.now()}`,
       name,
       sourceColumn,
-      items: generateListFromColumn(items, sourceColumn)
+      items: generateListFromColumn(items, sourceColumn),
+      checkedItems: {}
     };
     const updatedLists = [...lists, newList];
     setLists(updatedLists);
@@ -86,6 +88,22 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     saveWithDate(rundownTitle, updatedLists);
   }, [lists, rundownTitle, saveWithDate]);
 
+  const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
+    const updatedLists = lists.map(list => {
+      if (list.id === listId) {
+        return {
+          ...list,
+          checkedItems
+        };
+      }
+      return list;
+    });
+    setLists(updatedLists);
+    
+    // Save to database silently
+    saveWithDate(rundownTitle, updatedLists, true);
+  }, [lists, rundownTitle, saveWithDate]);
+
   const refreshAllLists = useCallback(() => {
     const updatedLists = lists.map(list => ({
       ...list,
@@ -116,6 +134,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     addNewList,
     deleteList,
     renameList,
+    updateCheckedItems,
     refreshAllLists,
     ...dragAndDropHandlers
   };
