@@ -89,7 +89,13 @@ const Dashboard = () => {
     const rundown = savedRundowns.find(r => r.id === rundownId)
     if (rundown) {
       try {
-        await updateRundown(rundownId, rundown.title, rundown.items, false, rundown.archived, rundown.columns, rundown.timezone, iconUrl)
+        console.log('Dashboard: Updating icon for rundown:', rundownId, 'with icon:', iconUrl)
+        // Create updated rundown object with new icon
+        const updatedRundown = {
+          ...rundown,
+          icon: iconUrl
+        }
+        await updateRundown(rundownId, rundown.title, rundown.items, false, rundown.archived, rundown.columns, rundown.timezone, rundown.startTime, iconUrl)
       } catch (error) {
         console.error('Failed to update rundown icon:', error)
       }
