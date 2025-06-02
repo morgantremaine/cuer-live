@@ -1,11 +1,41 @@
 
+import { supabase } from '@/lib/supabase'
+
 export const uploadFile = async (file: File): Promise<string> => {
-  // For now, create a local URL for the uploaded file
-  // In a real implementation, this would upload to a cloud storage service
-  const url = URL.createObjectURL(file)
+  const { data: { user } } = await supabase.auth.getUser()
   
-  // Store the file reference for later cleanup if needed
-  return url
+  if (!user) {
+    throw new Error('User must be authenticated to upload files')
+  }
+  
+  // Create a unique filename with user ID folder structure
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${user.id}/${Date.now()}.${fileExt}`
+  
+  console.log('fileUpload: Uploading file to Supabase Storage:', fileName)
+  
+  const { data, error } = await supabase.storage
+    .from('rundown-icons')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    })
+
+  if (error) {
+    console.error('fileUpload: Supabase storage error:', error)
+    throw new Error(`Failed to upload file: ${error.message}`)
+  }
+
+  console.log('fileUpload: File uploaded successfully:', data.path)
+  
+  // Get the public URL for the uploaded file
+  const { data: { publicUrl } } = supabase.storage
+    .from('rundown-icons')
+    .getPublicUrl(data.path)
+
+  console.log('fileUpload: Generated public URL:', publicUrl)
+  
+  return publicUrl
 }
 
 export const handleFileUpload = async (file: File): Promise<string> => {
