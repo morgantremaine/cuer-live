@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -82,17 +81,8 @@ const Blueprint = () => {
               </Button>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white flex items-center">
-                {rundown?.icon && (
-                  <img 
-                    src={rundown.icon} 
-                    alt="Rundown icon" 
-                    className="w-8 h-8 mr-3 rounded object-cover"
-                  />
-                )}
-                Blueprint
-              </h1>
-              <p className="text-gray-400">{rundown?.title}</p>
+              <h1 className="text-3xl font-bold text-white">Blueprint</h1>
+              <p className="text-gray-400">{rundown.title}</p>
             </div>
           </div>
           

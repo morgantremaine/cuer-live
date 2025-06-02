@@ -1,42 +1,115 @@
 
 import React from 'react';
-import { RundownHeaderSectionProps } from '@/types/rundownContainer';
+import RundownHeader from './RundownHeader';
+import RundownToolbar from './RundownToolbar';
 
-const RundownHeaderSection = (props: RundownHeaderSectionProps) => {
-  const formatTime = (time: Date, tz: string) => {
-    try {
-      const timeString = time.toLocaleTimeString('en-US', { 
-        hour12: false,
-        timeZone: tz
-      });
-      return timeString;
-    } catch {
-      return time.toLocaleTimeString('en-US', { hour12: false });
-    }
-  };
+interface RundownHeaderSectionProps {
+  currentTime: Date;
+  timezone: string;
+  onTimezoneChange: (timezone: string) => void;
+  totalRuntime: string;
+  onAddRow: () => void;
+  onAddHeader: () => void;
+  onShowColumnManager: () => void;
+  selectedCount: number;
+  hasClipboardData: boolean;
+  onCopySelectedRows: () => void;
+  onPasteRows: () => void;
+  onDeleteSelectedRows: () => void;
+  onClearSelection: () => void;
+  selectedRowId: string | null;
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
+  onPlay: (selectedSegmentId?: string) => void;
+  onPause: () => void;
+  onForward: () => void;
+  onBackward: () => void;
+  hasUnsavedChanges: boolean;
+  isSaving: boolean;
+  rundownTitle: string;
+  onTitleChange: (title: string) => void;
+  rundownStartTime: string;
+  onRundownStartTimeChange: (startTime: string) => void;
+  rundownId?: string;
+  onOpenTeleprompter: () => void;
+  items?: any[];
+  visibleColumns?: any[];
+  onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
+  onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
+  currentHighlight?: any;
+}
 
+const RundownHeaderSection = ({
+  currentTime,
+  timezone,
+  onTimezoneChange,
+  totalRuntime,
+  onAddRow,
+  onAddHeader,
+  onShowColumnManager,
+  selectedCount,
+  hasClipboardData,
+  onCopySelectedRows,
+  onPasteRows,
+  onDeleteSelectedRows,
+  onClearSelection,
+  selectedRowId,
+  isPlaying,
+  currentSegmentId,
+  timeRemaining,
+  onPlay,
+  onPause,
+  onForward,
+  onBackward,
+  hasUnsavedChanges,
+  isSaving,
+  rundownTitle,
+  onTitleChange,
+  rundownStartTime,
+  onRundownStartTimeChange,
+  rundownId,
+  onOpenTeleprompter,
+  items = [],
+  visibleColumns = [],
+  onHighlightMatch = () => {},
+  onReplaceText = () => {},
+  currentHighlight
+}: RundownHeaderSectionProps) => {
   return (
-    <div className="mb-6">
-      <div className="flex justify-between items-start mb-2">
-        <h1 className="text-2xl font-bold text-white">
-          {props.rundownTitle}
-        </h1>
-        <div className="text-right text-sm text-gray-400">
-          <div>{formatTime(props.currentTime, props.timezone)} {props.timezone.replace('_', ' ')}</div>
-          <div>Start: {props.startTime}</div>
-        </div>
-      </div>
-      
-      {props.currentSegmentId && (
-        <div className="bg-red-900/50 border-l-4 border-red-500 p-3">
-          <div className="flex items-center">
-            <div className="text-red-400 font-semibold mr-2">● LIVE</div>
-            <div className="text-red-200">
-              {props.items.find(item => item.id === props.currentSegmentId)?.name || 'Current Segment'}
-            </div>
-          </div>
-        </div>
-      )}
+    <div>
+      <RundownHeader
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        title={rundownTitle}
+        onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        items={items}
+        visibleColumns={visibleColumns}
+        onHighlightMatch={onHighlightMatch}
+        onReplaceText={onReplaceText}
+        currentHighlight={currentHighlight}
+      />
+      <RundownToolbar
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
+        onShowColumnManager={onShowColumnManager}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+      />
     </div>
   );
 };

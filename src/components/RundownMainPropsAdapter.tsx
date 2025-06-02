@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React from 'react';
 import RundownMainContent from './RundownMainContent';
 import { RundownContainerProps } from '@/types/rundownContainer';
 
@@ -7,7 +7,9 @@ interface RundownMainPropsAdapterProps {
   props: RundownContainerProps;
 }
 
-const RundownMainPropsAdapter = memo(({ props }: RundownMainPropsAdapterProps) => {
+const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
+  console.log('RundownMainPropsAdapter: handleRenameColumn available:', !!props.handleRenameColumn);
+  
   return (
     <RundownMainContent
       currentTime={props.currentTime}
@@ -53,11 +55,6 @@ const RundownMainPropsAdapter = memo(({ props }: RundownMainPropsAdapterProps) =
       handleLoadLayout={props.handleLoadLayout}
     />
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison to prevent unnecessary re-renders
-  return prevProps.props === nextProps.props;
-});
-
-RundownMainPropsAdapter.displayName = 'RundownMainPropsAdapter';
+};
 
 export default RundownMainPropsAdapter;

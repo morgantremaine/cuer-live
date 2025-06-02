@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -15,7 +16,6 @@ interface SavedRundown {
   updated_at: string
   archived?: boolean
   startTime?: string
-  icon?: string
 }
 
 export const useRundownStorage = () => {
@@ -47,13 +47,13 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[], columns?: Column[], timezone?: string, startTime?: string, icon?: string) => {
+  const saveRundown = async (title: string, items: RundownItem[], columns?: Column[], timezone?: string, startTime?: string) => {
     if (!user) {
       console.error('Cannot save: no user')
       return
     }
 
-    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, startTime, icon, userId: user.id })
+    console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, startTime, userId: user.id })
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -64,7 +64,6 @@ export const useRundownStorage = () => {
         columns: columns || null,
         timezone: timezone || null,
         start_time: startTime || null,
-        icon: icon || null,
         archived: false
       })
       .select()
@@ -89,7 +88,7 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string, startTime?: string, icon?: string) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string, startTime?: string) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
@@ -102,7 +101,6 @@ export const useRundownStorage = () => {
       columnsCount: columns?.length || 0,
       timezone,
       startTime,
-      icon,
       userId: user.id,
       silent,
       archived
@@ -114,7 +112,6 @@ export const useRundownStorage = () => {
       columns: columns || null,
       timezone: timezone || null,
       start_time: startTime || null,
-      icon: icon || null,
       updated_at: new Date().toISOString(),
       archived: archived
     }

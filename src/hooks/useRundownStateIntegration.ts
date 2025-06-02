@@ -2,7 +2,6 @@
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
-import { useMemo, useRef } from 'react';
 
 export const useRundownStateIntegration = (
   markAsChanged: () => void,
@@ -12,42 +11,70 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  // Use refs for stable function references
-  const stableRefsRef = useRef({
-    markAsChanged,
-    setRundownTitleDirectly,
-    setTimezoneDirectly
-  });
+  // Rundown items management - call without arguments as per hook definition
+  const {
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration
+  } = useRundownItems();
 
-  // Update refs when functions change
-  stableRefsRef.current.markAsChanged = markAsChanged;
-  stableRefsRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
-  stableRefsRef.current.setTimezoneDirectly = setTimezoneDirectly;
+  // Column management - call with markAsChanged to ensure proper change tracking
+  const {
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth
+  } = useColumnsManager(markAsChanged);
 
-  // Rundown items management
-  const itemsHook = useRundownItems();
+  console.log('useRundownStateIntegration: handleRenameColumn available:', !!handleRenameColumn);
 
-  // Column management with stable reference
-  const columnsHook = useColumnsManager(stableRefsRef.current.markAsChanged);
-
-  // Auto-save functionality
-  const autoSaveHook = useAutoSave(
-    itemsHook.items,
+  // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone, startTime
+  const { hasUnsavedChanges, isSaving } = useAutoSave(
+    items,
     rundownTitle,
-    columnsHook.columns,
+    columns,
     timezone,
     rundownStartTime
   );
 
-  // Memoize the return object to prevent unnecessary re-renders
-  return useMemo(() => ({
-    ...itemsHook,
-    ...columnsHook,
-    ...autoSaveHook,
-    markAsChanged: stableRefsRef.current.markAsChanged
-  }), [
-    itemsHook,
-    columnsHook,
-    autoSaveHook
-  ]);
+  return {
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
+    hasUnsavedChanges,
+    isSaving,
+    markAsChanged
+  };
 };

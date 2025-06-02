@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -8,7 +8,6 @@ import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 const RundownIndexContent = () => {
   const gridState = useRundownGridState();
   
-  // Extract only the values we need to prevent dependency loops
   const {
     currentTime,
     timezone,
@@ -97,7 +96,7 @@ const RundownIndexContent = () => {
   const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
 
   // Prepare rundown data for Cuer AI
-  const rundownData = useMemo(() => ({
+  const rundownData = {
     id: rundownId,
     title: rundownTitle,
     startTime: rundownStartTime,
@@ -105,139 +104,74 @@ const RundownIndexContent = () => {
     items: items,
     columns: columns,
     totalRuntime: calculateTotalRuntime()
-  }), [rundownId, rundownTitle, rundownStartTime, timezone, items, columns, calculateTotalRuntime]);
-
-  // Memoize the container props to prevent unnecessary re-renders
-  const containerProps = useMemo(() => ({
-    currentTime,
-    timezone,
-    onTimezoneChange: handleTimezoneChange,
-    totalRuntime: calculateTotalRuntime(),
-    showColumnManager,
-    setShowColumnManager,
-    items,
-    visibleColumns,
-    columns,
-    showColorPicker,
-    cellRefs,
-    selectedRows,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
-    currentSegmentId,
-    getColumnWidth,
-    updateColumnWidth,
-    getRowNumber,
-    getRowStatus,
-    calculateHeaderDuration,
-    onUpdateItem: updateItem,
-    onCellClick: handleCellClick,
-    onKeyDown: handleKeyDown,
-    onToggleColorPicker: handleToggleColorPicker,
-    onColorSelect: selectColor,
-    onDeleteRow: deleteRow,
-    onToggleFloat: toggleFloatRow,
-    onRowSelect: handleRowSelect,
-    onDragStart: handleDragStart,
-    onDragOver: handleDragOver,
-    onDragLeave: handleDragLeave,
-    onDrop: handleDrop,
-    onAddRow: handleAddRow,
-    onAddHeader: handleAddHeader,
-    selectedCount: selectedRows.size,
-    hasClipboardData,
-    onCopySelectedRows: handleCopySelectedRows,
-    onPasteRows: handlePasteRows,
-    onDeleteSelectedRows: handleDeleteSelectedRows,
-    onClearSelection: clearSelection,
-    selectedRowId,
-    isPlaying,
-    timeRemaining,
-    onPlay: play,
-    onPause: pause,
-    onForward: forward,
-    onBackward: backward,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumnWithCleanup: handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    hasUnsavedChanges,
-    isSaving,
-    rundownTitle,
-    onTitleChange: setRundownTitle,
-    rundownStartTime,
-    onRundownStartTimeChange: handleRundownStartTimeChange,
-    rundownId,
-    onOpenTeleprompter: handleOpenTeleprompter
-  }), [
-    currentTime,
-    timezone,
-    handleTimezoneChange,
-    calculateTotalRuntime,
-    showColumnManager,
-    setShowColumnManager,
-    items,
-    visibleColumns,
-    columns,
-    showColorPicker,
-    cellRefs,
-    selectedRows,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
-    currentSegmentId,
-    getColumnWidth,
-    updateColumnWidth,
-    getRowNumber,
-    getRowStatus,
-    calculateHeaderDuration,
-    updateItem,
-    handleCellClick,
-    handleKeyDown,
-    handleToggleColorPicker,
-    selectColor,
-    deleteRow,
-    toggleFloatRow,
-    handleRowSelect,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleAddRow,
-    handleAddHeader,
-    hasClipboardData,
-    handleCopySelectedRows,
-    handlePasteRows,
-    handleDeleteSelectedRows,
-    clearSelection,
-    selectedRowId,
-    isPlaying,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    hasUnsavedChanges,
-    isSaving,
-    rundownTitle,
-    setRundownTitle,
-    rundownStartTime,
-    handleRundownStartTimeChange,
-    rundownId,
-    handleOpenTeleprompter
-  ]);
+  };
 
   return (
     <>
-      <RundownContainer {...containerProps} />
+      <RundownContainer
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={handleTimezoneChange}
+        totalRuntime={calculateTotalRuntime()}
+        showColumnManager={showColumnManager}
+        setShowColumnManager={setShowColumnManager}
+        items={items}
+        visibleColumns={visibleColumns}
+        columns={columns}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={updateColumnWidth}
+        getRowNumber={getRowNumber}
+        getRowStatus={getRowStatus}
+        calculateHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={updateItem}
+        onCellClick={handleCellClick}
+        onKeyDown={handleKeyDown}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={(id, color) => selectColor(id, color)}
+        onDeleteRow={deleteRow}
+        onToggleFloat={toggleFloatRow}
+        onRowSelect={handleRowSelect}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
+        selectedCount={selectedRows.size}
+        hasClipboardData={hasClipboardData}
+        onCopySelectedRows={handleCopySelectedRows}
+        onPasteRows={handlePasteRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
+        onClearSelection={clearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        timeRemaining={timeRemaining}
+        onPlay={play}
+        onPause={pause}
+        onForward={forward}
+        onBackward={backward}
+        handleAddColumn={handleAddColumn}
+        handleReorderColumns={handleReorderColumns}
+        handleDeleteColumnWithCleanup={handleDeleteColumn}
+        handleRenameColumn={handleRenameColumn}
+        handleToggleColumnVisibility={handleToggleColumnVisibility}
+        handleLoadLayout={handleLoadLayout}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={setRundownTitle}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={handleRundownStartTimeChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={handleOpenTeleprompter}
+      />
       
       {/* Cuer AI Chat Button with rundown data */}
       <CuerChatButton rundownData={rundownData} />

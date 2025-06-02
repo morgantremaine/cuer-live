@@ -5,7 +5,6 @@ interface UseRundownDataLoaderProps {
   rundownId: string | undefined;
   savedRundowns: any[];
   loading: boolean;
-  isInitialized: boolean;
   setRundownTitle: (title: string) => void;
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
@@ -16,30 +15,29 @@ export const useRundownDataLoader = ({
   rundownId,
   savedRundowns,
   loading,
-  isInitialized,
   setRundownTitle,
   setTimezone,
   setRundownStartTime,
   handleLoadLayout
 }: UseRundownDataLoaderProps) => {
-  // Track what we've loaded to prevent re-loading
-  const hasLoadedRef = useRef<Set<string>>(new Set());
+  // Track what we've already loaded to prevent re-loading
+  const loadedDataRef = useRef<{ [key: string]: boolean }>({});
+  const isProcessingRef = useRef(false);
 
+  // Load rundown data only once per rundown
   const loadRundownData = useCallback(() => {
-    // Don't proceed if not initialized or still loading data
-    if (!isInitialized || loading) {
+    if (loading || isProcessingRef.current) {
       return;
     }
 
-    const loadKey = rundownId || 'new';
+    const currentKey = rundownId || 'new';
     
-    // If we've already loaded this rundown, skip
-    if (hasLoadedRef.current.has(loadKey)) {
+    // Skip if already loaded
+    if (loadedDataRef.current[currentKey]) {
       return;
     }
 
-    // Mark as loading to prevent duplicate calls
-    hasLoadedRef.current.add(loadKey);
+    isProcessingRef.current = true;
 
     try {
       if (rundownId && savedRundowns.length > 0) {
@@ -51,6 +49,9 @@ export const useRundownDataLoader = ({
             timezone: existingRundown.timezone,
             startTime: existingRundown.start_time
           });
+          
+          // Mark as loaded before setting data to prevent loops
+          loadedDataRef.current[currentKey] = true;
           
           if (existingRundown.title) {
             console.log('Setting title from saved rundown:', existingRundown.title);
@@ -74,26 +75,31 @@ export const useRundownDataLoader = ({
         }
       } else if (!rundownId) {
         console.log('New rundown, using default title');
+        loadedDataRef.current[currentKey] = true;
         setRundownTitle('Live Broadcast Rundown');
+        // Don't set default timezone for new rundowns - let it use the default from useRundownBasicState
       }
-    } catch (error) {
-      console.error('Error loading rundown data:', error);
-      // Remove from loaded set on error so it can be retried
-      hasLoadedRef.current.delete(loadKey);
+    } finally {
+      isProcessingRef.current = false;
     }
-  }, [rundownId, savedRundowns, loading, isInitialized, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
-
-  // Reset loaded state when rundown changes
-  useEffect(() => {
-    // Clear loaded state when rundown ID changes
-    return () => {
-      const loadKey = rundownId || 'new';
-      hasLoadedRef.current.delete(loadKey);
-    };
-  }, [rundownId]);
+  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
   // Load data when conditions are met
   useEffect(() => {
+    // Don't proceed if still loading
+    if (loading) return;
+    
+    // For existing rundowns, wait for savedRundowns to be available
+    if (rundownId && savedRundowns.length === 0) return;
+    
+    // Load the data
     loadRundownData();
-  }, [loadRundownData]);
+  }, [rundownId, savedRundowns.length, loading, loadRundownData]);
+
+  // Clean up when rundown changes
+  useEffect(() => {
+    return () => {
+      isProcessingRef.current = false;
+    };
+  }, [rundownId]);
 };

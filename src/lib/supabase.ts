@@ -41,8 +41,6 @@ export type Database = {
           created_at: string
           updated_at: string
           archived: boolean
-          start_time?: string
-          icon?: string
         }
         Insert: {
           id?: string
@@ -54,8 +52,6 @@ export type Database = {
           created_at?: string
           updated_at?: string
           archived?: boolean
-          start_time?: string
-          icon?: string
         }
         Update: {
           id?: string
@@ -67,8 +63,6 @@ export type Database = {
           created_at?: string
           updated_at?: string
           archived?: boolean
-          start_time?: string
-          icon?: string
         }
       }
       column_layouts: {

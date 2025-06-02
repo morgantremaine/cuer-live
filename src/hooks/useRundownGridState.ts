@@ -13,12 +13,20 @@ export const useRundownGridState = () => {
   // Local clipboard state
   const [clipboardItems, setClipboardItems] = useState<RundownItem[]>([]);
   
+  // Stable refs to prevent infinite loops
+  const stableUpdateItemRef = useRef(coreState.updateItem);
+  const stableMarkAsChangedRef = useRef(coreState.markAsChanged);
+  
+  // Update refs when core functions change
+  stableUpdateItemRef.current = coreState.updateItem;
+  stableMarkAsChangedRef.current = coreState.markAsChanged;
+
   // Stable color selection function
   const handleColorSelection = useCallback((id: string, color: string) => {
     console.log('Applying color to item:', id, color);
-    coreState.updateItem(id, 'color', color);
-    coreState.markAsChanged();
-  }, [coreState.updateItem, coreState.markAsChanged]);
+    stableUpdateItemRef.current(id, 'color', color);
+    stableMarkAsChangedRef.current();
+  }, []);
 
   // Use resizable columns with width change handler
   const { getColumnWidth, updateColumnWidth } = useResizableColumns(
@@ -26,7 +34,7 @@ export const useRundownGridState = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Get interaction handlers
+  // Get interaction handlers - use stable references
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
@@ -55,7 +63,7 @@ export const useRundownGridState = () => {
     coreState.markAsChanged
   );
 
-  // Simple clipboard functions
+  // Simple clipboard functions with clean data
   const copyItems = useCallback((items: RundownItem[]) => {
     const copiedItems = items.map(item => {
       const cleanItem = { ...item };
@@ -69,7 +77,7 @@ export const useRundownGridState = () => {
     return clipboardItems.length > 0;
   }, [clipboardItems.length]);
 
-  // Direct copy/paste handlers
+  // Direct copy/paste handlers with stable dependencies
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = coreState.items.filter(item => interactions.selectedRows.has(item.id));
     if (selectedItems.length > 0) {
@@ -129,7 +137,7 @@ export const useRundownGridState = () => {
     coreState.addHeader(insertAfterIndex);
   }, [coreState.addHeader]);
 
-  // Stable UI state with overrides
+  // Override the UI state's selectColor with our stable version
   const stableUIState = useMemo(() => ({
     ...uiState,
     selectColor: handleColorSelection,
@@ -137,7 +145,7 @@ export const useRundownGridState = () => {
     updateColumnWidth
   }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth]);
 
-  // Memoize the return object
+  // Memoize the return object with stable references
   return useMemo(() => ({
     ...coreState,
     ...interactions,

@@ -85,35 +85,6 @@ const Dashboard = () => {
     }
   }
 
-  const handleIconUpdate = async (rundownId: string, iconUrl: string | null) => {
-    console.log('Dashboard: handleIconUpdate called with rundownId:', rundownId, 'iconUrl:', iconUrl)
-    const rundown = savedRundowns.find(r => r.id === rundownId)
-    console.log('Dashboard: Found rundown:', !!rundown)
-    
-    if (rundown) {
-      try {
-        console.log('Dashboard: Calling updateRundown with parameters:', {
-          rundownId,
-          title: rundown.title,
-          itemsCount: rundown.items.length,
-          silent: false,
-          archived: rundown.archived,
-          columnsCount: rundown.columns?.length || 0,
-          timezone: rundown.timezone,
-          startTime: rundown.startTime,
-          iconUrl
-        })
-        
-        await updateRundown(rundownId, rundown.title, rundown.items, false, rundown.archived, rundown.columns, rundown.timezone, rundown.startTime, iconUrl)
-        console.log('Dashboard: updateRundown completed successfully')
-      } catch (error) {
-        console.error('Dashboard: Failed to update rundown icon:', error)
-      }
-    } else {
-      console.error('Dashboard: Rundown not found for id:', rundownId)
-    }
-  }
-
   const confirmDelete = async () => {
     if (deleteDialog.rundownId) {
       try {
@@ -163,7 +134,6 @@ const Dashboard = () => {
           onDelete={handleDeleteClick}
           onArchive={handleArchiveClick}
           onDuplicate={handleDuplicateClick}
-          onIconUpdate={handleIconUpdate}
           showEmptyState={true}
         />
 
@@ -176,7 +146,6 @@ const Dashboard = () => {
             onDelete={handleDeleteClick}
             onUnarchive={handleUnarchiveClick}
             onDuplicate={handleDuplicateClick}
-            onIconUpdate={handleIconUpdate}
             isArchived={true}
             showEmptyState={false}
           />
