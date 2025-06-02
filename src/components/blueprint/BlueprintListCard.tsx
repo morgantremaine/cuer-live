@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Copy, Edit2, Check, X } from 'lucide-react';
+import { Trash2, Copy, Edit2, Check, X, GripVertical } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,9 +11,28 @@ interface BlueprintListCardProps {
   list: BlueprintList;
   onDelete: (listId: string) => void;
   onRename: (listId: string, newName: string) => void;
+  // Drag and drop props
+  isDragging?: boolean;
+  isDropTarget?: boolean;
+  onDragStart?: (e: React.DragEvent, listId: string) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
-const BlueprintListCard = ({ list, onDelete, onRename }: BlueprintListCardProps) => {
+const BlueprintListCard = ({ 
+  list, 
+  onDelete, 
+  onRename,
+  isDragging = false,
+  isDropTarget = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd
+}: BlueprintListCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
   const { toast } = useToast();
@@ -64,7 +84,19 @@ const BlueprintListCard = ({ list, onDelete, onRename }: BlueprintListCardProps)
   };
 
   return (
-    <Card className="h-fit bg-gray-800 border-gray-700">
+    <Card 
+      className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 ${
+        isDragging ? 'opacity-50 transform rotate-2' : ''
+      } ${
+        isDropTarget ? 'border-blue-500 border-2 bg-blue-900/20' : ''
+      }`}
+      draggable={!isEditing}
+      onDragStart={(e) => onDragStart?.(e, list.id)}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           {isEditing ? (
@@ -95,7 +127,10 @@ const BlueprintListCard = ({ list, onDelete, onRename }: BlueprintListCardProps)
             </div>
           ) : (
             <>
-              <CardTitle className="text-lg text-white">{list.name}</CardTitle>
+              <div className="flex items-center gap-2">
+                <GripVertical className="h-5 w-5 text-gray-400 cursor-grab active:cursor-grabbing" />
+                <CardTitle className="text-lg text-white">{list.name}</CardTitle>
+              </div>
               <div className="flex gap-1">
                 <Button
                   variant="ghost"

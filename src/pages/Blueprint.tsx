@@ -21,7 +21,14 @@ const Blueprint = () => {
     addNewList,
     deleteList,
     renameList,
-    refreshAllLists
+    refreshAllLists,
+    draggedListId,
+    dropTargetIndex,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd
   } = useBlueprintState(
     id || '',
     rundown?.title || 'Unknown Rundown',
@@ -107,12 +114,19 @@ const Blueprint = () => {
           </div>
         ) : (
           <div className="columns-2 gap-6">
-            {lists.map((list) => (
+            {lists.map((list, index) => (
               <div key={list.id} className="break-inside-avoid mb-6">
                 <BlueprintListCard
                   list={list}
                   onDelete={deleteList}
                   onRename={renameList}
+                  isDragging={draggedListId === list.id}
+                  isDropTarget={dropTargetIndex === index}
+                  onDragStart={handleDragStart}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
                 />
               </div>
             ))}

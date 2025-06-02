@@ -1,9 +1,9 @@
-
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn, generateDefaultBlueprint, getAvailableColumns } from '@/utils/blueprintUtils';
 import { useBlueprintStorage } from './useBlueprintStorage';
+import { useBlueprintDragAndDrop } from './useBlueprintDragAndDrop';
 import { useToast } from '@/hooks/use-toast';
 
 export const useBlueprintState = (rundownId: string, rundownTitle: string, items: RundownItem[]) => {
@@ -13,6 +13,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   
   const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
+
+  // Drag and drop functionality
+  const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, saveBlueprint, rundownTitle);
 
   // Initialize lists when items and saved blueprint are loaded
   useEffect(() => {
@@ -92,6 +95,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     addNewList,
     deleteList,
     renameList,
-    refreshAllLists
+    refreshAllLists,
+    ...dragAndDropHandlers
   };
 };
