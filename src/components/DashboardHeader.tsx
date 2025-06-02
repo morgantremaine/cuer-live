@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 
 interface DashboardHeaderProps {
   userEmail?: string
@@ -13,8 +13,11 @@ const DashboardHeader = ({ userEmail, onSignOut }: DashboardHeaderProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <FileText className="h-8 w-8 text-blue-400 mr-3" />
-            <h1 className="text-xl font-semibold text-white">Cuer</h1>
+            <img 
+              src="/lovable-uploads/5d70286b-5caf-42c6-9b69-ab57d3ccba4e.png" 
+              alt="Cuer Logo" 
+              className="h-8 w-auto mr-3"
+            />
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-300">Welcome, {userEmail}</span>
