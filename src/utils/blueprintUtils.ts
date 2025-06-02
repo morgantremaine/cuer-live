@@ -1,225 +1,62 @@
 
+import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 
-export interface BlueprintList {
-  id: string;
-  name: string;
-  items: string[];
-}
-
-export const generateBlueprintFromRundown = (
-  items: RundownItem[],
-  visibleColumns: any[],
-  listName: string = 'Generated List'
-): BlueprintList[] => {
-  const blueprintLists: BlueprintList[] = [];
-
-  const headersColumn = visibleColumns.find(col => col.key === 'headers');
-  if (headersColumn) {
-    const headerItems = items.filter(item => item.type === 'header');
-    console.log('Header items found:', headerItems);
-    
-    const headerValues = headerItems.map(item => {
-      if (item.type === 'header') {
-        console.log('Processing header item:', {
-          id: item.id,
-          name: item.name,
-          notes: item.notes,
-          script: item.script,
-          rowNumber: item.rowNumber,
-          segmentName: item.segmentName
-        });
-        
-        // Use notes for header descriptions (where descriptions are actually stored)
-        const headerText = item.notes || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
-        console.log('Selected header text:', headerText);
-        return headerText;
-      }
-      return 'Untitled Header';
-    });
-
-    console.log('Final header values:', headerValues);
-
-    blueprintLists.push({
-      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: `${listName} - Headers`,
-      items: headerValues,
-    });
-  }
-
-  visibleColumns.forEach(column => {
-    if (column.key !== 'headers') {
-      const regularItems = items.filter(item => item.type !== 'header');
-      const values = new Set<string>();
-
-      regularItems.forEach(item => {
-        let value = '';
-
-        if (column.key in item) {
-          value = String(item[column.key as keyof RundownItem] || '').trim();
-        } else if (item.customFields && column.key in item.customFields) {
-          value = String(item.customFields[column.key] || '').trim();
-        }
-
-        if (value && value !== '') {
-          values.add(value);
-        }
-      });
-
-      const sortedValues = Array.from(values).sort();
-
-      blueprintLists.push({
-        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: `${listName} - ${column.name}`,
-        items: sortedValues,
-      });
-    }
-  });
-  
-  return blueprintLists;
-};
-
-export const processColumnForBlueprint = (items: RundownItem[], column: any) => {
-  if (column.key === 'headers') {
-    const headerItems = items.filter(item => item.type === 'header');
-    console.log('processColumnForBlueprint - Header items:', headerItems);
-    
-    return headerItems.map(item => {
-      if (item.type === 'header') {
-        const headerText = item.notes || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
-        console.log('processColumnForBlueprint - Selected header text:', headerText);
-        return headerText;
-      }
-      return 'Untitled Header';
-    });
-  }
-
-  // For regular columns, get unique non-empty values
-  const regularItems = items.filter(item => item.type !== 'header');
-  const values = new Set<string>();
-  
-  regularItems.forEach(item => {
-    let value = '';
-    
-    if (column.key in item) {
-      value = String(item[column.key as keyof RundownItem] || '').trim();
-    } else if (item.customFields && column.key in item.customFields) {
-      value = String(item.customFields[column.key] || '').trim();
-    }
-    
-    if (value && value !== '') {
-      values.add(value);
-    }
-  });
-
-  return Array.from(values).sort();
-};
-
-export const exportRundownToBlueprint = (
-  items: RundownItem[],
-  visibleColumns: any[],
-  rundownTitle: string
-): BlueprintList[] => {
-  const blueprintLists: BlueprintList[] = [];
-
-  visibleColumns.forEach(column => {
-    const processedValues = processColumnForBlueprint(items, column);
-    
-    if (processedValues.length > 0) {
-      blueprintLists.push({
-        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: `${rundownTitle} - ${column.name}`,
-        items: processedValues
-      });
-    }
-  });
-
-  return blueprintLists;
-};
-
-export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): string[] => {
-  console.log('generateListFromColumn called with:', { sourceColumn, itemsCount: items.length });
-  
+export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): any[] => {
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
-    console.log('generateListFromColumn - Header items:', headerItems);
-    
-    return headerItems.map(item => {
-      if (item.type === 'header') {
-        const headerText = item.notes || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
-        console.log('generateListFromColumn - Selected header text:', headerText);
-        return headerText;
-      }
-      return 'Untitled Header';
-    });
+    const headerTexts = headerItems.map(item => item.segmentName || item.rowNumber);
+    return headerTexts;
   }
-
-  // For regular columns, get unique non-empty values
-  const regularItems = items.filter(item => item.type !== 'header');
-  const values = new Set<string>();
   
-  regularItems.forEach(item => {
-    let value = '';
-    
-    if (sourceColumn in item) {
-      value = String(item[sourceColumn as keyof RundownItem] || '').trim();
-    } else if (item.customFields && sourceColumn in item.customFields) {
-      value = String(item.customFields[sourceColumn] || '').trim();
-    }
-    
-    if (value && value !== '') {
-      values.add(value);
-    }
-  });
-
-  return Array.from(values).sort();
+  // For other columns, return the values from that column
+  return items
+    .filter(item => item.type !== 'header')
+    .map(item => {
+      const value = item.customFields?.[sourceColumn] || item[sourceColumn as keyof RundownItem];
+      return value || '';
+    })
+    .filter(value => value !== '');
 };
 
-export const getAvailableColumns = (items: RundownItem[]) => {
-  const columns = [
-    { key: 'headers', name: 'Headers' },
-    { key: 'gfx', name: 'GFX' },
-    { key: 'video', name: 'Video' },
-    { key: 'talent', name: 'Talent' },
-    { key: 'script', name: 'Script' },
-    { key: 'notes', name: 'Notes' }
-  ];
+export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
+  const availableColumns = getAvailableColumns(items);
+  
+  return availableColumns.slice(0, 3).map((column, index) => ({
+    id: `${column}_${Date.now()}_${index}`,
+    name: column.charAt(0).toUpperCase() + column.slice(1),
+    sourceColumn: column,
+    items: generateListFromColumn(items, column),
+    checkedItems: {}
+  }));
+};
 
-  // Get custom fields from items
-  const customFields = new Set<string>();
+export const getAvailableColumns = (items: RundownItem[]): string[] => {
+  const columns = new Set<string>();
+  
+  // Always include headers
+  if (items.some(item => item.type === 'header')) {
+    columns.add('headers');
+  }
+  
+  // Check standard fields
+  const standardFields = ['video', 'gfx', 'talent', 'audio', 'script'];
+  standardFields.forEach(field => {
+    if (items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '')) {
+      columns.add(field);
+    }
+  });
+  
+  // Check custom fields
   items.forEach(item => {
     if (item.customFields) {
       Object.keys(item.customFields).forEach(key => {
-        customFields.add(key);
+        if (item.customFields![key] && item.customFields![key] !== '') {
+          columns.add(key);
+        }
       });
     }
   });
-
-  // Add custom fields as available columns
-  customFields.forEach(field => {
-    if (!columns.find(col => col.key === field)) {
-      columns.push({
-        key: field,
-        name: field.charAt(0).toUpperCase() + field.slice(1)
-      });
-    }
-  });
-
-  return columns;
-};
-
-export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]) => {
-  const defaultLists = [
-    { name: `${rundownTitle} - Headers`, sourceColumn: 'headers' },
-    { name: `${rundownTitle} - GFX`, sourceColumn: 'gfx' },
-    { name: `${rundownTitle} - Video`, sourceColumn: 'video' },
-    { name: `${rundownTitle} - Talent`, sourceColumn: 'talent' }
-  ];
-
-  return defaultLists.map(listConfig => ({
-    id: `${listConfig.sourceColumn}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name: listConfig.name,
-    sourceColumn: listConfig.sourceColumn,
-    items: generateListFromColumn(items, listConfig.sourceColumn)
-  }));
+  
+  return Array.from(columns);
 };

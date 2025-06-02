@@ -1,6 +1,8 @@
 
-import { useState, useRef, useEffect } from 'react';
-import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useBlueprintStorage } from './useBlueprintStorage';
+
+type SaveStatus = 'saved' | 'saving' | 'unsaved';
 
 export const useScratchpadEditor = (
   rundownId: string,
@@ -10,111 +12,102 @@ export const useScratchpadEditor = (
 ) => {
   const [notes, setNotes] = useState(initialNotes);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedNotesRef = useRef(initialNotes);
+
   const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
 
-  // Load notes from saved blueprint when available
+  // Load notes from saved blueprint when it changes
   useEffect(() => {
-    if (savedBlueprint?.notes !== undefined) {
-      console.log('Loading notes from blueprint:', savedBlueprint.notes);
-      setNotes(savedBlueprint.notes || '');
+    if (savedBlueprint?.notes && savedBlueprint.notes !== lastSavedNotesRef.current) {
+      const loadedNotes = savedBlueprint.notes;
+      console.log('Loading notes from blueprint:', loadedNotes);
+      setNotes(loadedNotes);
+      lastSavedNotesRef.current = loadedNotes;
       setSaveStatus('saved');
     }
-  }, [savedBlueprint?.notes]);
+  }, [savedBlueprint]);
 
-  const handleNotesChange = (value: string) => {
-    console.log('Notes changed:', value);
-    setNotes(value);
-    setSaveStatus('unsaved');
-    onNotesChange?.(value);
-
-    // Clear existing timeout
+  // Auto-save functionality with debouncing
+  const scheduleAutoSave = useCallback((notesToSave: string) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout for auto-save
-    saveTimeoutRef.current = setTimeout(() => {
-      autoSaveNotes(value);
+    setSaveStatus('unsaved');
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        setSaveStatus('saving');
+        
+        if (savedBlueprint) {
+          await saveBlueprint(rundownTitle, savedBlueprint.lists, savedBlueprint.show_date, true, notesToSave);
+          lastSavedNotesRef.current = notesToSave;
+          setSaveStatus('saved');
+          console.log('Notes auto-saved successfully');
+        }
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+        setSaveStatus('unsaved');
+      }
     }, 2000);
-  };
+  }, [savedBlueprint, saveBlueprint, rundownTitle]);
 
-  const autoSaveNotes = async (notesToSave: string) => {
-    console.log('Starting auto-save with notes:', notesToSave);
-    setIsSaving(true);
-    setSaveStatus('saving');
-    
-    try {
-      // Get current blueprint data or use defaults
-      const listsToSave = savedBlueprint?.lists || [];
-      const showDate = savedBlueprint?.show_date;
-      
-      console.log('Saving blueprint with:', {
-        rundownId,
-        rundownTitle,
-        listsCount: listsToSave.length,
-        showDate,
-        notesLength: notesToSave.length
-      });
-      
-      await saveBlueprint(
-        rundownTitle,
-        listsToSave,
-        showDate,
-        true, // silent save
-        notesToSave
-      );
-      
-      console.log('Notes auto-saved successfully');
-      setSaveStatus('saved');
-    } catch (error) {
-      console.error('Failed to auto-save notes:', error);
-      setSaveStatus('unsaved');
-    } finally {
-      setIsSaving(false);
+  const handleNotesChange = useCallback((value: string) => {
+    setNotes(value);
+    onNotesChange?.(value);
+
+    // Only schedule auto-save if notes actually changed from last saved version
+    if (value !== lastSavedNotesRef.current) {
+      scheduleAutoSave(value);
     }
-  };
+  }, [onNotesChange, scheduleAutoSave]);
 
-  const insertText = (before: string, after: string = '') => {
+  // Text formatting functions
+  const insertTextAtCursor = useCallback((beforeText: string, afterText: string = '') => {
+    if (!textareaRef.current) return;
+
     const textarea = textareaRef.current;
-    if (!textarea) return;
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = notes.substring(start, end);
-    const newText = notes.substring(0, start) + before + selectedText + after + notes.substring(end);
+    const newText = notes.substring(0, start) + beforeText + selectedText + afterText + notes.substring(end);
     
-    handleNotesChange(newText);
+    setNotes(newText);
+    onNotesChange?.(newText);
     
-    // Restore focus and cursor position
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + before.length + selectedText.length + after.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
-  };
+    // Schedule auto-save
+    if (newText !== lastSavedNotesRef.current) {
+      scheduleAutoSave(newText);
+    }
 
-  const handleBold = () => insertText('**', '**');
-  const handleItalic = () => insertText('*', '*');
-  const handleUnderline = () => insertText('__', '__');
-  const handleBulletList = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const lineStart = notes.lastIndexOf('\n', start - 1) + 1;
-    const newText = notes.substring(0, lineStart) + '• ' + notes.substring(lineStart);
-    
-    handleNotesChange(newText);
-    
+    // Restore cursor position
     setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + 2, start + 2);
+      if (textarea) {
+        const newCursorPos = start + beforeText.length + selectedText.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        textarea.focus();
+      }
     }, 0);
-  };
+  }, [notes, onNotesChange, scheduleAutoSave]);
+
+  const handleBold = useCallback(() => {
+    insertTextAtCursor('**', '**');
+  }, [insertTextAtCursor]);
+
+  const handleItalic = useCallback(() => {
+    insertTextAtCursor('*', '*');
+  }, [insertTextAtCursor]);
+
+  const handleUnderline = useCallback(() => {
+    insertTextAtCursor('<u>', '</u>');
+  }, [insertTextAtCursor]);
+
+  const handleBulletList = useCallback(() => {
+    insertTextAtCursor('• ');
+  }, [insertTextAtCursor]);
 
   // Cleanup timeout on unmount
   useEffect(() => {

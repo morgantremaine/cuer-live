@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { BlueprintList } from '@/types/blueprint';
@@ -22,11 +22,17 @@ export const useBlueprintStorage = (rundownId: string) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const loadingRef = useRef(false);
+  const loadedRundownRef = useRef<string | null>(null);
 
   const loadBlueprint = async () => {
-    if (!user || !rundownId) return null;
+    if (!user || !rundownId || loadingRef.current || loadedRundownRef.current === rundownId) {
+      return savedBlueprint;
+    }
 
+    loadingRef.current = true;
     setLoading(true);
+    
     try {
       const { data, error } = await supabase
         .from('blueprints')
@@ -41,6 +47,7 @@ export const useBlueprintStorage = (rundownId: string) => {
       }
 
       console.log('Loaded blueprint:', data);
+      loadedRundownRef.current = rundownId;
       setSavedBlueprint(data);
       return data;
     } catch (error) {
@@ -48,6 +55,7 @@ export const useBlueprintStorage = (rundownId: string) => {
       return null;
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   };
 
@@ -56,16 +64,6 @@ export const useBlueprintStorage = (rundownId: string) => {
       console.error('Cannot save blueprint: missing user or rundownId');
       return;
     }
-
-    console.log('Saving blueprint with data:', {
-      user_id: user.id,
-      rundown_id: rundownId,
-      rundown_title: rundownTitle,
-      lists: lists,
-      show_date: showDate,
-      notes: notes,
-      isUpdate: !!savedBlueprint
-    });
 
     try {
       const blueprintData = {
@@ -80,7 +78,6 @@ export const useBlueprintStorage = (rundownId: string) => {
 
       if (savedBlueprint) {
         // Update existing blueprint
-        console.log('Updating existing blueprint with ID:', savedBlueprint.id);
         const { data, error } = await supabase
           .from('blueprints')
           .update(blueprintData)
@@ -101,12 +98,10 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
-        console.log('Blueprint updated successfully:', data);
         // Update local state with the returned data
         setSavedBlueprint(data);
       } else {
         // Create new blueprint
-        console.log('Creating new blueprint');
         const { data, error } = await supabase
           .from('blueprints')
           .insert(blueprintData)
@@ -125,7 +120,6 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
-        console.log('Blueprint created successfully:', data);
         setSavedBlueprint(data);
       }
 
@@ -147,8 +141,17 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
   };
 
+  // Reset loading state when rundown changes
   useEffect(() => {
-    if (user && rundownId) {
+    if (loadedRundownRef.current !== rundownId) {
+      loadedRundownRef.current = null;
+      loadingRef.current = false;
+      setSavedBlueprint(null);
+    }
+  }, [rundownId]);
+
+  useEffect(() => {
+    if (user && rundownId && !loadingRef.current && loadedRundownRef.current !== rundownId) {
       loadBlueprint();
     }
   }, [user, rundownId]);
