@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -144,6 +145,7 @@ const Blueprint = () => {
 
         <BlueprintScratchpad
           rundownId={id || ''}
+          rundownTitle={rundown?.title || 'Unknown Rundown'}
           initialNotes={savedBlueprint?.notes || ''}
           onNotesChange={(notes) => {
             // Notes are automatically handled by the component
