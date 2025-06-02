@@ -39,6 +39,12 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
     }
   };
 
+  // Filter out custom columns and show meaningful column names
+  const meaningfulColumns = availableColumns.filter(column => 
+    !column.key.startsWith('custom_') && 
+    ['headers', 'gfx', 'video', 'talent', 'script', 'notes'].includes(column.key)
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -72,7 +78,7 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
                 <SelectValue placeholder="Select a column" />
               </SelectTrigger>
               <SelectContent>
-                {availableColumns.map((column) => (
+                {meaningfulColumns.map((column) => (
                   <SelectItem key={column.key} value={column.key}>
                     {column.name}
                   </SelectItem>
