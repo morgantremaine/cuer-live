@@ -8,12 +8,12 @@ export const useTimeCalculations = (
   rundownStartTime: string
 ) => {
   const timeToSeconds = (timeStr: string) => {
-    // Handle both HH:MM and HH:MM:SS formats
+    // Handle both MM:SS and HH:MM:SS formats
     const parts = timeStr.split(':').map(Number);
     if (parts.length === 2) {
-      // HH:MM format
-      const [hours, minutes] = parts;
-      return hours * 3600 + minutes * 60;
+      // MM:SS format (minutes:seconds)
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
     } else if (parts.length === 3) {
       // HH:MM:SS format
       const [hours, minutes, seconds] = parts;
