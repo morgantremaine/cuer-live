@@ -12,7 +12,6 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
-  icon?: string
 }
 
 interface RundownGridProps {

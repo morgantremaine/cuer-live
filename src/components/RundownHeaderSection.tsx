@@ -38,8 +38,6 @@ interface RundownHeaderSectionProps {
   onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
   currentHighlight?: any;
-  rundownIcon?: string;
-  onIconChange?: (icon: string) => void;
 }
 
 const RundownHeaderSection = ({
@@ -76,26 +74,26 @@ const RundownHeaderSection = ({
   visibleColumns = [],
   onHighlightMatch = () => {},
   onReplaceText = () => {},
-  currentHighlight,
-  rundownIcon = '',
-  onIconChange = () => {}
+  currentHighlight
 }: RundownHeaderSectionProps) => {
   return (
     <div>
       <RundownHeader
         currentTime={currentTime}
         timezone={timezone}
-        setTimezone={onTimezoneChange}
         onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
-        rundownTitle={rundownTitle}
-        setRundownTitle={onTitleChange}
+        title={rundownTitle}
+        onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
-        setRundownStartTime={onRundownStartTimeChange}
-        rundownIcon={rundownIcon}
-        setRundownIcon={onIconChange}
-        onShowColumnManager={onShowColumnManager}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        items={items}
+        visibleColumns={visibleColumns}
+        onHighlightMatch={onHighlightMatch}
+        onReplaceText={onReplaceText}
+        currentHighlight={currentHighlight}
       />
       <RundownToolbar
         onAddRow={onAddRow}

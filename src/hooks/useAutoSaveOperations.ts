@@ -1,40 +1,80 @@
 
+import { useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
+import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
 
 export const useAutoSaveOperations = () => {
-  const { saveRundown, updateRundown } = useRundownStorage();
+  const [isSaving, setIsSaving] = useState(false);
+  const params = useParams<{ id: string }>();
+  // Filter out the literal ":id" string that sometimes comes from route patterns
+  const rawId = params.id;
+  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
+  
+  const { updateRundown, saveRundown } = useRundownStorage();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const performSave = async (
-    title: string,
-    items: RundownItem[],
-    columns?: Column[],
-    timezone?: string,
-    startTime?: string,
-    icon?: string
-  ) => {
-    console.log('AutoSaveOperations: Performing save with icon:', icon);
-    return await saveRundown(title, items, columns, timezone, startTime, icon);
-  };
+  const isNewRundown = !rundownId;
 
-  const performUpdate = async (
-    id: string,
-    title: string,
-    items: RundownItem[],
-    silent = false,
-    archived = false,
-    columns?: Column[],
-    timezone?: string,
-    startTime?: string,
-    icon?: string
-  ) => {
-    console.log('AutoSaveOperations: Performing update with icon:', icon);
-    return await updateRundown(id, title, items, silent, archived, columns, timezone, startTime, icon);
-  };
+  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
+    if (isSaving) {
+      console.log('Save already in progress, skipping');
+      return false;
+    }
+
+    if (!user) {
+      console.error('Cannot save: user not authenticated');
+      return false;
+    }
+
+    // Validate data before saving
+    if (!rundownTitle || rundownTitle.trim() === '') {
+      console.error('Cannot save: title is empty');
+      return false;
+    }
+
+    if (!Array.isArray(items)) {
+      console.error('Cannot save: items is not an array');
+      return false;
+    }
+
+    console.log('performSave: Saving with timezone:', timezone, 'startTime:', startTime);
+
+    try {
+      setIsSaving(true);
+      
+      if (isNewRundown) {
+        console.log('performSave: Saving new rundown with timezone:', timezone, 'startTime:', startTime);
+        const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
+        
+        if (result?.id) {
+          navigate(`/rundown/${result.id}`, { replace: true });
+          return true;
+        } else {
+          throw new Error('Failed to save new rundown - no ID returned');
+        }
+      } else if (rundownId) {
+        console.log('performSave: Updating existing rundown with timezone:', timezone, 'startTime:', startTime);
+        await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, startTime);
+        return true;
+      }
+      
+      console.error('No valid save path found');
+      return false;
+    } catch (error) {
+      console.error('Save failed:', error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, user, isNewRundown, rundownId, saveRundown, updateRundown, navigate]);
 
   return {
+    isSaving,
     performSave,
-    performUpdate
+    isNewRundown
   };
 };
