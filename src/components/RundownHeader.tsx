@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Edit2, User, LogOut, ArrowLeft, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -106,7 +105,7 @@ const RundownHeader = ({
           <img 
             src="/lovable-uploads/80ad38cb-388f-4a21-b9ce-da3da0901c60.png" 
             alt="Cuer Logo" 
-            className="h-8 w-auto"
+            className="h-6 w-auto"
           />
           {isEditingTitle ? (
             <input

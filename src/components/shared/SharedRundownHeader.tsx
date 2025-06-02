@@ -39,7 +39,7 @@ const SharedRundownHeader = ({
           <img 
             src="/lovable-uploads/80ad38cb-388f-4a21-b9ce-da3da0901c60.png" 
             alt="Cuer Logo" 
-            className="h-8 w-auto"
+            className="h-6 w-auto"
           />
           <h1 className="text-2xl font-bold text-gray-900 print:text-xl">
             {title}

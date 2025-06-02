@@ -69,14 +69,14 @@ const Login = () => {
     <div className="dark min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
       <Card className="w-full max-w-md bg-gray-800 border-gray-700">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-2">
             <img 
               src="/lovable-uploads/d3829867-67da-4acb-a6d3-66561a4e60e7.png" 
               alt="Cuer Logo" 
               className="h-12 w-auto"
             />
           </div>
-          <div className="text-lg text-gray-300 mt-2">Your AI rundown pilot</div>
+          <div className="text-lg text-gray-300">Your AI rundown pilot</div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
