@@ -23,7 +23,7 @@ export const saveRundownToDatabase = async (
   startTime?: string,
   icon?: string
 ) => {
-  console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, startTime, icon, userId })
+  console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, startTime, userId })
 
   const { data, error } = await supabase
     .from('rundowns')
@@ -61,7 +61,6 @@ export const updateRundownInDatabase = async (
     columnsCount: columns?.length || 0,
     timezone,
     startTime,
-    icon: icon ? 'Icon provided' : 'No icon',
     userId,
     archived
   })

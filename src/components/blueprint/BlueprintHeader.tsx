@@ -5,19 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, RefreshCw, FileText, Clock, Calendar } from 'lucide-react';
 import AddListDialog from './AddListDialog';
-import IconUpload from './IconUpload';
 
 interface BlueprintHeaderProps {
   rundown: {
     id: string;
     title: string;
-    icon?: string;
     startTime?: string;
   };
   showDate: string;
   availableColumns: { key: string; name: string }[];
   onShowDateUpdate: (date: string) => void;
-  onIconChange: (iconData: string | null) => void;
   onAddList: (name: string, sourceColumn: string) => void;
   onRefreshAll: () => void;
 }
@@ -27,7 +24,6 @@ const BlueprintHeader = ({
   showDate,
   availableColumns,
   onShowDateUpdate,
-  onIconChange,
   onAddList,
   onRefreshAll
 }: BlueprintHeaderProps) => {
@@ -37,13 +33,6 @@ const BlueprintHeader = ({
     <div className="flex items-start justify-between mb-8">
       <div>
         <div className="flex items-center space-x-3 mb-2">
-          {rundown.icon && (
-            <img 
-              src={rundown.icon} 
-              alt="Rundown icon" 
-              className="w-16 h-16 rounded object-cover"
-            />
-          )}
           <div>
             <h1 className="text-3xl font-bold text-white">Blueprint</h1>
             <p className="text-gray-400">{rundown.title}</p>
@@ -91,10 +80,6 @@ const BlueprintHeader = ({
             </Button>
           </div>
           <div className="flex gap-2">
-            <IconUpload
-              currentIcon={rundown.icon}
-              onIconChange={onIconChange}
-            />
             <AddListDialog
               availableColumns={availableColumns}
               onAddList={onAddList}
