@@ -40,17 +40,32 @@ const RundownHeader = ({
   onHighlightMatch = () => {},
   onReplaceText = () => {}
 }: RundownHeaderProps) => {
+  const formatTime = (time: Date, tz: string) => {
+    try {
+      const timeString = time.toLocaleTimeString('en-US', { 
+        hour12: false,
+        timeZone: tz
+      });
+      return timeString;
+    } catch {
+      return time.toLocaleTimeString('en-US', { hour12: false });
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-3 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center space-x-4">
-          <HeaderLogo />
+      {/* Mobile layout: Compact single column */}
+      <div className="block sm:hidden">
+        <div className="mb-2">
           <HeaderTitle
             title={title}
             onTitleChange={onTitleChange}
             hasUnsavedChanges={hasUnsavedChanges}
             isSaving={isSaving}
           />
+          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+            <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
+          </div>
         </div>
         <HeaderControls
           currentTime={currentTime}
@@ -63,11 +78,35 @@ const RundownHeader = ({
         />
       </div>
 
-      <HeaderBottomSection
-        totalRuntime={totalRuntime}
-        rundownStartTime={rundownStartTime}
-        onRundownStartTimeChange={onRundownStartTimeChange}
-      />
+      {/* Desktop layout: Logo, title, and controls in a row */}
+      <div className="hidden sm:block">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center space-x-4">
+            <HeaderLogo />
+            <HeaderTitle
+              title={title}
+              onTitleChange={onTitleChange}
+              hasUnsavedChanges={hasUnsavedChanges}
+              isSaving={isSaving}
+            />
+          </div>
+          <HeaderControls
+            currentTime={currentTime}
+            timezone={timezone}
+            onTimezoneChange={onTimezoneChange}
+            items={items}
+            visibleColumns={visibleColumns}
+            onHighlightMatch={onHighlightMatch}
+            onReplaceText={onReplaceText}
+          />
+        </div>
+
+        <HeaderBottomSection
+          totalRuntime={totalRuntime}
+          rundownStartTime={rundownStartTime}
+          onRundownStartTimeChange={onRundownStartTimeChange}
+        />
+      </div>
     </div>
   );
 };
