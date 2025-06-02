@@ -8,23 +8,31 @@ export const useTimeCalculations = (
   rundownStartTime: string
 ) => {
   const timeToSeconds = (timeStr: string) => {
-    if (!timeStr) return 0;
+    if (!timeStr || timeStr === '') return 0;
     
     // Handle both MM:SS and HH:MM:SS formats
-    const parts = timeStr.split(':').map(Number);
+    const parts = timeStr.split(':').map(str => {
+      const num = parseInt(str, 10);
+      return isNaN(num) ? 0 : num;
+    });
+    
     if (parts.length === 2) {
       // MM:SS format (minutes:seconds)
       const [minutes, seconds] = parts;
-      return (minutes || 0) * 60 + (seconds || 0);
+      return minutes * 60 + seconds;
     } else if (parts.length === 3) {
       // HH:MM:SS format
       const [hours, minutes, seconds] = parts;
-      return (hours || 0) * 3600 + (minutes || 0) * 60 + (seconds || 0);
+      return hours * 3600 + minutes * 60 + seconds;
     }
     return 0;
   };
 
   const secondsToTime = (seconds: number) => {
+    if (isNaN(seconds) || seconds < 0) {
+      return '00:00:00';
+    }
+    
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
@@ -45,11 +53,8 @@ export const useTimeCalculations = (
   };
 
   const getRowStatus = (item: RundownItem, currentTime: Date) => {
-    const formatTime = (time: Date) => {
-      return time.toLocaleTimeString('en-US', { hour12: false });
-    };
-    
-    const now = formatTime(currentTime);
+    // Get current time in HH:MM:SS format
+    const now = currentTime.toTimeString().substring(0, 8); // Gets HH:MM:SS
     const currentSeconds = timeToSeconds(now);
     const startSeconds = timeToSeconds(item.startTime);
     const endSeconds = timeToSeconds(item.endTime);

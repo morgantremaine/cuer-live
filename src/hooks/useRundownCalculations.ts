@@ -4,18 +4,22 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
   const timeToSeconds = useCallback((timeStr: string) => {
-    if (!timeStr) return 0;
+    if (!timeStr || timeStr === '') return 0;
     
     // Handle both MM:SS and HH:MM:SS formats
-    const parts = timeStr.split(':').map(Number);
+    const parts = timeStr.split(':').map(str => {
+      const num = parseInt(str, 10);
+      return isNaN(num) ? 0 : num;
+    });
+    
     if (parts.length === 2) {
       // MM:SS format (minutes:seconds)
       const [minutes, seconds] = parts;
-      return (minutes || 0) * 60 + (seconds || 0);
+      return minutes * 60 + seconds;
     } else if (parts.length === 3) {
       // HH:MM:SS format
       const [hours, minutes, seconds] = parts;
-      return (hours || 0) * 3600 + (minutes || 0) * 60 + (seconds || 0);
+      return hours * 3600 + minutes * 60 + seconds;
     }
     return 0;
   }, []);
