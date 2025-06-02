@@ -29,11 +29,11 @@ const IconUpload = ({ currentIcon, onIconChange, disabled = false }: IconUploadP
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 3MB)
+    if (file.size > 3 * 1024 * 1024) {
       toast({
         title: 'File too large',
-        description: 'Please select an image smaller than 2MB',
+        description: 'Please select an image smaller than 3MB',
         variant: 'destructive',
       });
       return;
