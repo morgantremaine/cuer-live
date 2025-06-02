@@ -16,6 +16,7 @@ export const useSharedRundownState = () => {
     items: RundownItem[];
     columns: any[];
     startTime: string;
+    timezone?: string;
     lastUpdated?: string;
   } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -46,7 +47,7 @@ export const useSharedRundownState = () => {
       // Try to access rundown without RLS enforcement
       const { data, error: queryError } = await supabase
         .from('rundowns')
-        .select('id, title, items, columns, start_time, created_at, updated_at')
+        .select('id, title, items, columns, start_time, timezone, created_at, updated_at')
         .eq('id', rundownId)
         .single();
 
@@ -68,7 +69,8 @@ export const useSharedRundownState = () => {
           title: data.title || 'Untitled Rundown',
           items: data.items || [],
           columns: data.columns || [],
-          startTime: data.start_time || '09:00:00', // Use the actual start time from database
+          startTime: data.start_time || '09:00:00',
+          timezone: data.timezone || 'UTC',
           lastUpdated: data.updated_at
         };
         

@@ -54,7 +54,7 @@ const SharedRundown = () => {
         startTime={rundownData.startTime || '09:00:00'}
         currentSegmentId={currentSegmentId}
         items={rundownData.items}
-        timezone="America/New_York"
+        timezone={rundownData.timezone || 'UTC'}
       />
 
       <SharedRundownTable
