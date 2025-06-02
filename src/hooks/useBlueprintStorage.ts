@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -48,7 +47,7 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
   };
 
-  const saveBlueprint = async (rundownTitle: string, lists: BlueprintList[]) => {
+  const saveBlueprint = async (rundownTitle: string, lists: BlueprintList[], silent = false) => {
     if (!user || !rundownId) return;
 
     try {
@@ -70,11 +69,13 @@ export const useBlueprintStorage = (rundownId: string) => {
 
         if (error) {
           console.error('Error updating blueprint:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to save blueprint',
-            variant: 'destructive',
-          });
+          if (!silent) {
+            toast({
+              title: 'Error',
+              description: 'Failed to save blueprint',
+              variant: 'destructive',
+            });
+          }
           return;
         }
       } else {
@@ -87,28 +88,34 @@ export const useBlueprintStorage = (rundownId: string) => {
 
         if (error) {
           console.error('Error creating blueprint:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to save blueprint',
-            variant: 'destructive',
-          });
+          if (!silent) {
+            toast({
+              title: 'Error',
+              description: 'Failed to save blueprint',
+              variant: 'destructive',
+            });
+          }
           return;
         }
 
         setSavedBlueprint(data);
       }
 
-      toast({
-        title: 'Success',
-        description: 'Blueprint saved successfully!',
-      });
+      if (!silent) {
+        toast({
+          title: 'Success',
+          description: 'Blueprint saved successfully!',
+        });
+      }
     } catch (error) {
       console.error('Error saving blueprint:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save blueprint',
-        variant: 'destructive',
-      });
+      if (!silent) {
+        toast({
+          title: 'Error',
+          description: 'Failed to save blueprint',
+          variant: 'destructive',
+        });
+      }
     }
   };
 

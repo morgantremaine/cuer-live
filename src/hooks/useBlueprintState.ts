@@ -4,10 +4,12 @@ import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn, generateDefaultBlueprint, getAvailableColumns } from '@/utils/blueprintUtils';
 import { useBlueprintStorage } from './useBlueprintStorage';
+import { useToast } from '@/hooks/use-toast';
 
 export const useBlueprintState = (rundownId: string, rundownTitle: string, items: RundownItem[]) => {
   const [lists, setLists] = useState<BlueprintList[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const { toast } = useToast();
   
   const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
@@ -75,9 +77,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     }));
     setLists(updatedLists);
     
-    // Save to database
-    saveBlueprint(rundownTitle, updatedLists);
-  }, [items, lists, rundownTitle, saveBlueprint]);
+    // Save to database silently and show custom refresh message
+    saveBlueprint(rundownTitle, updatedLists, true);
+    
+    toast({
+      title: 'Success',
+      description: 'All lists refreshed successfully!',
+    });
+  }, [items, lists, rundownTitle, saveBlueprint, toast]);
 
   return {
     lists,
