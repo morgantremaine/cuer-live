@@ -100,10 +100,6 @@ const Blueprint = () => {
                 <h1 className="text-3xl font-bold text-white">Blueprint</h1>
                 <p className="text-gray-400">{rundown.title}</p>
               </div>
-              <IconUpload
-                currentIcon={rundown.icon}
-                onIconChange={handleIconChange}
-              />
             </div>
             
             {/* Start Time and Date Section */}
@@ -147,7 +143,11 @@ const Blueprint = () => {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <IconUpload
+              currentIcon={rundown.icon}
+              onIconChange={handleIconChange}
+            />
             <Button
               variant="outline"
               onClick={refreshAllLists}
