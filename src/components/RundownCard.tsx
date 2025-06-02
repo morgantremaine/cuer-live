@@ -61,16 +61,30 @@ const RundownCard = ({
 
   const handleIconUpload = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log('RundownCard: handleIconUpload clicked')
-    fileInputRef.current?.click()
+    console.log('RundownCard: handleIconUpload clicked for rundown:', rundown.id)
+    console.log('RundownCard: fileInputRef.current exists:', !!fileInputRef.current)
+    
+    if (fileInputRef.current) {
+      console.log('RundownCard: Triggering file input click')
+      fileInputRef.current.click()
+    } else {
+      console.error('RundownCard: fileInputRef.current is null')
+    }
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('RundownCard: handleFileChange triggered')
     const file = e.target.files?.[0]
-    console.log('RundownCard: File selected:', file?.name, 'onIconUpdate available:', !!onIconUpdate)
+    console.log('RundownCard: File selected:', file?.name, 'File size:', file?.size, 'File type:', file?.type)
+    console.log('RundownCard: onIconUpdate function available:', !!onIconUpdate)
     
-    if (!file || !onIconUpdate) {
-      console.log('RundownCard: Missing file or onIconUpdate function')
+    if (!file) {
+      console.log('RundownCard: No file selected')
+      return
+    }
+
+    if (!onIconUpdate) {
+      console.error('RundownCard: onIconUpdate function not provided')
       return
     }
 
@@ -187,6 +201,9 @@ const RundownCard = ({
                     accept="image/*"
                     onChange={handleFileChange}
                     className="hidden"
+                    onClick={(e) => {
+                      console.log('RundownCard: File input clicked event triggered')
+                    }}
                   />
                 </>
               )}
