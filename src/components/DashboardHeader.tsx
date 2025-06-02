@@ -14,7 +14,7 @@ const DashboardHeader = ({ userEmail, onSignOut }: DashboardHeaderProps) => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <img 
-              src="/lovable-uploads/5d70286b-5caf-42c6-9b69-ab57d3ccba4e.png" 
+              src="/lovable-uploads/d3829867-67da-4acb-a6d3-66561a4e60e7.png" 
               alt="Cuer Logo" 
               className="h-8 w-auto mr-3"
             />
