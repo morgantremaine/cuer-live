@@ -78,8 +78,8 @@ export const useTimeCalculations = (
   const getRowStatus = (item: RundownItem, currentTime: Date) => {
     // Get current time in HH:MM:SS format
     const now = currentTime.toTimeString().substring(0, 8); // Gets HH:MM:SS
-    console.log('getRowStatus called for item:', item.id, 'current time:', now);
-    console.log('getRowStatus item details:', { 
+    console.log('🔴 getRowStatus called for item:', item.id, 'current time:', now);
+    console.log('🔴 getRowStatus item details:', { 
       id: item.id, 
       name: item.name,
       startTime: item.startTime, 
@@ -89,13 +89,13 @@ export const useTimeCalculations = (
     
     // Skip headers for live status
     if (isHeaderItem(item)) {
-      console.log('getRowStatus: Skipping header item');
+      console.log('🔴 getRowStatus: Skipping header item');
       return 'upcoming';
     }
     
     // Ensure we have valid times
     if (!item.startTime || !item.endTime) {
-      console.log('getRowStatus: Missing start or end time, returning upcoming');
+      console.log('🔴 getRowStatus: Missing start or end time, returning upcoming');
       return 'upcoming';
     }
     
@@ -103,7 +103,7 @@ export const useTimeCalculations = (
     const startSeconds = timeToSeconds(item.startTime);
     const endSeconds = timeToSeconds(item.endTime);
     
-    console.log('getRowStatus seconds comparison:', { 
+    console.log('🔴 getRowStatus seconds comparison:', { 
       currentSeconds, 
       startSeconds, 
       endSeconds,
@@ -112,18 +112,18 @@ export const useTimeCalculations = (
     
     // Handle invalid conversions
     if (isNaN(currentSeconds) || isNaN(startSeconds) || isNaN(endSeconds)) {
-      console.log('getRowStatus: Invalid time conversion, returning upcoming');
+      console.log('🔴 getRowStatus: Invalid time conversion, returning upcoming');
       return 'upcoming';
     }
     
     if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
-      console.log('getRowStatus: Item is CURRENT/LIVE');
+      console.log('🔴 getRowStatus: Item is CURRENT/LIVE');
       return 'current';
     } else if (currentSeconds >= endSeconds) {
-      console.log('getRowStatus: Item is completed');
+      console.log('🔴 getRowStatus: Item is completed');
       return 'completed';
     }
-    console.log('getRowStatus: Item is upcoming');
+    console.log('🔴 getRowStatus: Item is upcoming');
     return 'upcoming';
   };
 
@@ -180,6 +180,9 @@ export const useTimeCalculations = (
       }
     });
   }, [items, updateItem, rundownStartTime]);
+
+  // Add logging to track when getRowStatus is being exported
+  console.log('🔵 useTimeCalculations returning getRowStatus function');
 
   return {
     calculateEndTime,
