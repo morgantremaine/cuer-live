@@ -45,7 +45,7 @@ const CuerChatMessages = ({
       const htmlContent = marked(content);
       return (
         <div 
-          className="prose prose-sm max-w-none"
+          className="prose prose-sm max-w-none prose-p:mb-4 prose-p:last:mb-0"
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
       );
