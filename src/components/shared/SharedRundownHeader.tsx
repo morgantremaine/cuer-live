@@ -34,14 +34,16 @@ const SharedRundownHeader = ({
 
   return (
     <div className="mb-6 print:mb-4">
-      {/* Mobile layout: Title only, no logo */}
-      <div className="block sm:hidden mb-2">
-        <h1 className="text-xl font-bold text-gray-900 print:text-xl break-words mb-2">
-          {title}
-        </h1>
-        <div className="text-left text-sm text-gray-600">
-          <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
-          <div>Start: {startTime}</div>
+      {/* Mobile layout: Compact single column */}
+      <div className="block sm:hidden">
+        <div className="mb-3">
+          <h1 className="text-lg font-bold text-gray-900 print:text-xl line-clamp-2 leading-tight mb-1">
+            {title}
+          </h1>
+          <div className="text-xs text-gray-600 space-y-0.5">
+            <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
+            <div>Start: {startTime}</div>
+          </div>
         </div>
       </div>
 
