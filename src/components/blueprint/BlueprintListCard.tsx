@@ -1,13 +1,16 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Copy, Edit2, Check, X, GripVertical } from 'lucide-react';
+import { Trash2, Copy, Edit2, Check, X, GripVertical, Clock } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useToast } from '@/hooks/use-toast';
 
 interface BlueprintListCardProps {
   list: BlueprintList;
+  rundownItems: RundownItem[];
   onDelete: (listId: string) => void;
   onRename: (listId: string, newName: string) => void;
   // Drag and drop props
@@ -20,6 +23,7 @@ interface BlueprintListCardProps {
 
 const BlueprintListCard = ({ 
   list, 
+  rundownItems,
   onDelete, 
   onRename,
   isDragging = false,
@@ -76,6 +80,23 @@ const BlueprintListCard = ({
     } else if (e.key === 'Escape') {
       handleCancelEdit();
     }
+  };
+
+  // Function to get start time for header items
+  const getHeaderStartTime = (itemText: string) => {
+    if (list.sourceColumn !== 'headers') return null;
+    
+    // Find the header item that matches this text
+    const headerItem = rundownItems.find(item => 
+      isHeaderItem(item) && (
+        item.notes === itemText || 
+        item.name === itemText || 
+        item.segmentName === itemText || 
+        item.rowNumber === itemText
+      )
+    );
+    
+    return headerItem?.startTime || null;
   };
 
   return (
@@ -165,14 +186,24 @@ const BlueprintListCard = ({
           {list.items.length === 0 ? (
             <p className="text-gray-500 italic">No items found</p>
           ) : (
-            list.items.map((item, index) => (
-              <div
-                key={index}
-                className="p-2 bg-gray-700 rounded text-sm border border-gray-600 text-gray-200"
-              >
-                {item}
-              </div>
-            ))
+            list.items.map((item, index) => {
+              const startTime = getHeaderStartTime(item);
+              
+              return (
+                <div
+                  key={index}
+                  className="p-2 bg-gray-700 rounded text-sm border border-gray-600 text-gray-200 flex justify-between items-center"
+                >
+                  <span className="flex-1">{item}</span>
+                  {startTime && (
+                    <div className="flex items-center gap-1 text-gray-400 text-xs ml-2">
+                      <Clock className="h-3 w-3" />
+                      <span>{startTime}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </CardContent>

@@ -123,39 +123,43 @@ const Blueprint = () => {
               </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/dashboard')}
-                className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/rundown/${id}`)}
-                className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Rundown
-              </Button>
-              <IconUpload
-                currentIcon={rundown.icon}
-                onIconChange={handleIconChange}
-              />
-              <AddListDialog
-                availableColumns={availableColumns}
-                onAddList={addNewList}
-              />
-              <Button
-                variant="outline"
-                onClick={refreshAllLists}
-                className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh All
-              </Button>
+            <div className="flex gap-2 justify-between">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/rundown/${id}`)}
+                  className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Rundown
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <IconUpload
+                  currentIcon={rundown.icon}
+                  onIconChange={handleIconChange}
+                />
+                <AddListDialog
+                  availableColumns={availableColumns}
+                  onAddList={addNewList}
+                />
+                <Button
+                  variant="outline"
+                  onClick={refreshAllLists}
+                  className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh All
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -189,6 +193,7 @@ const Blueprint = () => {
                   <BlueprintListCard
                     list={list}
                     index={index}
+                    rundownItems={rundown?.items || []}
                     onDelete={deleteList}
                     onRename={renameList}
                     isDragging={draggedListId === list.id}
