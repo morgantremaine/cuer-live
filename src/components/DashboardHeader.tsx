@@ -21,7 +21,12 @@ const DashboardHeader = ({ userEmail, onSignOut }: DashboardHeaderProps) => {
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-300">Welcome, {userEmail}</span>
-            <Button variant="outline" onClick={onSignOut} className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSignOut}
+              className="text-gray-300 hover:bg-gray-700 hover:text-white"
+            >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
