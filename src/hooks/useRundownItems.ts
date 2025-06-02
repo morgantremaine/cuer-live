@@ -16,6 +16,7 @@ const normalizeRundownItem = (item: RundownItem): RundownItem => ({
   segmentName: isHeaderItem(item) ? item.segmentName || item.rowNumber : item.segmentName,
   gfx: item.gfx || '',
   video: item.video || '',
+  elapsedTime: item.elapsedTime || '00:00:00',
 });
 
 export const useRundownItems = () => {

@@ -7,6 +7,7 @@ export interface RundownItem {
   startTime: string;
   duration: string;
   endTime: string;
+  elapsedTime: string;
   talent: string;
   script: string;
   gfx: string;
