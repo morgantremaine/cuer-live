@@ -1,195 +1,171 @@
 
-import React, { useState } from 'react';
-import { Edit2, User, LogOut, ArrowLeft, Clock } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Settings, Save, Archive, Trash2 } from 'lucide-react';
 import TimezoneSelector from './TimezoneSelector';
-import AuthModal from './AuthModal';
-import SearchBar from './SearchBar';
-import { useAuth } from '@/hooks/useAuth';
-import { SearchHighlight } from '@/types/search';
+import IconPicker from './IconPicker';
+import IconDisplay from './IconDisplay';
 
 interface RundownHeaderProps {
-  currentTime: Date;
+  rundownTitle: string;
+  setRundownTitle: (title: string) => void;
+  rundownStartTime: string;
+  setRundownStartTime: (time: string) => void;
+  rundownIcon: string;
+  setRundownIcon: (icon: string) => void;
   timezone: string;
-  onTimezoneChange: (timezone: string) => void;
-  totalRuntime: string;
+  setTimezone: (timezone: string) => void;
+  currentTime: Date;
+  onShowColumnManager: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
-  title: string;
-  onTitleChange: (title: string) => void;
-  rundownStartTime: string;
-  onRundownStartTimeChange: (startTime: string) => void;
-  items?: any[];
-  visibleColumns?: any[];
-  onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
-  onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
-  currentHighlight?: SearchHighlight | null;
+  onSave?: () => void;
+  onArchive?: () => void;
+  onDelete?: () => void;
+  isExistingRundown?: boolean;
 }
 
-const RundownHeader = ({ 
-  currentTime, 
-  timezone, 
-  onTimezoneChange, 
-  totalRuntime,
+const RundownHeader = ({
+  rundownTitle,
+  setRundownTitle,
+  rundownStartTime,
+  setRundownStartTime,
+  rundownIcon,
+  setRundownIcon,
+  timezone,
+  setTimezone,
+  currentTime,
+  onShowColumnManager,
   hasUnsavedChanges,
   isSaving,
-  title,
-  onTitleChange,
-  rundownStartTime,
-  onRundownStartTimeChange,
-  items = [],
-  visibleColumns = [],
-  onHighlightMatch = () => {},
-  onReplaceText = () => {}
+  onSave,
+  onArchive,
+  onDelete,
+  isExistingRundown = false
 }: RundownHeaderProps) => {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-
   const formatTime = (time: Date, tz: string) => {
     try {
-      const timeString = time.toLocaleTimeString('en-US', { 
+      return time.toLocaleTimeString('en-US', { 
         hour12: false,
         timeZone: tz
       });
-      return timeString;
     } catch {
       return time.toLocaleTimeString('en-US', { hour12: false });
     }
   };
 
-  const handleTitleSubmit = () => {
-    setIsEditingTitle(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleTitleSubmit();
-    } else if (e.key === 'Escape') {
-      setIsEditingTitle(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
-  };
-
-  const getSaveStatus = () => {
-    if (isSaving) {
-      return <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">Saving...</span>;
-    }
-    if (hasUnsavedChanges) {
-      return <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">Unsaved changes</span>;
-    }
-    return <span className="text-xs text-green-600 dark:text-green-400 ml-2">Saved</span>;
-  };
-
   return (
-    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-3 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBackToDashboard}
-            className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-2"
-            title="Back to Dashboard"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          {isEditingTitle ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              onBlur={handleTitleSubmit}
-              onKeyDown={handleKeyDown}
-              className="text-xl font-bold bg-transparent border-b-2 border-gray-400 dark:border-gray-500 outline-none text-gray-900 dark:text-white placeholder-gray-500"
-              autoFocus
+    <Card className="mb-6 bg-gray-800 border-gray-700">
+      <CardContent className="p-6">
+        {/* Top Row - Title and Icon */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <IconPicker
+              selectedIcon={rundownIcon}
+              onIconSelect={setRundownIcon}
             />
-          ) : (
-            <div className="flex items-center space-x-2 group">
-              <h1 className="text-xl font-bold">{title}</h1>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditingTitle(true)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              {getSaveStatus()}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
-          <TimezoneSelector 
-            currentTimezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-          />
-          <div className="relative">
-            <SearchBar
-              items={items}
-              visibleColumns={visibleColumns}
-              onHighlightMatch={onHighlightMatch}
-              onReplaceText={onReplaceText}
+            <IconDisplay 
+              iconName={rundownIcon} 
+              size="md" 
+              className="text-gray-300" 
             />
           </div>
-          {user ? (
-            <div className="flex items-center space-x-2 relative">
-              <span className="text-sm">{user.email}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+          <div className="flex-1">
+            <Input
+              value={rundownTitle}
+              onChange={(e) => setRundownTitle(e.target.value)}
+              className="text-xl font-bold bg-transparent border-none text-white p-0 h-auto focus-visible:ring-0"
+              placeholder="Rundown Title"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            {hasUnsavedChanges && (
+              <span className="text-sm text-yellow-400">
+                {isSaving ? 'Saving...' : 'Unsaved changes'}
+              </span>
+            )}
+            {onSave && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onSave}
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                disabled={isSaving}
               >
-                <LogOut className="h-4 w-4" />
+                <Save className="h-4 w-4 mr-1" />
+                Save
               </Button>
+            )}
+            {isExistingRundown && onArchive && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onArchive}
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              >
+                <Archive className="h-4 w-4 mr-1" />
+                Archive
+              </Button>
+            )}
+            {isExistingRundown && onDelete && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onDelete}
+                className="border-red-600 text-red-400 hover:bg-red-900/50"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Row - Time and Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="start-time" className="text-sm text-gray-400">
+                Start Time:
+              </Label>
+              <Input
+                id="start-time"
+                type="time"
+                value={rundownStartTime}
+                onChange={(e) => setRundownStartTime(e.target.value)}
+                className="w-auto bg-gray-700 border-gray-600 text-white"
+              />
             </div>
-          ) : (
+            
+            <TimezoneSelector
+              timezone={timezone}
+              onTimezoneChange={setTimezone}
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="text-right text-sm text-gray-400">
+              <div className="font-mono">
+                {formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}
+              </div>
+            </div>
+            
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={() => setShowAuthModal(true)}
-              className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={onShowColumnManager}
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >
-              <User className="h-4 w-4 mr-2" />
-              Sign In
+              <Settings className="h-4 w-4 mr-1" />
+              Columns
             </Button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center text-sm">
-        <div className="flex items-center space-x-4">
-          <span className="opacity-75">Total Runtime: {totalRuntime}</span>
-          <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 opacity-75" />
-            <span className="opacity-75">Start Time:</span>
-            <input
-              type="text"
-              value={rundownStartTime}
-              onChange={(e) => onRundownStartTimeChange(e.target.value)}
-              className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-24 focus:outline-none focus:border-blue-500"
-              placeholder="00:00:00"
-            />
           </div>
         </div>
-      </div>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
