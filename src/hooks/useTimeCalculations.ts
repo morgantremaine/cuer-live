@@ -107,6 +107,9 @@ export const useTimeCalculations = (
       currentSeconds, 
       startSeconds, 
       endSeconds,
+      currentTime: now,
+      itemStart: item.startTime,
+      itemEnd: item.endTime,
       isInRange: currentSeconds >= startSeconds && currentSeconds < endSeconds
     });
     
@@ -128,7 +131,19 @@ export const useTimeCalculations = (
   };
 
   const findCurrentItem = (currentTime: Date) => {
-    console.log('🟢 findCurrentItem called with time:', currentTime.toTimeString().substring(0, 8));
+    const now = currentTime.toTimeString().substring(0, 8);
+    console.log('🟢 findCurrentItem called with time:', now);
+    console.log('🟢 findCurrentItem checking', items.length, 'items');
+    
+    // Add summary of all item times for debugging
+    const itemSummary = items.map(item => ({
+      id: item.id,
+      name: item.name,
+      start: item.startTime,
+      end: item.endTime,
+      type: item.type
+    }));
+    console.log('🟢 findCurrentItem item summary:', itemSummary);
     
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -146,7 +161,7 @@ export const useTimeCalculations = (
       }
     }
     
-    console.log('🟢 findCurrentItem: No current item found');
+    console.log('🟢 findCurrentItem: No current item found - current time', now, 'does not fall within any item time range');
     return null;
   };
 
