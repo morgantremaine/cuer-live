@@ -1,5 +1,3 @@
-
-
 import { RundownItem } from '@/types/rundown';
 
 export interface BlueprintList {
@@ -20,7 +18,8 @@ export const generateBlueprintFromRundown = (
     const headerItems = items.filter(item => item.type === 'header');
     const headerValues = headerItems.map(item => {
       if (item.type === 'header') {
-        return item.name || item.rowNumber || 'Untitled Header';
+        // Use script field for header descriptions, fallback to name
+        return item.script || item.name || item.rowNumber || 'Untitled Header';
       }
       return 'Untitled Header';
     });
@@ -69,7 +68,8 @@ export const processColumnForBlueprint = (items: RundownItem[], column: any) => 
     const headerItems = items.filter(item => item.type === 'header');
     return headerItems.map(item => {
       if (item.type === 'header') {
-        return item.name || item.rowNumber || 'Untitled Header';
+        // Use script field for header descriptions, fallback to name
+        return item.script || item.name || item.rowNumber || 'Untitled Header';
       }
       return 'Untitled Header';
     });
@@ -124,7 +124,8 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
     const headerItems = items.filter(item => item.type === 'header');
     return headerItems.map(item => {
       if (item.type === 'header') {
-        return item.name || item.rowNumber || 'Untitled Header';
+        // Use script field for header descriptions, fallback to name
+        return item.script || item.name || item.rowNumber || 'Untitled Header';
       }
       return 'Untitled Header';
     });
@@ -199,4 +200,3 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
     items: generateListFromColumn(items, listConfig.sourceColumn)
   }));
 };
-
