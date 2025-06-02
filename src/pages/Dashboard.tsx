@@ -78,7 +78,7 @@ const Dashboard = () => {
     if (rundown) {
       const newTitle = `COPY ${title}`
       try {
-        await saveRundown(newTitle, items, rundown.columns, rundown.timezone)
+        await saveRundown(newTitle, items, rundown.columns, rundown.timezone, rundown.startTime, rundown.icon)
       } catch (error) {
         console.error('Failed to duplicate rundown:', error)
       }
