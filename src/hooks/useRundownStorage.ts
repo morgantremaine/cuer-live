@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -16,6 +15,7 @@ interface SavedRundown {
   updated_at: string
   archived?: boolean
   startTime?: string
+  icon?: string
 }
 
 export const useRundownStorage = () => {
