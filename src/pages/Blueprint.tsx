@@ -7,6 +7,17 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, FileText } from 'lucide-react';
 import BlueprintListCard from '@/components/blueprint/BlueprintListCard';
 import AddListDialog from '@/components/blueprint/AddListDialog';
+import { RundownItem } from '@/hooks/useRundownItems';
+
+interface SavedRundown {
+  id: string
+  title: string
+  items: RundownItem[]
+  created_at: string
+  updated_at: string
+  archived?: boolean
+  icon?: string
+}
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
@@ -83,7 +94,7 @@ const Blueprint = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white flex items-center">
-                {rundown.icon && (
+                {rundown?.icon && (
                   <img 
                     src={rundown.icon} 
                     alt="Rundown icon" 
@@ -92,7 +103,7 @@ const Blueprint = () => {
                 )}
                 Blueprint
               </h1>
-              <p className="text-gray-400">{rundown.title}</p>
+              <p className="text-gray-400">{rundown?.title}</p>
             </div>
           </div>
           
