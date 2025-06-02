@@ -130,7 +130,7 @@ const Blueprint = () => {
                 className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+                Dashboard
               </Button>
               <Button
                 variant="outline"
@@ -138,28 +138,25 @@ const Blueprint = () => {
                 className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Back to Rundown
+                Rundown
+              </Button>
+              <IconUpload
+                currentIcon={rundown.icon}
+                onIconChange={handleIconChange}
+              />
+              <AddListDialog
+                availableColumns={availableColumns}
+                onAddList={addNewList}
+              />
+              <Button
+                variant="outline"
+                onClick={refreshAllLists}
+                className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh All
               </Button>
             </div>
-          </div>
-          
-          <div className="flex gap-2 items-center justify-end">
-            <IconUpload
-              currentIcon={rundown.icon}
-              onIconChange={handleIconChange}
-            />
-            <Button
-              variant="outline"
-              onClick={refreshAllLists}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh All
-            </Button>
-            <AddListDialog
-              availableColumns={availableColumns}
-              onAddList={addNewList}
-            />
           </div>
         </div>
 
