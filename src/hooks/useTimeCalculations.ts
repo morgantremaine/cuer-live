@@ -127,6 +127,29 @@ export const useTimeCalculations = (
     return 'upcoming';
   };
 
+  const findCurrentItem = (currentTime: Date) => {
+    console.log('🟢 findCurrentItem called with time:', currentTime.toTimeString().substring(0, 8));
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const status = getRowStatus(item, currentTime);
+      
+      if (status === 'current' && !isHeaderItem(item)) {
+        console.log('🟢 findCurrentItem found live item:', {
+          id: item.id,
+          name: item.name,
+          index: i,
+          startTime: item.startTime,
+          endTime: item.endTime
+        });
+        return item;
+      }
+    }
+    
+    console.log('🟢 findCurrentItem: No current item found');
+    return null;
+  };
+
   // Recalculate all start, end, and elapsed times based on rundown start time and durations
   useEffect(() => {
     console.log('useTimeCalculations useEffect triggered');
@@ -181,11 +204,12 @@ export const useTimeCalculations = (
     });
   }, [items, updateItem, rundownStartTime]);
 
-  // Add logging to track when getRowStatus is being exported
-  console.log('🔵 useTimeCalculations returning getRowStatus function');
+  // Add logging to track when functions are being exported
+  console.log('🔵 useTimeCalculations returning getRowStatus and findCurrentItem functions');
 
   return {
     calculateEndTime,
-    getRowStatus
+    getRowStatus,
+    findCurrentItem
   };
 };
