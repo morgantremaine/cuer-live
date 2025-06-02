@@ -76,15 +76,14 @@ export const useTimeCalculations = (
   };
 
   const getRowStatus = (item: RundownItem, currentTime: Date) => {
-    // Get current time in HH:MM:SS format
-    const now = currentTime.toTimeString().substring(0, 8); // Gets HH:MM:SS
-    console.log('🔴 getRowStatus called for item:', item.id, 'current time:', now);
+    console.log('🔴 getRowStatus called for item:', item.id, 'with rundown-based timing');
     console.log('🔴 getRowStatus item details:', { 
       id: item.id, 
       name: item.name,
       startTime: item.startTime, 
       endTime: item.endTime,
-      type: item.type 
+      type: item.type,
+      elapsedTime: item.elapsedTime
     });
     
     // Skip headers for live status
@@ -94,35 +93,39 @@ export const useTimeCalculations = (
     }
     
     // Ensure we have valid times
-    if (!item.startTime || !item.endTime) {
-      console.log('🔴 getRowStatus: Missing start or end time, returning upcoming');
+    if (!item.startTime || !item.endTime || !item.elapsedTime) {
+      console.log('🔴 getRowStatus: Missing timing data, returning upcoming');
       return 'upcoming';
     }
     
-    const currentSeconds = timeToSeconds(now);
-    const startSeconds = timeToSeconds(item.startTime);
-    const endSeconds = timeToSeconds(item.endTime);
+    // Use elapsed time from rundown start (not real clock time)
+    const currentElapsedSeconds = timeToSeconds(item.elapsedTime);
+    const itemStartSeconds = timeToSeconds(item.startTime);
+    const itemEndSeconds = timeToSeconds(item.endTime);
+    const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
-    console.log('🔴 getRowStatus seconds comparison:', { 
-      currentSeconds, 
-      startSeconds, 
-      endSeconds,
-      currentTime: now,
-      itemStart: item.startTime,
-      itemEnd: item.endTime,
-      isInRange: currentSeconds >= startSeconds && currentSeconds < endSeconds
+    // Calculate how far we are into the rundown
+    const rundownElapsed = currentElapsedSeconds + rundownStartSeconds;
+    
+    console.log('🔴 getRowStatus rundown-based comparison:', { 
+      rundownElapsed,
+      itemStartSeconds,
+      itemEndSeconds,
+      currentElapsedSeconds,
+      rundownStartSeconds,
+      isInRange: rundownElapsed >= itemStartSeconds && rundownElapsed < itemEndSeconds
     });
     
     // Handle invalid conversions
-    if (isNaN(currentSeconds) || isNaN(startSeconds) || isNaN(endSeconds)) {
+    if (isNaN(rundownElapsed) || isNaN(itemStartSeconds) || isNaN(itemEndSeconds)) {
       console.log('🔴 getRowStatus: Invalid time conversion, returning upcoming');
       return 'upcoming';
     }
     
-    if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
+    if (rundownElapsed >= itemStartSeconds && rundownElapsed < itemEndSeconds) {
       console.log('🔴 getRowStatus: Item is CURRENT/LIVE');
       return 'current';
-    } else if (currentSeconds >= endSeconds) {
+    } else if (rundownElapsed >= itemEndSeconds) {
       console.log('🔴 getRowStatus: Item is completed');
       return 'completed';
     }
@@ -131,19 +134,8 @@ export const useTimeCalculations = (
   };
 
   const findCurrentItem = (currentTime: Date) => {
-    const now = currentTime.toTimeString().substring(0, 8);
-    console.log('🟢 findCurrentItem called with time:', now);
+    console.log('🟢 findCurrentItem called - using rundown elapsed time');
     console.log('🟢 findCurrentItem checking', items.length, 'items');
-    
-    // Add summary of all item times for debugging
-    const itemSummary = items.map(item => ({
-      id: item.id,
-      name: item.name,
-      start: item.startTime,
-      end: item.endTime,
-      type: item.type
-    }));
-    console.log('🟢 findCurrentItem item summary:', itemSummary);
     
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -155,13 +147,14 @@ export const useTimeCalculations = (
           name: item.name,
           index: i,
           startTime: item.startTime,
-          endTime: item.endTime
+          endTime: item.endTime,
+          elapsedTime: item.elapsedTime
         });
         return item;
       }
     }
     
-    console.log('🟢 findCurrentItem: No current item found - current time', now, 'does not fall within any item time range');
+    console.log('🟢 findCurrentItem: No current item found');
     return null;
   };
 
