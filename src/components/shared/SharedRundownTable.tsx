@@ -10,7 +10,7 @@ interface SharedRundownTableProps {
 }
 
 const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
-  // Calculate header duration (sum of all regular items until next header)
+  // Calculate header duration (sum of all non-floated regular items until next header)
   const calculateHeaderDuration = (headerIndex: number) => {
     if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
       return '00:00:00';
@@ -32,7 +32,10 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
     let i = headerIndex + 1;
 
     while (i < items.length && items[i].type !== 'header') {
-      totalSeconds += timeToSeconds(items[i].duration || '00:00');
+      // Only count non-floated items in header duration
+      if (!items[i].isFloating && !items[i].isFloated) {
+        totalSeconds += timeToSeconds(items[i].duration || '00:00');
+      }
       i++;
     }
 
@@ -70,6 +73,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
           {items.map((item, index) => {
             // Only non-header items can be current segments
             const isCurrentSegment = item.type !== 'header' && currentSegmentId === item.id;
+            const isFloated = item.isFloating || item.isFloated;
             
             return (
               <tr
@@ -77,13 +81,17 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 className={`
                   ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                   ${isCurrentSegment ? 'bg-red-50 border-l-4 border-red-500' : ''}
+                  ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
                   print:break-inside-avoid
                 `}
-                style={{ backgroundColor: item.color !== '#ffffff' && item.color ? item.color : undefined }}
+                style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
               >
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                   {isCurrentSegment && (
                     <span className="text-red-600 mr-1">▶</span>
+                  )}
+                  {isFloated && (
+                    <span className="text-yellow-400 mr-1">⚓</span>
                   )}
                   {getRowNumber(index, items)}
                 </td>
@@ -99,7 +107,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                         </td>
                       );
                     } else if (column.key === 'duration') {
-                      // Show the calculated header duration
+                      // Show the calculated header duration (excluding floated items)
                       return (
                         <td key={column.id} className="px-3 py-2 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400">
                           <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
@@ -121,7 +129,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   return (
                     <td
                       key={column.id}
-                      className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400"
+                      className={`px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400 ${isFloated ? 'text-white' : 'text-gray-900'}`}
                     >
                       <div className="break-words whitespace-pre-wrap">{value}</div>
                     </td>

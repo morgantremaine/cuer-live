@@ -60,7 +60,12 @@ export const useRundownCalculations = (items: RundownItem[]) => {
   }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {
+    // Only include non-floated items in the total runtime calculation
     let totalSeconds = items.reduce((acc, item) => {
+      // Skip floated items - they don't count towards runtime
+      if (item.isFloating || item.isFloated) {
+        return acc;
+      }
       return acc + timeToSeconds(item.duration);
     }, 0);
   
@@ -84,8 +89,12 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     let totalSeconds = 0;
     let i = index + 1;
   
+    // Sum up durations of non-floated items until next header
     while (i < items.length && !isHeaderItem(items[i])) {
-      totalSeconds += timeToSeconds(items[i].duration);
+      // Only count non-floated items
+      if (!items[i].isFloating && !items[i].isFloated) {
+        totalSeconds += timeToSeconds(items[i].duration);
+      }
       i++;
     }
   

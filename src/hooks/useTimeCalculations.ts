@@ -61,6 +61,7 @@ export const useTimeCalculations = (
   };
 
   // Recalculate all start, end, and elapsed times based on rundown start time and durations
+  // This now properly handles floated items by excluding them from the time progression
   useEffect(() => {
     let currentTime = rundownStartTime;
     let needsUpdate = false;
@@ -99,8 +100,11 @@ export const useTimeCalculations = (
           needsUpdate = true;
         }
         
-        // Next item starts when this one ends
-        currentTime = expectedEndTime;
+        // Only advance time if the item is not floated
+        // Floated items don't contribute to the timeline progression
+        if (!item.isFloating && !item.isFloated) {
+          currentTime = expectedEndTime;
+        }
       }
     });
   }, [items, updateItem, rundownStartTime]);
