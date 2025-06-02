@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
@@ -19,7 +19,10 @@ export const useAutoSave = (
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { performSave, performUpdate } = useAutoSaveOperations();
-  const { hasUnsavedChanges, markAsSaved, isSaving, setIsSaving } = useChangeTracking();
+  const { hasUnsavedChanges, markAsSaved, markAsChanged } = useChangeTracking(items, title, columns, timezone, startTime);
+  
+  // Add local isSaving state since it's not provided by useChangeTracking
+  const [isSaving, setIsSaving] = useState(false);
   
   // Track the last saved state to prevent unnecessary saves
   const lastSavedStateRef = useRef<string>('');
@@ -47,14 +50,14 @@ export const useAutoSave = (
       }
       
       lastSavedStateRef.current = currentStateHash;
-      markAsSaved();
+      markAsSaved(items, title, columns, timezone, startTime);
       console.log('AutoSave: Save completed successfully');
     } catch (error) {
       console.error('AutoSave: Save failed:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [items, title, columns, timezone, startTime, icon, rundownId, isSaving, performSave, performUpdate, markAsSaved, setIsSaving]);
+  }, [items, title, columns, timezone, startTime, icon, rundownId, isSaving, performSave, performUpdate, markAsSaved]);
 
   // Auto-save with debouncing
   useEffect(() => {
