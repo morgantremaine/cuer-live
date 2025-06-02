@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -11,6 +10,7 @@ import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
+import CrewList from '@/components/blueprint/CrewList';
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
@@ -125,6 +125,8 @@ const Blueprint = () => {
             onDragEnd={handleDragEnd}
           />
         )}
+
+        <CrewList />
 
         <BlueprintScratchpad
           rundownId={id || ''}
