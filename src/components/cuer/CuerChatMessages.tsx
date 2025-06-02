@@ -34,9 +34,7 @@ const CuerChatMessages = ({
   useEffect(() => {
     marked.setOptions({
       breaks: true, // Convert line breaks to <br>
-      gfm: true, // GitHub Flavored Markdown
-      headerIds: false,
-      mangle: false
+      gfm: true // GitHub Flavored Markdown
     });
   }, []);
 
