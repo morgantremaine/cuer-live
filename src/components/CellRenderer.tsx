@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
@@ -100,7 +98,7 @@ const CellRenderer = ({
 
   const focusStyles = getFocusStyles();
 
-  if (column.key === 'endTime' || column.key === 'startTime') {
+  if (column.key === 'endTime' || column.key === 'startTime' || column.key === 'elapsedTime') {
     return (
       <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
         <div className="flex items-center justify-start h-full min-h-[28px]">

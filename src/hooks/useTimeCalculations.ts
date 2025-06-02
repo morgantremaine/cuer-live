@@ -35,6 +35,13 @@ export const useTimeCalculations = (
     return secondsToTime(startSeconds + durationSeconds);
   };
 
+  const calculateElapsedTime = (startTime: string, rundownStartTime: string) => {
+    const startSeconds = timeToSeconds(startTime);
+    const rundownStartSeconds = timeToSeconds(rundownStartTime);
+    const elapsedSeconds = startSeconds - rundownStartSeconds;
+    return secondsToTime(Math.max(0, elapsedSeconds));
+  };
+
   const getRowStatus = (item: RundownItem, currentTime: Date) => {
     const formatTime = (time: Date) => {
       return time.toLocaleTimeString('en-US', { hour12: false });
@@ -53,17 +60,24 @@ export const useTimeCalculations = (
     return 'upcoming';
   };
 
-  // Recalculate all start and end times based on rundown start time and durations
+  // Recalculate all start, end, and elapsed times based on rundown start time and durations
   useEffect(() => {
     let currentTime = rundownStartTime;
     let needsUpdate = false;
 
     items.forEach((item, index) => {
+      // Calculate elapsed time for this item
+      const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
+
       // For headers, they don't have duration, so they start at current time and end at current time
       if (isHeaderItem(item)) {
         if (item.startTime !== currentTime || item.endTime !== currentTime) {
           updateItem(item.id, 'startTime', currentTime);
           updateItem(item.id, 'endTime', currentTime);
+          needsUpdate = true;
+        }
+        if (item.elapsedTime !== expectedElapsedTime) {
+          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
           needsUpdate = true;
         }
       } else {
@@ -77,6 +91,11 @@ export const useTimeCalculations = (
         
         if (item.endTime !== expectedEndTime) {
           updateItem(item.id, 'endTime', expectedEndTime);
+          needsUpdate = true;
+        }
+
+        if (item.elapsedTime !== expectedElapsedTime) {
+          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
           needsUpdate = true;
         }
         
