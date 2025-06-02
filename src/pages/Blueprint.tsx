@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useBlueprintState } from '@/hooks/useBlueprintState';
@@ -15,6 +14,12 @@ const Blueprint = () => {
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
+  const [localIcon, setLocalIcon] = useState<string | undefined>(rundown?.icon);
+  
+  // Update local icon when rundown changes
+  useEffect(() => {
+    setLocalIcon(rundown?.icon);
+  }, [rundown?.icon]);
   
   const {
     lists,
@@ -45,6 +50,9 @@ const Blueprint = () => {
     if (!rundown || !id) return;
 
     try {
+      // Update local state immediately for responsive UI
+      setLocalIcon(iconData || undefined);
+      
       await updateRundown(
         id,
         rundown.title,
@@ -58,6 +66,8 @@ const Blueprint = () => {
       );
     } catch (error) {
       console.error('Error updating icon:', error);
+      // Revert local state if update fails
+      setLocalIcon(rundown.icon);
     }
   };
 
@@ -86,7 +96,10 @@ const Blueprint = () => {
     <div className="min-h-screen bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
-          rundown={rundown}
+          rundown={{
+            ...rundown,
+            icon: localIcon // Use local icon state
+          }}
           showDate={showDate}
           availableColumns={availableColumns}
           onShowDateUpdate={updateShowDate}
