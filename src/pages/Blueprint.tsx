@@ -93,16 +93,18 @@ const Blueprint = () => {
                 <img 
                   src={rundown.icon} 
                   alt="Rundown icon" 
-                  className="w-8 h-8 rounded object-cover"
+                  className="w-16 h-16 rounded object-cover"
                 />
               )}
-              <h1 className="text-3xl font-bold text-white">Blueprint</h1>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Blueprint</h1>
+                <p className="text-gray-400">{rundown.title}</p>
+              </div>
               <IconUpload
                 currentIcon={rundown.icon}
                 onIconChange={handleIconChange}
               />
             </div>
-            <p className="text-gray-400 mb-2">{rundown.title}</p>
             
             {/* Start Time and Date Section */}
             <div className="flex items-center space-x-6 mb-4">
