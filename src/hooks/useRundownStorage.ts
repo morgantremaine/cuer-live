@@ -114,7 +114,7 @@ export const useRundownStorage = () => {
       columns: columns || null,
       timezone: timezone || null,
       start_time: startTime || null,
-      icon: icon || null,
+      icon: icon !== undefined ? icon : null, // Explicitly handle undefined vs null
       updated_at: new Date().toISOString(),
       archived: archived
     }

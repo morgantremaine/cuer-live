@@ -14,11 +14,13 @@ const Blueprint = () => {
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
-  const [localIcon, setLocalIcon] = useState<string | undefined>(rundown?.icon);
+  const [localIcon, setLocalIcon] = useState<string | undefined>();
   
-  // Update local icon when rundown changes
+  // Update local icon when rundown changes, but only if we haven't manually set it
   useEffect(() => {
-    setLocalIcon(rundown?.icon);
+    if (rundown?.icon !== undefined) {
+      setLocalIcon(rundown.icon);
+    }
   }, [rundown?.icon]);
   
   const {
@@ -62,8 +64,10 @@ const Blueprint = () => {
         rundown.columns,
         rundown.timezone,
         rundown.startTime,
-        iconData
+        iconData || undefined // Ensure we pass undefined instead of null
       );
+      
+      console.log('Icon updated successfully:', iconData ? 'Icon set' : 'Icon removed');
     } catch (error) {
       console.error('Error updating icon:', error);
       // Revert local state if update fails
