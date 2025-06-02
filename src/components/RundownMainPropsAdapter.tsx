@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownMainContent from './RundownMainContent';
 import { RundownContainerProps } from '@/types/rundownContainer';
@@ -12,7 +13,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       currentTime={props.currentTime}
       items={props.items}
       visibleColumns={props.visibleColumns}
-      columns={props.columns}
       showColorPicker={props.showColorPicker}
       cellRefs={props.cellRefs}
       selectedRows={props.selectedRows}
@@ -42,14 +42,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       onDeleteSelectedRows={props.onDeleteSelectedRows}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}
-      showColumnManager={props.showColumnManager}
-      setShowColumnManager={props.setShowColumnManager}
-      handleAddColumn={props.handleAddColumn}
-      handleReorderColumns={props.handleReorderColumns}
-      handleDeleteColumnWithCleanup={props.handleDeleteColumnWithCleanup}
-      handleRenameColumn={props.handleRenameColumn}
-      handleToggleColumnVisibility={props.handleToggleColumnVisibility}
-      handleLoadLayout={props.handleLoadLayout}
       findCurrentItem={props.findCurrentItem}
     />
   );
