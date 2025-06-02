@@ -85,6 +85,17 @@ const Dashboard = () => {
     }
   }
 
+  const handleIconUpdate = async (rundownId: string, iconUrl: string | null) => {
+    const rundown = savedRundowns.find(r => r.id === rundownId)
+    if (rundown) {
+      try {
+        await updateRundown(rundownId, rundown.title, rundown.items, false, rundown.archived, rundown.columns, rundown.timezone, iconUrl)
+      } catch (error) {
+        console.error('Failed to update rundown icon:', error)
+      }
+    }
+  }
+
   const confirmDelete = async () => {
     if (deleteDialog.rundownId) {
       try {
@@ -134,6 +145,7 @@ const Dashboard = () => {
           onDelete={handleDeleteClick}
           onArchive={handleArchiveClick}
           onDuplicate={handleDuplicateClick}
+          onIconUpdate={handleIconUpdate}
           showEmptyState={true}
         />
 
@@ -146,6 +158,7 @@ const Dashboard = () => {
             onDelete={handleDeleteClick}
             onUnarchive={handleUnarchiveClick}
             onDuplicate={handleDuplicateClick}
+            onIconUpdate={handleIconUpdate}
             isArchived={true}
             showEmptyState={false}
           />

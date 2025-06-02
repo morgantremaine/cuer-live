@@ -10,6 +10,7 @@ interface SharedRundownHeaderProps {
   currentSegmentId: string | null;
   items: RundownItem[];
   timezone?: string;
+  icon?: string;
 }
 
 const SharedRundownHeader = ({ 
@@ -18,7 +19,8 @@ const SharedRundownHeader = ({
   startTime, 
   currentSegmentId, 
   items,
-  timezone = 'UTC'
+  timezone = 'UTC',
+  icon
 }: SharedRundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -35,7 +37,14 @@ const SharedRundownHeader = ({
   return (
     <div className="mb-6 print:mb-4">
       <div className="flex justify-between items-start mb-2">
-        <h1 className="text-2xl font-bold text-gray-900 print:text-xl">
+        <h1 className="text-2xl font-bold text-gray-900 print:text-xl flex items-center">
+          {icon && (
+            <img 
+              src={icon} 
+              alt="Rundown icon" 
+              className="w-8 h-8 mr-3 rounded object-cover"
+            />
+          )}
           {title}
         </h1>
         <div className="text-right text-sm text-gray-600">

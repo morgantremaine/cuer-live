@@ -12,6 +12,7 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
+  icon?: string
 }
 
 interface RundownGridProps {
@@ -24,6 +25,7 @@ interface RundownGridProps {
   onArchive?: (id: string, title: string, e: React.MouseEvent) => void
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  onIconUpdate?: (id: string, iconUrl: string | null) => void
   isArchived?: boolean
   showEmptyState?: boolean
 }
@@ -38,6 +40,7 @@ const RundownGrid = ({
   onArchive, 
   onUnarchive, 
   onDuplicate,
+  onIconUpdate,
   isArchived = false,
   showEmptyState = true
 }: RundownGridProps) => {
@@ -83,6 +86,7 @@ const RundownGrid = ({
               onArchive={onArchive}
               onUnarchive={onUnarchive}
               onDuplicate={onDuplicate}
+              onIconUpdate={onIconUpdate}
               isArchived={isArchived}
             />
           ))

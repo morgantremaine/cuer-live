@@ -7,9 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Clock, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
+import { Calendar, Clock, Trash2, Archive, MoreVertical, Copy, FileText, Image, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
+import { useState, useRef } from 'react'
+import { handleFileUpload } from '@/utils/fileUpload'
+import { useToast } from '@/hooks/use-toast'
 
 interface SavedRundown {
   id: string
@@ -18,6 +21,7 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
+  icon?: string
 }
 
 interface RundownCardProps {
@@ -27,6 +31,7 @@ interface RundownCardProps {
   onArchive?: (id: string, title: string, e: React.MouseEvent) => void
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  onIconUpdate?: (id: string, iconUrl: string | null) => void
   isArchived?: boolean
 }
 
@@ -37,8 +42,13 @@ const RundownCard = ({
   onArchive, 
   onUnarchive, 
   onDuplicate,
+  onIconUpdate,
   isArchived = false 
 }: RundownCardProps) => {
+  const [isUploadingIcon, setIsUploadingIcon] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
+
   const handleBlueprintClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     window.location.href = `/blueprint/${rundown.id}`
@@ -49,6 +59,50 @@ const RundownCard = ({
     onOpen(rundown.id)
   }
 
+  const handleIconUpload = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !onIconUpdate) return
+
+    setIsUploadingIcon(true)
+    try {
+      const iconUrl = await handleFileUpload(file)
+      onIconUpdate(rundown.id, iconUrl)
+      toast({
+        title: "Success",
+        description: "Icon uploaded successfully!",
+      })
+    } catch (error) {
+      console.error('Failed to upload icon:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to upload icon",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingIcon(false)
+      // Reset the input so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveIcon = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onIconUpdate) {
+      onIconUpdate(rundown.id, null)
+      toast({
+        title: "Success",
+        description: "Icon removed successfully!",
+      })
+    }
+  }
+
   return (
     <Card 
       className={`hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 ${isArchived ? 'opacity-75' : ''}`}
@@ -57,6 +111,23 @@ const RundownCard = ({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg flex items-center text-white">
+              {rundown.icon && (
+                <div className="relative mr-2 group">
+                  <img 
+                    src={rundown.icon} 
+                    alt="Rundown icon" 
+                    className="w-6 h-6 rounded object-cover"
+                  />
+                  {onIconUpdate && (
+                    <button
+                      onClick={handleRemoveIcon}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-2 h-2 text-white" />
+                    </button>
+                  )}
+                </div>
+              )}
               {isArchived && <Archive className="h-4 w-4 mr-2 text-gray-400" />}
               {rundown.title}
             </CardTitle>
@@ -86,6 +157,25 @@ const RundownCard = ({
               align="end" 
               className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
             >
+              {onIconUpdate && (
+                <>
+                  <DropdownMenuItem 
+                    onClick={handleIconUpload}
+                    disabled={isUploadingIcon}
+                    className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+                  >
+                    <Image className="h-4 w-4 mr-2" />
+                    {isUploadingIcon ? 'Uploading...' : rundown.icon ? 'Change Icon' : 'Add Icon'}
+                  </DropdownMenuItem>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </>
+              )}
               {onDuplicate && (
                 <DropdownMenuItem 
                   onClick={(e) => {
