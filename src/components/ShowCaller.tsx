@@ -4,7 +4,7 @@ import { useCurrentLiveItem } from '@/hooks/useCurrentLiveItem';
 import { RundownItem } from '@/types/rundown';
 
 interface ShowCallerProps {
-  findCurrentItem: (currentTime: Date) => RundownItem | null;
+  findCurrentItem: ((currentTime: Date) => RundownItem | null) | undefined;
   currentTime: Date;
 }
 

@@ -24,7 +24,7 @@ export interface RundownContainerProps {
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
-  findCurrentItem: (currentTime: Date) => RundownItem | null;
+  findCurrentItem?: (currentTime: Date) => RundownItem | null;
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
