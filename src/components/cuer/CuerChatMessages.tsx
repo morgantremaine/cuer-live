@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Bot, User } from 'lucide-react';
+import { marked } from 'marked';
 
 interface ChatMessage {
   id: string;
@@ -29,6 +30,30 @@ const CuerChatMessages = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // Configure marked for safe HTML rendering
+  useEffect(() => {
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+    });
+  }, []);
+
+  const renderMessageContent = (content: string, role: 'user' | 'assistant') => {
+    if (role === 'assistant') {
+      // Parse markdown for AI responses
+      const htmlContent = marked(content);
+      return (
+        <div 
+          className="prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
+      );
+    } else {
+      // Plain text for user messages
+      return <div className="whitespace-pre-wrap">{content}</div>;
+    }
+  };
 
   if (isConnected === null) {
     return (
@@ -70,7 +95,7 @@ const CuerChatMessages = ({
                 ? 'bg-gray-100 text-gray-800' 
                 : 'bg-blue-100 text-blue-800'
             }`}>
-              <div className="whitespace-pre-wrap">{message.content}</div>
+              {renderMessageContent(message.content, message.role)}
             </div>
           </div>
         </div>
