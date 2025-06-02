@@ -16,13 +16,27 @@ export const generateBlueprintFromRundown = (
   const headersColumn = visibleColumns.find(col => col.key === 'headers');
   if (headersColumn) {
     const headerItems = items.filter(item => item.type === 'header');
+    console.log('Header items found:', headerItems);
+    
     const headerValues = headerItems.map(item => {
       if (item.type === 'header') {
-        // Use script field for header descriptions, fallback to name
-        return item.script || item.name || item.rowNumber || 'Untitled Header';
+        console.log('Processing header item:', {
+          id: item.id,
+          name: item.name,
+          script: item.script,
+          rowNumber: item.rowNumber,
+          segmentName: item.segmentName
+        });
+        
+        // Try script first, then name, then segmentName, then rowNumber
+        const headerText = item.script || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
+        console.log('Selected header text:', headerText);
+        return headerText;
       }
       return 'Untitled Header';
     });
+
+    console.log('Final header values:', headerValues);
 
     blueprintLists.push({
       id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -66,10 +80,13 @@ export const generateBlueprintFromRundown = (
 export const processColumnForBlueprint = (items: RundownItem[], column: any) => {
   if (column.key === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
+    console.log('processColumnForBlueprint - Header items:', headerItems);
+    
     return headerItems.map(item => {
       if (item.type === 'header') {
-        // Use script field for header descriptions, fallback to name
-        return item.script || item.name || item.rowNumber || 'Untitled Header';
+        const headerText = item.script || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
+        console.log('processColumnForBlueprint - Selected header text:', headerText);
+        return headerText;
       }
       return 'Untitled Header';
     });
@@ -118,14 +135,18 @@ export const exportRundownToBlueprint = (
   return blueprintLists;
 };
 
-// New functions needed by useBlueprintState
 export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): string[] => {
+  console.log('generateListFromColumn called with:', { sourceColumn, itemsCount: items.length });
+  
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
+    console.log('generateListFromColumn - Header items:', headerItems);
+    
     return headerItems.map(item => {
       if (item.type === 'header') {
-        // Use script field for header descriptions, fallback to name
-        return item.script || item.name || item.rowNumber || 'Untitled Header';
+        const headerText = item.script || item.name || item.segmentName || item.rowNumber || 'Untitled Header';
+        console.log('generateListFromColumn - Selected header text:', headerText);
+        return headerText;
       }
       return 'Untitled Header';
     });
