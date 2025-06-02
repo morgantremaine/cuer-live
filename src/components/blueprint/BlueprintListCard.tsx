@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,12 +12,10 @@ interface BlueprintListCardProps {
   onRename: (listId: string, newName: string) => void;
   // Drag and drop props
   isDragging?: boolean;
-  isDropTarget?: boolean;
   onDragStart?: (e: React.DragEvent, listId: string) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDragLeave?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent) => void;
+  onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
   onDragEnd?: () => void;
+  index: number;
 }
 
 const BlueprintListCard = ({ 
@@ -26,12 +23,10 @@ const BlueprintListCard = ({
   onDelete, 
   onRename,
   isDragging = false,
-  isDropTarget = false,
   onDragStart,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onDragEnd
+  onDragEnterContainer,
+  onDragEnd,
+  index
 }: BlueprintListCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
@@ -87,14 +82,10 @@ const BlueprintListCard = ({
     <Card 
       className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 ${
         isDragging ? 'opacity-50 transform rotate-2' : ''
-      } ${
-        isDropTarget ? 'border-blue-500 border-2 bg-blue-900/20' : ''
       }`}
       draggable={!isEditing}
       onDragStart={(e) => onDragStart?.(e, list.id)}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      onDragEnter={(e) => onDragEnterContainer?.(e, index)}
       onDragEnd={onDragEnd}
     >
       <CardHeader className="pb-3">

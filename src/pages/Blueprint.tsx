@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -23,9 +22,10 @@ const Blueprint = () => {
     renameList,
     refreshAllLists,
     draggedListId,
-    dropTargetIndex,
+    insertionIndex,
     handleDragStart,
     handleDragOver,
+    handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
     handleDragEnd
@@ -113,22 +113,38 @@ const Blueprint = () => {
             />
           </div>
         ) : (
-          <div className="columns-2 gap-6">
+          <div 
+            className="columns-2 gap-6 relative"
+            data-drop-container
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             {lists.map((list, index) => (
-              <div key={list.id} className="break-inside-avoid mb-6">
-                <BlueprintListCard
-                  list={list}
-                  onDelete={deleteList}
-                  onRename={renameList}
-                  isDragging={draggedListId === list.id}
-                  isDropTarget={dropTargetIndex === index}
-                  onDragStart={handleDragStart}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onDragEnd={handleDragEnd}
-                />
-              </div>
+              <React.Fragment key={list.id}>
+                {/* Insertion line at the top */}
+                {insertionIndex === index && (
+                  <div className="h-1 bg-blue-500 rounded-full mb-4 break-inside-avoid animate-pulse" />
+                )}
+                
+                <div className="break-inside-avoid mb-6">
+                  <BlueprintListCard
+                    list={list}
+                    index={index}
+                    onDelete={deleteList}
+                    onRename={renameList}
+                    isDragging={draggedListId === list.id}
+                    onDragStart={handleDragStart}
+                    onDragEnterContainer={handleDragEnterContainer}
+                    onDragEnd={handleDragEnd}
+                  />
+                </div>
+                
+                {/* Insertion line at the bottom if it's the last item */}
+                {insertionIndex === lists.length && index === lists.length - 1 && (
+                  <div className="h-1 bg-blue-500 rounded-full mt-4 break-inside-avoid animate-pulse" />
+                )}
+              </React.Fragment>
             ))}
           </div>
         )}
