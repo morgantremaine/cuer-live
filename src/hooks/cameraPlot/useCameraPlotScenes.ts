@@ -12,7 +12,7 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     createNewPlot: createScene,
     deletePlot: deleteScene,
     duplicatePlot: duplicateScene,
-    updatePlot: updateScene,
+    updatePlot,
     updateSceneName,
     reloadPlots
   } = useCameraPlot(rundownId, 'Camera Plot', readOnly);
@@ -47,8 +47,9 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     createScene,
     deleteScene,
     duplicateScene,
-    updateScene,
-    updateSceneName,
+    updateScene: updatePlot, // Alias for backwards compatibility
+    updatePlot, // Make sure this is returned
+    updateSceneName, // Make sure this is returned
     reloadPlots
   };
 };
