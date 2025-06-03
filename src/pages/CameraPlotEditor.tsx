@@ -60,6 +60,20 @@ const CameraPlotEditor = () => {
     window.print();
   };
 
+  // Wrapper function to handle the type mismatch for duplicateElement
+  const handleDuplicateElement = (element: any) => {
+    // Call duplicateElement with the element's ID since the hook expects elementId
+    if (typeof duplicateElement === 'function') {
+      if (typeof element === 'string') {
+        // If element is already a string (elementId), use it directly
+        duplicateElement(element);
+      } else if (element && element.id) {
+        // If element is an object with id property, use the id
+        duplicateElement(element.id);
+      }
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -178,7 +192,7 @@ const CameraPlotEditor = () => {
               onAddElement={addElement}
               onUpdateElement={updateElement}
               onDeleteElement={deleteElement}
-              onDuplicateElement={duplicateElement}
+              onDuplicateElement={handleDuplicateElement}
               onSelectElement={selectElement}
               snapToGrid={snapToGrid}
               updatePlot={updatePlot}
