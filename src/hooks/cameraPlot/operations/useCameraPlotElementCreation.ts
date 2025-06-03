@@ -131,7 +131,7 @@ export const useCameraPlotElementCreation = (
 
     console.log('Created element:', newElement);
     const updatedElements = [...activeScene.elements, newElement];
-    console.log('Updating scene with new elements:', updatedElements.length);
+    console.log('Updating scene with new elements count:', updatedElements.length);
     updatePlot(activeScene.id, { elements: updatedElements });
   };
 

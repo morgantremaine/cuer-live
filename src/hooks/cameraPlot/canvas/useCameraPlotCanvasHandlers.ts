@@ -78,21 +78,39 @@ export const useCameraPlotCanvasHandlers = ({
       const segments = finishDrawing();
       console.log('Wall segments created:', segments);
       
-      // Create wall elements using the standard addElement function
-      segments.forEach((segment, index) => {
+      // Create wall elements directly using the segment data
+      segments.forEach((segment) => {
         const distance = Math.sqrt(
           Math.pow(segment.end.x - segment.start.x, 2) + 
           Math.pow(segment.end.y - segment.start.y, 2)
         );
         
         if (distance > 5) { // Only create walls with meaningful length
-          console.log(`Creating wall segment ${index + 1}:`, segment);
+          console.log('Creating wall element:', segment);
           
-          // Use a timeout to ensure each wall is created separately
-          setTimeout(() => {
-            // Create wall using the existing addElement system
-            onAddElement('wall', segment.start.x, segment.start.y);
-          }, index * 50);
+          // Calculate angle for proper rotation
+          const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x) * (180 / Math.PI);
+          
+          // Create the wall element directly through scene update
+          if (scene) {
+            const newWallElement = {
+              id: segment.id,
+              type: 'wall' as const,
+              x: segment.start.x,
+              y: segment.start.y - 2,
+              width: distance,
+              height: 4,
+              rotation: angle,
+              scale: 1,
+              label: '',
+              labelOffsetX: 0,
+              labelOffsetY: -20
+            };
+            
+            console.log('Adding wall element to scene:', newWallElement);
+            const updatedElements = [...scene.elements, newWallElement];
+            onUpdateElement(scene.id, { elements: updatedElements } as any);
+          }
         }
       });
     }
