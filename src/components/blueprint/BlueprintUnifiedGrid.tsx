@@ -57,7 +57,9 @@ const BlueprintUnifiedGrid = ({
     return (
       <React.Fragment key={item.id}>
         {showDropIndicator && (
-          <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse col-span-2" />
+          <div className="w-full mb-4">
+            <div className="h-1 bg-blue-500 rounded-full animate-pulse" />
+          </div>
         )}
         
         {item.type === 'list' && (
@@ -78,7 +80,7 @@ const BlueprintUnifiedGrid = ({
         )}
         
         {item.type === 'crew-list' && (
-          <div className="col-span-2 mb-8">
+          <div className="w-full mb-6 break-inside-avoid">
             <CrewList 
               rundownId={rundownId}
               rundownTitle={rundownTitle}
@@ -91,7 +93,7 @@ const BlueprintUnifiedGrid = ({
         )}
         
         {item.type === 'scratchpad' && (
-          <div className="col-span-2 mb-8">
+          <div className="w-full mb-6 break-inside-avoid">
             <BlueprintScratchpad
               rundownId={rundownId}
               rundownTitle={rundownTitle}
@@ -122,7 +124,9 @@ const BlueprintUnifiedGrid = ({
       
       {/* Final drop indicator */}
       {insertionIndex === allItems.length && draggedListId && (
-        <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse col-span-2" />
+        <div className="w-full mb-4">
+          <div className="h-1 bg-blue-500 rounded-full animate-pulse" />
+        </div>
       )}
     </div>
   );
