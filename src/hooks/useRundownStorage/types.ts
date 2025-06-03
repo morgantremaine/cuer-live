@@ -2,6 +2,14 @@
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
 
+interface UndoState {
+  items: RundownItem[];
+  columns: Column[];
+  title: string;
+  action: string;
+  timestamp: number;
+}
+
 export interface SavedRundown {
   id: string
   title: string
@@ -14,4 +22,5 @@ export interface SavedRundown {
   startTime?: string
   start_time?: string // Also include the database field name
   icon?: string
+  undo_history?: UndoState[]
 }
