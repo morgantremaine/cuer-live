@@ -4,7 +4,7 @@ import { useCameraPlotTools } from '../useCameraPlotTools';
 import { useCameraPlotWalls } from '../useCameraPlotWalls';
 
 export const useCameraPlotState = (rundownId: string) => {
-  const sceneState = useCameraPlotScenes(rundownId);
+  const sceneState = useCameraPlotScenes(rundownId, false); // Editor mode (not read-only)
   const toolState = useCameraPlotTools();
   const wallState = useCameraPlotWalls();
 

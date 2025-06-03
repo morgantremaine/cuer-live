@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useCameraPlot, CameraPlotScene } from '@/hooks/useCameraPlot';
 
-export const useCameraPlotScenes = (rundownId: string) => {
-  const { plots, createNewPlot, deletePlot, duplicatePlot, updatePlot, reloadPlots } = useCameraPlot(rundownId, 'Camera Plot');
+export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
+  const { plots, createNewPlot, deletePlot, duplicatePlot, updatePlot, reloadPlots } = useCameraPlot(rundownId, 'Camera Plot', readOnly);
   const [activeSceneId, setActiveSceneId] = useState<string>('');
 
   // Wait for plots to load and set active scene
@@ -26,6 +26,8 @@ export const useCameraPlotScenes = (rundownId: string) => {
   console.log('Current active scene:', activeScene?.id, 'from plots:', plots.length);
 
   const createScene = (name: string) => {
+    if (readOnly) return null;
+    
     const newPlot = createNewPlot(name);
     if (newPlot) {
       setActiveSceneId(newPlot.id);
@@ -34,6 +36,8 @@ export const useCameraPlotScenes = (rundownId: string) => {
   };
 
   const deleteScene = (sceneId: string) => {
+    if (readOnly) return;
+    
     if (plots.length > 1) {
       deletePlot(sceneId);
       if (activeSceneId === sceneId) {
@@ -46,6 +50,8 @@ export const useCameraPlotScenes = (rundownId: string) => {
   };
 
   const duplicateScene = (sceneId: string) => {
+    if (readOnly) return null;
+    
     const newPlot = duplicatePlot(sceneId);
     if (newPlot) {
       setActiveSceneId(newPlot.id);
@@ -59,6 +65,8 @@ export const useCameraPlotScenes = (rundownId: string) => {
   };
 
   const updateSceneName = (sceneId: string, newName: string) => {
+    if (readOnly) return;
+    
     const scene = plots.find(s => s.id === sceneId);
     if (scene) {
       updatePlot(sceneId, { name: newName });

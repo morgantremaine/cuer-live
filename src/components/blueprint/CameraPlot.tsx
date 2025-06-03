@@ -22,7 +22,7 @@ const CameraPlot = ({
   onDragEnterContainer, 
   onDragEnd 
 }: CameraPlotProps) => {
-  const { scenes, reloadPlots } = useCameraPlotScenes(rundownId);
+  const { scenes, reloadPlots } = useCameraPlotScenes(rundownId, true); // Read-only mode
   const [isLoading, setIsLoading] = useState(false);
 
   // Load data when component mounts
