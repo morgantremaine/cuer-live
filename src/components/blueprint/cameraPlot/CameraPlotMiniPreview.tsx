@@ -57,36 +57,6 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
         preserveAspectRatio="xMidYMid meet"
         key={`preview-${plot.id}-${plot.elements.length}`}
       >
-        {/* Define patterns and images for reuse */}
-        <defs>
-          <pattern
-            id={`camera-pattern-${plot.id}`}
-            patternUnits="objectBoundingBox"
-            width="1"
-            height="1"
-          >
-            <image
-              href="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png"
-              width="1"
-              height="1"
-              preserveAspectRatio="xMidYMid slice"
-            />
-          </pattern>
-          <pattern
-            id={`person-pattern-${plot.id}`}
-            patternUnits="objectBoundingBox"
-            width="1"
-            height="1"
-          >
-            <image
-              href="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png"
-              width="1"
-              height="1"
-              preserveAspectRatio="xMidYMid slice"
-            />
-          </pattern>
-        </defs>
-
         {plot.elements.map((element: any, index: number) => {
           const x = element.x;
           const y = element.y;
@@ -95,18 +65,28 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
 
           if (element.type === 'camera') {
             return (
-              <rect
-                key={`${element.id}-${index}`}
-                x={x}
-                y={y}
-                width={width}
-                height={height}
-                fill={`url(#camera-pattern-${plot.id})`}
-                stroke="#1d4ed8"
-                strokeWidth="1"
-                rx="3"
-                transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
-              />
+              <g key={`${element.id}-${index}`}>
+                <rect
+                  x={x}
+                  y={y}
+                  width={width}
+                  height={height}
+                  fill="#1e40af"
+                  stroke="#1d4ed8"
+                  strokeWidth="1"
+                  rx="3"
+                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+                />
+                <image
+                  href="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png"
+                  x={x}
+                  y={y}
+                  width={width}
+                  height={height}
+                  preserveAspectRatio="xMidYMid meet"
+                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+                />
+              </g>
             );
           } else if (element.type === 'wall') {
             return (
@@ -122,18 +102,28 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
             );
           } else if (element.type === 'person') {
             return (
-              <rect
-                key={`${element.id}-${index}`}
-                x={x}
-                y={y}
-                width={width}
-                height={height}
-                fill={`url(#person-pattern-${plot.id})`}
-                stroke="#059669"
-                strokeWidth="1"
-                rx="50%"
-                transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
-              />
+              <g key={`${element.id}-${index}`}>
+                <rect
+                  x={x}
+                  y={y}
+                  width={width}
+                  height={height}
+                  fill="#10b981"
+                  stroke="#059669"
+                  strokeWidth="1"
+                  rx="50%"
+                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+                />
+                <image
+                  href="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png"
+                  x={x}
+                  y={y}
+                  width={width}
+                  height={height}
+                  preserveAspectRatio="xMidYMid meet"
+                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+                />
+              </g>
             );
           } else if (element.type === 'furniture') {
             const isRound = element.label?.toLowerCase().includes('round') || element.label?.toLowerCase().includes('circle');
