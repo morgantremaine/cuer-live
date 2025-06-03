@@ -89,6 +89,9 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onHighlightMatch={handleHighlightMatch}
       onReplaceText={handleReplaceText}
       currentHighlight={currentHighlight}
+      onUndo={props.onUndo}
+      canUndo={props.canUndo}
+      lastAction={props.lastAction}
     />
   );
 };

@@ -22,6 +22,9 @@ interface RundownHeaderProps {
   onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
   currentHighlight?: SearchHighlight | null;
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
 }
 
 const RundownHeader = ({ 
@@ -38,7 +41,11 @@ const RundownHeader = ({
   items = [],
   visibleColumns = [],
   onHighlightMatch = () => {},
-  onReplaceText = () => {}
+  onReplaceText = () => {},
+  currentHighlight,
+  onUndo,
+  canUndo,
+  lastAction
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -75,6 +82,9 @@ const RundownHeader = ({
           visibleColumns={visibleColumns}
           onHighlightMatch={onHighlightMatch}
           onReplaceText={onReplaceText}
+          onUndo={onUndo}
+          canUndo={canUndo}
+          lastAction={lastAction}
         />
       </div>
 
@@ -98,6 +108,9 @@ const RundownHeader = ({
             visibleColumns={visibleColumns}
             onHighlightMatch={onHighlightMatch}
             onReplaceText={onReplaceText}
+            onUndo={onUndo}
+            canUndo={canUndo}
+            lastAction={lastAction}
           />
         </div>
 

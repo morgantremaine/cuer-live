@@ -69,7 +69,10 @@ const RundownIndexContent = () => {
     handlePasteRows,
     handleDeleteSelectedRows,
     setRundownStartTime,
-    setTimezone
+    setTimezone,
+    handleUndo,
+    canUndo,
+    lastAction
   } = gridState;
 
   const {
@@ -171,6 +174,9 @@ const RundownIndexContent = () => {
         onRundownStartTimeChange={handleRundownStartTimeChange}
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
+        onUndo={handleUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
       />
       
       {/* Cuer AI Chat Button with rundown data */}

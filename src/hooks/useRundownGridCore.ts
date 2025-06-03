@@ -7,6 +7,7 @@ import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useCallback, useEffect } from 'react';
+import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
   // Core state management
