@@ -57,13 +57,13 @@ const BlueprintUnifiedGrid = ({
     return (
       <React.Fragment key={item.id}>
         {showDropIndicator && (
-          <div className="w-full mb-4">
+          <div className={`mb-4 ${item.type === 'list' ? '' : 'col-span-2'}`}>
             <div className="h-1 bg-blue-500 rounded-full animate-pulse" />
           </div>
         )}
         
         {item.type === 'list' && (
-          <div className="break-inside-avoid mb-6">
+          <div className="mb-6">
             <BlueprintListCard
               list={item.data!}
               index={index}
@@ -80,7 +80,7 @@ const BlueprintUnifiedGrid = ({
         )}
         
         {item.type === 'crew-list' && (
-          <div className="w-full mb-6 break-inside-avoid">
+          <div className="col-span-2 mb-6">
             <CrewList 
               rundownId={rundownId}
               rundownTitle={rundownTitle}
@@ -93,7 +93,7 @@ const BlueprintUnifiedGrid = ({
         )}
         
         {item.type === 'scratchpad' && (
-          <div className="w-full mb-6 break-inside-avoid">
+          <div className="col-span-2 mb-6">
             <BlueprintScratchpad
               rundownId={rundownId}
               rundownTitle={rundownTitle}
@@ -114,7 +114,7 @@ const BlueprintUnifiedGrid = ({
 
   return (
     <div 
-      className="columns-2 gap-6 relative"
+      className="grid grid-cols-2 gap-6 auto-rows-min"
       data-drop-container
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
@@ -124,7 +124,7 @@ const BlueprintUnifiedGrid = ({
       
       {/* Final drop indicator */}
       {insertionIndex === allItems.length && draggedListId && (
-        <div className="w-full mb-4">
+        <div className="col-span-2 mb-4">
           <div className="h-1 bg-blue-500 rounded-full animate-pulse" />
         </div>
       )}
