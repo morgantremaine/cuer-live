@@ -21,6 +21,13 @@ const CameraPlotElementHandles = ({
   const canRotate = element.type === 'camera' || element.type === 'person';
   const canScale = element.type === 'furniture';
 
+  // For walls, we need to apply the same transform as the element to show correct selection
+  const isWall = element.type === 'wall';
+  const selectionStyle = isWall ? {
+    transform: `rotate(${element.rotation || 0}deg)`,
+    transformOrigin: 'center'
+  } : {};
+
   return (
     <>
       {/* Rotation handle for cameras and people */}
@@ -41,10 +48,13 @@ const CameraPlotElementHandles = ({
         </>
       )}
       
-      {/* Selection outline */}
+      {/* Selection outline - matches element rotation for walls */}
       <div 
         className="absolute inset-0 border-2 border-blue-500 rounded pointer-events-none"
-        style={{ opacity: 0.6 }}
+        style={{ 
+          opacity: 0.6,
+          ...selectionStyle
+        }}
       />
     </>
   );
