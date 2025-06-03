@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
+import CameraPlotRotationHandle from './CameraPlotRotationHandle';
 
 interface CameraPlotElementHandlesProps {
   element: CameraElement;
@@ -15,9 +16,20 @@ const CameraPlotElementHandles = ({
   onRotationStart,
   isRotating 
 }: CameraPlotElementHandlesProps) => {
-  // Remove all visual handles and selection indicators
-  // Return null to render nothing
-  return null;
+  // Only show rotation handles for cameras and persons when selected
+  const canRotate = element.type === 'camera' || element.type === 'person';
+  const showRotationHandle = isSelected && canRotate && onRotationStart;
+
+  if (!showRotationHandle) {
+    return null;
+  }
+
+  return (
+    <CameraPlotRotationHandle
+      onRotationStart={onRotationStart}
+      isRotating={isRotating || false}
+    />
+  );
 };
 
 export default CameraPlotElementHandles;

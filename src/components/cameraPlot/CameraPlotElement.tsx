@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotElementRenderer from './CameraPlotElementRenderer';
 import CameraPlotElementLabel from './CameraPlotElementLabel';
+import CameraPlotElementHandles from './CameraPlotElementHandles';
 import CameraPlotElementContextMenu from './CameraPlotElementContextMenu';
 import { useCameraPlotElementInteractions } from '@/hooks/cameraPlot/useCameraPlotElementInteractions';
 
@@ -82,7 +83,7 @@ const CameraPlotElement = ({
 
   return (
     <>
-      {/* Main element - removed all selection highlighting */}
+      {/* Main element - no selection highlighting */}
       <div
         data-element-id={element.id}
         className="absolute"
@@ -99,6 +100,14 @@ const CameraPlotElement = ({
         onKeyDown={handleKeyPress}
       >
         <CameraPlotElementRenderer element={element} />
+        
+        {/* Rotation handles - restored for cameras and persons */}
+        <CameraPlotElementHandles
+          element={element}
+          isSelected={isSelected}
+          onRotationStart={handleRotationStart}
+          isRotating={isRotating}
+        />
       </div>
 
       {/* Label */}

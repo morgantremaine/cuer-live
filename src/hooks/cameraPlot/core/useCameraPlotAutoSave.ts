@@ -22,7 +22,7 @@ export const useCameraPlotAutoSave = (
 
     const currentState = JSON.stringify(plots);
     
-    // Only save if the state has actually changed and enough time has passed
+    // Only save if the state has actually changed
     if (currentState !== lastSaveRef.current) {
       lastSaveRef.current = currentState;
       
@@ -31,11 +31,10 @@ export const useCameraPlotAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
       
-      // Debounce the save operation with longer delay
+      // Debounce the save operation
       saveTimeoutRef.current = setTimeout(() => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
-          // Only log auto-save when it actually happens
           console.log('Auto-saving camera plots:', plots.length);
           
           try {
@@ -48,11 +47,13 @@ export const useCameraPlotAutoSave = (
               savedBlueprint?.crew_data,
               plots // Pass the camera plots
             );
+          } catch (error) {
+            console.error('Error auto-saving camera plots:', error);
           } finally {
             isSavingRef.current = false;
           }
         }
-      }, 3000); // Increased debounce time to 3 seconds
+      }, 1000); // Reduced debounce time to 1 second for better responsiveness
     }
 
     return () => {
