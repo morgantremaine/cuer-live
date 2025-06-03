@@ -47,7 +47,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
           console.log('Loading existing camera plots:', blueprint.camera_plots);
           setPlots(blueprint.camera_plots);
         } else {
-          console.log('No existing camera plots found, starting with empty array');
+          console.log('No existing camera plots found, will start with empty array');
           setPlots([]);
         }
         setIsInitialized(true);

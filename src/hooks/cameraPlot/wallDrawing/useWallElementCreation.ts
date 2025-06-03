@@ -25,7 +25,7 @@ export const useWallElementCreation = (
         segment.end.x - segment.start.x
       ) * (180 / Math.PI);
       
-      // For perfect connections, position walls exactly from start to end points
+      // Position walls exactly from start to end points with proper centering
       const wallElement: CameraElement = {
         id: segment.id,
         type: 'wall',
