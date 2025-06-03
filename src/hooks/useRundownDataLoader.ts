@@ -1,5 +1,4 @@
 
-
 import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
@@ -95,4 +94,3 @@ export const useRundownDataLoader = ({
     }
   }, [rundownId, paramId]);
 };
-

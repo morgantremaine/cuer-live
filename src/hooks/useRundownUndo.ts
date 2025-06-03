@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -29,7 +30,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     setUndoStack(history.slice(-10)); // Keep only last 10 states
   }, []);
 
-  // Save undo history to database
+  // Save undo history to database - with debouncing
   const saveUndoHistoryToDatabase = useCallback(async (newStack: UndoState[]) => {
     if (!props?.rundownId || !props.updateRundown || isSavingHistory.current) return;
     if (!props.currentTitle || !props.currentItems || !props.currentColumns) return;
@@ -45,11 +46,11 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       // Update only the undo history, keeping all other fields as they are
       await props.updateRundown(
         props.rundownId,
-        props.currentTitle, // Use current title from props
-        props.currentItems, // Use current items from props
+        props.currentTitle,
+        props.currentItems,
         true, // silent update
         false, // not archived
-        props.currentColumns, // Use current columns from props
+        props.currentColumns,
         undefined, // timezone - keep existing
         undefined, // startTime - keep existing
         undefined, // icon - keep existing
@@ -86,9 +87,9 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       // Keep only last 10 states to prevent memory issues
       const trimmedStack = newStack.slice(-10);
       
-      // Save to database asynchronously with a longer delay to batch changes
+      // Save to database asynchronously with longer delay to reduce frequency
       if (props?.rundownId && props?.updateRundown) {
-        setTimeout(() => saveUndoHistoryToDatabase(trimmedStack), 1000);
+        setTimeout(() => saveUndoHistoryToDatabase(trimmedStack), 2000);
       }
       
       return trimmedStack;
@@ -116,15 +117,15 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     const newStack = undoStack.slice(0, -1);
     setUndoStack(newStack);
     
-    // Save updated history to database
+    // Save updated history to database with delay
     if (props?.rundownId && props?.updateRundown) {
-      saveUndoHistoryToDatabase(newStack);
+      setTimeout(() => saveUndoHistoryToDatabase(newStack), 1000);
     }
     
-    // Reset the undoing flag after a short delay
+    // Reset the undoing flag after a delay
     setTimeout(() => {
       isUndoing.current = false;
-    }, 100);
+    }, 500); // Increased delay to prevent interference
 
     return lastState.action;
   }, [undoStack, saveUndoHistoryToDatabase, props?.rundownId, props?.updateRundown]);

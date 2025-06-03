@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect, useRef } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
@@ -11,6 +10,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const initialLoadRef = useRef(false);
   const isLoadingRef = useRef(false);
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedOnceRef = useRef(false);
 
   // Initialize tracking after first meaningful load with delay
   useEffect(() => {
@@ -19,13 +19,14 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       clearTimeout(initializationTimeoutRef.current);
     }
 
-    // Only initialize once we have meaningful data
-    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+    // Only initialize once we have meaningful data and haven't initialized yet
+    if (!initialLoadRef.current && !hasInitializedOnceRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
       // Add a small delay to prevent initialization during rapid state changes
       initializationTimeoutRef.current = setTimeout(() => {
         const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
         lastSavedDataRef.current = signature;
         initialLoadRef.current = true;
+        hasInitializedOnceRef.current = true;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
         console.log('Change tracking initialized');
@@ -76,4 +77,3 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     setIsLoading
   };
 };
-
