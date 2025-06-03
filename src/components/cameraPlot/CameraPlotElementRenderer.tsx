@@ -30,13 +30,11 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
             transformOrigin: 'center'
           }}
         >
-          {/* Top-down camera view: square body with triangular lens pointing toward it */}
-          <svg width="40" height="32" viewBox="0 0 40 32" className="fill-blue-500 stroke-black stroke-1">
-            {/* Camera body - square on the right */}
-            <rect x="20" y="8" width="16" height="16" rx="2" ry="2" />
-            {/* Camera lens - triangle with point touching the square */}
-            <path d="M4 16 L20 12 L20 20 Z" />
-          </svg>
+          <img 
+            src="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
+            alt="Camera"
+            className="w-8 h-8 object-contain"
+          />
         </div>
       );
       

@@ -69,13 +69,28 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   // Determine if we need a dotted line (when label is moved away from default position)
   const needsDottedLine = Math.abs(labelOffsetX) > 10 || Math.abs(labelOffsetY - getDefaultOffset()) > 10;
   
-  // Calculate line from element center to label
+  // Calculate line from element center to label with padding
   const elementCenterX = element.x + element.width / 2;
   const elementCenterY = element.y + element.height / 2;
+  
+  // Add padding to the line endpoints
+  const padding = 5;
+  const dx = labelX - elementCenterX;
+  const dy = labelY - elementCenterY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Calculate padded endpoints
+  const unitX = dx / distance;
+  const unitY = dy / distance;
+  
+  const lineStartX = elementCenterX + unitX * padding;
+  const lineStartY = elementCenterY + unitY * padding;
+  const lineEndX = labelX - unitX * padding;
+  const lineEndY = labelY - unitY * padding;
 
   return (
     <>
-      {/* Dotted line connection */}
+      {/* Dotted line connection with padding */}
       {needsDottedLine && (
         <svg 
           className="absolute pointer-events-none"
@@ -88,10 +103,10 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
           }}
         >
           <line
-            x1={elementCenterX}
-            y1={elementCenterY}
-            x2={labelX}
-            y2={labelY}
+            x1={lineStartX}
+            y1={lineStartY}
+            x2={lineEndX}
+            y2={lineEndY}
             stroke="white"
             strokeWidth="1"
             strokeDasharray="3,3"
