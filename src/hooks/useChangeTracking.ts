@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useRef } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
@@ -27,8 +28,8 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
         initialLoadRef.current = true;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
-        console.log('Change tracking initialized with title:', rundownTitle, 'timezone:', timezone, 'startTime:', startTime);
-      }, 100);
+        console.log('Change tracking initialized');
+      }, 200);
     }
 
     return () => {
@@ -46,7 +47,6 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
     if (hasChanges !== hasUnsavedChanges) {
-      console.log('Change detected:', { title: rundownTitle, timezone, startTime, hasChanges });
       setHasUnsavedChanges(hasChanges);
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, hasUnsavedChanges]);
@@ -55,12 +55,10 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const signature = JSON.stringify({ items: savedItems, title: savedTitle, columns: savedColumns, timezone: savedTimezone, startTime: savedStartTime });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Marked as saved with title:', savedTitle, 'timezone:', savedTimezone, 'startTime:', savedStartTime);
   };
 
   const markAsChanged = () => {
     if (!isLoadingRef.current) {
-      console.log('Manually marked as changed');
       setHasUnsavedChanges(true);
     }
   };
@@ -78,3 +76,4 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     setIsLoading
   };
 };
+

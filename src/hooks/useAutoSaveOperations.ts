@@ -1,4 +1,5 @@
 
+
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -21,7 +22,6 @@ export const useAutoSaveOperations = () => {
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
     if (isSaving) {
-      console.log('Save already in progress, skipping');
       return false;
     }
 
@@ -41,13 +41,10 @@ export const useAutoSaveOperations = () => {
       return false;
     }
 
-    console.log('performSave: Saving with timezone:', timezone, 'startTime:', startTime);
-
     try {
       setIsSaving(true);
       
       if (isNewRundown) {
-        console.log('performSave: Saving new rundown with timezone:', timezone, 'startTime:', startTime);
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
@@ -57,7 +54,6 @@ export const useAutoSaveOperations = () => {
           throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
-        console.log('performSave: Updating existing rundown with timezone:', timezone, 'startTime:', startTime);
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, startTime);
         return true;
       }
@@ -78,3 +74,4 @@ export const useAutoSaveOperations = () => {
     isNewRundown
   };
 };
+

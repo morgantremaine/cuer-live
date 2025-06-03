@@ -1,4 +1,5 @@
 
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
@@ -27,8 +28,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       return;
     }
 
-    console.log('Auto-save: Starting save with timezone:', timezoneToSave, 'startTime:', startTimeToSave);
-
     // Mark as loading to prevent change detection during save
     setIsLoading(true);
 
@@ -36,10 +35,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
       
       if (success) {
-        console.log('Auto-save: Save successful, marking as saved with timezone:', timezoneToSave, 'startTime:', startTimeToSave);
         markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
       } else {
-        console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
       }
     } catch (error) {
@@ -59,15 +56,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     // Create a unique signature for this data
     const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
     
-    console.log('Auto-save: Checking if data changed. Current timezone:', timezone, 'startTime:', startTime);
-    
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
-      console.log('Auto-save: Data signature unchanged, skipping save');
       return;
     }
 
-    console.log('Auto-save: Data changed, scheduling save with timezone:', timezone, 'startTime:', startTime);
     lastSaveDataRef.current = currentDataSignature;
 
     // Clear existing timeout
@@ -77,7 +70,6 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
-      console.log('Auto-save: Executing save with timezone:', timezone, 'startTime:', startTime);
       debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       debounceTimeoutRef.current = null;
     }, 2000);
@@ -103,3 +95,4 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     markAsChanged: markAsChangedCallback
   };
 };
+

@@ -1,4 +1,5 @@
 
+
 import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
@@ -28,10 +29,11 @@ export const useRundownDataLoader = ({
   const params = useParams<{ id: string }>();
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
     // Only proceed if we have rundowns loaded and a specific rundown ID
-    if (loading || savedRundowns.length === 0) return;
+    if (loading || savedRundowns.length === 0 || isLoadingRef.current) return;
     
     const currentRundownId = rundownId || paramId;
     if (!currentRundownId) return;
@@ -42,9 +44,10 @@ export const useRundownDataLoader = ({
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
-    console.log('Loading rundown data:', rundown);
+    console.log('Loading rundown data:', rundown.title);
     
-    // Mark as loaded first to prevent loops
+    // Mark as loading and loaded to prevent loops
+    isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
     
     // Set the rundown data
@@ -66,6 +69,11 @@ export const useRundownDataLoader = ({
     if (onRundownLoaded) {
       onRundownLoaded(rundown);
     }
+
+    // Reset loading flag after a short delay
+    setTimeout(() => {
+      isLoadingRef.current = false;
+    }, 100);
   }, [
     rundownId, 
     paramId, 
@@ -83,6 +91,8 @@ export const useRundownDataLoader = ({
     const currentRundownId = rundownId || paramId;
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
       loadedRef.current = null;
+      isLoadingRef.current = false;
     }
   }, [rundownId, paramId]);
 };
+
