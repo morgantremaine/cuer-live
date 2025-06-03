@@ -8,11 +8,13 @@ interface CameraPlotCanvasProps {
   selectedTool: string;
   selectedElements: string[];
   isDrawingWall?: boolean;
-  wallPoints?: { x: number; y: number }[];
+  wallStart?: { x: number; y: number } | null;
+  showGrid?: boolean;
   onAddElement: (type: string, x: number, y: number) => void;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   onDeleteElement: (elementId: string) => void;
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
+  snapToGrid: (x: number, y: number) => { x: number; y: number };
 }
 
 const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
@@ -20,16 +22,23 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   selectedTool,
   selectedElements,
   isDrawingWall,
-  wallPoints,
+  wallStart,
+  showGrid,
   onAddElement,
   onUpdateElement,
   onDeleteElement,
-  onSelectElement
+  onSelectElement,
+  snapToGrid
 }, ref) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (selectedTool === 'select') return;
+    if (selectedTool === 'select') {
+      if (e.target === e.currentTarget) {
+        onSelectElement('', false);
+      }
+      return;
+    }
 
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -40,62 +49,100 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
+    const rawPos = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top
-    });
+    };
+    const snappedPos = snapToGrid(rawPos.x, rawPos.y);
+    setMousePos(snappedPos);
   };
 
-  const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    if (selectedTool === 'select' && e.target === e.currentTarget) {
-      onSelectElement('', false); // Clear selection when clicking empty space
+  const renderGrid = () => {
+    if (!showGrid) return null;
+    
+    const gridSize = 20;
+    const lines = [];
+    
+    // Vertical lines
+    for (let x = 0; x <= 2000; x += gridSize) {
+      lines.push(
+        <line
+          key={`v-${x}`}
+          x1={x}
+          y1={0}
+          x2={x}
+          y2={2000}
+          stroke="#374151"
+          strokeWidth={0.5}
+          opacity={0.3}
+        />
+      );
     }
+    
+    // Horizontal lines
+    for (let y = 0; y <= 2000; y += gridSize) {
+      lines.push(
+        <line
+          key={`h-${y}`}
+          x1={0}
+          y1={y}
+          x2={2000}
+          y2={y}
+          stroke="#374151"
+          strokeWidth={0.5}
+          opacity={0.3}
+        />
+      );
+    }
+    
+    return (
+      <svg
+        className="absolute inset-0 pointer-events-none"
+        style={{ width: '100%', height: '100%' }}
+      >
+        {lines}
+      </svg>
+    );
   };
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-gray-600">
+    <div className="flex-1 relative overflow-auto bg-gray-600">
       <div
         ref={ref}
-        className="w-full h-full relative cursor-crosshair bg-gray-600"
+        className="relative bg-gray-600"
         onClick={handleCanvasClick}
         onMouseMove={handleMouseMove}
-        onMouseDown={handleCanvasMouseDown}
-        style={{ minHeight: '100vh' }}
+        style={{ 
+          width: '2000px', 
+          height: '2000px',
+          cursor: selectedTool === 'select' ? 'default' : 'crosshair'
+        }}
       >
-        {/* Wall preview lines */}
-        {isDrawingWall && wallPoints && wallPoints.length > 0 && (
+        {/* Grid */}
+        {renderGrid()}
+
+        {/* Wall preview line */}
+        {isDrawingWall && wallStart && (
           <svg
-            className="absolute inset-0 pointer-events-none z-50"
+            className="absolute inset-0 pointer-events-none z-40"
             style={{ width: '100%', height: '100%' }}
           >
-            {/* Draw existing wall segments */}
-            {wallPoints.length > 1 && wallPoints.map((point, index) => {
-              if (index === 0) return null;
-              const prevPoint = wallPoints[index - 1];
-              return (
-                <line
-                  key={`wall-${index}`}
-                  x1={prevPoint.x}
-                  y1={prevPoint.y}
-                  x2={point.x}
-                  y2={point.y}
-                  stroke="#374151"
-                  strokeWidth="4"
-                />
-              );
-            })}
-            {/* Draw preview line from last point to mouse */}
-            {wallPoints.length > 0 && (
-              <line
-                x1={wallPoints[wallPoints.length - 1].x}
-                y1={wallPoints[wallPoints.length - 1].y}
-                x2={mousePos.x}
-                y2={mousePos.y}
-                stroke="#9CA3AF"
-                strokeWidth="4"
-                strokeDasharray="8,4"
-              />
-            )}
+            <line
+              x1={wallStart.x}
+              y1={wallStart.y}
+              x2={mousePos.x}
+              y2={mousePos.y}
+              stroke="#9CA3AF"
+              strokeWidth="4"
+              strokeDasharray="8,4"
+            />
+            {/* Start point indicator */}
+            <circle
+              cx={wallStart.x}
+              cy={wallStart.y}
+              r="4"
+              fill="#ef4444"
+            />
           </svg>
         )}
 
@@ -108,16 +155,16 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
             onUpdate={onUpdateElement}
             onDelete={onDeleteElement}
             onSelect={onSelectElement}
+            snapToGrid={snapToGrid}
           />
         ))}
 
         {/* Empty state */}
         {!scene?.elements.length && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-            <div className="text-center">
-              <p className="text-lg mb-2">Camera Plot Canvas</p>
-              <p className="text-sm">Select a tool and click to add elements</p>
-            </div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-300 text-center pointer-events-none">
+            <p className="text-lg mb-2">Camera Plot Canvas</p>
+            <p className="text-sm">Select a tool and click to add elements</p>
+            <p className="text-xs mt-2 opacity-75">Grid snapping enabled (20px)</p>
           </div>
         )}
       </div>

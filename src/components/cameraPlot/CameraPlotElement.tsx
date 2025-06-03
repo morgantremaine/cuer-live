@@ -8,19 +8,27 @@ interface CameraPlotElementProps {
   onUpdate: (elementId: string, updates: Partial<CameraElement>) => void;
   onDelete: (elementId: string) => void;
   onSelect: (elementId: string, multiSelect?: boolean) => void;
+  snapToGrid: (x: number, y: number) => { x: number; y: number };
 }
 
-const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }: CameraPlotElementProps) => {
+const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, snapToGrid }: CameraPlotElementProps) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isRotatingOrScaling, setIsRotatingOrScaling] = useState(false);
   const [isLabelDragging, setIsLabelDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(element.label);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
-  const [isScaling, setIsScaling] = useState(false);
-  const [isRotating, setIsRotating] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0, elementX: 0, elementY: 0, initialScale: 1, initialRotation: 0 });
-  const [cursorType, setCursorType] = useState('move');
+  const [dragStart, setDragStart] = useState({ 
+    x: 0, 
+    y: 0, 
+    elementX: 0, 
+    elementY: 0, 
+    initialScale: 1, 
+    initialRotation: 0,
+    centerX: 0,
+    centerY: 0
+  });
   
   const elementRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,21 +53,26 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
     const rect = e.currentTarget.getBoundingClientRect();
     const relativeX = e.clientX - rect.left;
     const relativeY = e.clientY - rect.top;
-    const edgeThreshold = 10;
+    const edgeThreshold = 15;
     
-    // Check if near edges for scaling/rotation
+    const centerX = element.x + element.width / 2;
+    const centerY = element.y + element.height / 2;
+    
+    // Check if near edges for rotation/scaling
     const nearEdge = relativeX < edgeThreshold || relativeX > rect.width - edgeThreshold || 
                     relativeY < edgeThreshold || relativeY > rect.height - edgeThreshold;
     
     if (nearEdge && isSelected) {
-      setIsRotating(true);
+      setIsRotatingOrScaling(true);
       setDragStart({
         x: e.clientX,
         y: e.clientY,
         elementX: element.x,
         elementY: element.y,
         initialScale: element.scale || 1,
-        initialRotation: element.rotation || 0
+        initialRotation: element.rotation || 0,
+        centerX,
+        centerY
       });
     } else {
       setIsDragging(true);
@@ -69,23 +82,11 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
         elementX: element.x,
         elementY: element.y,
         initialScale: element.scale || 1,
-        initialRotation: element.rotation || 0
+        initialRotation: element.rotation || 0,
+        centerX,
+        centerY
       });
     }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isSelected) return;
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const relativeX = e.clientX - rect.left;
-    const relativeY = e.clientY - rect.top;
-    const edgeThreshold = 10;
-    
-    const nearEdge = relativeX < edgeThreshold || relativeX > rect.width - edgeThreshold || 
-                    relativeY < edgeThreshold || relativeY > rect.height - edgeThreshold;
-    
-    setCursorType(nearEdge ? 'grab' : 'move');
   };
 
   const handleLabelMouseDown = (e: React.MouseEvent) => {
@@ -97,7 +98,9 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
       elementX: element.labelOffsetX || 0,
       elementY: element.labelOffsetY || 0,
       initialScale: element.scale || 1,
-      initialRotation: element.rotation || 0
+      initialRotation: element.rotation || 0,
+      centerX: 0,
+      centerY: 0
     });
   };
 
@@ -106,9 +109,10 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
       if (isDragging) {
         const deltaX = e.clientX - dragStart.x;
         const deltaY = e.clientY - dragStart.y;
+        const newPos = snapToGrid(dragStart.elementX + deltaX, dragStart.elementY + deltaY);
         onUpdate(element.id, {
-          x: dragStart.elementX + deltaX,
-          y: dragStart.elementY + deltaY
+          x: newPos.x,
+          y: newPos.y
         });
       } else if (isLabelDragging) {
         const deltaX = e.clientX - dragStart.x;
@@ -117,19 +121,23 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
           labelOffsetX: dragStart.elementX + deltaX,
           labelOffsetY: dragStart.elementY + deltaY
         });
-      } else if (isRotating) {
-        const deltaX = e.clientX - dragStart.x;
-        const deltaY = e.clientY - dragStart.y;
-        
-        // Calculate rotation
+      } else if (isRotatingOrScaling) {
         const centerX = element.x + element.width / 2;
         const centerY = element.y + element.height / 2;
+        
+        // Calculate rotation
         const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
         
         // Calculate scale based on distance from center
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        const scaleChange = distance / 100;
-        const newScale = Math.max(0.1, Math.min(3, dragStart.initialScale + scaleChange * (deltaX > 0 ? 1 : -1)));
+        const currentDistance = Math.sqrt(
+          Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2)
+        );
+        const initialDistance = Math.sqrt(
+          Math.pow(dragStart.x - dragStart.centerX, 2) + Math.pow(dragStart.y - dragStart.centerY, 2)
+        );
+        
+        const scaleMultiplier = currentDistance / initialDistance;
+        const newScale = Math.max(0.2, Math.min(3, dragStart.initialScale * scaleMultiplier));
         
         onUpdate(element.id, {
           rotation: angle,
@@ -141,11 +149,10 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
     const handleMouseUp = () => {
       setIsDragging(false);
       setIsLabelDragging(false);
-      setIsScaling(false);
-      setIsRotating(false);
+      setIsRotatingOrScaling(false);
     };
 
-    if (isDragging || isLabelDragging || isScaling || isRotating) {
+    if (isDragging || isLabelDragging || isRotatingOrScaling) {
       document.addEventListener('mousemove', handleMouseMoveGlobal);
       document.addEventListener('mouseup', handleMouseUp);
     }
@@ -154,7 +161,7 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
       document.removeEventListener('mousemove', handleMouseMoveGlobal);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isLabelDragging, isScaling, isRotating, dragStart, element.id, element.x, element.y, element.width, element.height, onUpdate]);
+  }, [isDragging, isLabelDragging, isRotatingOrScaling, dragStart, element, onUpdate, snapToGrid]);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -174,22 +181,20 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
     } else if (e.key === 'Escape') {
       setEditValue(element.label);
       setIsEditing(false);
+    } else if (e.key === 'Delete' && isSelected) {
+      onDelete(element.id);
     }
   };
 
-  const duplicate = () => {
-    // This will be handled by the parent component
-    setShowContextMenu(false);
+  const getCursor = () => {
+    if (isDragging) return 'grabbing';
+    if (isRotatingOrScaling) return 'grab';
+    return 'grab';
   };
 
-  const handleDelete = () => {
-    onDelete(element.id);
-    setShowContextMenu(false);
-  };
-
-  // Calculate label position
+  // Calculate label position (relative to element)
   const labelX = element.x + element.width / 2 + (element.labelOffsetX || 0);
-  const labelY = element.y + element.height + 10 + (element.labelOffsetY || 0);
+  const labelY = element.y + element.height + (element.labelOffsetY || 0);
 
   const renderElement = () => {
     const scale = element.scale || 1;
@@ -204,33 +209,35 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
       case 'camera':
         return (
           <div 
-            className="flex items-center justify-center text-white font-bold border-2 border-gray-400 bg-gray-700"
+            className="flex items-center justify-center border-2 border-gray-400 bg-white rounded"
             style={style}
           >
             <img 
               src="/lovable-uploads/03e30ecb-e3df-45bd-917f-47a6684bfae6.png" 
               alt="Camera" 
               className="w-full h-full object-contain"
+              draggable={false}
             />
           </div>
         );
       case 'person':
         return (
           <div 
-            className="flex items-center justify-center text-white border-2 border-gray-400 bg-gray-700"
+            className="flex items-center justify-center border-2 border-gray-400 bg-white rounded-full"
             style={style}
           >
             <img 
               src="/lovable-uploads/e28a970b-a037-42d0-a0c9-5b03fb007b14.png" 
               alt="Person" 
               className="w-full h-full object-contain"
+              draggable={false}
             />
           </div>
         );
       case 'wall':
         return (
           <div 
-            className="bg-gray-800 border-t-2 border-gray-700"
+            className="bg-gray-800 border border-gray-700"
             style={{ 
               width: '100%',
               height: '100%',
@@ -239,24 +246,24 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
           />
         );
       case 'furniture':
-        if (element.label.includes('Round') || element.label.includes('Circle')) {
+        if (element.label.toLowerCase().includes('round') || element.label.toLowerCase().includes('circle')) {
           return (
             <div 
-              className="rounded-full border-2 border-gray-400 bg-gray-700"
+              className="rounded-full border-2 border-gray-400 bg-amber-100"
               style={style}
             />
           );
         }
         return (
           <div 
-            className="border-2 border-gray-400 bg-gray-700"
+            className="border-2 border-gray-400 bg-amber-100"
             style={style}
           />
         );
       default:
         return (
           <div 
-            className="border-2 border-gray-400 bg-gray-700"
+            className="border-2 border-gray-400 bg-gray-300"
             style={style}
           />
         );
@@ -268,63 +275,67 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
       {/* Main element */}
       <div
         ref={elementRef}
-        className={`absolute ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+        className={`absolute ${isSelected ? 'ring-2 ring-blue-500 ring-opacity-75' : ''} ${
+          isSelected ? 'z-10' : 'z-5'
+        }`}
         style={{
           left: element.x,
           top: element.y,
           width: element.width,
           height: element.height,
-          cursor: cursorType,
-          zIndex: 2
+          cursor: getCursor()
         }}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
         onContextMenu={handleContextMenu}
+        tabIndex={0}
+        onKeyDown={handleKeyPress}
       >
         {renderElement()}
         
         {/* Selection handles */}
         {isSelected && (
           <>
-            {/* Corner handles for rotation/scaling */}
-            <div className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 cursor-grab" />
-            <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 cursor-grab" />
-            <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 cursor-grab" />
-            <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 cursor-grab" />
+            <div className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 border border-white cursor-nw-resize" />
+            <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 border border-white cursor-ne-resize" />
+            <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 border border-white cursor-sw-resize" />
+            <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 border border-white cursor-se-resize" />
           </>
         )}
       </div>
 
       {/* Label */}
-      <div
-        className="absolute cursor-move text-sm text-white bg-black bg-opacity-50 px-1 rounded"
-        style={{
-          left: labelX - 20,
-          top: labelY,
-          zIndex: 3
-        }}
-        onMouseDown={handleLabelMouseDown}
-        onDoubleClick={() => setIsEditing(true)}
-      >
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={handleEditSubmit}
-            onKeyDown={handleKeyPress}
-            className="bg-white text-black px-1 text-sm min-w-12"
-          />
-        ) : (
-          element.label
-        )}
-      </div>
+      {element.label && (
+        <div
+          className={`absolute text-sm text-white bg-black bg-opacity-75 px-2 py-1 rounded pointer-events-auto cursor-move ${
+            isSelected ? 'z-10' : 'z-5'
+          }`}
+          style={{
+            left: labelX - 20,
+            top: labelY,
+          }}
+          onMouseDown={handleLabelMouseDown}
+          onDoubleClick={() => setIsEditing(true)}
+        >
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleEditSubmit}
+              onKeyDown={handleKeyPress}
+              className="bg-white text-black px-1 text-sm min-w-16 rounded"
+            />
+          ) : (
+            element.label
+          )}
+        </div>
+      )}
 
       {/* Context menu */}
       {showContextMenu && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-50"
             onClick={() => setShowContextMenu(false)}
           />
           <div
@@ -333,13 +344,23 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect }
           >
             <button
               className="block w-full px-4 py-2 text-left text-white hover:bg-gray-700"
-              onClick={duplicate}
+              onClick={() => {
+                onUpdate(element.id, {
+                  id: `element-${Date.now()}`,
+                  x: element.x + 20,
+                  y: element.y + 20
+                });
+                setShowContextMenu(false);
+              }}
             >
               Duplicate
             </button>
             <button
               className="block w-full px-4 py-2 text-left text-white hover:bg-gray-700"
-              onClick={handleDelete}
+              onClick={() => {
+                onDelete(element.id);
+                setShowContextMenu(false);
+              }}
             >
               Delete
             </button>

@@ -19,7 +19,8 @@ const CameraPlotEditor = () => {
     selectedTool,
     selectedElements,
     isDrawingWall,
-    wallPoints,
+    wallStart,
+    showGrid,
     setSelectedTool,
     addElement,
     updateElement,
@@ -31,7 +32,9 @@ const CameraPlotEditor = () => {
     duplicateScene,
     setActiveScene,
     updateSceneName,
-    stopDrawingWalls
+    stopDrawingWalls,
+    toggleGrid,
+    snapToGrid
   } = useCameraPlotEditor(id || '');
 
   const handleBackToDashboard = () => {
@@ -40,10 +43,6 @@ const CameraPlotEditor = () => {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleDuplicateElement = (elementId: string) => {
-    duplicateElement(elementId);
   };
 
   return (
@@ -88,6 +87,8 @@ const CameraPlotEditor = () => {
             onToolSelect={setSelectedTool}
             isDrawingWall={isDrawingWall}
             onStopDrawingWalls={stopDrawingWalls}
+            showGrid={showGrid}
+            onToggleGrid={toggleGrid}
           />
           
           <div className="mt-8">
@@ -111,11 +112,13 @@ const CameraPlotEditor = () => {
             selectedTool={selectedTool}
             selectedElements={selectedElements}
             isDrawingWall={isDrawingWall}
-            wallPoints={wallPoints}
+            wallStart={wallStart}
+            showGrid={showGrid}
             onAddElement={addElement}
             onUpdateElement={updateElement}
             onDeleteElement={deleteElement}
             onSelectElement={selectElement}
+            snapToGrid={snapToGrid}
           />
         </div>
       </div>
