@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
+import { v4 as uuidv4 } from 'uuid';
+import { getNextCameraNumber } from '@/hooks/cameraPlot/utils/cameraUtils';
 
 interface CameraPlotElementContextMenuProps {
   isVisible: boolean;
@@ -9,6 +11,8 @@ interface CameraPlotElementContextMenuProps {
   onClose: () => void;
   onUpdate: (elementId: string, updates: Partial<CameraElement>) => void;
   onDelete: (elementId: string) => void;
+  onDuplicate?: (element: CameraElement) => void;
+  allElements?: CameraElement[];
 }
 
 const CameraPlotElementContextMenu = ({ 
@@ -17,16 +21,30 @@ const CameraPlotElementContextMenu = ({
   element, 
   onClose, 
   onUpdate, 
-  onDelete 
+  onDelete,
+  onDuplicate,
+  allElements = []
 }: CameraPlotElementContextMenuProps) => {
   if (!isVisible) return null;
 
   const handleDuplicate = () => {
-    onUpdate(element.id, {
-      id: `element-${Date.now()}`,
-      x: element.x + 20,
-      y: element.y + 20
-    });
+    const newElement: CameraElement = {
+      ...element,
+      id: uuidv4(),
+      x: element.x + 40,
+      y: element.y + 40
+    };
+
+    // Handle camera numbering for duplicated cameras
+    if (element.type === 'camera') {
+      const cameraNumber = getNextCameraNumber(allElements);
+      newElement.cameraNumber = cameraNumber;
+      newElement.label = `CAM ${cameraNumber}`;
+    }
+
+    if (onDuplicate) {
+      onDuplicate(newElement);
+    }
     onClose();
   };
 

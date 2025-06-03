@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
-import { User } from 'lucide-react';
 
 interface CameraPlotElementRendererProps {
   element: CameraElement;
@@ -41,14 +40,18 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
     case 'person':
       return (
         <div 
-          className="bg-green-500 border-2 border-black rounded-full flex items-center justify-center relative"
+          className="relative"
           style={{
             ...baseStyle,
             transform: `rotate(${rotation}deg) scale(${scale})`,
             transformOrigin: 'center'
           }}
         >
-          <User className="w-6 h-6 text-black" />
+          <img 
+            src="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png" 
+            alt="Person"
+            className="w-6 h-6 object-contain"
+          />
           {/* Direction indicator */}
           <div 
             className="absolute w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-black"

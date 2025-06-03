@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { CameraElement, CameraPlotScene } from '@/hooks/useCameraPlot';
+import { getNextCameraNumber } from '../utils/cameraUtils';
 
 export const useCameraPlotElementCreation = (
   activeScene: CameraPlotScene | undefined,
@@ -41,10 +42,12 @@ export const useCameraPlotElementCreation = (
 
     switch (type) {
       case 'camera':
+        const cameraNumber = getNextCameraNumber(activeScene.elements);
         newElement = {
           ...baseElement,
           id: uuidv4(),
-          label: 'Camera',
+          label: `CAM ${cameraNumber}`,
+          cameraNumber,
           width: 40,
           height: 32
         };

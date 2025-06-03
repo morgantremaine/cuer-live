@@ -73,8 +73,9 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const elementCenterX = element.x + element.width / 2;
   const elementCenterY = element.y + element.height / 2;
   
-  // Increased padding to create more space between line and icon/label
-  const padding = 12;
+  // Increased padding to create more space between line and icon/label - increased from 12 to 20 for icon side
+  const iconPadding = 20; // More space from icon
+  const labelPadding = 15; // Keep existing space from label
   const dx = labelX - elementCenterX;
   const dy = labelY - elementCenterY;
   const distance = Math.sqrt(dx * dx + dy * dy);
@@ -83,10 +84,10 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const unitX = dx / distance;
   const unitY = dy / distance;
   
-  const lineStartX = elementCenterX + unitX * padding;
-  const lineStartY = elementCenterY + unitY * padding;
-  const lineEndX = labelX - unitX * padding;
-  const lineEndY = labelY - unitY * padding;
+  const lineStartX = elementCenterX + unitX * iconPadding;
+  const lineStartY = elementCenterY + unitY * iconPadding;
+  const lineEndX = labelX - unitX * labelPadding;
+  const lineEndY = labelY - unitY * labelPadding;
 
   return (
     <>

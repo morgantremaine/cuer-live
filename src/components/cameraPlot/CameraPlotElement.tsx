@@ -12,11 +12,22 @@ interface CameraPlotElementProps {
   isSelected: boolean;
   onUpdate: (elementId: string, updates: Partial<CameraElement>) => void;
   onDelete: (elementId: string) => void;
+  onDuplicate?: (element: CameraElement) => void;
   onSelect: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
+  allElements?: CameraElement[];
 }
 
-const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, snapToGrid }: CameraPlotElementProps) => {
+const CameraPlotElement = ({ 
+  element, 
+  isSelected, 
+  onUpdate, 
+  onDelete, 
+  onDuplicate,
+  onSelect, 
+  snapToGrid,
+  allElements = []
+}: CameraPlotElementProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
@@ -106,6 +117,8 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
         onClose={() => setShowContextMenu(false)}
         onUpdate={onUpdate}
         onDelete={onDelete}
+        onDuplicate={onDuplicate}
+        allElements={allElements}
       />
     </>
   );
