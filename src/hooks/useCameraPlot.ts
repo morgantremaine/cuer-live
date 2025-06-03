@@ -36,6 +36,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedPlotsRef = useRef<string>('');
   const lastLoggedActiveSceneRef = useRef<string>('');
+  const lastLogTimeRef = useRef<number>(0);
 
   // Load saved plot data when blueprint is loaded
   useEffect(() => {

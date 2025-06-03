@@ -1,87 +1,52 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCameraPlot, CameraPlotScene } from '@/hooks/useCameraPlot';
 
 export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
-  const { plots, createNewPlot, deletePlot, duplicatePlot, updatePlot, reloadPlots } = useCameraPlot(rundownId, 'Camera Plot', readOnly);
-  const [activeSceneId, setActiveSceneId] = useState<string>('');
+  const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+  const lastLogTimeRef = useRef<number>(0);
+  const LOG_THROTTLE_MS = 1000; // Only log once per second
+  
+  const {
+    plots: scenes,
+    createNewPlot: createScene,
+    deletePlot: deleteScene,
+    duplicatePlot: duplicateScene,
+    updatePlot: updateScene,
+    reloadPlots
+  } = useCameraPlot(rundownId, 'Camera Plot', readOnly);
 
-  // Wait for plots to load and set active scene
+  // Set active scene to first available scene
   useEffect(() => {
-    if (plots.length > 0) {
-      // If we don't have an active scene or it doesn't exist anymore, set to first
-      const activeExists = plots.find(p => p.id === activeSceneId);
-      if (!activeSceneId || !activeExists) {
-        console.log('Setting active scene to first plot:', plots[0].id);
-        setActiveSceneId(plots[0].id);
+    const now = Date.now();
+    const shouldLog = now - lastLogTimeRef.current > LOG_THROTTLE_MS;
+    
+    if (scenes.length > 0 && !activeSceneId) {
+      if (shouldLog) {
+        console.log('Setting active scene to first plot:', scenes[0].id);
+        lastLogTimeRef.current = now;
       }
-    } else if (plots.length === 0 && activeSceneId) {
-      // Clear active scene if no plots exist
-      setActiveSceneId('');
+      setActiveSceneId(scenes[0].id);
+    } else if (scenes.length === 0 && activeSceneId) {
+      setActiveSceneId(null);
     }
-  }, [plots, activeSceneId]);
+  }, [scenes, activeSceneId]);
 
-  const activeScene = plots.find(scene => scene.id === activeSceneId);
+  const activeScene = scenes.find(scene => scene.id === activeSceneId) || null;
 
-  console.log('Current active scene:', activeScene?.id, 'from plots:', plots.length);
-
-  const createScene = (name: string) => {
-    if (readOnly) return null;
-    
-    const newPlot = createNewPlot(name);
-    if (newPlot) {
-      setActiveSceneId(newPlot.id);
-    }
-    return newPlot;
-  };
-
-  const deleteScene = (sceneId: string) => {
-    if (readOnly) return;
-    
-    if (plots.length > 1) {
-      deletePlot(sceneId);
-      if (activeSceneId === sceneId) {
-        const remainingScenes = plots.filter(s => s.id !== sceneId);
-        if (remainingScenes.length > 0) {
-          setActiveSceneId(remainingScenes[0].id);
-        }
-      }
-    }
-  };
-
-  const duplicateScene = (sceneId: string) => {
-    if (readOnly) return null;
-    
-    const newPlot = duplicatePlot(sceneId);
-    if (newPlot) {
-      setActiveSceneId(newPlot.id);
-    }
-    return newPlot;
-  };
-
-  const setActiveScene = (sceneId: string) => {
-    console.log('Setting active scene to:', sceneId);
+  const setActiveScene = useCallback((sceneId: string) => {
     setActiveSceneId(sceneId);
-  };
-
-  const updateSceneName = (sceneId: string, newName: string) => {
-    if (readOnly) return;
-    
-    const scene = plots.find(s => s.id === sceneId);
-    if (scene) {
-      updatePlot(sceneId, { name: newName });
-    }
-  };
+  }, []);
 
   return {
-    scenes: plots,
+    scenes,
     activeScene,
+    activeSceneId,
+    setActiveScene,
     createScene,
     deleteScene,
     duplicateScene,
-    setActiveScene,
-    updateSceneName,
-    updatePlot,
+    updateScene,
     reloadPlots
   };
 };
