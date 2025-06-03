@@ -81,6 +81,16 @@ export const useBlueprintStorage = (rundownId: string) => {
       return;
     }
 
+    console.log('useBlueprintStorage: saveBlueprint called', {
+      rundownTitle,
+      lists: lists.length,
+      showDate,
+      silent,
+      notes: notes ? 'present' : 'none',
+      crewData: crewData ? `${crewData.length} members` : 'none',
+      existingBlueprintId: savedBlueprint?.id
+    });
+
     try {
       const blueprintData = {
         user_id: user.id,
@@ -95,6 +105,7 @@ export const useBlueprintStorage = (rundownId: string) => {
 
       if (savedBlueprint) {
         // Update existing blueprint
+        console.log('useBlueprintStorage: Updating existing blueprint');
         const { data, error } = await supabase
           .from('blueprints')
           .update(blueprintData)
@@ -115,10 +126,12 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
+        console.log('useBlueprintStorage: Blueprint updated successfully');
         // Update local state with the returned data
         setSavedBlueprint(data);
       } else {
         // Create new blueprint
+        console.log('useBlueprintStorage: Creating new blueprint');
         const { data, error } = await supabase
           .from('blueprints')
           .insert(blueprintData)
@@ -137,6 +150,7 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
+        console.log('useBlueprintStorage: Blueprint created successfully');
         setSavedBlueprint(data);
       }
 
