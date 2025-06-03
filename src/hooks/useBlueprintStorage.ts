@@ -5,6 +5,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { BlueprintList } from '@/types/blueprint';
 import { useToast } from '@/hooks/use-toast';
 
+interface CrewMember {
+  id: string;
+  role: string;
+  name: string;
+  phone: string;
+  email: string;
+}
+
 interface SavedBlueprint {
   id: string;
   user_id: string;
@@ -13,6 +21,7 @@ interface SavedBlueprint {
   lists: BlueprintList[];
   show_date?: string;
   notes?: string;
+  crew_data?: CrewMember[];
   created_at: string;
   updated_at: string;
 }
@@ -59,7 +68,14 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
   };
 
-  const saveBlueprint = async (rundownTitle: string, lists: BlueprintList[], showDate?: string, silent = false, notes?: string) => {
+  const saveBlueprint = async (
+    rundownTitle: string, 
+    lists: BlueprintList[], 
+    showDate?: string, 
+    silent = false, 
+    notes?: string,
+    crewData?: CrewMember[]
+  ) => {
     if (!user || !rundownId) {
       console.error('Cannot save blueprint: missing user or rundownId');
       return;
@@ -73,6 +89,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         lists: lists,
         show_date: showDate,
         notes: notes || null,
+        crew_data: crewData || null,
         updated_at: new Date().toISOString()
       };
 

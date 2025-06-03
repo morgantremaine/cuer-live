@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GripVertical } from 'lucide-react';
 import { useScratchpadEditor } from '@/hooks/useScratchpadEditor';
 import ScratchpadToolbar from './scratchpad/ScratchpadToolbar';
 import ScratchpadContent from './scratchpad/ScratchpadContent';
@@ -32,6 +33,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
             <CardTitle className="text-xl text-white">Show Scratchpad</CardTitle>
             <SaveStatus status={saveStatus} />
           </div>

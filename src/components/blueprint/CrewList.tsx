@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
 
 interface CrewMember {
   id: string;
@@ -14,13 +15,22 @@ interface CrewMember {
 }
 
 interface CrewListProps {
+  rundownId: string;
+  rundownTitle: string;
   isDragging?: boolean;
   onDragStart?: (e: React.DragEvent, listId: string) => void;
   onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
   onDragEnd?: () => void;
 }
 
-const CrewList = ({ isDragging, onDragStart, onDragEnterContainer, onDragEnd }: CrewListProps) => {
+const CrewList = ({ 
+  rundownId, 
+  rundownTitle, 
+  isDragging, 
+  onDragStart, 
+  onDragEnterContainer, 
+  onDragEnd 
+}: CrewListProps) => {
   const [crewMembers, setCrewMembers] = useState<CrewMember[]>(() => {
     // Initialize with 5 empty rows
     return Array.from({ length: 5 }, (_, index) => ({
@@ -34,6 +44,37 @@ const CrewList = ({ isDragging, onDragStart, onDragEnterContainer, onDragEnd }: 
 
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
+
+  // Load saved crew data when blueprint is loaded
+  useEffect(() => {
+    if (savedBlueprint && savedBlueprint.crew_data && !isInitialized) {
+      setCrewMembers(savedBlueprint.crew_data);
+      setIsInitialized(true);
+    } else if (!savedBlueprint?.crew_data && !isInitialized) {
+      setIsInitialized(true);
+    }
+  }, [savedBlueprint, isInitialized]);
+
+  // Auto-save crew data whenever it changes
+  useEffect(() => {
+    if (isInitialized && rundownId && rundownTitle) {
+      const saveTimeout = setTimeout(() => {
+        saveBlueprint(
+          rundownTitle,
+          savedBlueprint?.lists || [],
+          savedBlueprint?.show_date,
+          true, // silent save
+          savedBlueprint?.notes,
+          crewMembers
+        );
+      }, 1000); // Debounce saves by 1 second
+
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [crewMembers, isInitialized, rundownId, rundownTitle, savedBlueprint, saveBlueprint]);
 
   const addRow = () => {
     const newMember: CrewMember = {
@@ -62,6 +103,7 @@ const CrewList = ({ isDragging, onDragStart, onDragEnterContainer, onDragEnd }: 
     setDraggedRowId(rowId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', rowId);
+    e.stopPropagation();
   };
 
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
@@ -90,7 +132,8 @@ const CrewList = ({ isDragging, onDragStart, onDragEnterContainer, onDragEnd }: 
     setDropTargetIndex(null);
   };
 
-  const handleRowDragEnd = () => {
+  const handleRowDragEnd = (e: React.DragEvent) => {
+    e.stopPropagation();
     setDraggedRowId(null);
     setDropTargetIndex(null);
   };
@@ -105,7 +148,10 @@ const CrewList = ({ isDragging, onDragStart, onDragEnterContainer, onDragEnd }: 
     >
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl text-white">Crew List</CardTitle>
+          <div className="flex items-center gap-2">
+            <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
+            <CardTitle className="text-xl text-white">Crew List</CardTitle>
+          </div>
           <Button
             onClick={addRow}
             size="sm"

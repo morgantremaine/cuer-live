@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -138,6 +139,8 @@ const Blueprint = () => {
           )}
 
           <CrewList 
+            rundownId={id || ''}
+            rundownTitle={rundown?.title || 'Unknown Rundown'}
             isDragging={draggedListId === 'crew-list'}
             onDragStart={handleDragStart}
             onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 1)}
