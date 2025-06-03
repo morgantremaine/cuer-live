@@ -50,7 +50,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const elementWidth = typeof element.width === 'number' ? element.width : 40;
   const elementHeight = typeof element.height === 'number' ? element.height : 40;
 
-  // Calculate label position with much further default distances
+  // Calculate label position with different default distances per type
   const getDefaultOffset = () => {
     switch (element.type) {
       case 'camera':
@@ -58,11 +58,24 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
       case 'person':
         return 5; // Close for people
       case 'furniture':
-        return 80; // Much further for furniture (increased from 50)
+        return 80; // Much further for furniture
       case 'wall':
         return -15; // Just above walls
       default:
         return 5;
+    }
+  };
+
+  // Get threshold for when lines should appear - type-specific
+  const getLineThreshold = () => {
+    switch (element.type) {
+      case 'furniture':
+        return 100; // Higher threshold for furniture since default offset is 80
+      case 'camera':
+      case 'person':
+        return 25; // Lower threshold for cameras and people
+      default:
+        return 25;
     }
   };
 
@@ -71,22 +84,22 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const labelX = elementX + elementWidth / 2 + labelOffsetX;
   const labelY = elementY + elementHeight + labelOffsetY;
 
-  // More strict logic for when dotted lines should appear
-  // Only show lines when label is moved significantly away from default position
+  // Calculate distance from default position with type-specific logic
   const defaultOffsetY = getDefaultOffset();
   const distanceFromDefault = Math.sqrt(
     Math.pow(labelOffsetX, 2) + Math.pow(labelOffsetY - defaultOffsetY, 2)
   );
   
-  // Increased threshold - lines only appear when label is moved more than 25 pixels from default
-  const needsDottedLine = distanceFromDefault > 25;
+  // Use type-specific threshold for line appearance
+  const lineThreshold = getLineThreshold();
+  const needsDottedLine = distanceFromDefault > lineThreshold;
   
-  // Calculate line from element center to label with much larger padding for furniture
+  // Calculate line from element center to label with appropriate padding
   const elementCenterX = elementX + elementWidth / 2;
   const elementCenterY = elementY + elementHeight / 2;
   
-  // Much larger padding for furniture to keep lines far from icons
-  const iconPadding = element.type === 'furniture' ? 80 : 30; // Increased furniture padding significantly
+  // Type-specific padding to keep lines away from icons
+  const iconPadding = element.type === 'furniture' ? 80 : 30;
   const labelPadding = 15;
   const dx = labelX - elementCenterX;
   const dy = labelY - elementCenterY;
@@ -116,7 +129,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   return (
     <>
-      {/* Dotted line connection with much larger padding for furniture and stricter appearance logic */}
+      {/* Dotted line connection with type-specific padding and thresholds */}
       {needsDottedLine && canRenderLine && (
         <svg 
           className="absolute pointer-events-none"
@@ -141,15 +154,19 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
         </svg>
       )}
       
-      {/* Label */}
+      {/* Label with user-select prevention */}
       <div
-        className={`absolute text-sm text-white bg-black bg-opacity-75 px-2 py-1 rounded pointer-events-auto cursor-move ${
+        className={`absolute text-sm text-white bg-black bg-opacity-75 px-2 py-1 rounded pointer-events-auto cursor-move select-none ${
           isSelected ? 'z-10' : 'z-5'
         }`}
         style={{
           left: labelX,
           top: labelY,
-          transform: 'translateX(-50%)', // This centers the label horizontally
+          transform: 'translateX(-50%)',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none'
         }}
         onMouseDown={onMouseDown}
         onDoubleClick={handleDoubleClick}
