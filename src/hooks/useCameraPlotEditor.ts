@@ -31,7 +31,9 @@ export const useCameraPlotEditor = (rundownId: string) => {
     stopDrawingWalls
   } = useCameraPlotState(rundownId);
 
-  // Element interactions
+  console.log('useCameraPlotEditor - activeScene:', activeScene?.id, 'scenes:', scenes.length);
+
+  // Element interactions - only initialize if we have an active scene
   const {
     snapToGrid,
     baseAddElement,
@@ -40,7 +42,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     duplicateElement
   } = useCameraPlotInteractions(activeScene, scenes, updateSceneName, updatePlot, setSelectedTool);
 
-  // Enhanced operations with setSelectedTool integration
+  // Enhanced operations with setSelectedTool integration - only if active scene exists
   const { addElement } = useCameraPlotEnhancedOperations({
     selectedTool,
     isDrawingWall,
@@ -65,6 +67,16 @@ export const useCameraPlotEditor = (rundownId: string) => {
     stopDrawingWalls
   });
 
+  // Safe wrapper for addElement that checks for active scene
+  const safeAddElement = (type: string, x: number, y: number) => {
+    console.log('safeAddElement called with activeScene:', activeScene?.id);
+    if (!activeScene) {
+      console.log('No active scene available for element creation');
+      return;
+    }
+    addElement(type, x, y);
+  };
+
   return {
     scenes,
     activeScene,
@@ -75,7 +87,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     wallPreview,
     showGrid,
     setSelectedTool: handleSetSelectedTool,
-    addElement,
+    addElement: safeAddElement,
     updateElement,
     deleteElement,
     duplicateElement,

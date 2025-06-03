@@ -33,9 +33,13 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     }
   }, [scenes, activeSceneId]);
 
+  // Ensure we always have a valid active scene reference
   const activeScene = scenes.find(scene => scene.id === activeSceneId) || null;
 
+  console.log('useCameraPlotScenes - activeSceneId:', activeSceneId, 'activeScene found:', !!activeScene, 'scenes count:', scenes.length);
+
   const setActiveScene = useCallback((sceneId: string) => {
+    console.log('setActiveScene called with:', sceneId);
     setActiveSceneId(sceneId);
   }, []);
 
@@ -48,8 +52,8 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     deleteScene,
     duplicateScene,
     updateScene: updatePlot, // Alias for backwards compatibility
-    updatePlot, // Make sure this is returned
-    updateSceneName, // Make sure this is returned
+    updatePlot,
+    updateSceneName,
     reloadPlots
   };
 };
