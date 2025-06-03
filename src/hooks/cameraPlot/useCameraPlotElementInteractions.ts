@@ -3,7 +3,6 @@ import { CameraElement } from '@/hooks/useCameraPlot';
 import { useCameraPlotElementDrag } from './interactions/useCameraPlotElementDrag';
 import { useCameraPlotElementRotation } from './interactions/useCameraPlotElementRotation';
 import { useCameraPlotElementScaling } from './interactions/useCameraPlotElementScaling';
-import { useCameraPlotElementCursor } from './interactions/useCameraPlotElementCursor';
 import { useCameraPlotElementLabel } from './interactions/useCameraPlotElementLabel';
 
 interface UseCameraPlotElementInteractionsProps {
@@ -44,20 +43,6 @@ export const useCameraPlotElementInteractions = ({
     onUpdate
   });
 
-  const { 
-    isInRotationZone, 
-    isInScaleZone, 
-    handleMouseMove, 
-    handleMouseLeave, 
-    getCursor 
-  } = useCameraPlotElementCursor({
-    canRotate,
-    canScale,
-    isDragging,
-    isRotating,
-    isScaling
-  });
-
   const { isLabelDragging, startLabelDrag } = useCameraPlotElementLabel({
     element,
     onUpdate
@@ -72,9 +57,14 @@ export const useCameraPlotElementInteractions = ({
 
     onSelect(element.id, e.ctrlKey || e.metaKey);
     
-    if (isInRotationZone && canRotate) {
-      startRotation(e);
-    } else if (isInScaleZone && canScale) {
+    // Only allow dragging if not clicking on scale handles
+    const target = e.target as HTMLElement;
+    const isScaleHandle = target.classList.contains('cursor-nw-resize') || 
+                         target.classList.contains('cursor-ne-resize') ||
+                         target.classList.contains('cursor-sw-resize') ||
+                         target.classList.contains('cursor-se-resize');
+    
+    if (isScaleHandle && canScale) {
       startScaling(e);
     } else {
       startDrag(e);
@@ -83,16 +73,22 @@ export const useCameraPlotElementInteractions = ({
     return { isDoubleClick: false };
   };
 
+  const getCursor = () => {
+    if (isDragging) return 'grabbing';
+    if (isRotating) return 'grabbing';
+    if (isScaling) return 'nw-resize';
+    return 'move';
+  };
+
   return {
     handleMouseDown,
     handleLabelMouseDown: startLabelDrag,
-    handleMouseMove,
-    handleMouseLeave,
+    handleRotationStart: startRotation,
     getCursor,
-    isInRotationZone,
-    isInScaleZone,
     isDragging,
     isRotating,
-    isScaling
+    isScaling,
+    canRotate,
+    canScale
   };
 };

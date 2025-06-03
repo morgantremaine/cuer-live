@@ -1,13 +1,11 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Move, Square, Circle, StopCircle, Grid3X3, Camera, User } from 'lucide-react';
+import { Move, Square, Circle, Grid3X3, Camera, User } from 'lucide-react';
 
 interface CameraPlotToolbarProps {
   selectedTool: string;
   onToolSelect: (tool: string) => void;
-  isDrawingWall?: boolean;
-  onStopDrawingWalls?: () => void;
   showGrid: boolean;
   onToggleGrid: () => void;
 }
@@ -15,8 +13,6 @@ interface CameraPlotToolbarProps {
 const CameraPlotToolbar = ({ 
   selectedTool, 
   onToolSelect, 
-  isDrawingWall, 
-  onStopDrawingWalls,
   showGrid,
   onToggleGrid 
 }: CameraPlotToolbarProps) => {
@@ -72,23 +68,15 @@ const CameraPlotToolbar = ({
           <Grid3X3 className="h-4 w-4 mr-2" />
           Grid: {showGrid ? 'ON' : 'OFF'}
         </Button>
+        
+        {selectedTool === 'wall' && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-400">
+              Click to start drawing walls, double-click to finish.
+            </p>
+          </div>
+        )}
       </div>
-      
-      {isDrawingWall && (
-        <div className="border-t border-gray-600 pt-4">
-          <Button
-            onClick={onStopDrawingWalls}
-            size="sm"
-            className="w-full bg-red-600 hover:bg-red-700 text-white"
-          >
-            <StopCircle className="h-4 w-4 mr-2" />
-            Finish Wall
-          </Button>
-          <p className="text-xs text-gray-400 mt-2">
-            Click to add points, double-click to finish the wall outline.
-          </p>
-        </div>
-      )}
     </div>
   );
 };

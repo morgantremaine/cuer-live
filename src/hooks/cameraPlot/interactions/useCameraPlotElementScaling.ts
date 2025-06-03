@@ -14,50 +14,42 @@ export const useCameraPlotElementScaling = ({
   onUpdate
 }: UseCameraPlotElementScalingProps) => {
   const [isScaling, setIsScaling] = useState(false);
-  const [scaleStart, setScaleStart] = useState({ 
-    x: 0, 
-    y: 0, 
-    initialWidth: 0, 
-    initialHeight: 0 
-  });
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
 
   const startScaling = (e: React.MouseEvent) => {
     if (!canScale) return;
+    
     setIsScaling(true);
-    setScaleStart({
-      x: e.clientX,
-      y: e.clientY,
-      initialWidth: element.width,
-      initialHeight: element.height
-    });
+    setStartPos({ x: e.clientX, y: e.clientY });
+    setInitialSize({ width: element.width, height: element.height });
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isScaling || !canScale) return;
       
-      const deltaX = e.clientX - scaleStart.x;
-      const deltaY = e.clientY - scaleStart.y;
+      const deltaX = e.clientX - startPos.x;
+      const deltaY = e.clientY - startPos.y;
       
-      // Use the larger delta for uniform scaling
-      const delta = Math.max(deltaX, deltaY);
-      const scaleFactor = 1 + delta / 100;
+      // Calculate the scale factor based on the larger delta
+      const scaleFactor = Math.max(deltaX, deltaY) / 100;
       
-      const isRoundTable = element.label.toLowerCase().includes('round') || element.label.toLowerCase().includes('circle');
+      // Check if it's a round table (furniture with equal width/height)
+      const isRoundTable = element.type === 'furniture' && initialSize.width === initialSize.height;
       
       let newWidth, newHeight;
       
       if (isRoundTable) {
-        // Round tables maintain aspect ratio (always square)
-        const newSize = Math.max(20, scaleStart.initialWidth * scaleFactor);
-        newWidth = newSize;
-        newHeight = newSize;
+        // For round tables, maintain aspect ratio
+        const avgDelta = (Math.abs(deltaX) + Math.abs(deltaY)) / 2;
+        const sizeChange = avgDelta * (deltaX + deltaY > 0 ? 1 : -1);
+        newWidth = Math.max(20, initialSize.width + sizeChange);
+        newHeight = newWidth; // Keep it perfectly round
       } else {
-        // Rectangular furniture can be freely transformed
-        const scaleFactorX = 1 + deltaX / 100;
-        const scaleFactorY = 1 + deltaY / 100;
-        newWidth = Math.max(20, scaleStart.initialWidth * scaleFactorX);
-        newHeight = Math.max(20, scaleStart.initialHeight * scaleFactorY);
+        // For rectangular furniture, allow free scaling
+        newWidth = Math.max(20, initialSize.width + deltaX);
+        newHeight = Math.max(20, initialSize.height + deltaY);
       }
       
       onUpdate(element.id, {
@@ -79,7 +71,7 @@ export const useCameraPlotElementScaling = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isScaling, scaleStart, element.id, element.label, onUpdate, canScale]);
+  }, [isScaling, element.id, onUpdate, canScale, startPos, initialSize]);
 
   return {
     isScaling,

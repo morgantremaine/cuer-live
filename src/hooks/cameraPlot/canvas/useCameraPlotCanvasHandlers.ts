@@ -14,6 +14,7 @@ interface UseCameraPlotCanvasHandlersProps {
   updatePreview: (point: { x: number; y: number }) => void;
   finishDrawing: () => any[];
   scene: CameraPlotScene | undefined;
+  onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
 }
 
 export const useCameraPlotCanvasHandlers = ({
@@ -27,7 +28,8 @@ export const useCameraPlotCanvasHandlers = ({
   addPoint,
   updatePreview,
   finishDrawing,
-  scene
+  scene,
+  onUpdateElement
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -76,10 +78,37 @@ export const useCameraPlotCanvasHandlers = ({
       
       // Create individual wall elements for each segment
       segments.forEach((segment, index) => {
-        // Create wall element using the standard addElement function
-        setTimeout(() => {
-          onAddElement('wall', segment.start.x, segment.start.y);
-        }, index * 10); // Small delay to ensure proper creation
+        const distance = Math.sqrt(
+          Math.pow(segment.end.x - segment.start.x, 2) + 
+          Math.pow(segment.end.y - segment.start.y, 2)
+        );
+        const angle = Math.atan2(
+          segment.end.y - segment.start.y, 
+          segment.end.x - segment.start.x
+        ) * (180 / Math.PI);
+        
+        // Create wall element directly in the scene
+        if (scene) {
+          const elementId = `wall-${Date.now()}-${index}`;
+          const newWall: CameraElement = {
+            id: elementId,
+            type: 'wall',
+            x: segment.start.x,
+            y: segment.start.y - 2,
+            width: distance,
+            height: 4,
+            rotation: angle,
+            scale: 1,
+            label: '',
+            labelOffsetX: 0,
+            labelOffsetY: -20
+          };
+          
+          // Add wall to scene
+          setTimeout(() => {
+            onUpdateElement(elementId, newWall);
+          }, index * 10);
+        }
       });
     }
   };

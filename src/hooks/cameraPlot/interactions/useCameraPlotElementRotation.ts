@@ -20,9 +20,13 @@ export const useCameraPlotElementRotation = ({
   const startRotation = (e: React.MouseEvent) => {
     if (!canRotate) return;
     
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    e.stopPropagation();
+    
+    const elementRect = e.currentTarget.closest('[data-element-id]')?.getBoundingClientRect();
+    if (!elementRect) return;
+    
+    const centerX = elementRect.left + elementRect.width / 2;
+    const centerY = elementRect.top + elementRect.height / 2;
     
     const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
     
@@ -35,7 +39,6 @@ export const useCameraPlotElementRotation = ({
     const handleMouseMove = (e: MouseEvent) => {
       if (!isRotating || !canRotate) return;
       
-      // Get element center from DOM
       const elementDiv = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
       if (!elementDiv) return;
       
@@ -48,7 +51,7 @@ export const useCameraPlotElementRotation = ({
       const newRotation = initialRotation + (deltaAngle * 180 / Math.PI);
       
       onUpdate(element.id, {
-        rotation: newRotation
+        rotation: newRotation % 360
       });
     };
 

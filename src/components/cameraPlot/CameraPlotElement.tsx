@@ -24,11 +24,10 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
   const {
     handleMouseDown,
     handleLabelMouseDown,
-    handleMouseMove,
-    handleMouseLeave,
+    handleRotationStart,
     getCursor,
-    isInRotationZone,
-    isInScaleZone
+    isRotating,
+    canRotate
   } = useCameraPlotElementInteractions({
     element,
     isSelected,
@@ -73,8 +72,6 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
           cursor: getCursor()
         }}
         onMouseDown={handleElementMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
         onContextMenu={handleContextMenu}
         tabIndex={0}
         onKeyDown={handleKeyPress}
@@ -82,9 +79,9 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
         <CameraPlotElementRenderer element={element} />
         <CameraPlotElementHandles 
           element={element} 
-          isSelected={isSelected} 
-          isInRotationZone={isInRotationZone}
-          isInScaleZone={isInScaleZone}
+          isSelected={isSelected}
+          onRotationStart={canRotate ? handleRotationStart : undefined}
+          isRotating={isRotating}
         />
       </div>
 

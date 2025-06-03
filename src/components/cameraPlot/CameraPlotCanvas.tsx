@@ -57,7 +57,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     addPoint,
     updatePreview,
     finishDrawing,
-    scene
+    scene,
+    onUpdateElement
   });
 
   return (
