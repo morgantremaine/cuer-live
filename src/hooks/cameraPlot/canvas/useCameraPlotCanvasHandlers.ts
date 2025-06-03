@@ -78,39 +78,28 @@ export const useCameraPlotCanvasHandlers = ({
       const segments = finishDrawing();
       console.log('Wall segments created:', segments);
       
-      // Create wall elements directly using the segment data
-      segments.forEach((segment) => {
+      // Create wall elements using the proper onAddElement function with wall data
+      segments.forEach((segment, index) => {
         const distance = Math.sqrt(
           Math.pow(segment.end.x - segment.start.x, 2) + 
           Math.pow(segment.end.y - segment.start.y, 2)
         );
         
         if (distance > 5) { // Only create walls with meaningful length
-          console.log('Creating wall element:', segment);
+          console.log(`Creating wall segment ${index + 1}:`, segment);
           
-          // Calculate angle for proper rotation
-          const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x) * (180 / Math.PI);
+          // Create each wall segment as a separate element
+          // We'll pass the wall data through a custom property that the addElement function can use
+          const wallData = {
+            start: segment.start,
+            end: segment.end,
+            id: segment.id
+          };
           
-          // Create the wall element directly through scene update
-          if (scene) {
-            const newWallElement = {
-              id: segment.id,
-              type: 'wall' as const,
-              x: segment.start.x,
-              y: segment.start.y - 2,
-              width: distance,
-              height: 4,
-              rotation: angle,
-              scale: 1,
-              label: '',
-              labelOffsetX: 0,
-              labelOffsetY: -20
-            };
-            
-            console.log('Adding wall element to scene:', newWallElement);
-            const updatedElements = [...scene.elements, newWallElement];
-            onUpdateElement(scene.id, { elements: updatedElements } as any);
-          }
+          // Store wall data temporarily for the addElement function to use
+          (window as any).__tempWallData = wallData;
+          onAddElement('wall', segment.start.x, segment.start.y);
+          delete (window as any).__tempWallData;
         }
       });
     }

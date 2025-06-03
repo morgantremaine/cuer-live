@@ -18,16 +18,20 @@ export const useCameraPlotElementCreation = (
     let newElement: CameraElement;
     const elementId = `element-${Date.now()}-${Math.random()}`;
 
-    if (type === 'wall' && wallData) {
+    // Check if there's temporary wall data from the canvas handlers
+    const tempWallData = (window as any).__tempWallData;
+    
+    if (type === 'wall' && (wallData || tempWallData)) {
       // Create wall from start to end points
-      const { start, end } = wallData;
+      const wallInfo = wallData || tempWallData;
+      const { start, end, id } = wallInfo;
       const distance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
       const angle = Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI);
       
       console.log('Creating wall with distance:', distance, 'angle:', angle);
       
       newElement = {
-        id: elementId,
+        id: id || elementId,
         type: 'wall',
         x: start.x,
         y: start.y - 2,

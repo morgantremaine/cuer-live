@@ -30,17 +30,17 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
             transformOrigin: 'center'
           }}
         >
-          {/* Camera body (rounded rectangle) */}
-          <div className="w-10 h-8 bg-blue-500 border-2 border-black rounded-md relative z-10" />
+          {/* Camera body (square) */}
+          <div className="w-8 h-8 bg-blue-500 border-2 border-black relative z-10" />
           
-          {/* Camera lens (3D trapezoid shape) */}
+          {/* Camera lens (triangle pointing towards square) */}
           <div 
-            className="absolute bg-blue-400 border-2 border-black z-0"
+            className="absolute w-0 h-0 z-0"
             style={{
-              width: '16px',
-              height: '20px',
-              clipPath: 'polygon(0% 20%, 100% 0%, 100% 80%, 0% 100%)',
-              right: '-8px',
+              borderTop: '6px solid transparent',
+              borderBottom: '6px solid transparent',
+              borderRight: '10px solid #3b82f6',
+              left: '-8px',
               top: '50%',
               transform: 'translateY(-50%)',
               filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5))'
@@ -51,7 +51,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
           <div 
             className="absolute w-1 h-2 bg-black z-20"
             style={{
-              right: '-10px',
+              right: '-2px',
               top: '50%',
               transform: 'translateY(-50%)'
             }}
