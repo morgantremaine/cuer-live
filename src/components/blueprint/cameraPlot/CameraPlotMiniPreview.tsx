@@ -57,6 +57,36 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
         preserveAspectRatio="xMidYMid meet"
         key={`preview-${plot.id}-${plot.elements.length}`}
       >
+        {/* Define patterns and images for reuse */}
+        <defs>
+          <pattern
+            id={`camera-pattern-${plot.id}`}
+            patternUnits="userSpaceOnUse"
+            width="32"
+            height="24"
+          >
+            <image
+              href="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png"
+              width="32"
+              height="24"
+              preserveAspectRatio="xMidYMid meet"
+            />
+          </pattern>
+          <pattern
+            id={`person-pattern-${plot.id}`}
+            patternUnits="userSpaceOnUse"
+            width="32"
+            height="32"
+          >
+            <image
+              href="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png"
+              width="32"
+              height="32"
+              preserveAspectRatio="xMidYMid meet"
+            />
+          </pattern>
+        </defs>
+
         {plot.elements.map((element: any, index: number) => {
           const x = element.x;
           const y = element.y;
@@ -65,24 +95,18 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
 
           if (element.type === 'camera') {
             return (
-              <g key={`${element.id}-${index}`}>
-                <rect
-                  x={x + width * 0.2}
-                  y={y + height * 0.2}
-                  width={width * 0.6}
-                  height={height * 0.6}
-                  fill="#3b82f6"
-                  stroke="#1d4ed8"
-                  strokeWidth="1"
-                  rx="3"
-                />
-                <path
-                  d={`M${x} ${y + height * 0.35} L${x + width * 0.2} ${y + height * 0.5} L${x} ${y + height * 0.65} Z`}
-                  fill="#3b82f6"
-                  stroke="#1d4ed8"
-                  strokeWidth="1"
-                />
-              </g>
+              <rect
+                key={`${element.id}-${index}`}
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                fill={`url(#camera-pattern-${plot.id})`}
+                stroke="#1d4ed8"
+                strokeWidth="1"
+                rx="3"
+                transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+              />
             );
           } else if (element.type === 'wall') {
             return (
@@ -98,15 +122,19 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
             );
           } else if (element.type === 'person') {
             return (
-              <circle
-                key={`${element.id}-${index}`}
-                cx={x + width/2}
-                cy={y + height/2}
-                r={Math.max(8, Math.min(width, height)/2)}
-                fill="#10b981"
-                stroke="#059669"
-                strokeWidth="1"
-              />
+              <g key={`${element.id}-${index}`}>
+                <rect
+                  x={x}
+                  y={y}
+                  width={width}
+                  height={height}
+                  fill={`url(#person-pattern-${plot.id})`}
+                  stroke="#059669"
+                  strokeWidth="1"
+                  rx="50%"
+                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+                />
+              </g>
             );
           } else if (element.type === 'furniture') {
             const isRound = element.label?.toLowerCase().includes('round') || element.label?.toLowerCase().includes('circle');
