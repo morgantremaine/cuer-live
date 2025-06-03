@@ -40,19 +40,27 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   useEffect(() => {
     const initializePlots = async () => {
       if (!isInitialized && rundownId && rundownTitle) {
-        console.log('Initializing camera plots for rundown:', rundownId, readOnly ? '(read-only)' : '(editor)');
+        console.log(`Initializing camera plots for rundown: ${rundownId} ${readOnly ? '(read-only)' : '(editor)'}`);
         
         // Force fresh load from database
         const blueprint = await loadBlueprint();
         
+        // Check if camera_plots exists and is a valid array
         if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
           console.log('Loading existing camera plots:', blueprint.camera_plots.length, 'scenes');
           setPlots(blueprint.camera_plots);
           lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
         } else {
-          console.log('No existing camera plots found, starting with empty array');
-          setPlots([]);
-          lastSavedPlotsRef.current = JSON.stringify([]);
+          // Only initialize empty array if we're in editor mode, not read-only
+          if (!readOnly) {
+            console.log('No existing camera plots found, starting with empty array');
+            setPlots([]);
+            lastSavedPlotsRef.current = JSON.stringify([]);
+          } else {
+            console.log('Read-only mode: No camera plots found, keeping empty state');
+            setPlots([]);
+            // Don't update lastSavedPlotsRef in read-only mode to prevent overwriting
+          }
         }
         setIsInitialized(true);
       }
@@ -64,18 +72,21 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   // Force reload data when coming back to a page
   const reloadPlots = async () => {
     console.log('Reloading camera plots data...');
-    setIsInitialized(false); // Reset initialization to force fresh load
     const blueprint = await loadBlueprint();
-    if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots)) {
+    if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
       console.log('Reloaded camera plots:', blueprint.camera_plots.length, 'scenes');
       setPlots(blueprint.camera_plots);
-      lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
+      if (!readOnly) {
+        lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
+      }
     } else {
       console.log('No camera plots found during reload');
       setPlots([]);
-      lastSavedPlotsRef.current = JSON.stringify([]);
+      // Don't update lastSavedPlotsRef in read-only mode
+      if (!readOnly) {
+        lastSavedPlotsRef.current = JSON.stringify([]);
+      }
     }
-    setIsInitialized(true);
   };
 
   // Debounced auto-save plot data (only for editor, not read-only mode)
@@ -110,7 +121,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
           } catch (error) {
             console.error('Auto-save failed:', error);
           }
-        }, 100); // Even faster auto-save for immediate syncing
+        }, 50); // Very fast auto-save for immediate syncing
       }
     }
 
