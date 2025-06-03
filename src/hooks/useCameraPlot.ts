@@ -42,15 +42,17 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
       if (!isInitialized && rundownId && rundownTitle) {
         console.log('Initializing camera plots for rundown:', rundownId);
         
-        // Ensure blueprint is loaded
+        // Force fresh load from database
         const blueprint = await loadBlueprint();
         
-        if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
+        if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
           console.log('Loading existing camera plots:', blueprint.camera_plots.length, 'scenes');
           setPlots(blueprint.camera_plots);
+          lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
         } else {
           console.log('No existing camera plots found, starting with empty array');
           setPlots([]);
+          lastSavedPlotsRef.current = JSON.stringify([]);
         }
         setIsInitialized(true);
       }
@@ -63,16 +65,18 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
   const reloadPlots = async () => {
     console.log('Reloading camera plots data...');
     const blueprint = await loadBlueprint();
-    if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots)) {
+    if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots)) {
       console.log('Reloaded camera plots:', blueprint.camera_plots.length, 'scenes');
       setPlots(blueprint.camera_plots);
+      lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
     } else {
       console.log('No camera plots found during reload');
       setPlots([]);
+      lastSavedPlotsRef.current = JSON.stringify([]);
     }
   };
 
-  // Auto-save plot data with debouncing to prevent excessive saves
+  // Auto-save plot data with debouncing
   useEffect(() => {
     if (isInitialized && rundownId && rundownTitle && plots !== null) {
       const currentPlotsString = JSON.stringify(plots);
@@ -86,19 +90,25 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
           clearTimeout(autoSaveTimeoutRef.current);
         }
         
-        // Set new timeout
-        autoSaveTimeoutRef.current = setTimeout(() => {
-          lastSavedPlotsRef.current = currentPlotsString;
-          saveBlueprint(
-            rundownTitle,
-            savedBlueprint?.lists || [],
-            savedBlueprint?.show_date,
-            true, // silent save
-            savedBlueprint?.notes,
-            savedBlueprint?.crew_data,
-            plots // Save the camera plots
-          );
-        }, 1000);
+        // Set new timeout with shorter delay for faster syncing
+        autoSaveTimeoutRef.current = setTimeout(async () => {
+          try {
+            console.log('Executing auto-save for camera plots');
+            lastSavedPlotsRef.current = currentPlotsString;
+            await saveBlueprint(
+              rundownTitle,
+              savedBlueprint?.lists || [],
+              savedBlueprint?.show_date,
+              true, // silent save
+              savedBlueprint?.notes,
+              savedBlueprint?.crew_data,
+              plots // Save the camera plots
+            );
+            console.log('Auto-save completed successfully');
+          } catch (error) {
+            console.error('Auto-save failed:', error);
+          }
+        }, 500); // Reduced from 1000ms to 500ms for faster syncing
       }
     }
 
