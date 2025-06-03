@@ -35,6 +35,7 @@ export const useCameraPlotAutoSave = (
       saveTimeoutRef.current = setTimeout(() => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
+          // Only log auto-save when it actually happens
           console.log('Auto-saving camera plots:', plots.length);
           
           try {
@@ -51,7 +52,7 @@ export const useCameraPlotAutoSave = (
             isSavingRef.current = false;
           }
         }
-      }, 2000); // Increased debounce time to 2 seconds
+      }, 3000); // Increased debounce time to 3 seconds
     }
 
     return () => {

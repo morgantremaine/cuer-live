@@ -9,10 +9,14 @@ export const useCameraPlotInteractions = (
   updatePlot: (plotId: string, updates: Partial<CameraPlotScene>) => void,
   setSelectedTool: (tool: string) => void
 ) => {
-  console.log('useCameraPlotInteractions - activeScene:', activeScene?.id, 'scenes count:', scenes.length);
+  // Remove the noisy log that was running constantly
+  // console.log('useCameraPlotInteractions - activeScene:', activeScene?.id, 'scenes count:', scenes.length);
   
   const updatePlotCallback = (plotId: string, updates: Partial<CameraPlotScene>) => {
-    console.log('updatePlotCallback called with plotId:', plotId, 'updates:', updates);
+    // Only log when actually important updates happen
+    if (updates.elements && updates.elements.length !== activeScene?.elements?.length) {
+      console.log('updatePlotCallback called with plotId:', plotId, 'element count changed to:', updates.elements.length);
+    }
     updatePlot(plotId, updates);
     
     // Also handle name updates separately if needed

@@ -5,7 +5,7 @@ import { useCameraPlot, CameraPlotScene } from '@/hooks/useCameraPlot';
 export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const lastLogTimeRef = useRef<number>(0);
-  const LOG_THROTTLE_MS = 5000; // Reduced logging frequency
+  const LOG_THROTTLE_MS = 30000; // Increased to 30 seconds to reduce noise
   
   const {
     plots: scenes,
@@ -55,10 +55,10 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
   // Always get the most current active scene from the scenes array
   const activeScene = activeSceneId ? scenes.find(scene => scene.id === activeSceneId) || null : null;
 
-  console.log('useCameraPlotScenes - activeSceneId:', activeSceneId, 'activeScene found:', !!activeScene, 'scenes count:', scenes.length);
+  // Remove the noisy log that was running on every render
+  // console.log('useCameraPlotScenes - activeSceneId:', activeSceneId, 'activeScene found:', !!activeScene, 'scenes count:', scenes.length);
 
   const setActiveScene = useCallback((sceneId: string) => {
-    console.log('setActiveScene called with:', sceneId);
     setActiveSceneId(sceneId);
   }, []);
 

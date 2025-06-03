@@ -8,7 +8,8 @@ export const useCameraPlotState = (rundownId: string) => {
   const toolState = useCameraPlotTools();
   const wallState = useCameraPlotWalls();
 
-  console.log('useCameraPlotState - activeScene:', sceneState.activeScene?.id, 'scenes:', sceneState.scenes.length);
+  // Remove the noisy log that was running constantly
+  // console.log('useCameraPlotState - activeScene:', sceneState.activeScene?.id, 'scenes:', sceneState.scenes.length);
 
   return {
     ...sceneState,

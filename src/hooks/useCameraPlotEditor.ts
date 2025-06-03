@@ -31,7 +31,8 @@ export const useCameraPlotEditor = (rundownId: string) => {
     stopDrawingWalls
   } = useCameraPlotState(rundownId);
 
-  console.log('useCameraPlotEditor - activeScene:', activeScene?.id, 'scenes:', scenes.length);
+  // Remove the noisy log that was running constantly
+  // console.log('useCameraPlotEditor - activeScene:', activeScene?.id, 'scenes:', scenes.length);
 
   // Element interactions - only initialize if we have an active scene
   const {
@@ -69,7 +70,6 @@ export const useCameraPlotEditor = (rundownId: string) => {
 
   // Safe wrapper for addElement that checks for active scene
   const safeAddElement = (type: string, x: number, y: number) => {
-    console.log('safeAddElement called with activeScene:', activeScene?.id);
     if (!activeScene) {
       console.log('No active scene available for element creation');
       return;
