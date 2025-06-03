@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Edit } from 'lucide-react';
@@ -23,12 +23,16 @@ const CameraPlot = ({
   onDragEnd 
 }: CameraPlotProps) => {
   const { scenes, reloadPlots } = useCameraPlotScenes(rundownId);
+  const [hasMounted, setHasMounted] = useState(false);
 
   // Reload data only when component first mounts
   useEffect(() => {
-    console.log('CameraPlot component mounted, reloading scenes');
-    reloadPlots();
-  }, []); // Empty dependency array to only run on mount
+    if (!hasMounted) {
+      console.log('CameraPlot component mounted, reloading scenes');
+      reloadPlots();
+      setHasMounted(true);
+    }
+  }, [hasMounted, reloadPlots]);
 
   console.log('CameraPlot component rendering with scenes:', scenes.length);
 

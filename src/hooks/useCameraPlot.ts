@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
 
 export interface CameraElement {
@@ -33,6 +33,8 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
   const [plots, setPlots] = useState<CameraPlotScene[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const { savedBlueprint, saveBlueprint, loadBlueprint } = useBlueprintStorage(rundownId);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastSavedPlotsRef = useRef<string>('');
 
   // Load saved plot data when blueprint is loaded
   useEffect(() => {
@@ -44,10 +46,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
         const blueprint = await loadBlueprint();
         
         if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
-          console.log('Loading existing camera plots:', blueprint.camera_plots);
+          console.log('Loading existing camera plots:', blueprint.camera_plots.length, 'scenes');
           setPlots(blueprint.camera_plots);
         } else {
-          console.log('No existing camera plots found, will start with empty array');
+          console.log('No existing camera plots found, starting with empty array');
           setPlots([]);
         }
         setIsInitialized(true);
@@ -62,7 +64,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
     console.log('Reloading camera plots data...');
     const blueprint = await loadBlueprint();
     if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots)) {
-      console.log('Reloaded camera plots:', blueprint.camera_plots);
+      console.log('Reloaded camera plots:', blueprint.camera_plots.length, 'scenes');
       setPlots(blueprint.camera_plots);
     } else {
       console.log('No camera plots found during reload');
@@ -70,25 +72,41 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
     }
   };
 
-  // Auto-save plot data whenever it changes - but prevent excessive saves
+  // Auto-save plot data with debouncing to prevent excessive saves
   useEffect(() => {
     if (isInitialized && rundownId && rundownTitle && plots !== null) {
-      console.log('Auto-saving camera plots:', plots);
+      const currentPlotsString = JSON.stringify(plots);
       
-      const saveTimeout = setTimeout(() => {
-        saveBlueprint(
-          rundownTitle,
-          savedBlueprint?.lists || [],
-          savedBlueprint?.show_date,
-          true, // silent save
-          savedBlueprint?.notes,
-          savedBlueprint?.crew_data,
-          plots // Save the camera plots
-        );
-      }, 1000);
-
-      return () => clearTimeout(saveTimeout);
+      // Only save if data has actually changed
+      if (currentPlotsString !== lastSavedPlotsRef.current) {
+        console.log('Scheduling auto-save for camera plots with', plots.length, 'scenes');
+        
+        // Clear existing timeout
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        
+        // Set new timeout
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          lastSavedPlotsRef.current = currentPlotsString;
+          saveBlueprint(
+            rundownTitle,
+            savedBlueprint?.lists || [],
+            savedBlueprint?.show_date,
+            true, // silent save
+            savedBlueprint?.notes,
+            savedBlueprint?.crew_data,
+            plots // Save the camera plots
+          );
+        }, 1000);
+      }
     }
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
   }, [plots, isInitialized, rundownId, rundownTitle, savedBlueprint, saveBlueprint]);
 
   const createNewPlot = (name: string) => {
@@ -97,10 +115,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
       name,
       elements: []
     };
-    console.log('Creating new plot:', newPlot);
+    console.log('Creating new plot:', newPlot.name);
     setPlots(prevPlots => {
       const updatedPlots = [...prevPlots, newPlot];
-      console.log('Updated plots after creation:', updatedPlots);
+      console.log('Updated plots after creation:', updatedPlots.length, 'total scenes');
       return updatedPlots;
     });
     return newPlot;
@@ -110,7 +128,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
     console.log('Deleting plot:', plotId);
     setPlots(prevPlots => {
       const updatedPlots = prevPlots.filter(plot => plot.id !== plotId);
-      console.log('Updated plots after deletion:', updatedPlots);
+      console.log('Updated plots after deletion:', updatedPlots.length, 'remaining scenes');
       return updatedPlots;
     });
   };
@@ -127,10 +145,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
           id: `element-${Date.now()}-${Math.random()}`
         }))
       };
-      console.log('Duplicating plot:', duplicatedPlot);
+      console.log('Duplicating plot:', duplicatedPlot.name);
       setPlots(prevPlots => {
         const updatedPlots = [...prevPlots, duplicatedPlot];
-        console.log('Updated plots after duplication:', updatedPlots);
+        console.log('Updated plots after duplication:', updatedPlots.length, 'total scenes');
         return updatedPlots;
       });
       return duplicatedPlot;
@@ -138,12 +156,12 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
   };
 
   const updatePlot = (plotId: string, updatedPlot: Partial<CameraPlotScene>) => {
-    console.log('Updating plot:', plotId, 'with updates:', updatedPlot);
+    console.log('Updating plot:', plotId, 'with', Object.keys(updatedPlot).join(', '));
     setPlots(prevPlots => {
       const updatedPlots = prevPlots.map(plot => 
         plot.id === plotId ? { ...plot, ...updatedPlot } : plot
       );
-      console.log('Updated plots after update:', updatedPlots);
+      console.log('Updated plots after update:', updatedPlots.length, 'total scenes');
       return updatedPlots;
     });
   };
