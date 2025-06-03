@@ -31,12 +31,6 @@ export const useRundownGridCore = () => {
   // Get storage functionality
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
 
-  // Undo functionality with persistence
-  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
-    rundownId,
-    updateRundown
-  });
-
   // Rundown data integration
   const {
     items,
@@ -70,6 +64,15 @@ export const useRundownGridCore = () => {
     setRundownTitleDirectly, 
     setTimezoneDirectly
   );
+
+  // Undo functionality with persistence - pass current state
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
+    rundownId,
+    updateRundown,
+    currentTitle: rundownTitle,
+    currentItems: items,
+    currentColumns: columns
+  });
 
   // Use data loader with undo history loading
   useRundownDataLoader({

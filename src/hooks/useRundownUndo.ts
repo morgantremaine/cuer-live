@@ -13,6 +13,9 @@ interface UndoState {
 interface UseRundownUndoProps {
   rundownId?: string;
   updateRundown?: (id: string, title: string, items: RundownItem[], silent?: boolean, archived?: boolean, columns?: Column[], timezone?: string, startTime?: string, icon?: string, undoHistory?: UndoState[]) => Promise<void>;
+  currentTitle?: string;
+  currentItems?: RundownItem[];
+  currentColumns?: Column[];
 }
 
 export const useRundownUndo = (props?: UseRundownUndoProps) => {
@@ -28,18 +31,18 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   // Save undo history to database
   const saveUndoHistoryToDatabase = useCallback(async (newStack: UndoState[]) => {
     if (!props?.rundownId || !props.updateRundown || isSavingHistory.current) return;
+    if (!props.currentTitle || !props.currentItems || !props.currentColumns) return;
     
     try {
       isSavingHistory.current = true;
-      // Get the current rundown state (we need all fields for the update)
-      // We'll pass the undo history as a separate parameter
+      // Update only the undo history, keeping all other fields as they are
       await props.updateRundown(
         props.rundownId,
-        newStack[newStack.length - 1]?.title || 'Untitled Rundown',
-        newStack[newStack.length - 1]?.items || [],
+        props.currentTitle, // Use current title from props
+        props.currentItems, // Use current items from props
         true, // silent update
         false, // not archived
-        newStack[newStack.length - 1]?.columns,
+        props.currentColumns, // Use current columns from props
         undefined, // timezone - keep existing
         undefined, // startTime - keep existing
         undefined, // icon - keep existing
@@ -50,7 +53,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     } finally {
       isSavingHistory.current = false;
     }
-  }, [props?.rundownId, props?.updateRundown]);
+  }, [props?.rundownId, props?.updateRundown, props?.currentTitle, props?.currentItems, props?.currentColumns]);
 
   const saveState = useCallback((
     items: RundownItem[],
