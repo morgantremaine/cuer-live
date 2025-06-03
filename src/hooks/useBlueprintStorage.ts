@@ -22,6 +22,7 @@ interface SavedBlueprint {
   show_date?: string;
   notes?: string;
   crew_data?: CrewMember[];
+  camera_plots?: any[];
   created_at: string;
   updated_at: string;
 }
@@ -73,7 +74,8 @@ export const useBlueprintStorage = (rundownId: string) => {
     showDate?: string, 
     silent = false, 
     notes?: string,
-    crewData?: CrewMember[]
+    crewData?: CrewMember[],
+    cameraPlots?: any[]
   ) => {
     if (!user || !rundownId) {
       console.error('Cannot save blueprint: missing user or rundownId');
@@ -89,6 +91,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         show_date: showDate,
         notes: notes || null,
         crew_data: crewData || null,
+        camera_plots: cameraPlots || null,
         updated_at: new Date().toISOString()
       };
 

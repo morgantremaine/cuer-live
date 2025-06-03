@@ -12,6 +12,7 @@ import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
 import CrewList from '@/components/blueprint/CrewList';
+import CameraPlot from '@/components/blueprint/CameraPlot';
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
@@ -147,8 +148,22 @@ const Blueprint = () => {
             onDragEnd={handleDragEnd}
           />
 
-          {/* Insertion line for scratchpad */}
+          {/* Insertion line for camera plot */}
           {insertionIndex === lists.length + 2 && (
+            <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
+          )}
+
+          <CameraPlot
+            rundownId={id || ''}
+            rundownTitle={rundown?.title || 'Unknown Rundown'}
+            isDragging={draggedListId === 'camera-plot'}
+            onDragStart={handleDragStart}
+            onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 2)}
+            onDragEnd={handleDragEnd}
+          />
+
+          {/* Insertion line for scratchpad */}
+          {insertionIndex === lists.length + 3 && (
             <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
           )}
 
@@ -156,7 +171,7 @@ const Blueprint = () => {
             className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
             draggable
             onDragStart={(e) => handleDragStart(e, 'scratchpad')}
-            onDragEnter={(e) => handleDragEnterContainer(e, lists.length + 2)}
+            onDragEnter={(e) => handleDragEnterContainer(e, lists.length + 3)}
             onDragEnd={handleDragEnd}
           >
             <BlueprintScratchpad

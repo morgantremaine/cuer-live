@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import SharedRundown from "./pages/SharedRundown";
 import Teleprompter from "./pages/Teleprompter";
 import Blueprint from "./pages/Blueprint";
+import CameraPlotEditor from "./pages/CameraPlotEditor";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Blueprint />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/camera-plot-editor/:id" 
+        element={
+          <ProtectedRoute>
+            <CameraPlotEditor />
           </ProtectedRoute>
         } 
       />
