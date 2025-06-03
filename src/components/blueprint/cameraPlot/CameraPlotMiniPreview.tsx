@@ -61,28 +61,28 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
         <defs>
           <pattern
             id={`camera-pattern-${plot.id}`}
-            patternUnits="userSpaceOnUse"
-            width="32"
-            height="24"
+            patternUnits="objectBoundingBox"
+            width="1"
+            height="1"
           >
             <image
               href="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png"
-              width="32"
-              height="24"
-              preserveAspectRatio="xMidYMid meet"
+              width="1"
+              height="1"
+              preserveAspectRatio="xMidYMid slice"
             />
           </pattern>
           <pattern
             id={`person-pattern-${plot.id}`}
-            patternUnits="userSpaceOnUse"
-            width="32"
-            height="32"
+            patternUnits="objectBoundingBox"
+            width="1"
+            height="1"
           >
             <image
               href="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png"
-              width="32"
-              height="32"
-              preserveAspectRatio="xMidYMid meet"
+              width="1"
+              height="1"
+              preserveAspectRatio="xMidYMid slice"
             />
           </pattern>
         </defs>
@@ -122,19 +122,18 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
             );
           } else if (element.type === 'person') {
             return (
-              <g key={`${element.id}-${index}`}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={width}
-                  height={height}
-                  fill={`url(#person-pattern-${plot.id})`}
-                  stroke="#059669"
-                  strokeWidth="1"
-                  rx="50%"
-                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
-                />
-              </g>
+              <rect
+                key={`${element.id}-${index}`}
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                fill={`url(#person-pattern-${plot.id})`}
+                stroke="#059669"
+                strokeWidth="1"
+                rx="50%"
+                transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+              />
             );
           } else if (element.type === 'furniture') {
             const isRound = element.label?.toLowerCase().includes('round') || element.label?.toLowerCase().includes('circle');
