@@ -16,7 +16,9 @@ export const useCameraPlotSceneOperations = (
       name,
       elements: []
     };
-    setPlots([...plots, newPlot]);
+    
+    // Add new plot at the beginning of the array (newest first)
+    setPlots([newPlot, ...plots]);
     return newPlot;
   };
 
@@ -44,7 +46,9 @@ export const useCameraPlotSceneOperations = (
           id: `element-${Date.now()}-${Math.random()}`
         }))
       };
-      setPlots([...plots, duplicatedPlot]);
+      
+      // Add duplicated plot at the beginning of the array (newest first)
+      setPlots([duplicatedPlot, ...plots]);
       return duplicatedPlot;
     }
   };

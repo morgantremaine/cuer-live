@@ -55,6 +55,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
         className="w-full h-full" 
         viewBox={`${bounds.minX} ${bounds.minY} ${viewBoxWidth} ${viewBoxHeight}`}
         preserveAspectRatio="xMidYMid meet"
+        key={`preview-${plot.id}-${plot.elements.length}`}
       >
         {plot.elements.map((element: any, index: number) => {
           const x = element.x;
@@ -64,7 +65,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
 
           if (element.type === 'camera') {
             return (
-              <g key={index}>
+              <g key={`${element.id}-${index}`}>
                 <rect
                   x={x + width * 0.2}
                   y={y + height * 0.2}
@@ -86,7 +87,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
           } else if (element.type === 'wall') {
             return (
               <rect
-                key={index}
+                key={`${element.id}-${index}`}
                 x={x}
                 y={y}
                 width={width}
@@ -98,7 +99,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
           } else if (element.type === 'person') {
             return (
               <circle
-                key={index}
+                key={`${element.id}-${index}`}
                 cx={x + width/2}
                 cy={y + height/2}
                 r={Math.max(8, Math.min(width, height)/2)}
@@ -113,7 +114,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
             if (isRound) {
               return (
                 <circle
-                  key={index}
+                  key={`${element.id}-${index}`}
                   cx={x + width/2}
                   cy={y + height/2}
                   r={Math.min(width, height)/2}
@@ -126,7 +127,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
             
             return (
               <rect
-                key={index}
+                key={`${element.id}-${index}`}
                 x={x}
                 y={y}
                 width={width}

@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotElementRenderer from './CameraPlotElementRenderer';
-import CameraPlotElementHandles from './CameraPlotElementHandles';
 import CameraPlotElementLabel from './CameraPlotElementLabel';
 import CameraPlotElementContextMenu from './CameraPlotElementContextMenu';
 import { useCameraPlotElementInteractions } from '@/hooks/cameraPlot/useCameraPlotElementInteractions';
@@ -83,12 +82,10 @@ const CameraPlotElement = ({
 
   return (
     <>
-      {/* Main element */}
+      {/* Main element - removed all selection highlighting */}
       <div
         data-element-id={element.id}
-        className={`absolute ${isSelected ? 'ring-2 ring-blue-500 ring-opacity-75' : ''} ${
-          isSelected ? 'z-10' : 'z-5'
-        }`}
+        className="absolute"
         style={{
           left: element.x,
           top: element.y,
@@ -102,12 +99,6 @@ const CameraPlotElement = ({
         onKeyDown={handleKeyPress}
       >
         <CameraPlotElementRenderer element={element} />
-        <CameraPlotElementHandles 
-          element={element} 
-          isSelected={isSelected}
-          onRotationStart={canRotate ? handleRotationStart : undefined}
-          isRotating={isRotating}
-        />
       </div>
 
       {/* Label */}
