@@ -45,51 +45,88 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   if (!element.label) return null;
 
-  // Calculate label position - very close to the element based on type
+  // Calculate label position - much closer to the element
   const getDefaultOffset = () => {
     switch (element.type) {
       case 'camera':
-        return 5; // Very close for cameras
+        return 2; // Very close for cameras
       case 'person':
-        return 5; // Very close for people
+        return 2; // Very close for people
       case 'furniture':
-        return 5; // Very close for furniture
+        return 2; // Very close for furniture
       case 'wall':
-        return -5; // Just above walls
+        return -15; // Just above walls
       default:
-        return 5;
+        return 2;
     }
   };
 
-  const labelX = element.x + element.width / 2 + (element.labelOffsetX || 0);
-  const labelY = element.y + element.height + (element.labelOffsetY || getDefaultOffset());
+  const labelOffsetX = element.labelOffsetX || 0;
+  const labelOffsetY = element.labelOffsetY || getDefaultOffset();
+  const labelX = element.x + element.width / 2 + labelOffsetX;
+  const labelY = element.y + element.height + labelOffsetY;
+
+  // Determine if we need a dotted line (when label is moved away from default position)
+  const needsDottedLine = Math.abs(labelOffsetX) > 10 || Math.abs(labelOffsetY - getDefaultOffset()) > 10;
+  
+  // Calculate line from element center to label
+  const elementCenterX = element.x + element.width / 2;
+  const elementCenterY = element.y + element.height / 2;
 
   return (
-    <div
-      className={`absolute text-sm text-white bg-black bg-opacity-75 px-2 py-1 rounded pointer-events-auto cursor-move ${
-        isSelected ? 'z-10' : 'z-5'
-      }`}
-      style={{
-        left: labelX,
-        top: labelY,
-        transform: 'translateX(-50%)', // This centers the label horizontally
-      }}
-      onMouseDown={onMouseDown}
-      onDoubleClick={handleDoubleClick}
-    >
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={handleEditSubmit}
-          onKeyDown={handleKeyPress}
-          className="bg-white text-black px-1 text-sm min-w-16 rounded"
-        />
-      ) : (
-        element.label
+    <>
+      {/* Dotted line connection */}
+      {needsDottedLine && (
+        <svg 
+          className="absolute pointer-events-none"
+          style={{ 
+            left: 0, 
+            top: 0, 
+            width: '100%', 
+            height: '100%',
+            zIndex: 1
+          }}
+        >
+          <line
+            x1={elementCenterX}
+            y1={elementCenterY}
+            x2={labelX}
+            y2={labelY}
+            stroke="white"
+            strokeWidth="1"
+            strokeDasharray="3,3"
+            opacity="0.7"
+          />
+        </svg>
       )}
-    </div>
+      
+      {/* Label */}
+      <div
+        className={`absolute text-sm text-white bg-black bg-opacity-75 px-2 py-1 rounded pointer-events-auto cursor-move ${
+          isSelected ? 'z-10' : 'z-5'
+        }`}
+        style={{
+          left: labelX,
+          top: labelY,
+          transform: 'translateX(-50%)', // This centers the label horizontally
+        }}
+        onMouseDown={onMouseDown}
+        onDoubleClick={handleDoubleClick}
+      >
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleEditSubmit}
+            onKeyDown={handleKeyPress}
+            className="bg-white text-black px-1 text-sm min-w-16 rounded"
+          />
+        ) : (
+          element.label
+        )}
+      </div>
+    </>
   );
 };
 
