@@ -62,11 +62,30 @@ export const useCameraPlotElementRotation = ({
     if (isRotating) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      
+      // Prevent text selection and other interactions while rotating
+      document.body.style.userSelect = 'none';
+      document.body.style.pointerEvents = 'none';
+      
+      // Allow pointer events on the current element to continue tracking
+      const elementDiv = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      if (elementDiv) {
+        elementDiv.style.pointerEvents = 'auto';
+      }
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      
+      // Restore normal interactions
+      document.body.style.userSelect = '';
+      document.body.style.pointerEvents = '';
+      
+      const elementDiv = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      if (elementDiv) {
+        elementDiv.style.pointerEvents = '';
+      }
     };
   }, [isRotating, element.id, onUpdate, canRotate, startAngle, initialRotation]);
 

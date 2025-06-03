@@ -16,13 +16,22 @@ export const useCameraPlotElementScaling = ({
   const [isScaling, setIsScaling] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const [initialPos, setInitialPos] = useState({ x: 0, y: 0 });
+  const [scaleHandle, setScaleHandle] = useState<string>('');
 
   const startScaling = (e: React.MouseEvent) => {
     if (!canScale) return;
     
+    e.stopPropagation();
+    
+    const target = e.target as HTMLElement;
+    const handle = target.getAttribute('data-handle') || 'se';
+    
     setIsScaling(true);
     setStartPos({ x: e.clientX, y: e.clientY });
     setInitialSize({ width: element.width, height: element.height });
+    setInitialPos({ x: element.x, y: element.y });
+    setScaleHandle(handle);
   };
 
   useEffect(() => {
@@ -32,29 +41,105 @@ export const useCameraPlotElementScaling = ({
       const deltaX = e.clientX - startPos.x;
       const deltaY = e.clientY - startPos.y;
       
-      // Calculate the scale factor based on the larger delta
-      const scaleFactor = Math.max(deltaX, deltaY) / 100;
+      let newWidth = initialSize.width;
+      let newHeight = initialSize.height;
+      let newX = initialPos.x;
+      let newY = initialPos.y;
       
       // Check if it's a round table (furniture with equal width/height)
-      const isRoundTable = element.type === 'furniture' && initialSize.width === initialSize.height;
+      const isRoundTable = element.type === 'furniture' && 
+        element.label && (
+          element.label.toLowerCase().includes('round') || 
+          element.label.toLowerCase().includes('circle') ||
+          initialSize.width === initialSize.height
+        );
       
-      let newWidth, newHeight;
-      
-      if (isRoundTable) {
-        // For round tables, maintain aspect ratio
-        const avgDelta = (Math.abs(deltaX) + Math.abs(deltaY)) / 2;
-        const sizeChange = avgDelta * (deltaX + deltaY > 0 ? 1 : -1);
-        newWidth = Math.max(20, initialSize.width + sizeChange);
-        newHeight = newWidth; // Keep it perfectly round
-      } else {
-        // For rectangular furniture, allow free scaling
-        newWidth = Math.max(20, initialSize.width + deltaX);
-        newHeight = Math.max(20, initialSize.height + deltaY);
+      switch (scaleHandle) {
+        case 'nw': // Top-left
+          if (isRoundTable) {
+            const avgDelta = -(deltaX + deltaY) / 2;
+            newWidth = Math.max(20, initialSize.width + avgDelta);
+            newHeight = newWidth;
+            newX = initialPos.x - (newWidth - initialSize.width);
+            newY = initialPos.y - (newHeight - initialSize.height);
+          } else {
+            newWidth = Math.max(20, initialSize.width - deltaX);
+            newHeight = Math.max(20, initialSize.height - deltaY);
+            newX = initialPos.x + (initialSize.width - newWidth);
+            newY = initialPos.y + (initialSize.height - newHeight);
+          }
+          break;
+        case 'ne': // Top-right
+          if (isRoundTable) {
+            const avgDelta = (deltaX - deltaY) / 2;
+            newWidth = Math.max(20, initialSize.width + avgDelta);
+            newHeight = newWidth;
+            newY = initialPos.y - (newHeight - initialSize.height);
+          } else {
+            newWidth = Math.max(20, initialSize.width + deltaX);
+            newHeight = Math.max(20, initialSize.height - deltaY);
+            newY = initialPos.y + (initialSize.height - newHeight);
+          }
+          break;
+        case 'sw': // Bottom-left
+          if (isRoundTable) {
+            const avgDelta = (-deltaX + deltaY) / 2;
+            newWidth = Math.max(20, initialSize.width + avgDelta);
+            newHeight = newWidth;
+            newX = initialPos.x - (newWidth - initialSize.width);
+          } else {
+            newWidth = Math.max(20, initialSize.width - deltaX);
+            newHeight = Math.max(20, initialSize.height + deltaY);
+            newX = initialPos.x + (initialSize.width - newWidth);
+          }
+          break;
+        case 'se': // Bottom-right
+          if (isRoundTable) {
+            const avgDelta = (deltaX + deltaY) / 2;
+            newWidth = Math.max(20, initialSize.width + avgDelta);
+            newHeight = newWidth;
+          } else {
+            newWidth = Math.max(20, initialSize.width + deltaX);
+            newHeight = Math.max(20, initialSize.height + deltaY);
+          }
+          break;
+        case 'n': // Top center
+          newHeight = Math.max(20, initialSize.height - deltaY);
+          newY = initialPos.y + (initialSize.height - newHeight);
+          if (isRoundTable) {
+            newWidth = newHeight;
+            newX = initialPos.x - (newWidth - initialSize.width) / 2;
+          }
+          break;
+        case 's': // Bottom center
+          newHeight = Math.max(20, initialSize.height + deltaY);
+          if (isRoundTable) {
+            newWidth = newHeight;
+            newX = initialPos.x - (newWidth - initialSize.width) / 2;
+          }
+          break;
+        case 'w': // Left center
+          newWidth = Math.max(20, initialSize.width - deltaX);
+          newX = initialPos.x + (initialSize.width - newWidth);
+          if (isRoundTable) {
+            newHeight = newWidth;
+            newY = initialPos.y - (newHeight - initialSize.height) / 2;
+          }
+          break;
+        case 'e': // Right center
+          newWidth = Math.max(20, initialSize.width + deltaX);
+          if (isRoundTable) {
+            newHeight = newWidth;
+            newY = initialPos.y - (newHeight - initialSize.height) / 2;
+          }
+          break;
       }
       
       onUpdate(element.id, {
         width: newWidth,
-        height: newHeight
+        height: newHeight,
+        x: newX,
+        y: newY
       });
     };
 
@@ -71,7 +156,7 @@ export const useCameraPlotElementScaling = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isScaling, element.id, onUpdate, canScale, startPos, initialSize]);
+  }, [isScaling, element.id, onUpdate, canScale, startPos, initialSize, initialPos, scaleHandle]);
 
   return {
     isScaling,

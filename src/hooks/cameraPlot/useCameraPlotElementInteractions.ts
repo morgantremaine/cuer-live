@@ -21,7 +21,7 @@ export const useCameraPlotElementInteractions = ({
   snapToGrid
 }: UseCameraPlotElementInteractionsProps) => {
   // Determine interaction capabilities
-  const canRotate = element.type === 'camera' || element.type === 'person';
+  const canRotate = element.type === 'camera' || element.type === 'person' || element.type === 'furniture';
   const canScale = element.type === 'furniture';
 
   // Individual interaction hooks
@@ -57,9 +57,9 @@ export const useCameraPlotElementInteractions = ({
 
     onSelect(element.id, e.ctrlKey || e.metaKey);
     
-    // Only allow dragging if not clicking on scale handles
+    // Check if clicking on scale handles
     const target = e.target as HTMLElement;
-    const isScaleHandle = target.classList.contains('cursor-se-resize');
+    const isScaleHandle = target.hasAttribute('data-handle');
     
     if (isScaleHandle && canScale) {
       startScaling(e);

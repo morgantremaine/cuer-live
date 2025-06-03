@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
 
@@ -45,19 +44,19 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   if (!element.label) return null;
 
-  // Calculate label position - much closer to the element
+  // Calculate label position - much further away from the element
   const getDefaultOffset = () => {
     switch (element.type) {
       case 'camera':
-        return 2; // Very close for cameras
+        return 5; // Close for cameras
       case 'person':
-        return 2; // Very close for people
+        return 5; // Close for people
       case 'furniture':
-        return 2; // Very close for furniture
+        return 50; // Much further for furniture
       case 'wall':
         return -15; // Just above walls
       default:
-        return 2;
+        return 5;
     }
   };
 
@@ -73,9 +72,9 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const elementCenterX = element.x + element.width / 2;
   const elementCenterY = element.y + element.height / 2;
   
-  // Increased padding to create more space between line and icon/label - increased icon padding more
-  const iconPadding = 30; // Increased from 20 to 30 for more space from icon
-  const labelPadding = 15; // Keep existing space from label
+  // Much larger padding for furniture to keep lines far from icons
+  const iconPadding = element.type === 'furniture' ? 50 : 30; // Increased furniture padding significantly
+  const labelPadding = 15;
   const dx = labelX - elementCenterX;
   const dy = labelY - elementCenterY;
   const distance = Math.sqrt(dx * dx + dy * dy);
@@ -91,7 +90,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   return (
     <>
-      {/* Dotted line connection with increased padding */}
+      {/* Dotted line connection with much larger padding for furniture */}
       {needsDottedLine && (
         <svg 
           className="absolute pointer-events-none"

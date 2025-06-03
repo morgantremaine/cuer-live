@@ -21,8 +21,8 @@ const CameraPlotElementHandles = ({
   isRotating,
   isScaling 
 }: CameraPlotElementHandlesProps) => {
-  // Show rotation handles for cameras and persons when selected
-  const canRotate = element.type === 'camera' || element.type === 'person';
+  // Show rotation handles for cameras, persons, and furniture when selected
+  const canRotate = element.type === 'camera' || element.type === 'person' || element.type === 'furniture';
   const showRotationHandle = isSelected && canRotate && onRotationStart;
 
   // Show scale handles for furniture when selected
