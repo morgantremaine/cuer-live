@@ -64,6 +64,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
   // Force reload data when coming back to a page
   const reloadPlots = async () => {
     console.log('Reloading camera plots data...');
+    setIsInitialized(false); // Reset initialization to force fresh load
     const blueprint = await loadBlueprint();
     if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots)) {
       console.log('Reloaded camera plots:', blueprint.camera_plots.length, 'scenes');
@@ -74,9 +75,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
       setPlots([]);
       lastSavedPlotsRef.current = JSON.stringify([]);
     }
+    setIsInitialized(true);
   };
 
-  // Auto-save plot data with debouncing
+  // Debounced auto-save plot data
   useEffect(() => {
     if (isInitialized && rundownId && rundownTitle && plots !== null) {
       const currentPlotsString = JSON.stringify(plots);
@@ -108,7 +110,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
           } catch (error) {
             console.error('Auto-save failed:', error);
           }
-        }, 500); // Reduced from 1000ms to 500ms for faster syncing
+        }, 100); // Even faster auto-save for immediate syncing
       }
     }
 

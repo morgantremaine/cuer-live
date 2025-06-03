@@ -32,18 +32,16 @@ export const useBlueprintStorage = (rundownId: string) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const loadingRef = useRef(false);
-  const loadedRundownRef = useRef<string | null>(null);
 
   const loadBlueprint = async () => {
-    if (!user || !rundownId || loadingRef.current || loadedRundownRef.current === rundownId) {
+    if (!user || !rundownId) {
       return savedBlueprint;
     }
 
-    loadingRef.current = true;
     setLoading(true);
     
     try {
+      console.log('Loading blueprint from database for rundown:', rundownId);
       const { data, error } = await supabase
         .from('blueprints')
         .select('*')
@@ -56,7 +54,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         return null;
       }
 
-      loadedRundownRef.current = rundownId;
+      console.log('Loaded blueprint data:', data ? 'found' : 'not found');
       setSavedBlueprint(data);
       return data;
     } catch (error) {
@@ -64,7 +62,6 @@ export const useBlueprintStorage = (rundownId: string) => {
       return null;
     } finally {
       setLoading(false);
-      loadingRef.current = false;
     }
   };
 
@@ -94,6 +91,8 @@ export const useBlueprintStorage = (rundownId: string) => {
         camera_plots: cameraPlots || null,
         updated_at: new Date().toISOString()
       };
+
+      console.log('Saving blueprint with camera plots:', cameraPlots?.length || 0, 'scenes');
 
       if (savedBlueprint) {
         // Update existing blueprint
@@ -159,17 +158,8 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
   };
 
-  // Reset loading state when rundown changes
   useEffect(() => {
-    if (loadedRundownRef.current !== rundownId) {
-      loadedRundownRef.current = null;
-      loadingRef.current = false;
-      setSavedBlueprint(null);
-    }
-  }, [rundownId]);
-
-  useEffect(() => {
-    if (user && rundownId && !loadingRef.current && loadedRundownRef.current !== rundownId) {
+    if (user && rundownId) {
       loadBlueprint();
     }
   }, [user, rundownId]);
