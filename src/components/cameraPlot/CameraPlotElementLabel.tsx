@@ -45,19 +45,19 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   if (!element.label) return null;
 
-  // Calculate label position - closer to the element based on type
+  // Calculate label position - much closer to the element based on type
   const getDefaultOffset = () => {
     switch (element.type) {
       case 'camera':
-        return 30; // Closer for cameras
+        return 15; // Much closer for cameras
       case 'person':
-        return 25; // Closer for people
+        return 12; // Much closer for people
       case 'furniture':
-        return 35; // Slightly further for furniture
+        return 18; // Much closer for furniture
       case 'wall':
-        return -15; // Above walls
+        return -10; // Above walls
       default:
-        return 30;
+        return 15;
     }
   };
 

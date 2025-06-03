@@ -46,7 +46,13 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setContextMenuPos({ x: e.clientX, y: e.clientY });
+    
+    // Position context menu near the clicked element instead of mouse position
+    const elementRect = e.currentTarget.getBoundingClientRect();
+    setContextMenuPos({ 
+      x: elementRect.right + 10, 
+      y: elementRect.top 
+    });
     setShowContextMenu(true);
   };
 
