@@ -70,7 +70,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
     }
   };
 
-  // Auto-save plot data whenever it changes
+  // Auto-save plot data whenever it changes - but prevent excessive saves
   useEffect(() => {
     if (isInitialized && rundownId && rundownTitle && plots !== null) {
       console.log('Auto-saving camera plots:', plots);

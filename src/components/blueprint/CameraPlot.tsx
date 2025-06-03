@@ -24,11 +24,11 @@ const CameraPlot = ({
 }: CameraPlotProps) => {
   const { scenes, reloadPlots } = useCameraPlotScenes(rundownId);
 
-  // Reload data when component becomes visible
+  // Reload data only when component first mounts
   useEffect(() => {
     console.log('CameraPlot component mounted, reloading scenes');
     reloadPlots();
-  }, [reloadPlots]);
+  }, []); // Empty dependency array to only run on mount
 
   console.log('CameraPlot component rendering with scenes:', scenes.length);
 
