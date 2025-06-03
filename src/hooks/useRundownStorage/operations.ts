@@ -35,7 +35,8 @@ export const saveRundownToDatabase = async (
       timezone: timezone || null,
       start_time: startTime || null,
       icon: icon || null,
-      archived: false
+      archived: false,
+      undo_history: []
     })
     .select()
     .single()
@@ -52,7 +53,8 @@ export const updateRundownInDatabase = async (
   columns?: Column[],
   timezone?: string,
   startTime?: string,
-  icon?: string
+  icon?: string,
+  undoHistory?: any[]
 ) => {
   console.log('Updating rundown in database:', {
     id,
@@ -62,10 +64,11 @@ export const updateRundownInDatabase = async (
     timezone,
     startTime,
     userId,
-    archived
+    archived,
+    undoHistoryCount: undoHistory?.length || 0
   })
 
-  const updateData = createUpdatePayload(title, items, columns, timezone, startTime, icon, archived)
+  const updateData = createUpdatePayload(title, items, columns, timezone, startTime, icon, archived, undoHistory)
   console.log('Update payload (cleaned):', updateData)
 
   const { error, data } = await supabase

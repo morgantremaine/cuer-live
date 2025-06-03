@@ -1,14 +1,18 @@
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { SavedRundown } from './useRundownStorage/types';
+import { Column } from './useColumnsManager';
 
 interface UseRundownDataLoaderProps {
-  rundownId: string | undefined;
-  savedRundowns: any[];
+  rundownId?: string;
+  savedRundowns: SavedRundown[];
   loading: boolean;
   setRundownTitle: (title: string) => void;
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
-  handleLoadLayout: (columns: any[]) => void;
+  handleLoadLayout: (columns: Column[]) => void;
+  onRundownLoaded?: (rundown: SavedRundown) => void;
 }
 
 export const useRundownDataLoader = ({
@@ -18,90 +22,52 @@ export const useRundownDataLoader = ({
   setRundownTitle,
   setTimezone,
   setRundownStartTime,
-  handleLoadLayout
+  handleLoadLayout,
+  onRundownLoaded
 }: UseRundownDataLoaderProps) => {
-  // Track what we've already loaded to prevent re-loading
-  const loadedDataRef = useRef<{ [key: string]: boolean }>({});
-  const isProcessingRef = useRef(false);
+  const params = useParams<{ id: string }>();
+  const paramId = params.id;
 
-  // Load rundown data only once per rundown
-  const loadRundownData = useCallback(() => {
-    if (loading || isProcessingRef.current) {
-      return;
-    }
-
-    const currentKey = rundownId || 'new';
-    
-    // Skip if already loaded
-    if (loadedDataRef.current[currentKey]) {
-      return;
-    }
-
-    isProcessingRef.current = true;
-
-    try {
-      if (rundownId && savedRundowns.length > 0) {
-        const existingRundown = savedRundowns.find(r => r.id === rundownId);
-        if (existingRundown) {
-          console.log('Loading rundown data:', { 
-            id: rundownId, 
-            title: existingRundown.title, 
-            timezone: existingRundown.timezone,
-            startTime: existingRundown.startTime || existingRundown.start_time
-          });
-          
-          // Mark as loaded before setting data to prevent loops
-          loadedDataRef.current[currentKey] = true;
-          
-          if (existingRundown.title) {
-            console.log('Setting title from saved rundown:', existingRundown.title);
-            setRundownTitle(existingRundown.title);
-          }
-          
-          if (existingRundown.timezone) {
-            console.log('Setting timezone from saved rundown:', existingRundown.timezone);
-            setTimezone(existingRundown.timezone);
-          }
-
-          // Handle both startTime and start_time fields for compatibility
-          const startTime = existingRundown.startTime || existingRundown.start_time;
-          if (startTime) {
-            console.log('Setting start time from saved rundown:', startTime);
-            setRundownStartTime(startTime);
-          }
-          
-          if (existingRundown.columns && Array.isArray(existingRundown.columns)) {
-            console.log('Loading column layout:', existingRundown.columns);
-            handleLoadLayout(existingRundown.columns);
-          }
-        }
-      } else if (!rundownId) {
-        console.log('New rundown, using default title');
-        loadedDataRef.current[currentKey] = true;
-        setRundownTitle('Live Broadcast Rundown');
-        // Don't set default timezone for new rundowns - let it use the default from useRundownBasicState
-      }
-    } finally {
-      isProcessingRef.current = false;
-    }
-  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
-
-  // Load data when conditions are met
   useEffect(() => {
-    // Don't proceed if still loading
-    if (loading) return;
+    // Only proceed if we have rundowns loaded and a specific rundown ID
+    if (loading || savedRundowns.length === 0) return;
     
-    // For existing rundowns, wait for savedRundowns to be available
-    if (rundownId && savedRundowns.length === 0) return;
-    
-    // Load the data
-    loadRundownData();
-  }, [rundownId, savedRundowns.length, loading, loadRundownData]);
+    const currentRundownId = rundownId || paramId;
+    if (!currentRundownId) return;
 
-  // Clean up when rundown changes
-  useEffect(() => {
-    return () => {
-      isProcessingRef.current = false;
-    };
-  }, [rundownId]);
+    const rundown = savedRundowns.find(r => r.id === currentRundownId);
+    if (!rundown) return;
+
+    console.log('Loading rundown data:', rundown);
+    
+    // Set the rundown data
+    setRundownTitle(rundown.title);
+    
+    if (rundown.timezone) {
+      setTimezone(rundown.timezone);
+    }
+    
+    if (rundown.startTime || rundown.start_time) {
+      setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
+    }
+    
+    if (rundown.columns) {
+      handleLoadLayout(rundown.columns);
+    }
+
+    // Call the callback with the loaded rundown
+    if (onRundownLoaded) {
+      onRundownLoaded(rundown);
+    }
+  }, [
+    rundownId, 
+    paramId, 
+    savedRundowns, 
+    loading, 
+    setRundownTitle, 
+    setTimezone, 
+    setRundownStartTime, 
+    handleLoadLayout,
+    onRundownLoaded
+  ]);
 };

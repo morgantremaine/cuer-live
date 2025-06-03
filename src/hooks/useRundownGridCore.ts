@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -27,8 +28,14 @@ export const useRundownGridCore = () => {
     markAsChanged
   } = useRundownBasicState();
 
-  // Get storage data for the data loader
-  const { savedRundowns, loading } = useRundownStorage();
+  // Get storage functionality
+  const { savedRundowns, loading, updateRundown } = useRundownStorage();
+
+  // Undo functionality with persistence
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
+    rundownId,
+    updateRundown
+  });
 
   // Rundown data integration
   const {
@@ -64,10 +71,7 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Undo functionality
-  const { saveState, undo, canUndo, lastAction } = useRundownUndo();
-
-  // Use data loader
+  // Use data loader with undo history loading
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -75,7 +79,13 @@ export const useRundownGridCore = () => {
     setRundownTitle: setRundownTitleDirectly,
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
-    handleLoadLayout
+    handleLoadLayout,
+    onRundownLoaded: (rundown) => {
+      // Load undo history when rundown is loaded
+      if (rundown.undo_history) {
+        loadUndoHistory(rundown.undo_history);
+      }
+    }
   });
 
   // Playback controls

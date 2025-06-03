@@ -19,7 +19,8 @@ export const createUpdatePayload = (
   timezone?: string,
   startTime?: string,
   icon?: string,
-  archived = false
+  archived = false,
+  undoHistory?: any[]
 ) => {
   const updateData = {
     title: title,
@@ -28,6 +29,7 @@ export const createUpdatePayload = (
     timezone: timezone || null,
     start_time: startTime || null, // Use start_time to match database column
     icon: icon !== undefined ? (icon || null) : undefined, // Only include icon in update if explicitly provided
+    undo_history: undoHistory !== undefined ? undoHistory : undefined, // Only include undo_history if explicitly provided
     updated_at: new Date().toISOString(),
     archived: archived
   }

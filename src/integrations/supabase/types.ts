@@ -114,6 +114,7 @@ export type Database = {
           team_id: string | null
           timezone: string | null
           title: string
+          undo_history: Json | null
           updated_at: string | null
           user_id: string
           visibility: string | null
@@ -129,6 +130,7 @@ export type Database = {
           team_id?: string | null
           timezone?: string | null
           title: string
+          undo_history?: Json | null
           updated_at?: string | null
           user_id: string
           visibility?: string | null
@@ -144,6 +146,7 @@ export type Database = {
           team_id?: string | null
           timezone?: string | null
           title?: string
+          undo_history?: Json | null
           updated_at?: string | null
           user_id?: string
           visibility?: string | null

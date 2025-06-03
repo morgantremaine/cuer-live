@@ -67,13 +67,13 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string, startTime?: string, icon?: string) => {
+  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string, startTime?: string, icon?: string, undoHistory?: any[]) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
     }
 
-    const { error, data } = await updateRundownInDatabase(id, user.id, title, items, archived, columns, timezone, startTime, icon)
+    const { error, data } = await updateRundownInDatabase(id, user.id, title, items, archived, columns, timezone, startTime, icon, undoHistory)
 
     if (error) {
       console.error('Database error updating rundown:', {
