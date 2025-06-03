@@ -38,6 +38,9 @@ interface RundownHeaderSectionProps {
   onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
   currentHighlight?: any;
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
 }
 
 const RundownHeaderSection = ({
@@ -74,7 +77,10 @@ const RundownHeaderSection = ({
   visibleColumns = [],
   onHighlightMatch = () => {},
   onReplaceText = () => {},
-  currentHighlight
+  currentHighlight,
+  onUndo,
+  canUndo,
+  lastAction
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -94,6 +100,9 @@ const RundownHeaderSection = ({
         onHighlightMatch={onHighlightMatch}
         onReplaceText={onReplaceText}
         currentHighlight={currentHighlight}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
       />
       <RundownToolbar
         onAddRow={onAddRow}

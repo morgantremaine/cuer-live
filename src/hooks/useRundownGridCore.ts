@@ -5,6 +5,8 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
+import { useRundownUndo } from './useRundownUndo';
+import { useCallback, useEffect } from 'react';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -28,7 +30,7 @@ export const useRundownGridCore = () => {
   // Get storage data for the data loader
   const { savedRundowns, loading } = useRundownStorage();
 
-  // Rundown data integration - now passing all required arguments including rundownStartTime
+  // Rundown data integration
   const {
     items,
     setItems,
@@ -62,7 +64,10 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Use data loader to properly set title, timezone, and start time - using direct setters to avoid change tracking during load
+  // Undo functionality
+  const { saveState, undo, canUndo, lastAction } = useRundownUndo();
+
+  // Use data loader
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -73,7 +78,7 @@ export const useRundownGridCore = () => {
     handleLoadLayout
   });
 
-  // Playback controls - fix the function call
+  // Playback controls
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -84,34 +89,104 @@ export const useRundownGridCore = () => {
     backward 
   } = usePlaybackControls(items, updateItem);
 
-  // Time calculations - fix the function call
+  // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
+
+  // Wrapped functions that save state before making changes
+  const wrappedAddRow = useCallback((calculateEndTimeFn: any) => {
+    saveState(items, columns, rundownTitle, 'Add Row');
+    addRow(calculateEndTimeFn);
+  }, [addRow, saveState, items, columns, rundownTitle]);
+
+  const wrappedAddHeader = useCallback(() => {
+    saveState(items, columns, rundownTitle, 'Add Header');
+    addHeader();
+  }, [addHeader, saveState, items, columns, rundownTitle]);
+
+  const wrappedDeleteRow = useCallback((id: string) => {
+    saveState(items, columns, rundownTitle, 'Delete Row');
+    deleteRow(id);
+  }, [deleteRow, saveState, items, columns, rundownTitle]);
+
+  const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
+    saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
+    deleteMultipleRows(ids);
+  }, [deleteMultipleRows, saveState, items, columns, rundownTitle]);
+
+  const wrappedToggleFloatRow = useCallback((id: string) => {
+    saveState(items, columns, rundownTitle, 'Toggle Float');
+    toggleFloatRow(id);
+  }, [toggleFloatRow, saveState, items, columns, rundownTitle]);
+
+  const wrappedSetItems = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
+    const newItems = typeof updater === 'function' ? updater(items) : updater;
+    // Only save state if items actually changed
+    if (JSON.stringify(newItems) !== JSON.stringify(items)) {
+      saveState(items, columns, rundownTitle, 'Move Rows');
+    }
+    setItems(updater);
+  }, [setItems, saveState, items, columns, rundownTitle]);
+
+  const wrappedAddMultipleRows = useCallback((newItems: RundownItem[], calculateEndTimeFn: any) => {
+    saveState(items, columns, rundownTitle, 'Paste Rows');
+    addMultipleRows(newItems, calculateEndTimeFn);
+  }, [addMultipleRows, saveState, items, columns, rundownTitle]);
+
+  const wrappedSetRundownTitle = useCallback((title: string) => {
+    if (title !== rundownTitle) {
+      saveState(items, columns, rundownTitle, 'Change Title');
+    }
+    setRundownTitle(title);
+  }, [setRundownTitle, saveState, items, columns, rundownTitle]);
+
+  const handleUndo = useCallback(() => {
+    const action = undo(setItems, (cols) => handleLoadLayout(cols), setRundownTitleDirectly);
+    if (action) {
+      markAsChanged();
+      console.log(`Undid: ${action}`);
+    }
+  }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged]);
+
+  // Keyboard shortcut for undo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) {
+          handleUndo();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, canUndo]);
 
   return {
     // Basic state
     currentTime,
     timezone,
-    setTimezone, // This is the change-tracking version for user interactions
+    setTimezone,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
-    setRundownTitle, // This is the change-tracking version for user interactions
+    setRundownTitle: wrappedSetRundownTitle,
     rundownStartTime,
     setRundownStartTime,
     rundownId,
     markAsChanged,
 
-    // Items and data
+    // Items and data - use wrapped versions for undo support
     items,
-    setItems,
+    setItems: wrappedSetItems,
     updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
+    addRow: wrappedAddRow,
+    addHeader: wrappedAddHeader,
+    deleteRow: wrappedDeleteRow,
+    deleteMultipleRows: wrappedDeleteMultipleRows,
+    addMultipleRows: wrappedAddMultipleRows,
     getRowNumber,
-    toggleFloatRow,
+    toggleFloatRow: wrappedToggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
     visibleColumns,
@@ -138,6 +213,11 @@ export const useRundownGridCore = () => {
     // Save state
     hasUnsavedChanges,
     isSaving,
-    calculateEndTime
+    calculateEndTime,
+
+    // Undo functionality
+    handleUndo,
+    canUndo,
+    lastAction
   };
 };

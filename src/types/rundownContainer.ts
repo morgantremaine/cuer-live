@@ -55,7 +55,7 @@ export interface RundownContainerProps {
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
-  handleRenameColumn: (columnId: string, newName: string) => void; // Made required instead of optional
+  handleRenameColumn: (columnId: string, newName: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
   hasUnsavedChanges: boolean;
@@ -66,4 +66,8 @@ export interface RundownContainerProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
+  // Undo functionality
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
 }
