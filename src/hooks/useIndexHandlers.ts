@@ -1,16 +1,16 @@
 
 import { useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { RundownItem } from '@/types/rundown';
+import { useNavigate } from 'react-router-dom';
+import { RundownItem } from './useRundownItems';
 
 interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
   rundownId?: string;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => void;
-  addHeader: (insertAfterIndex?: number) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => void;
+  addHeader: (selectedRowId?: string | null) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
-  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[]) => void;
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   setRundownStartTime: (startTime: string) => void;
   setTimezone: (timezone: string) => void;
   markAsChanged: () => void;
@@ -28,67 +28,38 @@ export const useIndexHandlers = ({
   setTimezone,
   markAsChanged
 }: UseIndexHandlersProps) => {
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleRundownStartTimeChange = useCallback((startTime: string) => {
     setRundownStartTime(startTime);
     markAsChanged();
   }, [setRundownStartTime, markAsChanged]);
 
-  const handleTimezoneChange = useCallback((newTimezone: string) => {
-    setTimezone(newTimezone);
+  const handleTimezoneChange = useCallback((timezone: string) => {
+    setTimezone(timezone);
     markAsChanged();
   }, [setTimezone, markAsChanged]);
 
   const handleOpenTeleprompter = useCallback(() => {
-    if (!rundownId) {
-      toast({
-        title: "Cannot open teleprompter",
-        description: "Save this rundown first to access the teleprompter.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
-    window.open(teleprompterUrl, '_blank', 'width=1200,height=800');
-  }, [rundownId, toast]);
+    if (!rundownId) return;
+    navigate(`/teleprompter/${rundownId}`);
+  }, [navigate, rundownId]);
 
   const handleRowSelect = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
-  }, [toggleRowSelection, items]);
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick);
+  }, [toggleRowSelection]);
 
   const handleAddRow = useCallback(() => {
     const selectedRowsArray = Array.from(selectedRows);
-    
-    // If there's a single selected row, insert after it
-    if (selectedRowsArray.length === 1) {
-      const selectedItemId = selectedRowsArray[0];
-      const selectedIndex = items.findIndex(item => item.id === selectedItemId);
-      if (selectedIndex !== -1) {
-        addRow(calculateEndTime, selectedIndex);
-        return;
-      }
-    }
-    // Default behavior: add to the end
-    addRow(calculateEndTime);
-  }, [selectedRows, items, addRow, calculateEndTime]);
+    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+    addRow(calculateEndTime, selectedRowId);
+  }, [addRow, calculateEndTime, selectedRows]);
 
   const handleAddHeader = useCallback(() => {
     const selectedRowsArray = Array.from(selectedRows);
-    
-    // If there's a single selected row, insert after it
-    if (selectedRowsArray.length === 1) {
-      const selectedItemId = selectedRowsArray[0];
-      const selectedIndex = items.findIndex(item => item.id === selectedItemId);
-      if (selectedIndex !== -1) {
-        addHeader(selectedIndex);
-        return;
-      }
-    }
-    // Default behavior: add to the end
-    addHeader();
-  }, [selectedRows, items, addHeader]);
+    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+    addHeader(selectedRowId);
+  }, [addHeader, selectedRows]);
 
   return {
     handleRundownStartTimeChange,
