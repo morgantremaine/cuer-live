@@ -1,27 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
-import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
-
-interface CrewMember {
-  id: string;
-  role: string;
-  name: string;
-  phone: string;
-  email: string;
-}
-
-interface CrewListProps {
-  rundownId: string;
-  rundownTitle: string;
-  isDragging?: boolean;
-  onDragStart?: (e: React.DragEvent, listId: string) => void;
-  onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
-  onDragEnd?: () => void;
-}
+import { Plus, GripVertical } from 'lucide-react';
+import { CrewListProps } from '@/types/crew';
+import { useCrewList } from '@/hooks/useCrewList';
+import { useCrewRowDragDrop } from '@/hooks/useCrewRowDragDrop';
+import CrewTable from './crew/CrewTable';
 
 const CrewList = ({ 
   rundownId, 
@@ -31,112 +16,22 @@ const CrewList = ({
   onDragEnterContainer, 
   onDragEnd 
 }: CrewListProps) => {
-  const [crewMembers, setCrewMembers] = useState<CrewMember[]>(() => {
-    // Initialize with 5 empty rows
-    return Array.from({ length: 5 }, (_, index) => ({
-      id: `crew-${index + 1}`,
-      role: '',
-      name: '',
-      phone: '',
-      email: ''
-    }));
-  });
+  const {
+    crewMembers,
+    addRow,
+    deleteRow,
+    updateMember,
+    reorderMembers
+  } = useCrewList(rundownId, rundownTitle);
 
-  const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
-  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
-
-  // Load saved crew data when blueprint is loaded
-  useEffect(() => {
-    if (savedBlueprint && savedBlueprint.crew_data && !isInitialized) {
-      setCrewMembers(savedBlueprint.crew_data);
-      setIsInitialized(true);
-    } else if (!savedBlueprint?.crew_data && !isInitialized) {
-      setIsInitialized(true);
-    }
-  }, [savedBlueprint, isInitialized]);
-
-  // Auto-save crew data whenever it changes
-  useEffect(() => {
-    if (isInitialized && rundownId && rundownTitle) {
-      const saveTimeout = setTimeout(() => {
-        saveBlueprint(
-          rundownTitle,
-          savedBlueprint?.lists || [],
-          savedBlueprint?.show_date,
-          true, // silent save
-          savedBlueprint?.notes,
-          crewMembers
-        );
-      }, 1000); // Debounce saves by 1 second
-
-      return () => clearTimeout(saveTimeout);
-    }
-  }, [crewMembers, isInitialized, rundownId, rundownTitle, savedBlueprint, saveBlueprint]);
-
-  const addRow = () => {
-    const newMember: CrewMember = {
-      id: `crew-${Date.now()}`,
-      role: '',
-      name: '',
-      phone: '',
-      email: ''
-    };
-    setCrewMembers([...crewMembers, newMember]);
-  };
-
-  const deleteRow = (id: string) => {
-    if (crewMembers.length > 1) {
-      setCrewMembers(crewMembers.filter(member => member.id !== id));
-    }
-  };
-
-  const updateMember = (id: string, field: keyof Omit<CrewMember, 'id'>, value: string) => {
-    setCrewMembers(crewMembers.map(member =>
-      member.id === id ? { ...member, [field]: value } : member
-    ));
-  };
-
-  const handleRowDragStart = (e: React.DragEvent, rowId: string) => {
-    setDraggedRowId(rowId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', rowId);
-    e.stopPropagation();
-  };
-
-  const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (draggedRowId) {
-      setDropTargetIndex(targetIndex);
-    }
-  };
-
-  const handleRowDrop = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!draggedRowId) return;
-
-    const draggedIndex = crewMembers.findIndex(member => member.id === draggedRowId);
-    if (draggedIndex === -1) return;
-
-    const newMembers = [...crewMembers];
-    const [draggedMember] = newMembers.splice(draggedIndex, 1);
-    newMembers.splice(targetIndex, 0, draggedMember);
-
-    setCrewMembers(newMembers);
-    setDraggedRowId(null);
-    setDropTargetIndex(null);
-  };
-
-  const handleRowDragEnd = (e: React.DragEvent) => {
-    e.stopPropagation();
-    setDraggedRowId(null);
-    setDropTargetIndex(null);
-  };
+  const {
+    draggedRowId,
+    dropTargetIndex,
+    handleRowDragStart,
+    handleRowDragOver,
+    handleRowDrop,
+    handleRowDragEnd
+  } = useCrewRowDragDrop(reorderMembers);
 
   return (
     <Card 
@@ -163,97 +58,17 @@ const CrewList = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-600">
-                <th className="w-8"></th>
-                <th className="text-left py-2 px-3 text-sm font-medium text-gray-300 w-1/4">Role</th>
-                <th className="text-left py-2 px-3 text-sm font-medium text-gray-300 w-1/4">Name</th>
-                <th className="text-left py-2 px-3 text-sm font-medium text-gray-300 w-1/4">Phone Number</th>
-                <th className="text-left py-2 px-3 text-sm font-medium text-gray-300 w-1/4">Email</th>
-                <th className="w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {crewMembers.map((member, index) => (
-                <React.Fragment key={member.id}>
-                  {dropTargetIndex === index && draggedRowId && (
-                    <tr>
-                      <td colSpan={6}>
-                        <div className="h-1 bg-blue-500 rounded-full my-1 animate-pulse" />
-                      </td>
-                    </tr>
-                  )}
-                  <tr 
-                    className={`border-b border-gray-700 ${draggedRowId === member.id ? 'opacity-50' : ''}`}
-                    draggable
-                    onDragStart={(e) => handleRowDragStart(e, member.id)}
-                    onDragOver={(e) => handleRowDragOver(e, index)}
-                    onDrop={(e) => handleRowDrop(e, index)}
-                    onDragEnd={handleRowDragEnd}
-                  >
-                    <td className="py-2 px-3">
-                      <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
-                    </td>
-                    <td className="py-2 px-3">
-                      <Input
-                        value={member.role}
-                        onChange={(e) => updateMember(member.id, 'role', e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                        placeholder="Role"
-                      />
-                    </td>
-                    <td className="py-2 px-3">
-                      <Input
-                        value={member.name}
-                        onChange={(e) => updateMember(member.id, 'name', e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                        placeholder="Name"
-                      />
-                    </td>
-                    <td className="py-2 px-3">
-                      <Input
-                        value={member.phone}
-                        onChange={(e) => updateMember(member.id, 'phone', e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                        placeholder="Phone"
-                        type="tel"
-                      />
-                    </td>
-                    <td className="py-2 px-3">
-                      <Input
-                        value={member.email}
-                        onChange={(e) => updateMember(member.id, 'email', e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                        placeholder="Email"
-                        type="email"
-                      />
-                    </td>
-                    <td className="py-2 px-3">
-                      <Button
-                        onClick={() => deleteRow(member.id)}
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                        disabled={crewMembers.length === 1}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                </React.Fragment>
-              ))}
-              {dropTargetIndex === crewMembers.length && draggedRowId && (
-                <tr>
-                  <td colSpan={6}>
-                    <div className="h-1 bg-blue-500 rounded-full my-1 animate-pulse" />
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <CrewTable
+          crewMembers={crewMembers}
+          draggedRowId={draggedRowId}
+          dropTargetIndex={dropTargetIndex}
+          onUpdate={updateMember}
+          onDelete={deleteRow}
+          onDragStart={handleRowDragStart}
+          onDragOver={handleRowDragOver}
+          onDrop={(e, targetIndex) => handleRowDrop(e, targetIndex, crewMembers)}
+          onDragEnd={handleRowDragEnd}
+        />
       </CardContent>
     </Card>
   );
