@@ -119,7 +119,7 @@ const CameraPlotEditor = () => {
             showGrid={showGrid}
             onAddElement={addElement}
             onUpdateElement={updateElement}
-            onDeleteElement={onDeleteElement}
+            onDeleteElement={deleteElement}
             onSelectElement={selectElement}
             onUpdateWallPreview={updateWallPreview}
             snapToGrid={snapToGrid}
