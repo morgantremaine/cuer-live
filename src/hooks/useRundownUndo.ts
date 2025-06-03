@@ -22,6 +22,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   const [undoStack, setUndoStack] = useState<UndoState[]>([]);
   const isUndoing = useRef(false);
   const isSavingHistory = useRef(false);
+  const lastSavedHistoryRef = useRef<string>('');
 
   // Load undo history when rundown is loaded
   const loadUndoHistory = useCallback((history: UndoState[] = []) => {
@@ -33,8 +34,14 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     if (!props?.rundownId || !props.updateRundown || isSavingHistory.current) return;
     if (!props.currentTitle || !props.currentItems || !props.currentColumns) return;
     
+    // Prevent saving the same history multiple times
+    const historyKey = JSON.stringify(newStack);
+    if (lastSavedHistoryRef.current === historyKey) return;
+    
     try {
       isSavingHistory.current = true;
+      lastSavedHistoryRef.current = historyKey;
+      
       // Update only the undo history, keeping all other fields as they are
       await props.updateRundown(
         props.rundownId,
@@ -50,6 +57,8 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       );
     } catch (error) {
       console.error('Failed to save undo history:', error);
+      // Reset the saved history key on error so we can try again
+      lastSavedHistoryRef.current = '';
     } finally {
       isSavingHistory.current = false;
     }
@@ -77,10 +86,9 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       // Keep only last 10 states to prevent memory issues
       const trimmedStack = newStack.slice(-10);
       
-      // Save to database asynchronously
+      // Save to database asynchronously with a longer delay to batch changes
       if (props?.rundownId && props?.updateRundown) {
-        // Use a small delay to batch rapid changes
-        setTimeout(() => saveUndoHistoryToDatabase(trimmedStack), 500);
+        setTimeout(() => saveUndoHistoryToDatabase(trimmedStack), 1000);
       }
       
       return trimmedStack;

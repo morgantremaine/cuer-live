@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
@@ -27,6 +27,7 @@ export const useRundownDataLoader = ({
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
   const paramId = params.id;
+  const loadedRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Only proceed if we have rundowns loaded and a specific rundown ID
@@ -35,10 +36,16 @@ export const useRundownDataLoader = ({
     const currentRundownId = rundownId || paramId;
     if (!currentRundownId) return;
 
+    // Prevent loading the same rundown multiple times
+    if (loadedRef.current === currentRundownId) return;
+
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
     console.log('Loading rundown data:', rundown);
+    
+    // Mark as loaded first to prevent loops
+    loadedRef.current = currentRundownId;
     
     // Set the rundown data
     setRundownTitle(rundown.title);
@@ -62,7 +69,7 @@ export const useRundownDataLoader = ({
   }, [
     rundownId, 
     paramId, 
-    savedRundowns, 
+    savedRundowns.length, // Use length instead of the array to prevent unnecessary re-runs
     loading, 
     setRundownTitle, 
     setTimezone, 
@@ -70,4 +77,12 @@ export const useRundownDataLoader = ({
     handleLoadLayout,
     onRundownLoaded
   ]);
+
+  // Reset loaded reference when rundown ID changes
+  useEffect(() => {
+    const currentRundownId = rundownId || paramId;
+    if (loadedRef.current && loadedRef.current !== currentRundownId) {
+      loadedRef.current = null;
+    }
+  }, [rundownId, paramId]);
 };
