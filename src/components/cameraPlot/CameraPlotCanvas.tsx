@@ -5,7 +5,6 @@ import CameraPlotElement from './CameraPlotElement';
 import CameraPlotGrid from './canvas/CameraPlotGrid';
 import CameraPlotWallPreview from './canvas/CameraPlotWallPreview';
 import CameraPlotEmptyState from './canvas/CameraPlotEmptyState';
-import { useCameraPlotWallDrawing } from '@/hooks/cameraPlot/useCameraPlotWallDrawing';
 import { useCameraPlotCanvasHandlers } from '@/hooks/cameraPlot/canvas/useCameraPlotCanvasHandlers';
 
 interface CameraPlotCanvasProps {
@@ -18,6 +17,7 @@ interface CameraPlotCanvasProps {
   onDeleteElement: (elementId: string) => void;
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
+  updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
 }
 
 const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
@@ -29,36 +29,25 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   onUpdateElement,
   onDeleteElement,
   onSelectElement,
-  snapToGrid
+  snapToGrid,
+  updatePlot
 }, ref) => {
-  const {
-    isDrawing: isDrawingWall,
-    currentPath,
-    previewPoint,
-    startDrawing,
-    addPoint,
-    updatePreview,
-    finishDrawing
-  } = useCameraPlotWallDrawing();
-
   const {
     mousePos,
     handleCanvasClick,
     handleMouseMove,
-    handleDoubleClick
+    handleDoubleClick,
+    isDrawingWall,
+    currentPath,
+    previewPoint
   } = useCameraPlotCanvasHandlers({
     selectedTool,
     onAddElement,
     onSelectElement,
     snapToGrid,
-    isDrawingWall,
-    currentPath,
-    startDrawing,
-    addPoint,
-    updatePreview,
-    finishDrawing,
     scene,
-    onUpdateElement
+    onUpdateElement,
+    updatePlot
   });
 
   return (

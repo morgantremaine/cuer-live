@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,7 @@ const CameraPlotEditor = () => {
     duplicateScene,
     setActiveScene,
     updateSceneName,
+    updatePlot,
     toggleGrid,
     snapToGrid
   } = useCameraPlotEditor(id || '');
@@ -112,6 +112,7 @@ const CameraPlotEditor = () => {
             onDeleteElement={deleteElement}
             onSelectElement={selectElement}
             snapToGrid={snapToGrid}
+            updatePlot={updatePlot}
           />
         </div>
       </div>

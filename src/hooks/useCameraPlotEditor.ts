@@ -82,6 +82,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     duplicateScene,
     setActiveScene: handleSetActiveScene,
     updateSceneName,
+    updatePlot, // Expose the updatePlot function
     updateWallPreview,
     stopDrawingWalls,
     toggleGrid,

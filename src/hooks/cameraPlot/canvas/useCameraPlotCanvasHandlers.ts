@@ -1,20 +1,16 @@
 
 import { useState } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
+import { useWallCanvasHandlers } from '../wallDrawing/useWallCanvasHandlers';
 
 interface UseCameraPlotCanvasHandlersProps {
   selectedTool: string;
   onAddElement: (type: string, x: number, y: number) => void;
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
-  isDrawingWall: boolean;
-  currentPath: { x: number; y: number }[];
-  startDrawing: (point: { x: number; y: number }) => void;
-  addPoint: (point: { x: number; y: number }) => void;
-  updatePreview: (point: { x: number; y: number }) => void;
-  finishDrawing: () => any[];
   scene: CameraPlotScene | undefined;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
+  updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
 }
 
 export const useCameraPlotCanvasHandlers = ({
@@ -22,16 +18,18 @@ export const useCameraPlotCanvasHandlers = ({
   onAddElement,
   onSelectElement,
   snapToGrid,
-  isDrawingWall,
-  currentPath,
-  startDrawing,
-  addPoint,
-  updatePreview,
-  finishDrawing,
   scene,
-  onUpdateElement
+  onUpdateElement,
+  updatePlot
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  const wallHandlers = useWallCanvasHandlers({
+    selectedTool,
+    snapToGrid,
+    activeScene: scene,
+    updatePlot
+  });
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (selectedTool === 'select') {
@@ -44,17 +42,14 @@ export const useCameraPlotCanvasHandlers = ({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const snapped = snapToGrid(x, y);
 
-    if (selectedTool === 'wall') {
-      if (!isDrawingWall) {
-        startDrawing(snapped);
-      } else {
-        addPoint(snapped);
-      }
+    // Handle wall tool clicks
+    if (wallHandlers.handleWallClick(x, y)) {
       return;
     }
 
+    // Handle other tools
+    const snapped = snapToGrid(x, y);
     onAddElement(selectedTool, snapped.x, snapped.y);
   };
 
@@ -67,41 +62,14 @@ export const useCameraPlotCanvasHandlers = ({
     const snappedPos = snapToGrid(rawPos.x, rawPos.y);
     setMousePos(snappedPos);
 
-    if (isDrawingWall) {
-      updatePreview(snappedPos);
-    }
+    // Handle wall tool mouse movement
+    wallHandlers.handleWallMouseMove(rawPos.x, rawPos.y);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    if (selectedTool === 'wall' && isDrawingWall && currentPath.length > 1) {
-      console.log('Double click detected, finishing wall drawing');
-      const segments = finishDrawing();
-      console.log('Wall segments created:', segments);
-      
-      // Create wall elements using the proper onAddElement function with wall data
-      segments.forEach((segment, index) => {
-        const distance = Math.sqrt(
-          Math.pow(segment.end.x - segment.start.x, 2) + 
-          Math.pow(segment.end.y - segment.start.y, 2)
-        );
-        
-        if (distance > 5) { // Only create walls with meaningful length
-          console.log(`Creating wall segment ${index + 1}:`, segment);
-          
-          // Create each wall segment as a separate element
-          // We'll pass the wall data through a custom property that the addElement function can use
-          const wallData = {
-            start: segment.start,
-            end: segment.end,
-            id: segment.id
-          };
-          
-          // Store wall data temporarily for the addElement function to use
-          (window as any).__tempWallData = wallData;
-          onAddElement('wall', segment.start.x, segment.start.y);
-          delete (window as any).__tempWallData;
-        }
-      });
+    // Handle wall tool double click
+    if (wallHandlers.handleWallDoubleClick()) {
+      return;
     }
   };
 
@@ -109,6 +77,10 @@ export const useCameraPlotCanvasHandlers = ({
     mousePos,
     handleCanvasClick,
     handleMouseMove,
-    handleDoubleClick
+    handleDoubleClick,
+    // Expose wall drawing state for preview rendering
+    isDrawingWall: wallHandlers.isDrawing,
+    currentPath: wallHandlers.currentPath,
+    previewPoint: wallHandlers.previewPoint
   };
 };
