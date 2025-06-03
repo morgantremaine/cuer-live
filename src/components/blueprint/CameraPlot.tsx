@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Edit, Plus } from 'lucide-react';
-import { useCameraPlot } from '@/hooks/useCameraPlot';
+import { useCameraPlotScenes } from '@/hooks/cameraPlot/useCameraPlotScenes';
 
 interface CameraPlotProps {
   rundownId: string;
@@ -22,23 +22,24 @@ const CameraPlot = ({
   onDragEnterContainer, 
   onDragEnd 
 }: CameraPlotProps) => {
-  const { plots, createNewPlot, openPlotEditor } = useCameraPlot(rundownId, rundownTitle);
+  const { scenes, createScene } = useCameraPlotScenes(rundownId);
 
-  console.log('CameraPlot component rendering with plots:', plots);
+  console.log('CameraPlot component rendering with scenes:', scenes.length);
 
   const handleOpenEditor = () => {
-    if (!plots || plots.length === 0) {
-      // Create first plot if none exist
-      console.log('Creating initial plot before opening editor');
-      createNewPlot('Scene 1');
+    if (!scenes || scenes.length === 0) {
+      // Create first scene if none exist
+      console.log('Creating initial scene before opening editor');
+      createScene('Scene 1');
     }
     // Always open editor regardless - it will handle scene creation
-    openPlotEditor();
+    const editorUrl = `/camera-plot-editor/${rundownId}`;
+    window.open(editorUrl, '_blank');
   };
 
   const handleCreateNewScene = () => {
-    const sceneNumber = (plots?.length || 0) + 1;
-    createNewPlot(`Scene ${sceneNumber}`);
+    const sceneNumber = (scenes?.length || 0) + 1;
+    createScene(`Scene ${sceneNumber}`);
   };
 
   const renderMiniPreview = (plot: any) => {
@@ -152,14 +153,14 @@ const CameraPlot = ({
         </div>
       </CardHeader>
       <CardContent>
-        {!plots || plots.length === 0 ? (
+        {!scenes || scenes.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <p>No camera plots created yet.</p>
             <p className="text-sm mt-2">Click "Edit Plot" to start creating your camera diagram.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {plots.map((plot) => (
+            {scenes.map((plot) => (
               <div
                 key={plot.id}
                 className="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-gray-500 transition-colors cursor-pointer"

@@ -25,12 +25,16 @@ export const useWallElementCreation = (
         segment.end.x - segment.start.x
       ) * (180 / Math.PI);
       
-      // Position walls exactly from start to end points with proper centering
+      // Calculate the center point of the line segment
+      const centerX = (segment.start.x + segment.end.x) / 2;
+      const centerY = (segment.start.y + segment.end.y) / 2;
+      
+      // Create wall centered on the line segment
       const wallElement: CameraElement = {
         id: segment.id,
         type: 'wall',
-        x: segment.start.x,
-        y: segment.start.y - 2, // Center the wall height around the line
+        x: centerX - distance / 2, // Position so the wall rectangle centers on the line
+        y: centerY - 2, // Center the wall height around the line
         width: distance,
         height: 4,
         rotation: angle,
@@ -44,6 +48,7 @@ export const useWallElementCreation = (
         id: wallElement.id,
         start: segment.start,
         end: segment.end,
+        center: { x: centerX, y: centerY },
         position: { x: wallElement.x, y: wallElement.y },
         width: wallElement.width,
         height: wallElement.height,
