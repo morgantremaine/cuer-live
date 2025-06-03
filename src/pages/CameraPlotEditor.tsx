@@ -19,7 +19,7 @@ const CameraPlotEditor = () => {
     selectedTool,
     selectedElements,
     isDrawingWall,
-    wallStart,
+    wallPoints,
     setSelectedTool,
     addElement,
     updateElement,
@@ -56,7 +56,7 @@ const CameraPlotEditor = () => {
               onClick={handleBackToDashboard}
               variant="outline"
               size="sm"
-              className="text-white border-gray-600 hover:bg-gray-700"
+              className="text-white border-gray-600 hover:bg-gray-700 bg-transparent"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Blueprint
@@ -71,7 +71,7 @@ const CameraPlotEditor = () => {
               onClick={handlePrint}
               variant="outline"
               size="sm"
-              className="text-white border-gray-600 hover:bg-gray-700"
+              className="text-white border-gray-600 hover:bg-gray-700 bg-transparent"
             >
               <Printer className="h-4 w-4 mr-2" />
               Print View
@@ -111,7 +111,7 @@ const CameraPlotEditor = () => {
             selectedTool={selectedTool}
             selectedElements={selectedElements}
             isDrawingWall={isDrawingWall}
-            wallStart={wallStart}
+            wallPoints={wallPoints}
             onAddElement={addElement}
             onUpdateElement={updateElement}
             onDeleteElement={deleteElement}

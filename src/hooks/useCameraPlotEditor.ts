@@ -9,7 +9,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
   const [selectedTool, setSelectedTool] = useState('select');
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
   const [isDrawingWall, setIsDrawingWall] = useState(false);
-  const [wallStart, setWallStart] = useState<{ x: number; y: number } | null>(null);
+  const [wallPoints, setWallPoints] = useState<{ x: number; y: number }[]>([]);
 
   // Initialize with first scene or create one if none exist
   useEffect(() => {
@@ -46,7 +46,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     setActiveSceneId(sceneId);
     setSelectedElements([]);
     setIsDrawingWall(false);
-    setWallStart(null);
+    setWallPoints([]);
   };
 
   const updateSceneName = (sceneId: string, newName: string) => {
@@ -87,32 +87,39 @@ export const useCameraPlotEditor = (rundownId: string) => {
     if (!activeScene) return;
 
     if (type === 'wall') {
-      if (!isDrawingWall || !wallStart) {
+      if (!isDrawingWall) {
         // Start drawing wall
         setIsDrawingWall(true);
-        setWallStart({ x, y });
+        setWallPoints([{ x, y }]);
         return;
       } else {
-        // Complete wall
-        const newElement: CameraElement = {
-          id: `element-${Date.now()}`,
-          type: 'wall',
-          x: wallStart.x,
-          y: wallStart.y,
-          width: Math.abs(x - wallStart.x),
-          height: Math.abs(y - wallStart.y),
-          rotation: Math.atan2(y - wallStart.y, x - wallStart.x) * (180 / Math.PI),
-          label: 'Wall',
-          color: '#6B7280',
-          labelX: (wallStart.x + x) / 2,
-          labelY: (wallStart.y + y) / 2
-        };
-
-        const updatedElements = [...activeScene.elements, newElement];
-        updatePlot(activeScene.id, { elements: updatedElements });
+        // Add point to wall
+        const newPoints = [...wallPoints, { x, y }];
+        setWallPoints(newPoints);
         
-        // Continue drawing more walls
-        setWallStart({ x, y });
+        // Create wall segment from previous point to current point
+        if (wallPoints.length > 0) {
+          const prevPoint = wallPoints[wallPoints.length - 1];
+          const distance = Math.sqrt(Math.pow(x - prevPoint.x, 2) + Math.pow(y - prevPoint.y, 2));
+          const angle = Math.atan2(y - prevPoint.y, x - prevPoint.x) * (180 / Math.PI);
+          
+          const newElement: CameraElement = {
+            id: `wall-${Date.now()}-${Math.random()}`,
+            type: 'wall',
+            x: prevPoint.x,
+            y: prevPoint.y - 2, // Center the wall line
+            width: distance,
+            height: 4,
+            rotation: angle,
+            scale: 1,
+            label: 'Wall',
+            labelOffsetX: 0,
+            labelOffsetY: 20
+          };
+
+          const updatedElements = [...activeScene.elements, newElement];
+          updatePlot(activeScene.id, { elements: updatedElements });
+        }
         return;
       }
     }
@@ -131,11 +138,11 @@ export const useCameraPlotEditor = (rundownId: string) => {
           width: 40,
           height: 40,
           rotation: 0,
+          scale: 1,
           label: `CAM ${cameraNumber}`,
           cameraNumber,
-          color: '#6B7280',
-          labelX: x,
-          labelY: y + 50
+          labelOffsetX: 0,
+          labelOffsetY: 50
         };
         break;
       case 'person':
@@ -147,10 +154,10 @@ export const useCameraPlotEditor = (rundownId: string) => {
           width: 30,
           height: 30,
           rotation: 0,
+          scale: 1,
           label: 'Person',
-          color: '#6B7280',
-          labelX: x,
-          labelY: y + 40
+          labelOffsetX: 0,
+          labelOffsetY: 40
         };
         break;
       case 'furniture-rect':
@@ -162,10 +169,10 @@ export const useCameraPlotEditor = (rundownId: string) => {
           width: 50,
           height: 50,
           rotation: 0,
+          scale: 1,
           label: 'Furniture',
-          color: '#6B7280',
-          labelX: x,
-          labelY: y + 60
+          labelOffsetX: 0,
+          labelOffsetY: 60
         };
         break;
       case 'furniture-circle':
@@ -177,10 +184,10 @@ export const useCameraPlotEditor = (rundownId: string) => {
           width: 50,
           height: 50,
           rotation: 0,
+          scale: 1,
           label: 'Round Table',
-          color: '#6B7280',
-          labelX: x,
-          labelY: y + 60
+          labelOffsetX: 0,
+          labelOffsetY: 60
         };
         break;
       default:
@@ -196,16 +203,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
 
     const updatedElements = activeScene.elements.map(element => {
       if (element.id === elementId) {
-        const updatedElement = { ...element, ...updates };
-        
-        // If position changed and label doesn't have custom position, move label with element
-        if ((updates.x !== undefined || updates.y !== undefined) && 
-            element.labelX === undefined && element.labelY === undefined) {
-          updatedElement.labelX = updatedElement.x + updatedElement.width / 2;
-          updatedElement.labelY = updatedElement.y + updatedElement.height + 10;
-        }
-        
-        return updatedElement;
+        return { ...element, ...updates };
       }
       return element;
     });
@@ -238,9 +236,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
       ...elementToDuplicate,
       id: `element-${Date.now()}`,
       x: elementToDuplicate.x + 20,
-      y: elementToDuplicate.y + 20,
-      labelX: elementToDuplicate.labelX ? elementToDuplicate.labelX + 20 : undefined,
-      labelY: elementToDuplicate.labelY ? elementToDuplicate.labelY + 20 : undefined
+      y: elementToDuplicate.y + 20
     };
 
     if (elementToDuplicate.type === 'camera') {
@@ -267,7 +263,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
 
   const stopDrawingWalls = () => {
     setIsDrawingWall(false);
-    setWallStart(null);
+    setWallPoints([]);
     setSelectedTool('select');
   };
 
@@ -277,7 +273,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     selectedTool,
     selectedElements,
     isDrawingWall,
-    wallStart,
+    wallPoints,
     setSelectedTool,
     addElement,
     updateElement,

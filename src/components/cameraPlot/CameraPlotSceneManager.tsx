@@ -62,7 +62,7 @@ const CameraPlotSceneManager = ({
         <Button
           onClick={() => setIsCreating(true)}
           size="sm"
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -92,7 +92,7 @@ const CameraPlotSceneManager = ({
               }}
               size="sm"
               variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -106,8 +106,8 @@ const CameraPlotSceneManager = ({
             key={scene.id}
             className={`p-3 rounded border cursor-pointer transition-colors ${
               activeSceneId === scene.id
-                ? 'bg-blue-600 border-blue-500 text-white'
-                : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
             }`}
             onClick={() => onSelectScene(scene.id)}
           >
@@ -131,7 +131,7 @@ const CameraPlotSceneManager = ({
                     onClick={cancelEditing}
                     size="sm"
                     variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent"
                   >
                     <X className="h-3 w-3" />
                   </Button>

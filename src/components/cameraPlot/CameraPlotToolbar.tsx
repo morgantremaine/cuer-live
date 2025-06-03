@@ -31,8 +31,8 @@ const CameraPlotToolbar = ({ selectedTool, onToolSelect, isDrawingWall, onStopDr
             size="sm"
             className={`flex flex-col items-center gap-1 h-auto py-3 ${
               selectedTool === tool.id 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600' 
-                : 'text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white'
+                ? 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600' 
+                : 'text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white bg-transparent'
             }`}
             onClick={() => onToolSelect(tool.id)}
           >

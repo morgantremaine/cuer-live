@@ -8,7 +8,7 @@ interface CameraPlotCanvasProps {
   selectedTool: string;
   selectedElements: string[];
   isDrawingWall?: boolean;
-  wallStart?: { x: number; y: number } | null;
+  wallPoints?: { x: number; y: number }[];
   onAddElement: (type: string, x: number, y: number) => void;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   onDeleteElement: (elementId: string) => void;
@@ -20,7 +20,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   selectedTool,
   selectedElements,
   isDrawingWall,
-  wallStart,
+  wallPoints,
   onAddElement,
   onUpdateElement,
   onDeleteElement,
@@ -53,15 +53,52 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   };
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-gray-700">
+    <div className="flex-1 relative overflow-hidden bg-gray-600">
       <div
         ref={ref}
-        className="w-full h-full relative cursor-crosshair bg-gray-700"
+        className="w-full h-full relative cursor-crosshair bg-gray-600"
         onClick={handleCanvasClick}
         onMouseMove={handleMouseMove}
         onMouseDown={handleCanvasMouseDown}
         style={{ minHeight: '100vh' }}
       >
+        {/* Wall preview lines */}
+        {isDrawingWall && wallPoints && wallPoints.length > 0 && (
+          <svg
+            className="absolute inset-0 pointer-events-none z-50"
+            style={{ width: '100%', height: '100%' }}
+          >
+            {/* Draw existing wall segments */}
+            {wallPoints.length > 1 && wallPoints.map((point, index) => {
+              if (index === 0) return null;
+              const prevPoint = wallPoints[index - 1];
+              return (
+                <line
+                  key={`wall-${index}`}
+                  x1={prevPoint.x}
+                  y1={prevPoint.y}
+                  x2={point.x}
+                  y2={point.y}
+                  stroke="#374151"
+                  strokeWidth="4"
+                />
+              );
+            })}
+            {/* Draw preview line from last point to mouse */}
+            {wallPoints.length > 0 && (
+              <line
+                x1={wallPoints[wallPoints.length - 1].x}
+                y1={wallPoints[wallPoints.length - 1].y}
+                x2={mousePos.x}
+                y2={mousePos.y}
+                stroke="#9CA3AF"
+                strokeWidth="4"
+                strokeDasharray="8,4"
+              />
+            )}
+          </svg>
+        )}
+
         {/* Render all elements */}
         {scene?.elements.map((element) => (
           <CameraPlotElement
@@ -74,27 +111,9 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           />
         ))}
 
-        {/* Show wall preview while drawing */}
-        {isDrawingWall && wallStart && (
-          <svg
-            className="absolute inset-0 pointer-events-none"
-            style={{ width: '100%', height: '100%' }}
-          >
-            <line
-              x1={wallStart.x}
-              y1={wallStart.y}
-              x2={mousePos.x}
-              y2={mousePos.y}
-              stroke="#9CA3AF"
-              strokeWidth="3"
-              strokeDasharray="5,5"
-            />
-          </svg>
-        )}
-
         {/* Empty state */}
         {!scene?.elements.length && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+          <div className="absolute inset-0 flex items-center justify-center text-gray-300">
             <div className="text-center">
               <p className="text-lg mb-2">Camera Plot Canvas</p>
               <p className="text-sm">Select a tool and click to add elements</p>

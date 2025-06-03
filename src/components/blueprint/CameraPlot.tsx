@@ -50,7 +50,7 @@ const CameraPlot = ({
             <Button
               onClick={handleOpenEditor}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit Plot
@@ -59,7 +59,7 @@ const CameraPlot = ({
               onClick={() => createNewPlot(`Scene ${plots.length + 1}`)}
               size="sm"
               variant="outline"
-              className="text-white border-gray-600 hover:bg-gray-700"
+              className="text-white border-gray-600 hover:bg-gray-700 bg-transparent"
             >
               <Plus className="h-4 w-4 mr-2" />
               New Scene

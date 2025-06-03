@@ -10,10 +10,10 @@ export interface CameraElement {
   width: number;
   height: number;
   rotation: number;
+  scale: number;
   label: string;
-  labelX?: number;
-  labelY?: number;
-  color?: string;
+  labelOffsetX?: number;
+  labelOffsetY?: number;
   cameraNumber?: number;
 }
 
