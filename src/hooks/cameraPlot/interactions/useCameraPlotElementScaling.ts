@@ -39,11 +39,26 @@ export const useCameraPlotElementScaling = ({
       const deltaX = e.clientX - scaleStart.x;
       const deltaY = e.clientY - scaleStart.y;
       
-      const scaleFactorX = 1 + deltaX / 100;
-      const scaleFactorY = 1 + deltaY / 100;
+      // Use the larger delta for uniform scaling
+      const delta = Math.max(deltaX, deltaY);
+      const scaleFactor = 1 + delta / 100;
       
-      const newWidth = Math.max(20, scaleStart.initialWidth * scaleFactorX);
-      const newHeight = Math.max(20, scaleStart.initialHeight * scaleFactorY);
+      const isRoundTable = element.label.toLowerCase().includes('round') || element.label.toLowerCase().includes('circle');
+      
+      let newWidth, newHeight;
+      
+      if (isRoundTable) {
+        // Round tables maintain aspect ratio (always square)
+        const newSize = Math.max(20, scaleStart.initialWidth * scaleFactor);
+        newWidth = newSize;
+        newHeight = newSize;
+      } else {
+        // Rectangular furniture can be freely transformed
+        const scaleFactorX = 1 + deltaX / 100;
+        const scaleFactorY = 1 + deltaY / 100;
+        newWidth = Math.max(20, scaleStart.initialWidth * scaleFactorX);
+        newHeight = Math.max(20, scaleStart.initialHeight * scaleFactorY);
+      }
       
       onUpdate(element.id, {
         width: newWidth,
@@ -64,7 +79,7 @@ export const useCameraPlotElementScaling = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isScaling, scaleStart, element.id, onUpdate, canScale]);
+  }, [isScaling, scaleStart, element.id, element.label, onUpdate, canScale]);
 
   return {
     isScaling,

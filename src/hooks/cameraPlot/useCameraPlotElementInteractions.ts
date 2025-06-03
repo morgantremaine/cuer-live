@@ -44,7 +44,13 @@ export const useCameraPlotElementInteractions = ({
     onUpdate
   });
 
-  const { cursorMode, handleMouseMove, getCursor } = useCameraPlotElementCursor({
+  const { 
+    isInRotationZone, 
+    isInScaleZone, 
+    handleMouseMove, 
+    handleMouseLeave, 
+    getCursor 
+  } = useCameraPlotElementCursor({
     canRotate,
     canScale,
     isDragging,
@@ -66,9 +72,9 @@ export const useCameraPlotElementInteractions = ({
 
     onSelect(element.id, e.ctrlKey || e.metaKey);
     
-    if (cursorMode === 'rotate' && canRotate) {
-      startRotation();
-    } else if (cursorMode === 'scale' && canScale) {
+    if (isInRotationZone && canRotate) {
+      startRotation(e);
+    } else if (isInScaleZone && canScale) {
       startScaling(e);
     } else {
       startDrag(e);
@@ -81,8 +87,10 @@ export const useCameraPlotElementInteractions = ({
     handleMouseDown,
     handleLabelMouseDown: startLabelDrag,
     handleMouseMove,
+    handleMouseLeave,
     getCursor,
-    cursorMode,
+    isInRotationZone,
+    isInScaleZone,
     isDragging,
     isRotating,
     isScaling

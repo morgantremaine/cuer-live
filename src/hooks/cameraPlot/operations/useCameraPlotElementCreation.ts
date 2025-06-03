@@ -10,9 +10,8 @@ export const useCameraPlotElementCreation = (
   const addElement = (type: string, x: number, y: number, wallData?: { start: { x: number; y: number }, end: { x: number; y: number } }) => {
     if (!activeScene) return;
 
-    const snapped = snapToGrid(x, y);
     let newElement: CameraElement;
-    const elementId = `element-${Date.now()}`;
+    const elementId = `element-${Date.now()}-${Math.random()}`;
 
     if (type === 'wall' && wallData) {
       // Create wall from start to end points
@@ -34,6 +33,8 @@ export const useCameraPlotElementCreation = (
         labelOffsetY: -20
       };
     } else {
+      const snapped = snapToGrid(x, y);
+      
       switch (type) {
         case 'camera':
           const cameraNumber = getNextCameraNumber(activeScene.elements);

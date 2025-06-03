@@ -14,23 +14,41 @@ export const useCameraPlotElementRotation = ({
   onUpdate
 }: UseCameraPlotElementRotationProps) => {
   const [isRotating, setIsRotating] = useState(false);
+  const [startAngle, setStartAngle] = useState(0);
+  const [initialRotation, setInitialRotation] = useState(0);
 
-  const startRotation = () => {
+  const startRotation = (e: React.MouseEvent) => {
     if (!canRotate) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+    
     setIsRotating(true);
+    setStartAngle(angle);
+    setInitialRotation(element.rotation || 0);
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isRotating || !canRotate) return;
       
-      const centerX = element.x + element.width / 2;
-      const centerY = element.y + element.height / 2;
+      // Get element center from DOM
+      const elementDiv = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      if (!elementDiv) return;
       
-      const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI) + 90;
+      const rect = elementDiv.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+      const deltaAngle = currentAngle - startAngle;
+      const newRotation = initialRotation + (deltaAngle * 180 / Math.PI);
       
       onUpdate(element.id, {
-        rotation: angle
+        rotation: newRotation
       });
     };
 
@@ -47,7 +65,7 @@ export const useCameraPlotElementRotation = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isRotating, element, onUpdate, canRotate]);
+  }, [isRotating, element.id, onUpdate, canRotate, startAngle, initialRotation]);
 
   return {
     isRotating,

@@ -16,27 +16,33 @@ export const useCameraPlotElementCursor = ({
   isRotating,
   isScaling
 }: UseCameraPlotElementCursorProps) => {
-  const [cursorMode, setCursorMode] = useState<'normal' | 'rotate' | 'scale'>('normal');
+  const [isInRotationZone, setIsInRotationZone] = useState(false);
+  const [isInScaleZone, setIsInScaleZone] = useState(false);
 
-  const handleMouseMove = (e: React.MouseEvent, rect: DOMRect) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging || isRotating || isScaling) return;
 
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relativeX = e.clientX - rect.left;
+    const relativeY = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
     const distance = Math.sqrt(
-      Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2)
+      Math.pow(relativeX - centerX, 2) + Math.pow(relativeY - centerY, 2)
     );
+    
     const elementRadius = Math.min(rect.width, rect.height) / 2;
-
-    // Rotation zone: slightly outside the element
-    if (canRotate && distance > elementRadius + 5 && distance < elementRadius + 25) {
-      setCursorMode('rotate');
+    const rotationZoneInner = elementRadius + 5;
+    const rotationZoneOuter = elementRadius + 25;
+    
+    // Check if in rotation zone (slightly outside element)
+    if (canRotate && distance >= rotationZoneInner && distance <= rotationZoneOuter) {
+      setIsInRotationZone(true);
+      setIsInScaleZone(false);
     } else if (canScale) {
-      // For furniture, check if we're near corners for scaling
-      const relativeX = e.clientX - rect.left;
-      const relativeY = e.clientY - rect.top;
-      const cornerThreshold = 12;
-      
+      // Check if near corners for scaling
+      const cornerThreshold = 15;
       const nearCorner = (
         (relativeX < cornerThreshold && relativeY < cornerThreshold) ||
         (relativeX > rect.width - cornerThreshold && relativeY < cornerThreshold) ||
@@ -44,27 +50,33 @@ export const useCameraPlotElementCursor = ({
         (relativeX > rect.width - cornerThreshold && relativeY > rect.height - cornerThreshold)
       );
       
-      setCursorMode(nearCorner ? 'scale' : 'normal');
+      setIsInRotationZone(false);
+      setIsInScaleZone(nearCorner);
     } else {
-      setCursorMode('normal');
+      setIsInRotationZone(false);
+      setIsInScaleZone(false);
     }
+  };
+
+  const handleMouseLeave = () => {
+    setIsInRotationZone(false);
+    setIsInScaleZone(false);
   };
 
   const getCursor = () => {
     if (isDragging) return 'grabbing';
-    if (isRotating) return 'grab';
+    if (isRotating) return 'grabbing';
     if (isScaling) return 'nw-resize';
-    
-    switch (cursorMode) {
-      case 'rotate': return 'grab';
-      case 'scale': return 'nw-resize';
-      default: return 'grab';
-    }
+    if (isInRotationZone) return 'grab';
+    if (isInScaleZone) return 'nw-resize';
+    return 'move';
   };
 
   return {
-    cursorMode,
+    isInRotationZone,
+    isInScaleZone,
     handleMouseMove,
+    handleMouseLeave,
     getCursor
   };
 };

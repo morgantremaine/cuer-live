@@ -71,37 +71,27 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    if (selectedTool === 'wall' && isDrawingWall) {
+    if (selectedTool === 'wall' && isDrawingWall && currentPath.length > 1) {
       const segments = finishDrawing();
-      // Convert segments to wall elements
-      segments.forEach((segment) => {
+      
+      // Create individual wall elements for each segment
+      segments.forEach((segment, index) => {
         const length = Math.sqrt(
           Math.pow(segment.end.x - segment.start.x, 2) + 
           Math.pow(segment.end.y - segment.start.y, 2)
         );
         const angle = Math.atan2(
           segment.end.y - segment.start.y, 
-          segment.end.x - segment.start.x
+          segment.start.x - segment.end.x
         ) * (180 / Math.PI);
         
-        const element: Partial<CameraElement> = {
-          id: segment.id,
-          type: 'wall',
-          x: segment.start.x,
-          y: segment.start.y - 2,
-          width: length,
-          height: 4,
-          rotation: angle,
-          scale: 1,
-          label: '',
-          labelOffsetX: 0,
-          labelOffsetY: -20
-        };
-        
-        if (scene) {
-          const updatedElements = [...scene.elements, element as CameraElement];
-          scene.elements = updatedElements;
-        }
+        // Create wall element using the proper addElement function
+        setTimeout(() => {
+          onAddElement('wall', segment.start.x, segment.start.y, {
+            start: segment.start,
+            end: segment.end
+          });
+        }, index * 10); // Small delay to ensure proper creation
       });
     }
   };
