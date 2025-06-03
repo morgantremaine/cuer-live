@@ -18,11 +18,6 @@ interface BlueprintListsGridProps {
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   onDragEnd: () => void;
-  allItems: Array<{
-    type: 'list' | 'crew-list' | 'scratchpad';
-    id: string;
-    data: BlueprintList | null;
-  }>;
 }
 
 const BlueprintListsGrid = ({
@@ -38,40 +33,8 @@ const BlueprintListsGrid = ({
   onDragEnterContainer,
   onDragLeave,
   onDrop,
-  onDragEnd,
-  allItems
+  onDragEnd
 }: BlueprintListsGridProps) => {
-  const renderListItem = (item: any, index: number) => {
-    if (item.type !== 'list') return null;
-    
-    const list = item.data;
-    const isBeingDragged = draggedListId === item.id;
-    const showDropIndicator = insertionIndex === index && draggedListId !== null;
-
-    return (
-      <React.Fragment key={list.id}>
-        {showDropIndicator && (
-          <div className="h-1 bg-blue-500 rounded-full mb-4 break-inside-avoid animate-pulse" />
-        )}
-        
-        <div className="break-inside-avoid mb-6">
-          <BlueprintListCard
-            list={list}
-            index={index}
-            rundownItems={rundownItems}
-            onDelete={onDeleteList}
-            onRename={onRenameList}
-            onUpdateCheckedItems={onUpdateCheckedItems}
-            isDragging={isBeingDragged}
-            onDragStart={onDragStart}
-            onDragEnterContainer={onDragEnterContainer}
-            onDragEnd={onDragEnd}
-          />
-        </div>
-      </React.Fragment>
-    );
-  };
-
   return (
     <div 
       className="columns-2 gap-6 relative"
@@ -80,12 +43,34 @@ const BlueprintListsGrid = ({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      {allItems.map((item, index) => renderListItem(item, index))}
-      
-      {/* Final drop indicator for regular lists only */}
-      {insertionIndex === lists.length && draggedListId && lists.some(list => list.id === draggedListId) && (
-        <div className="h-1 bg-blue-500 rounded-full mb-4 break-inside-avoid animate-pulse" />
-      )}
+      {lists.map((list, index) => (
+        <React.Fragment key={list.id}>
+          {/* Insertion line at the top */}
+          {insertionIndex === index && (
+            <div className="h-1 bg-blue-500 rounded-full mb-4 break-inside-avoid animate-pulse" />
+          )}
+          
+          <div className="break-inside-avoid mb-6">
+            <BlueprintListCard
+              list={list}
+              index={index}
+              rundownItems={rundownItems}
+              onDelete={onDeleteList}
+              onRename={onRenameList}
+              onUpdateCheckedItems={onUpdateCheckedItems}
+              isDragging={draggedListId === list.id}
+              onDragStart={onDragStart}
+              onDragEnterContainer={onDragEnterContainer}
+              onDragEnd={onDragEnd}
+            />
+          </div>
+          
+          {/* Insertion line at the bottom if it's the last item */}
+          {insertionIndex === lists.length && index === lists.length - 1 && (
+            <div className="h-1 bg-blue-500 rounded-full mt-4 break-inside-avoid animate-pulse" />
+          )}
+        </React.Fragment>
+      ))}
     </div>
   );
 };

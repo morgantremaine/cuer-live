@@ -11,23 +11,10 @@ interface BlueprintScratchpadProps {
   rundownId: string;
   rundownTitle: string;
   initialNotes?: string;
-  isDragging?: boolean;
-  onDragStart?: (e: React.DragEvent, listId: string) => void;
-  onDragEnterContainer?: (e: React.DragEvent) => void;
-  onDragEnd?: () => void;
   onNotesChange?: (notes: string) => void;
 }
 
-const BlueprintScratchpad = ({ 
-  rundownId, 
-  rundownTitle, 
-  initialNotes = '', 
-  isDragging = false,
-  onDragStart,
-  onDragEnterContainer,
-  onDragEnd,
-  onNotesChange 
-}: BlueprintScratchpadProps) => {
+const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNotesChange }: BlueprintScratchpadProps) => {
   const {
     notes,
     isEditing,
@@ -42,13 +29,7 @@ const BlueprintScratchpad = ({
   } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, onNotesChange);
 
   return (
-    <Card 
-      className={`w-full bg-gray-800 border-gray-700 ${isDragging ? 'opacity-50' : ''}`}
-      draggable
-      onDragStart={(e) => onDragStart?.(e, 'scratchpad')}
-      onDragEnter={onDragEnterContainer}
-      onDragEnd={onDragEnd}
-    >
+    <Card className="w-full mt-8 bg-gray-800 border-gray-700">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

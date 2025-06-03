@@ -11,13 +11,6 @@ export const useBlueprintDragAndDrop = (
   const [draggedListId, setDraggedListId] = useState<string | null>(null);
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
 
-  // Create unified items array for drag and drop calculations
-  const allItems = [
-    ...lists.map(list => ({ type: 'list', id: list.id, data: list })),
-    { type: 'crew-list', id: 'crew-list', data: null },
-    { type: 'scratchpad', id: 'scratchpad', data: null }
-  ];
-
   const handleDragStart = (e: React.DragEvent, listId: string) => {
     setDraggedListId(listId);
     e.dataTransfer.effectAllowed = 'move';
@@ -32,7 +25,7 @@ export const useBlueprintDragAndDrop = (
   const handleDragEnterContainer = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedListId) {
-      const draggedIndex = allItems.findIndex(item => item.id === draggedListId);
+      const draggedIndex = lists.findIndex(list => list.id === draggedListId);
       
       // Calculate the insertion index based on mouse position
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -65,13 +58,12 @@ export const useBlueprintDragAndDrop = (
     e.preventDefault();
     
     const draggedId = e.dataTransfer.getData('text/plain');
-    if (!draggedId || insertionIndex === null) {
+    if (!draggedId || !insertionIndex === null) {
       setDraggedListId(null);
       setInsertionIndex(null);
       return;
     }
 
-    // Only handle reordering of regular lists - crew list and scratchpad maintain fixed positions
     const draggedIndex = lists.findIndex(list => list.id === draggedId);
     if (draggedIndex === -1) {
       setDraggedListId(null);
@@ -79,21 +71,10 @@ export const useBlueprintDragAndDrop = (
       return;
     }
 
-    // Calculate new position within the lists array
-    let newListIndex = insertionIndex;
-    
-    // Adjust for crew list and scratchpad positions
-    const itemsBeforeInsertion = allItems.slice(0, insertionIndex);
-    const nonListItemsBeforeInsertion = itemsBeforeInsertion.filter(item => item.type !== 'list').length;
-    newListIndex = insertionIndex - nonListItemsBeforeInsertion;
-
-    // Ensure we don't go beyond array bounds
-    newListIndex = Math.max(0, Math.min(newListIndex, lists.length));
-
     // Create new array with reordered lists
     const newLists = [...lists];
     const [draggedList] = newLists.splice(draggedIndex, 1);
-    newLists.splice(newListIndex, 0, draggedList);
+    newLists.splice(insertionIndex!, 0, draggedList);
 
     setLists(newLists);
     saveBlueprint(rundownTitle, newLists, true);
