@@ -5,7 +5,7 @@ import { useCameraPlot, CameraPlotScene } from '@/hooks/useCameraPlot';
 export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const lastLogTimeRef = useRef<number>(0);
-  const LOG_THROTTLE_MS = 1000; // Only log once per second
+  const LOG_THROTTLE_MS = 5000; // Reduced logging frequency
   
   const {
     plots: scenes,
@@ -13,6 +13,7 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     deletePlot: deleteScene,
     duplicatePlot: duplicateScene,
     updatePlot: updateScene,
+    updateSceneName,
     reloadPlots
   } = useCameraPlot(rundownId, 'Camera Plot', readOnly);
 
@@ -47,6 +48,7 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     deleteScene,
     duplicateScene,
     updateScene,
+    updateSceneName,
     reloadPlots
   };
 };
