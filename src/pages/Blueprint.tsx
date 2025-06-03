@@ -18,18 +18,9 @@ const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading, updateRundown } = useRundownStorage();
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const { savedRundowns, loading } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
-
-  // Only load rundowns once when component mounts and data isn't already loaded
-  useEffect(() => {
-    if (!loading && !dataLoaded && savedRundowns.length === 0) {
-      console.log('Loading rundowns for the first time');
-      setDataLoaded(true);
-    }
-  }, [loading, dataLoaded, savedRundowns.length]);
   
   const {
     lists,

@@ -15,6 +15,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const [lastItemsHash, setLastItemsHash] = useState<string>('');
   // Add a ref to track if we're currently updating checkbox state
   const isUpdatingCheckboxes = useRef(false);
+  // Add a ref to track if we've already initialized to prevent multiple initializations
+  const hasInitialized = useRef(false);
   const { toast } = useToast();
   
   const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
@@ -40,7 +42,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       return;
     }
 
-    if (items.length > 0 && !loading && !initialized) {
+    // Prevent multiple initializations with ref
+    if (items.length > 0 && !loading && !hasInitialized.current) {
       console.log('Initializing blueprint state with items:', items.length);
       
       if (savedBlueprint && savedBlueprint.lists.length > 0) {
@@ -68,8 +71,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       // Set the initial items hash
       setLastItemsHash(createItemsHash(items));
       setInitialized(true);
+      hasInitialized.current = true;
     }
-  }, [rundownId, rundownTitle, items, savedBlueprint, loading, initialized, createItemsHash]);
+  }, [rundownId, rundownTitle, items, savedBlueprint, loading, createItemsHash]);
 
   // Refresh list content when items actually change (but preserve checkbox states)
   useEffect(() => {
@@ -169,7 +173,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       // Clear the flag after a delay to allow the save to complete
       setTimeout(() => {
         isUpdatingCheckboxes.current = false;
-      }, 500);
+      }, 1000); // Increased timeout to ensure save completes
     }
   }, [lists, rundownTitle, saveBlueprint, showDate]);
 
