@@ -36,6 +36,8 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedPlotsRef = useRef<string>('');
 
+  console.log(`useCameraPlot: ${readOnly ? 'READ-ONLY' : 'EDITOR'} mode for rundown:`, rundownId);
+
   // Load saved plot data when blueprint is loaded
   useEffect(() => {
     const initializePlots = async () => {
@@ -49,7 +51,9 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
         if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
           console.log('Loading existing camera plots:', blueprint.camera_plots.length, 'scenes');
           setPlots(blueprint.camera_plots);
-          lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
+          if (!readOnly) {
+            lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
+          }
         } else {
           // Only initialize empty array if we're in editor mode, not read-only
           if (!readOnly) {
@@ -89,9 +93,15 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
     }
   };
 
-  // Debounced auto-save plot data (only for editor, not read-only mode)
+  // Debounced auto-save plot data (ONLY FOR EDITOR, NEVER FOR READ-ONLY MODE)
   useEffect(() => {
-    if (!readOnly && isInitialized && rundownId && rundownTitle && plots !== null) {
+    // CRITICAL: Never save in read-only mode
+    if (readOnly) {
+      console.log('Read-only mode: Skipping auto-save setup');
+      return;
+    }
+
+    if (isInitialized && rundownId && rundownTitle && plots !== null) {
       const currentPlotsString = JSON.stringify(plots);
       
       // Only save if data has actually changed
@@ -133,7 +143,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   }, [plots, isInitialized, rundownId, rundownTitle, savedBlueprint, saveBlueprint, readOnly]);
 
   const createNewPlot = (name: string) => {
-    if (readOnly) return null; // Don't allow creation in read-only mode
+    if (readOnly) {
+      console.log('Read-only mode: Cannot create new plot');
+      return null;
+    }
     
     const newPlot: CameraPlotScene = {
       id: `plot-${Date.now()}-${Math.random()}`,
@@ -150,7 +163,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   };
 
   const deletePlot = (plotId: string) => {
-    if (readOnly) return; // Don't allow deletion in read-only mode
+    if (readOnly) {
+      console.log('Read-only mode: Cannot delete plot');
+      return;
+    }
     
     console.log('Deleting plot:', plotId);
     setPlots(prevPlots => {
@@ -161,7 +177,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   };
 
   const duplicatePlot = (plotId: string) => {
-    if (readOnly) return null; // Don't allow duplication in read-only mode
+    if (readOnly) {
+      console.log('Read-only mode: Cannot duplicate plot');
+      return null;
+    }
     
     const plotToDuplicate = plots.find(plot => plot.id === plotId);
     if (plotToDuplicate) {
@@ -185,7 +204,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   };
 
   const updatePlot = (plotId: string, updatedPlot: Partial<CameraPlotScene>) => {
-    if (readOnly) return; // Don't allow updates in read-only mode
+    if (readOnly) {
+      console.log('Read-only mode: Cannot update plot');
+      return;
+    }
     
     console.log('Updating plot:', plotId, 'with', Object.keys(updatedPlot).join(', '));
     setPlots(prevPlots => {
