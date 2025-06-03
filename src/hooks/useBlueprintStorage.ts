@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,7 +40,6 @@ export const useBlueprintStorage = (rundownId: string) => {
     setLoading(true);
     
     try {
-      console.log('Loading blueprint from database for rundown:', rundownId);
       const { data, error } = await supabase
         .from('blueprints')
         .select('*')
@@ -54,12 +52,6 @@ export const useBlueprintStorage = (rundownId: string) => {
         return null;
       }
 
-      console.log('Loaded blueprint data:', data ? 'found' : 'not found');
-      if (data) {
-        console.log('Blueprint camera_plots field:', data.camera_plots);
-        console.log('Camera plots type:', typeof data.camera_plots);
-        console.log('Camera plots length:', Array.isArray(data.camera_plots) ? data.camera_plots.length : 'not array');
-      }
       setSavedBlueprint(data);
       return data;
     } catch (error) {
@@ -101,10 +93,6 @@ export const useBlueprintStorage = (rundownId: string) => {
       // Only include camera_plots if it's explicitly provided
       if (cameraPlots !== undefined) {
         blueprintData.camera_plots = cameraPlots;
-        console.log('Saving blueprint with camera plots:', cameraPlots?.length || 0, 'scenes');
-        console.log('Camera plots being saved:', cameraPlots);
-      } else {
-        console.log('Saving blueprint WITHOUT camera plots data (preserving existing)');
       }
 
       if (savedBlueprint) {
@@ -129,7 +117,6 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
-        console.log('Successfully updated blueprint, returned data camera_plots:', data?.camera_plots);
         setSavedBlueprint(data);
       } else {
         // Create new blueprint
@@ -151,7 +138,6 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
-        console.log('Successfully created blueprint, returned data camera_plots:', data?.camera_plots);
         setSavedBlueprint(data);
       }
 

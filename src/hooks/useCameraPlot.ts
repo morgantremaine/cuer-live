@@ -36,20 +36,15 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedPlotsRef = useRef<string>('');
 
-  console.log(`useCameraPlot: ${readOnly ? 'READ-ONLY' : 'EDITOR'} mode for rundown:`, rundownId);
-
   // Load saved plot data when blueprint is loaded
   useEffect(() => {
     const initializePlots = async () => {
       if (!isInitialized && rundownId && rundownTitle) {
-        console.log(`Initializing camera plots for rundown: ${rundownId} ${readOnly ? '(read-only)' : '(editor)'}`);
-        
         // Force fresh load from database
         const blueprint = await loadBlueprint();
         
         // Check if camera_plots exists and is a valid array
         if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
-          console.log('Loading existing camera plots:', blueprint.camera_plots.length, 'scenes');
           setPlots(blueprint.camera_plots);
           if (!readOnly) {
             lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
@@ -57,13 +52,10 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
         } else {
           // Only initialize empty array if we're in editor mode, not read-only
           if (!readOnly) {
-            console.log('No existing camera plots found, starting with empty array');
             setPlots([]);
             lastSavedPlotsRef.current = JSON.stringify([]);
           } else {
-            console.log('Read-only mode: No camera plots found, keeping empty state');
             setPlots([]);
-            // Don't update lastSavedPlotsRef in read-only mode to prevent overwriting
           }
         }
         setIsInitialized(true);
@@ -75,18 +67,14 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
 
   // Force reload data when coming back to a page
   const reloadPlots = async () => {
-    console.log('Reloading camera plots data...');
     const blueprint = await loadBlueprint();
     if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
-      console.log('Reloaded camera plots:', blueprint.camera_plots.length, 'scenes');
       setPlots(blueprint.camera_plots);
       if (!readOnly) {
         lastSavedPlotsRef.current = JSON.stringify(blueprint.camera_plots);
       }
     } else {
-      console.log('No camera plots found during reload');
       setPlots([]);
-      // Don't update lastSavedPlotsRef in read-only mode
       if (!readOnly) {
         lastSavedPlotsRef.current = JSON.stringify([]);
       }
@@ -97,7 +85,6 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
   useEffect(() => {
     // CRITICAL: Never save in read-only mode
     if (readOnly) {
-      console.log('Read-only mode: Skipping auto-save setup');
       return;
     }
 
@@ -106,8 +93,6 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
       
       // Only save if data has actually changed
       if (currentPlotsString !== lastSavedPlotsRef.current) {
-        console.log('Scheduling auto-save for camera plots with', plots.length, 'scenes');
-        
         // Clear existing timeout
         if (autoSaveTimeoutRef.current) {
           clearTimeout(autoSaveTimeoutRef.current);
@@ -116,7 +101,6 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
         // Set new timeout with shorter delay for faster syncing
         autoSaveTimeoutRef.current = setTimeout(async () => {
           try {
-            console.log('Executing auto-save for camera plots');
             lastSavedPlotsRef.current = currentPlotsString;
             await saveBlueprint(
               rundownTitle,
@@ -127,7 +111,6 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
               savedBlueprint?.crew_data,
               plots // Save the camera plots
             );
-            console.log('Auto-save completed successfully');
           } catch (error) {
             console.error('Auto-save failed:', error);
           }
@@ -144,7 +127,6 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
 
   const createNewPlot = (name: string) => {
     if (readOnly) {
-      console.log('Read-only mode: Cannot create new plot');
       return null;
     }
     
@@ -153,10 +135,8 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
       name,
       elements: []
     };
-    console.log('Creating new plot:', newPlot.name);
     setPlots(prevPlots => {
       const updatedPlots = [...prevPlots, newPlot];
-      console.log('Updated plots after creation:', updatedPlots.length, 'total scenes');
       return updatedPlots;
     });
     return newPlot;
@@ -164,21 +144,17 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
 
   const deletePlot = (plotId: string) => {
     if (readOnly) {
-      console.log('Read-only mode: Cannot delete plot');
       return;
     }
     
-    console.log('Deleting plot:', plotId);
     setPlots(prevPlots => {
       const updatedPlots = prevPlots.filter(plot => plot.id !== plotId);
-      console.log('Updated plots after deletion:', updatedPlots.length, 'remaining scenes');
       return updatedPlots;
     });
   };
 
   const duplicatePlot = (plotId: string) => {
     if (readOnly) {
-      console.log('Read-only mode: Cannot duplicate plot');
       return null;
     }
     
@@ -193,10 +169,8 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
           id: `element-${Date.now()}-${Math.random()}`
         }))
       };
-      console.log('Duplicating plot:', duplicatedPlot.name);
       setPlots(prevPlots => {
         const updatedPlots = [...prevPlots, duplicatedPlot];
-        console.log('Updated plots after duplication:', updatedPlots.length, 'total scenes');
         return updatedPlots;
       });
       return duplicatedPlot;
@@ -205,16 +179,13 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
 
   const updatePlot = (plotId: string, updatedPlot: Partial<CameraPlotScene>) => {
     if (readOnly) {
-      console.log('Read-only mode: Cannot update plot');
       return;
     }
     
-    console.log('Updating plot:', plotId, 'with', Object.keys(updatedPlot).join(', '));
     setPlots(prevPlots => {
       const updatedPlots = prevPlots.map(plot => 
         plot.id === plotId ? { ...plot, ...updatedPlot } : plot
       );
-      console.log('Updated plots after update:', updatedPlots.length, 'total scenes');
       return updatedPlots;
     });
   };
