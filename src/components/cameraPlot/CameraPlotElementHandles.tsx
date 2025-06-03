@@ -36,7 +36,6 @@ const CameraPlotElementHandles = ({
       {/* Rotation handle for rotatable elements */}
       {onRotationStart && (
         <CameraPlotRotationHandle
-          element={element}
           onRotationStart={onRotationStart}
           isRotating={isRotating}
         />
