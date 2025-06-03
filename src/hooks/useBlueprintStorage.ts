@@ -55,6 +55,11 @@ export const useBlueprintStorage = (rundownId: string) => {
       }
 
       console.log('Loaded blueprint data:', data ? 'found' : 'not found');
+      if (data) {
+        console.log('Blueprint camera_plots field:', data.camera_plots);
+        console.log('Camera plots type:', typeof data.camera_plots);
+        console.log('Camera plots length:', Array.isArray(data.camera_plots) ? data.camera_plots.length : 'not array');
+      }
       setSavedBlueprint(data);
       return data;
     } catch (error) {
@@ -93,6 +98,7 @@ export const useBlueprintStorage = (rundownId: string) => {
       };
 
       console.log('Saving blueprint with camera plots:', cameraPlots?.length || 0, 'scenes');
+      console.log('Camera plots being saved:', cameraPlots);
 
       if (savedBlueprint) {
         // Update existing blueprint
@@ -116,6 +122,7 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
+        console.log('Successfully updated blueprint, returned data camera_plots:', data?.camera_plots);
         setSavedBlueprint(data);
       } else {
         // Create new blueprint
@@ -137,6 +144,7 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
+        console.log('Successfully created blueprint, returned data camera_plots:', data?.camera_plots);
         setSavedBlueprint(data);
       }
 
