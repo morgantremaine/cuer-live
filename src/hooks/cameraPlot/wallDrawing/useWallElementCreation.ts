@@ -25,16 +25,12 @@ export const useWallElementCreation = (
         segment.end.x - segment.start.x
       ) * (180 / Math.PI);
       
-      // Calculate the center point of the wall segment
-      const centerX = (segment.start.x + segment.end.x) / 2;
-      const centerY = (segment.start.y + segment.end.y) / 2;
-      
-      // Position the wall at its center, then it will rotate around that center
+      // For perfect connections, position walls exactly from start to end points
       const wallElement: CameraElement = {
         id: segment.id,
         type: 'wall',
-        x: centerX - (distance / 2), // Offset by half width so rotation happens at center
-        y: centerY - 2, // Offset by half height
+        x: segment.start.x,
+        y: segment.start.y - 2, // Center the wall height around the line
         width: distance,
         height: 4,
         rotation: angle,
@@ -48,7 +44,6 @@ export const useWallElementCreation = (
         id: wallElement.id,
         start: segment.start,
         end: segment.end,
-        center: { x: centerX, y: centerY },
         position: { x: wallElement.x, y: wallElement.y },
         width: wallElement.width,
         height: wallElement.height,

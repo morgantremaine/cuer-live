@@ -24,7 +24,7 @@ export const useWallCanvasHandlers = ({
   const handleWallClick = (x: number, y: number) => {
     if (selectedTool !== 'wall') return false;
 
-    // Always snap to grid for perfect connections
+    // Always snap to grid for perfect connections - use smaller grid for more precision
     const snapped = snapToGrid(x, y);
     console.log('Wall click at raw coords:', { x, y }, 'snapped to:', snapped);
 

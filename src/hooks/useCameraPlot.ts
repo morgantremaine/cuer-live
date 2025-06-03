@@ -32,21 +32,36 @@ export interface CameraPlotData {
 export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
   const [plots, setPlots] = useState<CameraPlotScene[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
-  const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
+  const { savedBlueprint, saveBlueprint, loadBlueprint } = useBlueprintStorage(rundownId);
 
   // Load saved plot data when blueprint is loaded
   useEffect(() => {
-    if (savedBlueprint && !isInitialized) {
-      if (savedBlueprint.camera_plots && Array.isArray(savedBlueprint.camera_plots)) {
-        setPlots(savedBlueprint.camera_plots);
+    const initializePlots = async () => {
+      if (!isInitialized && rundownId && rundownTitle) {
+        console.log('Initializing camera plots for rundown:', rundownId);
+        
+        // Ensure blueprint is loaded
+        const blueprint = await loadBlueprint();
+        
+        if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots)) {
+          console.log('Loading existing camera plots:', blueprint.camera_plots);
+          setPlots(blueprint.camera_plots);
+        } else {
+          console.log('No existing camera plots found, starting with empty array');
+          setPlots([]);
+        }
+        setIsInitialized(true);
       }
-      setIsInitialized(true);
-    }
-  }, [savedBlueprint, isInitialized]);
+    };
+
+    initializePlots();
+  }, [rundownId, rundownTitle, loadBlueprint, isInitialized]);
 
   // Auto-save plot data whenever it changes
   useEffect(() => {
-    if (isInitialized && rundownId && rundownTitle) {
+    if (isInitialized && rundownId && rundownTitle && plots) {
+      console.log('Auto-saving camera plots:', plots);
+      
       const saveTimeout = setTimeout(() => {
         saveBlueprint(
           rundownTitle,
@@ -55,7 +70,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
           true, // silent save
           savedBlueprint?.notes,
           savedBlueprint?.crew_data,
-          plots
+          plots // Save the camera plots
         );
       }, 1000);
 
@@ -69,11 +84,21 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
       name,
       elements: []
     };
-    setPlots([...plots, newPlot]);
+    console.log('Creating new plot:', newPlot);
+    setPlots(prevPlots => {
+      const updatedPlots = [...prevPlots, newPlot];
+      console.log('Updated plots after creation:', updatedPlots);
+      return updatedPlots;
+    });
   };
 
   const deletePlot = (plotId: string) => {
-    setPlots(plots.filter(plot => plot.id !== plotId));
+    console.log('Deleting plot:', plotId);
+    setPlots(prevPlots => {
+      const updatedPlots = prevPlots.filter(plot => plot.id !== plotId);
+      console.log('Updated plots after deletion:', updatedPlots);
+      return updatedPlots;
+    });
   };
 
   const duplicatePlot = (plotId: string) => {
@@ -88,14 +113,24 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
           id: `element-${Date.now()}-${Math.random()}`
         }))
       };
-      setPlots([...plots, duplicatedPlot]);
+      console.log('Duplicating plot:', duplicatedPlot);
+      setPlots(prevPlots => {
+        const updatedPlots = [...prevPlots, duplicatedPlot];
+        console.log('Updated plots after duplication:', updatedPlots);
+        return updatedPlots;
+      });
     }
   };
 
   const updatePlot = (plotId: string, updatedPlot: Partial<CameraPlotScene>) => {
-    setPlots(plots.map(plot => 
-      plot.id === plotId ? { ...plot, ...updatedPlot } : plot
-    ));
+    console.log('Updating plot:', plotId, 'with updates:', updatedPlot);
+    setPlots(prevPlots => {
+      const updatedPlots = prevPlots.map(plot => 
+        plot.id === plotId ? { ...plot, ...updatedPlot } : plot
+      );
+      console.log('Updated plots after update:', updatedPlots);
+      return updatedPlots;
+    });
   };
 
   const openPlotEditor = () => {

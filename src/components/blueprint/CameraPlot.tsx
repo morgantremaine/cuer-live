@@ -24,6 +24,8 @@ const CameraPlot = ({
 }: CameraPlotProps) => {
   const { plots, createNewPlot, openPlotEditor } = useCameraPlot(rundownId, rundownTitle);
 
+  console.log('CameraPlot component rendering with plots:', plots);
+
   const handleOpenEditor = () => {
     if (plots.length === 0) {
       // Create first plot if none exist

@@ -1,5 +1,5 @@
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useEffect } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotElement from './CameraPlotElement';
 import CameraPlotGrid from './canvas/CameraPlotGrid';
@@ -53,6 +53,25 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     setSelectedTool
   });
 
+  // Add keyboard event listener for delete key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        selectedElements.forEach(elementId => {
+          onDeleteElement(elementId);
+        });
+      }
+    };
+
+    // Add event listener to document
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedElements, onDeleteElement]);
+
   return (
     <div className="flex-1 relative overflow-auto bg-gray-600">
       <div
@@ -66,6 +85,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           height: '2000px',
           cursor: selectedTool === 'select' ? 'default' : 'crosshair'
         }}
+        tabIndex={0} // Make div focusable for keyboard events
       >
         <CameraPlotGrid showGrid={showGrid || false} />
 

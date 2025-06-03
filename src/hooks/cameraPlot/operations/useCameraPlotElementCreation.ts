@@ -46,7 +46,6 @@ export const useCameraPlotElementCreation = (
       };
     } else if (type === 'wall') {
       // Create a default wall segment when no wallData is provided
-      // This will be a horizontal wall of 100px length
       const snapped = snapToGrid(x, y);
       
       newElement = {
@@ -80,7 +79,7 @@ export const useCameraPlotElementCreation = (
             label: `CAM ${cameraNumber}`,
             cameraNumber,
             labelOffsetX: 0,
-            labelOffsetY: 15 // Closer to the icon, directly underneath
+            labelOffsetY: 55 // Position label directly under the camera
           };
           break;
         case 'person':
@@ -95,7 +94,7 @@ export const useCameraPlotElementCreation = (
             scale: 1,
             label: 'Person',
             labelOffsetX: 0,
-            labelOffsetY: 15 // Closer to the icon, directly underneath
+            labelOffsetY: 45 // Position label directly under the person
           };
           break;
         case 'furniture-rect':
@@ -108,9 +107,9 @@ export const useCameraPlotElementCreation = (
             height: 60,
             rotation: 0,
             scale: 1,
-            label: 'Table',
+            label: 'Rectangle', // Changed from 'Table'
             labelOffsetX: 0,
-            labelOffsetY: 15 // Closer to the icon, directly underneath
+            labelOffsetY: 65 // Position label directly under the furniture
           };
           break;
         case 'furniture-circle':
@@ -123,9 +122,9 @@ export const useCameraPlotElementCreation = (
             height: 60,
             rotation: 0,
             scale: 1,
-            label: 'Round Table',
+            label: 'Circle', // Changed from 'Round Table'
             labelOffsetX: 0,
-            labelOffsetY: 15 // Closer to the icon, directly underneath
+            labelOffsetY: 65 // Position label directly under the furniture
           };
           break;
         default:

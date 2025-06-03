@@ -47,7 +47,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   // Calculate label position - perfectly centered below the element
   const labelX = element.x + element.width / 2 + (element.labelOffsetX || 0);
-  const labelY = element.y + element.height + (element.labelOffsetY || 0);
+  const labelY = element.y + element.height + (element.labelOffsetY || 10); // Use a smaller default offset
 
   return (
     <div
