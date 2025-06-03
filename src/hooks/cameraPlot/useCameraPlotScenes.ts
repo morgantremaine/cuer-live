@@ -6,30 +6,18 @@ export const useCameraPlotScenes = (rundownId: string) => {
   const { plots, createNewPlot, deletePlot, duplicatePlot, updatePlot } = useCameraPlot(rundownId, 'Camera Plot');
   const [activeSceneId, setActiveSceneId] = useState<string>('');
 
-  // Initialize with first scene or create one if none exist
+  // Wait for plots to load and set active scene
   useEffect(() => {
-    if (plots.length === 0) {
-      console.log('No plots exist, creating initial scene');
-      createNewPlot('Scene 1');
-    } else if (!activeSceneId) {
-      console.log('Setting active scene to first plot:', plots[0].id);
-      setActiveSceneId(plots[0].id);
-    } else {
-      // Ensure active scene still exists in plots
+    if (plots.length > 0) {
+      // If we don't have an active scene or it doesn't exist anymore, set to first
       const activeExists = plots.find(p => p.id === activeSceneId);
-      if (!activeExists && plots.length > 0) {
-        console.log('Active scene no longer exists, setting to first available:', plots[0].id);
+      if (!activeSceneId || !activeExists) {
+        console.log('Setting active scene to first plot:', plots[0].id);
         setActiveSceneId(plots[0].id);
       }
-    }
-  }, [plots, activeSceneId, createNewPlot]);
-
-  // When a new plot is created, make it active if no active scene
-  useEffect(() => {
-    if (plots.length > 0 && !activeSceneId) {
-      const latestPlot = plots[plots.length - 1];
-      console.log('Setting newly created plot as active:', latestPlot.id);
-      setActiveSceneId(latestPlot.id);
+    } else if (plots.length === 0 && activeSceneId) {
+      // Clear active scene if no plots exist
+      setActiveSceneId('');
     }
   }, [plots, activeSceneId]);
 
@@ -38,7 +26,10 @@ export const useCameraPlotScenes = (rundownId: string) => {
   console.log('Current active scene:', activeScene?.id, 'from plots:', plots.length);
 
   const createScene = (name: string) => {
-    createNewPlot(name);
+    const newPlot = createNewPlot(name);
+    if (newPlot && !activeSceneId) {
+      setActiveSceneId(newPlot.id);
+    }
   };
 
   const deleteScene = (sceneId: string) => {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,12 +26,7 @@ const CameraPlot = ({
   console.log('CameraPlot component rendering with scenes:', scenes.length);
 
   const handleOpenEditor = () => {
-    if (!scenes || scenes.length === 0) {
-      // Create first scene if none exist
-      console.log('Creating initial scene before opening editor');
-      createScene('Scene 1');
-    }
-    // Always open editor regardless - it will handle scene creation
+    // Always open editor - it will handle scene creation if needed
     const editorUrl = `/camera-plot-editor/${rundownId}`;
     window.open(editorUrl, '_blank');
   };
