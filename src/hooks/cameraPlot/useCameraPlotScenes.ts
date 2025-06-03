@@ -23,20 +23,32 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     const shouldLog = now - lastLogTimeRef.current > LOG_THROTTLE_MS;
     
     if (scenes.length > 0) {
-      // If no active scene is set, or the current active scene doesn't exist, set to first scene
-      const currentActiveScene = scenes.find(scene => scene.id === activeSceneId);
-      
-      if (!activeSceneId || !currentActiveScene) {
+      // If no active scene is set, set to first scene
+      if (!activeSceneId) {
         const firstSceneId = scenes[0].id;
         if (shouldLog) {
           console.log('Setting active scene to first plot:', firstSceneId);
           lastLogTimeRef.current = now;
         }
         setActiveSceneId(firstSceneId);
+      } else {
+        // Check if the current active scene still exists in the scenes
+        const currentActiveScene = scenes.find(scene => scene.id === activeSceneId);
+        if (!currentActiveScene) {
+          // If current active scene doesn't exist, set to first scene
+          const firstSceneId = scenes[0].id;
+          if (shouldLog) {
+            console.log('Active scene not found, setting to first plot:', firstSceneId);
+            lastLogTimeRef.current = now;
+          }
+          setActiveSceneId(firstSceneId);
+        }
       }
     } else if (scenes.length === 0) {
       // Clear active scene if no scenes exist
-      setActiveSceneId(null);
+      if (activeSceneId !== null) {
+        setActiveSceneId(null);
+      }
     }
   }, [scenes, activeSceneId]);
 

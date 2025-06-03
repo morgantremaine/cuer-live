@@ -32,25 +32,20 @@ export interface CameraPlotData {
 export const useCameraPlotData = (rundownId: string, rundownTitle: string, readOnly = false) => {
   const [plots, setPlots] = useState<CameraPlotScene[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const initializationRef = useRef(false);
   const { savedBlueprint, saveBlueprint, loadBlueprint } = useBlueprintStorage(rundownId);
 
   // Load saved plot data when blueprint is loaded
   useEffect(() => {
     const initializePlots = async () => {
-      if (!isInitialized && rundownId && rundownTitle) {
+      if (!initializationRef.current && rundownId && rundownTitle) {
+        initializationRef.current = true;
+        
         const blueprint = await loadBlueprint();
         
         if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
-          // Use a more stable update to prevent reference issues
-          setPlots(prevPlots => {
-            // Only update if the data is actually different
-            const newPlots = blueprint.camera_plots;
-            if (JSON.stringify(prevPlots) !== JSON.stringify(newPlots)) {
-              console.log('Loading camera plots from blueprint:', newPlots.length);
-              return newPlots;
-            }
-            return prevPlots;
-          });
+          console.log('Loading camera plots from blueprint:', blueprint.camera_plots.length);
+          setPlots(blueprint.camera_plots);
         } else {
           setPlots([]);
         }
@@ -59,7 +54,7 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
     };
 
     initializePlots();
-  }, [rundownId, rundownTitle, loadBlueprint, isInitialized]);
+  }, [rundownId, rundownTitle, loadBlueprint]);
 
   const reloadPlots = async () => {
     const blueprint = await loadBlueprint();

@@ -9,47 +9,46 @@ export const useCameraPlotAutoSave = (
   rundownTitle: string,
   readOnly: boolean,
   savedBlueprint: any,
-  saveBlueprint: (title: string, lists: any[], showDate?: string, silent?: boolean, notes?: string, crewData?: any, cameraPlots?: CameraPlotScene[]) => Promise<void>
+  saveBlueprint: (title: string, lists: any[], showDate?: string, silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
 ) => {
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastSavedPlotsRef = useRef<string>('');
+  const lastSaveRef = useRef<string>('');
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    if (readOnly) {
+    if (!isInitialized || readOnly || plots.length === 0) {
       return;
     }
 
-    if (isInitialized && rundownId && rundownTitle && plots !== null) {
-      const currentPlotsString = JSON.stringify(plots);
+    const currentState = JSON.stringify(plots);
+    
+    // Only save if the state has actually changed
+    if (currentState !== lastSaveRef.current) {
+      lastSaveRef.current = currentState;
       
-      if (currentPlotsString !== lastSavedPlotsRef.current) {
-        if (autoSaveTimeoutRef.current) {
-          clearTimeout(autoSaveTimeoutRef.current);
-        }
-        
-        autoSaveTimeoutRef.current = setTimeout(async () => {
-          try {
-            lastSavedPlotsRef.current = currentPlotsString;
-            await saveBlueprint(
-              rundownTitle,
-              savedBlueprint?.lists || [],
-              savedBlueprint?.show_date,
-              true,
-              savedBlueprint?.notes,
-              savedBlueprint?.crew_data,
-              plots
-            );
-          } catch (error) {
-            console.error('Auto-save failed:', error);
-          }
-        }, 50);
+      // Clear any existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
+      
+      // Debounce the save operation
+      saveTimeoutRef.current = setTimeout(() => {
+        console.log('Auto-saving camera plots:', plots.length);
+        saveBlueprint(
+          rundownTitle,
+          savedBlueprint?.lists || [],
+          savedBlueprint?.show_date,
+          true, // silent save
+          savedBlueprint?.notes,
+          savedBlueprint?.crew_data,
+          plots // Pass the camera plots
+        );
+      }, 1000); // 1 second debounce
     }
 
     return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [plots, isInitialized, rundownId, rundownTitle, savedBlueprint, saveBlueprint, readOnly]);
+  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, savedBlueprint, saveBlueprint]);
 };
