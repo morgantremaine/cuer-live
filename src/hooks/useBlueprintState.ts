@@ -33,6 +33,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         const refreshedLists = savedBlueprint.lists.map(list => ({
           ...list,
           items: generateListFromColumn(items, list.sourceColumn),
+          // CRITICAL: Preserve the saved checkedItems state
           checkedItems: list.checkedItems || {}
         }));
         setLists(refreshedLists);
@@ -48,6 +49,30 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       setInitialized(true);
     }
   }, [rundownId, rundownTitle, items, savedBlueprint, loading, initialized]);
+
+  // Refresh list content when items change (but preserve checkbox states)
+  useEffect(() => {
+    if (initialized && items.length > 0 && lists.length > 0) {
+      const refreshedLists = lists.map(list => ({
+        ...list,
+        items: generateListFromColumn(items, list.sourceColumn),
+        // CRITICAL: Preserve existing checkbox states during refresh
+        checkedItems: list.checkedItems || {}
+      }));
+      
+      // Only update if the items actually changed
+      const hasItemsChanged = lists.some((list, index) => {
+        const newItems = generateListFromColumn(items, list.sourceColumn);
+        return JSON.stringify(list.items) !== JSON.stringify(newItems);
+      });
+      
+      if (hasItemsChanged) {
+        setLists(refreshedLists);
+        // Save silently to preserve checkbox states
+        saveBlueprint(rundownTitle, refreshedLists, showDate, true);
+      }
+    }
+  }, [items, initialized, rundownTitle, showDate, saveBlueprint]);
 
   const addNewList = useCallback((name: string, sourceColumn: string) => {
     const newList: BlueprintList = {
@@ -114,14 +139,16 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   }, [lists, rundownTitle, saveBlueprint, showDate]);
 
   const refreshAllLists = useCallback(() => {
-    const updatedLists = lists.map(list => ({
+    const refreshedLists = lists.map(list => ({
       ...list,
-      items: generateListFromColumn(items, list.sourceColumn)
+      items: generateListFromColumn(items, list.sourceColumn),
+      // CRITICAL: Preserve checkbox states during manual refresh
+      checkedItems: list.checkedItems || {}
     }));
-    setLists(updatedLists);
+    setLists(refreshedLists);
     
     // Save to database silently and show custom refresh message
-    saveWithDate(rundownTitle, updatedLists, true);
+    saveWithDate(rundownTitle, refreshedLists, true);
     
     toast({
       title: 'Success',
