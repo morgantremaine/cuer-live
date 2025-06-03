@@ -16,8 +16,18 @@ export const useCameraPlotElementCreation = (
       return;
     }
 
+    // Convert tool types to element types
+    const getElementType = (toolType: string): "camera" | "person" | "wall" | "furniture" => {
+      if (toolType === 'furniture-rect' || toolType === 'furniture-circle') {
+        return 'furniture';
+      }
+      return toolType as "camera" | "person" | "wall" | "furniture";
+    };
+
+    const elementType = getElementType(type);
+
     const baseElement: Omit<CameraElement, 'id'> = {
-      type,
+      type: elementType,
       x,
       y,
       width: 40,
@@ -48,11 +58,22 @@ export const useCameraPlotElementCreation = (
           height: 30
         };
         break;
-      case 'furniture':
+      case 'furniture-rect':
         newElement = {
           ...baseElement,
           id: uuidv4(),
+          type: 'furniture',
           label: 'Square',
+          width: 60,
+          height: 60
+        };
+        break;
+      case 'furniture-circle':
+        newElement = {
+          ...baseElement,
+          id: uuidv4(),
+          type: 'furniture',
+          label: 'Circle',
           width: 60,
           height: 60
         };
