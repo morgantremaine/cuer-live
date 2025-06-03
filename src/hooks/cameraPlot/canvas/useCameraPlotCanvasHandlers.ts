@@ -76,21 +76,9 @@ export const useCameraPlotCanvasHandlers = ({
       
       // Create individual wall elements for each segment
       segments.forEach((segment, index) => {
-        const length = Math.sqrt(
-          Math.pow(segment.end.x - segment.start.x, 2) + 
-          Math.pow(segment.end.y - segment.start.y, 2)
-        );
-        const angle = Math.atan2(
-          segment.end.y - segment.start.y, 
-          segment.start.x - segment.end.x
-        ) * (180 / Math.PI);
-        
-        // Create wall element using the proper addElement function
+        // Create wall element using the standard addElement function
         setTimeout(() => {
-          onAddElement('wall', segment.start.x, segment.start.y, {
-            start: segment.start,
-            end: segment.end
-          });
+          onAddElement('wall', segment.start.x, segment.start.y);
         }, index * 10); // Small delay to ensure proper creation
       });
     }
