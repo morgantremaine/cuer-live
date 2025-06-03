@@ -57,6 +57,19 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
     initializePlots();
   }, [rundownId, rundownTitle, loadBlueprint, isInitialized]);
 
+  // Force reload data when coming back to a page
+  const reloadPlots = async () => {
+    console.log('Reloading camera plots data...');
+    const blueprint = await loadBlueprint();
+    if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots)) {
+      console.log('Reloaded camera plots:', blueprint.camera_plots);
+      setPlots(blueprint.camera_plots);
+    } else {
+      console.log('No camera plots found during reload');
+      setPlots([]);
+    }
+  };
+
   // Auto-save plot data whenever it changes
   useEffect(() => {
     if (isInitialized && rundownId && rundownTitle && plots !== null) {
@@ -146,6 +159,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
     deletePlot,
     duplicatePlot,
     updatePlot,
-    openPlotEditor
+    openPlotEditor,
+    reloadPlots
   };
 };

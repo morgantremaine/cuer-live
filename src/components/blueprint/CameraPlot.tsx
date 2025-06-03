@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Edit } from 'lucide-react';
@@ -22,7 +22,13 @@ const CameraPlot = ({
   onDragEnterContainer, 
   onDragEnd 
 }: CameraPlotProps) => {
-  const { scenes } = useCameraPlotScenes(rundownId);
+  const { scenes, reloadPlots } = useCameraPlotScenes(rundownId);
+
+  // Reload data when component becomes visible
+  useEffect(() => {
+    console.log('CameraPlot component mounted, reloading scenes');
+    reloadPlots();
+  }, [reloadPlots]);
 
   console.log('CameraPlot component rendering with scenes:', scenes.length);
 

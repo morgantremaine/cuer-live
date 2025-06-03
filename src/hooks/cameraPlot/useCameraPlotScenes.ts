@@ -3,8 +3,16 @@ import { useState, useEffect } from 'react';
 import { useCameraPlot, CameraPlotScene } from '@/hooks/useCameraPlot';
 
 export const useCameraPlotScenes = (rundownId: string) => {
-  const { plots, createNewPlot, deletePlot, duplicatePlot, updatePlot } = useCameraPlot(rundownId, 'Camera Plot');
+  const { plots, createNewPlot, deletePlot, duplicatePlot, updatePlot, reloadPlots } = useCameraPlot(rundownId, 'Camera Plot');
   const [activeSceneId, setActiveSceneId] = useState<string>('');
+
+  // Force reload when component mounts to ensure fresh data
+  useEffect(() => {
+    if (rundownId) {
+      console.log('useCameraPlotScenes mounting, reloading data for rundown:', rundownId);
+      reloadPlots();
+    }
+  }, [rundownId, reloadPlots]);
 
   // Wait for plots to load and set active scene
   useEffect(() => {
@@ -73,6 +81,7 @@ export const useCameraPlotScenes = (rundownId: string) => {
     duplicateScene,
     setActiveScene,
     updateSceneName,
-    updatePlot
+    updatePlot,
+    reloadPlots
   };
 };
