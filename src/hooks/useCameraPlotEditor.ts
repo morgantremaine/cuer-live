@@ -38,7 +38,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     updateElement,
     deleteElement,
     duplicateElement
-  } = useCameraPlotInteractions(activeScene, scenes, updateSceneName, updatePlot);
+  } = useCameraPlotInteractions(activeScene, scenes, updateSceneName, updatePlot, setSelectedTool);
 
   // Enhanced operations with setSelectedTool integration
   const { addElement } = useCameraPlotEnhancedOperations({

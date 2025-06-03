@@ -6,9 +6,10 @@ import { useCameraPlotElementModification } from './operations/useCameraPlotElem
 
 export const useCameraPlotElements = (
   activeScene: CameraPlotScene | undefined,
-  updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void
+  updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void,
+  setSelectedTool: (tool: string) => void
 ) => {
-  const { addElement } = useCameraPlotElementCreation(activeScene, updatePlot);
+  const { addElement } = useCameraPlotElementCreation(activeScene, updatePlot, setSelectedTool);
   const { updateElement, deleteElement, duplicateElement } = useCameraPlotElementModification(activeScene, updatePlot);
 
   return {

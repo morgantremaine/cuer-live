@@ -6,7 +6,8 @@ export const useCameraPlotInteractions = (
   activeScene: CameraPlotScene | undefined,
   scenes: CameraPlotScene[],
   updateSceneName: (sceneId: string, name: string) => void,
-  updatePlot: (plotId: string, updates: Partial<CameraPlotScene>) => void
+  updatePlot: (plotId: string, updates: Partial<CameraPlotScene>) => void,
+  setSelectedTool: (tool: string) => void
 ) => {
   const updatePlotCallback = (plotId: string, updates: Partial<CameraPlotScene>) => {
     updatePlot(plotId, updates);
@@ -23,7 +24,7 @@ export const useCameraPlotInteractions = (
     updateElement,
     deleteElement,
     duplicateElement
-  } = useCameraPlotElements(activeScene, updatePlotCallback);
+  } = useCameraPlotElements(activeScene, updatePlotCallback, setSelectedTool);
 
   return {
     snapToGrid,
