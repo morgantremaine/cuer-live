@@ -12,6 +12,7 @@ export type Database = {
       blueprints: {
         Row: {
           created_at: string
+          crew_data: Json | null
           id: string
           lists: Json
           notes: string | null
@@ -23,6 +24,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          crew_data?: Json | null
           id?: string
           lists?: Json
           notes?: string | null
@@ -34,6 +36,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          crew_data?: Json | null
           id?: string
           lists?: Json
           notes?: string | null

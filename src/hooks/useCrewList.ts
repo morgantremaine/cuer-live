@@ -21,12 +21,13 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
   // Load saved crew data when blueprint is loaded
   useEffect(() => {
     console.log('useCrewList: Loading saved blueprint data', { savedBlueprint, isInitialized });
-    if (savedBlueprint && savedBlueprint.crew_data && !isInitialized) {
-      console.log('useCrewList: Loading saved crew data:', savedBlueprint.crew_data);
-      setCrewMembers(savedBlueprint.crew_data);
-      setIsInitialized(true);
-    } else if (!savedBlueprint?.crew_data && !isInitialized) {
-      console.log('useCrewList: No saved crew data, using default');
+    if (savedBlueprint && !isInitialized) {
+      if (savedBlueprint.crew_data && Array.isArray(savedBlueprint.crew_data) && savedBlueprint.crew_data.length > 0) {
+        console.log('useCrewList: Loading saved crew data:', savedBlueprint.crew_data);
+        setCrewMembers(savedBlueprint.crew_data);
+      } else {
+        console.log('useCrewList: No saved crew data, using default');
+      }
       setIsInitialized(true);
     }
   }, [savedBlueprint, isInitialized]);
