@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Edit, Plus } from 'lucide-react';
+import { GripVertical, Edit } from 'lucide-react';
 import { useCameraPlotScenes } from '@/hooks/cameraPlot/useCameraPlotScenes';
 
 interface CameraPlotProps {
@@ -21,7 +22,7 @@ const CameraPlot = ({
   onDragEnterContainer, 
   onDragEnd 
 }: CameraPlotProps) => {
-  const { scenes, createScene } = useCameraPlotScenes(rundownId);
+  const { scenes } = useCameraPlotScenes(rundownId);
 
   console.log('CameraPlot component rendering with scenes:', scenes.length);
 
@@ -29,11 +30,6 @@ const CameraPlot = ({
     // Always open editor - it will handle scene creation if needed
     const editorUrl = `/camera-plot-editor/${rundownId}`;
     window.open(editorUrl, '_blank');
-  };
-
-  const handleCreateNewScene = () => {
-    const sceneNumber = (scenes?.length || 0) + 1;
-    createScene(`Scene ${sceneNumber}`);
   };
 
   const renderMiniPreview = (plot: any) => {
@@ -125,32 +121,21 @@ const CameraPlot = ({
             <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
             <CardTitle className="text-xl text-white">Camera Plot</CardTitle>
           </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleOpenEditor}
-              size="sm"
-              className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Plot
-            </Button>
-            <Button
-              onClick={handleCreateNewScene}
-              size="sm"
-              variant="outline"
-              className="text-white border-gray-600 hover:bg-gray-700 bg-transparent"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Scene
-            </Button>
-          </div>
+          <Button
+            onClick={handleOpenEditor}
+            size="sm"
+            className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Open Editor
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
         {!scenes || scenes.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <p>No camera plots created yet.</p>
-            <p className="text-sm mt-2">Click "Edit Plot" to start creating your camera diagram.</p>
+            <p className="text-sm mt-2">Click "Open Editor" to start creating your camera diagram.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

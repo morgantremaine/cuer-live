@@ -27,9 +27,10 @@ export const useCameraPlotScenes = (rundownId: string) => {
 
   const createScene = (name: string) => {
     const newPlot = createNewPlot(name);
-    if (newPlot && !activeSceneId) {
+    if (newPlot) {
       setActiveSceneId(newPlot.id);
     }
+    return newPlot;
   };
 
   const deleteScene = (sceneId: string) => {
@@ -45,7 +46,11 @@ export const useCameraPlotScenes = (rundownId: string) => {
   };
 
   const duplicateScene = (sceneId: string) => {
-    duplicatePlot(sceneId);
+    const newPlot = duplicatePlot(sceneId);
+    if (newPlot) {
+      setActiveSceneId(newPlot.id);
+    }
+    return newPlot;
   };
 
   const setActiveScene = (sceneId: string) => {

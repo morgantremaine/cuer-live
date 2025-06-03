@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
@@ -34,6 +34,14 @@ const CameraPlotEditor = () => {
     toggleGrid,
     snapToGrid
   } = useCameraPlotEditor(id || '');
+
+  // Create initial scene if none exist
+  useEffect(() => {
+    if (scenes.length === 0) {
+      console.log('No scenes exist in editor, creating initial scene');
+      createScene('Scene 1');
+    }
+  }, [scenes.length, createScene]);
 
   const handleBackToDashboard = () => {
     navigate(`/blueprint/${id}`);
