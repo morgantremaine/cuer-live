@@ -30,9 +30,9 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
             transformOrigin: 'center'
           }}
         >
-          {/* Single camera shape - square body with triangular lens */}
-          <svg width="32" height="24" viewBox="0 0 32 24" className="fill-blue-500 stroke-black stroke-1">
-            <path d="M2 4 h16 v16 h-16 z M18 8 l8 4 l-8 4 z" />
+          {/* Single camera shape - square body with triangular lens pointing left */}
+          <svg width="40" height="32" viewBox="0 0 40 32" className="fill-blue-500 stroke-black stroke-1">
+            <path d="M8 6 h20 v20 h-20 z M8 12 l-6 4 l6 4 z" />
           </svg>
         </div>
       );

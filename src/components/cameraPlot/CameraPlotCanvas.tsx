@@ -12,6 +12,9 @@ interface CameraPlotCanvasProps {
   selectedTool: string;
   selectedElements: string[];
   showGrid?: boolean;
+  zoom: number;
+  pan: { x: number; y: number };
+  updatePan: (deltaX: number, deltaY: number) => void;
   onAddElement: (type: string, x: number, y: number) => void;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   onDeleteElement: (elementId: string) => void;
@@ -26,6 +29,9 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   selectedTool,
   selectedElements,
   showGrid,
+  zoom,
+  pan,
+  updatePan,
   onAddElement,
   onUpdateElement,
   onDeleteElement,
@@ -37,7 +43,9 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   const {
     mousePos,
     handleCanvasClick,
+    handleMouseDown,
     handleMouseMove,
+    handleMouseUp,
     handleDoubleClick,
     isDrawingWall,
     currentPath,
@@ -50,7 +58,10 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     scene,
     onUpdateElement,
     updatePlot,
-    setSelectedTool
+    setSelectedTool,
+    zoom,
+    pan,
+    updatePan
   });
 
   // Add keyboard event listener for delete key
@@ -63,10 +74,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
       }
     };
 
-    // Add event listener to document
     document.addEventListener('keydown', handleKeyDown);
-
-    // Cleanup
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -78,14 +86,18 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         ref={ref}
         className="relative bg-gray-600"
         onClick={handleCanvasClick}
-        onDoubleClick={handleDoubleClick}
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
         style={{ 
           width: '2000px', 
           height: '2000px',
-          cursor: selectedTool === 'select' ? 'default' : 'crosshair'
+          cursor: selectedTool === 'select' ? 'grab' : 'crosshair',
+          transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+          transformOrigin: '0 0'
         }}
-        tabIndex={0} // Make div focusable for keyboard events
+        tabIndex={0}
       >
         <CameraPlotGrid showGrid={showGrid || false} />
 

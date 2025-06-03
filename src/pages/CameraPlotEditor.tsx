@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { useCameraPlotEditor } from '@/hooks/useCameraPlotEditor';
+import { useCameraPlotZoom } from '@/hooks/cameraPlot/useCameraPlotZoom';
 import CameraPlotCanvas from '@/components/cameraPlot/CameraPlotCanvas';
 import CameraPlotToolbar from '@/components/cameraPlot/CameraPlotToolbar';
 import CameraPlotSceneManager from '@/components/cameraPlot/CameraPlotSceneManager';
@@ -34,6 +35,15 @@ const CameraPlotEditor = () => {
     toggleGrid,
     snapToGrid
   } = useCameraPlotEditor(id || '');
+
+  const {
+    zoom,
+    pan,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    updatePan
+  } = useCameraPlotZoom();
 
   // Create initial scene if none exist
   useEffect(() => {
@@ -93,6 +103,10 @@ const CameraPlotEditor = () => {
             onToolSelect={setSelectedTool}
             showGrid={showGrid}
             onToggleGrid={toggleGrid}
+            zoom={zoom}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onResetZoom={resetZoom}
           />
           
           <div className="mt-8">
@@ -116,6 +130,9 @@ const CameraPlotEditor = () => {
             selectedTool={selectedTool}
             selectedElements={selectedElements}
             showGrid={showGrid}
+            zoom={zoom}
+            pan={pan}
+            updatePan={updatePan}
             onAddElement={addElement}
             onUpdateElement={updateElement}
             onDeleteElement={deleteElement}

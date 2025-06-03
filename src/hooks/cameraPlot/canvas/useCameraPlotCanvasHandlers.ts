@@ -12,6 +12,9 @@ interface UseCameraPlotCanvasHandlersProps {
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
   setSelectedTool: (tool: string) => void;
+  zoom: number;
+  pan: { x: number; y: number };
+  updatePan: (deltaX: number, deltaY: number) => void;
 }
 
 export const useCameraPlotCanvasHandlers = ({
@@ -22,9 +25,14 @@ export const useCameraPlotCanvasHandlers = ({
   scene,
   onUpdateElement,
   updatePlot,
-  setSelectedTool
+  setSelectedTool,
+  zoom,
+  pan,
+  updatePan
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
 
   const wallHandlers = useWallCanvasHandlers({
     selectedTool,
@@ -34,7 +42,16 @@ export const useCameraPlotCanvasHandlers = ({
     setSelectedTool
   });
 
+  const getCanvasCoordinates = (clientX: number, clientY: number, rect: DOMRect) => {
+    // Account for zoom and pan
+    const x = (clientX - rect.left - pan.x) / zoom;
+    const y = (clientY - rect.top - pan.y) / zoom;
+    return { x, y };
+  };
+
   const handleCanvasClick = (e: React.MouseEvent) => {
+    if (isPanning) return;
+
     if (selectedTool === 'select') {
       if (e.target === e.currentTarget) {
         onSelectElement('', false);
@@ -43,8 +60,7 @@ export const useCameraPlotCanvasHandlers = ({
     }
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
 
     // Handle wall tool clicks
     if (wallHandlers.handleWallClick(x, y)) {
@@ -56,17 +72,34 @@ export const useCameraPlotCanvasHandlers = ({
     onAddElement(selectedTool, snapped.x, snapped.y);
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (selectedTool === 'select' && e.target === e.currentTarget) {
+      setIsPanning(true);
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+    }
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const rawPos = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-    const snappedPos = snapToGrid(rawPos.x, rawPos.y);
+    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
+    const snappedPos = snapToGrid(x, y);
     setMousePos(snappedPos);
 
-    // Handle wall tool mouse movement
-    wallHandlers.handleWallMouseMove(rawPos.x, rawPos.y);
+    // Handle panning
+    if (isPanning && selectedTool === 'select') {
+      const deltaX = e.clientX - lastPanPoint.x;
+      const deltaY = e.clientY - lastPanPoint.y;
+      updatePan(deltaX, deltaY);
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+      return;
+    }
+
+    // Handle wall tool mouse movement with canvas coordinates
+    wallHandlers.handleWallMouseMove(x, y);
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -79,7 +112,9 @@ export const useCameraPlotCanvasHandlers = ({
   return {
     mousePos,
     handleCanvasClick,
+    handleMouseDown,
     handleMouseMove,
+    handleMouseUp,
     handleDoubleClick,
     // Expose wall drawing state for preview rendering
     isDrawingWall: wallHandlers.isDrawing,
