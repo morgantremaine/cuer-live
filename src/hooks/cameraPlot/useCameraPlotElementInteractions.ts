@@ -21,65 +21,80 @@ export const useCameraPlotElementInteractions = ({
   const [isRotating, setIsRotating] = useState(false);
   const [isScaling, setIsScaling] = useState(false);
   const [isLabelDragging, setIsLabelDragging] = useState(false);
+  const [cursorMode, setCursorMode] = useState<'normal' | 'rotate' | 'scale'>('normal');
   const [dragStart, setDragStart] = useState({ 
     x: 0, 
     y: 0, 
     elementX: 0, 
     elementY: 0, 
     initialScale: 1, 
-    initialRotation: 0,
-    centerX: 0,
-    centerY: 0
+    initialRotation: 0
   });
 
-  // Check if element can be scaled (cameras and people cannot be scaled)
-  const canScale = element.type !== 'camera' && element.type !== 'person';
+  // Check if element can be scaled/rotated
+  const canTransform = element.type === 'furniture';
+  const canRotate = element.type === 'camera' || element.type === 'person' || element.type === 'furniture';
+
+  const getDistanceFromCenter = (clientX: number, clientY: number, rect: DOMRect) => {
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    return Math.sqrt(Math.pow(clientX - centerX, 2) + Math.pow(clientY - centerY, 2));
+  };
+
+  const handleMouseMove = (e: React.MouseEvent, rect: DOMRect) => {
+    if (!isSelected) return;
+
+    const distance = getDistanceFromCenter(e.clientX, e.clientY, rect);
+    const elementRadius = Math.min(rect.width, rect.height) / 2;
+    const rotationZone = elementRadius + 15; // 15px outside the element
+
+    if (canRotate && distance > elementRadius && distance < rotationZone) {
+      setCursorMode('rotate');
+    } else if (canTransform && distance <= elementRadius) {
+      const relativeX = e.clientX - rect.left;
+      const relativeY = e.clientY - rect.top;
+      const cornerThreshold = 8;
+      
+      const nearCorner = (
+        (relativeX < cornerThreshold && relativeY < cornerThreshold) ||
+        (relativeX > rect.width - cornerThreshold && relativeY < cornerThreshold) ||
+        (relativeX < cornerThreshold && relativeY > rect.height - cornerThreshold) ||
+        (relativeX > rect.width - cornerThreshold && relativeY > rect.height - cornerThreshold)
+      );
+      
+      setCursorMode(nearCorner ? 'scale' : 'normal');
+    } else {
+      setCursorMode('normal');
+    }
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (e.detail === 2) { // Double click - handled by parent
+    if (e.detail === 2) {
       return { isDoubleClick: true };
     }
 
     onSelect(element.id, e.ctrlKey || e.metaKey);
     
     const rect = e.currentTarget.getBoundingClientRect();
-    const relativeX = e.clientX - rect.left;
-    const relativeY = e.clientY - rect.top;
     const centerX = element.x + element.width / 2;
     const centerY = element.y + element.height / 2;
     
-    // Check if clicking on rotation handle (outer edge)
-    const edgeThreshold = 15;
-    const nearEdge = relativeX < edgeThreshold || relativeX > rect.width - edgeThreshold || 
-                    relativeY < edgeThreshold || relativeY > rect.height - edgeThreshold;
-    
-    // Check if clicking on scale handle (corners) - only for scalable elements
-    const cornerThreshold = 8;
-    const nearCorner = canScale && isSelected && (
-      (relativeX < cornerThreshold && relativeY < cornerThreshold) ||
-      (relativeX > rect.width - cornerThreshold && relativeY < cornerThreshold) ||
-      (relativeX < cornerThreshold && relativeY > rect.height - cornerThreshold) ||
-      (relativeX > rect.width - cornerThreshold && relativeY > rect.height - cornerThreshold)
-    );
-
     const commonDragStart = {
       x: e.clientX,
       y: e.clientY,
       elementX: element.x,
       elementY: element.y,
       initialScale: element.scale || 1,
-      initialRotation: element.rotation || 0,
-      centerX,
-      centerY
+      initialRotation: element.rotation || 0
     };
 
-    if (nearCorner) {
-      setIsScaling(true);
-      setDragStart(commonDragStart);
-    } else if (nearEdge && isSelected) {
+    if (cursorMode === 'rotate' && canRotate) {
       setIsRotating(true);
+      setDragStart(commonDragStart);
+    } else if (cursorMode === 'scale' && canTransform) {
+      setIsScaling(true);
       setDragStart(commonDragStart);
     } else {
       setIsDragging(true);
@@ -98,17 +113,20 @@ export const useCameraPlotElementInteractions = ({
       elementX: element.labelOffsetX || 0,
       elementY: element.labelOffsetY || 0,
       initialScale: element.scale || 1,
-      initialRotation: element.rotation || 0,
-      centerX: 0,
-      centerY: 0
+      initialRotation: element.rotation || 0
     });
   };
 
   const getCursor = () => {
     if (isDragging) return 'grabbing';
-    if (isRotating) return 'crosshair';
+    if (isRotating) return 'grab';
     if (isScaling) return 'nw-resize';
-    return 'grab';
+    
+    switch (cursorMode) {
+      case 'rotate': return 'grab';
+      case 'scale': return 'nw-resize';
+      default: return 'grab';
+    }
   };
 
   useEffect(() => {
@@ -137,7 +155,7 @@ export const useCameraPlotElementInteractions = ({
         onUpdate(element.id, {
           rotation: angle
         });
-      } else if (isScaling && canScale) {
+      } else if (isScaling && canTransform) {
         const centerX = element.x + element.width / 2;
         const centerY = element.y + element.height / 2;
         
@@ -175,12 +193,14 @@ export const useCameraPlotElementInteractions = ({
       document.removeEventListener('mousemove', handleMouseMoveGlobal);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isLabelDragging, isRotating, isScaling, dragStart, element, onUpdate, snapToGrid, canScale]);
+  }, [isDragging, isLabelDragging, isRotating, isScaling, dragStart, element, onUpdate, snapToGrid, canTransform]);
 
   return {
     handleMouseDown,
     handleLabelMouseDown,
+    handleMouseMove,
     getCursor,
+    cursorMode,
     isDragging,
     isRotating,
     isScaling

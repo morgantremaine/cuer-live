@@ -2,20 +2,17 @@
 import React, { forwardRef, useState } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotElement from './CameraPlotElement';
+import { useCameraPlotWallDrawing } from '@/hooks/cameraPlot/useCameraPlotWallDrawing';
 
 interface CameraPlotCanvasProps {
   scene: CameraPlotScene | undefined;
   selectedTool: string;
   selectedElements: string[];
-  isDrawingWall?: boolean;
-  wallStart?: { x: number; y: number } | null;
-  wallPreview?: { x: number; y: number } | null;
   showGrid?: boolean;
   onAddElement: (type: string, x: number, y: number) => void;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   onDeleteElement: (elementId: string) => void;
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
-  onUpdateWallPreview?: (point: { x: number; y: number }) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
 }
 
@@ -23,18 +20,25 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   scene,
   selectedTool,
   selectedElements,
-  isDrawingWall,
-  wallStart,
-  wallPreview,
   showGrid,
   onAddElement,
   onUpdateElement,
   onDeleteElement,
   onSelectElement,
-  onUpdateWallPreview,
   snapToGrid
 }, ref) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  
+  const {
+    isDrawing: isDrawingWall,
+    currentPath,
+    previewPoint,
+    startDrawing,
+    addPoint,
+    updatePreview,
+    finishDrawing,
+    cancelDrawing
+  } = useCameraPlotWallDrawing();
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (selectedTool === 'select') {
@@ -47,8 +51,18 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    const snapped = snapToGrid(x, y);
 
-    onAddElement(selectedTool, x, y);
+    if (selectedTool === 'wall') {
+      if (!isDrawingWall) {
+        startDrawing(snapped);
+      } else {
+        addPoint(snapped);
+      }
+      return;
+    }
+
+    onAddElement(selectedTool, snapped.x, snapped.y);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -60,9 +74,45 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     const snappedPos = snapToGrid(rawPos.x, rawPos.y);
     setMousePos(snappedPos);
 
-    // Update wall preview when drawing walls
-    if (isDrawingWall && onUpdateWallPreview) {
-      onUpdateWallPreview(snappedPos);
+    if (isDrawingWall) {
+      updatePreview(snappedPos);
+    }
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (selectedTool === 'wall' && isDrawingWall) {
+      const segments = finishDrawing();
+      // Convert segments to wall elements
+      segments.forEach((segment, index) => {
+        const length = Math.sqrt(
+          Math.pow(segment.end.x - segment.start.x, 2) + 
+          Math.pow(segment.end.y - segment.start.y, 2)
+        );
+        const angle = Math.atan2(
+          segment.end.y - segment.start.y, 
+          segment.end.x - segment.start.x
+        ) * (180 / Math.PI);
+        
+        const element: Partial<CameraElement> = {
+          id: segment.id,
+          type: 'wall',
+          x: segment.start.x,
+          y: segment.start.y - 2,
+          width: length,
+          height: 4,
+          rotation: angle,
+          scale: 1,
+          label: '',
+          labelOffsetX: 0,
+          labelOffsetY: -20
+        };
+        
+        if (scene) {
+          const updatedElements = [...scene.elements, element as CameraElement];
+          // This is a bit hacky, but we need to update the scene directly
+          scene.elements = updatedElements;
+        }
+      });
     }
   };
 
@@ -72,7 +122,6 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     const gridSize = 20;
     const lines = [];
     
-    // Vertical lines
     for (let x = 0; x <= 2000; x += gridSize) {
       lines.push(
         <line
@@ -88,7 +137,6 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
       );
     }
     
-    // Horizontal lines
     for (let y = 0; y <= 2000; y += gridSize) {
       lines.push(
         <line
@@ -114,7 +162,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     );
   };
 
-  const currentWallPreview = wallPreview || mousePos;
+  const currentPreviewPoint = previewPoint || mousePos;
 
   return (
     <div className="flex-1 relative overflow-auto bg-gray-600">
@@ -122,6 +170,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         ref={ref}
         className="relative bg-gray-600"
         onClick={handleCanvasClick}
+        onDoubleClick={handleDoubleClick}
         onMouseMove={handleMouseMove}
         style={{ 
           width: '2000px', 
@@ -129,38 +178,63 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           cursor: selectedTool === 'select' ? 'default' : 'crosshair'
         }}
       >
-        {/* Grid */}
         {renderGrid()}
 
-        {/* Wall preview line */}
-        {isDrawingWall && wallStart && (
+        {/* Wall drawing preview */}
+        {isDrawingWall && currentPath.length > 0 && (
           <svg
             className="absolute inset-0 pointer-events-none z-40"
             style={{ width: '100%', height: '100%' }}
           >
-            <line
-              x1={wallStart.x}
-              y1={wallStart.y}
-              x2={currentWallPreview.x}
-              y2={currentWallPreview.y}
-              stroke="#60A5FA"
-              strokeWidth="4"
-              strokeDasharray="8,4"
-              opacity={0.8}
-            />
-            {/* Start point indicator */}
+            {/* Draw completed path segments */}
+            {currentPath.map((point, index) => {
+              if (index === 0) return null;
+              const prevPoint = currentPath[index - 1];
+              return (
+                <line
+                  key={`path-${index}`}
+                  x1={prevPoint.x}
+                  y1={prevPoint.y}
+                  x2={point.x}
+                  y2={point.y}
+                  stroke="#60A5FA"
+                  strokeWidth="4"
+                  opacity={0.8}
+                />
+              );
+            })}
+            
+            {/* Preview line to current mouse position */}
+            {currentPath.length > 0 && (
+              <line
+                x1={currentPath[currentPath.length - 1].x}
+                y1={currentPath[currentPath.length - 1].y}
+                x2={currentPreviewPoint.x}
+                y2={currentPreviewPoint.y}
+                stroke="#60A5FA"
+                strokeWidth="4"
+                strokeDasharray="8,4"
+                opacity={0.6}
+              />
+            )}
+            
+            {/* Draw points */}
+            {currentPath.map((point, index) => (
+              <circle
+                key={`point-${index}`}
+                cx={point.x}
+                cy={point.y}
+                r="6"
+                fill="#ef4444"
+                stroke="#fff"
+                strokeWidth="2"
+              />
+            ))}
+            
+            {/* Preview point */}
             <circle
-              cx={wallStart.x}
-              cy={wallStart.y}
-              r="6"
-              fill="#ef4444"
-              stroke="#fff"
-              strokeWidth="2"
-            />
-            {/* End point preview */}
-            <circle
-              cx={currentWallPreview.x}
-              cy={currentWallPreview.y}
+              cx={currentPreviewPoint.x}
+              cy={currentPreviewPoint.y}
               r="4"
               fill="#60A5FA"
               opacity={0.8}
@@ -186,7 +260,11 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-300 text-center pointer-events-none">
             <p className="text-lg mb-2">Camera Plot Canvas</p>
             <p className="text-sm">Select a tool and click to add elements</p>
-            <p className="text-xs mt-2 opacity-75">Grid snapping enabled (20px)</p>
+            {isDrawingWall && (
+              <p className="text-xs mt-2 text-blue-400">
+                Click to add wall points, double-click to finish
+              </p>
+            )}
           </div>
         )}
       </div>

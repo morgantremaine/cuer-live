@@ -18,9 +18,6 @@ const CameraPlotEditor = () => {
     activeScene,
     selectedTool,
     selectedElements,
-    isDrawingWall,
-    wallStart,
-    wallPreview,
     showGrid,
     setSelectedTool,
     addElement,
@@ -33,8 +30,6 @@ const CameraPlotEditor = () => {
     duplicateScene,
     setActiveScene,
     updateSceneName,
-    updateWallPreview,
-    stopDrawingWalls,
     toggleGrid,
     snapToGrid
   } = useCameraPlotEditor(id || '');
@@ -87,8 +82,6 @@ const CameraPlotEditor = () => {
           <CameraPlotToolbar
             selectedTool={selectedTool}
             onToolSelect={setSelectedTool}
-            isDrawingWall={isDrawingWall}
-            onStopDrawingWalls={stopDrawingWalls}
             showGrid={showGrid}
             onToggleGrid={toggleGrid}
           />
@@ -113,15 +106,11 @@ const CameraPlotEditor = () => {
             scene={activeScene}
             selectedTool={selectedTool}
             selectedElements={selectedElements}
-            isDrawingWall={isDrawingWall}
-            wallStart={wallStart}
-            wallPreview={wallPreview}
             showGrid={showGrid}
             onAddElement={addElement}
             onUpdateElement={updateElement}
             onDeleteElement={deleteElement}
             onSelectElement={selectElement}
-            onUpdateWallPreview={updateWallPreview}
             snapToGrid={snapToGrid}
           />
         </div>

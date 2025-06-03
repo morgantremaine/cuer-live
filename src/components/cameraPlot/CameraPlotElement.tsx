@@ -24,7 +24,9 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
   const {
     handleMouseDown,
     handleLabelMouseDown,
-    getCursor
+    handleMouseMove,
+    getCursor,
+    cursorMode
   } = useCameraPlotElementInteractions({
     element,
     isSelected,
@@ -38,6 +40,11 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
     if (result?.isDoubleClick) {
       setIsEditing(true);
     }
+  };
+
+  const handleElementMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    handleMouseMove(e, rect);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -68,12 +75,13 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
           cursor: getCursor()
         }}
         onMouseDown={handleElementMouseDown}
+        onMouseMove={handleElementMouseMove}
         onContextMenu={handleContextMenu}
         tabIndex={0}
         onKeyDown={handleKeyPress}
       >
         <CameraPlotElementRenderer element={element} />
-        <CameraPlotElementHandles element={element} isSelected={isSelected} />
+        <CameraPlotElementHandles element={element} isSelected={isSelected} cursorMode={cursorMode} />
       </div>
 
       {/* Label */}

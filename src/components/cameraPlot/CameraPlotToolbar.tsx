@@ -6,8 +6,8 @@ import { Move, Square, Circle, StopCircle, Grid3X3 } from 'lucide-react';
 interface CameraPlotToolbarProps {
   selectedTool: string;
   onToolSelect: (tool: string) => void;
-  isDrawingWall: boolean;
-  onStopDrawingWalls: () => void;
+  isDrawingWall?: boolean;
+  onStopDrawingWalls?: () => void;
   showGrid: boolean;
   onToggleGrid: () => void;
 }
@@ -22,15 +22,19 @@ const CameraPlotToolbar = ({
 }: CameraPlotToolbarProps) => {
   const CameraIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2"/>
-      <path d="M12 8 L16 12 L12 16" stroke="currentColor" strokeWidth="2" fill="none"/>
+      <rect x="4" y="8" width="16" height="10" stroke="currentColor" strokeWidth="2" fill="none" rx="1"/>
+      <circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="2" fill="none"/>
+      <line x1="12" y1="13" x2="12" y2="6" stroke="currentColor" strokeWidth="2"/>
+      <polygon points="12,6 10,8 14,8" fill="currentColor"/>
     </svg>
   );
 
   const PersonIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2"/>
-      <line x1="12" y1="12" x2="12" y2="4" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="2" fill="none"/>
+      <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="2" fill="none"/>
+      <line x1="12" y1="8" x2="12" y2="2" stroke="currentColor" strokeWidth="2"/>
+      <polygon points="12,2 10,4 14,4" fill="currentColor"/>
     </svg>
   );
 
@@ -96,10 +100,10 @@ const CameraPlotToolbar = ({
             className="w-full bg-red-600 hover:bg-red-700 text-white"
           >
             <StopCircle className="h-4 w-4 mr-2" />
-            Finish Drawing
+            Finish Wall
           </Button>
           <p className="text-xs text-gray-400 mt-2">
-            Click to place wall endpoints. Each click continues the wall from the last point.
+            Click to add points, double-click to finish the wall outline.
           </p>
         </div>
       )}
