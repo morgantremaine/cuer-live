@@ -62,7 +62,7 @@ const CameraPlotEditor = () => {
 
   return (
     <>
-      <style jsx>{`
+      <style>{`
         @media print {
           .no-print {
             display: none !important;
