@@ -47,10 +47,10 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
     e.preventDefault();
     e.stopPropagation();
     
-    // Position context menu near the clicked element instead of mouse position
+    // Position context menu very close to the element
     const elementRect = e.currentTarget.getBoundingClientRect();
     setContextMenuPos({ 
-      x: elementRect.right + 10, 
+      x: elementRect.left + elementRect.width + 5, 
       y: elementRect.top 
     });
     setShowContextMenu(true);
