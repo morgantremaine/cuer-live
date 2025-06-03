@@ -12,6 +12,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const [lists, setLists] = useState<BlueprintList[]>([]);
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
+  const [lastItemsHash, setLastItemsHash] = useState<string>('');
   const { toast } = useToast();
   
   const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
@@ -25,10 +26,18 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   // Drag and drop functionality
   const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, saveWithDate, rundownTitle);
 
+  // Create a hash of items to detect actual changes
+  const createItemsHash = useCallback((items: RundownItem[]) => {
+    return JSON.stringify(items.map(item => ({ id: item.id, name: item.name, segmentName: item.segmentName })));
+  }, []);
+
   // Initialize lists when items and saved blueprint are loaded
   useEffect(() => {
     if (items.length > 0 && !loading && !initialized) {
+      console.log('Initializing blueprint state with items:', items.length);
+      
       if (savedBlueprint && savedBlueprint.lists.length > 0) {
+        console.log('Loading saved blueprint with', savedBlueprint.lists.length, 'lists');
         // Load saved lists and refresh their content based on current items
         const refreshedLists = savedBlueprint.lists.map(list => ({
           ...list,
@@ -37,6 +46,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
           checkedItems: list.checkedItems || {}
         }));
         setLists(refreshedLists);
+        console.log('Loaded lists with preserved checkbox states:', refreshedLists.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
         
         // Load saved show date if available
         if (savedBlueprint.show_date) {
@@ -44,35 +54,40 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         }
       } else {
         // Generate default blueprint if no saved blueprint exists
+        console.log('Generating default blueprint');
         setLists(generateDefaultBlueprint(rundownId, rundownTitle, items));
       }
+      
+      // Set the initial items hash
+      setLastItemsHash(createItemsHash(items));
       setInitialized(true);
     }
-  }, [rundownId, rundownTitle, items, savedBlueprint, loading, initialized]);
+  }, [rundownId, rundownTitle, items, savedBlueprint, loading, initialized, createItemsHash]);
 
-  // Refresh list content when items change (but preserve checkbox states)
+  // Refresh list content when items actually change (but preserve checkbox states)
   useEffect(() => {
     if (initialized && items.length > 0 && lists.length > 0) {
-      const refreshedLists = lists.map(list => ({
-        ...list,
-        items: generateListFromColumn(items, list.sourceColumn),
-        // CRITICAL: Preserve existing checkbox states during refresh
-        checkedItems: list.checkedItems || {}
-      }));
+      const currentItemsHash = createItemsHash(items);
       
-      // Only update if the items actually changed
-      const hasItemsChanged = lists.some((list, index) => {
-        const newItems = generateListFromColumn(items, list.sourceColumn);
-        return JSON.stringify(list.items) !== JSON.stringify(newItems);
-      });
-      
-      if (hasItemsChanged) {
+      // Only refresh if items actually changed
+      if (currentItemsHash !== lastItemsHash) {
+        console.log('Items changed, refreshing lists while preserving checkbox states');
+        
+        const refreshedLists = lists.map(list => ({
+          ...list,
+          items: generateListFromColumn(items, list.sourceColumn),
+          // CRITICAL: Preserve existing checkbox states during refresh
+          checkedItems: list.checkedItems || {}
+        }));
+        
         setLists(refreshedLists);
+        setLastItemsHash(currentItemsHash);
+        
         // Save silently to preserve checkbox states
         saveBlueprint(rundownTitle, refreshedLists, showDate, true);
       }
     }
-  }, [items, initialized, rundownTitle, showDate, saveBlueprint]);
+  }, [items, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash]);
 
   const addNewList = useCallback((name: string, sourceColumn: string) => {
     const newList: BlueprintList = {
@@ -147,6 +162,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     }));
     setLists(refreshedLists);
     
+    // Update the items hash to prevent automatic refresh from triggering
+    setLastItemsHash(createItemsHash(items));
+    
     // Save to database silently and show custom refresh message
     saveWithDate(rundownTitle, refreshedLists, true);
     
@@ -154,7 +172,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       title: 'Success',
       description: 'All lists refreshed successfully!',
     });
-  }, [items, lists, rundownTitle, saveWithDate, toast]);
+  }, [items, lists, rundownTitle, saveWithDate, toast, createItemsHash]);
 
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
