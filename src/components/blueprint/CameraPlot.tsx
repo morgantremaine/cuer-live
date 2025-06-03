@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Edit, RefreshCw } from 'lucide-react';
+import { GripVertical, Edit } from 'lucide-react';
 import { useCameraPlotScenes } from '@/hooks/cameraPlot/useCameraPlotScenes';
+import { useNavigate } from 'react-router-dom';
 
 interface CameraPlotProps {
   rundownId: string;
@@ -23,7 +24,7 @@ const CameraPlot = ({
   onDragEnd 
 }: CameraPlotProps) => {
   const { scenes, reloadPlots } = useCameraPlotScenes(rundownId, true); // Read-only mode
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Load data when component mounts
   useEffect(() => {
@@ -32,23 +33,19 @@ const CameraPlot = ({
   }, []);
 
   const handleReload = async () => {
-    setIsLoading(true);
     try {
       await reloadPlots();
       console.log('Manual reload completed');
     } catch (error) {
       console.error('Manual reload failed:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   console.log('CameraPlot component rendering with scenes:', scenes.length);
 
   const handleOpenEditor = () => {
-    // Always open editor - it will handle scene creation if needed
-    const editorUrl = `/camera-plot-editor/${rundownId}`;
-    window.open(editorUrl, '_blank');
+    // Navigate in the same window instead of opening new tab
+    navigate(`/camera-plot-editor/${rundownId}`);
   };
 
   const renderMiniPreview = (plot: any) => {
@@ -142,15 +139,6 @@ const CameraPlot = ({
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={handleReload}
-              size="sm"
-              disabled={isLoading}
-              className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Reload
-            </Button>
-            <Button
               onClick={handleOpenEditor}
               size="sm"
               className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
@@ -162,12 +150,7 @@ const CameraPlot = ({
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="text-center py-8 text-gray-400">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>Loading camera plots...</p>
-          </div>
-        ) : !scenes || scenes.length === 0 ? (
+        {!scenes || scenes.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <p>No camera plots created yet.</p>
             <p className="text-sm mt-2">Click "Open Editor" to start creating your camera diagram.</p>
