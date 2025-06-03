@@ -27,11 +27,18 @@ const CameraPlot = ({
   console.log('CameraPlot component rendering with plots:', plots);
 
   const handleOpenEditor = () => {
-    if (plots.length === 0) {
+    if (!plots || plots.length === 0) {
       // Create first plot if none exist
+      console.log('Creating initial plot before opening editor');
       createNewPlot('Scene 1');
     }
+    // Always open editor regardless - it will handle scene creation
     openPlotEditor();
+  };
+
+  const handleCreateNewScene = () => {
+    const sceneNumber = (plots?.length || 0) + 1;
+    createNewPlot(`Scene ${sceneNumber}`);
   };
 
   const renderMiniPreview = (plot: any) => {
@@ -133,7 +140,7 @@ const CameraPlot = ({
               Edit Plot
             </Button>
             <Button
-              onClick={() => createNewPlot(`Scene ${plots.length + 1}`)}
+              onClick={handleCreateNewScene}
               size="sm"
               variant="outline"
               className="text-white border-gray-600 hover:bg-gray-700 bg-transparent"
@@ -145,7 +152,7 @@ const CameraPlot = ({
         </div>
       </CardHeader>
       <CardContent>
-        {plots.length === 0 ? (
+        {!plots || plots.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <p>No camera plots created yet.</p>
             <p className="text-sm mt-2">Click "Edit Plot" to start creating your camera diagram.</p>

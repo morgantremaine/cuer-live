@@ -9,13 +9,33 @@ export const useCameraPlotScenes = (rundownId: string) => {
   // Initialize with first scene or create one if none exist
   useEffect(() => {
     if (plots.length === 0) {
+      console.log('No plots exist, creating initial scene');
       createNewPlot('Scene 1');
-    } else if (!activeSceneId && plots.length > 0) {
+    } else if (!activeSceneId) {
+      console.log('Setting active scene to first plot:', plots[0].id);
       setActiveSceneId(plots[0].id);
+    } else {
+      // Ensure active scene still exists in plots
+      const activeExists = plots.find(p => p.id === activeSceneId);
+      if (!activeExists && plots.length > 0) {
+        console.log('Active scene no longer exists, setting to first available:', plots[0].id);
+        setActiveSceneId(plots[0].id);
+      }
     }
   }, [plots, activeSceneId, createNewPlot]);
 
+  // When a new plot is created, make it active if no active scene
+  useEffect(() => {
+    if (plots.length > 0 && !activeSceneId) {
+      const latestPlot = plots[plots.length - 1];
+      console.log('Setting newly created plot as active:', latestPlot.id);
+      setActiveSceneId(latestPlot.id);
+    }
+  }, [plots, activeSceneId]);
+
   const activeScene = plots.find(scene => scene.id === activeSceneId);
+
+  console.log('Current active scene:', activeScene?.id, 'from plots:', plots.length);
 
   const createScene = (name: string) => {
     createNewPlot(name);
@@ -38,6 +58,7 @@ export const useCameraPlotScenes = (rundownId: string) => {
   };
 
   const setActiveScene = (sceneId: string) => {
+    console.log('Setting active scene to:', sceneId);
     setActiveSceneId(sceneId);
   };
 

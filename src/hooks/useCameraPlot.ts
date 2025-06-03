@@ -43,7 +43,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
         // Ensure blueprint is loaded
         const blueprint = await loadBlueprint();
         
-        if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots)) {
+        if (blueprint && blueprint.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
           console.log('Loading existing camera plots:', blueprint.camera_plots);
           setPlots(blueprint.camera_plots);
         } else {
@@ -59,7 +59,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
 
   // Auto-save plot data whenever it changes
   useEffect(() => {
-    if (isInitialized && rundownId && rundownTitle && plots) {
+    if (isInitialized && rundownId && rundownTitle && plots !== null) {
       console.log('Auto-saving camera plots:', plots);
       
       const saveTimeout = setTimeout(() => {
@@ -80,7 +80,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
 
   const createNewPlot = (name: string) => {
     const newPlot: CameraPlotScene = {
-      id: `plot-${Date.now()}`,
+      id: `plot-${Date.now()}-${Math.random()}`,
       name,
       elements: []
     };
@@ -90,6 +90,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
       console.log('Updated plots after creation:', updatedPlots);
       return updatedPlots;
     });
+    return newPlot;
   };
 
   const deletePlot = (plotId: string) => {
@@ -106,7 +107,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
     if (plotToDuplicate) {
       const duplicatedPlot: CameraPlotScene = {
         ...plotToDuplicate,
-        id: `plot-${Date.now()}`,
+        id: `plot-${Date.now()}-${Math.random()}`,
         name: `${plotToDuplicate.name} (Copy)`,
         elements: plotToDuplicate.elements.map(element => ({
           ...element,
@@ -119,6 +120,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string) => {
         console.log('Updated plots after duplication:', updatedPlots);
         return updatedPlots;
       });
+      return duplicatedPlot;
     }
   };
 
