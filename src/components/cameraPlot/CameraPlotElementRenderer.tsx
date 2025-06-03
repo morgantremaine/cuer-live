@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
-import { Camera, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 interface CameraPlotElementRendererProps {
   element: CameraElement;
@@ -23,19 +23,35 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
     case 'camera':
       return (
         <div 
-          className="bg-blue-500 border-2 border-black rounded flex items-center justify-center"
+          className="relative"
           style={{
             ...baseStyle,
             transform: `rotate(${rotation}deg) scale(${scale})`,
             transformOrigin: 'center'
           }}
         >
-          <Camera className="w-6 h-6 text-black" />
-          {/* Direction indicator */}
+          {/* Camera body (square) */}
+          <div className="w-8 h-8 bg-blue-500 border-2 border-black relative z-10" />
+          
+          {/* Camera lens (triangle) */}
           <div 
-            className="absolute w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-black"
+            className="absolute w-0 h-0 z-0"
             style={{
-              top: '-4px',
+              borderLeft: '8px solid transparent',
+              borderRight: '8px solid transparent', 
+              borderBottom: '12px solid #3b82f6',
+              top: '-8px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.8))'
+            }}
+          />
+          
+          {/* Direction indicator - small line at the front */}
+          <div 
+            className="absolute w-1 h-3 bg-black"
+            style={{
+              top: '-12px',
               left: '50%',
               transform: 'translateX(-50%)'
             }}
@@ -46,7 +62,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
     case 'person':
       return (
         <div 
-          className="bg-green-500 border-2 border-black rounded-full flex items-center justify-center"
+          className="bg-green-500 border-2 border-black rounded-full flex items-center justify-center relative"
           style={{
             ...baseStyle,
             transform: `rotate(${rotation}deg) scale(${scale})`,

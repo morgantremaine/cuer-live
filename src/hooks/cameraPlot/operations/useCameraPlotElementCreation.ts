@@ -8,7 +8,12 @@ export const useCameraPlotElementCreation = (
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void
 ) => {
   const addElement = (type: string, x: number, y: number, wallData?: { start: { x: number; y: number }, end: { x: number; y: number } }) => {
-    if (!activeScene) return;
+    if (!activeScene) {
+      console.log('No active scene, cannot add element');
+      return;
+    }
+
+    console.log('Adding element:', { type, x, y, wallData });
 
     let newElement: CameraElement;
     const elementId = `element-${Date.now()}-${Math.random()}`;
@@ -19,6 +24,8 @@ export const useCameraPlotElementCreation = (
       const distance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
       const angle = Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI);
       
+      console.log('Creating wall with distance:', distance, 'angle:', angle);
+      
       newElement = {
         id: elementId,
         type: 'wall',
@@ -27,6 +34,24 @@ export const useCameraPlotElementCreation = (
         width: distance,
         height: 4,
         rotation: angle,
+        scale: 1,
+        label: '',
+        labelOffsetX: 0,
+        labelOffsetY: -20
+      };
+    } else if (type === 'wall') {
+      // Create a default wall segment when no wallData is provided
+      // This will be a horizontal wall of 100px length
+      const snapped = snapToGrid(x, y);
+      
+      newElement = {
+        id: elementId,
+        type: 'wall',
+        x: snapped.x,
+        y: snapped.y - 2,
+        width: 100,
+        height: 4,
+        rotation: 0,
         scale: 1,
         label: '',
         labelOffsetX: 0,
@@ -99,11 +124,14 @@ export const useCameraPlotElementCreation = (
           };
           break;
         default:
+          console.log('Unknown element type:', type);
           return;
       }
     }
 
+    console.log('Created element:', newElement);
     const updatedElements = [...activeScene.elements, newElement];
+    console.log('Updating scene with new elements:', updatedElements.length);
     updatePlot(activeScene.id, { elements: updatedElements });
   };
 

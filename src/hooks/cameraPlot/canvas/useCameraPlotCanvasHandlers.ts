@@ -74,40 +74,25 @@ export const useCameraPlotCanvasHandlers = ({
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (selectedTool === 'wall' && isDrawingWall && currentPath.length > 1) {
+      console.log('Double click detected, finishing wall drawing');
       const segments = finishDrawing();
+      console.log('Wall segments created:', segments);
       
-      // Create individual wall elements for each segment
+      // Create wall elements using the standard addElement function
       segments.forEach((segment, index) => {
         const distance = Math.sqrt(
           Math.pow(segment.end.x - segment.start.x, 2) + 
           Math.pow(segment.end.y - segment.start.y, 2)
         );
-        const angle = Math.atan2(
-          segment.end.y - segment.start.y, 
-          segment.end.x - segment.start.x
-        ) * (180 / Math.PI);
         
-        // Create wall element directly in the scene
-        if (scene) {
-          const elementId = `wall-${Date.now()}-${index}`;
-          const newWall: CameraElement = {
-            id: elementId,
-            type: 'wall',
-            x: segment.start.x,
-            y: segment.start.y - 2,
-            width: distance,
-            height: 4,
-            rotation: angle,
-            scale: 1,
-            label: '',
-            labelOffsetX: 0,
-            labelOffsetY: -20
-          };
+        if (distance > 5) { // Only create walls with meaningful length
+          console.log(`Creating wall segment ${index + 1}:`, segment);
           
-          // Add wall to scene
+          // Use a timeout to ensure each wall is created separately
           setTimeout(() => {
-            onUpdateElement(elementId, newWall);
-          }, index * 10);
+            // Create wall using the existing addElement system
+            onAddElement('wall', segment.start.x, segment.start.y);
+          }, index * 50);
         }
       });
     }
