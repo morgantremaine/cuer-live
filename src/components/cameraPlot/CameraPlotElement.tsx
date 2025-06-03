@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotElementRenderer from './CameraPlotElementRenderer';
@@ -47,11 +46,10 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
     e.preventDefault();
     e.stopPropagation();
     
-    // Position context menu very close to the element
-    const elementRect = e.currentTarget.getBoundingClientRect();
+    // Position context menu right at the edge of the element
     setContextMenuPos({ 
-      x: elementRect.left + elementRect.width + 5, 
-      y: elementRect.top 
+      x: element.x + element.width + 2, 
+      y: element.y 
     });
     setShowContextMenu(true);
   };
