@@ -5,7 +5,8 @@ export const useCameraPlotWalls = () => {
   const [wallStart, setWallStart] = useState<{ x: number; y: number } | null>(null);
   const [wallPreview, setWallPreview] = useState<{ x: number; y: number } | null>(null);
 
-  const startWallDrawing = (point: { x: number; y: number }) => {
+  const startWallDrawing = (x: number, y: number) => {
+    const point = { x, y };
     console.log('Starting wall drawing at:', point);
     setIsDrawingWall(true);
     setWallStart(point);
@@ -18,15 +19,13 @@ export const useCameraPlotWalls = () => {
     }
   };
 
-  const completeWall = (endPoint: { x: number; y: number }) => {
-    console.log('Completing wall from:', wallStart, 'to:', endPoint);
-    const result = { start: wallStart, end: endPoint };
+  const completeWall = () => {
+    console.log('Completing wall drawing');
     
     // Reset state but keep drawing mode active for continuous wall drawing
-    setWallStart(endPoint); // Start next wall from this point
+    setIsDrawingWall(false);
+    setWallStart(null);
     setWallPreview(null);
-    
-    return result;
   };
 
   const stopDrawingWalls = () => {
