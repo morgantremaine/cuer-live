@@ -22,16 +22,18 @@ const CameraPlotElementHandles = ({
 
   return (
     <>
-      {/* Selection outline that follows the actual shape */}
-      {element.type === 'wall' && (
-        <div 
-          className="absolute inset-0 border-2 border-blue-500 border-opacity-75 pointer-events-none"
-          style={{
-            transform: `rotate(${rotation}deg)`,
-            transformOrigin: 'center'
-          }}
-        />
-      )}
+      {/* Selection outline that follows the actual shape and rotation */}
+      <div 
+        className="absolute border-2 border-blue-500 border-opacity-75 pointer-events-none"
+        style={{
+          left: 0,
+          top: 0,
+          width: '100%',
+          height: '100%',
+          transform: `rotate(${rotation}deg)`,
+          transformOrigin: 'center'
+        }}
+      />
 
       {/* Rotation handle for rotatable elements */}
       {onRotationStart && (

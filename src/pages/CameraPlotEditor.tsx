@@ -178,6 +178,7 @@ const CameraPlotEditor = () => {
               onAddElement={addElement}
               onUpdateElement={updateElement}
               onDeleteElement={deleteElement}
+              onDuplicateElement={duplicateElement}
               onSelectElement={selectElement}
               snapToGrid={snapToGrid}
               updatePlot={updatePlot}

@@ -18,6 +18,7 @@ interface CameraPlotCanvasProps {
   onAddElement: (type: string, x: number, y: number) => void;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   onDeleteElement: (elementId: string) => void;
+  onDuplicateElement?: (element: CameraElement) => void;
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
@@ -35,6 +36,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   onAddElement,
   onUpdateElement,
   onDeleteElement,
+  onDuplicateElement,
   onSelectElement,
   snapToGrid,
   updatePlot,
@@ -116,8 +118,10 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
             isSelected={selectedElements.includes(element.id)}
             onUpdate={onUpdateElement}
             onDelete={onDeleteElement}
+            onDuplicate={onDuplicateElement}
             onSelect={onSelectElement}
             snapToGrid={snapToGrid}
+            allElements={scene.elements}
           />
         ))}
 

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
 
 interface UseCameraPlotElementDragProps {
@@ -20,6 +20,7 @@ export const useCameraPlotElementDrag = ({
     elementX: 0, 
     elementY: 0
   });
+  const lastUpdateRef = useRef<{ x: number; y: number } | null>(null);
 
   const startDrag = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -29,6 +30,7 @@ export const useCameraPlotElementDrag = ({
       elementX: element.x,
       elementY: element.y
     });
+    lastUpdateRef.current = null;
   };
 
   useEffect(() => {
@@ -39,14 +41,21 @@ export const useCameraPlotElementDrag = ({
       const deltaY = e.clientY - dragStart.y;
       const newPos = snapToGrid(dragStart.elementX + deltaX, dragStart.elementY + deltaY);
       
-      onUpdate(element.id, {
-        x: newPos.x,
-        y: newPos.y
-      });
+      // Only update if position has actually changed
+      if (!lastUpdateRef.current || 
+          lastUpdateRef.current.x !== newPos.x || 
+          lastUpdateRef.current.y !== newPos.y) {
+        lastUpdateRef.current = newPos;
+        onUpdate(element.id, {
+          x: newPos.x,
+          y: newPos.y
+        });
+      }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      lastUpdateRef.current = null;
     };
 
     if (isDragging) {
