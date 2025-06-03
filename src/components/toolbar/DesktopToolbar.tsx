@@ -53,6 +53,7 @@ const DesktopToolbar = ({
           lastAction={lastAction}
           rundownId={rundownId}
           onOpenTeleprompter={onOpenTeleprompter}
+          selectedRowId={selectedRowId}
           isMobile={false}
         />
       </div>

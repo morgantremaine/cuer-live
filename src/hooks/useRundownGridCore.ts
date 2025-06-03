@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -93,15 +92,45 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Wrapped functions that save state before making changes
-  const wrappedAddRow = useCallback((calculateEndTimeFn: any) => {
+  // Wrapped functions that save state before making changes - update to support insertion after selected row
+  const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null) => {
     saveState(items, columns, rundownTitle, 'Add Row');
-    addRow(calculateEndTimeFn);
+    
+    // Find the index of the selected row if provided
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRowId) {
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
+    
+    // Call addRow with the insertion index
+    if (insertAfterIndex !== undefined) {
+      addRow(calculateEndTimeFn, insertAfterIndex);
+    } else {
+      addRow(calculateEndTimeFn);
+    }
   }, [addRow, saveState, items, columns, rundownTitle]);
 
-  const wrappedAddHeader = useCallback(() => {
+  const wrappedAddHeader = useCallback((selectedRowId?: string | null) => {
     saveState(items, columns, rundownTitle, 'Add Header');
-    addHeader();
+    
+    // Find the index of the selected row if provided
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRowId) {
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
+    
+    // Call addHeader with the insertion index
+    if (insertAfterIndex !== undefined) {
+      addHeader(insertAfterIndex);
+    } else {
+      addHeader();
+    }
   }, [addHeader, saveState, items, columns, rundownTitle]);
 
   const wrappedDeleteRow = useCallback((id: string) => {

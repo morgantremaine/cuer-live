@@ -8,8 +8,8 @@ interface RundownHeaderSectionProps {
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
-  onAddRow: () => void;
-  onAddHeader: () => void;
+  onAddRow: (selectedRowId?: string | null) => void;
+  onAddHeader: (selectedRowId?: string | null) => void;
   onShowColumnManager: () => void;
   selectedCount: number;
   hasClipboardData: boolean;
@@ -105,8 +105,8 @@ const RundownHeaderSection = ({
         lastAction={lastAction}
       />
       <RundownToolbar
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
+        onAddRow={() => onAddRow(selectedRowId)}
+        onAddHeader={() => onAddHeader(selectedRowId)}
         onShowColumnManager={onShowColumnManager}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}

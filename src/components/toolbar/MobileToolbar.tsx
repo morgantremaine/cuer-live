@@ -54,6 +54,7 @@ const MobileToolbar = ({
           lastAction={lastAction}
           rundownId={rundownId}
           onOpenTeleprompter={onOpenTeleprompter}
+          selectedRowId={selectedRowId}
           isMobile={true}
         />
       </div>

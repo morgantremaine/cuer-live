@@ -14,6 +14,7 @@ interface MainActionButtonsProps {
   lastAction: string | null;
   rundownId: string | undefined;
   onOpenTeleprompter: () => void;
+  selectedRowId?: string | null;
   isMobile?: boolean;
 }
 
@@ -26,6 +27,7 @@ const MainActionButtons = ({
   lastAction,
   rundownId,
   onOpenTeleprompter,
+  selectedRowId,
   isMobile = false
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
@@ -77,10 +79,6 @@ const MainActionButtons = ({
         <Plus className="h-4 w-4" />
         <span>{isMobile ? 'Header' : 'Add Header'}</span>
       </Button>
-      <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
-        <Settings className="h-4 w-4" />
-        <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
-      </Button>
       <Button 
         onClick={onUndo} 
         variant="outline" 
@@ -91,6 +89,10 @@ const MainActionButtons = ({
       >
         <Undo className="h-4 w-4" />
         <span>Undo</span>
+      </Button>
+      <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
+        <Settings className="h-4 w-4" />
+        <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
       </Button>
       <Button onClick={handleShareRundown} variant="outline" size={buttonSize} className={buttonClass}>
         <Share2 className="h-4 w-4" />
