@@ -44,7 +44,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   if (!element.label) return null;
 
-  // Calculate label position - much further away from the element
+  // Calculate label position with much further default distances
   const getDefaultOffset = () => {
     switch (element.type) {
       case 'camera':
@@ -52,7 +52,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
       case 'person':
         return 5; // Close for people
       case 'furniture':
-        return 50; // Much further for furniture
+        return 80; // Much further for furniture (increased from 50)
       case 'wall':
         return -15; // Just above walls
       default:
@@ -65,15 +65,22 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const labelX = element.x + element.width / 2 + labelOffsetX;
   const labelY = element.y + element.height + labelOffsetY;
 
-  // Determine if we need a dotted line (when label is moved away from default position)
-  const needsDottedLine = Math.abs(labelOffsetX) > 10 || Math.abs(labelOffsetY - getDefaultOffset()) > 10;
+  // More strict logic for when dotted lines should appear
+  // Only show lines when label is moved significantly away from default position
+  const defaultOffsetY = getDefaultOffset();
+  const distanceFromDefault = Math.sqrt(
+    Math.pow(labelOffsetX, 2) + Math.pow(labelOffsetY - defaultOffsetY, 2)
+  );
   
-  // Calculate line from element center to label with increased padding
+  // Increased threshold - lines only appear when label is moved more than 25 pixels from default
+  const needsDottedLine = distanceFromDefault > 25;
+  
+  // Calculate line from element center to label with much larger padding for furniture
   const elementCenterX = element.x + element.width / 2;
   const elementCenterY = element.y + element.height / 2;
   
   // Much larger padding for furniture to keep lines far from icons
-  const iconPadding = element.type === 'furniture' ? 50 : 30; // Increased furniture padding significantly
+  const iconPadding = element.type === 'furniture' ? 80 : 30; // Increased furniture padding significantly
   const labelPadding = 15;
   const dx = labelX - elementCenterX;
   const dy = labelY - elementCenterY;
@@ -90,7 +97,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   return (
     <>
-      {/* Dotted line connection with much larger padding for furniture */}
+      {/* Dotted line connection with much larger padding for furniture and stricter appearance logic */}
       {needsDottedLine && (
         <svg 
           className="absolute pointer-events-none"
