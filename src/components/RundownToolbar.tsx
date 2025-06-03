@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor, FileText } from 'lucide-react';
+import { Plus, Settings, Play, Pause, SkipForward, SkipBack, Share2, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,10 @@ interface RundownToolbarProps {
   rundownId: string | undefined;
   // Teleprompter functionality
   onOpenTeleprompter: () => void;
+  // Undo functionality
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
 }
 
 const RundownToolbar = ({
@@ -39,7 +43,10 @@ const RundownToolbar = ({
   onForward,
   onBackward,
   rundownId,
-  onOpenTeleprompter
+  onOpenTeleprompter,
+  onUndo,
+  canUndo,
+  lastAction
 }: RundownToolbarProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -113,6 +120,17 @@ const RundownToolbar = ({
           <Button onClick={onShowColumnManager} variant="outline" size="sm" className="flex items-center space-x-1">
             <Settings className="h-4 w-4" />
             <span>Columns</span>
+          </Button>
+          <Button 
+            onClick={onUndo} 
+            variant="outline" 
+            size="sm" 
+            disabled={!canUndo}
+            title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
+            className="flex items-center space-x-1"
+          >
+            <Undo className="h-4 w-4" />
+            <span>Undo</span>
           </Button>
           <Button onClick={handleShareRundown} variant="outline" size="sm" className="flex items-center space-x-1">
             <Share2 className="h-4 w-4" />
@@ -189,6 +207,16 @@ const RundownToolbar = ({
         <Button onClick={onShowColumnManager} variant="outline" className="flex items-center space-x-2">
           <Settings className="h-4 w-4" />
           <span>Manage Columns</span>
+        </Button>
+        <Button 
+          onClick={onUndo} 
+          variant="outline" 
+          disabled={!canUndo}
+          title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
+          className="flex items-center space-x-2"
+        >
+          <Undo className="h-4 w-4" />
+          <span>Undo</span>
         </Button>
         <Button onClick={handleShareRundown} variant="outline" className="flex items-center space-x-2">
           <Share2 className="h-4 w-4" />

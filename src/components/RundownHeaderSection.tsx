@@ -118,6 +118,9 @@ const RundownHeaderSection = ({
         onBackward={onBackward}
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
       />
     </div>
   );
