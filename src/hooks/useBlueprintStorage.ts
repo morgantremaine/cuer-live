@@ -85,7 +85,9 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
 
     try {
-      const blueprintData = {
+      // CRITICAL: Only include camera_plots in the update if it's explicitly provided
+      // This prevents accidentally overwriting camera plot data when saving other blueprint data
+      const blueprintData: any = {
         user_id: user.id,
         rundown_id: rundownId,
         rundown_title: rundownTitle,
@@ -93,12 +95,17 @@ export const useBlueprintStorage = (rundownId: string) => {
         show_date: showDate,
         notes: notes || null,
         crew_data: crewData || null,
-        camera_plots: cameraPlots || null,
         updated_at: new Date().toISOString()
       };
 
-      console.log('Saving blueprint with camera plots:', cameraPlots?.length || 0, 'scenes');
-      console.log('Camera plots being saved:', cameraPlots);
+      // Only include camera_plots if it's explicitly provided
+      if (cameraPlots !== undefined) {
+        blueprintData.camera_plots = cameraPlots;
+        console.log('Saving blueprint with camera plots:', cameraPlots?.length || 0, 'scenes');
+        console.log('Camera plots being saved:', cameraPlots);
+      } else {
+        console.log('Saving blueprint WITHOUT camera plots data (preserving existing)');
+      }
 
       if (savedBlueprint) {
         // Update existing blueprint
