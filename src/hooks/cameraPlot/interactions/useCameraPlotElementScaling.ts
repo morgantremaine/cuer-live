@@ -46,12 +46,12 @@ export const useCameraPlotElementScaling = ({
       let newX = initialPos.x;
       let newY = initialPos.y;
       
-      // Check if it's a round table (furniture with equal width/height)
+      // Check if it's a round table (furniture with equal width/height or circle in label)
       const isRoundTable = element.type === 'furniture' && 
         element.label && (
           element.label.toLowerCase().includes('round') || 
           element.label.toLowerCase().includes('circle') ||
-          initialSize.width === initialSize.height
+          (initialSize.width === initialSize.height && element.label.toLowerCase().includes('table'))
         );
       
       switch (scaleHandle) {

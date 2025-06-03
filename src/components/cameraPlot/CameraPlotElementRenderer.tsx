@@ -15,7 +15,9 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
     height: '100%',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    transform: `rotate(${rotation}deg) scale(${scale})`,
+    transformOrigin: 'center'
   };
 
   switch (element.type) {
@@ -23,11 +25,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       return (
         <div 
           className="relative"
-          style={{
-            ...baseStyle,
-            transform: `rotate(${rotation}deg) scale(${scale})`,
-            transformOrigin: 'center'
-          }}
+          style={baseStyle}
         >
           <img 
             src="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
@@ -41,11 +39,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       return (
         <div 
           className="relative"
-          style={{
-            ...baseStyle,
-            transform: `rotate(${rotation}deg) scale(${scale})`,
-            transformOrigin: 'center'
-          }}
+          style={baseStyle}
         >
           <img 
             src="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png" 
@@ -78,18 +72,16 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       );
       
     case 'furniture':
-      const isRound = element.label.toLowerCase().includes('round') || element.label.toLowerCase().includes('circle');
+      const isRound = element.label && (
+        element.label.toLowerCase().includes('round') || 
+        element.label.toLowerCase().includes('circle')
+      );
       
       if (isRound) {
         return (
           <div 
             className="bg-amber-500 border-2 border-black rounded-full"
-            style={{
-              transform: `rotate(${rotation}deg) scale(${scale})`,
-              transformOrigin: 'center',
-              width: '100%',
-              height: '100%'
-            }}
+            style={baseStyle}
           />
         );
       }
@@ -97,12 +89,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       return (
         <div 
           className="bg-amber-500 border-2 border-black"
-          style={{
-            transform: `rotate(${rotation}deg) scale(${scale})`,
-            transformOrigin: 'center',
-            width: '100%',
-            height: '100%'
-          }}
+          style={baseStyle}
         />
       );
       
@@ -110,12 +97,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       return (
         <div 
           className="bg-gray-500 border-2 border-black"
-          style={{
-            transform: `rotate(${rotation}deg) scale(${scale})`,
-            transformOrigin: 'center',
-            width: '100%',
-            height: '100%'
-          }}
+          style={baseStyle}
         />
       );
   }
