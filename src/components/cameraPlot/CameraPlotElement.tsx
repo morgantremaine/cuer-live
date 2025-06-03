@@ -36,9 +36,12 @@ const CameraPlotElement = ({
     handleMouseDown,
     handleLabelMouseDown,
     handleRotationStart,
+    handleScaleStart,
     getCursor,
     isRotating,
-    canRotate
+    isScaling,
+    canRotate,
+    canScale
   } = useCameraPlotElementInteractions({
     element,
     isSelected,
@@ -101,12 +104,14 @@ const CameraPlotElement = ({
       >
         <CameraPlotElementRenderer element={element} />
         
-        {/* Rotation handles - restored for cameras and persons */}
+        {/* Handles - rotation for cameras/persons, scaling for furniture */}
         <CameraPlotElementHandles
           element={element}
           isSelected={isSelected}
           onRotationStart={handleRotationStart}
+          onScaleStart={handleScaleStart}
           isRotating={isRotating}
+          isScaling={isScaling}
         />
       </div>
 

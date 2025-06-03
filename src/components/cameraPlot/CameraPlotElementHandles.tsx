@@ -2,33 +2,49 @@
 import React from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotRotationHandle from './CameraPlotRotationHandle';
+import CameraPlotScaleHandles from './CameraPlotScaleHandles';
 
 interface CameraPlotElementHandlesProps {
   element: CameraElement;
   isSelected: boolean;
   onRotationStart?: (e: React.MouseEvent) => void;
+  onScaleStart?: (e: React.MouseEvent) => void;
   isRotating?: boolean;
+  isScaling?: boolean;
 }
 
 const CameraPlotElementHandles = ({ 
   element, 
   isSelected, 
   onRotationStart,
-  isRotating 
+  onScaleStart,
+  isRotating,
+  isScaling 
 }: CameraPlotElementHandlesProps) => {
-  // Only show rotation handles for cameras and persons when selected
+  // Show rotation handles for cameras and persons when selected
   const canRotate = element.type === 'camera' || element.type === 'person';
   const showRotationHandle = isSelected && canRotate && onRotationStart;
 
-  if (!showRotationHandle) {
-    return null;
-  }
+  // Show scale handles for furniture when selected
+  const canScale = element.type === 'furniture';
+  const showScaleHandles = isSelected && canScale && onScaleStart;
 
   return (
-    <CameraPlotRotationHandle
-      onRotationStart={onRotationStart}
-      isRotating={isRotating || false}
-    />
+    <>
+      {showRotationHandle && (
+        <CameraPlotRotationHandle
+          onRotationStart={onRotationStart}
+          isRotating={isRotating || false}
+        />
+      )}
+      
+      {showScaleHandles && (
+        <CameraPlotScaleHandles
+          onScaleStart={onScaleStart}
+          isScaling={isScaling || false}
+        />
+      )}
+    </>
   );
 };
 

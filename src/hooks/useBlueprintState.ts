@@ -88,7 +88,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     saveWithDate(rundownTitle, updatedLists);
   }, [lists, rundownTitle, saveWithDate]);
 
-  const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
+  const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
     console.log('Updating checked items for list:', listId, 'checkedItems:', checkedItems);
     
     const updatedLists = lists.map(list => {
@@ -104,8 +104,13 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     console.log('Updated lists:', updatedLists);
     setLists(updatedLists);
     
-    // Force save to database immediately for checkbox changes
-    saveBlueprint(rundownTitle, updatedLists, showDate, true);
+    // Force immediate save to database for checkbox changes
+    try {
+      await saveBlueprint(rundownTitle, updatedLists, showDate, true);
+      console.log('Checkbox changes saved successfully');
+    } catch (error) {
+      console.error('Failed to save checkbox changes:', error);
+    }
   }, [lists, rundownTitle, saveBlueprint, showDate]);
 
   const refreshAllLists = useCallback(() => {

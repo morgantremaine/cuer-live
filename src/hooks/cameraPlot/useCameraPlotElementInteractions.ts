@@ -59,10 +59,7 @@ export const useCameraPlotElementInteractions = ({
     
     // Only allow dragging if not clicking on scale handles
     const target = e.target as HTMLElement;
-    const isScaleHandle = target.classList.contains('cursor-nw-resize') || 
-                         target.classList.contains('cursor-ne-resize') ||
-                         target.classList.contains('cursor-sw-resize') ||
-                         target.classList.contains('cursor-se-resize');
+    const isScaleHandle = target.classList.contains('cursor-se-resize');
     
     if (isScaleHandle && canScale) {
       startScaling(e);
@@ -76,7 +73,7 @@ export const useCameraPlotElementInteractions = ({
   const getCursor = () => {
     if (isDragging) return 'grabbing';
     if (isRotating) return 'grabbing';
-    if (isScaling) return 'nw-resize';
+    if (isScaling) return 'se-resize';
     return 'move';
   };
 
@@ -84,6 +81,7 @@ export const useCameraPlotElementInteractions = ({
     handleMouseDown,
     handleLabelMouseDown: startLabelDrag,
     handleRotationStart: startRotation,
+    handleScaleStart: startScaling,
     getCursor,
     isDragging,
     isRotating,
