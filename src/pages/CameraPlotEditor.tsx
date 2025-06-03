@@ -1,9 +1,8 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ArrowLeft, Plus, Camera, User, Square, Circle, Move } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { useCameraPlotEditor } from '@/hooks/useCameraPlotEditor';
 import CameraPlotCanvas from '@/components/cameraPlot/CameraPlotCanvas';
 import CameraPlotToolbar from '@/components/cameraPlot/CameraPlotToolbar';
@@ -19,16 +18,20 @@ const CameraPlotEditor = () => {
     activeScene,
     selectedTool,
     selectedElements,
+    isDrawingWall,
+    wallStart,
     setSelectedTool,
     addElement,
     updateElement,
     deleteElement,
+    duplicateElement,
     selectElement,
     createScene,
     deleteScene,
     duplicateScene,
     setActiveScene,
-    updateSceneName
+    updateSceneName,
+    stopDrawingWalls
   } = useCameraPlotEditor(id || '');
 
   const handleBackToDashboard = () => {
@@ -37,6 +40,10 @@ const CameraPlotEditor = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDuplicateElement = (elementId: string) => {
+    duplicateElement(elementId);
   };
 
   return (
@@ -55,6 +62,9 @@ const CameraPlotEditor = () => {
               Back to Blueprint
             </Button>
             <h1 className="text-xl font-bold">Camera Plot Editor</h1>
+            {activeScene && (
+              <span className="text-gray-400">- {activeScene.name}</span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -63,6 +73,7 @@ const CameraPlotEditor = () => {
               size="sm"
               className="text-white border-gray-600 hover:bg-gray-700"
             >
+              <Printer className="h-4 w-4 mr-2" />
               Print View
             </Button>
           </div>
@@ -75,9 +86,11 @@ const CameraPlotEditor = () => {
           <CameraPlotToolbar
             selectedTool={selectedTool}
             onToolSelect={setSelectedTool}
+            isDrawingWall={isDrawingWall}
+            onStopDrawingWalls={stopDrawingWalls}
           />
           
-          <div className="mt-6">
+          <div className="mt-8">
             <CameraPlotSceneManager
               scenes={scenes}
               activeSceneId={activeScene?.id}
@@ -97,6 +110,8 @@ const CameraPlotEditor = () => {
             scene={activeScene}
             selectedTool={selectedTool}
             selectedElements={selectedElements}
+            isDrawingWall={isDrawingWall}
+            wallStart={wallStart}
             onAddElement={addElement}
             onUpdateElement={updateElement}
             onDeleteElement={deleteElement}

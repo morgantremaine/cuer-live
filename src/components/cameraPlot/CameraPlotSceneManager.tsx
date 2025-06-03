@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Copy, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Check, X } from 'lucide-react';
 import { CameraPlotScene } from '@/hooks/useCameraPlot';
 
 interface CameraPlotSceneManagerProps {
   scenes: CameraPlotScene[];
-  activeSceneId?: string;
+  activeSceneId: string | undefined;
   onCreateScene: (name: string) => void;
   onDeleteScene: (sceneId: string) => void;
   onDuplicateScene: (sceneId: string) => void;
@@ -37,35 +37,34 @@ const CameraPlotSceneManager = ({
     }
   };
 
-  const handleStartEdit = (scene: CameraPlotScene) => {
+  const startEditing = (scene: CameraPlotScene) => {
     setEditingSceneId(scene.id);
     setEditingName(scene.name);
   };
 
-  const handleSaveEdit = () => {
+  const handleRename = () => {
     if (editingSceneId && editingName.trim()) {
       onRenameScene(editingSceneId, editingName.trim());
-      setEditingSceneId(null);
-      setEditingName('');
     }
+    setEditingSceneId(null);
+    setEditingName('');
   };
 
-  const handleCancelEdit = () => {
+  const cancelEditing = () => {
     setEditingSceneId(null);
     setEditingName('');
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-300">Scenes</h3>
         <Button
           onClick={() => setIsCreating(true)}
           size="sm"
-          variant="outline"
-          className="text-gray-300 border-gray-600 hover:bg-gray-700"
+          className="bg-blue-600 hover:bg-blue-700 text-white"
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
 
@@ -75,104 +74,115 @@ const CameraPlotSceneManager = ({
             value={newSceneName}
             onChange={(e) => setNewSceneName(e.target.value)}
             placeholder="Scene name"
-            className="bg-gray-700 border-gray-600 text-white text-sm"
+            className="bg-gray-700 border-gray-600 text-white"
             onKeyPress={(e) => e.key === 'Enter' && handleCreateScene()}
-            autoFocus
           />
           <div className="flex gap-2">
             <Button
               onClick={handleCreateScene}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
-              Create
+              <Check className="h-4 w-4" />
             </Button>
             <Button
-              onClick={() => setIsCreating(false)}
+              onClick={() => {
+                setIsCreating(false);
+                setNewSceneName('');
+              }}
               size="sm"
               variant="outline"
-              className="text-gray-300 border-gray-600 hover:bg-gray-700"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >
-              Cancel
+              <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      <div className="space-y-1 max-h-60 overflow-y-auto">
+      <div className="space-y-2 max-h-64 overflow-y-auto">
         {scenes.map((scene) => (
           <div
             key={scene.id}
-            className={`p-2 rounded border transition-colors ${
+            className={`p-3 rounded border cursor-pointer transition-colors ${
               activeSceneId === scene.id
-                ? 'bg-blue-600 border-blue-500'
-                : 'bg-gray-700 border-gray-600 hover:bg-gray-650'
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
             }`}
+            onClick={() => onSelectScene(scene.id)}
           >
             {editingSceneId === scene.id ? (
-              <div className="space-y-2">
+              <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                 <Input
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
-                  className="bg-gray-600 border-gray-500 text-white text-sm"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                  autoFocus
+                  className="bg-gray-800 border-gray-600 text-white text-sm"
+                  onKeyPress={(e) => e.key === 'Enter' && handleRename()}
                 />
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   <Button
-                    onClick={handleSaveEdit}
+                    onClick={handleRename}
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white flex-1 text-xs"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                   >
-                    Save
+                    <Check className="h-3 w-3" />
                   </Button>
                   <Button
-                    onClick={handleCancelEdit}
+                    onClick={cancelEditing}
                     size="sm"
                     variant="outline"
-                    className="text-gray-300 border-gray-500 hover:bg-gray-600 text-xs"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
                   >
-                    Cancel
+                    <X className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
             ) : (
-              <>
-                <div
-                  className="cursor-pointer text-sm font-medium text-white mb-2"
-                  onClick={() => onSelectScene(scene.id)}
-                >
-                  {scene.name}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-sm">{scene.name}</div>
+                  <div className="text-xs opacity-75">
+                    {scene.elements.length} element{scene.elements.length !== 1 ? 's' : ''}
+                  </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 opacity-75 hover:opacity-100">
                   <Button
-                    onClick={() => handleStartEdit(scene)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startEditing(scene);
+                    }}
                     size="sm"
                     variant="ghost"
-                    className="text-gray-300 hover:bg-gray-600 p-1 h-auto"
+                    className="h-6 w-6 p-0 hover:bg-gray-600"
                   >
                     <Edit2 className="h-3 w-3" />
                   </Button>
                   <Button
-                    onClick={() => onDuplicateScene(scene.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDuplicateScene(scene.id);
+                    }}
                     size="sm"
                     variant="ghost"
-                    className="text-gray-300 hover:bg-gray-600 p-1 h-auto"
+                    className="h-6 w-6 p-0 hover:bg-gray-600"
                   >
                     <Copy className="h-3 w-3" />
                   </Button>
                   {scenes.length > 1 && (
                     <Button
-                      onClick={() => onDeleteScene(scene.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteScene(scene.id);
+                      }}
                       size="sm"
                       variant="ghost"
-                      className="text-red-400 hover:bg-red-900/20 p-1 h-auto"
+                      className="h-6 w-6 p-0 hover:bg-gray-600 hover:text-red-400"
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   )}
                 </div>
-              </>
+              </div>
             )}
           </div>
         ))}

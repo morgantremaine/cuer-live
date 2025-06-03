@@ -1,202 +1,294 @@
 
-import { useState, useEffect } from 'react';
-import { CameraElement, CameraPlotScene } from './useCameraPlot';
-import { useBlueprintStorage } from './useBlueprintStorage';
+import { useState, useEffect, useCallback } from 'react';
+import { useCameraPlot, CameraElement, CameraPlotScene } from '@/hooks/useCameraPlot';
 
 export const useCameraPlotEditor = (rundownId: string) => {
-  const [scenes, setScenes] = useState<CameraPlotScene[]>([]);
-  const [activeSceneId, setActiveSceneId] = useState<string>('');
-  const [selectedTool, setSelectedTool] = useState<string>('select');
-  const [selectedElements, setSelectedElements] = useState<string[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const { plots, createNewPlot, deletePlot, duplicatePlot, updatePlot } = useCameraPlot(rundownId, 'Camera Plot');
   
-  const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
+  const [activeSceneId, setActiveSceneId] = useState<string>('');
+  const [selectedTool, setSelectedTool] = useState('select');
+  const [selectedElements, setSelectedElements] = useState<string[]>([]);
+  const [isDrawingWall, setIsDrawingWall] = useState(false);
+  const [wallStart, setWallStart] = useState<{ x: number; y: number } | null>(null);
 
-  const activeScene = scenes.find(scene => scene.id === activeSceneId);
-
-  // Load saved data
+  // Initialize with first scene or create one if none exist
   useEffect(() => {
-    if (savedBlueprint && !isInitialized) {
-      if (savedBlueprint.camera_plots && Array.isArray(savedBlueprint.camera_plots)) {
-        setScenes(savedBlueprint.camera_plots);
-        if (savedBlueprint.camera_plots.length > 0) {
-          setActiveSceneId(savedBlueprint.camera_plots[0].id);
+    if (plots.length === 0) {
+      createNewPlot('Scene 1');
+    } else if (!activeSceneId && plots.length > 0) {
+      setActiveSceneId(plots[0].id);
+    }
+  }, [plots, activeSceneId, createNewPlot]);
+
+  const activeScene = plots.find(scene => scene.id === activeSceneId);
+
+  const createScene = (name: string) => {
+    createNewPlot(name);
+  };
+
+  const deleteScene = (sceneId: string) => {
+    if (plots.length > 1) {
+      deletePlot(sceneId);
+      if (activeSceneId === sceneId) {
+        const remainingScenes = plots.filter(s => s.id !== sceneId);
+        if (remainingScenes.length > 0) {
+          setActiveSceneId(remainingScenes[0].id);
         }
-      } else {
-        // Create initial scene if none exist
-        const initialScene: CameraPlotScene = {
-          id: `scene-${Date.now()}`,
-          name: 'Scene 1',
-          elements: []
-        };
-        setScenes([initialScene]);
-        setActiveSceneId(initialScene.id);
       }
-      setIsInitialized(true);
     }
-  }, [savedBlueprint, isInitialized]);
+  };
 
-  // Auto-save
-  useEffect(() => {
-    if (isInitialized && rundownId) {
-      const saveTimeout = setTimeout(() => {
-        saveBlueprint(
-          savedBlueprint?.rundown_title || 'Unknown Rundown',
-          savedBlueprint?.lists || [],
-          savedBlueprint?.show_date,
-          true,
-          savedBlueprint?.notes,
-          savedBlueprint?.crew_data,
-          scenes
-        );
-      }, 1000);
+  const duplicateScene = (sceneId: string) => {
+    duplicatePlot(sceneId);
+  };
 
-      return () => clearTimeout(saveTimeout);
+  const setActiveScene = (sceneId: string) => {
+    setActiveSceneId(sceneId);
+    setSelectedElements([]);
+    setIsDrawingWall(false);
+    setWallStart(null);
+  };
+
+  const updateSceneName = (sceneId: string, newName: string) => {
+    const scene = plots.find(s => s.id === sceneId);
+    if (scene) {
+      updatePlot(sceneId, { name: newName });
     }
-  }, [scenes, isInitialized, rundownId, savedBlueprint, saveBlueprint]);
+  };
 
-  const addElement = (element: Omit<CameraElement, 'id'>) => {
+  const getNextCameraNumber = useCallback((elements: CameraElement[]) => {
+    const cameraNumbers = elements
+      .filter(el => el.type === 'camera')
+      .map(el => el.cameraNumber || 0)
+      .sort((a, b) => a - b);
+    
+    for (let i = 1; i <= cameraNumbers.length + 1; i++) {
+      if (!cameraNumbers.includes(i)) {
+        return i;
+      }
+    }
+    return 1;
+  }, []);
+
+  const reorderCameraNumbers = useCallback((elements: CameraElement[]) => {
+    const cameras = elements.filter(el => el.type === 'camera');
+    const nonCameras = elements.filter(el => el.type !== 'camera');
+    
+    cameras.sort((a, b) => (a.cameraNumber || 0) - (b.cameraNumber || 0));
+    cameras.forEach((camera, index) => {
+      camera.cameraNumber = index + 1;
+      camera.label = `CAM ${index + 1}`;
+    });
+    
+    return [...cameras, ...nonCameras];
+  }, []);
+
+  const addElement = (type: string, x: number, y: number) => {
     if (!activeScene) return;
 
-    let newElement: CameraElement = {
-      ...element,
-      id: `element-${Date.now()}`
-    };
+    if (type === 'wall') {
+      if (!isDrawingWall || !wallStart) {
+        // Start drawing wall
+        setIsDrawingWall(true);
+        setWallStart({ x, y });
+        return;
+      } else {
+        // Complete wall
+        const newElement: CameraElement = {
+          id: `element-${Date.now()}`,
+          type: 'wall',
+          x: wallStart.x,
+          y: wallStart.y,
+          width: Math.abs(x - wallStart.x),
+          height: Math.abs(y - wallStart.y),
+          rotation: Math.atan2(y - wallStart.y, x - wallStart.x) * (180 / Math.PI),
+          label: 'Wall',
+          color: '#6B7280',
+          labelX: (wallStart.x + x) / 2,
+          labelY: (wallStart.y + y) / 2
+        };
 
-    // Auto-assign camera numbers
-    if (element.type === 'camera') {
-      const existingCameras = activeScene.elements.filter(el => el.type === 'camera');
-      const usedNumbers = existingCameras.map(cam => cam.cameraNumber).filter(Boolean).sort((a, b) => a! - b!);
-      
-      let nextNumber = 1;
-      for (const num of usedNumbers) {
-        if (num === nextNumber) {
-          nextNumber++;
-        } else {
-          break;
-        }
+        const updatedElements = [...activeScene.elements, newElement];
+        updatePlot(activeScene.id, { elements: updatedElements });
+        
+        // Continue drawing more walls
+        setWallStart({ x, y });
+        return;
       }
-      
-      newElement.cameraNumber = nextNumber;
-      newElement.label = `Cam ${nextNumber}`;
     }
 
-    const updatedScene = {
-      ...activeScene,
-      elements: [...activeScene.elements, newElement]
-    };
+    let newElement: CameraElement;
+    const elementId = `element-${Date.now()}`;
 
-    setScenes(scenes.map(scene => 
-      scene.id === activeSceneId ? updatedScene : scene
-    ));
+    switch (type) {
+      case 'camera':
+        const cameraNumber = getNextCameraNumber(activeScene.elements);
+        newElement = {
+          id: elementId,
+          type: 'camera',
+          x: x - 20,
+          y: y - 20,
+          width: 40,
+          height: 40,
+          rotation: 0,
+          label: `CAM ${cameraNumber}`,
+          cameraNumber,
+          color: '#6B7280',
+          labelX: x,
+          labelY: y + 50
+        };
+        break;
+      case 'person':
+        newElement = {
+          id: elementId,
+          type: 'person',
+          x: x - 15,
+          y: y - 15,
+          width: 30,
+          height: 30,
+          rotation: 0,
+          label: 'Person',
+          color: '#6B7280',
+          labelX: x,
+          labelY: y + 40
+        };
+        break;
+      case 'furniture-rect':
+        newElement = {
+          id: elementId,
+          type: 'furniture',
+          x: x - 25,
+          y: y - 25,
+          width: 50,
+          height: 50,
+          rotation: 0,
+          label: 'Furniture',
+          color: '#6B7280',
+          labelX: x,
+          labelY: y + 60
+        };
+        break;
+      case 'furniture-circle':
+        newElement = {
+          id: elementId,
+          type: 'furniture',
+          x: x - 25,
+          y: y - 25,
+          width: 50,
+          height: 50,
+          rotation: 0,
+          label: 'Round Table',
+          color: '#6B7280',
+          labelX: x,
+          labelY: y + 60
+        };
+        break;
+      default:
+        return;
+    }
+
+    const updatedElements = [...activeScene.elements, newElement];
+    updatePlot(activeScene.id, { elements: updatedElements });
   };
 
   const updateElement = (elementId: string, updates: Partial<CameraElement>) => {
     if (!activeScene) return;
 
-    const updatedScene = {
-      ...activeScene,
-      elements: activeScene.elements.map(element =>
-        element.id === elementId ? { ...element, ...updates } : element
-      )
-    };
+    const updatedElements = activeScene.elements.map(element => {
+      if (element.id === elementId) {
+        const updatedElement = { ...element, ...updates };
+        
+        // If position changed and label doesn't have custom position, move label with element
+        if ((updates.x !== undefined || updates.y !== undefined) && 
+            element.labelX === undefined && element.labelY === undefined) {
+          updatedElement.labelX = updatedElement.x + updatedElement.width / 2;
+          updatedElement.labelY = updatedElement.y + updatedElement.height + 10;
+        }
+        
+        return updatedElement;
+      }
+      return element;
+    });
 
-    setScenes(scenes.map(scene => 
-      scene.id === activeSceneId ? updatedScene : scene
-    ));
+    updatePlot(activeScene.id, { elements: updatedElements });
   };
 
   const deleteElement = (elementId: string) => {
     if (!activeScene) return;
 
-    const elementToDelete = activeScene.elements.find(el => el.id === elementId);
-    let updatedElements = activeScene.elements.filter(element => element.id !== elementId);
-
-    // Renumber cameras if a camera was deleted
-    if (elementToDelete?.type === 'camera') {
-      const cameras = updatedElements.filter(el => el.type === 'camera');
-      cameras.sort((a, b) => (a.cameraNumber || 0) - (b.cameraNumber || 0));
-      
-      cameras.forEach((camera, index) => {
-        const newNumber = index + 1;
-        camera.cameraNumber = newNumber;
-        camera.label = `Cam ${newNumber}`;
-      });
-    }
-
-    const updatedScene = {
-      ...activeScene,
-      elements: updatedElements
-    };
-
-    setScenes(scenes.map(scene => 
-      scene.id === activeSceneId ? updatedScene : scene
-    ));
-  };
-
-  const selectElement = (elementId: string) => {
-    setSelectedElements([elementId]);
-  };
-
-  const createScene = (name: string) => {
-    const newScene: CameraPlotScene = {
-      id: `scene-${Date.now()}`,
-      name,
-      elements: []
-    };
-    setScenes([...scenes, newScene]);
-    setActiveSceneId(newScene.id);
-  };
-
-  const deleteScene = (sceneId: string) => {
-    const newScenes = scenes.filter(scene => scene.id !== sceneId);
-    setScenes(newScenes);
+    let updatedElements = activeScene.elements.filter(el => el.id !== elementId);
     
-    if (activeSceneId === sceneId && newScenes.length > 0) {
-      setActiveSceneId(newScenes[0].id);
+    // Reorder camera numbers if a camera was deleted
+    const deletedElement = activeScene.elements.find(el => el.id === elementId);
+    if (deletedElement?.type === 'camera') {
+      updatedElements = reorderCameraNumbers(updatedElements);
+    }
+
+    updatePlot(activeScene.id, { elements: updatedElements });
+    setSelectedElements(prev => prev.filter(id => id !== elementId));
+  };
+
+  const duplicateElement = (elementId: string) => {
+    if (!activeScene) return;
+
+    const elementToDuplicate = activeScene.elements.find(el => el.id === elementId);
+    if (!elementToDuplicate) return;
+
+    const newElement: CameraElement = {
+      ...elementToDuplicate,
+      id: `element-${Date.now()}`,
+      x: elementToDuplicate.x + 20,
+      y: elementToDuplicate.y + 20,
+      labelX: elementToDuplicate.labelX ? elementToDuplicate.labelX + 20 : undefined,
+      labelY: elementToDuplicate.labelY ? elementToDuplicate.labelY + 20 : undefined
+    };
+
+    if (elementToDuplicate.type === 'camera') {
+      const cameraNumber = getNextCameraNumber(activeScene.elements);
+      newElement.cameraNumber = cameraNumber;
+      newElement.label = `CAM ${cameraNumber}`;
+    }
+
+    const updatedElements = [...activeScene.elements, newElement];
+    updatePlot(activeScene.id, { elements: updatedElements });
+  };
+
+  const selectElement = (elementId: string, multiSelect = false) => {
+    if (multiSelect) {
+      setSelectedElements(prev => 
+        prev.includes(elementId) 
+          ? prev.filter(id => id !== elementId)
+          : [...prev, elementId]
+      );
+    } else {
+      setSelectedElements([elementId]);
     }
   };
 
-  const duplicateScene = (sceneId: string) => {
-    const sceneToDuplicate = scenes.find(scene => scene.id === sceneId);
-    if (sceneToDuplicate) {
-      const duplicatedScene: CameraPlotScene = {
-        ...sceneToDuplicate,
-        id: `scene-${Date.now()}`,
-        name: `${sceneToDuplicate.name} (Copy)`,
-        elements: sceneToDuplicate.elements.map(element => ({
-          ...element,
-          id: `element-${Date.now()}-${Math.random()}`
-        }))
-      };
-      setScenes([...scenes, duplicatedScene]);
-    }
-  };
-
-  const setActiveScene = (sceneId: string) => {
-    setActiveSceneId(sceneId);
-  };
-
-  const updateSceneName = (sceneId: string, newName: string) => {
-    setScenes(scenes.map(scene => 
-      scene.id === sceneId ? { ...scene, name: newName } : scene
-    ));
+  const stopDrawingWalls = () => {
+    setIsDrawingWall(false);
+    setWallStart(null);
+    setSelectedTool('select');
   };
 
   return {
-    scenes,
+    scenes: plots,
     activeScene,
     selectedTool,
     selectedElements,
+    isDrawingWall,
+    wallStart,
     setSelectedTool,
     addElement,
     updateElement,
     deleteElement,
+    duplicateElement,
     selectElement,
     createScene,
     deleteScene,
     duplicateScene,
     setActiveScene,
-    updateSceneName
+    updateSceneName,
+    stopDrawingWalls
   };
 };

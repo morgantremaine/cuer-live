@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       blueprints: {
         Row: {
+          camera_plots: Json | null
           created_at: string
           crew_data: Json | null
           id: string
@@ -23,6 +24,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          camera_plots?: Json | null
           created_at?: string
           crew_data?: Json | null
           id?: string
@@ -35,6 +37,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          camera_plots?: Json | null
           created_at?: string
           crew_data?: Json | null
           id?: string
