@@ -9,7 +9,10 @@ export const useCameraPlotInteractions = (
   updatePlot: (plotId: string, updates: Partial<CameraPlotScene>) => void,
   setSelectedTool: (tool: string) => void
 ) => {
+  console.log('useCameraPlotInteractions - activeScene:', activeScene?.id, 'scenes count:', scenes.length);
+  
   const updatePlotCallback = (plotId: string, updates: Partial<CameraPlotScene>) => {
+    console.log('updatePlotCallback called with plotId:', plotId, 'updates:', updates);
     updatePlot(plotId, updates);
     
     // Also handle name updates separately if needed

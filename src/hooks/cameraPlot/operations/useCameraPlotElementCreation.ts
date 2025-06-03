@@ -9,6 +9,8 @@ export const useCameraPlotElementCreation = (
   setSelectedTool: (tool: string) => void
 ) => {
   const addElement = (type: string, x: number, y: number, wallData?: { start: { x: number; y: number }, end: { x: number; y: number } }) => {
+    console.log('addElement called with:', { type, x, y, wallData, activeSceneId: activeScene?.id });
+    
     if (!activeScene) {
       console.log('No active scene, cannot add element');
       return;

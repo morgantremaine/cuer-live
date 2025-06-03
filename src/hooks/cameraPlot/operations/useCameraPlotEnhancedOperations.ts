@@ -27,6 +27,8 @@ export const useCameraPlotEnhancedOperations = ({
   updatePlot,
   setSelectedTool
 }: UseCameraPlotEnhancedOperationsProps) => {
+  console.log('useCameraPlotEnhancedOperations - activeScene:', activeScene?.id);
+  
   const { addElement: createElementDirectly } = useCameraPlotElementCreation(
     activeScene,
     updatePlot,
@@ -34,6 +36,8 @@ export const useCameraPlotEnhancedOperations = ({
   );
 
   const addElement = (type: string, x: number, y: number) => {
+    console.log('Enhanced addElement called with:', { type, x, y, activeSceneId: activeScene?.id });
+    
     if (type === 'wall') {
       const snapped = snapToGrid(x, y);
       
