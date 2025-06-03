@@ -8,14 +8,21 @@ import { useCrewList } from '@/hooks/useCrewList';
 import { useCrewRowDragDrop } from '@/hooks/useCrewRowDragDrop';
 import CrewTable from './crew/CrewTable';
 
+interface ExtendedCrewListProps extends CrewListProps {
+  isDragging?: boolean;
+  onDragStart?: (e: React.DragEvent, listId: string) => void;
+  onDragEnterContainer?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
+}
+
 const CrewList = ({ 
   rundownId, 
   rundownTitle, 
-  isDragging, 
+  isDragging = false,
   onDragStart, 
   onDragEnterContainer, 
   onDragEnd 
-}: CrewListProps) => {
+}: ExtendedCrewListProps) => {
   const {
     crewMembers,
     addRow,
@@ -35,10 +42,10 @@ const CrewList = ({
 
   return (
     <Card 
-      className={`w-full mt-8 bg-gray-800 border-gray-700 ${isDragging ? 'opacity-50' : ''}`}
+      className={`w-full bg-gray-800 border-gray-700 ${isDragging ? 'opacity-50' : ''}`}
       draggable
       onDragStart={(e) => onDragStart?.(e, 'crew-list')}
-      onDragEnter={(e) => onDragEnterContainer?.(e, -1)}
+      onDragEnter={onDragEnterContainer}
       onDragEnd={onDragEnd}
     >
       <CardHeader className="pb-4">
