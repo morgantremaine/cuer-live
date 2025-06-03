@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn, generateDefaultBlueprint, getAvailableColumns } from '@/utils/blueprintUtils';
@@ -13,6 +13,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
   const [lastItemsHash, setLastItemsHash] = useState<string>('');
+  // Add a ref to track if we're currently updating checkbox state
+  const isUpdatingCheckboxes = useRef(false);
   const { toast } = useToast();
   
   const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
@@ -33,6 +35,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   // Initialize lists when items and saved blueprint are loaded
   useEffect(() => {
+    // Don't reinitialize if we're currently updating checkboxes
+    if (isUpdatingCheckboxes.current) {
+      return;
+    }
+
     if (items.length > 0 && !loading && !initialized) {
       console.log('Initializing blueprint state with items:', items.length);
       
@@ -66,6 +73,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   // Refresh list content when items actually change (but preserve checkbox states)
   useEffect(() => {
+    // Don't refresh if we're currently updating checkboxes
+    if (isUpdatingCheckboxes.current) {
+      return;
+    }
+
     if (initialized && items.length > 0 && lists.length > 0) {
       const currentItemsHash = createItemsHash(items);
       
@@ -131,6 +143,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
     console.log('Updating checked items for list:', listId, 'checkedItems:', checkedItems);
     
+    // Set the flag to prevent reinitialization during checkbox updates
+    isUpdatingCheckboxes.current = true;
+    
     const updatedLists = lists.map(list => {
       if (list.id === listId) {
         return {
@@ -150,6 +165,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       console.log('Checkbox changes saved successfully');
     } catch (error) {
       console.error('Failed to save checkbox changes:', error);
+    } finally {
+      // Clear the flag after a delay to allow the save to complete
+      setTimeout(() => {
+        isUpdatingCheckboxes.current = false;
+      }, 500);
     }
   }, [lists, rundownTitle, saveBlueprint, showDate]);
 
