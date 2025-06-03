@@ -29,6 +29,7 @@ export const useRundownDataLoader = ({
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
+  const lastLoadedDataRef = useRef<string>('');
 
   useEffect(() => {
     // Only proceed if we have rundowns loaded and a specific rundown ID
@@ -43,11 +44,23 @@ export const useRundownDataLoader = ({
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
+    // Create a signature to check if data actually changed
+    const dataSignature = JSON.stringify({
+      title: rundown.title,
+      timezone: rundown.timezone,
+      startTime: rundown.startTime || rundown.start_time,
+      columnsLength: rundown.columns?.length || 0
+    });
+
+    // Skip if same data was already loaded
+    if (lastLoadedDataRef.current === dataSignature) return;
+
     console.log('Loading rundown data:', rundown.title);
     
     // Mark as loading and loaded to prevent loops
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
+    lastLoadedDataRef.current = dataSignature;
     
     // Set the rundown data
     setRundownTitle(rundown.title);
@@ -91,6 +104,7 @@ export const useRundownDataLoader = ({
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
       loadedRef.current = null;
       isLoadingRef.current = false;
+      lastLoadedDataRef.current = '';
     }
   }, [rundownId, paramId]);
 };

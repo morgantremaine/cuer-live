@@ -53,9 +53,9 @@ export const useAutoSaveOperations = () => {
           throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
-        // Ensure timezone and startTime are properly passed or defaulted
-        const saveTimezone = timezone || undefined;
-        const saveStartTime = startTime || undefined;
+        // Ensure timezone and startTime are properly passed - don't default to undefined
+        const saveTimezone = timezone || null;
+        const saveStartTime = startTime || null;
         
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, saveTimezone, saveStartTime);
         return true;
