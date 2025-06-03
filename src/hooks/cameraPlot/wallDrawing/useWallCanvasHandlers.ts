@@ -23,13 +23,13 @@ export const useWallCanvasHandlers = ({
     if (selectedTool !== 'wall') return false;
 
     const snapped = snapToGrid(x, y);
-    console.log('Wall click at:', snapped);
+    console.log('Wall click at raw coords:', { x, y }, 'snapped to:', snapped);
 
     if (!wallDrawing.isDrawing) {
-      console.log('Starting new wall');
+      console.log('Starting new wall drawing');
       wallDrawing.startDrawing(snapped);
     } else {
-      console.log('Adding point to existing wall');
+      console.log('Adding point to existing wall drawing');
       wallDrawing.addPoint(snapped);
     }
 
@@ -46,31 +46,20 @@ export const useWallCanvasHandlers = ({
   const handleWallDoubleClick = () => {
     if (selectedTool === 'wall' && wallDrawing.isDrawing) {
       console.log('Double click detected, finishing wall drawing');
-      console.log('Current path length:', wallDrawing.currentPath.length);
+      console.log('Current path before finishing:', wallDrawing.currentPath);
       
       if (wallDrawing.currentPath.length >= 2) {
         const segments = wallDrawing.finishDrawing();
-        console.log('Wall segments created:', segments);
+        console.log('Generated wall segments:', segments);
         
-        // Filter out segments that are too short (less than 5 pixels)
-        const validSegments = segments.filter(segment => {
-          const distance = Math.sqrt(
-            Math.pow(segment.end.x - segment.start.x, 2) + 
-            Math.pow(segment.end.y - segment.start.y, 2)
-          );
-          return distance > 5;
-        });
-        
-        console.log('Valid segments after filtering:', validSegments);
-        
-        if (validSegments.length > 0) {
-          console.log('Creating wall elements...');
-          createWallElements(validSegments);
+        if (segments.length > 0) {
+          console.log('Creating wall elements from segments...');
+          createWallElements(segments);
         } else {
-          console.log('No valid segments to create');
+          console.log('No segments generated');
         }
       } else {
-        console.log('Not enough points to create wall');
+        console.log('Not enough points for wall creation, cancelling');
         wallDrawing.cancelDrawing();
       }
       
