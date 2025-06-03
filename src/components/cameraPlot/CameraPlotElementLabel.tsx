@@ -44,6 +44,12 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   if (!element.label) return null;
 
+  // Ensure all required values are numbers with safe defaults
+  const elementX = typeof element.x === 'number' ? element.x : 0;
+  const elementY = typeof element.y === 'number' ? element.y : 0;
+  const elementWidth = typeof element.width === 'number' ? element.width : 40;
+  const elementHeight = typeof element.height === 'number' ? element.height : 40;
+
   // Calculate label position with much further default distances
   const getDefaultOffset = () => {
     switch (element.type) {
@@ -60,10 +66,10 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
     }
   };
 
-  const labelOffsetX = element.labelOffsetX || 0;
-  const labelOffsetY = element.labelOffsetY || getDefaultOffset();
-  const labelX = element.x + element.width / 2 + labelOffsetX;
-  const labelY = element.y + element.height + labelOffsetY;
+  const labelOffsetX = typeof element.labelOffsetX === 'number' ? element.labelOffsetX : 0;
+  const labelOffsetY = typeof element.labelOffsetY === 'number' ? element.labelOffsetY : getDefaultOffset();
+  const labelX = elementX + elementWidth / 2 + labelOffsetX;
+  const labelY = elementY + elementHeight + labelOffsetY;
 
   // More strict logic for when dotted lines should appear
   // Only show lines when label is moved significantly away from default position
@@ -76,8 +82,8 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const needsDottedLine = distanceFromDefault > 25;
   
   // Calculate line from element center to label with much larger padding for furniture
-  const elementCenterX = element.x + element.width / 2;
-  const elementCenterY = element.y + element.height / 2;
+  const elementCenterX = elementX + elementWidth / 2;
+  const elementCenterY = elementY + elementHeight / 2;
   
   // Much larger padding for furniture to keep lines far from icons
   const iconPadding = element.type === 'furniture' ? 80 : 30; // Increased furniture padding significantly
@@ -86,19 +92,32 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const dy = labelY - elementCenterY;
   const distance = Math.sqrt(dx * dx + dy * dy);
   
-  // Calculate padded endpoints
-  const unitX = dx / distance;
-  const unitY = dy / distance;
+  // Only calculate line coordinates if distance is valid and greater than 0
+  let lineStartX = elementCenterX;
+  let lineStartY = elementCenterY;
+  let lineEndX = labelX;
+  let lineEndY = labelY;
   
-  const lineStartX = elementCenterX + unitX * iconPadding;
-  const lineStartY = elementCenterY + unitY * iconPadding;
-  const lineEndX = labelX - unitX * labelPadding;
-  const lineEndY = labelY - unitY * labelPadding;
+  if (distance > 0 && !isNaN(distance)) {
+    // Calculate padded endpoints
+    const unitX = dx / distance;
+    const unitY = dy / distance;
+    
+    lineStartX = elementCenterX + unitX * iconPadding;
+    lineStartY = elementCenterY + unitY * iconPadding;
+    lineEndX = labelX - unitX * labelPadding;
+    lineEndY = labelY - unitY * labelPadding;
+  }
+
+  // Validate all line coordinates before rendering
+  const isValidCoordinate = (coord: number) => typeof coord === 'number' && !isNaN(coord) && isFinite(coord);
+  const canRenderLine = isValidCoordinate(lineStartX) && isValidCoordinate(lineStartY) && 
+                       isValidCoordinate(lineEndX) && isValidCoordinate(lineEndY);
 
   return (
     <>
       {/* Dotted line connection with much larger padding for furniture and stricter appearance logic */}
-      {needsDottedLine && (
+      {needsDottedLine && canRenderLine && (
         <svg 
           className="absolute pointer-events-none"
           style={{ 
