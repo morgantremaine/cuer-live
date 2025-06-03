@@ -28,32 +28,33 @@ export const useCameraPlotElementInteractions = ({
     elementX: 0, 
     elementY: 0, 
     initialScale: 1, 
-    initialRotation: 0
+    initialRotation: 0,
+    initialWidth: 0,
+    initialHeight: 0
   });
 
-  // Check if element can be scaled/rotated
-  const canTransform = element.type === 'furniture';
-  const canRotate = element.type === 'camera' || element.type === 'person' || element.type === 'furniture';
-
-  const getDistanceFromCenter = (clientX: number, clientY: number, rect: DOMRect) => {
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    return Math.sqrt(Math.pow(clientX - centerX, 2) + Math.pow(clientY - centerY, 2));
-  };
+  // Determine interaction capabilities
+  const canRotate = element.type === 'camera' || element.type === 'person';
+  const canScale = element.type === 'furniture';
 
   const handleMouseMove = (e: React.MouseEvent, rect: DOMRect) => {
     if (!isSelected) return;
 
-    const distance = getDistanceFromCenter(e.clientX, e.clientY, rect);
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const distance = Math.sqrt(
+      Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2)
+    );
     const elementRadius = Math.min(rect.width, rect.height) / 2;
-    const rotationZone = elementRadius + 15; // 15px outside the element
 
-    if (canRotate && distance > elementRadius && distance < rotationZone) {
+    // Rotation zone: 10px outside the element
+    if (canRotate && distance > elementRadius + 5 && distance < elementRadius + 25) {
       setCursorMode('rotate');
-    } else if (canTransform && distance <= elementRadius) {
+    } else if (canScale) {
+      // For furniture, check if we're near corners for scaling
       const relativeX = e.clientX - rect.left;
       const relativeY = e.clientY - rect.top;
-      const cornerThreshold = 8;
+      const cornerThreshold = 12;
       
       const nearCorner = (
         (relativeX < cornerThreshold && relativeY < cornerThreshold) ||
@@ -78,8 +79,8 @@ export const useCameraPlotElementInteractions = ({
     onSelect(element.id, e.ctrlKey || e.metaKey);
     
     const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = element.x + element.width / 2;
-    const centerY = element.y + element.height / 2;
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
     
     const commonDragStart = {
       x: e.clientX,
@@ -87,13 +88,15 @@ export const useCameraPlotElementInteractions = ({
       elementX: element.x,
       elementY: element.y,
       initialScale: element.scale || 1,
-      initialRotation: element.rotation || 0
+      initialRotation: element.rotation || 0,
+      initialWidth: element.width,
+      initialHeight: element.height
     };
 
     if (cursorMode === 'rotate' && canRotate) {
       setIsRotating(true);
       setDragStart(commonDragStart);
-    } else if (cursorMode === 'scale' && canTransform) {
+    } else if (cursorMode === 'scale' && canScale) {
       setIsScaling(true);
       setDragStart(commonDragStart);
     } else {
@@ -113,7 +116,9 @@ export const useCameraPlotElementInteractions = ({
       elementX: element.labelOffsetX || 0,
       elementY: element.labelOffsetY || 0,
       initialScale: element.scale || 1,
-      initialRotation: element.rotation || 0
+      initialRotation: element.rotation || 0,
+      initialWidth: element.width,
+      initialHeight: element.height
     });
   };
 
@@ -146,34 +151,26 @@ export const useCameraPlotElementInteractions = ({
           labelOffsetX: dragStart.elementX + deltaX,
           labelOffsetY: dragStart.elementY + deltaY
         });
-      } else if (isRotating) {
+      } else if (isRotating && canRotate) {
         const centerX = element.x + element.width / 2;
         const centerY = element.y + element.height / 2;
         
-        const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+        const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI) + 90;
         
         onUpdate(element.id, {
           rotation: angle
         });
-      } else if (isScaling && canTransform) {
-        const centerX = element.x + element.width / 2;
-        const centerY = element.y + element.height / 2;
+      } else if (isScaling && canScale) {
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
         
-        const currentDistance = Math.sqrt(
-          Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2)
-        );
-        const initialDistance = Math.sqrt(
-          Math.pow(dragStart.x - centerX, 2) + Math.pow(dragStart.y - centerY, 2)
-        );
+        // Scale proportionally based on distance from start
+        const scaleFactor = 1 + (deltaX + deltaY) / 200;
+        const newScale = Math.max(0.3, Math.min(3, scaleFactor));
         
-        if (initialDistance > 0) {
-          const scaleMultiplier = currentDistance / initialDistance;
-          const newScale = Math.max(0.3, Math.min(3, dragStart.initialScale * scaleMultiplier));
-          
-          onUpdate(element.id, {
-            scale: newScale
-          });
-        }
+        onUpdate(element.id, {
+          scale: newScale
+        });
       }
     };
 
@@ -193,7 +190,7 @@ export const useCameraPlotElementInteractions = ({
       document.removeEventListener('mousemove', handleMouseMoveGlobal);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isLabelDragging, isRotating, isScaling, dragStart, element, onUpdate, snapToGrid, canTransform]);
+  }, [isDragging, isLabelDragging, isRotating, isScaling, dragStart, element, onUpdate, snapToGrid, canRotate, canScale]);
 
   return {
     handleMouseDown,
