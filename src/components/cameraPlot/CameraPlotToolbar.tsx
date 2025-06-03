@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Move, Square, Circle, Grid3X3, Camera, User, ZoomIn, ZoomOut } from 'lucide-react';
+import { Move, Square, Circle, Grid3X3, Camera, User, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface CameraPlotToolbarProps {
   selectedTool: string;
@@ -90,6 +90,7 @@ const CameraPlotToolbar = ({
             variant="outline"
             className="w-full text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white bg-transparent"
           >
+            <RotateCcw className="h-4 w-4 mr-2" />
             Reset View ({Math.round(zoom * 100)}%)
           </Button>
           
