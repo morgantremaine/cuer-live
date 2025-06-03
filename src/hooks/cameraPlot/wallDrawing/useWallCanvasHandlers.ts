@@ -8,13 +8,15 @@ interface UseWallCanvasHandlersProps {
   snapToGrid: (x: number, y: number) => { x: number; y: number };
   activeScene: CameraPlotScene | undefined;
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
+  setSelectedTool: (tool: string) => void;
 }
 
 export const useWallCanvasHandlers = ({
   selectedTool,
   snapToGrid,
   activeScene,
-  updatePlot
+  updatePlot,
+  setSelectedTool
 }: UseWallCanvasHandlersProps) => {
   const wallDrawing = useWallDrawingState();
   const { createWallElements } = useWallElementCreation(activeScene, updatePlot);
@@ -22,6 +24,7 @@ export const useWallCanvasHandlers = ({
   const handleWallClick = (x: number, y: number) => {
     if (selectedTool !== 'wall') return false;
 
+    // Always snap to grid for perfect connections
     const snapped = snapToGrid(x, y);
     console.log('Wall click at raw coords:', { x, y }, 'snapped to:', snapped);
 
@@ -38,6 +41,7 @@ export const useWallCanvasHandlers = ({
 
   const handleWallMouseMove = (x: number, y: number) => {
     if (selectedTool === 'wall' && wallDrawing.isDrawing) {
+      // Always snap preview to grid for visual feedback
       const snapped = snapToGrid(x, y);
       wallDrawing.updatePreview(snapped);
     }
@@ -55,12 +59,15 @@ export const useWallCanvasHandlers = ({
         if (segments.length > 0) {
           console.log('Creating wall elements from segments...');
           createWallElements(segments);
+          // Switch back to select tool after placing walls
+          setSelectedTool('select');
         } else {
           console.log('No segments generated');
         }
       } else {
         console.log('Not enough points for wall creation, cancelling');
         wallDrawing.cancelDrawing();
+        setSelectedTool('select');
       }
       
       return true;

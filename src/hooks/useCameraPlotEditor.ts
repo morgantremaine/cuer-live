@@ -40,7 +40,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     duplicateElement
   } = useCameraPlotInteractions(activeScene, scenes, updateSceneName, updatePlot);
 
-  // Enhanced operations
+  // Enhanced operations with setSelectedTool integration
   const { addElement } = useCameraPlotEnhancedOperations({
     selectedTool,
     isDrawingWall,
@@ -48,7 +48,10 @@ export const useCameraPlotEditor = (rundownId: string) => {
     baseAddElement,
     startWallDrawing,
     completeWall,
-    snapToGrid
+    snapToGrid,
+    activeScene,
+    updatePlot,
+    setSelectedTool
   });
 
   // State coordination
@@ -82,7 +85,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     duplicateScene,
     setActiveScene: handleSetActiveScene,
     updateSceneName,
-    updatePlot, // Expose the updatePlot function
+    updatePlot,
     updateWallPreview,
     stopDrawingWalls,
     toggleGrid,

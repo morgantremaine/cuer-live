@@ -11,6 +11,7 @@ interface UseCameraPlotCanvasHandlersProps {
   scene: CameraPlotScene | undefined;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
+  setSelectedTool: (tool: string) => void;
 }
 
 export const useCameraPlotCanvasHandlers = ({
@@ -20,7 +21,8 @@ export const useCameraPlotCanvasHandlers = ({
   snapToGrid,
   scene,
   onUpdateElement,
-  updatePlot
+  updatePlot,
+  setSelectedTool
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -28,7 +30,8 @@ export const useCameraPlotCanvasHandlers = ({
     selectedTool,
     snapToGrid,
     activeScene: scene,
-    updatePlot
+    updatePlot,
+    setSelectedTool
   });
 
   const handleCanvasClick = (e: React.MouseEvent) => {

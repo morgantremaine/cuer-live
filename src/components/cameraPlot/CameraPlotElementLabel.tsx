@@ -45,7 +45,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
 
   if (!element.label) return null;
 
-  // Calculate label position (relative to element)
+  // Calculate label position - perfectly centered below the element
   const labelX = element.x + element.width / 2 + (element.labelOffsetX || 0);
   const labelY = element.y + element.height + (element.labelOffsetY || 0);
 
@@ -55,8 +55,9 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
         isSelected ? 'z-10' : 'z-5'
       }`}
       style={{
-        left: labelX - 20,
+        left: labelX,
         top: labelY,
+        transform: 'translateX(-50%)', // This centers the label horizontally
       }}
       onMouseDown={onMouseDown}
       onDoubleClick={handleDoubleClick}

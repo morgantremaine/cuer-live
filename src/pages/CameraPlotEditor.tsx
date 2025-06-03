@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -113,6 +114,7 @@ const CameraPlotEditor = () => {
             onSelectElement={selectElement}
             snapToGrid={snapToGrid}
             updatePlot={updatePlot}
+            setSelectedTool={setSelectedTool}
           />
         </div>
       </div>

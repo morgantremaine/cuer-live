@@ -18,6 +18,7 @@ interface CameraPlotCanvasProps {
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
+  setSelectedTool: (tool: string) => void;
 }
 
 const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
@@ -30,7 +31,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   onDeleteElement,
   onSelectElement,
   snapToGrid,
-  updatePlot
+  updatePlot,
+  setSelectedTool
 }, ref) => {
   const {
     mousePos,
@@ -47,7 +49,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     snapToGrid,
     scene,
     onUpdateElement,
-    updatePlot
+    updatePlot,
+    setSelectedTool
   });
 
   return (

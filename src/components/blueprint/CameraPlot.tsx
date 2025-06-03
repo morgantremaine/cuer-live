@@ -32,6 +32,81 @@ const CameraPlot = ({
     openPlotEditor();
   };
 
+  const renderMiniPreview = (plot: any) => {
+    if (!plot.elements || plot.elements.length === 0) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-xs">
+          Empty Scene
+        </div>
+      );
+    }
+
+    return (
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 100">
+        {plot.elements.map((element: any, index: number) => {
+          // Scale down coordinates for mini preview
+          const x = (element.x / 2000) * 200;
+          const y = (element.y / 2000) * 100;
+          const width = Math.max(2, (element.width / 2000) * 200);
+          const height = Math.max(2, (element.height / 2000) * 100);
+
+          if (element.type === 'camera') {
+            return (
+              <circle
+                key={index}
+                cx={x + width/2}
+                cy={y + height/2}
+                r={Math.max(2, width/2)}
+                fill="#3b82f6"
+                stroke="#1d4ed8"
+                strokeWidth="0.5"
+              />
+            );
+          } else if (element.type === 'wall') {
+            return (
+              <rect
+                key={index}
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                fill="#6b7280"
+                transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+              />
+            );
+          } else if (element.type === 'person') {
+            return (
+              <circle
+                key={index}
+                cx={x + width/2}
+                cy={y + height/2}
+                r={Math.max(1.5, width/2)}
+                fill="#10b981"
+                stroke="#059669"
+                strokeWidth="0.5"
+              />
+            );
+          } else if (element.type === 'furniture') {
+            return (
+              <rect
+                key={index}
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                fill="#f59e0b"
+                stroke="#d97706"
+                strokeWidth="0.5"
+                rx="1"
+              />
+            );
+          }
+          return null;
+        })}
+      </svg>
+    );
+  };
+
   return (
     <Card 
       className={`w-full mt-8 bg-gray-800 border-gray-700 ${isDragging ? 'opacity-50' : ''}`}
@@ -83,10 +158,10 @@ const CameraPlot = ({
               >
                 <h4 className="text-white font-medium mb-2">{plot.name}</h4>
                 <div className="bg-white rounded h-32 relative overflow-hidden">
-                  {/* Mini preview of the plot */}
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
-                    Preview
-                  </div>
+                  {renderMiniPreview(plot)}
+                </div>
+                <div className="mt-2 text-xs text-gray-400">
+                  {plot.elements?.length || 0} elements
                 </div>
               </div>
             ))}

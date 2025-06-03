@@ -5,7 +5,8 @@ import { getNextCameraNumber } from '../utils/cameraUtils';
 
 export const useCameraPlotElementCreation = (
   activeScene: CameraPlotScene | undefined,
-  updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void
+  updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void,
+  setSelectedTool: (tool: string) => void
 ) => {
   const addElement = (type: string, x: number, y: number, wallData?: { start: { x: number; y: number }, end: { x: number; y: number } }) => {
     if (!activeScene) {
@@ -79,7 +80,7 @@ export const useCameraPlotElementCreation = (
             label: `CAM ${cameraNumber}`,
             cameraNumber,
             labelOffsetX: 0,
-            labelOffsetY: 60
+            labelOffsetY: 15 // Closer to the icon, directly underneath
           };
           break;
         case 'person':
@@ -94,7 +95,7 @@ export const useCameraPlotElementCreation = (
             scale: 1,
             label: 'Person',
             labelOffsetX: 0,
-            labelOffsetY: 50
+            labelOffsetY: 15 // Closer to the icon, directly underneath
           };
           break;
         case 'furniture-rect':
@@ -109,7 +110,7 @@ export const useCameraPlotElementCreation = (
             scale: 1,
             label: 'Table',
             labelOffsetX: 0,
-            labelOffsetY: 70
+            labelOffsetY: 15 // Closer to the icon, directly underneath
           };
           break;
         case 'furniture-circle':
@@ -124,7 +125,7 @@ export const useCameraPlotElementCreation = (
             scale: 1,
             label: 'Round Table',
             labelOffsetX: 0,
-            labelOffsetY: 70
+            labelOffsetY: 15 // Closer to the icon, directly underneath
           };
           break;
         default:
@@ -137,6 +138,11 @@ export const useCameraPlotElementCreation = (
     const updatedElements = [...activeScene.elements, newElement];
     console.log('Updating scene with new elements count:', updatedElements.length);
     updatePlot(activeScene.id, { elements: updatedElements });
+    
+    // Switch back to select tool after placing any element (except walls, which are handled in wall handlers)
+    if (type !== 'wall') {
+      setSelectedTool('select');
+    }
   };
 
   return {
