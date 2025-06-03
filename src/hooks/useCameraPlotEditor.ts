@@ -24,7 +24,10 @@ export const useCameraPlotEditor = (rundownId: string) => {
     resetSelection,
     isDrawingWall,
     wallStart,
+    wallPreview,
     startWallDrawing,
+    updateWallPreview,
+    completeWall,
     stopDrawingWalls
   } = useCameraPlotState(rundownId);
 
@@ -44,6 +47,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     wallStart,
     baseAddElement,
     startWallDrawing,
+    completeWall,
     snapToGrid
   });
 
@@ -65,6 +69,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     selectedElements,
     isDrawingWall,
     wallStart,
+    wallPreview,
     showGrid,
     setSelectedTool: handleSetSelectedTool,
     addElement,
@@ -77,6 +82,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     duplicateScene,
     setActiveScene: handleSetActiveScene,
     updateSceneName,
+    updateWallPreview,
     stopDrawingWalls,
     toggleGrid,
     snapToGrid

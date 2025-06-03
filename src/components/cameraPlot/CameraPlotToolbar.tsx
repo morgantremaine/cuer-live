@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, User, Square, Circle, Move, Minus, StopCircle, Grid3X3 } from 'lucide-react';
+import { Move, Square, Circle, StopCircle, Grid3X3 } from 'lucide-react';
 
 interface CameraPlotToolbarProps {
   selectedTool: string;
@@ -20,11 +20,31 @@ const CameraPlotToolbar = ({
   showGrid,
   onToggleGrid 
 }: CameraPlotToolbarProps) => {
+  const CameraIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2"/>
+      <path d="M12 8 L16 12 L12 16" stroke="currentColor" strokeWidth="2" fill="none"/>
+    </svg>
+  );
+
+  const PersonIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2"/>
+      <line x1="12" y1="12" x2="12" y2="4" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  );
+
+  const WallIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="10" width="18" height="4" stroke="currentColor" strokeWidth="2" fill="currentColor"/>
+    </svg>
+  );
+
   const tools = [
     { id: 'select', icon: Move, label: 'Select' },
-    { id: 'camera', icon: Camera, label: 'Camera' },
-    { id: 'person', icon: User, label: 'Person' },
-    { id: 'wall', icon: Minus, label: 'Wall' },
+    { id: 'camera', icon: CameraIcon, label: 'Camera' },
+    { id: 'person', icon: PersonIcon, label: 'Person' },
+    { id: 'wall', icon: WallIcon, label: 'Wall' },
     { id: 'furniture-rect', icon: Square, label: 'Table' },
     { id: 'furniture-circle', icon: Circle, label: 'Round Table' },
   ];
@@ -79,7 +99,7 @@ const CameraPlotToolbar = ({
             Finish Drawing
           </Button>
           <p className="text-xs text-gray-400 mt-2">
-            Click to place wall endpoints. Click "Finish Drawing" when done.
+            Click to place wall endpoints. Each click continues the wall from the last point.
           </p>
         </div>
       )}

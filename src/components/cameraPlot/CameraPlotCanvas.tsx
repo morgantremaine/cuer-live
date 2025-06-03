@@ -9,11 +9,13 @@ interface CameraPlotCanvasProps {
   selectedElements: string[];
   isDrawingWall?: boolean;
   wallStart?: { x: number; y: number } | null;
+  wallPreview?: { x: number; y: number } | null;
   showGrid?: boolean;
   onAddElement: (type: string, x: number, y: number) => void;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   onDeleteElement: (elementId: string) => void;
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
+  onUpdateWallPreview?: (point: { x: number; y: number }) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
 }
 
@@ -23,11 +25,13 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   selectedElements,
   isDrawingWall,
   wallStart,
+  wallPreview,
   showGrid,
   onAddElement,
   onUpdateElement,
   onDeleteElement,
   onSelectElement,
+  onUpdateWallPreview,
   snapToGrid
 }, ref) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -55,6 +59,11 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     };
     const snappedPos = snapToGrid(rawPos.x, rawPos.y);
     setMousePos(snappedPos);
+
+    // Update wall preview when drawing walls
+    if (isDrawingWall && onUpdateWallPreview) {
+      onUpdateWallPreview(snappedPos);
+    }
   };
 
   const renderGrid = () => {
@@ -105,6 +114,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     );
   };
 
+  const currentWallPreview = wallPreview || mousePos;
+
   return (
     <div className="flex-1 relative overflow-auto bg-gray-600">
       <div
@@ -130,18 +141,29 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
             <line
               x1={wallStart.x}
               y1={wallStart.y}
-              x2={mousePos.x}
-              y2={mousePos.y}
-              stroke="#9CA3AF"
+              x2={currentWallPreview.x}
+              y2={currentWallPreview.y}
+              stroke="#60A5FA"
               strokeWidth="4"
               strokeDasharray="8,4"
+              opacity={0.8}
             />
             {/* Start point indicator */}
             <circle
               cx={wallStart.x}
               cy={wallStart.y}
-              r="4"
+              r="6"
               fill="#ef4444"
+              stroke="#fff"
+              strokeWidth="2"
+            />
+            {/* End point preview */}
+            <circle
+              cx={currentWallPreview.x}
+              cy={currentWallPreview.y}
+              r="4"
+              fill="#60A5FA"
+              opacity={0.8}
             />
           </svg>
         )}

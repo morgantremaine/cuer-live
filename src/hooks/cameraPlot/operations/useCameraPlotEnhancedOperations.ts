@@ -3,8 +3,9 @@ export interface CameraPlotOperationsProps {
   selectedTool: string;
   isDrawingWall: boolean;
   wallStart: { x: number; y: number } | null;
-  baseAddElement: (type: string, x: number, y: number, wallStart?: { x: number; y: number } | null, onWallComplete?: () => void) => void;
+  baseAddElement: (type: string, x: number, y: number, wallData?: { start: { x: number; y: number }, end: { x: number; y: number } }) => void;
   startWallDrawing: (point: { x: number; y: number }) => void;
+  completeWall: (endPoint: { x: number; y: number }) => { start: { x: number; y: number }, end: { x: number; y: number } } | null;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
 }
 
@@ -14,24 +15,29 @@ export const useCameraPlotEnhancedOperations = ({
   wallStart,
   baseAddElement,
   startWallDrawing,
+  completeWall,
   snapToGrid
 }: CameraPlotOperationsProps) => {
   const addElement = (type: string, x: number, y: number) => {
+    const snapped = snapToGrid(x, y);
+    
     if (type === 'wall') {
       if (!isDrawingWall) {
-        const snapped = snapToGrid(x, y);
+        // Start drawing a wall
         startWallDrawing(snapped);
         return;
       } else if (wallStart) {
-        baseAddElement(type, x, y, wallStart, () => {
-          const snapped = snapToGrid(x, y);
-          startWallDrawing(snapped);
-        });
+        // Complete the wall
+        const wallData = completeWall(snapped);
+        if (wallData) {
+          baseAddElement('wall', x, y, wallData);
+        }
         return;
       }
     }
 
-    baseAddElement(type, x, y);
+    // For non-wall elements
+    baseAddElement(type, snapped.x, snapped.y);
   };
 
   return {

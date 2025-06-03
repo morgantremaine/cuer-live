@@ -13,7 +13,8 @@ interface CameraPlotElementProps {
 
 const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, snapToGrid }: CameraPlotElementProps) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [isRotatingOrScaling, setIsRotatingOrScaling] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
+  const [isScaling, setIsScaling] = useState(false);
   const [isLabelDragging, setIsLabelDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(element.label);
@@ -32,6 +33,9 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
   
   const elementRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check if element can be scaled (cameras and people cannot be scaled)
+  const canScale = element.type !== 'camera' && element.type !== 'person';
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -53,17 +57,39 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
     const rect = e.currentTarget.getBoundingClientRect();
     const relativeX = e.clientX - rect.left;
     const relativeY = e.clientY - rect.top;
-    const edgeThreshold = 15;
-    
     const centerX = element.x + element.width / 2;
     const centerY = element.y + element.height / 2;
     
-    // Check if near edges for rotation/scaling
+    // Check if clicking on rotation handle (outer edge)
+    const edgeThreshold = 15;
     const nearEdge = relativeX < edgeThreshold || relativeX > rect.width - edgeThreshold || 
                     relativeY < edgeThreshold || relativeY > rect.height - edgeThreshold;
     
-    if (nearEdge && isSelected) {
-      setIsRotatingOrScaling(true);
+    // Check if clicking on scale handle (corners) - only for scalable elements
+    const cornerThreshold = 8;
+    const nearCorner = canScale && isSelected && (
+      (relativeX < cornerThreshold && relativeY < cornerThreshold) ||
+      (relativeX > rect.width - cornerThreshold && relativeY < cornerThreshold) ||
+      (relativeX < cornerThreshold && relativeY > rect.height - cornerThreshold) ||
+      (relativeX > rect.width - cornerThreshold && relativeY > rect.height - cornerThreshold)
+    );
+
+    if (nearCorner) {
+      // Scale mode
+      setIsScaling(true);
+      setDragStart({
+        x: e.clientX,
+        y: e.clientY,
+        elementX: element.x,
+        elementY: element.y,
+        initialScale: element.scale || 1,
+        initialRotation: element.rotation || 0,
+        centerX,
+        centerY
+      });
+    } else if (nearEdge && isSelected) {
+      // Rotation mode
+      setIsRotating(true);
       setDragStart({
         x: e.clientX,
         y: e.clientY,
@@ -75,6 +101,7 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
         centerY
       });
     } else {
+      // Drag mode
       setIsDragging(true);
       setDragStart({
         x: e.clientX,
@@ -121,38 +148,47 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
           labelOffsetX: dragStart.elementX + deltaX,
           labelOffsetY: dragStart.elementY + deltaY
         });
-      } else if (isRotatingOrScaling) {
+      } else if (isRotating) {
         const centerX = element.x + element.width / 2;
         const centerY = element.y + element.height / 2;
         
-        // Calculate rotation
+        // Calculate rotation based on mouse position relative to center
         const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+        
+        onUpdate(element.id, {
+          rotation: angle
+        });
+      } else if (isScaling && canScale) {
+        const centerX = element.x + element.width / 2;
+        const centerY = element.y + element.height / 2;
         
         // Calculate scale based on distance from center
         const currentDistance = Math.sqrt(
           Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2)
         );
         const initialDistance = Math.sqrt(
-          Math.pow(dragStart.x - dragStart.centerX, 2) + Math.pow(dragStart.y - dragStart.centerY, 2)
+          Math.pow(dragStart.x - centerX, 2) + Math.pow(dragStart.y - centerY, 2)
         );
         
-        const scaleMultiplier = currentDistance / initialDistance;
-        const newScale = Math.max(0.2, Math.min(3, dragStart.initialScale * scaleMultiplier));
-        
-        onUpdate(element.id, {
-          rotation: angle,
-          scale: newScale
-        });
+        if (initialDistance > 0) {
+          const scaleMultiplier = currentDistance / initialDistance;
+          const newScale = Math.max(0.3, Math.min(3, dragStart.initialScale * scaleMultiplier));
+          
+          onUpdate(element.id, {
+            scale: newScale
+          });
+        }
       }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
       setIsLabelDragging(false);
-      setIsRotatingOrScaling(false);
+      setIsRotating(false);
+      setIsScaling(false);
     };
 
-    if (isDragging || isLabelDragging || isRotatingOrScaling) {
+    if (isDragging || isLabelDragging || isRotating || isScaling) {
       document.addEventListener('mousemove', handleMouseMoveGlobal);
       document.addEventListener('mouseup', handleMouseUp);
     }
@@ -161,7 +197,7 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
       document.removeEventListener('mousemove', handleMouseMoveGlobal);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isLabelDragging, isRotatingOrScaling, dragStart, element, onUpdate, snapToGrid]);
+  }, [isDragging, isLabelDragging, isRotating, isScaling, dragStart, element, onUpdate, snapToGrid, canScale]);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -188,7 +224,8 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
 
   const getCursor = () => {
     if (isDragging) return 'grabbing';
-    if (isRotatingOrScaling) return 'grab';
+    if (isRotating) return 'crosshair';
+    if (isScaling) return 'nw-resize';
     return 'grab';
   };
 
@@ -209,29 +246,33 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
       case 'camera':
         return (
           <div 
-            className="flex items-center justify-center border-2 border-gray-400 bg-white rounded"
-            style={style}
+            className="flex items-center justify-center border-2 border-blue-500 bg-white rounded-full"
+            style={{
+              transform: `rotate(${rotation}deg)`,
+              transformOrigin: 'center'
+            }}
           >
-            <img 
-              src="/lovable-uploads/03e30ecb-e3df-45bd-917f-47a6684bfae6.png" 
-              alt="Camera" 
-              className="w-full h-full object-contain"
-              draggable={false}
-            />
+            {/* Camera circle with direction indicator */}
+            <svg viewBox="0 0 24 24" className="w-full h-full p-1">
+              <circle cx="12" cy="12" r="10" fill="#3b82f6" stroke="white" strokeWidth="1"/>
+              <path d="M12 7 L17 12 L12 17" fill="white" stroke="white" strokeWidth="1"/>
+            </svg>
           </div>
         );
       case 'person':
         return (
           <div 
-            className="flex items-center justify-center border-2 border-gray-400 bg-white rounded-full"
-            style={style}
+            className="flex items-center justify-center border-2 border-green-500 bg-white rounded-full"
+            style={{
+              transform: `rotate(${rotation}deg)`,
+              transformOrigin: 'center'
+            }}
           >
-            <img 
-              src="/lovable-uploads/e28a970b-a037-42d0-a0c9-5b03fb007b14.png" 
-              alt="Person" 
-              className="w-full h-full object-contain"
-              draggable={false}
-            />
+            {/* Person circle with direction line */}
+            <svg viewBox="0 0 24 24" className="w-full h-full p-1">
+              <circle cx="12" cy="12" r="10" fill="#10b981" stroke="white" strokeWidth="1"/>
+              <line x1="12" y1="12" x2="12" y2="4" stroke="white" strokeWidth="2"/>
+            </svg>
           </div>
         );
       case 'wall':
@@ -295,10 +336,21 @@ const CameraPlotElement = ({ element, isSelected, onUpdate, onDelete, onSelect, 
         {/* Selection handles */}
         {isSelected && (
           <>
-            <div className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 border border-white cursor-nw-resize" />
-            <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 border border-white cursor-ne-resize" />
-            <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 border border-white cursor-sw-resize" />
-            <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 border border-white cursor-se-resize" />
+            {/* Rotation handles (edges) */}
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-yellow-500 border border-white cursor-crosshair rounded-full" />
+            <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-yellow-500 border border-white cursor-crosshair rounded-full" />
+            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-yellow-500 border border-white cursor-crosshair rounded-full" />
+            <div className="absolute -left-1 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-yellow-500 border border-white cursor-crosshair rounded-full" />
+            
+            {/* Scale handles (corners) - only for scalable elements */}
+            {canScale && (
+              <>
+                <div className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 border border-white cursor-nw-resize" />
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 border border-white cursor-ne-resize" />
+                <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 border border-white cursor-sw-resize" />
+                <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 border border-white cursor-se-resize" />
+              </>
+            )}
           </>
         )}
       </div>

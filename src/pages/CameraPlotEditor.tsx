@@ -20,6 +20,7 @@ const CameraPlotEditor = () => {
     selectedElements,
     isDrawingWall,
     wallStart,
+    wallPreview,
     showGrid,
     setSelectedTool,
     addElement,
@@ -32,6 +33,7 @@ const CameraPlotEditor = () => {
     duplicateScene,
     setActiveScene,
     updateSceneName,
+    updateWallPreview,
     stopDrawingWalls,
     toggleGrid,
     snapToGrid
@@ -113,11 +115,13 @@ const CameraPlotEditor = () => {
             selectedElements={selectedElements}
             isDrawingWall={isDrawingWall}
             wallStart={wallStart}
+            wallPreview={wallPreview}
             showGrid={showGrid}
             onAddElement={addElement}
             onUpdateElement={updateElement}
-            onDeleteElement={deleteElement}
+            onDeleteElement={onDeleteElement}
             onSelectElement={selectElement}
+            onUpdateWallPreview={updateWallPreview}
             snapToGrid={snapToGrid}
           />
         </div>
