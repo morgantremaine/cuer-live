@@ -5,18 +5,15 @@ import { CameraPlotScene } from '@/hooks/useCameraPlot';
 export const useCameraPlotInteractions = (
   activeScene: CameraPlotScene | undefined,
   scenes: CameraPlotScene[],
-  updateSceneName: (sceneId: string, name: string) => void
+  updateSceneName: (sceneId: string, name: string) => void,
+  updatePlot: (plotId: string, updates: Partial<CameraPlotScene>) => void
 ) => {
   const updatePlotCallback = (plotId: string, updates: Partial<CameraPlotScene>) => {
-    const sceneToUpdate = scenes.find(s => s.id === plotId);
-    if (sceneToUpdate) {
-      updateSceneName(plotId, updates.name || sceneToUpdate.name);
-      if (updates.elements) {
-        const plot = scenes.find(s => s.id === plotId);
-        if (plot && 'updatePlot' in plot) {
-          (plot as any).updatePlot(plotId, updates);
-        }
-      }
+    updatePlot(plotId, updates);
+    
+    // Also handle name updates separately if needed
+    if (updates.name) {
+      updateSceneName(plotId, updates.name);
     }
   };
 

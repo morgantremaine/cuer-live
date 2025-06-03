@@ -55,6 +55,7 @@ export const useCameraPlotScenes = (rundownId: string) => {
     deleteScene,
     duplicateScene,
     setActiveScene,
-    updateSceneName
+    updateSceneName,
+    updatePlot
   };
 };
