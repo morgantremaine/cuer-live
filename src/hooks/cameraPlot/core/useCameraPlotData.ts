@@ -41,7 +41,16 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
         const blueprint = await loadBlueprint();
         
         if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
-          setPlots(blueprint.camera_plots);
+          // Use a more stable update to prevent reference issues
+          setPlots(prevPlots => {
+            // Only update if the data is actually different
+            const newPlots = blueprint.camera_plots;
+            if (JSON.stringify(prevPlots) !== JSON.stringify(newPlots)) {
+              console.log('Loading camera plots from blueprint:', newPlots.length);
+              return newPlots;
+            }
+            return prevPlots;
+          });
         } else {
           setPlots([]);
         }
@@ -55,6 +64,7 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
   const reloadPlots = async () => {
     const blueprint = await loadBlueprint();
     if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
+      console.log('Reloading camera plots from blueprint:', blueprint.camera_plots.length);
       setPlots(blueprint.camera_plots);
     } else {
       setPlots([]);

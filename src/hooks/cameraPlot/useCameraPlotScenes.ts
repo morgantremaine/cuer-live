@@ -17,24 +17,31 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     reloadPlots
   } = useCameraPlot(rundownId, 'Camera Plot', readOnly);
 
-  // Set active scene to first available scene
+  // Set active scene to first available scene and handle scene changes
   useEffect(() => {
     const now = Date.now();
     const shouldLog = now - lastLogTimeRef.current > LOG_THROTTLE_MS;
     
-    if (scenes.length > 0 && !activeSceneId) {
-      if (shouldLog) {
-        console.log('Setting active scene to first plot:', scenes[0].id);
-        lastLogTimeRef.current = now;
+    if (scenes.length > 0) {
+      // If no active scene is set, or the current active scene doesn't exist, set to first scene
+      const currentActiveScene = scenes.find(scene => scene.id === activeSceneId);
+      
+      if (!activeSceneId || !currentActiveScene) {
+        const firstSceneId = scenes[0].id;
+        if (shouldLog) {
+          console.log('Setting active scene to first plot:', firstSceneId);
+          lastLogTimeRef.current = now;
+        }
+        setActiveSceneId(firstSceneId);
       }
-      setActiveSceneId(scenes[0].id);
-    } else if (scenes.length === 0 && activeSceneId) {
+    } else if (scenes.length === 0) {
+      // Clear active scene if no scenes exist
       setActiveSceneId(null);
     }
   }, [scenes, activeSceneId]);
 
-  // Ensure we always have a valid active scene reference
-  const activeScene = scenes.find(scene => scene.id === activeSceneId) || null;
+  // Always get the most current active scene from the scenes array
+  const activeScene = activeSceneId ? scenes.find(scene => scene.id === activeSceneId) || null : null;
 
   console.log('useCameraPlotScenes - activeSceneId:', activeSceneId, 'activeScene found:', !!activeScene, 'scenes count:', scenes.length);
 
