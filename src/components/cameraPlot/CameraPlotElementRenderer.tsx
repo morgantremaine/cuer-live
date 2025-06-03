@@ -50,7 +50,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
           <img 
             src="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png" 
             alt="Person"
-            className="w-6 h-6 object-contain"
+            className="w-8 h-8 object-contain"
           />
           {/* Direction indicator */}
           <div 

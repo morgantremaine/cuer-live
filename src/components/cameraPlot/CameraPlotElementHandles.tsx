@@ -12,33 +12,34 @@ interface CameraPlotElementHandlesProps {
 
 const CameraPlotElementHandles = ({ 
   element, 
-  isSelected,
-  onRotationStart,
-  isRotating = false
+  isSelected, 
+  onRotationStart, 
+  isRotating = false 
 }: CameraPlotElementHandlesProps) => {
   if (!isSelected) return null;
 
-  const canRotate = element.type === 'camera' || element.type === 'person';
-  const canScale = element.type === 'furniture';
+  const rotation = element.rotation || 0;
 
   return (
     <>
-      {/* Rotation handle for cameras and people */}
-      {canRotate && onRotationStart && (
-        <CameraPlotRotationHandle 
+      {/* Selection outline that follows the actual shape */}
+      {element.type === 'wall' && (
+        <div 
+          className="absolute inset-0 border-2 border-blue-500 border-opacity-75 pointer-events-none"
+          style={{
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: 'center'
+          }}
+        />
+      )}
+
+      {/* Rotation handle for rotatable elements */}
+      {onRotationStart && (
+        <CameraPlotRotationHandle
+          element={element}
           onRotationStart={onRotationStart}
           isRotating={isRotating}
         />
-      )}
-      
-      {/* Scale handles for furniture only */}
-      {canScale && (
-        <>
-          <div className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 border-2 border-white cursor-nw-resize rounded-sm shadow-lg" />
-          <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 border-2 border-white cursor-ne-resize rounded-sm shadow-lg" />
-          <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 border-2 border-white cursor-sw-resize rounded-sm shadow-lg" />
-          <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 border-2 border-white cursor-se-resize rounded-sm shadow-lg" />
-        </>
       )}
     </>
   );

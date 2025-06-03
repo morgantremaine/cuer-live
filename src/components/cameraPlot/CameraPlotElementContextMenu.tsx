@@ -28,6 +28,8 @@ const CameraPlotElementContextMenu = ({
   if (!isVisible) return null;
 
   const handleDuplicate = () => {
+    console.log('Duplicate button clicked for element:', element.id);
+    
     const newElement: CameraElement = {
       ...element,
       id: uuidv4(),
@@ -40,10 +42,15 @@ const CameraPlotElementContextMenu = ({
       const cameraNumber = getNextCameraNumber(allElements);
       newElement.cameraNumber = cameraNumber;
       newElement.label = `CAM ${cameraNumber}`;
+      console.log('Duplicating camera with new number:', cameraNumber);
     }
 
+    console.log('New duplicated element:', newElement);
+    
     if (onDuplicate) {
       onDuplicate(newElement);
+    } else {
+      console.error('onDuplicate callback not provided');
     }
     onClose();
   };

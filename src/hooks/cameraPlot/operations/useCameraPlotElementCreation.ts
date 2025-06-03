@@ -57,8 +57,8 @@ export const useCameraPlotElementCreation = (
           ...baseElement,
           id: uuidv4(),
           label: 'Person',
-          width: 30,
-          height: 30
+          width: 40,
+          height: 40
         };
         break;
       case 'furniture-rect':

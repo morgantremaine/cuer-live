@@ -72,6 +72,15 @@ const CameraPlotElement = ({
     }
   };
 
+  const handleDuplicateElement = (newElement: CameraElement) => {
+    console.log('CameraPlotElement - handleDuplicateElement called with:', newElement);
+    if (onDuplicate) {
+      onDuplicate(newElement);
+    } else {
+      console.error('onDuplicate prop not provided to CameraPlotElement');
+    }
+  };
+
   return (
     <>
       {/* Main element */}
@@ -117,7 +126,7 @@ const CameraPlotElement = ({
         onClose={() => setShowContextMenu(false)}
         onUpdate={onUpdate}
         onDelete={onDelete}
-        onDuplicate={onDuplicate}
+        onDuplicate={handleDuplicateElement}
         allElements={allElements}
       />
     </>
