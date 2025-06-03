@@ -30,32 +30,10 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
             transformOrigin: 'center'
           }}
         >
-          {/* Camera body (square with rounded corners) */}
-          <div className="w-7 h-7 bg-blue-500 border-2 border-black rounded-sm relative z-10" />
-          
-          {/* Camera lens (triangle pointing to the right) */}
-          <div 
-            className="absolute w-0 h-0 z-0"
-            style={{
-              borderTop: '8px solid transparent',
-              borderBottom: '8px solid transparent',
-              borderLeft: '12px solid #3b82f6',
-              right: '-10px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              filter: 'drop-shadow(1px 0 1px rgba(0,0,0,0.5))'
-            }}
-          />
-          
-          {/* Optional: Small lens detail */}
-          <div 
-            className="absolute w-2 h-2 bg-black rounded-full z-20"
-            style={{
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}
-          />
+          {/* Single camera shape - square body with triangular lens */}
+          <svg width="32" height="24" viewBox="0 0 32 24" className="fill-blue-500 stroke-black stroke-1">
+            <path d="M2 4 h16 v16 h-16 z M18 8 l8 4 l-8 4 z" />
+          </svg>
         </div>
       );
       
