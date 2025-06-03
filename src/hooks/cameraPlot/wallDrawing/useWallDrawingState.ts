@@ -26,7 +26,10 @@ export const useWallDrawingState = () => {
 
   const addPoint = (point: WallPoint) => {
     console.log('Adding wall point:', point);
-    setCurrentPath(prev => [...prev, point]);
+    console.log('Current path before adding:', currentPath);
+    const newPath = [...currentPath, point];
+    console.log('New path after adding:', newPath);
+    setCurrentPath(newPath);
   };
 
   const updatePreview = (point: WallPoint) => {
@@ -37,18 +40,30 @@ export const useWallDrawingState = () => {
 
   const finishDrawing = (): WallSegment[] => {
     console.log('Finishing wall drawing with path:', currentPath);
-    const segments: WallSegment[] = [];
     
+    if (currentPath.length < 2) {
+      console.log('Not enough points to create wall segments');
+      setIsDrawing(false);
+      setCurrentPath([]);
+      setPreviewPoint(null);
+      return [];
+    }
+    
+    const segments: WallSegment[] = [];
+    const timestamp = Date.now();
+    
+    // Create segments connecting consecutive points
     for (let i = 0; i < currentPath.length - 1; i++) {
-      const segment = {
-        id: `wall-${Date.now()}-${i}-${Math.random()}`,
+      const segment: WallSegment = {
+        id: `wall-${timestamp}-${i}`,
         start: currentPath[i],
         end: currentPath[i + 1]
       };
       segments.push(segment);
+      console.log(`Created segment ${i + 1}:`, segment);
     }
     
-    console.log('Created wall segments:', segments);
+    console.log('All segments created:', segments);
     
     setIsDrawing(false);
     setCurrentPath([]);
@@ -58,6 +73,7 @@ export const useWallDrawingState = () => {
   };
 
   const cancelDrawing = () => {
+    console.log('Cancelling wall drawing');
     setIsDrawing(false);
     setCurrentPath([]);
     setPreviewPoint(null);

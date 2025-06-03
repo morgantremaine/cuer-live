@@ -23,10 +23,13 @@ export const useWallCanvasHandlers = ({
     if (selectedTool !== 'wall') return false;
 
     const snapped = snapToGrid(x, y);
+    console.log('Wall click at:', snapped);
 
     if (!wallDrawing.isDrawing) {
+      console.log('Starting new wall');
       wallDrawing.startDrawing(snapped);
     } else {
+      console.log('Adding point to existing wall');
       wallDrawing.addPoint(snapped);
     }
 
@@ -41,21 +44,34 @@ export const useWallCanvasHandlers = ({
   };
 
   const handleWallDoubleClick = () => {
-    if (selectedTool === 'wall' && wallDrawing.isDrawing && wallDrawing.currentPath.length > 1) {
-      console.log('Double click detected, finishing wall');
-      const segments = wallDrawing.finishDrawing();
+    if (selectedTool === 'wall' && wallDrawing.isDrawing) {
+      console.log('Double click detected, finishing wall drawing');
+      console.log('Current path length:', wallDrawing.currentPath.length);
       
-      // Filter out segments that are too short
-      const validSegments = segments.filter(segment => {
-        const distance = Math.sqrt(
-          Math.pow(segment.end.x - segment.start.x, 2) + 
-          Math.pow(segment.end.y - segment.start.y, 2)
-        );
-        return distance > 5;
-      });
-      
-      if (validSegments.length > 0) {
-        createWallElements(validSegments);
+      if (wallDrawing.currentPath.length >= 2) {
+        const segments = wallDrawing.finishDrawing();
+        console.log('Wall segments created:', segments);
+        
+        // Filter out segments that are too short (less than 5 pixels)
+        const validSegments = segments.filter(segment => {
+          const distance = Math.sqrt(
+            Math.pow(segment.end.x - segment.start.x, 2) + 
+            Math.pow(segment.end.y - segment.start.y, 2)
+          );
+          return distance > 5;
+        });
+        
+        console.log('Valid segments after filtering:', validSegments);
+        
+        if (validSegments.length > 0) {
+          console.log('Creating wall elements...');
+          createWallElements(validSegments);
+        } else {
+          console.log('No valid segments to create');
+        }
+      } else {
+        console.log('Not enough points to create wall');
+        wallDrawing.cancelDrawing();
       }
       
       return true;

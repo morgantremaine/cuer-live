@@ -25,11 +25,13 @@ export const useWallElementCreation = (
         segment.end.x - segment.start.x
       ) * (180 / Math.PI);
       
+      // Position the wall at the start point
+      // The wall element should be positioned so it draws from start to end
       const wallElement: CameraElement = {
         id: segment.id,
         type: 'wall',
         x: segment.start.x,
-        y: segment.start.y - 2, // Center the wall on the line
+        y: segment.start.y - 2, // Offset slightly so the wall centers on the drawn line
         width: distance,
         height: 4,
         rotation: angle,
@@ -39,13 +41,24 @@ export const useWallElementCreation = (
         labelOffsetY: -20
       };
       
-      console.log('Created wall element:', wallElement);
+      console.log('Created wall element:', {
+        id: wallElement.id,
+        start: segment.start,
+        end: segment.end,
+        position: { x: wallElement.x, y: wallElement.y },
+        width: wallElement.width,
+        angle: wallElement.rotation
+      });
+      
       return wallElement;
     });
 
     // Add all wall elements to the scene
     const updatedElements = [...activeScene.elements, ...newWallElements];
     console.log('Updating scene with', newWallElements.length, 'new wall elements');
+    console.log('Scene elements before update:', activeScene.elements.length);
+    console.log('Scene elements after update:', updatedElements.length);
+    
     updatePlot(activeScene.id, { elements: updatedElements });
   };
 
