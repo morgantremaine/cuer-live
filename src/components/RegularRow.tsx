@@ -104,20 +104,21 @@ const RegularRow = ({
     onToggleFloat(item.id);
   };
 
-  // Calculate row styling
+  // Calculate row styling with proper color handling
   let rowClassName = 'border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer';
   let backgroundColor = undefined;
   let textColor = '';
 
+  // Priority order: currently playing > completed > floated > custom color
   if (isCurrentlyPlaying) {
     rowClassName += ' bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500';
   } else if (status === 'completed') {
     rowClassName += ' bg-green-50 dark:bg-green-900/20';
   } else if (isFloated) {
-    rowClassName += ' bg-red-800 text-white opacity-75';
+    backgroundColor = '#dc2626'; // red-600
     textColor = 'white';
-  } else if (item.color && item.color !== '#ffffff') {
-    // Apply custom color
+  } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF') {
+    // Apply custom color only if it's not white
     backgroundColor = item.color;
     textColor = getContrastTextColor(item.color);
   }

@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -104,7 +105,7 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Wrapped functions that save state before making changes - update to support insertion after selected row
+  // Wrapped functions that save state before making changes - use string IDs consistently
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     
