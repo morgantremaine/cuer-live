@@ -9,9 +9,7 @@ import { useChangeTracking } from './useChangeTracking';
 export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string, undoHistory?: any[]) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isSavingRef = useRef(false);
-  const saveQueueRef = useRef<boolean>(false);
-  const isProcessingSaveRef = useRef(false);
+  const isExecutingSaveRef = useRef(false);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -23,27 +21,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
-  // Update the saving ref when isSaving changes
-  useEffect(() => {
-    isSavingRef.current = isSaving;
-  }, [isSaving]);
-
-  // Stable save function that doesn't change on every render
+  // Stable save function
   const executeSave = useCallback(async () => {
-    if (!user || isSavingRef.current || isProcessingSaveRef.current) {
-      console.log('Auto-save skipped: no user or already saving');
+    if (!user || isSaving || isExecutingSaveRef.current) {
+      console.log('Auto-save blocked:', { user: !!user, isSaving, isExecuting: isExecutingSaveRef.current });
       return;
     }
 
-    if (saveQueueRef.current) {
-      console.log('Auto-save: Save already queued, skipping duplicate');
-      return;
-    }
-
-    isProcessingSaveRef.current = true;
-    console.log('Auto-save: Executing save operation');
+    isExecutingSaveRef.current = true;
+    console.log('Auto-save: Starting save operation');
     
-    // Mark as loading to prevent change detection during save
     setIsLoading(true);
 
     try {
@@ -57,9 +44,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       );
       
       if (success) {
-        console.log('Auto-save: Save successful');
+        console.log('Auto-save: Save completed successfully');
         markAsSaved(items, rundownTitle, columns, timezone, startTime);
-        saveQueueRef.current = false;
       } else {
         console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
@@ -69,13 +55,13 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       setHasUnsavedChanges(true);
     } finally {
       setIsLoading(false);
-      isProcessingSaveRef.current = false;
+      isExecutingSaveRef.current = false;
     }
-  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, items, rundownTitle, columns, timezone, startTime, undoHistory]);
+  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, items, rundownTitle, columns, timezone, startTime, undoHistory, isSaving]);
 
-  // Main effect that schedules saves
+  // Main auto-save effect
   useEffect(() => {
-    if (!hasUnsavedChanges || !isInitialized || !user || isProcessingSaveRef.current) {
+    if (!hasUnsavedChanges || !isInitialized || !user || isExecutingSaveRef.current) {
       return;
     }
 
@@ -87,12 +73,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     console.log('Auto-save: Scheduling save in 3 seconds');
 
-    // Schedule new save
+    // Schedule new save with timeout reference
     debounceTimeoutRef.current = setTimeout(() => {
-      executeSave();
+      console.log('Auto-save: Timeout reached, executing save');
       debounceTimeoutRef.current = null;
+      executeSave();
     }, 3000);
 
+    // Cleanup function
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
@@ -110,13 +98,9 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     };
   }, []);
 
-  const markAsChangedCallback = () => {
-    markAsChanged();
-  };
-
   return {
     hasUnsavedChanges,
-    isSaving,
-    markAsChanged: markAsChangedCallback
+    isSaving: isSaving || isExecutingSaveRef.current,
+    markAsChanged: () => markAsChanged()
   };
 };

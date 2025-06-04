@@ -7,51 +7,43 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedDataRef = useRef<string>('');
-  const initialLoadRef = useRef(false);
+  const initializedRef = useRef(false);
   const isLoadingRef = useRef(false);
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitializingRef = useRef(false);
 
-  // Initialize tracking after first meaningful load - prevent duplicate initialization
+  // Initialize tracking once when we have meaningful data
   useEffect(() => {
-    // Clear any pending initialization
-    if (initializationTimeoutRef.current) {
-      clearTimeout(initializationTimeoutRef.current);
-    }
+    // Only initialize once and when we have real data
+    if (initializedRef.current || isLoadingRef.current) return;
+    
+    // Check if we have meaningful data to initialize with
+    const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
+    if (!hasMeaningfulData) return;
 
-    // Only initialize once we have meaningful data and haven't initialized yet
-    if (!initialLoadRef.current && !isInitializingRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
-      isInitializingRef.current = true;
-      
-      initializationTimeoutRef.current = setTimeout(() => {
-        if (!initialLoadRef.current) {
-          const signature = JSON.stringify({ 
-            items: items.map(item => ({ id: item.id, ...item })), 
-            title: rundownTitle, 
-            columns, 
-            timezone, 
-            startTime 
-          });
-          lastSavedDataRef.current = signature;
-          initialLoadRef.current = true;
-          setIsInitialized(true);
-          setHasUnsavedChanges(false);
-          isInitializingRef.current = false;
-          console.log('Change tracking initialized with signature length:', signature.length);
-        }
-      }, 200);
-    }
+    console.log('Change tracking initialized with signature length:', JSON.stringify({ 
+      items: items.map(item => ({ id: item.id, ...item })), 
+      title: rundownTitle, 
+      columns, 
+      timezone, 
+      startTime 
+    }).length);
 
-    return () => {
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
-    };
+    const signature = JSON.stringify({ 
+      items: items.map(item => ({ id: item.id, ...item })), 
+      title: rundownTitle, 
+      columns, 
+      timezone, 
+      startTime 
+    });
+    
+    lastSavedDataRef.current = signature;
+    initializedRef.current = true;
+    setIsInitialized(true);
+    setHasUnsavedChanges(false);
   }, [items.length, rundownTitle]);
 
   // Track changes after initialization
   useEffect(() => {
-    if (!isInitialized || isLoadingRef.current || isInitializingRef.current) return;
+    if (!initializedRef.current || isLoadingRef.current) return;
 
     const currentSignature = JSON.stringify({ 
       items: items.map(item => ({ id: item.id, ...item })), 
@@ -67,7 +59,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       console.log('Change detected:', hasChanges ? 'unsaved changes' : 'no changes');
       setHasUnsavedChanges(hasChanges);
     }
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, hasUnsavedChanges]);
+  }, [items, rundownTitle, columns, timezone, startTime, hasUnsavedChanges]);
 
   const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
     const signature = JSON.stringify({ 
@@ -83,7 +75,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   };
 
   const markAsChanged = () => {
-    if (!isLoadingRef.current && isInitialized && !isInitializingRef.current) {
+    if (!isLoadingRef.current && initializedRef.current) {
       console.log('Manually marking as changed');
       setHasUnsavedChanges(true);
     }
