@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
@@ -43,8 +42,8 @@ const RundownGrid = () => {
   const { showColorPicker, handleToggleColorPicker, handleColorSelect: colorPickerSelect } = useColorPicker();
 
   const { handleCellClick, handleKeyDown } = useCellNavigation(
-    items,
-    visibleColumns
+    visibleColumns,
+    items
   );
 
   // Create a wrapper function that matches the expected signature
