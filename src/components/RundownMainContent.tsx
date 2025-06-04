@@ -104,9 +104,6 @@ const RundownMainContent = ({
   onAddRow,
   onAddHeader
 }: RundownMainContentProps) => {
-  console.log('RundownMainContent: onAddRow exists?', !!onAddRow);
-  console.log('RundownMainContent: onAddHeader exists?', !!onAddHeader);
-
   return (
     <>
       <RundownContent

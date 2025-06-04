@@ -8,9 +8,6 @@ interface RundownMainPropsAdapterProps {
 }
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
-  console.log('RundownMainPropsAdapter: onAddRow exists?', !!props.onAddRow);
-  console.log('RundownMainPropsAdapter: onAddHeader exists?', !!props.onAddHeader);
-
   return (
     <RundownMainContent
       currentTime={props.currentTime}
