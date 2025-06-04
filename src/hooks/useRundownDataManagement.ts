@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -30,7 +29,7 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems();
+  } = useRundownItems(markAsChanged);
 
   const {
     columns,

@@ -43,13 +43,17 @@ export const useRundownStateIntegration = (
   } = useColumnsManager(markAsChanged);
 
   // Change tracking
-  const { hasUnsavedChanges, isSaving } = useChangeTracking(
+  const changeTrackingResult = useChangeTracking(
     rundownTitle,
     items,
     columns,
     timezone,
     rundownStartTime
   );
+
+  // Extract hasUnsavedChanges and provide a default isSaving value
+  const hasUnsavedChanges = changeTrackingResult.hasUnsavedChanges;
+  const isSaving = false; // Default value since useChangeTracking doesn't provide this
 
   // Wrapped addRow that supports insertion at specific index
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
