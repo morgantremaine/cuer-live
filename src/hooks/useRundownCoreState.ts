@@ -29,7 +29,16 @@ export const useRundownCoreState = () => {
   // Get storage functionality
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
 
-  // Rundown data integration - this now includes auto-save
+  // Undo functionality with persistence - pass current state
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory, undoHistory } = useRundownUndo({
+    rundownId,
+    updateRundown,
+    currentTitle: rundownTitle,
+    currentItems: [], // Will be updated after state integration
+    currentColumns: [] // Will be updated after state integration
+  });
+
+  // Rundown data integration - now includes undo history
   const {
     items,
     setItems,
@@ -60,17 +69,9 @@ export const useRundownCoreState = () => {
     timezone, 
     rundownStartTime,
     setRundownTitleDirectly, 
-    setTimezoneDirectly
+    setTimezoneDirectly,
+    undoHistory
   );
-
-  // Undo functionality with persistence - pass current state
-  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
-    rundownId,
-    updateRundown,
-    currentTitle: rundownTitle,
-    currentItems: items,
-    currentColumns: columns
-  });
 
   // Use data loader with undo history loading - now includes setItems
   useRundownDataLoader({
@@ -84,6 +85,7 @@ export const useRundownCoreState = () => {
     setItems,
     onRundownLoaded: (rundown) => {
       if (rundown.undo_history) {
+        console.log('Loading undo history:', rundown.undo_history.length, 'entries');
         loadUndoHistory(rundown.undo_history);
       }
     }

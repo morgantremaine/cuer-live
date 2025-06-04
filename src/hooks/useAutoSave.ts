@@ -6,7 +6,7 @@ import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
-export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
+export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string, undoHistory?: any[]) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
@@ -28,19 +28,23 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   }, [isSaving]);
 
   // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
+  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string, undoHistoryToSave?: any[]) => {
     if (!user || isSavingRef.current) {
       console.log('Auto-save skipped:', { hasUser: !!user, isSaving: isSavingRef.current });
       return;
     }
 
-    console.log('Auto-save: Starting save operation');
+    console.log('Auto-save: Starting save operation with data:', {
+      itemsCount: itemsToSave.length,
+      title: titleToSave,
+      undoHistoryLength: undoHistoryToSave?.length || 0
+    });
     
     // Mark as loading to prevent change detection during save
     setIsLoading(true);
 
     try {
-      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
+      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave, undoHistoryToSave);
       
       if (success) {
         console.log('Auto-save: Save successful');
@@ -69,7 +73,8 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       title: rundownTitle, 
       columns: columns?.length || 0, 
       timezone, 
-      startTime 
+      startTime,
+      undoHistory: undoHistory?.length || 0
     });
     
     // Only schedule if data actually changed
@@ -88,11 +93,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     // Schedule new save
     debounceTimeoutRef.current = setTimeout(() => {
-      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
+      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime, undoHistory ? [...undoHistory] : undefined);
       debounceTimeoutRef.current = null;
     }, 2000);
 
-  }, [hasUnsavedChanges, isInitialized, user, items.length, rundownTitle, columns?.length, timezone, startTime, debouncedSave]);
+  }, [hasUnsavedChanges, isInitialized, user, items.length, rundownTitle, columns?.length, timezone, startTime, undoHistory?.length, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {

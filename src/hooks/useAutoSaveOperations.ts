@@ -19,52 +19,67 @@ export const useAutoSaveOperations = () => {
 
   const isNewRundown = !rundownId;
 
-  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
+  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string, undoHistory?: any[]) => {
     if (isSaving) {
+      console.log('Auto-save: Already saving, skipping');
       return false;
     }
 
     if (!user) {
-      console.error('Cannot save: user not authenticated');
+      console.error('Auto-save: Cannot save - user not authenticated');
       return false;
     }
 
     // Validate data before saving
     if (!rundownTitle || rundownTitle.trim() === '') {
-      console.error('Cannot save: title is empty');
+      console.error('Auto-save: Cannot save - title is empty');
       return false;
     }
 
     if (!Array.isArray(items)) {
-      console.error('Cannot save: items is not an array');
+      console.error('Auto-save: Cannot save - items is not an array');
       return false;
     }
+
+    console.log('Auto-save: Attempting to save', {
+      isNewRundown,
+      rundownId,
+      itemsCount: items.length,
+      title: rundownTitle,
+      undoHistoryLength: undoHistory?.length || 0
+    });
 
     try {
       setIsSaving(true);
       
       if (isNewRundown) {
+        console.log('Auto-save: Creating new rundown');
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
+          console.log('Auto-save: New rundown created with ID:', result.id);
           navigate(`/rundown/${result.id}`, { replace: true });
           return true;
         } else {
-          throw new Error('Failed to save new rundown - no ID returned');
+          console.error('Auto-save: Failed to save new rundown - no ID returned');
+          return false;
         }
       } else if (rundownId) {
+        console.log('Auto-save: Updating existing rundown:', rundownId);
+        
         // Ensure timezone and startTime are properly passed - don't default to undefined
         const saveTimezone = timezone || null;
         const saveStartTime = startTime || null;
         
-        await updateRundown(rundownId, rundownTitle, items, true, false, columns, saveTimezone, saveStartTime);
+        await updateRundown(rundownId, rundownTitle, items, true, false, columns, saveTimezone, saveStartTime, undefined, undoHistory);
+        console.log('Auto-save: Successfully updated rundown');
         return true;
       }
       
-      console.error('No valid save path found');
+      console.error('Auto-save: No valid save path found');
       return false;
     } catch (error) {
-      console.error('Save failed:', error);
+      console.error('Auto-save: Save failed with error:', error);
       return false;
     } finally {
       setIsSaving(false);
