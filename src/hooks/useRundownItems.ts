@@ -1,94 +1,150 @@
+import { useState, useCallback, useMemo } from 'react';
+import { RundownItem, SegmentItem, HeaderItem } from '@/types/rundown';
+import { v4 as uuidv4 } from 'uuid';
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { useRundownStorage } from './useRundownStorage';
-import { useRundownItemActions } from './useRundownItemActions';
-import { useRundownCalculations } from './useRundownCalculations';
-import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { defaultRundownItems } from '@/data/defaultRundownItems';
+export { RundownItem, SegmentItem, HeaderItem };
 
-export type { RundownItem } from '@/types/rundown';
-
-const normalizeRundownItem = (item: RundownItem): RundownItem => ({
-  ...item,
-  status: item.status || 'upcoming',
-  customFields: item.customFields || {},
-  segmentName: isHeaderItem(item) ? item.segmentName || item.rowNumber : item.segmentName,
-  gfx: item.gfx || '',
-  video: item.video || '',
-  elapsedTime: item.elapsedTime || '00:00:00',
-});
-
-export const useRundownItems = () => {
-  const params = useParams<{ id: string }>();
-  const rawId = params.id;
-  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
-  
-  const { savedRundowns, loading } = useRundownStorage();
+export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
-  const loadedRundownIdRef = useRef<string | null>(null);
-  const isLoadingRef = useRef(false);
-  const hasLoadedOnceRef = useRef(false);
 
-  // Load rundown data when conditions are met
-  useEffect(() => {
-    // Prevent loading if already loading or already loaded this rundown
-    if (isLoadingRef.current || loadedRundownIdRef.current === (rundownId || 'new')) {
-      return;
-    }
+  const updateItem = useCallback((id: string, field: string, value: string) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+    markAsChanged();
+  }, [markAsChanged]);
 
-    // For new rundowns (no ID)
-    if (!rundownId) {
-      if (loadedRundownIdRef.current !== 'new' && !hasLoadedOnceRef.current) {
-        console.log('useRundownItems: Loading rundown items for: new rundown');
-        loadedRundownIdRef.current = 'new';
-        hasLoadedOnceRef.current = true;
-        setItems(defaultRundownItems);
-      }
-      return;
-    }
-
-    // For existing rundowns - wait for savedRundowns to load
-    if (loading || savedRundowns.length === 0) {
-      return;
-    }
-
-    // Load existing rundown
-    const existingRundown = savedRundowns.find(r => r.id === rundownId);
-    if (existingRundown?.items) {
-      console.log('useRundownItems: Loading rundown items for:', rundownId);
-      isLoadingRef.current = true;
-      loadedRundownIdRef.current = rundownId;
-      hasLoadedOnceRef.current = true;
-      const normalizedItems = existingRundown.items.map(normalizeRundownItem);
-      setItems(normalizedItems);
-      isLoadingRef.current = false;
-    } else if (!existingRundown && !hasLoadedOnceRef.current) {
-      console.log('useRundownItems: Rundown not found, using defaults for ID:', rundownId);
-      loadedRundownIdRef.current = rundownId;
-      hasLoadedOnceRef.current = true;
-      setItems(defaultRundownItems);
-    }
-  }, [rundownId, savedRundowns, loading]);
-
-  // Reset when rundownId changes
-  useEffect(() => {
-    return () => {
-      if (loadedRundownIdRef.current && loadedRundownIdRef.current !== (rundownId || 'new')) {
-        loadedRundownIdRef.current = null;
-        isLoadingRef.current = false;
-        hasLoadedOnceRef.current = false;
-      }
+  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
+    const newItem: SegmentItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'segment',
+      title: '',
+      duration: '00:01:00',
+      startTime: '00:00:00',
+      endTime: '00:01:00',
+      script: '',
+      status: 'upcoming' as const,
+      isFloated: false,
+      color: ''
     };
-  }, [rundownId]);
 
-  const actions = useRundownItemActions(setItems);
-  const calculations = useRundownCalculations(items);
+    setItems(prev => {
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
+        // Insert after the specified index
+        const newItems = [...prev];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
+        return newItems;
+      } else {
+        // Add at the end
+        return [...prev, newItem];
+      }
+    });
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const addHeader = useCallback((insertAfterIndex?: number) => {
+    const newItem: HeaderItem = {
+      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'header',
+      title: 'New Header',
+      status: 'upcoming' as const,
+      isFloated: false,
+      color: ''
+    };
+
+    setItems(prev => {
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
+        // Insert after the specified index
+        const newItems = [...prev];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
+        return newItems;
+      } else {
+        // Add at the end
+        return [...prev, newItem];
+      }
+    });
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const deleteRow = useCallback((id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const deleteMultipleRows = useCallback((ids: string[]) => {
+    setItems(prev => prev.filter(item => !ids.includes(item.id)));
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const addMultipleRows = useCallback((newItems: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => {
+    setItems(prev => [...prev, ...newItems]);
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const toggleFloatRow = useCallback((id: string) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, isFloated: !item.isFloated } : item
+      )
+    );
+    markAsChanged();
+  }, [markAsChanged]);
+
+  const getRowNumber = useCallback((index: number) => {
+    return (index + 1).toString();
+  }, []);
+
+  const calculateTotalRuntime = useCallback(() => {
+    let totalMinutes = 0;
+    
+    items.forEach(item => {
+      if (item.type === 'segment' && item.duration) {
+        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
+        totalMinutes += hours * 60 + minutes + seconds / 60;
+      }
+    });
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.floor((totalMinutes % 1) * 60);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [items]);
+
+  const calculateHeaderDuration = useCallback((headerIndex: number) => {
+    let totalMinutes = 0;
+    
+    for (let i = headerIndex + 1; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'header') break;
+      
+      if (item.type === 'segment' && item.duration) {
+        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
+        totalMinutes += hours * 60 + minutes + seconds / 60;
+      }
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.floor((totalMinutes % 1) * 60);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [items]);
 
   return {
     items,
     setItems,
-    ...actions,
-    ...calculations,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration
   };
 };

@@ -1,7 +1,9 @@
 
+import { useState, useCallback, useMemo } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
-import { useAutoSave } from './useAutoSave';
+import { useChangeTracking } from './useChangeTracking';
+import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateIntegration = (
   markAsChanged: () => void,
@@ -11,13 +13,13 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  // Rundown items management - call without arguments as per hook definition
+  // Items management with change tracking
   const {
     items,
     setItems,
     updateItem,
-    addRow,
-    addHeader,
+    addRow: originalAddRow,
+    addHeader: originalAddHeader,
     deleteRow,
     deleteMultipleRows,
     addMultipleRows,
@@ -25,9 +27,9 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems();
+  } = useRundownItems(markAsChanged);
 
-  // Column management - call with markAsChanged to ensure proper change tracking
+  // Columns management
   const {
     columns,
     visibleColumns,
@@ -40,14 +42,24 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save functionality - useAutoSave expects items, rundownTitle, columns, timezone, startTime
-  const { hasUnsavedChanges, isSaving } = useAutoSave(
-    items,
+  // Change tracking
+  const { hasUnsavedChanges, isSaving } = useChangeTracking(
     rundownTitle,
+    items,
     columns,
     timezone,
     rundownStartTime
   );
+
+  // Wrapped addRow that supports insertion at specific index
+  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+    originalAddRow(calculateEndTime, insertAfterIndex);
+  }, [originalAddRow]);
+
+  // Wrapped addHeader that supports insertion at specific index  
+  const addHeader = useCallback((insertAfterIndex?: number) => {
+    originalAddHeader(insertAfterIndex);
+  }, [originalAddHeader]);
 
   return {
     items,
@@ -72,7 +84,6 @@ export const useRundownStateIntegration = (
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving,
-    markAsChanged
+    isSaving
   };
 };
