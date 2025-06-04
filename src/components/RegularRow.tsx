@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -107,6 +106,12 @@ const RegularRow = ({
     const target = e.target as HTMLElement;
     const isRowNumberCell = target.closest('td')?.classList.contains('row-number-cell');
     const isRowElement = target === e.currentTarget;
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    // Don't handle row selection if clicking on input fields
+    if (isInput) {
+      return;
+    }
     
     if ((isRowElement || isRowNumberCell) && onRowSelect) {
       e.preventDefault();
@@ -114,12 +119,47 @@ const RegularRow = ({
     }
   };
 
+  // Single row operations (work without selection)
+  const handleSingleRowCopy = () => {
+    // Temporarily select this row, copy it, then clear selection
+    if (onRowSelect) {
+      onRowSelect(item.id, index, false, false);
+    }
+    setTimeout(() => {
+      onCopySelectedRows();
+    }, 0);
+  };
+
+  const handleSingleRowPaste = () => {
+    // Temporarily select this row for paste positioning, then paste
+    if (onRowSelect) {
+      onRowSelect(item.id, index, false, false);
+    }
+    setTimeout(() => {
+      if (onPasteRows) {
+        onPasteRows();
+      }
+    }, 0);
+  };
+
+  const handleSingleRowDelete = () => {
+    onDeleteRow(item.id);
+  };
+
+  const handleSingleRowFloat = () => {
+    onToggleFloat(item.id);
+  };
+
+  const handleSingleRowColor = () => {
+    onToggleColorPicker(item.id);
+  };
+
+  // Context menu handlers - use single row operations if not part of multi-selection
   const handleContextMenuCopy = () => {
     if (isSelected && selectedRowsCount > 1) {
       onCopySelectedRows();
     } else {
-      // Copy just this row
-      onCopySelectedRows();
+      handleSingleRowCopy();
     }
   };
 
@@ -127,7 +167,7 @@ const RegularRow = ({
     if (isSelected && selectedRowsCount > 1) {
       onDeleteSelectedRows();
     } else {
-      onDeleteRow(item.id);
+      handleSingleRowDelete();
     }
   };
 
@@ -138,13 +178,23 @@ const RegularRow = ({
         onToggleFloat(selectedId);
       });
     } else {
-      // Toggle float for single row
-      onToggleFloat(item.id);
+      handleSingleRowFloat();
     }
   };
 
   const handleContextMenuColor = () => {
-    onToggleColorPicker(item.id);
+    handleSingleRowColor();
+  };
+
+  const handleContextMenuPaste = () => {
+    if (isSelected && selectedRowsCount > 1) {
+      // For multi-selection, paste after the last selected row
+      if (onPasteRows) {
+        onPasteRows();
+      }
+    } else {
+      handleSingleRowPaste();
+    }
   };
 
   return (
@@ -160,7 +210,7 @@ const RegularRow = ({
       onToggleFloat={handleContextMenuFloat}
       onColorPicker={handleContextMenuColor}
       onColorSelect={onColorSelect}
-      onPaste={onPasteRows}
+      onPaste={handleContextMenuPaste}
       onClearSelection={onClearSelection}
     >
       <tr 

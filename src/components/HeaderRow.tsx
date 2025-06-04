@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -77,11 +76,59 @@ const HeaderRow = ({
     rowClass += ' ring-2 ring-inset ring-blue-500 border-blue-500';
   }
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    // Don't handle row selection if clicking on input fields
+    if (isInput) {
+      return;
+    }
+    
+    if (onRowSelect) {
+      const isShiftClick = e.shiftKey;
+      const isCtrlClick = e.ctrlKey || e.metaKey;
+      onRowSelect(item.id, index, isShiftClick, isCtrlClick);
+    }
+  };
+
+  // Single row operations (work without selection)
+  const handleSingleRowCopy = () => {
+    // Temporarily select this row, copy it, then clear selection
+    if (onRowSelect) {
+      onRowSelect(item.id, index, false, false);
+    }
+    setTimeout(() => {
+      onCopySelectedRows();
+    }, 0);
+  };
+
+  const handleSingleRowPaste = () => {
+    // Temporarily select this row for paste positioning, then paste
+    if (onRowSelect) {
+      onRowSelect(item.id, index, false, false);
+    }
+    setTimeout(() => {
+      if (onPasteRows) {
+        onPasteRows();
+      }
+    }, 0);
+  };
+
+  const handleSingleRowDelete = () => {
+    onDeleteRow(item.id);
+  };
+
+  const handleSingleRowColor = () => {
+    onToggleColorPicker(item.id);
+  };
+
+  // Context menu handlers - use single row operations if not part of multi-selection
   const handleContextMenuCopy = () => {
     if (isSelected && selectedRowsCount > 1) {
       onCopySelectedRows();
     } else {
-      onCopySelectedRows();
+      handleSingleRowCopy();
     }
   };
 
@@ -89,7 +136,7 @@ const HeaderRow = ({
     if (isSelected && selectedRowsCount > 1) {
       onDeleteSelectedRows();
     } else {
-      onDeleteRow(item.id);
+      handleSingleRowDelete();
     }
   };
 
@@ -98,14 +145,17 @@ const HeaderRow = ({
   };
 
   const handleContextMenuColor = () => {
-    onToggleColorPicker(item.id);
+    handleSingleRowColor();
   };
 
-  const handleRowClick = (e: React.MouseEvent) => {
-    if (onRowSelect) {
-      const isShiftClick = e.shiftKey;
-      const isCtrlClick = e.ctrlKey || e.metaKey;
-      onRowSelect(item.id, index, isShiftClick, isCtrlClick);
+  const handleContextMenuPaste = () => {
+    if (isSelected && selectedRowsCount > 1) {
+      // For multi-selection, paste after the last selected row
+      if (onPasteRows) {
+        onPasteRows();
+      }
+    } else {
+      handleSingleRowPaste();
     }
   };
 
@@ -122,7 +172,7 @@ const HeaderRow = ({
       onToggleFloat={handleContextMenuFloat}
       onColorPicker={handleContextMenuColor}
       onColorSelect={onColorSelect}
-      onPaste={onPasteRows}
+      onPaste={handleContextMenuPaste}
       onClearSelection={onClearSelection}
     >
       <tr 
