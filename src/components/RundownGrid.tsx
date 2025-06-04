@@ -40,7 +40,7 @@ const RundownGrid = () => {
     calculateHeaderDuration
   } = useRundownGridState();
 
-  const { showColorPicker, handleToggleColorPicker, handleColorSelect } = useColorPicker();
+  const { showColorPicker, handleToggleColorPicker, handleColorSelect: colorPickerSelect } = useColorPicker();
 
   const { handleCellClick, handleKeyDown } = useCellNavigation(
     items,
@@ -48,6 +48,12 @@ const RundownGrid = () => {
     cellRefs,
     handleUpdateItem
   );
+
+  // Create a wrapper function that matches the expected signature
+  const handleColorSelect = (id: string, color: string) => {
+    handleUpdateItem(id, 'color', color);
+    colorPickerSelect(id, color);
+  };
 
   return (
     <RundownTable
@@ -71,7 +77,7 @@ const RundownGrid = () => {
       onCellClick={handleCellClick}
       onKeyDown={handleKeyDown}
       onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={(id, color) => handleColorSelect(id, color)}
+      onColorSelect={handleColorSelect}
       onDeleteRow={deleteRow}
       onToggleFloat={toggleFloatRow}
       onRowSelect={handleRowSelection}
