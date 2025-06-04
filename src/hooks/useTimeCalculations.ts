@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useRundownCalculations } from './useRundownCalculations';
 
@@ -9,6 +9,8 @@ export const useTimeCalculations = (
   rundownStartTime: string
 ) => {
   const { calculateSegmentName, timeToSeconds } = useRundownCalculations(items);
+  const lastProcessedRef = useRef<string>('');
+  const isProcessingRef = useRef(false);
 
   const secondsToTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -50,8 +52,19 @@ export const useTimeCalculations = (
 
   // Recalculate all start, end, and elapsed times and segment names
   useEffect(() => {
-    if (!items.length || !rundownStartTime) return;
+    if (!items.length || !rundownStartTime || isProcessingRef.current) return;
 
+    // Create a signature to detect if we need to process
+    const currentSignature = JSON.stringify({
+      itemsLength: items.length,
+      rundownStartTime,
+      itemsHash: items.map(item => `${item.id}-${item.duration}`).join(',')
+    });
+
+    // Skip if we've already processed this exact state
+    if (lastProcessedRef.current === currentSignature) return;
+
+    isProcessingRef.current = true;
     let hasChanges = false;
     let currentTime = rundownStartTime;
 
@@ -107,7 +120,10 @@ export const useTimeCalculations = (
     if (hasChanges) {
       console.log('Time calculations updated items');
     }
-  }, [items.length, rundownStartTime]); // Only depend on items length, not the full items array
+
+    lastProcessedRef.current = currentSignature;
+    isProcessingRef.current = false;
+  }, [items.length, rundownStartTime, items.map(item => `${item.id}-${item.duration}`).join(',')]); // More specific dependencies
 
   return {
     calculateEndTime,
