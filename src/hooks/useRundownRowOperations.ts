@@ -5,8 +5,8 @@ interface UseRundownRowOperationsProps {
   selectedRows: Set<string>;
   deleteMultipleRows: (ids: string[]) => void;
   clearSelection: () => void;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
-  addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addRow: (calculateEndTime: any, selectedRows?: Set<string>) => void;
+  addHeader: (selectedRows?: Set<string>) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
 }
 
@@ -18,20 +18,22 @@ export const useRundownRowOperations = ({
   addHeader,
   calculateEndTime
 }: UseRundownRowOperationsProps) => {
+  
   const handleDeleteSelectedRows = useCallback(() => {
-    const selectedIds = Array.from(selectedRows);
-    if (selectedIds.length > 0) {
-      deleteMultipleRows(selectedIds);
+    if (selectedRows.size > 0) {
+      deleteMultipleRows(Array.from(selectedRows));
       clearSelection();
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  const handleAddRow = useCallback((selectedRowId?: string | null) => {
-    addRow(calculateEndTime, selectedRowId, selectedRows);
+  const handleAddRow = useCallback(() => {
+    // Pass the selected rows to addRow so it can insert after the selection
+    addRow(calculateEndTime, selectedRows);
   }, [addRow, calculateEndTime, selectedRows]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string | null) => {
-    addHeader(selectedRowId, selectedRows);
+  const handleAddHeader = useCallback(() => {
+    // Pass the selected rows to addHeader so it can insert after the selection  
+    addHeader(selectedRows);
   }, [addHeader, selectedRows]);
 
   return {
