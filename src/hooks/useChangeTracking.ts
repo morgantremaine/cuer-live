@@ -10,30 +10,36 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const initialLoadRef = useRef(false);
   const isLoadingRef = useRef(false);
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitializingRef = useRef(false);
 
-  // Initialize tracking after first meaningful load
+  // Initialize tracking after first meaningful load - prevent duplicate initialization
   useEffect(() => {
     // Clear any pending initialization
     if (initializationTimeoutRef.current) {
       clearTimeout(initializationTimeoutRef.current);
     }
 
-    // Only initialize once we have meaningful data
-    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+    // Only initialize once we have meaningful data and haven't initialized yet
+    if (!initialLoadRef.current && !isInitializingRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+      isInitializingRef.current = true;
+      
       initializationTimeoutRef.current = setTimeout(() => {
-        const signature = JSON.stringify({ 
-          items: items.map(item => ({ id: item.id, ...item })), 
-          title: rundownTitle, 
-          columns, 
-          timezone, 
-          startTime 
-        });
-        lastSavedDataRef.current = signature;
-        initialLoadRef.current = true;
-        setIsInitialized(true);
-        setHasUnsavedChanges(false);
-        console.log('Change tracking initialized with signature length:', signature.length);
-      }, 100);
+        if (!initialLoadRef.current) {
+          const signature = JSON.stringify({ 
+            items: items.map(item => ({ id: item.id, ...item })), 
+            title: rundownTitle, 
+            columns, 
+            timezone, 
+            startTime 
+          });
+          lastSavedDataRef.current = signature;
+          initialLoadRef.current = true;
+          setIsInitialized(true);
+          setHasUnsavedChanges(false);
+          isInitializingRef.current = false;
+          console.log('Change tracking initialized with signature length:', signature.length);
+        }
+      }, 200);
     }
 
     return () => {
@@ -45,7 +51,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
   // Track changes after initialization
   useEffect(() => {
-    if (!isInitialized || isLoadingRef.current) return;
+    if (!isInitialized || isLoadingRef.current || isInitializingRef.current) return;
 
     const currentSignature = JSON.stringify({ 
       items: items.map(item => ({ id: item.id, ...item })), 
@@ -77,7 +83,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   };
 
   const markAsChanged = () => {
-    if (!isLoadingRef.current && isInitialized) {
+    if (!isLoadingRef.current && isInitialized && !isInitializingRef.current) {
       console.log('Manually marking as changed');
       setHasUnsavedChanges(true);
     }
