@@ -52,12 +52,33 @@ export const useRundownDataLoader = ({
 
     console.log('Loading rundown data:', rundown.title);
     console.log('Full rundown object:', rundown);
-    console.log('Rundown items details:', {
-      items: rundown.items,
-      itemsType: typeof rundown.items,
-      isArray: Array.isArray(rundown.items),
-      itemsLength: rundown.items?.length,
-      firstItem: rundown.items?.[0]
+    
+    // Check undo history for items if main items array is empty
+    let itemsToLoad = rundown.items || [];
+    
+    if ((!itemsToLoad || itemsToLoad.length === 0) && rundown.undo_history && Array.isArray(rundown.undo_history) && rundown.undo_history.length > 0) {
+      console.log('Main items array is empty, checking undo history for items...');
+      console.log('Undo history length:', rundown.undo_history.length);
+      
+      // Look through undo history to find the most recent state with items
+      for (let i = rundown.undo_history.length - 1; i >= 0; i--) {
+        const historyEntry = rundown.undo_history[i];
+        console.log(`Checking undo history entry ${i}:`, historyEntry);
+        
+        if (historyEntry && historyEntry.items && Array.isArray(historyEntry.items) && historyEntry.items.length > 0) {
+          console.log(`Found items in undo history entry ${i}:`, historyEntry.items.length, 'items');
+          itemsToLoad = historyEntry.items;
+          break;
+        }
+      }
+    }
+
+    console.log('Items to load:', {
+      items: itemsToLoad,
+      itemsType: typeof itemsToLoad,
+      isArray: Array.isArray(itemsToLoad),
+      itemsLength: itemsToLoad?.length,
+      firstItem: itemsToLoad?.[0]
     });
     
     // Mark as loading and loaded to prevent loops
@@ -79,20 +100,17 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // Load the rundown items with detailed logging
-    if (rundown.items) {
-      if (Array.isArray(rundown.items)) {
-        console.log('Setting items:', rundown.items);
-        setItems(rundown.items);
-        if (rundown.items.length === 0) {
-          console.log('Warning: Rundown has empty items array - this might be normal for a new rundown');
-        }
+    // Load the rundown items (either from main array or recovered from undo history)
+    if (itemsToLoad && Array.isArray(itemsToLoad)) {
+      console.log('Setting items:', itemsToLoad);
+      setItems(itemsToLoad);
+      if (itemsToLoad.length === 0) {
+        console.log('Warning: No items found in rundown or undo history');
       } else {
-        console.error('Items is not an array:', typeof rundown.items, rundown.items);
-        setItems([]);
+        console.log(`Successfully loaded ${itemsToLoad.length} items`);
       }
     } else {
-      console.log('No items property found in rundown');
+      console.error('Items is not an array:', typeof itemsToLoad, itemsToLoad);
       setItems([]);
     }
 
