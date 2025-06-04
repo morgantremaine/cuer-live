@@ -106,8 +106,7 @@ const RegularRow = ({
 
   // Calculate row styling with proper color handling
   let rowClassName = 'border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer';
-  let backgroundColor = undefined;
-  let textColor = '';
+  let rowStyle: React.CSSProperties = {};
 
   // Priority order: currently playing > completed > floated > custom color
   if (isCurrentlyPlaying) {
@@ -115,12 +114,12 @@ const RegularRow = ({
   } else if (status === 'completed') {
     rowClassName += ' bg-green-50 dark:bg-green-900/20';
   } else if (isFloated) {
-    backgroundColor = '#dc2626'; // red-600
-    textColor = 'white';
+    rowStyle.backgroundColor = '#dc2626'; // red-600
+    rowStyle.color = 'white';
   } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF') {
     // Apply custom color only if it's not white
-    backgroundColor = item.color;
-    textColor = getContrastTextColor(item.color);
+    rowStyle.backgroundColor = item.color;
+    rowStyle.color = getContrastTextColor(item.color);
   }
 
   if (isSelected) {
@@ -130,6 +129,12 @@ const RegularRow = ({
   if (isDragging || isDraggingMultiple) {
     rowClassName += ' opacity-50';
   }
+
+  console.log('RegularRow render - Add functions available:', {
+    onAddRowAfter: !!onAddRowAfter,
+    onAddHeaderAfter: !!onAddHeaderAfter,
+    itemId: item.id
+  });
 
   return (
     <RundownContextMenu
@@ -151,10 +156,7 @@ const RegularRow = ({
     >
       <tr
         className={rowClassName}
-        style={{ 
-          backgroundColor: backgroundColor || undefined,
-          color: textColor || undefined 
-        }}
+        style={rowStyle}
         onClick={handleRowClick}
         draggable
         onDragStart={(e) => onDragStart(e, index)}
@@ -169,7 +171,7 @@ const RegularRow = ({
             {isFloated && (
               <span className="text-yellow-400 text-xs">🛟</span>
             )}
-            <span style={{ color: textColor || undefined }}>{rowNumber}</span>
+            <span style={{ color: rowStyle.color }}>{rowNumber}</span>
           </div>
         </td>
         
@@ -179,7 +181,7 @@ const RegularRow = ({
             column={column}
             item={item}
             cellRefs={cellRefs}
-            textColor={textColor}
+            textColor={rowStyle.color as string || ''}
             currentHighlight={currentHighlight}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}

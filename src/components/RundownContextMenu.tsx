@@ -64,24 +64,18 @@ const RundownContextMenu = memo(({
 
   // Handle float toggle for multiple rows
   const handleContextMenuFloat = () => {
-    if (isMultipleSelection && selectedRows) {
-      // Toggle float for all selected rows
-      selectedRows.forEach(selectedId => {
-        onToggleFloat();
-      });
-    } else {
-      // Toggle float for single row
-      onToggleFloat();
-    }
+    onToggleFloat();
   };
 
   const handleAddRowAfter = () => {
+    console.log('Context menu - Add row after:', itemId);
     if (onAddRowAfter) {
       onAddRowAfter(itemId);
     }
   };
 
   const handleAddHeaderAfter = () => {
+    console.log('Context menu - Add header after:', itemId);
     if (onAddHeaderAfter) {
       onAddHeaderAfter(itemId);
     }
