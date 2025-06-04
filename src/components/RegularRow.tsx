@@ -152,7 +152,7 @@ const RegularRow = ({
       <tr
         className={rowClassName}
         style={{ 
-          backgroundColor,
+          backgroundColor: backgroundColor || undefined,
           color: textColor || undefined 
         }}
         onClick={handleRowClick}
