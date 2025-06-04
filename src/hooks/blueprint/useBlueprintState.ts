@@ -229,10 +229,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     }
   }, [user, rundownId, rundownTitle, items.length, initialized, loading, initializeBlueprint]);
 
-  // Checkbox update handler
+  // Checkbox update handler with immediate state update
   const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
     console.log('🚀 Updating checked items for list:', listId);
     
+    // Update state immediately
     setLists(currentLists => {
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, checkedItems } : list
@@ -258,37 +259,48 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       checkedItems: {}
     };
     
-    const updatedLists = [...lists, newList];
-    setLists(updatedLists);
-    
-    await saveBlueprint(updatedLists, false);
-  }, [lists, items, generateListId, saveBlueprint]);
+    // Update state immediately
+    setLists(currentLists => {
+      const updatedLists = [...currentLists, newList];
+      
+      // Save asynchronously
+      saveBlueprint(updatedLists, false);
+      
+      return updatedLists;
+    });
+  }, [items, generateListId, saveBlueprint]);
 
   const deleteList = useCallback(async (listId: string) => {
-    const updatedLists = lists.filter(list => list.id !== listId);
-    setLists(updatedLists);
-    await saveBlueprint(updatedLists, false);
-  }, [lists, saveBlueprint]);
+    setLists(currentLists => {
+      const updatedLists = currentLists.filter(list => list.id !== listId);
+      saveBlueprint(updatedLists, false);
+      return updatedLists;
+    });
+  }, [saveBlueprint]);
 
   const renameList = useCallback(async (listId: string, newName: string) => {
-    const updatedLists = lists.map(list => {
-      if (list.id === listId) {
-        return { ...list, name: newName };
-      }
-      return list;
+    setLists(currentLists => {
+      const updatedLists = currentLists.map(list => {
+        if (list.id === listId) {
+          return { ...list, name: newName };
+        }
+        return list;
+      });
+      saveBlueprint(updatedLists, true);
+      return updatedLists;
     });
-    setLists(updatedLists);
-    await saveBlueprint(updatedLists, true);
-  }, [lists, saveBlueprint]);
+  }, [saveBlueprint]);
 
   const refreshAllLists = useCallback(async () => {
-    const refreshedLists = lists.map(list => ({
-      ...list,
-      items: generateListFromColumn(items, list.sourceColumn)
-    }));
-    setLists(refreshedLists);
-    await saveBlueprint(refreshedLists, true);
-  }, [lists, items, saveBlueprint]);
+    setLists(currentLists => {
+      const refreshedLists = currentLists.map(list => ({
+        ...list,
+        items: generateListFromColumn(items, list.sourceColumn)
+      }));
+      saveBlueprint(refreshedLists, true);
+      return refreshedLists;
+    });
+  }, [items, saveBlueprint]);
 
   const updateShowDate = useCallback(async (newDate: string) => {
     setShowDate(newDate);
