@@ -39,6 +39,8 @@ interface RundownTableProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
   currentHighlight?: SearchHighlight | null;
 }
 
@@ -75,6 +77,8 @@ const RundownTable = ({
   onDeleteSelectedRows,
   onPasteRows,
   onClearSelection,
+  onAddRow,
+  onAddHeader,
   currentHighlight
 }: RundownTableProps) => {
   
@@ -132,6 +136,8 @@ const RundownTable = ({
                 onDeleteSelectedRows={onDeleteSelectedRows}
                 onPasteRows={onPasteRows}
                 onClearSelection={onClearSelection}
+                onAddRow={onAddRow}
+                onAddHeader={onAddHeader}
                 isDragging={draggedItemIndex === index}
                 getColumnWidth={getColumnWidth}
               />
