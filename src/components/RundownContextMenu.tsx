@@ -75,6 +75,18 @@ const RundownContextMenu = memo(({
     }
   };
 
+  const handleAddRowAfter = () => {
+    if (onAddRowAfter) {
+      onAddRowAfter(itemId);
+    }
+  };
+
+  const handleAddHeaderAfter = () => {
+    if (onAddHeaderAfter) {
+      onAddHeaderAfter(itemId);
+    }
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -96,14 +108,14 @@ const RundownContextMenu = memo(({
         <ContextMenuSeparator />
         
         {!isMultipleSelection && onAddRowAfter && (
-          <ContextMenuItem onClick={() => onAddRowAfter(itemId)}>
+          <ContextMenuItem onClick={handleAddRowAfter}>
             <Plus className="mr-2 h-4 w-4" />
             Add row below
           </ContextMenuItem>
         )}
         
         {!isMultipleSelection && onAddHeaderAfter && (
-          <ContextMenuItem onClick={() => onAddHeaderAfter(itemId)}>
+          <ContextMenuItem onClick={handleAddHeaderAfter}>
             <Hash className="mr-2 h-4 w-4" />
             Add header below
           </ContextMenuItem>

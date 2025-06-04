@@ -5,6 +5,7 @@ import { Column } from '@/hooks/useColumnsManager';
 import { SearchHighlight } from '@/types/search';
 import CellRenderer from './CellRenderer';
 import RundownContextMenu from './RundownContextMenu';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface RegularRowProps {
   item: RundownItem;
@@ -103,14 +104,22 @@ const RegularRow = ({
     onToggleFloat(item.id);
   };
 
+  // Calculate row styling
   let rowClassName = 'border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer';
-  
+  let backgroundColor = undefined;
+  let textColor = '';
+
   if (isCurrentlyPlaying) {
     rowClassName += ' bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500';
   } else if (status === 'completed') {
     rowClassName += ' bg-green-50 dark:bg-green-900/20';
   } else if (isFloated) {
     rowClassName += ' bg-red-800 text-white opacity-75';
+    textColor = 'white';
+  } else if (item.color && item.color !== '#ffffff') {
+    // Apply custom color
+    backgroundColor = item.color;
+    textColor = getContrastTextColor(item.color);
   }
 
   if (isSelected) {
@@ -120,8 +129,6 @@ const RegularRow = ({
   if (isDragging || isDraggingMultiple) {
     rowClassName += ' opacity-50';
   }
-
-  const textColor = isFloated ? 'white' : (item.color && item.color !== '#ffffff' ? 'white' : '');
 
   return (
     <RundownContextMenu
@@ -143,7 +150,10 @@ const RegularRow = ({
     >
       <tr
         className={rowClassName}
-        style={{ backgroundColor: !isFloated && item.color !== '#ffffff' && item.color ? item.color : undefined }}
+        style={{ 
+          backgroundColor,
+          color: textColor || undefined 
+        }}
         onClick={handleRowClick}
         draggable
         onDragStart={(e) => onDragStart(e, index)}
