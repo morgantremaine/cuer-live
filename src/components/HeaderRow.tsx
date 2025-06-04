@@ -85,6 +85,7 @@ const HeaderRow = ({
       return;
     }
     
+    // Select the row for any click in non-text areas
     if (onRowSelect) {
       const isShiftClick = e.shiftKey;
       const isCtrlClick = e.ctrlKey || e.metaKey;
@@ -92,51 +93,16 @@ const HeaderRow = ({
     }
   };
 
-  // Single row operations (work without selection)
-  const handleSingleRowCopy = () => {
-    // Temporarily select this row, copy it, then clear selection
-    if (onRowSelect) {
-      onRowSelect(item.id, index, false, false);
-    }
-    setTimeout(() => {
-      onCopySelectedRows();
-    }, 0);
-  };
-
-  const handleSingleRowPaste = () => {
-    // Temporarily select this row for paste positioning, then paste
-    if (onRowSelect) {
-      onRowSelect(item.id, index, false, false);
-    }
-    setTimeout(() => {
-      if (onPasteRows) {
-        onPasteRows();
-      }
-    }, 0);
-  };
-
-  const handleSingleRowDelete = () => {
-    onDeleteRow(item.id);
-  };
-
-  const handleSingleRowColor = () => {
-    onToggleColorPicker(item.id);
-  };
-
-  // Context menu handlers - use single row operations if not part of multi-selection
+  // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
-    if (isSelected && selectedRowsCount > 1) {
-      onCopySelectedRows();
-    } else {
-      handleSingleRowCopy();
-    }
+    onCopySelectedRows();
   };
 
   const handleContextMenuDelete = () => {
     if (isSelected && selectedRowsCount > 1) {
       onDeleteSelectedRows();
     } else {
-      handleSingleRowDelete();
+      onDeleteRow(item.id);
     }
   };
 
@@ -145,17 +111,12 @@ const HeaderRow = ({
   };
 
   const handleContextMenuColor = () => {
-    handleSingleRowColor();
+    onToggleColorPicker(item.id);
   };
 
   const handleContextMenuPaste = () => {
-    if (isSelected && selectedRowsCount > 1) {
-      // For multi-selection, paste after the last selected row
-      if (onPasteRows) {
-        onPasteRows();
-      }
-    } else {
-      handleSingleRowPaste();
+    if (onPasteRows) {
+      onPasteRows();
     }
   };
 
@@ -182,6 +143,7 @@ const HeaderRow = ({
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
         onClick={handleRowClick}
+        onContextMenu={handleRowClick}
       >
         <td className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" style={{ width: '40px' }}>
           <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>

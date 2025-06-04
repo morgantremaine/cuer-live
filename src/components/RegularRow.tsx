@@ -94,18 +94,8 @@ const RegularRow = ({
 
   const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
 
-  // Create cell selection styling
-  const getCellSelectionClass = () => {
-    if (isSelected) {
-      return 'ring-2 ring-inset ring-blue-500 border-blue-500';
-    }
-    return '';
-  };
-
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    const isRowNumberCell = target.closest('td')?.classList.contains('row-number-cell');
-    const isRowElement = target === e.currentTarget;
     const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
     
     // Don't handle row selection if clicking on input fields
@@ -113,61 +103,23 @@ const RegularRow = ({
       return;
     }
     
-    if ((isRowElement || isRowNumberCell) && onRowSelect) {
+    // Select the row for any click in non-text areas
+    if (onRowSelect) {
       e.preventDefault();
       onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
     }
   };
 
-  // Single row operations (work without selection)
-  const handleSingleRowCopy = () => {
-    // Temporarily select this row, copy it, then clear selection
-    if (onRowSelect) {
-      onRowSelect(item.id, index, false, false);
-    }
-    setTimeout(() => {
-      onCopySelectedRows();
-    }, 0);
-  };
-
-  const handleSingleRowPaste = () => {
-    // Temporarily select this row for paste positioning, then paste
-    if (onRowSelect) {
-      onRowSelect(item.id, index, false, false);
-    }
-    setTimeout(() => {
-      if (onPasteRows) {
-        onPasteRows();
-      }
-    }, 0);
-  };
-
-  const handleSingleRowDelete = () => {
-    onDeleteRow(item.id);
-  };
-
-  const handleSingleRowFloat = () => {
-    onToggleFloat(item.id);
-  };
-
-  const handleSingleRowColor = () => {
-    onToggleColorPicker(item.id);
-  };
-
-  // Context menu handlers - use single row operations if not part of multi-selection
+  // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
-    if (isSelected && selectedRowsCount > 1) {
-      onCopySelectedRows();
-    } else {
-      handleSingleRowCopy();
-    }
+    onCopySelectedRows();
   };
 
   const handleContextMenuDelete = () => {
     if (isSelected && selectedRowsCount > 1) {
       onDeleteSelectedRows();
     } else {
-      handleSingleRowDelete();
+      onDeleteRow(item.id);
     }
   };
 
@@ -178,22 +130,17 @@ const RegularRow = ({
         onToggleFloat(selectedId);
       });
     } else {
-      handleSingleRowFloat();
+      onToggleFloat(item.id);
     }
   };
 
   const handleContextMenuColor = () => {
-    handleSingleRowColor();
+    onToggleColorPicker(item.id);
   };
 
   const handleContextMenuPaste = () => {
-    if (isSelected && selectedRowsCount > 1) {
-      // For multi-selection, paste after the last selected row
-      if (onPasteRows) {
-        onPasteRows();
-      }
-    } else {
-      handleSingleRowPaste();
+    if (onPasteRows) {
+      onPasteRows();
     }
   };
 
@@ -221,6 +168,7 @@ const RegularRow = ({
         }}
         draggable
         onClick={handleRowClick}
+        onContextMenu={handleRowClick}
         onDragStart={(e) => onDragStart(e, index)}
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
