@@ -1,5 +1,5 @@
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 
 export const useBlueprintCheckboxes = (
@@ -7,54 +7,95 @@ export const useBlueprintCheckboxes = (
   setLists: (lists: BlueprintList[]) => void,
   rundownTitle: string,
   showDate: string,
-  saveBlueprint: (title: string, updatedLists: BlueprintList[], showDate: string, silent?: boolean) => Promise<void>,
-  initializationCompleted: boolean
+  saveBlueprint: (title: string, updatedLists: BlueprintList[], showDate: string, silent?: boolean) => Promise<void>
 ) => {
-  const savingRef = useRef(false);
-  const pendingSaveRef = useRef<Promise<void> | null>(null);
+  const [isUpdatingCheckboxes, setIsUpdatingCheckboxes] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingSavesRef = useRef<Map<string, Record<string, boolean>>>(new Map());
 
   const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
-    // Always allow checkbox updates regardless of initialization state
-    console.log('Updating checked items for list:', listId, 'checkedItems:', checkedItems);
+    console.log('Checkbox update requested for list:', listId, 'checkedItems:', checkedItems);
     
-    // Prevent concurrent saves by waiting for pending save to complete
-    if (pendingSaveRef.current) {
-      console.log('Waiting for pending save to complete...');
-      await pendingSaveRef.current;
+    setIsUpdatingCheckboxes(true);
+    
+    // Store pending save
+    pendingSavesRef.current.set(listId, checkedItems);
+    
+    // Update local state immediately
+    const updatedLists = lists.map(list => {
+      if (list.id === listId) {
+        return { ...list, checkedItems };
+      }
+      return list;
+    });
+    
+    setLists(updatedLists);
+    
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+    
+    // Debounce the save operation
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        console.log('Saving checkbox changes after debounce');
+        
+        // Get the most recent state and apply all pending saves
+        let finalLists = [...lists];
+        
+        pendingSavesRef.current.forEach((checkedItems, listId) => {
+          finalLists = finalLists.map(list => {
+            if (list.id === listId) {
+              return { ...list, checkedItems };
+            }
+            return list;
+          });
+        });
+        
+        await saveBlueprint(rundownTitle, finalLists, showDate, true);
+        console.log('Checkbox changes saved successfully');
+        
+        // Clear pending saves
+        pendingSavesRef.current.clear();
+      } catch (error) {
+        console.error('Failed to save checkbox changes:', error);
+      } finally {
+        setIsUpdatingCheckboxes(false);
+      }
+    }, 500); // 500ms debounce
+    
+  }, [lists, rundownTitle, showDate, saveBlueprint, setLists]);
 
-    savingRef.current = true;
+  // Function to check if we have pending checkbox updates
+  const hasPendingCheckboxUpdates = useCallback(() => {
+    return isUpdatingCheckboxes || pendingSavesRef.current.size > 0;
+  }, [isUpdatingCheckboxes]);
+
+  // Function to wait for pending updates to complete
+  const waitForPendingUpdates = useCallback(async () => {
+    if (!hasPendingCheckboxUpdates()) return;
     
-    try {
-      const updatedLists = lists.map(list => {
-        if (list.id === listId) {
-          return { ...list, checkedItems };
+    return new Promise<void>((resolve) => {
+      const checkInterval = setInterval(() => {
+        if (!hasPendingCheckboxUpdates()) {
+          clearInterval(checkInterval);
+          resolve();
         }
-        return list;
-      });
+      }, 50);
       
-      console.log('Updated lists:', updatedLists);
-      setLists(updatedLists);
-      
-      // Make save synchronous and store the promise
-      const savePromise = saveBlueprint(rundownTitle, updatedLists, showDate, true);
-      pendingSaveRef.current = savePromise;
-      
-      await savePromise;
-      console.log('Checkbox changes saved successfully');
-      
-      pendingSaveRef.current = null;
-    } catch (error) {
-      console.error('Failed to save checkbox changes:', error);
-      pendingSaveRef.current = null;
-    } finally {
-      savingRef.current = false;
-    }
-  }, [lists, rundownTitle, saveBlueprint, showDate]);
+      // Timeout after 2 seconds
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        resolve();
+      }, 2000);
+    });
+  }, [hasPendingCheckboxUpdates]);
 
   return {
     updateCheckedItems,
-    isSaving: savingRef.current,
-    hasPendingSave: pendingSaveRef.current !== null
+    isUpdatingCheckboxes,
+    hasPendingCheckboxUpdates,
+    waitForPendingUpdates
   };
 };

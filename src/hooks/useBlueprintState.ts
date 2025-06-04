@@ -27,16 +27,15 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     return JSON.stringify(items.map(item => ({ id: item.id, name: item.name, segmentName: item.segmentName })));
   }, []);
 
-  const { updateCheckedItems, isSaving, hasPendingSave } = useBlueprintCheckboxes(
+  const { updateCheckedItems, isUpdatingCheckboxes, hasPendingCheckboxUpdates, waitForPendingUpdates } = useBlueprintCheckboxes(
     lists,
     setLists,
     rundownTitle,
     showDate,
-    saveBlueprint,
-    initialized
+    saveBlueprint
   );
 
-  const { initializationCompleted } = useBlueprintInitialization(
+  const { initializationCompleted, isInitializing } = useBlueprintInitialization(
     rundownId,
     rundownTitle,
     items,
@@ -47,7 +46,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setInitialized,
     setLastItemsHash,
     createItemsHash,
-    hasPendingSave
+    waitForPendingUpdates
   );
 
   const { addNewList, deleteList, renameList, refreshAllLists } = useBlueprintOperations(
@@ -60,9 +59,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   );
 
   // Refresh list content when items actually change (but preserve checkbox states)
-  // Only do this after initialization is complete and no pending saves
+  // Only do this after initialization is complete and no pending checkbox updates
   useEffect(() => {
-    if (!initializationCompleted || !initialized || items.length === 0 || lists.length === 0 || hasPendingSave) {
+    if (!initializationCompleted || 
+        !initialized || 
+        items.length === 0 || 
+        lists.length === 0 || 
+        isInitializing ||
+        hasPendingCheckboxUpdates()) {
       return;
     }
 
@@ -84,12 +88,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       // Save silently
       saveBlueprint(rundownTitle, refreshedLists, showDate, true);
     }
-  }, [items, initializationCompleted, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash, hasPendingSave]);
+  }, [items, initializationCompleted, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash, isInitializing, hasPendingCheckboxUpdates]);
 
-  const updateShowDate = useCallback((newDate: string) => {
+  const updateShowDate = useCallback(async (newDate: string) => {
+    // Wait for pending checkbox updates before changing show date
+    await waitForPendingUpdates();
     setShowDate(newDate);
     saveBlueprint(rundownTitle, lists, newDate, true);
-  }, [rundownTitle, lists, saveBlueprint]);
+  }, [rundownTitle, lists, saveBlueprint, waitForPendingUpdates]);
 
   const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, saveWithDate, rundownTitle);
 
