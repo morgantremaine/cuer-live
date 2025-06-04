@@ -12,7 +12,7 @@ interface CameraPlotElementProps {
   isSelected: boolean;
   onUpdate: (elementId: string, updates: Partial<CameraElement>) => void;
   onDelete: (elementId: string) => void;
-  onDuplicate?: (element: CameraElement) => void;
+  onDuplicate?: (elementId: string) => void;
   onSelect: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
   allElements?: CameraElement[];
@@ -75,10 +75,10 @@ const CameraPlotElement = ({
     }
   };
 
-  const handleDuplicateElement = (newElement: CameraElement) => {
-    console.log('CameraPlotElement - handleDuplicateElement called with:', newElement);
+  const handleDuplicateElement = (elementId: string) => {
+    console.log('CameraPlotElement - handleDuplicateElement called with elementId:', elementId);
     if (onDuplicate) {
-      onDuplicate(newElement);
+      onDuplicate(elementId);
     } else {
       console.error('onDuplicate prop not provided to CameraPlotElement');
     }

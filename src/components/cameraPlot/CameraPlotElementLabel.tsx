@@ -58,7 +58,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
       case 'person':
         return 5; // Close for people
       case 'furniture':
-        return 80; // Much further for furniture
+        return 20; // Much closer for furniture (was 80)
       case 'wall':
         return -15; // Just above walls
       default:
@@ -70,7 +70,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const getLineThreshold = () => {
     switch (element.type) {
       case 'furniture':
-        return 100; // Higher threshold for furniture since default offset is 80
+        return 35; // Lower threshold for furniture (was 100)
       case 'camera':
       case 'person':
         return 25; // Lower threshold for cameras and people
@@ -99,7 +99,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const elementCenterY = elementY + elementHeight / 2;
   
   // Type-specific padding to keep lines away from icons
-  const iconPadding = element.type === 'furniture' ? 80 : 30;
+  const iconPadding = element.type === 'furniture' ? 25 : 30; // Reduced for furniture
   const labelPadding = 15;
   const dx = labelX - elementCenterX;
   const dy = labelY - elementCenterY;

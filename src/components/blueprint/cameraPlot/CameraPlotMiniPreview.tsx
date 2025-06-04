@@ -101,34 +101,22 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
               />
             );
           } else if (element.type === 'person') {
-            // Make person icons larger by increasing their display size
+            // Make person icons larger and use new uploaded image without triangle background
             const personSize = Math.max(width, height) * 1.5; // 50% larger
             const personX = x + (width - personSize) / 2;
             const personY = y + (height - personSize) / 2;
             
             return (
-              <g key={`${element.id}-${index}`}>
-                <rect
-                  x={personX}
-                  y={personY}
-                  width={personSize}
-                  height={personSize}
-                  fill="#10b981"
-                  stroke="#059669"
-                  strokeWidth="1"
-                  rx="50%"
-                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
-                />
-                <image
-                  href="/lovable-uploads/53aede73-ec59-4307-8be5-74cb3cf7b36c.png"
-                  x={personX}
-                  y={personY}
-                  width={personSize}
-                  height={personSize}
-                  preserveAspectRatio="xMidYMid meet"
-                  transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
-                />
-              </g>
+              <image
+                key={`${element.id}-${index}`}
+                href="/lovable-uploads/53aede73-ec59-4307-8be5-74cb3cf7b36c.png"
+                x={personX}
+                y={personY}
+                width={personSize}
+                height={personSize}
+                preserveAspectRatio="xMidYMid meet"
+                transform={`rotate(${element.rotation || 0} ${x + width/2} ${y + height/2})`}
+              />
             );
           } else if (element.type === 'furniture') {
             const isRound = element.label?.toLowerCase().includes('round') || element.label?.toLowerCase().includes('circle');
