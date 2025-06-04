@@ -4,6 +4,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
   const timeToSeconds = useCallback((timeStr: string) => {
+    if (!timeStr) return 0;
     // Handle both MM:SS and HH:MM:SS formats
     const parts = timeStr.split(':').map(Number);
     if (parts.length === 2) {
@@ -24,7 +25,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     
     // For headers, return their segment name (A, B, C, etc.)
     if (isHeaderItem(item)) {
-      return item.segmentName || item.rowNumber || 'A';
+      return item.segmentName || 'A';
     }
     
     // For regular items, find the current segment and count within that segment
@@ -34,7 +35,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Go backwards to find the most recent header
     for (let i = index - 1; i >= 0; i--) {
       if (isHeaderItem(items[i])) {
-        currentSegment = items[i].segmentName || items[i].rowNumber || 'A';
+        currentSegment = items[i].segmentName || 'A';
         break;
       }
     }
@@ -42,11 +43,9 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Count regular items in the current segment up to this index
     let segmentStartIndex = 0;
     for (let i = 0; i < items.length; i++) {
-      if (isHeaderItem(items[i])) {
-        if ((items[i].segmentName || items[i].rowNumber) === currentSegment) {
-          segmentStartIndex = i + 1;
-          break;
-        }
+      if (isHeaderItem(items[i]) && items[i].segmentName === currentSegment) {
+        segmentStartIndex = i + 1;
+        break;
       }
     }
     
@@ -62,11 +61,11 @@ export const useRundownCalculations = (items: RundownItem[]) => {
   const calculateTotalRuntime = useCallback(() => {
     // Only include non-floated items in the total runtime calculation
     let totalSeconds = items.reduce((acc, item) => {
-      // Skip floated items - they don't count towards runtime
-      if (item.isFloating || item.isFloated) {
+      // Skip floated items and headers - they don't count towards runtime
+      if (item.isFloating || item.isFloated || isHeaderItem(item)) {
         return acc;
       }
-      return acc + timeToSeconds(item.duration);
+      return acc + timeToSeconds(item.duration || '00:00:00');
     }, 0);
   
     const hours = Math.floor(totalSeconds / 3600);
@@ -93,7 +92,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     while (i < items.length && !isHeaderItem(items[i])) {
       // Only count non-floated items
       if (!items[i].isFloating && !items[i].isFloated) {
-        totalSeconds += timeToSeconds(items[i].duration);
+        totalSeconds += timeToSeconds(items[i].duration || '00:00:00');
       }
       i++;
     }

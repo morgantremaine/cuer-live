@@ -8,6 +8,7 @@ export const useTimeCalculations = (
   rundownStartTime: string
 ) => {
   const timeToSeconds = (timeStr: string) => {
+    if (!timeStr) return 0;
     // Handle both MM:SS and HH:MM:SS formats
     const parts = timeStr.split(':').map(Number);
     if (parts.length === 2) {
@@ -60,48 +61,51 @@ export const useTimeCalculations = (
     return 'upcoming';
   };
 
-  // Recalculate all start, end, and elapsed times based on rundown start time and durations
-  // This now properly handles floated items by excluding them from the time progression
+  // Recalculate all start, end, and elapsed times and segment names
   useEffect(() => {
     let currentTime = rundownStartTime;
-    let needsUpdate = false;
+    let currentSegmentLetter = 'A';
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
     items.forEach((item, index) => {
       // Calculate elapsed time for this item
       const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
 
-      // For headers, they don't have duration, so they start at current time and end at current time
+      // For headers, assign segment letter and update timing
       if (isHeaderItem(item)) {
+        const segmentName = letters[Math.max(0, Math.floor(index / 10))] || currentSegmentLetter;
+        
+        if (item.segmentName !== segmentName) {
+          updateItem(item.id, 'segmentName', segmentName);
+        }
+        
         if (item.startTime !== currentTime || item.endTime !== currentTime) {
           updateItem(item.id, 'startTime', currentTime);
           updateItem(item.id, 'endTime', currentTime);
-          needsUpdate = true;
         }
+        
         if (item.elapsedTime !== expectedElapsedTime) {
           updateItem(item.id, 'elapsedTime', expectedElapsedTime);
-          needsUpdate = true;
         }
+        
+        currentSegmentLetter = segmentName;
       } else {
         // For regular items, calculate start and end based on duration
-        const expectedEndTime = calculateEndTime(currentTime, item.duration);
+        const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:01:00');
         
         if (item.startTime !== currentTime) {
           updateItem(item.id, 'startTime', currentTime);
-          needsUpdate = true;
         }
         
         if (item.endTime !== expectedEndTime) {
           updateItem(item.id, 'endTime', expectedEndTime);
-          needsUpdate = true;
         }
 
         if (item.elapsedTime !== expectedElapsedTime) {
           updateItem(item.id, 'elapsedTime', expectedElapsedTime);
-          needsUpdate = true;
         }
         
         // Only advance time if the item is not floated
-        // Floated items don't contribute to the timeline progression
         if (!item.isFloating && !item.isFloated) {
           currentTime = expectedEndTime;
         }

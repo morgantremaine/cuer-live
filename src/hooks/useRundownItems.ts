@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+
+import { useState, useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { v4 as uuidv4 } from 'uuid';
 
 export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
@@ -36,12 +36,10 @@ export const useRundownItems = (markAsChanged: () => void) => {
 
     setItems(prev => {
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prev.length) {
-        // Insert after the specified index (insertAfterIndex + 1 position)
         const newItems = [...prev];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
         return newItems;
       } else {
-        // Add at the end if no valid index provided
         return [...prev, newItem];
       }
     });
@@ -49,33 +47,47 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
-    const newItem: RundownItem = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'header',
-      rowNumber: '',
-      name: 'New Header',
-      duration: '',
-      startTime: '',
-      endTime: '',
-      elapsedTime: '',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      status: 'upcoming' as const
-    };
-
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
     setItems(prev => {
+      // Calculate the next segment letter based on existing headers
+      let nextSegmentIndex = 0;
+      prev.forEach(item => {
+        if (isHeaderItem(item) && item.segmentName) {
+          const letterIndex = letters.indexOf(item.segmentName);
+          if (letterIndex >= nextSegmentIndex) {
+            nextSegmentIndex = letterIndex + 1;
+          }
+        }
+      });
+
+      const segmentName = letters[nextSegmentIndex] || 'A';
+
+      const newItem: RundownItem = {
+        id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'header',
+        rowNumber: '',
+        name: 'New Header',
+        duration: '',
+        startTime: '',
+        endTime: '',
+        elapsedTime: '',
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        notes: '',
+        color: '',
+        isFloating: false,
+        status: 'upcoming' as const,
+        segmentName: segmentName
+      };
+
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prev.length) {
-        // Insert after the specified index (insertAfterIndex + 1 position)
         const newItems = [...prev];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
         return newItems;
       } else {
-        // Add at the end if no valid index provided
         return [...prev, newItem];
       }
     });
@@ -106,6 +118,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     markAsChanged();
   }, [markAsChanged]);
 
+  // Use the dedicated calculation hook for these functions
   const getRowNumber = useCallback((index: number) => {
     if (!items[index]) return '1';
     
@@ -113,7 +126,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     
     // For headers, return their segment name (A, B, C, etc.)
     if (isHeaderItem(item)) {
-      return item.segmentName || item.rowNumber || 'A';
+      return item.segmentName || 'A';
     }
     
     // For regular items, find the current segment and count within that segment
@@ -123,7 +136,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     // Go backwards to find the most recent header
     for (let i = index - 1; i >= 0; i--) {
       if (isHeaderItem(items[i])) {
-        currentSegment = items[i].segmentName || items[i].rowNumber || 'A';
+        currentSegment = items[i].segmentName || 'A';
         break;
       }
     }
@@ -131,11 +144,9 @@ export const useRundownItems = (markAsChanged: () => void) => {
     // Count regular items in the current segment up to this index
     let segmentStartIndex = 0;
     for (let i = 0; i < items.length; i++) {
-      if (isHeaderItem(items[i])) {
-        if ((items[i].segmentName || items[i].rowNumber) === currentSegment) {
-          segmentStartIndex = i + 1;
-          break;
-        }
+      if (isHeaderItem(items[i]) && items[i].segmentName === currentSegment) {
+        segmentStartIndex = i + 1;
+        break;
       }
     }
     
@@ -149,19 +160,32 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {
+    const timeToSeconds = (timeStr: string) => {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return minutes * 60 + seconds;
+      } else if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return hours * 3600 + minutes * 60 + seconds;
+      }
+      return 0;
+    };
+
     // Only include non-floated items in the total runtime calculation
-    let totalMinutes = 0;
+    let totalSeconds = 0;
     
     items.forEach(item => {
-      if (item.type === 'regular' && item.duration && !item.isFloating && !item.isFloated) {
-        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
-        totalMinutes += hours * 60 + minutes + seconds / 60;
+      if (!isHeaderItem(item) && item.duration && !item.isFloating && !item.isFloated) {
+        totalSeconds += timeToSeconds(item.duration);
       }
     });
 
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.floor(totalMinutes % 60);
-    const seconds = Math.floor((totalMinutes % 1) * 60);
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
 
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [items]);
@@ -171,22 +195,35 @@ export const useRundownItems = (markAsChanged: () => void) => {
       return '00:00:00';
     }
   
-    let totalMinutes = 0;
+    const timeToSeconds = (timeStr: string) => {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return minutes * 60 + seconds;
+      } else if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return hours * 3600 + minutes * 60 + seconds;
+      }
+      return 0;
+    };
+
+    let totalSeconds = 0;
     let i = headerIndex + 1;
   
     // Sum up durations of non-floated items until next header
     while (i < items.length && !isHeaderItem(items[i])) {
       // Only count non-floated items
       if (items[i].duration && !items[i].isFloating && !items[i].isFloated) {
-        const [hours, minutes, seconds] = items[i].duration.split(':').map(Number);
-        totalMinutes += hours * 60 + minutes + seconds / 60;
+        totalSeconds += timeToSeconds(items[i].duration);
       }
       i++;
     }
   
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.floor(totalMinutes % 60);
-    const seconds = Math.floor((totalMinutes % 1) * 60);
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
   
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [items]);

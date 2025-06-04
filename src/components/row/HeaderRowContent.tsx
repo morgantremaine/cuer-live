@@ -30,7 +30,7 @@ const HeaderRowContent = ({
         className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 
         style={{ width: '40px' }}
       >
-        <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
+        <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName || 'A'}</span>
       </td>
       {columns.map((column, columnIndex) => (
         <td 
@@ -53,6 +53,12 @@ const HeaderRowContent = ({
             />
           ) : column.key === 'duration' ? (
             <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">({headerDuration})</span>
+          ) : column.key === 'startTime' ? (
+            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">{item.startTime}</span>
+          ) : column.key === 'endTime' ? (
+            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">{item.endTime}</span>
+          ) : column.key === 'elapsedTime' ? (
+            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">{item.elapsedTime}</span>
           ) : column.key === 'notes' ? (
             null
           ) : null}
