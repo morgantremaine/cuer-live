@@ -5,11 +5,8 @@ import { RundownItem } from '@/types/rundown';
 export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): any[] => {
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
-    // Use notes field for header descriptions, fallback to segmentName if notes is empty
     const headerTexts = headerItems.map(item => item.notes || item.segmentName || item.rowNumber);
-    // Remove duplicates and filter out empty values
-    const result = [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
-    return result;
+    return [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
   }
   
   // For other columns, return the values from that column
@@ -21,9 +18,7 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
     })
     .filter(value => value !== '');
   
-  // Remove duplicates using Set
-  const result = [...new Set(values)];
-  return result;
+  return [...new Set(values)];
 };
 
 // Generate consistent list ID based on rundown ID and source column
@@ -51,7 +46,7 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
     columns.add('headers');
   }
   
-  // Check standard fields
+  // Check standard fields efficiently
   const standardFields = ['video', 'gfx', 'talent', 'audio', 'script'];
   standardFields.forEach(field => {
     const hasField = items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '');
@@ -75,11 +70,9 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
   // Add unique custom fields to columns
   customFields.forEach(field => columns.add(field));
   
-  // Convert to the expected format with key and name - change Headers to Blocks
-  const result = Array.from(columns).map(column => ({
+  // Convert to the expected format with key and name
+  return Array.from(columns).map(column => ({
     key: column,
     name: column === 'headers' ? 'Blocks' : column.charAt(0).toUpperCase() + column.slice(1)
   }));
-  
-  return result;
 };

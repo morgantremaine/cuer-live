@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 
 export const useCrewList = (rundownId: string, rundownTitle: string) => {
   const [crewMembers, setCrewMembers] = useState<CrewMember[]>(() => {
-    // Initialize with 5 empty rows
     return Array.from({ length: 5 }, (_, index) => ({
       id: `crew-${index + 1}`,
       role: '',
@@ -21,6 +20,7 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
   const { user } = useAuth();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isSavingRef = useRef(false);
+  const lastSaveStateRef = useRef<string>('');
 
   // Load crew data from blueprint
   useEffect(() => {
@@ -51,19 +51,21 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
     loadCrewData();
   }, [user, rundownId, isInitialized]);
 
-  // Auto-save crew data
+  // Optimized auto-save with state comparison
   useEffect(() => {
     if (!isInitialized || !user || !rundownId || isSavingRef.current) return;
 
-    // Clear any existing timeout
+    const currentState = JSON.stringify(crewMembers);
+    if (currentState === lastSaveStateRef.current) return;
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce the save operation
     saveTimeoutRef.current = setTimeout(async () => {
       if (!isSavingRef.current) {
         isSavingRef.current = true;
+        lastSaveStateRef.current = currentState;
         
         try {
           const blueprintData = {

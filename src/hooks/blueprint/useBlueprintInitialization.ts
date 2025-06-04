@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn } from '@/utils/blueprintUtils';
@@ -20,17 +20,23 @@ export const useBlueprintInitialization = (
   saveBlueprint: (lists: BlueprintList[], silent?: boolean) => void,
   generateListId: (sourceColumn: string) => string
 ) => {
+  const initializationAttempted = useRef(false);
+
   useEffect(() => {
     // Reset if rundown changed
     if (rundownId !== stateRef.current.currentRundownId && stateRef.current.currentRundownId !== '') {
       setLists([]);
       setInitialized(false);
+      initializationAttempted.current = false;
       stateRef.current.currentRundownId = '';
       stateRef.current.isInitializing = false;
     }
     
-    // Initialize if needed
-    if (user && rundownId && rundownTitle && items.length > 0 && !initialized && !loading && !stateRef.current.isInitializing) {
+    // Initialize if needed - only once per rundown
+    if (user && rundownId && rundownTitle && items.length > 0 && !initialized && !loading && 
+        !stateRef.current.isInitializing && !initializationAttempted.current) {
+      
+      initializationAttempted.current = true;
       stateRef.current.isInitializing = true;
       stateRef.current.currentRundownId = rundownId;
       setLoading(true);
@@ -76,5 +82,12 @@ export const useBlueprintInitialization = (
 
       initializeBlueprint();
     }
-  }, [user, rundownId, rundownTitle, items.length, initialized, loading, loadBlueprint, saveBlueprint, generateListId, setLists, setInitialized, setLoading, setShowDate, stateRef]);
+  }, [user, rundownId, rundownTitle, items.length, initialized, loading]);
+
+  // Reset initialization flag when rundown changes
+  useEffect(() => {
+    if (rundownId !== stateRef.current.currentRundownId) {
+      initializationAttempted.current = false;
+    }
+  }, [rundownId]);
 };

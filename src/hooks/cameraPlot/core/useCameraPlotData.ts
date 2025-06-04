@@ -38,6 +38,7 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isSavingRef = useRef(false);
   const initializationRef = useRef(false);
+  const lastSaveStateRef = useRef<string>('');
 
   // Load camera plot data from blueprint
   useEffect(() => {
@@ -70,19 +71,21 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
     }
   }, [rundownId, rundownTitle, user]);
 
-  // Auto-save camera plot data
+  // Optimized auto-save with state comparison
   useEffect(() => {
     if (!isInitialized || readOnly || !user || !rundownId || isSavingRef.current) return;
 
-    // Clear any existing timeout
+    const currentState = JSON.stringify(plots);
+    if (currentState === lastSaveStateRef.current) return;
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce the save operation
     saveTimeoutRef.current = setTimeout(async () => {
       if (!isSavingRef.current) {
         isSavingRef.current = true;
+        lastSaveStateRef.current = currentState;
         
         try {
           const blueprintData = {

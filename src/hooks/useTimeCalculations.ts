@@ -50,80 +50,69 @@ export const useTimeCalculations = (
     return 'upcoming';
   };
 
-  // Recalculate all start, end, and elapsed times and segment names
+  // Optimized recalculation with better dependency tracking
   useEffect(() => {
     if (!items.length || !rundownStartTime || isProcessingRef.current) return;
 
-    // Create a signature to detect if we need to process
-    const currentSignature = JSON.stringify({
-      itemsLength: items.length,
-      rundownStartTime,
-      itemsHash: items.map(item => `${item.id}-${item.duration}`).join(',')
-    });
+    // Create a more efficient signature
+    const currentSignature = `${items.length}-${rundownStartTime}-${items.map(item => `${item.id}:${item.duration}`).join(',')}`;
 
     // Skip if we've already processed this exact state
     if (lastProcessedRef.current === currentSignature) return;
 
     isProcessingRef.current = true;
-    let hasChanges = false;
     let currentTime = rundownStartTime;
+    const updates: Array<{ id: string; field: string; value: string }> = [];
 
     items.forEach((item, index) => {
-      // Calculate elapsed time for this item
       const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
 
-      // For headers, assign segment letter and update timing
       if (isHeaderItem(item)) {
         const segmentName = calculateSegmentName(index);
         
         if (item.segmentName !== segmentName) {
-          updateItem(item.id, 'segmentName', segmentName);
-          hasChanges = true;
+          updates.push({ id: item.id, field: 'segmentName', value: segmentName });
         }
         
         if (item.startTime !== currentTime || item.endTime !== currentTime) {
-          updateItem(item.id, 'startTime', currentTime);
-          updateItem(item.id, 'endTime', currentTime);
-          hasChanges = true;
+          updates.push({ id: item.id, field: 'startTime', value: currentTime });
+          updates.push({ id: item.id, field: 'endTime', value: currentTime });
         }
         
         if (item.elapsedTime !== expectedElapsedTime) {
-          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
-          hasChanges = true;
+          updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
         }
       } else {
-        // For regular items, calculate start and end based on duration
         const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:01:00');
         
         if (item.startTime !== currentTime) {
-          updateItem(item.id, 'startTime', currentTime);
-          hasChanges = true;
+          updates.push({ id: item.id, field: 'startTime', value: currentTime });
         }
         
         if (item.endTime !== expectedEndTime) {
-          updateItem(item.id, 'endTime', expectedEndTime);
-          hasChanges = true;
+          updates.push({ id: item.id, field: 'endTime', value: expectedEndTime });
         }
 
         if (item.elapsedTime !== expectedElapsedTime) {
-          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
-          hasChanges = true;
+          updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
         }
         
-        // Only advance time if the item is not floated
         if (!item.isFloating && !item.isFloated) {
           currentTime = expectedEndTime;
         }
       }
     });
 
-    if (hasChanges) {
-      console.log('Time calculations updated items');
+    // Batch updates for better performance
+    if (updates.length > 0) {
+      updates.forEach(update => {
+        updateItem(update.id, update.field, update.value);
+      });
     }
 
     lastProcessedRef.current = currentSignature;
     isProcessingRef.current = false;
-  }, [items.length, rundownStartTime, items.map(item => `${item.id}-${item.duration}`).join(',')]); // More specific dependencies
+  }, [items.length, rundownStartTime, items.map(item => `${item.id}-${item.duration}`).join(',')]);
 
   return {
     calculateEndTime,
