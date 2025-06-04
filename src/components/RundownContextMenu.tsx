@@ -49,6 +49,8 @@ const RundownContextMenu = memo(({
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
+  console.log('Context menu opening for item:', itemId);
+
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
     if (isMultipleSelection && selectedRows) {
@@ -85,7 +87,7 @@ const RundownContextMenu = memo(({
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-48 z-50">
+        <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
           {onAddRow && (
             <ContextMenuItem onClick={onAddRow}>
               <Plus className="mr-2 h-4 w-4" />
@@ -147,7 +149,7 @@ const RundownContextMenu = memo(({
       
       {/* Color picker positioned outside the context menu */}
       {showColorPicker === itemId && (
-        <div className="fixed z-50" style={{ 
+        <div className="fixed z-[10000]" style={{ 
           top: '50%', 
           left: '50%', 
           transform: 'translate(-50%, -50%)'

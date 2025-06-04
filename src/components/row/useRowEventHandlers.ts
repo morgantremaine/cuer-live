@@ -52,21 +52,15 @@ export const useRowEventHandlers = ({
     console.log('Event target:', e.target);
     console.log('Event currentTarget:', e.currentTarget);
     
-    // Prevent the default browser context menu
-    e.preventDefault();
+    // Don't prevent default - let Radix handle it
+    // e.preventDefault();
     
-    // Stop the event from bubbling up to parent elements
-    e.stopPropagation();
+    // Don't stop propagation - let Radix handle it
+    // e.stopPropagation();
     
     // Select the row if not already selected
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
-    }
-    
-    // Blur any focused input elements
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-      (target as HTMLInputElement | HTMLTextAreaElement).blur();
     }
     
     console.log('Context menu should show for row:', item.id);
