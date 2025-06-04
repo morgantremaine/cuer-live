@@ -1,3 +1,4 @@
+
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 
@@ -23,11 +24,16 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
   return [...new Set(values)];
 };
 
+// Generate consistent list ID based on rundown ID and source column
+const generateConsistentListId = (sourceColumn: string, rundownId: string) => {
+  return `${sourceColumn}_${rundownId}`;
+};
+
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
   const availableColumns = getAvailableColumns(items);
   
-  return availableColumns.slice(0, 3).map((column, index) => ({
-    id: `${column.key}_${Date.now()}_${index}`,
+  return availableColumns.slice(0, 3).map((column) => ({
+    id: generateConsistentListId(column.key, rundownId),
     name: column.name,
     sourceColumn: column.key,
     items: generateListFromColumn(items, column.key),

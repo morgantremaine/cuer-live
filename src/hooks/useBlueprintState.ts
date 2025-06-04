@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -20,6 +21,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
 
+  // Generate consistent list ID based on rundown ID and source column
+  const generateConsistentListId = useCallback((sourceColumn: string, rundownId: string) => {
+    return `${sourceColumn}_${rundownId}`;
+  }, []);
+
   // Initialize blueprint data - run only once per rundown
   useEffect(() => {
     const shouldInitialize = !loading && 
@@ -35,12 +41,17 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         console.log('Loading saved blueprint with', savedBlueprint.lists.length, 'lists');
         
         // Create lists with fresh items and EXACT checkbox states from database
-        const refreshedLists = savedBlueprint.lists.map((list: BlueprintList) => ({
-          ...list,
-          items: generateListFromColumn(items, list.sourceColumn),
-          // CRITICAL: Use the exact checkbox states from the saved blueprint
-          checkedItems: list.checkedItems || {}
-        }));
+        const refreshedLists = savedBlueprint.lists.map((list: BlueprintList) => {
+          // Ensure consistent list ID
+          const consistentId = generateConsistentListId(list.sourceColumn, rundownId);
+          return {
+            ...list,
+            id: consistentId, // Use consistent ID
+            items: generateListFromColumn(items, list.sourceColumn),
+            // CRITICAL: Use the exact checkbox states from the saved blueprint
+            checkedItems: list.checkedItems || {}
+          };
+        });
         
         console.log('Loaded lists with checkbox states:', refreshedLists.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
         setLists(refreshedLists);
@@ -52,7 +63,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         console.log('Creating default blueprint');
         const defaultLists = [
           {
-            id: `headers_${Date.now()}_${Math.random()}`,
+            id: generateConsistentListId('headers', rundownId),
             name: 'Rundown Overview',
             sourceColumn: 'headers',
             items: generateListFromColumn(items, 'headers'),
@@ -69,7 +80,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       };
       setInitialized(true);
     }
-  }, [loading, items, initialized, savedBlueprint, rundownId, rundownTitle]);
+  }, [loading, items, initialized, savedBlueprint, rundownId, rundownTitle, generateConsistentListId]);
 
   // Reset initialization when rundown changes
   useEffect(() => {
@@ -104,7 +115,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   const addNewList = useCallback((name: string, sourceColumn: string) => {
     const newList: BlueprintList = {
-      id: `${sourceColumn}_${Date.now()}_${Math.random()}`,
+      id: generateConsistentListId(sourceColumn, rundownId),
       name,
       sourceColumn,
       items: generateListFromColumn(items, sourceColumn),
@@ -113,7 +124,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     const updatedLists = [...lists, newList];
     setLists(updatedLists);
     saveWithDate(rundownTitle, updatedLists);
-  }, [items, lists, rundownTitle, saveWithDate]);
+  }, [items, lists, rundownTitle, saveWithDate, generateConsistentListId, rundownId]);
 
   const deleteList = useCallback((listId: string) => {
     const updatedLists = lists.filter(list => list.id !== listId);
