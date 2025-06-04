@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -120,6 +121,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       operationInProgressRef.current = false;
     }
   }, [rundownTitle, showDate, saveBlueprint]);
+
+  // Create a wrapper function that matches the expected signature for drag and drop
+  const saveListsForDragAndDrop = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
+    saveLists(updatedLists, silent);
+  }, [saveLists]);
 
   // Checkbox update handler
   const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
@@ -259,7 +265,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   }, [lists, rundownTitle, saveBlueprint]);
 
   // Drag and drop functionality
-  const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, saveLists, rundownTitle);
+  const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, saveListsForDragAndDrop, rundownTitle);
 
   return {
     lists,
