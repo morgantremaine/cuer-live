@@ -1,7 +1,6 @@
-
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RundownItem } from './useRundownItems';
+import { RundownItem } from '@/types/rundown';
 
 interface UseIndexHandlersProps {
   items: RundownItem[];

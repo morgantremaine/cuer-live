@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { RundownItem } from './useRundownItems';
+import { RundownItem } from '@/types/rundown';
 
 export const useDragAndDrop = (
   items: RundownItem[], 

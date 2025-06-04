@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
 export interface RundownContainerProps {

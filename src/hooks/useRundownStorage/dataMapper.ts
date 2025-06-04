@@ -1,6 +1,4 @@
-
-import { RundownItem } from '@/hooks/useRundownItems'
-import { Column } from '@/hooks/useColumnsManager'
+import { RundownItem } from '@/types/rundown'
 import { SavedRundown } from './types'
 
 export const mapRundownFromDatabase = (rundown: any): SavedRundown => ({
@@ -9,7 +7,19 @@ export const mapRundownFromDatabase = (rundown: any): SavedRundown => ({
 })
 
 export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
-  return (data || []).map(mapRundownFromDatabase)
+  return data.map(row => ({
+    id: row.id,
+    title: row.title,
+    items: row.items,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    user_id: row.user_id,
+    archived: row.archived,
+    columns: row.columns,
+    timezone: row.timezone,
+    start_time: row.start_time,
+    icon: row.icon
+  }))
 }
 
 export const createUpdatePayload = (

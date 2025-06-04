@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
 import { format } from 'date-fns'
-import { RundownItem } from '@/hooks/useRundownItems'
+import { RundownItem } from '@/types/rundown'
 
 interface SavedRundown {
   id: string
