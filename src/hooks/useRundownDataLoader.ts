@@ -46,14 +46,18 @@ export const useRundownDataLoader = ({
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) {
       console.log('Rundown not found:', currentRundownId);
+      console.log('Available rundowns:', savedRundowns.map(r => ({ id: r.id, title: r.title })));
       return;
     }
 
     console.log('Loading rundown data:', rundown.title);
-    console.log('Rundown data:', { 
-      itemsCount: rundown.items?.length || 0, 
-      hasItems: !!rundown.items,
-      items: rundown.items 
+    console.log('Full rundown object:', rundown);
+    console.log('Rundown items details:', {
+      items: rundown.items,
+      itemsType: typeof rundown.items,
+      isArray: Array.isArray(rundown.items),
+      itemsLength: rundown.items?.length,
+      firstItem: rundown.items?.[0]
     });
     
     // Mark as loading and loaded to prevent loops
@@ -75,16 +79,16 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // Load the rundown items - fix the condition check
+    // Load the rundown items with detailed logging
     if (rundown.items) {
-      if (Array.isArray(rundown.items) && rundown.items.length > 0) {
-        console.log('Loading rundown items:', rundown.items.length);
+      if (Array.isArray(rundown.items)) {
+        console.log('Setting items:', rundown.items);
         setItems(rundown.items);
-      } else if (Array.isArray(rundown.items)) {
-        console.log('Rundown has empty items array');
-        setItems([]);
+        if (rundown.items.length === 0) {
+          console.log('Warning: Rundown has empty items array - this might be normal for a new rundown');
+        }
       } else {
-        console.log('Items is not an array:', typeof rundown.items, rundown.items);
+        console.error('Items is not an array:', typeof rundown.items, rundown.items);
         setItems([]);
       }
     } else {
