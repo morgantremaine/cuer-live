@@ -9,7 +9,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const lastSavedDataRef = useRef<string>('');
   const initializedRef = useRef(false);
   const isLoadingRef = useRef(false);
-  const initializationKey = useRef<string>('');
+  const hasInitialDataRef = useRef(false);
 
   // Create a stable signature for the data
   const createSignature = (dataItems: RundownItem[], title: string, cols?: Column[], tz?: string, st?: string) => {
@@ -22,34 +22,29 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     });
   };
 
-  // Initialize tracking once when we have meaningful data
+  // Initialize tracking ONLY ONCE when we first get meaningful data
   useEffect(() => {
-    // Create a key to prevent duplicate initialization
-    const currentKey = `${items.length}-${rundownTitle}-${JSON.stringify(columns)}`;
-    
-    // Only initialize once per unique data set
-    if (initializedRef.current && initializationKey.current === currentKey) {
-      return;
-    }
-    
-    if (isLoadingRef.current) return;
+    // Skip if already initialized or currently loading
+    if (initializedRef.current || isLoadingRef.current) return;
     
     // Check if we have meaningful data to initialize with
     const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
-    if (!hasMeaningfulData) return;
-
-    console.log('Change tracking initialized with signature length:', createSignature(items, rundownTitle, columns, timezone, startTime).length);
-
-    const signature = createSignature(items, rundownTitle, columns, timezone, startTime);
     
-    lastSavedDataRef.current = signature;
-    initializedRef.current = true;
-    initializationKey.current = currentKey;
-    setIsInitialized(true);
-    setHasUnsavedChanges(false);
-  }, [items.length, rundownTitle, JSON.stringify(columns)]);
+    // Only initialize once we have meaningful data and haven't initialized before
+    if (hasMeaningfulData && !hasInitialDataRef.current) {
+      hasInitialDataRef.current = true;
+      const signature = createSignature(items, rundownTitle, columns, timezone, startTime);
+      
+      console.log('Change tracking initialized with signature length:', signature.length);
+      
+      lastSavedDataRef.current = signature;
+      initializedRef.current = true;
+      setIsInitialized(true);
+      setHasUnsavedChanges(false);
+    }
+  }, [items.length > 0, rundownTitle !== 'Live Broadcast Rundown']);
 
-  // Track changes after initialization - with debouncing
+  // Track changes after initialization - this should run on every change
   useEffect(() => {
     if (!initializedRef.current || isLoadingRef.current) return;
 

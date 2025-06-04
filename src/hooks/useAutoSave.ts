@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
@@ -22,12 +22,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
-  // Create stable data snapshots to prevent infinite re-renders
-  const stableItems = useMemo(() => JSON.stringify(items), [items]);
-  const stableColumns = useMemo(() => JSON.stringify(columns), [columns]);
-  const stableUndoHistory = useMemo(() => JSON.stringify(undoHistory), [undoHistory]);
-
-  // Stable save function that won't change on every render
+  // Stable save function that captures current state when called
   const executeSave = useCallback(async () => {
     const now = Date.now();
     
@@ -53,23 +48,18 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading(true);
 
     try {
-      // Parse the stable data back to objects
-      const itemsToSave = JSON.parse(stableItems);
-      const columnsToSave = stableColumns ? JSON.parse(stableColumns) : undefined;
-      const undoToSave = stableUndoHistory ? JSON.parse(stableUndoHistory) : undefined;
-      
       const success = await performSave(
-        itemsToSave, 
+        items, 
         rundownTitle, 
-        columnsToSave, 
+        columns, 
         timezone, 
         startTime, 
-        undoToSave
+        undoHistory
       );
       
       if (success) {
         console.log('Auto-save: Save completed successfully at', new Date().toISOString());
-        markAsSaved(itemsToSave, rundownTitle, columnsToSave, timezone, startTime);
+        markAsSaved(items, rundownTitle, columns, timezone, startTime);
       } else {
         console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
@@ -81,9 +71,9 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       setIsLoading(false);
       isExecutingSaveRef.current = false;
     }
-  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, rundownTitle, timezone, startTime, stableItems, stableColumns, stableUndoHistory, isSaving]);
+  }, [user, items, rundownTitle, columns, timezone, startTime, undoHistory, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, isSaving]);
 
-  // Main auto-save effect - only depends on change state and user
+  // Main auto-save effect - triggers when changes are detected
   useEffect(() => {
     if (!hasUnsavedChanges || !isInitialized || !user) {
       return;
