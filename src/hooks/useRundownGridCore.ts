@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -105,13 +104,23 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Wrapped functions that save state before making changes - update to support insertion after selected row
-  const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null) => {
+  // Wrapped functions that save state before making changes - update to support insertion after selected rows
+  const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     
-    // Find the index of the selected row if provided
+    // Find the index of the last selected row if multiple rows are selected
     let insertAfterIndex: number | undefined = undefined;
-    if (selectedRowId) {
+    if (selectedRows && selectedRows.size > 0) {
+      // Find the highest index among selected rows
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      // Single row selection fallback
       const selectedIndex = items.findIndex(item => item.id === selectedRowId);
       if (selectedIndex !== -1) {
         insertAfterIndex = selectedIndex;
@@ -126,12 +135,22 @@ export const useRundownGridCore = () => {
     }
   }, [addRow, saveState, items, columns, rundownTitle]);
 
-  const wrappedAddHeader = useCallback((selectedRowId?: string | null) => {
+  const wrappedAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Header');
     
-    // Find the index of the selected row if provided
+    // Find the index of the last selected row if multiple rows are selected
     let insertAfterIndex: number | undefined = undefined;
-    if (selectedRowId) {
+    if (selectedRows && selectedRows.size > 0) {
+      // Find the highest index among selected rows
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      // Single row selection fallback
       const selectedIndex = items.findIndex(item => item.id === selectedRowId);
       if (selectedIndex !== -1) {
         insertAfterIndex = selectedIndex;
