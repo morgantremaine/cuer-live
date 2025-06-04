@@ -72,9 +72,7 @@ const RundownIndexContent = () => {
     setTimezone,
     handleUndo,
     canUndo,
-    lastAction,
-    handleAddRowAfter,
-    handleAddHeaderAfter
+    lastAction
   } = gridState;
 
   const {
@@ -155,8 +153,6 @@ const RundownIndexContent = () => {
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
         onClearSelection={clearSelection}
-        onAddRowAfter={handleAddRowAfter}
-        onAddHeaderAfter={handleAddHeaderAfter}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
         timeRemaining={timeRemaining}

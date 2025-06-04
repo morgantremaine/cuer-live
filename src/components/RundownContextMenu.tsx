@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Hash } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -25,8 +25,6 @@ interface RundownContextMenuProps {
   onColorSelect: (itemId: string, color: string) => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
-  onAddRowAfter?: (itemId: string) => void;
-  onAddHeaderAfter?: (itemId: string) => void;
 }
 
 const RundownContextMenu = memo(({
@@ -43,9 +41,7 @@ const RundownContextMenu = memo(({
   onColorPicker,
   onColorSelect,
   onPaste,
-  onClearSelection,
-  onAddRowAfter,
-  onAddHeaderAfter
+  onClearSelection
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -64,20 +60,14 @@ const RundownContextMenu = memo(({
 
   // Handle float toggle for multiple rows
   const handleContextMenuFloat = () => {
-    onToggleFloat();
-  };
-
-  const handleAddRowAfter = () => {
-    console.log('Context menu - Add row after:', itemId);
-    if (onAddRowAfter) {
-      onAddRowAfter(itemId);
-    }
-  };
-
-  const handleAddHeaderAfter = () => {
-    console.log('Context menu - Add header after:', itemId);
-    if (onAddHeaderAfter) {
-      onAddHeaderAfter(itemId);
+    if (isMultipleSelection && selectedRows) {
+      // Toggle float for all selected rows
+      selectedRows.forEach(selectedId => {
+        onToggleFloat();
+      });
+    } else {
+      // Toggle float for single row
+      onToggleFloat();
     }
   };
 
@@ -100,24 +90,6 @@ const RundownContextMenu = memo(({
         )}
         
         <ContextMenuSeparator />
-        
-        {!isMultipleSelection && onAddRowAfter && (
-          <ContextMenuItem onClick={handleAddRowAfter}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add row below
-          </ContextMenuItem>
-        )}
-        
-        {!isMultipleSelection && onAddHeaderAfter && (
-          <ContextMenuItem onClick={handleAddHeaderAfter}>
-            <Hash className="mr-2 h-4 w-4" />
-            Add header below
-          </ContextMenuItem>
-        )}
-        
-        {(!isMultipleSelection && (onAddRowAfter || onAddHeaderAfter)) && (
-          <ContextMenuSeparator />
-        )}
         
         <ContextMenuItem onClick={handleContextMenuFloat}>
           <span className="mr-2 h-4 w-4 flex items-center justify-center">🛟</span>

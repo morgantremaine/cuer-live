@@ -79,6 +79,7 @@ export const useRundownGridHandlers = ({
     const selectedItems = items.filter(item => selectedRows.has(item.id));
     if (selectedItems.length > 0) {
       copyItems(selectedItems);
+      console.log('Copied items to clipboard:', selectedItems.length);
       clearSelection();
     }
   }, [items, selectedRows, copyItems, clearSelection]);
@@ -94,8 +95,11 @@ export const useRundownGridHandlers = ({
 
   const handlePasteRowsWithClipboard = useCallback(() => {
     if (hasClipboardData() && clipboardItems.length > 0) {
+      console.log('Pasting items from clipboard:', clipboardItems.length);
       addMultipleRows(clipboardItems, calculateEndTime);
       markAsChanged();
+    } else {
+      console.log('No clipboard data to paste');
     }
   }, [hasClipboardData, clipboardItems, addMultipleRows, calculateEndTime, markAsChanged]);
 
@@ -106,80 +110,6 @@ export const useRundownGridHandlers = ({
       clearSelection();
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
-
-  const handleAddRowAfter = useCallback((itemId: string) => {
-    const targetIndex = items.findIndex(item => item.id === itemId);
-    if (targetIndex === -1) return;
-
-    setItems(currentItems => {
-      const newItems = [...currentItems];
-      const targetItem = newItems[targetIndex];
-      
-      // Calculate new start time based on the target item's end time
-      let newStartTime = targetItem.endTime || '00:00:00';
-      
-      // Create new row
-      const newRow = {
-        id: crypto.randomUUID(),
-        type: 'regular' as const,
-        rowNumber: '',
-        name: '',
-        startTime: newStartTime,
-        duration: '00:00',
-        endTime: calculateEndTime(newStartTime, '00:00'),
-        elapsedTime: '00:00:00',
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        notes: '',
-        color: '#ffffff',
-        isFloating: false,
-        customFields: {}
-      };
-
-      // Insert after the target item
-      newItems.splice(targetIndex + 1, 0, newRow);
-      return newItems;
-    });
-    
-    markAsChanged();
-  }, [items, setItems, calculateEndTime, markAsChanged]);
-
-  const handleAddHeaderAfter = useCallback((itemId: string) => {
-    const targetIndex = items.findIndex(item => item.id === itemId);
-    if (targetIndex === -1) return;
-
-    setItems(currentItems => {
-      const newItems = [...currentItems];
-      
-      // Create new header
-      const newHeader = {
-        id: crypto.randomUUID(),
-        type: 'header' as const,
-        rowNumber: '',
-        name: 'New Header',
-        startTime: '00:00:00',
-        duration: '00:00:00',
-        endTime: '00:00:00',
-        elapsedTime: '00:00:00',
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        notes: '',
-        color: '#ffffff',
-        isFloating: false,
-        customFields: {}
-      };
-
-      // Insert after the target item
-      newItems.splice(targetIndex + 1, 0, newHeader);
-      return newItems;
-    });
-    
-    markAsChanged();
-  }, [items, setItems, markAsChanged]);
 
   return {
     handleUpdateItem,
@@ -193,8 +123,6 @@ export const useRundownGridHandlers = ({
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange,
-    handleAddRowAfter,
-    handleAddHeaderAfter
+    handleTitleChange
   };
 };

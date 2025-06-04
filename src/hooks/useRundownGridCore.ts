@@ -105,7 +105,7 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Wrapped functions that save state before making changes - use string IDs consistently
+  // Wrapped functions that save state before making changes - update to support insertion after selected row
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     

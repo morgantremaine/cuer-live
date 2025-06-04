@@ -8,11 +8,6 @@ interface RundownMainPropsAdapterProps {
 }
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
-  console.log('RundownMainPropsAdapter - Add functions:', {
-    onAddRowAfter: !!props.onAddRowAfter,
-    onAddHeaderAfter: !!props.onAddHeaderAfter
-  });
-
   return (
     <RundownMainContent
       currentTime={props.currentTime}
@@ -48,8 +43,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       onDeleteSelectedRows={props.onDeleteSelectedRows}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}
-      onAddRowAfter={props.onAddRowAfter}
-      onAddHeaderAfter={props.onAddHeaderAfter}
       showColumnManager={props.showColumnManager}
       setShowColumnManager={props.setShowColumnManager}
       handleAddColumn={props.handleAddColumn}
@@ -60,8 +53,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       handleLoadLayout={props.handleLoadLayout}
       timeRemaining={props.timeRemaining}
       isPlaying={props.isPlaying}
-      currentSegmentName={props.items.find(item => item.id === props.currentSegmentId)?.name || ''}
-      totalDuration={props.calculateHeaderDuration ? props.calculateHeaderDuration(0) : '00:00:00'}
+      currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
+      totalDuration={props.items.find(item => item.id === props.currentSegmentId)?.duration || '00:00'}
     />
   );
 };

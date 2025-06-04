@@ -27,16 +27,12 @@ export const useRundownGridState = () => {
   });
 
   // Row operations
-  const { handleDeleteSelectedRows, addRow, addHeader, handleAddRowAfter, handleAddHeaderAfter } = useRundownRowOperations({
+  const { handleDeleteSelectedRows, addRow, addHeader } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection: interactions.clearSelection,
     addRow: coreState.addRow,
-    addHeader: coreState.addHeader,
-    items: coreState.items,
-    setItems: coreState.setItems,
-    calculateEndTime: coreState.calculateEndTime,
-    markAsChanged: coreState.markAsChanged
+    addHeader: coreState.addHeader
   });
 
   // Memoize the complete state object
@@ -56,10 +52,7 @@ export const useRundownGridState = () => {
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
-    handleDeleteSelectedRows,
-    // Add row/header after functions
-    handleAddRowAfter,
-    handleAddHeaderAfter
+    handleDeleteSelectedRows
   }), [
     coreState,
     interactions,
@@ -71,8 +64,6 @@ export const useRundownGridState = () => {
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
-    handleDeleteSelectedRows,
-    handleAddRowAfter,
-    handleAddHeaderAfter
+    handleDeleteSelectedRows
   ]);
 };

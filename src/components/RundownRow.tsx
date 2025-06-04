@@ -37,8 +37,6 @@ interface RundownRowProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onAddRowAfter?: (itemId: string) => void;
-  onAddHeaderAfter?: (itemId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -58,8 +56,6 @@ const RundownRow = (props: RundownRowProps) => {
         hasClipboardData={props.hasClipboardData}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
-        onAddRowAfter={props.onAddRowAfter}
-        onAddHeaderAfter={props.onAddHeaderAfter}
       />
     );
   }
@@ -76,8 +72,6 @@ const RundownRow = (props: RundownRowProps) => {
       onToggleFloat={props.onToggleFloat || (() => {})}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}
-      onAddRowAfter={props.onAddRowAfter}
-      onAddHeaderAfter={props.onAddHeaderAfter}
     />
   );
 };
