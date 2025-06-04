@@ -27,7 +27,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     return JSON.stringify(items.map(item => ({ id: item.id, name: item.name, segmentName: item.segmentName })));
   }, []);
 
-  const { isUpdatingCheckboxes } = useBlueprintInitialization(
+  const { initializationCompleted } = useBlueprintInitialization(
     rundownId,
     rundownTitle,
     items,
@@ -46,7 +46,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     rundownTitle,
     showDate,
     saveBlueprint,
-    isUpdatingCheckboxes
+    initializationCompleted
   );
 
   const { addNewList, deleteList, renameList, refreshAllLists } = useBlueprintOperations(
@@ -59,9 +59,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   );
 
   // Refresh list content when items actually change (but preserve checkbox states)
-  // Only do this if we're not in the middle of a checkbox update
+  // Only do this after initialization is complete
   useEffect(() => {
-    if (isUpdatingCheckboxes.current || !initialized || items.length === 0 || lists.length === 0) {
+    if (!initializationCompleted || !initialized || items.length === 0 || lists.length === 0) {
       return;
     }
 
@@ -80,10 +80,10 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       setLists(refreshedLists);
       setLastItemsHash(currentItemsHash);
       
-      // Save silently without affecting checkbox update state
+      // Save silently
       saveBlueprint(rundownTitle, refreshedLists, showDate, true);
     }
-  }, [items, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash, isUpdatingCheckboxes]);
+  }, [items, initializationCompleted, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash]);
 
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
