@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -137,7 +138,7 @@ const HeaderRow = ({
       onClearSelection={onClearSelection}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-move`}
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
         draggable
         onDragStart={(e) => onDragStart(e, index)}
         onDragOver={onDragOver}

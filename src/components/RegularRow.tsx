@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -174,7 +175,7 @@ const RegularRow = ({
         onDrop={(e) => onDrop(e, index)}
       >
         <td 
-          className={`px-2 py-1 text-sm font-mono cursor-move row-number-cell align-middle`}
+          className={`px-2 py-1 text-sm font-mono align-middle`}
           style={{ color: textColor || undefined, width: '40px' }}
         >
           <div className="flex items-center space-x-1">
