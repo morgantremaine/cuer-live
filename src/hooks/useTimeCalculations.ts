@@ -50,6 +50,9 @@ export const useTimeCalculations = (
 
   // Recalculate all start, end, and elapsed times and segment names
   useEffect(() => {
+    if (!items.length || !rundownStartTime) return;
+
+    let hasChanges = false;
     let currentTime = rundownStartTime;
 
     items.forEach((item, index) => {
@@ -62,15 +65,18 @@ export const useTimeCalculations = (
         
         if (item.segmentName !== segmentName) {
           updateItem(item.id, 'segmentName', segmentName);
+          hasChanges = true;
         }
         
         if (item.startTime !== currentTime || item.endTime !== currentTime) {
           updateItem(item.id, 'startTime', currentTime);
           updateItem(item.id, 'endTime', currentTime);
+          hasChanges = true;
         }
         
         if (item.elapsedTime !== expectedElapsedTime) {
           updateItem(item.id, 'elapsedTime', expectedElapsedTime);
+          hasChanges = true;
         }
       } else {
         // For regular items, calculate start and end based on duration
@@ -78,14 +84,17 @@ export const useTimeCalculations = (
         
         if (item.startTime !== currentTime) {
           updateItem(item.id, 'startTime', currentTime);
+          hasChanges = true;
         }
         
         if (item.endTime !== expectedEndTime) {
           updateItem(item.id, 'endTime', expectedEndTime);
+          hasChanges = true;
         }
 
         if (item.elapsedTime !== expectedElapsedTime) {
           updateItem(item.id, 'elapsedTime', expectedElapsedTime);
+          hasChanges = true;
         }
         
         // Only advance time if the item is not floated
@@ -94,7 +103,11 @@ export const useTimeCalculations = (
         }
       }
     });
-  }, [items, updateItem, rundownStartTime, calculateSegmentName]);
+
+    if (hasChanges) {
+      console.log('Time calculations updated items');
+    }
+  }, [items.length, rundownStartTime]); // Only depend on items length, not the full items array
 
   return {
     calculateEndTime,

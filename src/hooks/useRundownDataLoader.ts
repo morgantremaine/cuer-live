@@ -13,7 +13,7 @@ interface UseRundownDataLoaderProps {
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
   handleLoadLayout: (columns: Column[]) => void;
-  setItems: (items: RundownItem[]) => void; // Add setItems prop
+  setItems: (items: RundownItem[]) => void;
   onRundownLoaded?: (rundown: SavedRundown) => void;
 }
 
@@ -25,7 +25,7 @@ export const useRundownDataLoader = ({
   setTimezone,
   setRundownStartTime,
   handleLoadLayout,
-  setItems, // Add setItems parameter
+  setItems,
   onRundownLoaded
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
@@ -51,9 +51,9 @@ export const useRundownDataLoader = ({
     const dataSignature = JSON.stringify({
       title: rundown.title,
       timezone: rundown.timezone,
-      startTime: rundown.start_time, // Use start_time property
+      startTime: rundown.start_time,
       columnsLength: rundown.columns?.length || 0,
-      itemsLength: rundown.items?.length || 0 // Include items in signature
+      itemsLength: rundown.items?.length || 0
     });
 
     // Skip if same data was already loaded
@@ -73,7 +73,7 @@ export const useRundownDataLoader = ({
       setTimezone(rundown.timezone);
     }
     
-    if (rundown.start_time) { // Use start_time property
+    if (rundown.start_time) {
       setRundownStartTime(rundown.start_time || '09:00:00');
     }
     
@@ -82,9 +82,12 @@ export const useRundownDataLoader = ({
     }
 
     // Load the rundown items
-    if (rundown.items) {
+    if (rundown.items && rundown.items.length > 0) {
       console.log('Loading rundown items:', rundown.items.length);
       setItems(rundown.items);
+    } else {
+      console.log('No items found in rundown');
+      setItems([]);
     }
 
     // Call the callback with the loaded rundown
@@ -99,13 +102,13 @@ export const useRundownDataLoader = ({
   }, [
     rundownId, 
     paramId, 
-    savedRundowns.length, // Use length instead of the array to prevent unnecessary re-runs
+    savedRundowns.length,
     loading, 
     setRundownTitle, 
     setTimezone, 
     setRundownStartTime, 
     handleLoadLayout,
-    setItems, // Add setItems to dependencies
+    setItems,
     onRundownLoaded
   ]);
 

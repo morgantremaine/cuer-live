@@ -51,60 +51,47 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
+    const newItem: RundownItem = {
+      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'header',
+      rowNumber: '',
+      name: 'New Header',
+      duration: '',
+      startTime: '',
+      endTime: '',
+      elapsedTime: '',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
+      isFloating: false,
+      status: 'upcoming' as const,
+      segmentName: 'A' // Will be recalculated by time calculations
+    };
+
     setItems(prev => {
-      // Calculate the correct segment letter based on position
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prev.length;
-      
-      // Count headers that will be before this new header
-      let headerCount = 0;
-      for (let i = 0; i < targetIndex; i++) {
-        if (i < prev.length && isHeaderItem(prev[i])) {
-          headerCount++;
-        }
-      }
-
-      const segmentName = letters[headerCount] || 'A';
-
-      const newItem: RundownItem = {
-        id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'header',
-        rowNumber: '',
-        name: 'New Header',
-        duration: '',
-        startTime: '',
-        endTime: '',
-        elapsedTime: '',
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        notes: '',
-        color: '',
-        isFloating: false,
-        status: 'upcoming' as const,
-        segmentName: segmentName
-      };
-
+      let newItems;
       if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prev.length) {
-        const newItems = [...prev];
+        newItems = [...prev];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
-        
-        // Renumber all subsequent headers
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let currentHeaderIndex = 0;
-        
-        return newItems.map((item) => {
-          if (isHeaderItem(item)) {
-            const updatedItem = { ...item, segmentName: letters[currentHeaderIndex] || 'A' };
-            currentHeaderIndex++;
-            return updatedItem;
-          }
-          return item;
-        });
       } else {
-        return [...prev, newItem];
+        newItems = [...prev, newItem];
       }
+
+      // Renumber all headers after insertion
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let currentHeaderIndex = 0;
+      
+      return newItems.map((item) => {
+        if (isHeaderItem(item)) {
+          const updatedItem = { ...item, segmentName: letters[currentHeaderIndex] || 'A' };
+          currentHeaderIndex++;
+          return updatedItem;
+        }
+        return item;
+      });
     });
     markAsChanged();
   }, [markAsChanged]);
