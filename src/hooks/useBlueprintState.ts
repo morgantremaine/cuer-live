@@ -5,93 +5,148 @@ import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn, getAvailableColumns } from '@/utils/blueprintUtils';
 import { useBlueprintStorage } from './useBlueprintStorage';
 import { useBlueprintDragAndDrop } from './useBlueprintDragAndDrop';
-import { useBlueprintInitialization } from './blueprint/useBlueprintInitialization';
-import { useBlueprintOperations } from './blueprint/useBlueprintOperations';
-import { useBlueprintCheckboxes } from './blueprint/useBlueprintCheckboxes';
+import { useBlueprintCheckboxManager } from './blueprint/useBlueprintCheckboxManager';
 import { format } from 'date-fns';
 
 export const useBlueprintState = (rundownId: string, rundownTitle: string, items: RundownItem[], rundownStartTime?: string) => {
-  const [lists, setLists] = useState<BlueprintList[]>([]);
+  const [lists, setListsInternal] = useState<BlueprintList[]>([]);
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
-  const [lastItemsHash, setLastItemsHash] = useState<string>('');
   
   const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
 
-  const saveWithDate = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
-    return saveBlueprint(title, updatedLists, showDate, silent);
-  }, [saveBlueprint, showDate]);
+  // Initialize the checkbox manager
+  const {
+    initializeCheckboxStates,
+    applyCheckboxStates,
+    updateCheckboxState,
+    setOnSaveCheckboxStates,
+    isUpdating,
+    hasPendingUpdates,
+    waitForPendingUpdates
+  } = useBlueprintCheckboxManager(rundownId, rundownTitle, showDate, saveBlueprint);
+
+  // Safe setLists function that always preserves checkbox states
+  const setLists = useCallback((newLists: BlueprintList[]) => {
+    console.log('Setting lists with checkbox state preservation');
+    const listsWithCheckboxes = applyCheckboxStates(newLists);
+    setListsInternal(listsWithCheckboxes);
+  }, [applyCheckboxStates]);
+
+  // Checkbox update handler
+  const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
+    // Update the checkbox state in our manager
+    await updateCheckboxState(listId, checkedItems);
+    
+    // Update the local state immediately
+    setListsInternal(currentLists => 
+      currentLists.map(list => 
+        list.id === listId ? { ...list, checkedItems } : list
+      )
+    );
+  }, [updateCheckboxState]);
+
+  // Set up the save callback for the checkbox manager
+  useEffect(() => {
+    setOnSaveCheckboxStates(async () => {
+      const listsWithCheckboxes = applyCheckboxStates(lists);
+      await saveBlueprint(rundownTitle, listsWithCheckboxes, showDate, true);
+    });
+  }, [lists, rundownTitle, showDate, saveBlueprint, applyCheckboxStates, setOnSaveCheckboxStates]);
+
+  // Initialize blueprint data
+  useEffect(() => {
+    if (!loading && items.length > 0 && !initialized) {
+      console.log('Initializing blueprint state with items:', items.length);
+      
+      if (savedBlueprint && savedBlueprint.lists.length > 0) {
+        console.log('Loading saved blueprint with', savedBlueprint.lists.length, 'lists');
+        
+        // Initialize checkbox states first
+        initializeCheckboxStates(savedBlueprint.lists);
+        
+        // Create lists with fresh items but preserved checkbox states
+        const refreshedLists = savedBlueprint.lists.map((list: BlueprintList) => ({
+          ...list,
+          items: generateListFromColumn(items, list.sourceColumn)
+        }));
+        
+        // Apply checkbox states and set lists
+        setLists(refreshedLists);
+        
+        if (savedBlueprint.show_date) {
+          setShowDate(savedBlueprint.show_date);
+        }
+      } else {
+        console.log('Creating default blueprint');
+        const defaultLists = [
+          {
+            id: `headers_${Date.now()}_${Math.random()}`,
+            name: 'Rundown Overview',
+            sourceColumn: 'headers',
+            items: generateListFromColumn(items, 'headers'),
+            checkedItems: {}
+          }
+        ];
+        setLists(defaultLists);
+      }
+      
+      setInitialized(true);
+    }
+  }, [loading, items, initialized, savedBlueprint, setLists, initializeCheckboxStates]);
 
   const createItemsHash = useCallback((items: RundownItem[]) => {
     return JSON.stringify(items.map(item => ({ id: item.id, name: item.name, segmentName: item.segmentName })));
   }, []);
 
-  const { updateCheckedItems, isUpdatingCheckboxes, hasPendingCheckboxUpdates, waitForPendingUpdates } = useBlueprintCheckboxes(
-    lists,
-    setLists,
-    rundownTitle,
-    showDate,
-    saveBlueprint
-  );
+  const saveWithDate = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
+    return saveBlueprint(title, updatedLists, showDate, silent);
+  }, [saveBlueprint, showDate]);
 
-  const { initializationCompleted, isInitializing } = useBlueprintInitialization(
-    rundownId,
-    rundownTitle,
-    items,
-    savedBlueprint,
-    loading,
-    setLists,
-    setShowDate,
-    setInitialized,
-    setLastItemsHash,
-    createItemsHash,
-    waitForPendingUpdates
-  );
+  const addNewList = useCallback((name: string, sourceColumn: string) => {
+    const newList: BlueprintList = {
+      id: `${sourceColumn}_${Date.now()}_${Math.random()}`,
+      name,
+      sourceColumn,
+      items: generateListFromColumn(items, sourceColumn),
+      checkedItems: {}
+    };
+    const updatedLists = [...lists, newList];
+    setLists(updatedLists);
+    saveWithDate(rundownTitle, updatedLists);
+  }, [items, lists, rundownTitle, saveWithDate, setLists]);
 
-  const { addNewList, deleteList, renameList, refreshAllLists } = useBlueprintOperations(
-    lists,
-    setLists,
-    items,
-    rundownTitle,
-    saveWithDate,
-    saveBlueprint
-  );
+  const deleteList = useCallback((listId: string) => {
+    const updatedLists = lists.filter(list => list.id !== listId);
+    setLists(updatedLists);
+    saveWithDate(rundownTitle, updatedLists);
+  }, [lists, rundownTitle, saveWithDate, setLists]);
 
-  // Refresh list content when items actually change (but preserve checkbox states)
-  // Only do this after initialization is complete and no pending checkbox updates
-  useEffect(() => {
-    if (!initializationCompleted || 
-        !initialized || 
-        items.length === 0 || 
-        lists.length === 0 || 
-        isInitializing ||
-        hasPendingCheckboxUpdates()) {
-      return;
-    }
+  const renameList = useCallback((listId: string, newName: string) => {
+    const updatedLists = lists.map(list => {
+      if (list.id === listId) {
+        return { ...list, name: newName };
+      }
+      return list;
+    });
+    setLists(updatedLists);
+    saveWithDate(rundownTitle, updatedLists);
+  }, [lists, rundownTitle, saveWithDate, setLists]);
 
-    const currentItemsHash = createItemsHash(items);
+  const refreshAllLists = useCallback(async () => {
+    // Wait for any pending checkbox updates
+    await waitForPendingUpdates();
     
-    if (currentItemsHash !== lastItemsHash) {
-      console.log('Items changed, refreshing lists while preserving checkbox states');
-      
-      const refreshedLists = lists.map(list => ({
-        ...list,
-        items: generateListFromColumn(items, list.sourceColumn),
-        // Preserve existing checkbox states
-        checkedItems: list.checkedItems || {}
-      }));
-      
-      setLists(refreshedLists);
-      setLastItemsHash(currentItemsHash);
-      
-      // Save silently
-      saveBlueprint(rundownTitle, refreshedLists, showDate, true);
-    }
-  }, [items, initializationCompleted, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash, isInitializing, hasPendingCheckboxUpdates]);
+    const refreshedLists = lists.map(list => ({
+      ...list,
+      items: generateListFromColumn(items, list.sourceColumn)
+    }));
+    setLists(refreshedLists);
+    saveWithDate(rundownTitle, refreshedLists, true);
+  }, [items, lists, rundownTitle, saveWithDate, setLists, waitForPendingUpdates]);
 
   const updateShowDate = useCallback(async (newDate: string) => {
-    // Wait for pending checkbox updates before changing show date
     await waitForPendingUpdates();
     setShowDate(newDate);
     saveBlueprint(rundownTitle, lists, newDate, true);
