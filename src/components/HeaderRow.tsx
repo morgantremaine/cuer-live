@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -112,6 +113,16 @@ const HeaderRow = ({
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // If the row is not already selected, select it first
+    if (!isSelected && onRowSelect) {
+      console.log('HeaderRow: Right-click selecting row', item.id, 'at index', index);
+      onRowSelect(item.id, index, false, false);
+    }
+  };
+
   // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
     onCopySelectedRows();
@@ -164,6 +175,7 @@ const HeaderRow = ({
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
         onClick={handleRowClick}
+        onContextMenu={handleContextMenu}
       >
         <td 
           className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -128,6 +129,16 @@ const RegularRow = ({
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // If the row is not already selected, select it first
+    if (!isSelected && onRowSelect) {
+      console.log('RegularRow: Right-click selecting row', item.id, 'at index', index);
+      onRowSelect(item.id, index, false, false);
+    }
+  };
+
   // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
     onCopySelectedRows();
@@ -188,6 +199,7 @@ const RegularRow = ({
         }}
         draggable
         onClick={handleRowClick}
+        onContextMenu={handleContextMenu}
         onDragStart={(e) => onDragStart(e, index)}
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
