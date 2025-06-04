@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { CrewMember } from '@/types/crew';
-import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
 
 export const useCrewList = (rundownId: string, rundownTitle: string) => {
   const [crewMembers, setCrewMembers] = useState<CrewMember[]>(() => {
@@ -16,35 +15,13 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
-  const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
 
-  // Load saved crew data when blueprint is loaded
+  // Initialize crew data
   useEffect(() => {
-    if (savedBlueprint && !isInitialized) {
-      if (savedBlueprint.crew_data && Array.isArray(savedBlueprint.crew_data) && savedBlueprint.crew_data.length > 0) {
-        setCrewMembers(savedBlueprint.crew_data);
-      }
+    if (!isInitialized) {
       setIsInitialized(true);
     }
-  }, [savedBlueprint, isInitialized]);
-
-  // Auto-save crew data whenever it changes
-  useEffect(() => {
-    if (isInitialized && rundownId && rundownTitle) {
-      const saveTimeout = setTimeout(() => {
-        saveBlueprint(
-          rundownTitle,
-          savedBlueprint?.lists || [],
-          savedBlueprint?.show_date,
-          true, // silent save
-          savedBlueprint?.notes,
-          crewMembers
-        );
-      }, 1000); // Debounce saves by 1 second
-
-      return () => clearTimeout(saveTimeout);
-    }
-  }, [crewMembers, isInitialized, rundownId, rundownTitle, savedBlueprint, saveBlueprint]);
+  }, [isInitialized]);
 
   const addRow = () => {
     const newMember: CrewMember = {

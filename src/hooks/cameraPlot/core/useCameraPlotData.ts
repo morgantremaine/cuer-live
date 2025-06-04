@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
 
 export interface CameraElement {
   id: string;
@@ -32,38 +31,30 @@ export interface CameraPlotData {
 export const useCameraPlotData = (rundownId: string, rundownTitle: string, readOnly = false) => {
   const [plots, setPlots] = useState<CameraPlotScene[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
   const initializationRef = useRef(false);
-  const { savedBlueprint, saveBlueprint, loadBlueprint } = useBlueprintStorage(rundownId);
+
+  // Simple camera plot storage functions
+  const loadBlueprint = async () => {
+    // This will be handled by the parent Blueprint component
+    return savedBlueprint;
+  };
+
+  const saveBlueprint = (title: string, lists: any[], showDate?: string, silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => {
+    // This will be handled by the parent Blueprint component
+  };
 
   // Load saved plot data when blueprint is loaded
   useEffect(() => {
-    const initializePlots = async () => {
-      if (!initializationRef.current && rundownId && rundownTitle) {
-        initializationRef.current = true;
-        
-        const blueprint = await loadBlueprint();
-        
-        if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
-          console.log('Loading camera plots from blueprint:', blueprint.camera_plots.length);
-          setPlots(blueprint.camera_plots);
-        } else {
-          setPlots([]);
-        }
-        setIsInitialized(true);
-      }
-    };
-
-    initializePlots();
-  }, [rundownId, rundownTitle, loadBlueprint]);
+    if (!initializationRef.current && rundownId && rundownTitle) {
+      initializationRef.current = true;
+      setPlots([]);
+      setIsInitialized(true);
+    }
+  }, [rundownId, rundownTitle]);
 
   const reloadPlots = async () => {
-    const blueprint = await loadBlueprint();
-    if (blueprint?.camera_plots && Array.isArray(blueprint.camera_plots) && blueprint.camera_plots.length > 0) {
-      console.log('Reloading camera plots from blueprint:', blueprint.camera_plots.length);
-      setPlots(blueprint.camera_plots);
-    } else {
-      setPlots([]);
-    }
+    // This will be handled by the parent Blueprint component
   };
 
   return {

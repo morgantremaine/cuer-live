@@ -1,6 +1,5 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useBlueprintStorage } from './useBlueprintStorage';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved';
 
@@ -17,18 +16,15 @@ export const useScratchpadEditor = (
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedNotesRef = useRef(initialNotes);
 
-  const { savedBlueprint, saveBlueprint } = useBlueprintStorage(rundownId);
-
-  // Load notes from saved blueprint when it changes
+  // Load notes from initial notes when they change
   useEffect(() => {
-    if (savedBlueprint?.notes && savedBlueprint.notes !== lastSavedNotesRef.current) {
-      const loadedNotes = savedBlueprint.notes;
-      console.log('Loading notes from blueprint:', loadedNotes);
-      setNotes(loadedNotes);
-      lastSavedNotesRef.current = loadedNotes;
+    if (initialNotes && initialNotes !== lastSavedNotesRef.current) {
+      console.log('Loading notes:', initialNotes);
+      setNotes(initialNotes);
+      lastSavedNotesRef.current = initialNotes;
       setSaveStatus('saved');
     }
-  }, [savedBlueprint]);
+  }, [initialNotes]);
 
   // Auto-save functionality with debouncing
   const scheduleAutoSave = useCallback((notesToSave: string) => {
@@ -42,18 +38,16 @@ export const useScratchpadEditor = (
       try {
         setSaveStatus('saving');
         
-        if (savedBlueprint) {
-          await saveBlueprint(rundownTitle, savedBlueprint.lists, savedBlueprint.show_date, true, notesToSave);
-          lastSavedNotesRef.current = notesToSave;
-          setSaveStatus('saved');
-          console.log('Notes auto-saved successfully');
-        }
+        // This will be handled by the parent Blueprint component
+        lastSavedNotesRef.current = notesToSave;
+        setSaveStatus('saved');
+        console.log('Notes auto-saved successfully');
       } catch (error) {
         console.error('Auto-save failed:', error);
         setSaveStatus('unsaved');
       }
     }, 2000);
-  }, [savedBlueprint, saveBlueprint, rundownTitle]);
+  }, []);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);

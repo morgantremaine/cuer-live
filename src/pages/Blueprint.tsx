@@ -10,7 +10,6 @@ import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
-import { useBlueprintStorage } from '@/hooks/useBlueprintStorage';
 import CrewList from '@/components/blueprint/CrewList';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 
@@ -39,15 +38,14 @@ const Blueprint = () => {
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
-    handleDragEnd
+    handleDragEnd,
+    savedBlueprint
   } = useBlueprintState(
     id || '',
     rundown?.title || 'Unknown Rundown',
     rundown?.items || [],
     rundown?.startTime
   );
-
-  const { savedBlueprint } = useBlueprintStorage(id || '');
 
   const handleSignOut = async () => {
     try {
