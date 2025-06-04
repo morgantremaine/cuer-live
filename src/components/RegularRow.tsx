@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -98,9 +99,20 @@ const RegularRow = ({
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    const isResizeHandle = target.classList.contains('resize-handle') || target.closest('.resize-handle');
     
-    // Don't handle row selection if clicking on input fields
-    if (isInput) {
+    console.log('RegularRow click:', {
+      target: target.tagName,
+      isInput,
+      isResizeHandle,
+      classList: target.className,
+      itemId: item.id,
+      index
+    });
+    
+    // Don't handle row selection if clicking on input fields or resize handles
+    if (isInput || isResizeHandle) {
+      console.log('RegularRow: Ignoring click on input or resize handle');
       return;
     }
     
@@ -112,19 +124,6 @@ const RegularRow = ({
       console.log('RegularRow: Calling onRowSelect for item', item.id, 'at index', index);
       onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
     }
-  };
-
-  const handleCellClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-    
-    // Don't handle row selection if clicking on input fields
-    if (isInput) {
-      return;
-    }
-    
-    // Call the row click handler for non-input clicks
-    handleRowClick(e);
   };
 
   // Context menu handlers - use selection-based operations
@@ -192,7 +191,6 @@ const RegularRow = ({
         <td 
           className={`px-2 py-1 text-sm font-mono align-middle`}
           style={{ color: textColor || undefined, width: '40px' }}
-          onClick={handleCellClick}
         >
           <div className="flex items-center space-x-1">
             {isCurrentlyPlaying && (
@@ -209,7 +207,6 @@ const RegularRow = ({
             key={column.id}
             className="align-middle"
             style={{ width: getColumnWidth(column) }}
-            onClick={handleCellClick}
           >
             <CellRenderer
               column={column}
@@ -229,3 +226,4 @@ const RegularRow = ({
 };
 
 export default RegularRow;
+
