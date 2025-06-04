@@ -49,8 +49,6 @@ const RundownContextMenu = memo(({
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
-  console.log('Context menu opening for item:', itemId);
-
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
     if (isMultipleSelection && selectedRows) {
@@ -77,13 +75,9 @@ const RundownContextMenu = memo(({
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    console.log('Context menu open state changed:', open, 'for item:', itemId);
-  };
-
   return (
     <>
-      <ContextMenu onOpenChange={handleOpenChange}>
+      <ContextMenu>
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>

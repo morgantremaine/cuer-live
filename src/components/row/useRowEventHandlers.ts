@@ -47,23 +47,10 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    console.log('Right-click detected on row:', item.id);
-    console.log('Event prevented:', e.defaultPrevented);
-    console.log('Event target:', e.target);
-    console.log('Event currentTarget:', e.currentTarget);
-    
-    // Don't prevent default - let Radix handle it
-    // e.preventDefault();
-    
-    // Don't stop propagation - let Radix handle it
-    // e.stopPropagation();
-    
     // Select the row if not already selected
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
-    
-    console.log('Context menu should show for row:', item.id);
   };
 
   const handleContextMenuCopy = () => {
