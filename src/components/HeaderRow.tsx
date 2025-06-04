@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -97,6 +98,19 @@ const HeaderRow = ({
     }
   };
 
+  const handleCellClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    // Don't handle row selection if clicking on input fields
+    if (isInput) {
+      return;
+    }
+    
+    // Call the row click handler for non-input clicks
+    handleRowClick(e);
+  };
+
   // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
     onCopySelectedRows();
@@ -151,6 +165,7 @@ const HeaderRow = ({
         <td 
           className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 
           style={{ width: '40px' }}
+          onClick={handleCellClick}
         >
           <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
         </td>
@@ -159,6 +174,7 @@ const HeaderRow = ({
             key={column.id} 
             className="px-1 py-2 align-middle" 
             style={{ width: getColumnWidth(column) }}
+            onClick={handleCellClick}
           >
             {column.key === 'segmentName' ? (
               <input

@@ -114,6 +114,19 @@ const RegularRow = ({
     }
   };
 
+  const handleCellClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    // Don't handle row selection if clicking on input fields
+    if (isInput) {
+      return;
+    }
+    
+    // Call the row click handler for non-input clicks
+    handleRowClick(e);
+  };
+
   // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
     onCopySelectedRows();
@@ -179,6 +192,7 @@ const RegularRow = ({
         <td 
           className={`px-2 py-1 text-sm font-mono align-middle`}
           style={{ color: textColor || undefined, width: '40px' }}
+          onClick={handleCellClick}
         >
           <div className="flex items-center space-x-1">
             {isCurrentlyPlaying && (
@@ -195,6 +209,7 @@ const RegularRow = ({
             key={column.id}
             className="align-middle"
             style={{ width: getColumnWidth(column) }}
+            onClick={handleCellClick}
           >
             <CellRenderer
               column={column}
