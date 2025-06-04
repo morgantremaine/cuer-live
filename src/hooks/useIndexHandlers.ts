@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RundownItem } from '@/types/rundown';
@@ -6,8 +7,8 @@ interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
   rundownId?: string;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => void;
-  addHeader: (selectedRowId?: string | null) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRows?: Set<string>) => void;
+  addHeader: (selectedRows?: Set<string>) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[]) => void;
   setRundownStartTime: (startTime: string) => void;
@@ -49,15 +50,13 @@ export const useIndexHandlers = ({
   }, [toggleRowSelection, items]);
 
   const handleAddRow = useCallback(() => {
-    const selectedRowsArray = Array.from(selectedRows);
-    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
-    addRow(calculateEndTime, selectedRowId);
+    // Pass the selected rows set to addRow
+    addRow(calculateEndTime, selectedRows);
   }, [addRow, calculateEndTime, selectedRows]);
 
   const handleAddHeader = useCallback(() => {
-    const selectedRowsArray = Array.from(selectedRows);
-    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
-    addHeader(selectedRowId);
+    // Pass the selected rows set to addHeader
+    addHeader(selectedRows);
   }, [addHeader, selectedRows]);
 
   return {
