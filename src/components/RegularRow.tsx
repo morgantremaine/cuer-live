@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -106,9 +107,12 @@ const RegularRow = ({
     
     // Select the row for any click in non-text areas
     if (onRowSelect) {
-      e.preventDefault();
       onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
     }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    handleRowClick(e); // Also select on right-click
   };
 
   // Context menu handlers - use selection-based operations
@@ -169,7 +173,7 @@ const RegularRow = ({
         }}
         draggable
         onClick={handleRowClick}
-        onContextMenu={handleRowClick}
+        onContextMenu={handleContextMenu}
         onDragStart={(e) => onDragStart(e, index)}
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
@@ -207,3 +211,4 @@ const RegularRow = ({
 };
 
 export default RegularRow;
+

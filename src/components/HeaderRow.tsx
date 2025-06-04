@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -94,6 +95,10 @@ const HeaderRow = ({
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    handleRowClick(e); // Also select on right-click
+  };
+
   // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
     onCopySelectedRows();
@@ -144,7 +149,7 @@ const HeaderRow = ({
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
         onClick={handleRowClick}
-        onContextMenu={handleRowClick}
+        onContextMenu={handleContextMenu}
       >
         <td className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" style={{ width: '40px' }}>
           <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
@@ -177,3 +182,4 @@ const HeaderRow = ({
 };
 
 export default HeaderRow;
+
