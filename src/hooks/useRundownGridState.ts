@@ -26,13 +26,14 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations
-  const { handleDeleteSelectedRows, addRow, addHeader } = useRundownRowOperations({
+  // Row operations - now passing calculateEndTime and using correct returned property names
+  const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection: interactions.clearSelection,
     addRow: coreState.addRow,
-    addHeader: coreState.addHeader
+    addHeader: coreState.addHeader,
+    calculateEndTime: coreState.calculateEndTime
   });
 
   // Memoize the complete state object
@@ -43,9 +44,9 @@ export const useRundownGridState = () => {
     ...interactions,
     // UI state
     ...uiState,
-    // Override with wrapped functions
-    addRow,
-    addHeader,
+    // Override with wrapped functions - use correct handler names
+    addRow: handleAddRow,
+    addHeader: handleAddHeader,
     // Clipboard functionality
     clipboardItems,
     copyItems,
@@ -57,8 +58,8 @@ export const useRundownGridState = () => {
     coreState,
     interactions,
     uiState,
-    addRow,
-    addHeader,
+    handleAddRow,
+    handleAddHeader,
     clipboardItems,
     copyItems,
     hasClipboardData,
