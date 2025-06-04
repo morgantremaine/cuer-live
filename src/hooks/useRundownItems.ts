@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,13 +35,13 @@ export const useRundownItems = (markAsChanged: () => void) => {
     };
 
     setItems(prev => {
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
-        // Insert after the specified index
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prev.length) {
+        // Insert after the specified index (insertAfterIndex + 1 position)
         const newItems = [...prev];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
         return newItems;
       } else {
-        // Add at the end
+        // Add at the end if no valid index provided
         return [...prev, newItem];
       }
     });
@@ -70,13 +69,13 @@ export const useRundownItems = (markAsChanged: () => void) => {
     };
 
     setItems(prev => {
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
-        // Insert after the specified index
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prev.length) {
+        // Insert after the specified index (insertAfterIndex + 1 position)
         const newItems = [...prev];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
         return newItems;
       } else {
-        // Add at the end
+        // Add at the end if no valid index provided
         return [...prev, newItem];
       }
     });
