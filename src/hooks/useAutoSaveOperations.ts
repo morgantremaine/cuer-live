@@ -9,7 +9,6 @@ import { Column } from './useColumnsManager';
 export const useAutoSaveOperations = () => {
   const [isSaving, setIsSaving] = useState(false);
   const params = useParams<{ id: string }>();
-  // Filter out the literal ":id" string that sometimes comes from route patterns
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
@@ -45,8 +44,7 @@ export const useAutoSaveOperations = () => {
       isNewRundown,
       rundownId,
       itemsCount: items.length,
-      title: rundownTitle,
-      undoHistoryLength: undoHistory?.length || 0
+      title: rundownTitle
     });
 
     try {
@@ -67,11 +65,7 @@ export const useAutoSaveOperations = () => {
       } else if (rundownId) {
         console.log('Auto-save: Updating existing rundown:', rundownId);
         
-        // Ensure timezone and startTime are properly passed - don't default to undefined
-        const saveTimezone = timezone || null;
-        const saveStartTime = startTime || null;
-        
-        await updateRundown(rundownId, rundownTitle, items, true, false, columns, saveTimezone, saveStartTime, undefined, undoHistory);
+        await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, startTime, undefined, undoHistory);
         console.log('Auto-save: Successfully updated rundown');
         return true;
       }
