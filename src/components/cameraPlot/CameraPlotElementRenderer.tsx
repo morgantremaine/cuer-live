@@ -42,18 +42,9 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
           style={baseStyle}
         >
           <img 
-            src="/lovable-uploads/be690b28-e601-4ee1-9b5a-c96e6d6adb5a.png" 
+            src="/lovable-uploads/53aede73-ec59-4307-8be5-74cb3cf7b36c.png" 
             alt="Person"
-            className="w-8 h-8 object-contain"
-          />
-          {/* Direction indicator */}
-          <div 
-            className="absolute w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-black"
-            style={{
-              top: '-4px',
-              left: '50%',
-              transform: 'translateX(-50%)'
-            }}
+            className="w-12 h-12 object-contain"
           />
         </div>
       );
