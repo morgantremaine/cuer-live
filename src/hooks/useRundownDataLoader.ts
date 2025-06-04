@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
+import { RundownItem } from '@/types/rundown';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -12,6 +13,7 @@ interface UseRundownDataLoaderProps {
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
   handleLoadLayout: (columns: Column[]) => void;
+  setItems: (items: RundownItem[]) => void; // Add setItems prop
   onRundownLoaded?: (rundown: SavedRundown) => void;
 }
 
@@ -23,6 +25,7 @@ export const useRundownDataLoader = ({
   setTimezone,
   setRundownStartTime,
   handleLoadLayout,
+  setItems, // Add setItems parameter
   onRundownLoaded
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
@@ -49,7 +52,8 @@ export const useRundownDataLoader = ({
       title: rundown.title,
       timezone: rundown.timezone,
       startTime: rundown.start_time, // Use start_time property
-      columnsLength: rundown.columns?.length || 0
+      columnsLength: rundown.columns?.length || 0,
+      itemsLength: rundown.items?.length || 0 // Include items in signature
     });
 
     // Skip if same data was already loaded
@@ -77,6 +81,12 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
+    // Load the rundown items
+    if (rundown.items) {
+      console.log('Loading rundown items:', rundown.items.length);
+      setItems(rundown.items);
+    }
+
     // Call the callback with the loaded rundown
     if (onRundownLoaded) {
       onRundownLoaded(rundown);
@@ -95,6 +105,7 @@ export const useRundownDataLoader = ({
     setTimezone, 
     setRundownStartTime, 
     handleLoadLayout,
+    setItems, // Add setItems to dependencies
     onRundownLoaded
   ]);
 

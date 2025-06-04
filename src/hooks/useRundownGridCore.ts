@@ -73,7 +73,7 @@ export const useRundownGridCore = () => {
     currentColumns: columns
   });
 
-  // Use data loader with undo history loading
+  // Use data loader with undo history loading - now includes setItems
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -82,6 +82,7 @@ export const useRundownGridCore = () => {
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout,
+    setItems, // Pass setItems to the data loader
     onRundownLoaded: (rundown) => {
       // Load undo history when rundown is loaded - use correct property name
       if (rundown.undo_history) {
