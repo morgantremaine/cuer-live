@@ -27,7 +27,8 @@ export const useBlueprintInitialization = (
   const operationInProgressRef = useRef(false);
   const initStateRef = useRef({
     initialized: false,
-    rundownId: ''
+    rundownId: '',
+    lastItemsLength: 0
   });
 
   // Generate consistent list ID based on rundown ID and source column
@@ -39,6 +40,9 @@ export const useBlueprintInitialization = (
 
   // Initialize blueprint data
   useEffect(() => {
+    const currentItemsLength = items.length;
+    const hasItemsChanged = initStateRef.current.lastItemsLength !== currentItemsLength;
+    
     const shouldInitialize = 
       !loading && 
       items.length > 0 && 
@@ -47,66 +51,87 @@ export const useBlueprintInitialization = (
       !operationInProgressRef.current &&
       (!initStateRef.current.initialized || initStateRef.current.rundownId !== rundownId);
     
+    console.log('Blueprint init check:', {
+      shouldInitialize,
+      loading,
+      itemsLength: items.length,
+      rundownId,
+      rundownTitle,
+      operationInProgress: operationInProgressRef.current,
+      initialized: initStateRef.current.initialized,
+      rundownChanged: initStateRef.current.rundownId !== rundownId
+    });
+    
     if (shouldInitialize) {
-      console.log('Initializing blueprint state with items:', items.length);
+      console.log('STARTING Blueprint initialization for rundown:', rundownId);
       operationInProgressRef.current = true;
       
       const initializeLists = async () => {
-        // Try to load saved blueprint from database
-        const blueprint = await loadBlueprint();
-        
-        if (blueprint && blueprint.lists && blueprint.lists.length > 0) {
-          console.log('Loading saved blueprint with', blueprint.lists.length, 'lists');
+        try {
+          // Try to load saved blueprint from database
+          const blueprint = await loadBlueprint();
           
-          // Create lists with fresh items but existing checkbox states
-          const refreshedLists = blueprint.lists.map(list => ({
-            ...list,
-            items: generateListFromColumn(items, list.sourceColumn),
-            // Preserve checkbox states from database
-            checkedItems: list.checkedItems || {}
-          }));
-          
-          console.log('Loaded lists with checkbox states:', refreshedLists.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
-          setLists(refreshedLists);
-          
-          // Set show date from saved blueprint if available
-          if (blueprint.show_date) {
-            setShowDate(blueprint.show_date);
-          }
-        } else {
-          console.log('Creating default blueprint');
-          // No saved blueprint, create default list
-          const defaultLists = [
-            {
-              id: generateListId('headers'),
-              name: 'Rundown Overview',
-              sourceColumn: 'headers',
-              items: generateListFromColumn(items, 'headers'),
-              checkedItems: {}
+          if (blueprint && blueprint.lists && blueprint.lists.length > 0) {
+            console.log('Loading saved blueprint with', blueprint.lists.length, 'lists');
+            
+            // Create lists with fresh items but existing checkbox states
+            const refreshedLists = blueprint.lists.map(list => ({
+              ...list,
+              items: generateListFromColumn(items, list.sourceColumn),
+              // Preserve checkbox states from database
+              checkedItems: list.checkedItems || {}
+            }));
+            
+            setLists(refreshedLists);
+            
+            // Set show date from saved blueprint if available
+            if (blueprint.show_date) {
+              setShowDate(blueprint.show_date);
             }
-          ];
-          setLists(defaultLists);
+          } else {
+            console.log('Creating default blueprint');
+            // No saved blueprint, create default list
+            const defaultLists = [
+              {
+                id: generateListId('headers'),
+                name: 'Rundown Overview',
+                sourceColumn: 'headers',
+                items: generateListFromColumn(items, 'headers'),
+                checkedItems: {}
+              }
+            ];
+            setLists(defaultLists);
+            
+            // Save the default list to database
+            await saveBlueprint(rundownTitle, defaultLists, showDate, true);
+          }
           
-          // Save the default list to database
-          await saveBlueprint(rundownTitle, defaultLists, showDate, true);
+          initStateRef.current = {
+            initialized: true,
+            rundownId: rundownId,
+            lastItemsLength: currentItemsLength
+          };
+          setInitialized(true);
+          console.log('Blueprint initialization COMPLETED for rundown:', rundownId);
+        } catch (error) {
+          console.error('Error during blueprint initialization:', error);
+        } finally {
+          operationInProgressRef.current = false;
         }
-        
-        initStateRef.current = {
-          initialized: true,
-          rundownId: rundownId
-        };
-        setInitialized(true);
-        operationInProgressRef.current = false;
       };
       
       initializeLists();
+    } else if (hasItemsChanged && initStateRef.current.initialized && initStateRef.current.rundownId === rundownId) {
+      // Items changed but we're already initialized - just update the count
+      console.log('Items changed, updating count:', currentItemsLength);
+      initStateRef.current.lastItemsLength = currentItemsLength;
     }
-  }, [loading, items, rundownId, rundownTitle, savedBlueprint, loadBlueprint, saveBlueprint, generateListId, showDate]);
+  }, [loading, items.length, rundownId, rundownTitle, savedBlueprint, loadBlueprint, saveBlueprint, generateListId, showDate]);
 
   // Reset initialization when rundown changes
   useEffect(() => {
     if (initStateRef.current.rundownId !== rundownId) {
-      console.log('Rundown changed, resetting initialization');
+      console.log('Rundown changed from', initStateRef.current.rundownId, 'to', rundownId, '- resetting initialization');
       initStateRef.current.initialized = false;
       setInitialized(false);
       operationInProgressRef.current = false;
