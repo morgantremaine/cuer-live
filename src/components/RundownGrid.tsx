@@ -53,6 +53,9 @@ const RundownGrid = () => {
     colorPickerSelect(id, color);
   };
 
+  console.log('RundownGrid: handleAddRow exists?', !!handleAddRow);
+  console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
+
   return (
     <RundownTable
       items={items}

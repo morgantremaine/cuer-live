@@ -49,6 +49,9 @@ const RundownContextMenu = memo(({
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
+  console.log('RundownContextMenu: onAddRow exists?', !!onAddRow);
+  console.log('RundownContextMenu: onAddHeader exists?', !!onAddHeader);
+
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
     if (isMultipleSelection && selectedRows) {
