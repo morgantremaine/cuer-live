@@ -42,10 +42,10 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Change tracking
+  // Change tracking - fix parameter order to match useChangeTracking signature
   const changeTrackingResult = useChangeTracking(
-    rundownTitle,
     items,
+    rundownTitle,
     columns,
     timezone,
     rundownStartTime
