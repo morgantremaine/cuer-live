@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -113,11 +114,6 @@ const RegularRow = ({
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent browser context menu
-    handleRowClick(e); // Also select on right-click
-  };
-
   // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
     onCopySelectedRows();
@@ -176,7 +172,6 @@ const RegularRow = ({
         }}
         draggable
         onClick={handleRowClick}
-        onContextMenu={handleContextMenu}
         onDragStart={(e) => onDragStart(e, index)}
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}

@@ -97,11 +97,6 @@ const HeaderRow = ({
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent browser context menu
-    handleRowClick(e); // Also select on right-click
-  };
-
   // Context menu handlers - use selection-based operations
   const handleContextMenuCopy = () => {
     onCopySelectedRows();
@@ -152,7 +147,6 @@ const HeaderRow = ({
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
         onClick={handleRowClick}
-        onContextMenu={handleContextMenu}
       >
         <td 
           className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 
