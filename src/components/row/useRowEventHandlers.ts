@@ -47,16 +47,29 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    console.log('Right-click detected on row:', item.id);
+    console.log('Event prevented:', e.defaultPrevented);
+    console.log('Event target:', e.target);
+    console.log('Event currentTarget:', e.currentTarget);
+    
+    // Prevent the default browser context menu
     e.preventDefault();
     
-    if (onRowSelect) {
+    // Stop the event from bubbling up to parent elements
+    e.stopPropagation();
+    
+    // Select the row if not already selected
+    if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
     
+    // Blur any focused input elements
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
       (target as HTMLInputElement | HTMLTextAreaElement).blur();
     }
+    
+    console.log('Context menu should show for row:', item.id);
   };
 
   const handleContextMenuCopy = () => {

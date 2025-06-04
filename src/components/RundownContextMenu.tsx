@@ -75,69 +75,75 @@ const RundownContextMenu = memo(({
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    console.log('Context menu open state changed:', open, 'for item:', itemId);
+  };
+
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        {children}
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        {onAddRow && (
-          <ContextMenuItem onClick={onAddRow}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Segment
+    <>
+      <ContextMenu onOpenChange={handleOpenChange}>
+        <ContextMenuTrigger asChild>
+          {children}
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-48 z-50">
+          {onAddRow && (
+            <ContextMenuItem onClick={onAddRow}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Segment
+            </ContextMenuItem>
+          )}
+          
+          {onAddHeader && (
+            <ContextMenuItem onClick={onAddHeader}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Header
+            </ContextMenuItem>
+          )}
+          
+          {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
+          
+          <ContextMenuItem onClick={onCopy}>
+            <Copy className="mr-2 h-4 w-4" />
+            {isMultipleSelection ? `Copy ${selectedCount} rows` : 'Copy row'}
           </ContextMenuItem>
-        )}
-        
-        {onAddHeader && (
-          <ContextMenuItem onClick={onAddHeader}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Header
+          
+          {hasClipboardData && onPaste && (
+            <ContextMenuItem onClick={onPaste}>
+              <ClipboardPaste className="mr-2 h-4 w-4" />
+              Paste rows
+            </ContextMenuItem>
+          )}
+          
+          <ContextMenuSeparator />
+          
+          <ContextMenuItem onClick={handleContextMenuFloat}>
+            <span className="mr-2 h-4 w-4 flex items-center justify-center">🛟</span>
+            {isFloated ? 
+              (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
+              (isMultipleSelection ? `Float ${selectedCount} rows` : 'Float row')
+            }
           </ContextMenuItem>
-        )}
-        
-        {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
-        
-        <ContextMenuItem onClick={onCopy}>
-          <Copy className="mr-2 h-4 w-4" />
-          {isMultipleSelection ? `Copy ${selectedCount} rows` : 'Copy row'}
-        </ContextMenuItem>
-        
-        {hasClipboardData && onPaste && (
-          <ContextMenuItem onClick={onPaste}>
-            <ClipboardPaste className="mr-2 h-4 w-4" />
-            Paste rows
+          
+          <ContextMenuItem onClick={onColorPicker}>
+            <Palette className="mr-2 h-4 w-4" />
+            {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
           </ContextMenuItem>
-        )}
-        
-        <ContextMenuSeparator />
-        
-        <ContextMenuItem onClick={handleContextMenuFloat}>
-          <span className="mr-2 h-4 w-4 flex items-center justify-center">🛟</span>
-          {isFloated ? 
-            (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
-            (isMultipleSelection ? `Float ${selectedCount} rows` : 'Float row')
-          }
-        </ContextMenuItem>
-        
-        <ContextMenuItem onClick={onColorPicker}>
-          <Palette className="mr-2 h-4 w-4" />
-          {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
-        </ContextMenuItem>
-        
-        <ContextMenuSeparator />
-        
-        {isMultipleSelection && onClearSelection && (
-          <ContextMenuItem onClick={onClearSelection}>
-            <X className="mr-2 h-4 w-4" />
-            Clear selection
+          
+          <ContextMenuSeparator />
+          
+          {isMultipleSelection && onClearSelection && (
+            <ContextMenuItem onClick={onClearSelection}>
+              <X className="mr-2 h-4 w-4" />
+              Clear selection
+            </ContextMenuItem>
+          )}
+          
+          <ContextMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+            <Trash2 className="mr-2 h-4 w-4" />
+            {isMultipleSelection ? `Delete ${selectedCount} rows` : 'Delete row'}
           </ContextMenuItem>
-        )}
-        
-        <ContextMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
-          <Trash2 className="mr-2 h-4 w-4" />
-          {isMultipleSelection ? `Delete ${selectedCount} rows` : 'Delete row'}
-        </ContextMenuItem>
-      </ContextMenuContent>
+        </ContextMenuContent>
+      </ContextMenu>
       
       {/* Color picker positioned outside the context menu */}
       {showColorPicker === itemId && (
@@ -157,7 +163,7 @@ const RundownContextMenu = memo(({
           />
         </div>
       )}
-    </ContextMenu>
+    </>
   );
 });
 
