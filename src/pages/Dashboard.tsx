@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
@@ -9,6 +8,7 @@ import DashboardRundownGrid from '@/components/DashboardRundownGrid'
 import ConfirmationDialogs from '@/components/ConfirmationDialogs'
 import Footer from '@/components/Footer'
 import { RundownItem } from '@/hooks/useRundownItems'
+import { SavedRundown } from '@/hooks/useRundownStorage/types'
 
 const Dashboard = () => {
   const { user, signOut } = useAuth()

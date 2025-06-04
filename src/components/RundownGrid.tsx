@@ -71,7 +71,7 @@ const RundownGrid = () => {
       onCellClick={handleCellClick}
       onKeyDown={handleKeyDown}
       onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={(id, color) => handleColorSelect(id, color, handleUpdateItem)}
+      onColorSelect={(id, color) => handleColorSelect(id, color)}
       onDeleteRow={deleteRow}
       onToggleFloat={toggleFloatRow}
       onRowSelect={handleRowSelection}

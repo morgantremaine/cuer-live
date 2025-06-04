@@ -1,16 +1,6 @@
-
 import React from 'react';
 import RundownCard from './RundownCard';
-import { RundownItem } from '@/hooks/useRundownItems';
-
-interface SavedRundown {
-  id: string;
-  title: string;
-  items: RundownItem[];
-  archived?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { SavedRundown } from '@/hooks/useRundownStorage/types';
 
 interface DashboardRundownGridProps {
   title: string;
@@ -20,8 +10,8 @@ interface DashboardRundownGridProps {
   onOpen: (rundownId: string) => void;
   onDelete: (rundownId: string, title: string, e: React.MouseEvent) => void;
   onArchive?: (rundownId: string, title: string, e: React.MouseEvent) => void;
-  onUnarchive?: (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => void;
-  onDuplicate: (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => void;
+  onUnarchive?: (rundownId: string, title: string, items: any[], e: React.MouseEvent) => void;
+  onDuplicate: (rundownId: string, title: string, items: any[], e: React.MouseEvent) => void;
   isArchived?: boolean;
   showEmptyState: boolean;
 }
