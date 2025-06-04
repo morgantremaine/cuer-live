@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Hash } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -25,6 +25,8 @@ interface RundownContextMenuProps {
   onColorSelect: (itemId: string, color: string) => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
+  onAddRowAfter?: (itemId: string) => void;
+  onAddHeaderAfter?: (itemId: string) => void;
 }
 
 const RundownContextMenu = memo(({
@@ -41,7 +43,9 @@ const RundownContextMenu = memo(({
   onColorPicker,
   onColorSelect,
   onPaste,
-  onClearSelection
+  onClearSelection,
+  onAddRowAfter,
+  onAddHeaderAfter
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -90,6 +94,24 @@ const RundownContextMenu = memo(({
         )}
         
         <ContextMenuSeparator />
+        
+        {!isMultipleSelection && onAddRowAfter && (
+          <ContextMenuItem onClick={() => onAddRowAfter(itemId)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add row below
+          </ContextMenuItem>
+        )}
+        
+        {!isMultipleSelection && onAddHeaderAfter && (
+          <ContextMenuItem onClick={() => onAddHeaderAfter(itemId)}>
+            <Hash className="mr-2 h-4 w-4" />
+            Add header below
+          </ContextMenuItem>
+        )}
+        
+        {(!isMultipleSelection && (onAddRowAfter || onAddHeaderAfter)) && (
+          <ContextMenuSeparator />
+        )}
         
         <ContextMenuItem onClick={handleContextMenuFloat}>
           <span className="mr-2 h-4 w-4 flex items-center justify-center">🛟</span>

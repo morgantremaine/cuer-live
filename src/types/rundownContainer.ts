@@ -45,6 +45,8 @@ export interface RundownContainerProps {
   onPasteRows: () => void;
   onDeleteSelectedRows: () => void;
   onClearSelection: () => void;
+  onAddRowAfter: (itemId: string) => void;
+  onAddHeaderAfter: (itemId: string) => void;
   selectedRowId: string | null;
   isPlaying: boolean;
   timeRemaining: number;
