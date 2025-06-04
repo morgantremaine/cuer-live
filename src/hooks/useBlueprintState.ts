@@ -17,14 +17,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const [loading, setLoading] = useState(false);
   const [draggedListId, setDraggedListId] = useState<string | null>(null);
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
+  const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
   
   const stateRef = useRef({
     currentRundownId: '',
-    isInitializing: false,
-    savedBlueprint: null as any
+    isInitializing: false
   });
 
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
@@ -61,7 +61,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       }
 
       console.log('🔥 BLUEPRINT HOOK: Loaded data:', data ? `${data.lists?.length || 0} lists` : 'none');
-      stateRef.current.savedBlueprint = data;
+      setSavedBlueprint(data);
       return data;
     } catch (error) {
       console.error('🔥 BLUEPRINT HOOK: Load exception:', error);
@@ -87,11 +87,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
       let result;
       
-      if (stateRef.current.savedBlueprint) {
+      if (savedBlueprint) {
         const { data, error } = await supabase
           .from('blueprints')
           .update(blueprintData)
-          .eq('id', stateRef.current.savedBlueprint.id)
+          .eq('id', savedBlueprint.id)
           .eq('user_id', user.id)
           .select()
           .single();
@@ -111,7 +111,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         console.log('🔥 BLUEPRINT HOOK: Created successfully');
       }
       
-      stateRef.current.savedBlueprint = result;
+      setSavedBlueprint(result);
 
       if (!silent) {
         toast({
@@ -129,7 +129,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         });
       }
     }
-  }, [user, rundownId, rundownTitle, showDate, toast]);
+  }, [user, rundownId, rundownTitle, showDate, savedBlueprint, toast]);
 
   // Initialize blueprint
   useEffect(() => {
@@ -148,7 +148,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       console.log('🔥 BLUEPRINT HOOK: Rundown changed - resetting');
       setLists([]);
       setInitialized(false);
-      stateRef.current.savedBlueprint = null;
+      setSavedBlueprint(null);
       stateRef.current.currentRundownId = '';
       stateRef.current.isInitializing = false;
     }
@@ -378,6 +378,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
-    handleDragEnd
+    handleDragEnd,
+    savedBlueprint
   };
 };
