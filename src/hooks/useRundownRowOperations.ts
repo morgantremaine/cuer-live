@@ -34,12 +34,12 @@ export const useRundownRowOperations = ({
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  const addRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string) => {
-    coreAddRow(calculateEndTimeFn);
+  const addRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
+    coreAddRow(calculateEndTimeFn, insertAfterIndex);
   }, [coreAddRow]);
 
-  const addHeader = useCallback(() => {
-    coreAddHeader();
+  const addHeader = useCallback((insertAfterIndex?: number) => {
+    coreAddHeader(insertAfterIndex);
   }, [coreAddHeader]);
 
   const handleAddRowAfter = useCallback((itemId: string) => {
