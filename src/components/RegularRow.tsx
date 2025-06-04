@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -131,11 +130,18 @@ const RegularRow = ({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     
-    // If the row is not already selected, select it first
-    if (!isSelected && onRowSelect) {
+    // Always select the row on right-click, regardless of where we click
+    if (onRowSelect) {
       console.log('RegularRow: Right-click selecting row', item.id, 'at index', index);
       onRowSelect(item.id, index, false, false);
+    }
+    
+    // Blur any focused input to ensure context menu appears
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      (target as HTMLInputElement | HTMLTextAreaElement).blur();
     }
   };
 
