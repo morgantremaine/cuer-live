@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -25,6 +25,8 @@ interface RundownContextMenuProps {
   onColorSelect: (itemId: string, color: string) => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
 }
 
 const RundownContextMenu = memo(({
@@ -41,7 +43,9 @@ const RundownContextMenu = memo(({
   onColorPicker,
   onColorSelect,
   onPaste,
-  onClearSelection
+  onClearSelection,
+  onAddRow,
+  onAddHeader
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -77,6 +81,22 @@ const RundownContextMenu = memo(({
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
+        {onAddRow && (
+          <ContextMenuItem onClick={onAddRow}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Segment
+          </ContextMenuItem>
+        )}
+        
+        {onAddHeader && (
+          <ContextMenuItem onClick={onAddHeader}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Header
+          </ContextMenuItem>
+        )}
+        
+        {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
+        
         <ContextMenuItem onClick={onCopy}>
           <Copy className="mr-2 h-4 w-4" />
           {isMultipleSelection ? `Copy ${selectedCount} rows` : 'Copy row'}

@@ -29,6 +29,8 @@ interface HeaderRowProps {
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -59,6 +61,8 @@ const HeaderRow = ({
   onPasteRows,
   onClearSelection,
   onRowSelect,
+  onAddRow,
+  onAddHeader,
   isDragging,
   getColumnWidth
 }: HeaderRowProps) => {
@@ -150,6 +154,8 @@ const HeaderRow = ({
       onColorSelect={onColorSelect}
       onPaste={handleContextMenuPaste}
       onClearSelection={onClearSelection}
+      onAddRow={onAddRow}
+      onAddHeader={onAddHeader}
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
