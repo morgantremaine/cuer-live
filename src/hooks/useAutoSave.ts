@@ -11,6 +11,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
   const isSavingRef = useRef(false);
+  const saveQueueRef = useRef<boolean>(false);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -27,10 +28,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     isSavingRef.current = isSaving;
   }, [isSaving]);
 
-  // Create a debounced save function that's stable across renders
+  // Create a debounced save function that handles race conditions better
   const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string, undoHistoryToSave?: any[]) => {
-    if (!user || isSavingRef.current) {
-      console.log('Auto-save skipped:', { hasUser: !!user, isSaving: isSavingRef.current });
+    if (!user) {
+      console.log('Auto-save skipped: no user');
+      return;
+    }
+
+    if (isSavingRef.current) {
+      console.log('Auto-save: Save in progress, queuing new save');
+      saveQueueRef.current = true;
       return;
     }
 
@@ -49,6 +56,17 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       if (success) {
         console.log('Auto-save: Save successful');
         markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
+        
+        // If there was a queued save, schedule it
+        if (saveQueueRef.current) {
+          saveQueueRef.current = false;
+          console.log('Auto-save: Processing queued save');
+          setTimeout(() => {
+            if (hasUnsavedChanges) {
+              debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime, undoHistory ? [...undoHistory] : undefined);
+            }
+          }, 1000);
+        }
       } else {
         console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
@@ -59,9 +77,9 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     } finally {
       setIsLoading(false);
     }
-  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
+  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, hasUnsavedChanges, items, rundownTitle, columns, timezone, startTime, undoHistory]);
 
-  // Main effect that schedules saves
+  // Main effect that schedules saves with better race condition handling
   useEffect(() => {
     if (!hasUnsavedChanges || !isInitialized || !user) {
       return;

@@ -109,9 +109,26 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
   }, [items, timeToSeconds]);
 
+  // Fixed function to calculate proper segment names based on header position
+  const calculateSegmentName = useCallback((headerIndex: number) => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let headerCount = 0;
+    
+    // Count how many headers come before this one
+    for (let i = 0; i < headerIndex; i++) {
+      if (isHeaderItem(items[i])) {
+        headerCount++;
+      }
+    }
+    
+    return letters[headerCount] || 'A';
+  }, [items]);
+
   return {
     getRowNumber,
     calculateTotalRuntime,
     calculateHeaderDuration,
+    calculateSegmentName,
+    timeToSeconds
   };
 };

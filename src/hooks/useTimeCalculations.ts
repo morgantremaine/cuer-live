@@ -1,27 +1,14 @@
 
 import { useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { useRundownCalculations } from './useRundownCalculations';
 
 export const useTimeCalculations = (
   items: RundownItem[], 
   updateItem: (id: string, field: string, value: string) => void, 
   rundownStartTime: string
 ) => {
-  const timeToSeconds = (timeStr: string) => {
-    if (!timeStr) return 0;
-    // Handle both MM:SS and HH:MM:SS formats
-    const parts = timeStr.split(':').map(Number);
-    if (parts.length === 2) {
-      // MM:SS format (minutes:seconds)
-      const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
-    } else if (parts.length === 3) {
-      // HH:MM:SS format
-      const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
-    }
-    return 0;
-  };
+  const { calculateSegmentName, timeToSeconds } = useRundownCalculations(items);
 
   const secondsToTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -64,8 +51,6 @@ export const useTimeCalculations = (
   // Recalculate all start, end, and elapsed times and segment names
   useEffect(() => {
     let currentTime = rundownStartTime;
-    let currentSegmentLetter = 'A';
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
     items.forEach((item, index) => {
       // Calculate elapsed time for this item
@@ -73,7 +58,7 @@ export const useTimeCalculations = (
 
       // For headers, assign segment letter and update timing
       if (isHeaderItem(item)) {
-        const segmentName = letters[Math.max(0, Math.floor(index / 10))] || currentSegmentLetter;
+        const segmentName = calculateSegmentName(index);
         
         if (item.segmentName !== segmentName) {
           updateItem(item.id, 'segmentName', segmentName);
@@ -87,8 +72,6 @@ export const useTimeCalculations = (
         if (item.elapsedTime !== expectedElapsedTime) {
           updateItem(item.id, 'elapsedTime', expectedElapsedTime);
         }
-        
-        currentSegmentLetter = segmentName;
       } else {
         // For regular items, calculate start and end based on duration
         const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:01:00');
@@ -111,7 +94,7 @@ export const useTimeCalculations = (
         }
       }
     });
-  }, [items, updateItem, rundownStartTime]);
+  }, [items, updateItem, rundownStartTime, calculateSegmentName]);
 
   return {
     calculateEndTime,

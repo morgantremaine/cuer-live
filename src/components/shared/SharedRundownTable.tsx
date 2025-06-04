@@ -2,6 +2,7 @@
 import React from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
+import { useRundownCalculations } from '@/hooks/useRundownCalculations';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -10,47 +11,8 @@ interface SharedRundownTableProps {
 }
 
 const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
-  // Calculate header duration (sum of all non-floated regular items until next header)
-  const calculateHeaderDuration = (headerIndex: number) => {
-    if (headerIndex < 0 || headerIndex >= items.length || !isHeaderItem(items[headerIndex])) {
-      return '00:00:00';
-    }
-
-    const timeToSeconds = (timeStr: string) => {
-      if (!timeStr) return 0;
-      const parts = timeStr.split(':').map(Number);
-      if (parts.length === 2) {
-        const [minutes, seconds] = parts;
-        return minutes * 60 + seconds;
-      } else if (parts.length === 3) {
-        const [hours, minutes, seconds] = parts;
-        return hours * 3600 + minutes * 60 + seconds;
-      }
-      return 0;
-    };
-
-    let totalSeconds = 0;
-    let i = headerIndex + 1;
-
-    while (i < items.length && !isHeaderItem(items[i])) {
-      // Only count non-floated items in header duration
-      if (!items[i].isFloating && !items[i].isFloated && items[i].duration) {
-        totalSeconds += timeToSeconds(items[i].duration);
-      }
-      i++;
-    }
-
-    const hours = Math.floor(totalSeconds / 3600);
-    totalSeconds %= 3600;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-
-    const formattedHours = String(hours).padStart(2, '0');
-    const formattedMinutes = String(minutes).padStart(2, '0');
-    const formattedSeconds = String(seconds).padStart(2, '0');
-
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-  };
+  // Use centralized calculation hook
+  const { calculateHeaderDuration } = useRundownCalculations(items);
 
   return (
     <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
@@ -100,11 +62,12 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 {visibleColumns.map((column) => {
                   // For headers, handle special cases
                   if (isHeaderItem(item)) {
-                    if (column.key === 'segmentName') {
-                      // Show the header description/notes
+                    if (column.key === 'segmentName' || column.key === 'name') {
+                      // Show the header description/notes for segmentName, actual name for name
+                      const value = column.key === 'segmentName' ? (item.notes || item.name || '') : (item.name || '');
                       return (
                         <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                          <div className="break-words whitespace-pre-wrap">{item.notes || item.name || ''}</div>
+                          <div className="break-words whitespace-pre-wrap">{value}</div>
                         </td>
                       );
                     } else if (column.key === 'duration') {
