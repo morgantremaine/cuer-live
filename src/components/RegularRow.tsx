@@ -105,13 +105,18 @@ const RegularRow = ({
       return;
     }
     
+    // Prevent event bubbling and ensure selection happens
+    e.stopPropagation();
+    
     // Select the row for any click in non-text areas
     if (onRowSelect) {
+      console.log('RegularRow: Calling onRowSelect for item', item.id, 'at index', index);
       onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
     }
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent browser context menu
     handleRowClick(e); // Also select on right-click
   };
 

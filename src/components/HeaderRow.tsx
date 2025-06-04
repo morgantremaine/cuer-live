@@ -87,8 +87,12 @@ const HeaderRow = ({
       return;
     }
     
+    // Prevent event bubbling and ensure selection happens
+    e.stopPropagation();
+    
     // Select the row for any click in non-text areas
     if (onRowSelect) {
+      console.log('HeaderRow: Calling onRowSelect for item', item.id, 'at index', index);
       const isShiftClick = e.shiftKey;
       const isCtrlClick = e.ctrlKey || e.metaKey;
       onRowSelect(item.id, index, isShiftClick, isCtrlClick);
@@ -96,6 +100,7 @@ const HeaderRow = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent browser context menu
     handleRowClick(e); // Also select on right-click
   };
 
