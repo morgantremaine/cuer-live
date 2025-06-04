@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -6,7 +7,7 @@ import { generateListFromColumn } from '@/utils/blueprintUtils';
 export const useBlueprintOperations = (
   items: RundownItem[],
   lists: BlueprintList[],
-  setLists: (lists: BlueprintList[]) => void,
+  setLists: React.Dispatch<React.SetStateAction<BlueprintList[]>>,
   rundownTitle: string,
   showDate: string,
   saveLists: (updatedLists: BlueprintList[], silent?: boolean) => Promise<void>,
