@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -12,141 +11,118 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
   
-  // Prevent concurrent operations
-  const operationLockRef = useRef(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track initialization state and prevent concurrent operations
+  const operationInProgressRef = useRef(false);
+  const initStateRef = useRef({
+    initialized: false,
+    rundownId: ''
+  });
   
-  // Track initialization to prevent multiple runs
-  const initializationRef = useRef<{
-    completed: boolean;
-    rundownId: string;
-  }>({ completed: false, rundownId: '' });
-
-  const { savedBlueprint, loading, saveBlueprint } = useBlueprintStorage(rundownId);
+  const { savedBlueprint, loading, saveBlueprint, loadBlueprint } = useBlueprintStorage(rundownId);
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
 
   // Generate consistent list ID based on rundown ID and source column
-  const generateConsistentListId = useCallback((sourceColumn: string, rundownId: string, existingLists?: BlueprintList[]) => {
-    const baseId = `${sourceColumn}_${rundownId}`;
-    
-    // If no existing lists provided, return base ID
-    if (!existingLists) {
-      return baseId;
-    }
-    
-    // Check if base ID already exists
-    const existingIds = existingLists.map(list => list.id);
-    if (!existingIds.includes(baseId)) {
-      return baseId;
-    }
-    
-    // If it exists, add a counter
-    let counter = 1;
-    let newId = `${baseId}_${counter}`;
-    while (existingIds.includes(newId)) {
-      counter++;
-      newId = `${baseId}_${counter}`;
-    }
-    return newId;
+  const generateListId = useCallback((sourceColumn: string) => {
+    const timestamp = Date.now();
+    const random = Math.random();
+    return `${sourceColumn}_${timestamp}_${random}`;
   }, []);
 
-  // Initialize blueprint data - run only once per rundown
+  // Initialize blueprint data
   useEffect(() => {
-    const shouldInitialize = !loading && 
-                             items.length > 0 && 
-                             rundownId &&
-                             rundownTitle &&
-                             (!initializationRef.current.completed || initializationRef.current.rundownId !== rundownId) &&
-                             !operationLockRef.current;
-
+    const shouldInitialize = 
+      !loading && 
+      items.length > 0 && 
+      rundownId && 
+      rundownTitle && 
+      !operationInProgressRef.current &&
+      (!initStateRef.current.initialized || initStateRef.current.rundownId !== rundownId);
+    
     if (shouldInitialize) {
-      operationLockRef.current = true;
       console.log('Initializing blueprint state with items:', items.length);
+      operationInProgressRef.current = true;
       
-      if (savedBlueprint && savedBlueprint.lists.length > 0) {
-        console.log('Loading saved blueprint with', savedBlueprint.lists.length, 'lists');
+      const initializeLists = async () => {
+        // Try to load saved blueprint from database
+        const blueprint = await loadBlueprint();
         
-        // Create lists with fresh items and EXACT checkbox states from database
-        const refreshedLists = savedBlueprint.lists.map((list: BlueprintList) => {
-          // Keep the original ID from the saved blueprint to maintain consistency
-          return {
+        if (blueprint && blueprint.lists && blueprint.lists.length > 0) {
+          console.log('Loading saved blueprint with', blueprint.lists.length, 'lists');
+          
+          // Create lists with fresh items but existing checkbox states
+          const refreshedLists = blueprint.lists.map(list => ({
             ...list,
             items: generateListFromColumn(items, list.sourceColumn),
-            // CRITICAL: Use the exact checkbox states from the saved blueprint
+            // Preserve checkbox states from database
             checkedItems: list.checkedItems || {}
-          };
-        });
-        
-        console.log('Loaded lists with checkbox states:', refreshedLists.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
-        setLists(refreshedLists);
-        
-        if (savedBlueprint.show_date) {
-          setShowDate(savedBlueprint.show_date);
-        }
-      } else {
-        console.log('Creating default blueprint');
-        const defaultLists = [
-          {
-            id: generateConsistentListId('headers', rundownId),
-            name: 'Rundown Overview',
-            sourceColumn: 'headers',
-            items: generateListFromColumn(items, 'headers'),
-            checkedItems: {}
+          }));
+          
+          console.log('Loaded lists with checkbox states:', refreshedLists.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
+          setLists(refreshedLists);
+          
+          // Set show date from saved blueprint if available
+          if (blueprint.show_date) {
+            setShowDate(blueprint.show_date);
           }
-        ];
-        setLists(defaultLists);
-      }
-      
-      // Mark initialization as completed for this rundown
-      initializationRef.current = {
-        completed: true,
-        rundownId: rundownId
+        } else {
+          console.log('Creating default blueprint');
+          // No saved blueprint, create default list
+          const defaultLists = [
+            {
+              id: generateListId('headers'),
+              name: 'Rundown Overview',
+              sourceColumn: 'headers',
+              items: generateListFromColumn(items, 'headers'),
+              checkedItems: {}
+            }
+          ];
+          setLists(defaultLists);
+          
+          // Save the default list to database
+          await saveBlueprint(rundownTitle, defaultLists, showDate, true);
+        }
+        
+        initStateRef.current = {
+          initialized: true,
+          rundownId: rundownId
+        };
+        setInitialized(true);
+        operationInProgressRef.current = false;
       };
-      setInitialized(true);
-      operationLockRef.current = false;
+      
+      initializeLists();
     }
-  }, [loading, items, initialized, savedBlueprint, rundownId, rundownTitle, generateConsistentListId]);
+  }, [loading, items, rundownId, rundownTitle, savedBlueprint, loadBlueprint, saveBlueprint, generateListId, showDate]);
 
   // Reset initialization when rundown changes
   useEffect(() => {
-    if (initializationRef.current.rundownId !== rundownId) {
+    if (initStateRef.current.rundownId !== rundownId) {
       console.log('Rundown changed, resetting initialization');
-      initializationRef.current.completed = false;
+      initStateRef.current.initialized = false;
       setInitialized(false);
-      operationLockRef.current = false;
-      
-      // Clear any pending saves
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
+      operationInProgressRef.current = false;
     }
   }, [rundownId]);
 
-  // Debounced save function
-  const debouncedSave = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
-    if (operationLockRef.current) return;
-    
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+  // Save lists to database with a delay
+  const saveLists = useCallback(async (updatedLists: BlueprintList[], silent = false) => {
+    if (operationInProgressRef.current) {
+      console.log('Operation in progress, skipping save');
+      return;
     }
     
-    // Set new timeout for debounced save
-    saveTimeoutRef.current = setTimeout(async () => {
-      if (!operationLockRef.current) {
-        operationLockRef.current = true;
-        try {
-          await saveBlueprint(title, updatedLists, showDate, silent);
-        } finally {
-          operationLockRef.current = false;
-        }
-      }
-    }, silent ? 100 : 500); // Shorter delay for silent saves (checkbox changes)
-  }, [saveBlueprint, showDate]);
+    operationInProgressRef.current = true;
+    try {
+      await saveBlueprint(rundownTitle, updatedLists, showDate, silent);
+    } catch (error) {
+      console.error('Error saving lists:', error);
+    } finally {
+      operationInProgressRef.current = false;
+    }
+  }, [rundownTitle, showDate, saveBlueprint]);
 
-  // Checkbox update handler with debounced save
-  const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
+  // Checkbox update handler
+  const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
     console.log('Blueprint state: updating checked items for list:', listId, 'checkedItems:', checkedItems);
     
     // Update local state immediately
@@ -155,26 +131,25 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         list.id === listId ? { ...list, checkedItems } : list
       );
       
-      // Save with debouncing
-      console.log('Saving checkbox changes with debouncing');
-      debouncedSave(rundownTitle, updatedLists, true);
+      // Save with debouncing (silent=true means no toast notification)
+      saveLists(updatedLists, true);
       
       return updatedLists;
     });
-  }, [rundownTitle, debouncedSave]);
+  }, [saveLists]);
 
   const addNewList = useCallback(async (name: string, sourceColumn: string) => {
-    if (operationLockRef.current) {
+    if (operationInProgressRef.current) {
       console.log('Operation in progress, skipping add new list');
       return;
     }
     
     console.log('Adding new list:', name, 'for column:', sourceColumn);
-    operationLockRef.current = true;
+    operationInProgressRef.current = true;
     
     try {
       const newList: BlueprintList = {
-        id: generateConsistentListId(sourceColumn, rundownId, lists),
+        id: generateListId(sourceColumn),
         name,
         sourceColumn,
         items: generateListFromColumn(items, sourceColumn),
@@ -187,69 +162,104 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       // Update state first
       setLists(updatedLists);
       
-      // Save immediately without debouncing for new lists
+      // Save immediately without debouncing
       console.log('Saving new list to database with', updatedLists.length, 'total lists');
       await saveBlueprint(rundownTitle, updatedLists, showDate, false);
       console.log('New list saved successfully');
+      
+      // Force reload lists after saving to ensure we have the latest data
+      await loadBlueprint();
     } catch (error) {
       console.error('Failed to save new list:', error);
-      // Revert state on error
-      setLists(lists);
+      // Revert on error
+      setLists(prevLists => [...prevLists]);
     } finally {
-      operationLockRef.current = false;
+      operationInProgressRef.current = false;
     }
-  }, [items, lists, rundownTitle, saveBlueprint, showDate, generateConsistentListId, rundownId]);
+  }, [items, lists, rundownTitle, saveBlueprint, loadBlueprint, generateListId, showDate]);
 
-  const deleteList = useCallback((listId: string) => {
-    if (operationLockRef.current) return;
+  const deleteList = useCallback(async (listId: string) => {
+    if (operationInProgressRef.current) {
+      console.log('Operation in progress, skipping delete list');
+      return;
+    }
     
-    const updatedLists = lists.filter(list => list.id !== listId);
-    setLists(updatedLists);
-    debouncedSave(rundownTitle, updatedLists);
-  }, [lists, rundownTitle, debouncedSave]);
+    operationInProgressRef.current = true;
+    try {
+      const updatedLists = lists.filter(list => list.id !== listId);
+      setLists(updatedLists);
+      await saveBlueprint(rundownTitle, updatedLists, showDate, false);
+    } catch (error) {
+      console.error('Failed to delete list:', error);
+    } finally {
+      operationInProgressRef.current = false;
+    }
+  }, [lists, rundownTitle, saveBlueprint, showDate]);
 
-  const renameList = useCallback((listId: string, newName: string) => {
-    if (operationLockRef.current) return;
+  const renameList = useCallback(async (listId: string, newName: string) => {
+    if (operationInProgressRef.current) {
+      console.log('Operation in progress, skipping rename list');
+      return;
+    }
     
-    const updatedLists = lists.map(list => {
-      if (list.id === listId) {
-        return { ...list, name: newName };
-      }
-      return list;
-    });
-    setLists(updatedLists);
-    debouncedSave(rundownTitle, updatedLists);
-  }, [lists, rundownTitle, debouncedSave]);
+    operationInProgressRef.current = true;
+    try {
+      const updatedLists = lists.map(list => {
+        if (list.id === listId) {
+          return { ...list, name: newName };
+        }
+        return list;
+      });
+      setLists(updatedLists);
+      await saveBlueprint(rundownTitle, updatedLists, showDate, true);
+    } catch (error) {
+      console.error('Failed to rename list:', error);
+    } finally {
+      operationInProgressRef.current = false;
+    }
+  }, [lists, rundownTitle, saveBlueprint, showDate]);
 
-  const refreshAllLists = useCallback(() => {
-    if (operationLockRef.current) return;
+  const refreshAllLists = useCallback(async () => {
+    if (operationInProgressRef.current) {
+      console.log('Operation in progress, skipping refresh all lists');
+      return;
+    }
     
-    const refreshedLists = lists.map(list => ({
-      ...list,
-      items: generateListFromColumn(items, list.sourceColumn)
-      // IMPORTANT: Keep existing checkbox states during refresh
-    }));
-    setLists(refreshedLists);
-    debouncedSave(rundownTitle, refreshedLists, true);
-  }, [items, lists, rundownTitle, debouncedSave]);
+    operationInProgressRef.current = true;
+    try {
+      const refreshedLists = lists.map(list => ({
+        ...list,
+        items: generateListFromColumn(items, list.sourceColumn)
+        // Keep existing checkbox states
+      }));
+      setLists(refreshedLists);
+      await saveBlueprint(rundownTitle, refreshedLists, showDate, true);
+    } catch (error) {
+      console.error('Failed to refresh lists:', error);
+    } finally {
+      operationInProgressRef.current = false;
+    }
+  }, [items, lists, rundownTitle, saveBlueprint, showDate]);
 
-  const updateShowDate = useCallback((newDate: string) => {
-    if (operationLockRef.current) return;
+  const updateShowDate = useCallback(async (newDate: string) => {
+    if (operationInProgressRef.current) {
+      console.log('Operation in progress, skipping update show date');
+      return;
+    }
     
-    setShowDate(newDate);
-    debouncedSave(rundownTitle, lists, true);
-  }, [rundownTitle, lists, debouncedSave]);
+    operationInProgressRef.current = true;
+    try {
+      setShowDate(newDate);
+      await saveBlueprint(rundownTitle, lists, newDate, true);
+    } catch (error) {
+      console.error('Failed to update show date:', error);
+    } finally {
+      operationInProgressRef.current = false;
+    }
+  }, [lists, rundownTitle, saveBlueprint]);
 
-  const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, debouncedSave, rundownTitle);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
+  // Drag and drop functionality
+  const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, saveLists, rundownTitle);
 
   return {
     lists,
