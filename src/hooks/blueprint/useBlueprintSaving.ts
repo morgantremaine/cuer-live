@@ -4,39 +4,34 @@ import { BlueprintList } from '@/types/blueprint';
 import { useBlueprintStorage } from '../useBlueprintStorage';
 
 export const useBlueprintSaving = (rundownId: string, rundownTitle: string, showDate: string) => {
-  const operationInProgressRef = useRef(false);
-  const lastSaveRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastSaveRef = useRef<string>('');
   const { saveBlueprint } = useBlueprintStorage(rundownId);
 
-  // Save lists to database with debouncing to prevent infinite loops
+  // Simplified save function with better deduplication
   const saveLists = useCallback(async (updatedLists: BlueprintList[], silent = false) => {
-    if (operationInProgressRef.current) {
-      console.log('Save operation in progress, skipping save');
-      return;
-    }
-    
-    // Create a hash of the current state to prevent duplicate saves
+    // Create a more comprehensive hash to prevent duplicate saves
     const currentStateHash = JSON.stringify({
       listsCount: updatedLists.length,
-      listIds: updatedLists.map(l => l.id),
+      listData: updatedLists.map(l => ({
+        id: l.id,
+        name: l.name,
+        sourceColumn: l.sourceColumn,
+        itemsCount: l.items.length,
+        checkedItems: l.checkedItems || {}
+      })),
       showDate,
-      rundownTitle
+      rundownTitle,
+      rundownId
     });
     
+    // Skip if no changes
     if (lastSaveRef.current === currentStateHash) {
-      console.log('No changes detected, skipping save');
+      console.log('Blueprint save: No changes detected, skipping save');
       return;
     }
     
-    console.log('Saving blueprint lists:', {
-      count: updatedLists.length,
-      silent,
-      rundownId,
-      rundownTitle
-    });
-    
-    operationInProgressRef.current = true;
+    console.log('Blueprint save: Saving', updatedLists.length, 'lists', silent ? '(silent)' : '');
     lastSaveRef.current = currentStateHash;
     
     // Clear any existing timeout
@@ -45,37 +40,33 @@ export const useBlueprintSaving = (rundownId: string, rundownTitle: string, show
     }
     
     try {
-      // For silent saves (like checkbox updates), debounce to prevent spam
       if (silent) {
+        // Debounce silent saves (like checkbox updates)
         saveTimeoutRef.current = setTimeout(async () => {
           try {
             await saveBlueprint(rundownTitle, updatedLists, showDate, silent);
-            console.log('Debounced save completed');
+            console.log('Blueprint save: Debounced save completed');
           } catch (error) {
-            console.error('Error in debounced save:', error);
-          } finally {
-            operationInProgressRef.current = false;
+            console.error('Blueprint save: Error in debounced save:', error);
           }
         }, 500);
       } else {
-        // For immediate saves (like add/delete operations), save immediately
+        // Immediate save for important operations
         await saveBlueprint(rundownTitle, updatedLists, showDate, silent);
-        operationInProgressRef.current = false;
+        console.log('Blueprint save: Immediate save completed');
       }
     } catch (error) {
-      console.error('Error saving lists:', error);
-      operationInProgressRef.current = false;
+      console.error('Blueprint save: Error saving lists:', error);
     }
   }, [rundownTitle, showDate, saveBlueprint, rundownId]);
 
-  // Create a wrapper function that matches the expected signature for drag and drop
+  // Wrapper for drag and drop compatibility
   const saveListsForDragAndDrop = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
     saveLists(updatedLists, silent);
   }, [saveLists]);
 
   return {
     saveLists,
-    saveListsForDragAndDrop,
-    operationInProgressRef
+    saveListsForDragAndDrop
   };
 };

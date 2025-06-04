@@ -33,30 +33,36 @@ export const useBlueprintStorage = (rundownId: string) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Use a ref to track the last loaded blueprint to prevent duplicate loads
-  const lastLoadedRundownRef = useRef<string>('');
-  const isSavingRef = useRef(false);
-  const loadAttemptedRef = useRef(false);
+  // Simplified state tracking
+  const stateRef = useRef({
+    lastLoadedRundownId: '',
+    hasAttemptedLoad: false,
+    isSaving: false
+  });
 
   const loadBlueprint = async () => {
-    // Check for conditions that would prevent loading
-    if (!user || !rundownId || isSavingRef.current) {
+    if (!user || !rundownId || stateRef.current.isSaving) {
+      console.log('Blueprint storage: Cannot load - missing user, rundownId, or currently saving');
       return savedBlueprint;
     }
 
-    // Don't reload the same rundown if we already have it
-    if (rundownId === lastLoadedRundownRef.current && savedBlueprint !== null) {
-      console.log('Blueprint already loaded for rundown:', rundownId);
+    // Prevent duplicate loads for the same rundown
+    if (rundownId === stateRef.current.lastLoadedRundownId && savedBlueprint !== null) {
+      console.log('Blueprint storage: Already loaded for rundown:', rundownId);
       return savedBlueprint;
     }
 
-    // Mark that we've attempted to load
-    loadAttemptedRef.current = true;
+    // Only attempt to load once per rundown
+    if (rundownId === stateRef.current.lastLoadedRundownId && stateRef.current.hasAttemptedLoad) {
+      console.log('Blueprint storage: Already attempted load for rundown:', rundownId);
+      return savedBlueprint;
+    }
+
+    console.log('Blueprint storage: Loading blueprint for rundown:', rundownId);
     setLoading(true);
+    stateRef.current.hasAttemptedLoad = true;
     
     try {
-      console.log('Loading blueprint for rundown:', rundownId);
-      
       const { data, error } = await supabase
         .from('blueprints')
         .select('*')
@@ -65,7 +71,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error loading blueprint:', error);
+        console.error('Blueprint storage: Error loading:', error);
         toast({
           title: "Error",
           description: "Failed to load blueprint data",
@@ -74,23 +80,18 @@ export const useBlueprintStorage = (rundownId: string) => {
         return null;
       }
 
-      console.log('Blueprint loaded from database:', data ? `${data.lists.length} lists` : 'no blueprint found');
+      console.log('Blueprint storage: Loaded from database:', data ? `${data.lists.length} lists` : 'no blueprint found');
       
       if (data) {
         setSavedBlueprint(data);
-        lastLoadedRundownRef.current = rundownId;
+        stateRef.current.lastLoadedRundownId = rundownId;
       } else {
         setSavedBlueprint(null);
       }
       
       return data;
     } catch (error) {
-      console.error('Exception loading blueprint:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load blueprint data",
-        variant: "destructive"
-      });
+      console.error('Blueprint storage: Exception loading:', error);
       return null;
     } finally {
       setLoading(false);
@@ -106,22 +107,15 @@ export const useBlueprintStorage = (rundownId: string) => {
     crewData?: CrewMember[],
     cameraPlots?: any[]
   ) => {
-    if (!user || !rundownId) {
-      console.error('Cannot save blueprint: missing user or rundownId');
-      return;
-    }
-    
-    if (isSavingRef.current) {
-      console.log('Save operation already in progress, skipping');
+    if (!user || !rundownId || stateRef.current.isSaving) {
+      console.log('Blueprint storage: Cannot save - missing user, rundownId, or already saving');
       return;
     }
 
-    console.log('Saving blueprint with', lists.length, 'lists to database');
-    isSavingRef.current = true;
+    console.log('Blueprint storage: Saving', lists.length, 'lists');
+    stateRef.current.isSaving = true;
 
     try {
-      // CRITICAL: Only include camera_plots in the update if it's explicitly provided
-      // This prevents accidentally overwriting camera plot data when saving other blueprint data
       const blueprintData: any = {
         user_id: user.id,
         rundown_id: rundownId,
@@ -133,7 +127,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         updated_at: new Date().toISOString()
       };
 
-      // Only include camera_plots if it's explicitly provided
+      // Only include camera_plots if explicitly provided
       if (cameraPlots !== undefined) {
         blueprintData.camera_plots = cameraPlots;
       }
@@ -141,7 +135,6 @@ export const useBlueprintStorage = (rundownId: string) => {
       let result;
       
       if (savedBlueprint) {
-        // Update existing blueprint
         const { data, error } = await supabase
           .from('blueprints')
           .update(blueprintData)
@@ -150,31 +143,23 @@ export const useBlueprintStorage = (rundownId: string) => {
           .select()
           .single();
 
-        if (error) {
-          throw new Error(`Error updating blueprint: ${error.message}`);
-        }
-
-        console.log('Blueprint updated successfully with', data.lists.length, 'lists');
+        if (error) throw error;
         result = data;
+        console.log('Blueprint storage: Updated successfully');
       } else {
-        // Create new blueprint
         const { data, error } = await supabase
           .from('blueprints')
           .insert(blueprintData)
           .select()
           .single();
 
-        if (error) {
-          throw new Error(`Error creating blueprint: ${error.message}`);
-        }
-
-        console.log('Blueprint created successfully with', data.lists.length, 'lists');
+        if (error) throw error;
         result = data;
+        console.log('Blueprint storage: Created successfully');
       }
       
-      // Update our state with the latest data from the database
       setSavedBlueprint(result);
-      lastLoadedRundownRef.current = rundownId;
+      stateRef.current.lastLoadedRundownId = rundownId;
 
       if (!silent) {
         toast({
@@ -185,7 +170,7 @@ export const useBlueprintStorage = (rundownId: string) => {
       
       return result;
     } catch (error) {
-      console.error('Error saving blueprint:', error);
+      console.error('Blueprint storage: Save error:', error);
       if (!silent) {
         toast({
           title: 'Error',
@@ -195,22 +180,22 @@ export const useBlueprintStorage = (rundownId: string) => {
       }
       return null;
     } finally {
-      isSavingRef.current = false;
+      stateRef.current.isSaving = false;
     }
   };
 
-  // Reset when rundown changes
+  // Reset state when rundown changes
   useEffect(() => {
-    // Only reset if we're switching to a new rundown
-    if (rundownId !== lastLoadedRundownRef.current) {
+    if (rundownId !== stateRef.current.lastLoadedRundownId) {
+      console.log('Blueprint storage: Rundown changed, resetting state');
       setSavedBlueprint(null);
-      loadAttemptedRef.current = false;
+      stateRef.current.hasAttemptedLoad = false;
     }
   }, [rundownId]);
 
-  // Load blueprint once when component mounts or rundownId changes
+  // Load blueprint once when conditions are met
   useEffect(() => {
-    if (user && rundownId && !loadAttemptedRef.current) {
+    if (user && rundownId && !stateRef.current.hasAttemptedLoad && !loading) {
       loadBlueprint();
     }
   }, [user, rundownId]);
