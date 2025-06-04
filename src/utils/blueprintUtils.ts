@@ -3,16 +3,12 @@ import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 
 export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): any[] => {
-  console.log(`Generating list from column "${sourceColumn}" with ${items.length} items`);
-  
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
-    console.log(`Found ${headerItems.length} header items:`, headerItems.map(h => h.name || h.segmentName));
     // Use notes field for header descriptions, fallback to segmentName if notes is empty
     const headerTexts = headerItems.map(item => item.notes || item.segmentName || item.rowNumber);
     // Remove duplicates and filter out empty values
     const result = [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
-    console.log(`Generated ${result.length} header list items:`, result);
     return result;
   }
   
@@ -27,7 +23,6 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
   
   // Remove duplicates using Set
   const result = [...new Set(values)];
-  console.log(`Generated ${result.length} items for column "${sourceColumn}":`, result.slice(0, 5));
   return result;
 };
 
@@ -49,13 +44,11 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
 };
 
 export const getAvailableColumns = (items: RundownItem[]): { key: string; name: string; }[] => {
-  console.log(`Getting available columns from ${items.length} items`);
   const columns = new Set<string>();
   
-  // Always include headers
+  // Always include headers if they exist
   if (items.some(item => item.type === 'header')) {
     columns.add('headers');
-    console.log('Added headers column');
   }
   
   // Check standard fields
@@ -64,21 +57,23 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
     const hasField = items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '');
     if (hasField) {
       columns.add(field);
-      console.log(`Added standard field: ${field}`);
     }
   });
   
-  // Check custom fields
+  // Check custom fields - optimize to avoid duplicates
+  const customFields = new Set<string>();
   items.forEach(item => {
     if (item.customFields) {
       Object.keys(item.customFields).forEach(key => {
         if (item.customFields![key] && item.customFields![key] !== '') {
-          columns.add(key);
-          console.log(`Added custom field: ${key}`);
+          customFields.add(key);
         }
       });
     }
   });
+  
+  // Add unique custom fields to columns
+  customFields.forEach(field => columns.add(field));
   
   // Convert to the expected format with key and name - change Headers to Blocks
   const result = Array.from(columns).map(column => ({
@@ -86,6 +81,5 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
     name: column === 'headers' ? 'Blocks' : column.charAt(0).toUpperCase() + column.slice(1)
   }));
   
-  console.log('Available columns:', result);
   return result;
 };
