@@ -7,6 +7,7 @@ interface UseRundownRowOperationsProps {
   clearSelection: () => void;
   addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => void;
   addHeader: (selectedRowId?: string | null) => void;
+  calculateEndTime: (startTime: string, duration: string) => string;
 }
 
 export const useRundownRowOperations = ({
@@ -14,7 +15,8 @@ export const useRundownRowOperations = ({
   deleteMultipleRows,
   clearSelection,
   addRow,
-  addHeader
+  addHeader,
+  calculateEndTime
 }: UseRundownRowOperationsProps) => {
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(selectedRows);
@@ -24,17 +26,17 @@ export const useRundownRowOperations = ({
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  const wrappedAddRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => {
-    addRow(calculateEndTime, selectedRowId);
-  }, [addRow]);
+  const handleAddRow = useCallback(() => {
+    addRow(calculateEndTime);
+  }, [addRow, calculateEndTime]);
 
-  const wrappedAddHeader = useCallback((selectedRowId?: string | null) => {
-    addHeader(selectedRowId);
+  const handleAddHeader = useCallback(() => {
+    addHeader();
   }, [addHeader]);
 
   return {
     handleDeleteSelectedRows,
-    addRow: wrappedAddRow,
-    addHeader: wrappedAddHeader
+    handleAddRow,
+    handleAddHeader
   };
 };

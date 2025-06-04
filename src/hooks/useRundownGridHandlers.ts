@@ -50,8 +50,6 @@ export const useRundownGridHandlers = ({
   
   const {
     handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
     handleDeleteRow,
     handleToggleFloat,
     handleColorSelect,
@@ -74,6 +72,16 @@ export const useRundownGridHandlers = ({
     },
     markAsChanged
   });
+
+  const handleAddRow = useCallback(() => {
+    addRow(calculateEndTime);
+    markAsChanged();
+  }, [addRow, calculateEndTime, markAsChanged]);
+
+  const handleAddHeader = useCallback(() => {
+    addHeader();
+    markAsChanged();
+  }, [addHeader, markAsChanged]);
 
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
