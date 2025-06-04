@@ -1,5 +1,7 @@
+
 import { RundownItem } from '@/types/rundown'
 import { SavedRundown } from './types'
+import { Column } from '@/hooks/useColumnsManager'
 
 export const mapRundownFromDatabase = (rundown: any): SavedRundown => ({
   ...rundown,
@@ -18,7 +20,8 @@ export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
     columns: row.columns,
     timezone: row.timezone,
     start_time: row.start_time,
-    icon: row.icon
+    icon: row.icon,
+    undo_history: row.undo_history
   }))
 }
 

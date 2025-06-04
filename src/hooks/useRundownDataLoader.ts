@@ -48,7 +48,7 @@ export const useRundownDataLoader = ({
     const dataSignature = JSON.stringify({
       title: rundown.title,
       timezone: rundown.timezone,
-      startTime: rundown.startTime || rundown.start_time,
+      startTime: rundown.start_time, // Use start_time property
       columnsLength: rundown.columns?.length || 0
     });
 
@@ -69,8 +69,8 @@ export const useRundownDataLoader = ({
       setTimezone(rundown.timezone);
     }
     
-    if (rundown.startTime || rundown.start_time) {
-      setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
+    if (rundown.start_time) { // Use start_time property
+      setRundownStartTime(rundown.start_time || '09:00:00');
     }
     
     if (rundown.columns) {

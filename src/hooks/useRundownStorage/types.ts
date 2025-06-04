@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/types/rundown'
 import { Column } from '@/hooks/useColumnsManager'
 
@@ -13,4 +14,5 @@ export interface SavedRundown {
   timezone?: string
   start_time?: string
   icon?: string
+  undo_history?: any[]
 }

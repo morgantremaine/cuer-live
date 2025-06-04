@@ -44,7 +44,7 @@ const Blueprint = () => {
     id || '',
     rundown?.title || 'Unknown Rundown',
     rundown?.items || [],
-    rundown?.startTime
+    rundown?.start_time // Use start_time property instead of startTime
   );
 
   const handleSignOut = async () => {

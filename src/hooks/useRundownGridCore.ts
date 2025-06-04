@@ -83,7 +83,7 @@ export const useRundownGridCore = () => {
     setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout,
     onRundownLoaded: (rundown) => {
-      // Load undo history when rundown is loaded
+      // Load undo history when rundown is loaded - use correct property name
       if (rundown.undo_history) {
         loadUndoHistory(rundown.undo_history);
       }
