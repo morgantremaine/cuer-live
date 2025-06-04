@@ -45,8 +45,8 @@ export const useRundownGridState = () => {
     // UI state
     ...uiState,
     // Override with wrapped functions - use correct handler names
-    addRow: handleAddRow,
-    addHeader: handleAddHeader,
+    handleAddRow,
+    handleAddHeader,
     // Clipboard functionality
     clipboardItems,
     copyItems,

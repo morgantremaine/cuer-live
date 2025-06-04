@@ -5,7 +5,7 @@ import { useRundownStorage } from '@/hooks/useRundownStorage'
 import { useNavigate } from 'react-router-dom'
 import DashboardHeader from '@/components/DashboardHeader'
 import CreateNewButton from '@/components/CreateNewButton'
-import RundownGrid from '@/components/RundownGrid'
+import DashboardRundownGrid from '@/components/DashboardRundownGrid'
 import ConfirmationDialogs from '@/components/ConfirmationDialogs'
 import Footer from '@/components/Footer'
 import { RundownItem } from '@/hooks/useRundownItems'
@@ -117,7 +117,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         <CreateNewButton onClick={handleCreateNew} />
 
-        <RundownGrid
+        <DashboardRundownGrid
           title="Active Rundowns"
           rundowns={activeRundowns}
           loading={loading}
@@ -130,7 +130,7 @@ const Dashboard = () => {
         />
 
         {archivedRundowns.length > 0 && (
-          <RundownGrid
+          <DashboardRundownGrid
             title="Archived Rundowns"
             rundowns={archivedRundowns}
             loading={false}

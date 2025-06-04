@@ -30,17 +30,17 @@ const RundownGrid = () => {
     handleCopySelectedRows,
     handleDeleteSelectedRows,
     handlePasteRows,
-    onClearSelection,
+    clearSelection,
     handleAddRow,
     handleAddHeader,
-    onToggleFloat,
-    onDeleteRow,
+    toggleFloatRow,
+    deleteRow,
     getRowNumber,
     getRowStatus,
     calculateHeaderDuration
   } = useRundownGridState();
 
-  const { showColorPicker, handleToggleColorPicker, selectColor } = useColorPicker();
+  const { showColorPicker, handleToggleColorPicker, handleColorSelect } = useColorPicker();
 
   const { handleCellClick, handleKeyDown } = useCellNavigation(
     items,
@@ -71,9 +71,9 @@ const RundownGrid = () => {
       onCellClick={handleCellClick}
       onKeyDown={handleKeyDown}
       onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={selectColor}
-      onDeleteRow={onDeleteRow}
-      onToggleFloat={onToggleFloat}
+      onColorSelect={(id, color) => handleColorSelect(id, color, handleUpdateItem)}
+      onDeleteRow={deleteRow}
+      onToggleFloat={toggleFloatRow}
       onRowSelect={handleRowSelection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
@@ -82,7 +82,7 @@ const RundownGrid = () => {
       onCopySelectedRows={handleCopySelectedRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
       onPasteRows={handlePasteRows}
-      onClearSelection={onClearSelection}
+      onClearSelection={clearSelection}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
     />
