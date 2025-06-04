@@ -2,7 +2,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
-import { useChangeTracking } from './useChangeTracking';
+import { useAutoSave } from './useAutoSave';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateIntegration = (
@@ -42,18 +42,14 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Change tracking - fix parameter order to match useChangeTracking signature
-  const changeTrackingResult = useChangeTracking(
+  // Auto-save integration - this provides the real hasUnsavedChanges and isSaving states
+  const { hasUnsavedChanges, isSaving, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
     items,
     rundownTitle,
     columns,
     timezone,
     rundownStartTime
   );
-
-  // Extract hasUnsavedChanges and provide a default isSaving value
-  const hasUnsavedChanges = changeTrackingResult.hasUnsavedChanges;
-  const isSaving = false; // Default value since useChangeTracking doesn't provide this
 
   // Wrapped addRow that supports insertion at specific index
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {

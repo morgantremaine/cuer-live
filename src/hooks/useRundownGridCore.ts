@@ -31,7 +31,7 @@ export const useRundownGridCore = () => {
   // Get storage functionality
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
 
-  // Rundown data integration
+  // Rundown data integration - this now includes auto-save
   const {
     items,
     setItems,
@@ -254,7 +254,7 @@ export const useRundownGridCore = () => {
     handleLoadLayout,
     handleUpdateColumnWidth,
 
-    // Save state
+    // Save state - now properly integrated with auto-save
     hasUnsavedChanges,
     isSaving,
     calculateEndTime,
