@@ -19,11 +19,23 @@ export const useBlueprintInitialization = (
   const hasInitialized = useRef(false);
   const isUpdatingCheckboxes = useRef(false);
   const lastSavedBlueprintRef = useRef<string>('');
+  const initializationTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
+    // Clear any pending initialization when dependencies change
+    if (initializationTimeoutRef.current) {
+      clearTimeout(initializationTimeoutRef.current);
+    }
+
     // Skip if we're currently updating checkboxes
     if (isUpdatingCheckboxes.current) {
       console.log('Skipping initialization - checkboxes are being updated');
+      // Schedule re-initialization after checkbox update completes
+      initializationTimeoutRef.current = setTimeout(() => {
+        if (!isUpdatingCheckboxes.current) {
+          hasInitialized.current = false;
+        }
+      }, 3000);
       return;
     }
 
@@ -64,15 +76,23 @@ export const useBlueprintInitialization = (
       setInitialized(true);
       hasInitialized.current = true;
     }
+
+    return () => {
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+    };
   }, [rundownId, rundownTitle, items, savedBlueprint?.id, savedBlueprint?.lists, loading, createItemsHash, setLists, setShowDate, setInitialized, setLastItemsHash]);
 
   // Reset initialization when rundown changes
   useEffect(() => {
-    const currentRundownKey = `${rundownId}-${savedBlueprint?.id || 'new'}`;
     return () => {
       // Reset when component unmounts or rundown changes
       hasInitialized.current = false;
       lastSavedBlueprintRef.current = '';
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
     };
   }, [rundownId, savedBlueprint?.id]);
 
