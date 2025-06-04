@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -22,8 +21,28 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
 
   // Generate consistent list ID based on rundown ID and source column
-  const generateConsistentListId = useCallback((sourceColumn: string, rundownId: string) => {
-    return `${sourceColumn}_${rundownId}`;
+  const generateConsistentListId = useCallback((sourceColumn: string, rundownId: string, existingLists?: BlueprintList[]) => {
+    const baseId = `${sourceColumn}_${rundownId}`;
+    
+    // If no existing lists provided, return base ID
+    if (!existingLists) {
+      return baseId;
+    }
+    
+    // Check if base ID already exists
+    const existingIds = existingLists.map(list => list.id);
+    if (!existingIds.includes(baseId)) {
+      return baseId;
+    }
+    
+    // If it exists, add a counter
+    let counter = 1;
+    let newId = `${baseId}_${counter}`;
+    while (existingIds.includes(newId)) {
+      counter++;
+      newId = `${baseId}_${counter}`;
+    }
+    return newId;
   }, []);
 
   // Initialize blueprint data - run only once per rundown
@@ -42,11 +61,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         
         // Create lists with fresh items and EXACT checkbox states from database
         const refreshedLists = savedBlueprint.lists.map((list: BlueprintList) => {
-          // Ensure consistent list ID
-          const consistentId = generateConsistentListId(list.sourceColumn, rundownId);
+          // Keep the original ID from the saved blueprint to maintain consistency
           return {
             ...list,
-            id: consistentId, // Use consistent ID
             items: generateListFromColumn(items, list.sourceColumn),
             // CRITICAL: Use the exact checkbox states from the saved blueprint
             checkedItems: list.checkedItems || {}
@@ -113,18 +130,30 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     });
   }, [rundownTitle, showDate, saveBlueprint]);
 
-  const addNewList = useCallback((name: string, sourceColumn: string) => {
+  const addNewList = useCallback(async (name: string, sourceColumn: string) => {
+    console.log('Adding new list:', name, 'for column:', sourceColumn);
+    
     const newList: BlueprintList = {
-      id: generateConsistentListId(sourceColumn, rundownId),
+      id: generateConsistentListId(sourceColumn, rundownId, lists),
       name,
       sourceColumn,
       items: generateListFromColumn(items, sourceColumn),
       checkedItems: {}
     };
+    
     const updatedLists = [...lists, newList];
+    console.log('Updated lists count:', updatedLists.length);
+    
     setLists(updatedLists);
-    saveWithDate(rundownTitle, updatedLists);
-  }, [items, lists, rundownTitle, saveWithDate, generateConsistentListId, rundownId]);
+    
+    // Save immediately and wait for completion
+    try {
+      await saveBlueprint(rundownTitle, updatedLists, showDate, false);
+      console.log('New list saved successfully');
+    } catch (error) {
+      console.error('Failed to save new list:', error);
+    }
+  }, [items, lists, rundownTitle, saveBlueprint, showDate, generateConsistentListId, rundownId]);
 
   const deleteList = useCallback((listId: string) => {
     const updatedLists = lists.filter(list => list.id !== listId);
