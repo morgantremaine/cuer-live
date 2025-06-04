@@ -47,12 +47,7 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    console.log('Right-click detected on row:', item.id);
-    console.log('Context menu event target:', e.target);
-    console.log('Context menu event currentTarget:', e.currentTarget);
-    
     e.preventDefault();
-    // Don't stop propagation here - let it bubble to the ContextMenu component
     
     if (onRowSelect) {
       onRowSelect(item.id, index, false, false);
