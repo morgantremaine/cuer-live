@@ -59,31 +59,29 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   );
 
   // Refresh list content when items actually change (but preserve checkbox states)
+  // Only do this if we're not in the middle of a checkbox update
   useEffect(() => {
-    // Skip if we're updating checkboxes or not initialized
-    if (isUpdatingCheckboxes.current || !initialized) {
+    if (isUpdatingCheckboxes.current || !initialized || items.length === 0 || lists.length === 0) {
       return;
     }
 
-    if (items.length > 0 && lists.length > 0) {
-      const currentItemsHash = createItemsHash(items);
+    const currentItemsHash = createItemsHash(items);
+    
+    if (currentItemsHash !== lastItemsHash) {
+      console.log('Items changed, refreshing lists while preserving checkbox states');
       
-      if (currentItemsHash !== lastItemsHash) {
-        console.log('Items changed, refreshing lists while preserving checkbox states');
-        
-        const refreshedLists = lists.map(list => ({
-          ...list,
-          items: generateListFromColumn(items, list.sourceColumn),
-          // Preserve existing checkbox states
-          checkedItems: list.checkedItems || {}
-        }));
-        
-        setLists(refreshedLists);
-        setLastItemsHash(currentItemsHash);
-        
-        // Save silently without affecting checkbox update state
-        saveBlueprint(rundownTitle, refreshedLists, showDate, true);
-      }
+      const refreshedLists = lists.map(list => ({
+        ...list,
+        items: generateListFromColumn(items, list.sourceColumn),
+        // Preserve existing checkbox states
+        checkedItems: list.checkedItems || {}
+      }));
+      
+      setLists(refreshedLists);
+      setLastItemsHash(currentItemsHash);
+      
+      // Save silently without affecting checkbox update state
+      saveBlueprint(rundownTitle, refreshedLists, showDate, true);
     }
   }, [items, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash, isUpdatingCheckboxes]);
 

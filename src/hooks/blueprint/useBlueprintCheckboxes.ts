@@ -39,13 +39,14 @@ export const useBlueprintCheckboxes = (
       console.log('Checkbox changes saved successfully');
     } catch (error) {
       console.error('Failed to save checkbox changes:', error);
-    } finally {
-      // Reset the flag after a shorter delay since we're doing immediate saves
-      setTimeout(() => {
-        isUpdatingCheckboxes.current = false;
-        console.log('Checkbox update flag reset');
-      }, 500);
     }
+    
+    // Reset the flag after a very short delay to allow the save to complete
+    // but prevent interference with other operations
+    setTimeout(() => {
+      isUpdatingCheckboxes.current = false;
+      console.log('Checkbox update flag reset');
+    }, 100);
   }, [lists, rundownTitle, saveBlueprint, showDate, isUpdatingCheckboxes]);
 
   return {

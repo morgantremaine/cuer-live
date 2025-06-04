@@ -20,6 +20,7 @@ export const useBlueprintInitialization = (
   const isUpdatingCheckboxes = useRef(false);
   const lastSavedBlueprintRef = useRef<string>('');
   const initializationTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastInitializedRundownRef = useRef<string>('');
 
   useEffect(() => {
     // Clear any pending initialization when dependencies change
@@ -30,29 +31,28 @@ export const useBlueprintInitialization = (
     // Skip if we're currently updating checkboxes
     if (isUpdatingCheckboxes.current) {
       console.log('Skipping initialization - checkboxes are being updated');
-      // Schedule re-initialization after checkbox update completes
-      initializationTimeoutRef.current = setTimeout(() => {
-        if (!isUpdatingCheckboxes.current) {
-          hasInitialized.current = false;
-        }
-      }, 3000);
       return;
     }
 
-    // Only initialize once per rundown/blueprint combination
-    const blueprintKey = `${rundownId}-${savedBlueprint?.id || 'new'}`;
+    // Create a unique key for this rundown/blueprint combination
+    const currentKey = `${rundownId}-${savedBlueprint?.id || 'new'}`;
     
-    if (items.length > 0 && !loading && !hasInitialized.current) {
+    // Only initialize if this is a truly new rundown or the first time for this combination
+    const shouldInitialize = items.length > 0 && 
+                             !loading && 
+                             (!hasInitialized.current || lastInitializedRundownRef.current !== currentKey);
+
+    if (shouldInitialize) {
       console.log('Initializing blueprint state with items:', items.length);
       
-      // Check if we have a saved blueprint that's different from what we last processed
+      // Check if we have a saved blueprint
       const currentBlueprintData = JSON.stringify(savedBlueprint?.lists || []);
       
       if (savedBlueprint && savedBlueprint.lists.length > 0) {
         console.log('Loading saved blueprint with', savedBlueprint.lists.length, 'lists');
         
-        // Only reload if the blueprint data has actually changed
-        if (currentBlueprintData !== lastSavedBlueprintRef.current) {
+        // Only reload if we haven't processed this blueprint data before OR if it's a different rundown
+        if (currentBlueprintData !== lastSavedBlueprintRef.current || lastInitializedRundownRef.current !== currentKey) {
           const refreshedLists = savedBlueprint.lists.map((list: BlueprintList) => ({
             ...list,
             items: generateListFromColumn(items, list.sourceColumn),
@@ -61,6 +61,8 @@ export const useBlueprintInitialization = (
           setLists(refreshedLists);
           console.log('Loaded lists with preserved checkbox states:', refreshedLists.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
           lastSavedBlueprintRef.current = currentBlueprintData;
+        } else {
+          console.log('Skipping blueprint reload - same data already loaded');
         }
         
         if (savedBlueprint.show_date) {
@@ -75,6 +77,7 @@ export const useBlueprintInitialization = (
       setLastItemsHash(createItemsHash(items));
       setInitialized(true);
       hasInitialized.current = true;
+      lastInitializedRundownRef.current = currentKey;
     }
 
     return () => {
@@ -87,14 +90,15 @@ export const useBlueprintInitialization = (
   // Reset initialization when rundown changes
   useEffect(() => {
     return () => {
-      // Reset when component unmounts or rundown changes
+      // Only reset when component unmounts, not on every dependency change
       hasInitialized.current = false;
       lastSavedBlueprintRef.current = '';
+      lastInitializedRundownRef.current = '';
       if (initializationTimeoutRef.current) {
         clearTimeout(initializationTimeoutRef.current);
       }
     };
-  }, [rundownId, savedBlueprint?.id]);
+  }, [rundownId]);
 
   return {
     isUpdatingCheckboxes,
