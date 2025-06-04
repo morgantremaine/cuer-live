@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { RundownItem } from './useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
 export const useChangeTracking = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {

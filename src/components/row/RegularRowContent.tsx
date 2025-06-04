@@ -2,7 +2,7 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RegularRowContentProps {

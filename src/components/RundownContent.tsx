@@ -2,7 +2,7 @@
 import React from 'react';
 import RundownTable from './RundownTable';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownContentProps {

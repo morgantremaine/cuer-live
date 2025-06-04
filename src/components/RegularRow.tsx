@@ -4,7 +4,7 @@ import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
 

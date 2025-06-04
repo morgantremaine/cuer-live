@@ -1,8 +1,6 @@
-
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { RundownItem } from './useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
@@ -95,4 +93,3 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     markAsChanged: markAsChangedCallback
   };
 };
-

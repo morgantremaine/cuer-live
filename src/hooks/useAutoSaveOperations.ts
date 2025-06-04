@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { useAuth } from './useAuth';
-import { RundownItem } from './useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
 export const useAutoSaveOperations = () => {

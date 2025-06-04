@@ -1,9 +1,10 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface HeaderRowProps {
