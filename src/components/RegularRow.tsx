@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -186,7 +185,6 @@ const RegularRow = ({
           className={`px-2 py-1 text-sm font-mono align-middle`}
           style={{ color: textColor || undefined, width: '40px' }}
           onClick={handleRowClick}
-          onContextMenu={handleContextMenu}
         >
           <div className="flex items-center space-x-1">
             {isCurrentlyPlaying && (
@@ -204,7 +202,6 @@ const RegularRow = ({
             className="align-middle"
             style={{ width: getColumnWidth(column) }}
             onClick={handleRowClick}
-            onContextMenu={handleContextMenu}
           >
             <CellRenderer
               column={column}
