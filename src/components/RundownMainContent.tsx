@@ -51,6 +51,8 @@ interface RundownMainContentProps {
   isPlaying: boolean;
   currentSegmentName: string;
   totalDuration: string;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
 }
 
 const RundownMainContent = ({
@@ -98,8 +100,13 @@ const RundownMainContent = ({
   timeRemaining,
   isPlaying,
   currentSegmentName,
-  totalDuration
+  totalDuration,
+  onAddRow,
+  onAddHeader
 }: RundownMainContentProps) => {
+  console.log('RundownMainContent: onAddRow exists?', !!onAddRow);
+  console.log('RundownMainContent: onAddHeader exists?', !!onAddHeader);
+
   return (
     <>
       <RundownContent
@@ -135,6 +142,8 @@ const RundownMainContent = ({
         onDeleteSelectedRows={onDeleteSelectedRows}
         onPasteRows={onPasteRows}
         onClearSelection={onClearSelection}
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
       />
       
       {showColumnManager && (

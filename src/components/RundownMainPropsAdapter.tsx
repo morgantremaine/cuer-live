@@ -8,6 +8,9 @@ interface RundownMainPropsAdapterProps {
 }
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
+  console.log('RundownMainPropsAdapter: onAddRow exists?', !!props.onAddRow);
+  console.log('RundownMainPropsAdapter: onAddHeader exists?', !!props.onAddHeader);
+
   return (
     <RundownMainContent
       currentTime={props.currentTime}
@@ -55,6 +58,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       isPlaying={props.isPlaying}
       currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
       totalDuration={props.items.find(item => item.id === props.currentSegmentId)?.duration || '00:00'}
+      onAddRow={props.onAddRow}
+      onAddHeader={props.onAddHeader}
     />
   );
 };
