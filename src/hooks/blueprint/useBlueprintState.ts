@@ -8,12 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-interface BlueprintData {
-  lists: BlueprintList[];
-  show_date?: string;
-}
-
 export const useBlueprintState = (rundownId: string, rundownTitle: string, items: RundownItem[]) => {
+  console.log('🚀 CORE BLUEPRINT STATE HOOK CALLED:', { rundownId, rundownTitle, itemsLength: items.length });
+  
   const [lists, setLists] = useState<BlueprintList[]>([]);
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
@@ -22,29 +19,67 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Single state tracker to prevent loops
+  // State tracking with a single ref
   const stateRef = useRef({
     currentRundownId: '',
     isInitializing: false,
     isSaving: false,
-    savedBlueprint: null as any
+    savedBlueprint: null as any,
+    hasLoadedOnce: false
   });
 
-  // Generate consistent list ID
+  console.log('🚀 CORE STATE:', { 
+    listsCount: lists.length, 
+    initialized, 
+    loading,
+    currentRundownId: stateRef.current.currentRundownId,
+    isInitializing: stateRef.current.isInitializing
+  });
+
+  // Generate list ID
   const generateListId = useCallback((sourceColumn: string) => {
-    const timestamp = Date.now();
-    const random = Math.random();
-    return `${sourceColumn}_${timestamp}_${random}`;
+    return `${sourceColumn}_${Date.now()}_${Math.random()}`;
   }, []);
 
-  // Save function with proper deduplication
+  // Load blueprint from database
+  const loadBlueprint = useCallback(async () => {
+    if (!user || !rundownId) {
+      console.log('🚀 Cannot load - missing user or rundownId');
+      return null;
+    }
+
+    console.log('🚀 Loading blueprint from database for:', rundownId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('blueprints')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('rundown_id', rundownId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('🚀 Error loading blueprint:', error);
+        return null;
+      }
+
+      console.log('🚀 Loaded blueprint:', data ? `${data.lists?.length || 0} lists` : 'none');
+      stateRef.current.savedBlueprint = data;
+      return data;
+    } catch (error) {
+      console.error('🚀 Exception loading blueprint:', error);
+      return null;
+    }
+  }, [user, rundownId]);
+
+  // Save blueprint to database
   const saveBlueprint = useCallback(async (updatedLists: BlueprintList[], silent = false) => {
     if (!user || !rundownId || stateRef.current.isSaving) {
-      console.log('Blueprint save: Cannot save - missing user, rundownId, or already saving');
+      console.log('🚀 Cannot save - missing user, rundownId, or already saving');
       return;
     }
 
-    console.log('Blueprint save: Saving', updatedLists.length, 'lists', silent ? '(silent)' : '');
+    console.log('🚀 Saving blueprint with', updatedLists.length, 'lists');
     stateRef.current.isSaving = true;
 
     try {
@@ -70,7 +105,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
         if (error) throw error;
         result = data;
-        console.log('Blueprint save: Updated successfully');
+        console.log('🚀 Updated blueprint successfully');
       } else {
         const { data, error } = await supabase
           .from('blueprints')
@@ -80,7 +115,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
         if (error) throw error;
         result = data;
-        console.log('Blueprint save: Created successfully');
+        console.log('🚀 Created blueprint successfully');
       }
       
       stateRef.current.savedBlueprint = result;
@@ -94,7 +129,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       
       return result;
     } catch (error) {
-      console.error('Blueprint save: Error:', error);
+      console.error('🚀 Save error:', error);
       if (!silent) {
         toast({
           title: 'Error',
@@ -107,55 +142,40 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     }
   }, [user, rundownId, rundownTitle, showDate, toast]);
 
-  // Initialize blueprint data - called only once per rundown
+  // Initialize blueprint
   const initializeBlueprint = useCallback(async () => {
-    if (!user || !rundownId || !rundownTitle || items.length === 0) {
-      console.log('Blueprint init: Missing requirements');
+    // Prevent multiple initializations
+    if (stateRef.current.isInitializing || 
+        stateRef.current.currentRundownId === rundownId ||
+        !user || !rundownId || !rundownTitle || items.length === 0) {
+      console.log('🚀 Skipping initialization - already done or missing data');
       return;
     }
 
-    if (stateRef.current.isInitializing || stateRef.current.currentRundownId === rundownId) {
-      console.log('Blueprint init: Already initialized or initializing');
-      return;
-    }
-
-    console.log('Blueprint init: Starting for rundown:', rundownId);
+    console.log('🚀 STARTING initialization for:', rundownId);
     stateRef.current.isInitializing = true;
     stateRef.current.currentRundownId = rundownId;
     setLoading(true);
 
     try {
-      // Load existing blueprint
-      const { data, error } = await supabase
-        .from('blueprints')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('rundown_id', rundownId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Blueprint init: Error loading:', error);
-        return;
-      }
-
-      if (data && data.lists && data.lists.length > 0) {
-        console.log('Blueprint init: Using saved blueprint with', data.lists.length, 'lists');
+      const blueprintData = await loadBlueprint();
+      
+      if (blueprintData && blueprintData.lists && blueprintData.lists.length > 0) {
+        console.log('🚀 Using saved blueprint with', blueprintData.lists.length, 'lists');
         
-        // Refresh items but preserve checkbox states
-        const refreshedLists = data.lists.map((list: BlueprintList) => ({
+        const refreshedLists = blueprintData.lists.map((list: BlueprintList) => ({
           ...list,
           items: generateListFromColumn(items, list.sourceColumn),
           checkedItems: list.checkedItems || {}
         }));
         
         setLists(refreshedLists);
-        stateRef.current.savedBlueprint = data;
         
-        if (data.show_date) {
-          setShowDate(data.show_date);
+        if (blueprintData.show_date) {
+          setShowDate(blueprintData.show_date);
         }
       } else {
-        console.log('Blueprint init: Creating default blueprint');
+        console.log('🚀 Creating default blueprint');
         const defaultLists = [
           {
             id: generateListId('headers'),
@@ -172,19 +192,29 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       }
       
       setInitialized(true);
-      console.log('Blueprint init: Completed for rundown:', rundownId);
+      console.log('🚀 COMPLETED initialization for:', rundownId);
     } catch (error) {
-      console.error('Blueprint init: Error:', error);
+      console.error('🚀 Initialization error:', error);
     } finally {
       setLoading(false);
       stateRef.current.isInitializing = false;
     }
-  }, [user, rundownId, rundownTitle, items, generateListId, saveBlueprint]);
+  }, [user, rundownId, rundownTitle, items, generateListId, saveBlueprint, loadBlueprint]);
 
-  // Initialize when conditions are met
+  // Initialize when conditions are met - simplified effect
   useEffect(() => {
-    if (rundownId !== stateRef.current.currentRundownId) {
-      console.log('Blueprint: Rundown changed, resetting');
+    console.log('🚀 Effect triggered with:', { 
+      rundownId, 
+      currentRundownId: stateRef.current.currentRundownId,
+      itemsLength: items.length,
+      initialized,
+      loading,
+      user: !!user
+    });
+
+    // Reset if rundown changed
+    if (rundownId !== stateRef.current.currentRundownId && stateRef.current.currentRundownId !== '') {
+      console.log('🚀 Rundown changed - resetting');
       setLists([]);
       setInitialized(false);
       stateRef.current.savedBlueprint = null;
@@ -192,14 +222,16 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       stateRef.current.isInitializing = false;
     }
     
-    if (user && rundownId && rundownTitle && items.length > 0 && !initialized && !loading) {
+    // Initialize if needed
+    if (user && rundownId && rundownTitle && items.length > 0 && !initialized && !loading && !stateRef.current.isInitializing) {
+      console.log('🚀 Calling initializeBlueprint');
       initializeBlueprint();
     }
   }, [user, rundownId, rundownTitle, items.length, initialized, loading, initializeBlueprint]);
 
   // Checkbox update handler
   const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
-    console.log('Blueprint: updating checked items for list:', listId);
+    console.log('🚀 Updating checked items for list:', listId);
     
     setLists(currentLists => {
       const updatedLists = currentLists.map(list => 
@@ -216,12 +248,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   }, [saveBlueprint]);
 
   const addNewList = useCallback(async (name: string, sourceColumn: string) => {
-    if (stateRef.current.isSaving) {
-      console.log('Blueprint: Cannot add list while saving');
-      return;
-    }
-    
-    console.log('Blueprint: Adding new list:', name, 'for column:', sourceColumn);
+    console.log('🚀 Adding new list:', name, 'for column:', sourceColumn);
     
     const newList: BlueprintList = {
       id: generateListId(sourceColumn),
@@ -234,9 +261,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     const updatedLists = [...lists, newList];
     setLists(updatedLists);
     
-    // Save immediately
     await saveBlueprint(updatedLists, false);
-    console.log('Blueprint: New list saved');
   }, [lists, items, generateListId, saveBlueprint]);
 
   const deleteList = useCallback(async (listId: string) => {

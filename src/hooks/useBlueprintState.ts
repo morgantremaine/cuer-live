@@ -6,6 +6,8 @@ import { useBlueprintState as useBlueprintStateCore } from './blueprint/useBluep
 import { useBlueprintDragAndDrop } from './useBlueprintDragAndDrop';
 
 export const useBlueprintState = (rundownId: string, rundownTitle: string, items: RundownItem[], rundownStartTime?: string) => {
+  console.log('🔥 MAIN BLUEPRINT HOOK CALLED with:', { rundownId, rundownTitle, itemsLength: items.length });
+  
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
 
   // Use the consolidated blueprint state
@@ -21,6 +23,13 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     refreshAllLists,
     updateShowDate: updateShowDateCore
   } = useBlueprintStateCore(rundownId, rundownTitle, items);
+
+  console.log('🔥 MAIN BLUEPRINT HOOK RESULT:', { 
+    listsCount: lists.length, 
+    initialized, 
+    loading,
+    availableColumnsCount: availableColumns.length 
+  });
 
   // Simple wrapper function for title compatibility
   const saveListsForDragAndDrop = (title: string, updatedLists: any[], silent = false) => {
