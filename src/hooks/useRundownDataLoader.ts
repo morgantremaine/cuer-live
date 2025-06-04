@@ -32,7 +32,6 @@ export const useRundownDataLoader = ({
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
-  const lastLoadedDataRef = useRef<string>('');
 
   useEffect(() => {
     // Only proceed if we have rundowns loaded and a specific rundown ID
@@ -45,26 +44,21 @@ export const useRundownDataLoader = ({
     if (loadedRef.current === currentRundownId) return;
 
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
-    if (!rundown) return;
-
-    // Create a signature to check if data actually changed
-    const dataSignature = JSON.stringify({
-      title: rundown.title,
-      timezone: rundown.timezone,
-      startTime: rundown.start_time,
-      columnsLength: rundown.columns?.length || 0,
-      itemsLength: rundown.items?.length || 0
-    });
-
-    // Skip if same data was already loaded
-    if (lastLoadedDataRef.current === dataSignature) return;
+    if (!rundown) {
+      console.log('Rundown not found:', currentRundownId);
+      return;
+    }
 
     console.log('Loading rundown data:', rundown.title);
+    console.log('Rundown data:', { 
+      itemsCount: rundown.items?.length || 0, 
+      hasItems: !!rundown.items,
+      items: rundown.items 
+    });
     
     // Mark as loading and loaded to prevent loops
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
-    lastLoadedDataRef.current = dataSignature;
     
     // Set the rundown data
     setRundownTitle(rundown.title);
@@ -81,12 +75,20 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // Load the rundown items
-    if (rundown.items && rundown.items.length > 0) {
-      console.log('Loading rundown items:', rundown.items.length);
-      setItems(rundown.items);
+    // Load the rundown items - fix the condition check
+    if (rundown.items) {
+      if (Array.isArray(rundown.items) && rundown.items.length > 0) {
+        console.log('Loading rundown items:', rundown.items.length);
+        setItems(rundown.items);
+      } else if (Array.isArray(rundown.items)) {
+        console.log('Rundown has empty items array');
+        setItems([]);
+      } else {
+        console.log('Items is not an array:', typeof rundown.items, rundown.items);
+        setItems([]);
+      }
     } else {
-      console.log('No items found in rundown');
+      console.log('No items property found in rundown');
       setItems([]);
     }
 
@@ -102,7 +104,7 @@ export const useRundownDataLoader = ({
   }, [
     rundownId, 
     paramId, 
-    savedRundowns.length,
+    savedRundowns,
     loading, 
     setRundownTitle, 
     setTimezone, 
@@ -118,7 +120,6 @@ export const useRundownDataLoader = ({
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
       loadedRef.current = null;
       isLoadingRef.current = false;
-      lastLoadedDataRef.current = '';
     }
   }, [rundownId, paramId]);
 };
