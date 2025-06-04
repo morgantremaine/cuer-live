@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
@@ -10,6 +10,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isExecutingSaveRef = useRef(false);
+  const lastSaveAttemptRef = useRef<number>(0);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -21,31 +22,54 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
-  // Stable save function
+  // Create stable data snapshots to prevent infinite re-renders
+  const stableItems = useMemo(() => JSON.stringify(items), [items]);
+  const stableColumns = useMemo(() => JSON.stringify(columns), [columns]);
+  const stableUndoHistory = useMemo(() => JSON.stringify(undoHistory), [undoHistory]);
+
+  // Stable save function that won't change on every render
   const executeSave = useCallback(async () => {
+    const now = Date.now();
+    
+    // Prevent duplicate saves within 1 second
+    if (now - lastSaveAttemptRef.current < 1000) {
+      console.log('Auto-save: Skipping duplicate save attempt');
+      return;
+    }
+    
     if (!user || isSaving || isExecutingSaveRef.current) {
-      console.log('Auto-save blocked:', { user: !!user, isSaving, isExecuting: isExecutingSaveRef.current });
+      console.log('Auto-save: Save blocked:', { 
+        hasUser: !!user, 
+        isSaving, 
+        isExecuting: isExecutingSaveRef.current 
+      });
       return;
     }
 
+    lastSaveAttemptRef.current = now;
     isExecutingSaveRef.current = true;
-    console.log('Auto-save: Starting save operation');
+    console.log('Auto-save: Starting save operation at', new Date().toISOString());
     
     setIsLoading(true);
 
     try {
+      // Parse the stable data back to objects
+      const itemsToSave = JSON.parse(stableItems);
+      const columnsToSave = stableColumns ? JSON.parse(stableColumns) : undefined;
+      const undoToSave = stableUndoHistory ? JSON.parse(stableUndoHistory) : undefined;
+      
       const success = await performSave(
-        [...items], 
+        itemsToSave, 
         rundownTitle, 
-        columns ? [...columns] : undefined, 
+        columnsToSave, 
         timezone, 
         startTime, 
-        undoHistory ? [...undoHistory] : undefined
+        undoToSave
       );
       
       if (success) {
-        console.log('Auto-save: Save completed successfully');
-        markAsSaved(items, rundownTitle, columns, timezone, startTime);
+        console.log('Auto-save: Save completed successfully at', new Date().toISOString());
+        markAsSaved(itemsToSave, rundownTitle, columnsToSave, timezone, startTime);
       } else {
         console.log('Auto-save: Save failed');
         setHasUnsavedChanges(true);
@@ -57,15 +81,15 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       setIsLoading(false);
       isExecutingSaveRef.current = false;
     }
-  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, items, rundownTitle, columns, timezone, startTime, undoHistory, isSaving]);
+  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, rundownTitle, timezone, startTime, stableItems, stableColumns, stableUndoHistory, isSaving]);
 
-  // Main auto-save effect
+  // Main auto-save effect - only depends on change state and user
   useEffect(() => {
-    if (!hasUnsavedChanges || !isInitialized || !user || isExecutingSaveRef.current) {
+    if (!hasUnsavedChanges || !isInitialized || !user) {
       return;
     }
 
-    // Clear existing timeout
+    // Clear any existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = null;
@@ -73,7 +97,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     console.log('Auto-save: Scheduling save in 3 seconds');
 
-    // Schedule new save with timeout reference
+    // Set new timeout
     debounceTimeoutRef.current = setTimeout(() => {
       console.log('Auto-save: Timeout reached, executing save');
       debounceTimeoutRef.current = null;
@@ -87,7 +111,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
         debounceTimeoutRef.current = null;
       }
     };
-  }, [hasUnsavedChanges, isInitialized, user, executeSave]);
+  }, [hasUnsavedChanges, isInitialized, user?.id, executeSave]);
 
   // Cleanup on unmount
   useEffect(() => {
