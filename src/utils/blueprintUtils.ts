@@ -3,12 +3,17 @@ import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 
 export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): any[] => {
+  console.log(`Generating list from column "${sourceColumn}" with ${items.length} items`);
+  
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
+    console.log(`Found ${headerItems.length} header items:`, headerItems.map(h => h.name || h.segmentName));
     // Use notes field for header descriptions, fallback to segmentName if notes is empty
     const headerTexts = headerItems.map(item => item.notes || item.segmentName || item.rowNumber);
     // Remove duplicates and filter out empty values
-    return [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
+    const result = [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
+    console.log(`Generated ${result.length} header list items:`, result);
+    return result;
   }
   
   // For other columns, return the values from that column
@@ -21,7 +26,9 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
     .filter(value => value !== '');
   
   // Remove duplicates using Set
-  return [...new Set(values)];
+  const result = [...new Set(values)];
+  console.log(`Generated ${result.length} items for column "${sourceColumn}":`, result.slice(0, 5));
+  return result;
 };
 
 // Generate consistent list ID based on rundown ID and source column
@@ -42,18 +49,22 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
 };
 
 export const getAvailableColumns = (items: RundownItem[]): { key: string; name: string; }[] => {
+  console.log(`Getting available columns from ${items.length} items`);
   const columns = new Set<string>();
   
   // Always include headers
   if (items.some(item => item.type === 'header')) {
     columns.add('headers');
+    console.log('Added headers column');
   }
   
   // Check standard fields
   const standardFields = ['video', 'gfx', 'talent', 'audio', 'script'];
   standardFields.forEach(field => {
-    if (items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '')) {
+    const hasField = items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '');
+    if (hasField) {
       columns.add(field);
+      console.log(`Added standard field: ${field}`);
     }
   });
   
@@ -63,14 +74,18 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
       Object.keys(item.customFields).forEach(key => {
         if (item.customFields![key] && item.customFields![key] !== '') {
           columns.add(key);
+          console.log(`Added custom field: ${key}`);
         }
       });
     }
   });
   
   // Convert to the expected format with key and name - change Headers to Blocks
-  return Array.from(columns).map(column => ({
+  const result = Array.from(columns).map(column => ({
     key: column,
     name: column === 'headers' ? 'Blocks' : column.charAt(0).toUpperCase() + column.slice(1)
   }));
+  
+  console.log('Available columns:', result);
+  return result;
 };

@@ -21,8 +21,20 @@ export const useBlueprintInitialization = (
   generateListId: (sourceColumn: string) => string
 ) => {
   useEffect(() => {
+    console.log('Blueprint initialization check:', {
+      user: !!user,
+      rundownId,
+      rundownTitle,
+      itemsLength: items.length,
+      initialized,
+      loading,
+      isInitializing: stateRef.current.isInitializing,
+      currentRundownId: stateRef.current.currentRundownId
+    });
+
     // Reset if rundown changed
     if (rundownId !== stateRef.current.currentRundownId && stateRef.current.currentRundownId !== '') {
+      console.log('Rundown changed, resetting blueprint state');
       setLists([]);
       setInitialized(false);
       stateRef.current.currentRundownId = '';
@@ -31,15 +43,19 @@ export const useBlueprintInitialization = (
     
     // Initialize if needed
     if (user && rundownId && rundownTitle && items.length > 0 && !initialized && !loading && !stateRef.current.isInitializing) {
+      console.log('Starting blueprint initialization...');
       stateRef.current.isInitializing = true;
       stateRef.current.currentRundownId = rundownId;
       setLoading(true);
 
       const initializeBlueprint = async () => {
         try {
+          console.log('Loading existing blueprint data...');
           const blueprintData = await loadBlueprint();
+          console.log('Blueprint data loaded:', blueprintData);
           
           if (blueprintData && blueprintData.lists && blueprintData.lists.length > 0) {
+            console.log('Found existing blueprint with', blueprintData.lists.length, 'lists');
             const refreshedLists = blueprintData.lists.map((list: BlueprintList) => ({
               ...list,
               items: generateListFromColumn(items, list.sourceColumn),
@@ -52,6 +68,7 @@ export const useBlueprintInitialization = (
               setShowDate(blueprintData.show_date);
             }
           } else {
+            console.log('No existing blueprint found, creating default lists');
             const defaultLists = [
               {
                 id: generateListId('headers'),
@@ -61,13 +78,15 @@ export const useBlueprintInitialization = (
                 checkedItems: {}
               }
             ];
+            console.log('Created default lists:', defaultLists);
             setLists(defaultLists);
             await saveBlueprint(defaultLists, true);
           }
           
           setInitialized(true);
+          console.log('Blueprint initialization completed');
         } catch (error) {
-          // Initialization failed silently
+          console.error('Blueprint initialization failed:', error);
         } finally {
           setLoading(false);
           stateRef.current.isInitializing = false;
