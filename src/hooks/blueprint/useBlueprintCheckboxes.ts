@@ -14,8 +14,6 @@ export const useBlueprintCheckboxes = (
   const pendingSavesRef = useRef<Map<string, Record<string, boolean>>>(new Map());
 
   const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
-    console.log('Checkbox update requested for list:', listId, 'checkedItems:', checkedItems);
-    
     setIsUpdatingCheckboxes(true);
     
     // Store pending save
@@ -39,8 +37,6 @@ export const useBlueprintCheckboxes = (
     // Debounce the save operation
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        console.log('Saving checkbox changes after debounce');
-        
         // Get the most recent state and apply all pending saves
         let finalLists = [...lists];
         
@@ -54,7 +50,6 @@ export const useBlueprintCheckboxes = (
         });
         
         await saveBlueprint(rundownTitle, finalLists, showDate, true);
-        console.log('Checkbox changes saved successfully');
         
         // Clear pending saves
         pendingSavesRef.current.clear();

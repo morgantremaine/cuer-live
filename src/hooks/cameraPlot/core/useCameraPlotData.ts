@@ -36,7 +36,6 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
 
   // Simple camera plot storage functions
   const loadBlueprint = async () => {
-    // This will be handled by the parent Blueprint component
     return savedBlueprint;
   };
 

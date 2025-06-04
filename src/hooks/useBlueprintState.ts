@@ -9,8 +9,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export const useBlueprintState = (rundownId: string, rundownTitle: string, items: RundownItem[], rundownStartTime?: string) => {
-  console.log('🔥 BLUEPRINT HOOK: Starting with', { rundownId, rundownTitle, itemsLength: items.length });
-  
   const [lists, setLists] = useState<BlueprintList[]>([]);
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
@@ -29,13 +27,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
 
-  console.log('🔥 BLUEPRINT HOOK: Current state', { 
-    listsCount: lists.length, 
-    initialized, 
-    loading,
-    currentRundownId: stateRef.current.currentRundownId
-  });
-
   // Generate list ID
   const generateListId = useCallback((sourceColumn: string) => {
     return `${sourceColumn}_${Date.now()}_${Math.random()}`;
@@ -44,8 +35,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   // Load blueprint from database
   const loadBlueprint = useCallback(async () => {
     if (!user || !rundownId) return null;
-
-    console.log('🔥 BLUEPRINT HOOK: Loading from database');
     
     try {
       const { data, error } = await supabase
@@ -56,15 +45,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         .maybeSingle();
 
       if (error) {
-        console.error('🔥 BLUEPRINT HOOK: Load error:', error);
+        console.error('Blueprint load error:', error);
         return null;
       }
 
-      console.log('🔥 BLUEPRINT HOOK: Loaded data:', data ? `${data.lists?.length || 0} lists` : 'none');
       setSavedBlueprint(data);
       return data;
     } catch (error) {
-      console.error('🔥 BLUEPRINT HOOK: Load exception:', error);
+      console.error('Blueprint load exception:', error);
       return null;
     }
   }, [user, rundownId]);
@@ -72,8 +60,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   // Save blueprint to database
   const saveBlueprint = useCallback(async (updatedLists: BlueprintList[], silent = false) => {
     if (!user || !rundownId) return;
-
-    console.log('🔥 BLUEPRINT HOOK: Saving', updatedLists.length, 'lists');
 
     try {
       const blueprintData = {
@@ -98,7 +84,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
         if (error) throw error;
         result = data;
-        console.log('🔥 BLUEPRINT HOOK: Updated successfully');
       } else {
         const { data, error } = await supabase
           .from('blueprints')
@@ -108,7 +93,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
         if (error) throw error;
         result = data;
-        console.log('🔥 BLUEPRINT HOOK: Created successfully');
       }
       
       setSavedBlueprint(result);
@@ -120,7 +104,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         });
       }
     } catch (error) {
-      console.error('🔥 BLUEPRINT HOOK: Save error:', error);
+      console.error('Blueprint save error:', error);
       if (!silent) {
         toast({
           title: 'Error',
@@ -133,19 +117,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   // Initialize blueprint
   useEffect(() => {
-    console.log('🔥 BLUEPRINT HOOK: Effect triggered', { 
-      rundownId, 
-      currentRundownId: stateRef.current.currentRundownId,
-      itemsLength: items.length,
-      initialized,
-      loading,
-      user: !!user,
-      isInitializing: stateRef.current.isInitializing
-    });
-
     // Reset if rundown changed
     if (rundownId !== stateRef.current.currentRundownId && stateRef.current.currentRundownId !== '') {
-      console.log('🔥 BLUEPRINT HOOK: Rundown changed - resetting');
       setLists([]);
       setInitialized(false);
       setSavedBlueprint(null);
@@ -155,7 +128,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     
     // Initialize if needed
     if (user && rundownId && rundownTitle && items.length > 0 && !initialized && !loading && !stateRef.current.isInitializing) {
-      console.log('🔥 BLUEPRINT HOOK: Starting initialization');
       stateRef.current.isInitializing = true;
       stateRef.current.currentRundownId = rundownId;
       setLoading(true);
@@ -165,8 +137,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
           const blueprintData = await loadBlueprint();
           
           if (blueprintData && blueprintData.lists && blueprintData.lists.length > 0) {
-            console.log('🔥 BLUEPRINT HOOK: Using saved blueprint');
-            
             const refreshedLists = blueprintData.lists.map((list: BlueprintList) => ({
               ...list,
               items: generateListFromColumn(items, list.sourceColumn),
@@ -179,7 +149,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
               setShowDate(blueprintData.show_date);
             }
           } else {
-            console.log('🔥 BLUEPRINT HOOK: Creating default blueprint');
             const defaultLists = [
               {
                 id: generateListId('headers'),
@@ -194,9 +163,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
           }
           
           setInitialized(true);
-          console.log('🔥 BLUEPRINT HOOK: Initialization completed');
         } catch (error) {
-          console.error('🔥 BLUEPRINT HOOK: Initialization error:', error);
+          console.error('Blueprint initialization error:', error);
         } finally {
           setLoading(false);
           stateRef.current.isInitializing = false;
@@ -209,8 +177,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   // Update checked items
   const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
-    console.log('🔥 BLUEPRINT HOOK: Updating checked items for list:', listId);
-    
     setLists(currentLists => {
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, checkedItems } : list
@@ -227,8 +193,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   // Add new list
   const addNewList = useCallback((name: string, sourceColumn: string) => {
-    console.log('🔥 BLUEPRINT HOOK: Adding new list:', name, 'for column:', sourceColumn);
-    
     const newList: BlueprintList = {
       id: generateListId(sourceColumn),
       name,

@@ -19,7 +19,6 @@ export const useScratchpadEditor = (
   // Load notes from initial notes when they change
   useEffect(() => {
     if (initialNotes && initialNotes !== lastSavedNotesRef.current) {
-      console.log('Loading notes:', initialNotes);
       setNotes(initialNotes);
       lastSavedNotesRef.current = initialNotes;
       setSaveStatus('saved');
@@ -37,11 +36,8 @@ export const useScratchpadEditor = (
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         setSaveStatus('saving');
-        
-        // This will be handled by the parent Blueprint component
         lastSavedNotesRef.current = notesToSave;
         setSaveStatus('saved');
-        console.log('Notes auto-saved successfully');
       } catch (error) {
         console.error('Auto-save failed:', error);
         setSaveStatus('unsaved');
