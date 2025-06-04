@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from './CellRenderer';
@@ -186,6 +185,8 @@ const RegularRow = ({
         <td 
           className={`px-2 py-1 text-sm font-mono align-middle`}
           style={{ color: textColor || undefined, width: '40px' }}
+          onClick={handleRowClick}
+          onContextMenu={handleContextMenu}
         >
           <div className="flex items-center space-x-1">
             {isCurrentlyPlaying && (
@@ -198,17 +199,24 @@ const RegularRow = ({
           </div>
         </td>
         {columns.map((column) => (
-          <CellRenderer
+          <td
             key={column.id}
-            column={column}
-            item={item}
-            cellRefs={cellRefs}
-            textColor={textColor}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            width={getColumnWidth(column)}
-          />
+            className="align-middle"
+            style={{ width: getColumnWidth(column) }}
+            onClick={handleRowClick}
+            onContextMenu={handleContextMenu}
+          >
+            <CellRenderer
+              column={column}
+              item={item}
+              cellRefs={cellRefs}
+              textColor={textColor}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              width={getColumnWidth(column)}
+            />
+          </td>
         ))}
       </tr>
     </RundownContextMenu>
@@ -216,4 +224,3 @@ const RegularRow = ({
 };
 
 export default RegularRow;
-

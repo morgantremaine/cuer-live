@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -156,11 +155,22 @@ const HeaderRow = ({
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
       >
-        <td className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" style={{ width: '40px' }}>
+        <td 
+          className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 
+          style={{ width: '40px' }}
+          onClick={handleRowClick}
+          onContextMenu={handleContextMenu}
+        >
           <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
         </td>
         {columns.map((column, columnIndex) => (
-          <td key={column.id} className="px-1 py-2 align-middle" style={{ width: getColumnWidth(column) }}>
+          <td 
+            key={column.id} 
+            className="px-1 py-2 align-middle" 
+            style={{ width: getColumnWidth(column) }}
+            onClick={handleRowClick}
+            onContextMenu={handleContextMenu}
+          >
             {column.key === 'segmentName' ? (
               <input
                 ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
@@ -187,4 +197,3 @@ const HeaderRow = ({
 };
 
 export default HeaderRow;
-
