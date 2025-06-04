@@ -44,9 +44,7 @@ const RundownGrid = () => {
 
   const { handleCellClick, handleKeyDown } = useCellNavigation(
     items,
-    visibleColumns,
-    cellRefs,
-    handleUpdateItem
+    visibleColumns
   );
 
   // Create a wrapper function that matches the expected signature
