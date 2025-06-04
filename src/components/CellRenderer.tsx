@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
@@ -100,79 +101,39 @@ const CellRenderer = ({
 
   if (column.key === 'endTime' || column.key === 'startTime' || column.key === 'elapsedTime') {
     return (
-      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <div className="flex items-center justify-start h-full min-h-[28px]">
-          <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
-            <HighlightedText text={value} highlight={highlight} />
-          </span>
-        </div>
-      </td>
+      <div className="flex items-center justify-start h-full min-h-[28px]">
+        <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded text-gray-900 dark:text-gray-100">
+          <HighlightedText text={value} highlight={highlight} />
+        </span>
+      </div>
     );
   }
 
   if (column.key === 'script' || column.key === 'notes') {
     return (
-      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <ExpandableScriptCell
-          value={value}
-          itemId={item.id}
-          cellRefKey={cellRefKey}
-          cellRefs={cellRefs}
-          textColor={textColor}
-          currentHighlight={highlight}
-          onUpdateValue={handleUpdateValue}
-          onKeyDown={onKeyDown}
-        />
-      </td>
+      <ExpandableScriptCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={cellRefKey}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        currentHighlight={highlight}
+        onUpdateValue={handleUpdateValue}
+        onKeyDown={onKeyDown}
+      />
     );
   }
 
   if (column.isCustom) {
     return (
-      <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
-        <div className="relative flex items-center min-h-[28px]">
-          <textarea
-            ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
-            value={value}
-            onChange={(e) => handleUpdateValue(e.target.value)}
-            onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight`}
-            style={{ 
-              color: textColor || undefined,
-              minHeight: '20px',
-              height: shouldExpandRow ? '40px' : '20px',
-              lineHeight: '1.2'
-            }}
-            rows={shouldExpandRow ? 2 : 1}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              const scrollHeight = target.scrollHeight;
-              // Dynamically adjust height based on content, max 2 lines
-              target.style.height = Math.min(scrollHeight, 40) + 'px';
-            }}
-          />
-          {highlight && (
-            <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm flex items-center" style={{ color: 'transparent' }}>
-              <HighlightedText text={value} highlight={highlight} />
-            </div>
-          )}
-        </div>
-      </td>
-    );
-  }
-
-  return (
-    <td key={column.id} className="px-1 py-1 align-middle" onClick={handleCellClick} style={{ width }}>
       <div className="relative flex items-center min-h-[28px]">
         <textarea
           ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
           value={value}
           onChange={(e) => handleUpdateValue(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight ${
-            column.key === 'duration' ? 'font-mono text-center' : ''
-          }`}
+          onClick={handleCellClick}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight`}
           style={{ 
             color: textColor || undefined,
             minHeight: '20px',
@@ -180,7 +141,6 @@ const CellRenderer = ({
             lineHeight: '1.2'
           }}
           rows={shouldExpandRow ? 2 : 1}
-          placeholder={column.key === 'duration' ? '00:00:00' : ''}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = 'auto';
@@ -195,7 +155,42 @@ const CellRenderer = ({
           </div>
         )}
       </div>
-    </td>
+    );
+  }
+
+  return (
+    <div className="relative flex items-center min-h-[28px]">
+      <textarea
+        ref={el => el && (cellRefs.current[`${item.id}-${cellRefKey}`] = el)}
+        value={value}
+        onChange={(e) => handleUpdateValue(e.target.value)}
+        onKeyDown={(e) => onKeyDown(e, item.id, cellRefKey)}
+        onClick={handleCellClick}
+        className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight ${
+          column.key === 'duration' ? 'font-mono text-center' : ''
+        }`}
+        style={{ 
+          color: textColor || undefined,
+          minHeight: '20px',
+          height: shouldExpandRow ? '40px' : '20px',
+          lineHeight: '1.2'
+        }}
+        rows={shouldExpandRow ? 2 : 1}
+        placeholder={column.key === 'duration' ? '00:00:00' : ''}
+        onInput={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          target.style.height = 'auto';
+          const scrollHeight = target.scrollHeight;
+          // Dynamically adjust height based on content, max 2 lines
+          target.style.height = Math.min(scrollHeight, 40) + 'px';
+        }}
+      />
+      {highlight && (
+        <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm flex items-center" style={{ color: 'transparent' }}>
+          <HighlightedText text={value} highlight={highlight} />
+        </div>
+      )}
+    </div>
   );
 };
 
