@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 interface UseRundownClipboardOperationsProps {
   items: RundownItem[];
@@ -14,6 +14,34 @@ interface UseRundownClipboardOperationsProps {
   copyItems: (items: RundownItem[]) => void;
   hasClipboardData: boolean;
 }
+
+// Helper function to generate segment names (A, B, C, etc.)
+const generateSegmentName = (index: number): string => {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (index < alphabet.length) {
+    return alphabet[index];
+  }
+  // For indices beyond Z, use AA, AB, AC, etc.
+  const firstLetter = Math.floor(index / alphabet.length) - 1;
+  const secondLetter = index % alphabet.length;
+  return alphabet[firstLetter] + alphabet[secondLetter];
+};
+
+// Helper function to update all header segment names based on their position
+const updateHeaderSegmentNames = (items: RundownItem[]): RundownItem[] => {
+  let headerIndex = 0;
+  return items.map(item => {
+    if (isHeaderItem(item)) {
+      const updatedItem = {
+        ...item,
+        segmentName: generateSegmentName(headerIndex)
+      };
+      headerIndex++;
+      return updatedItem;
+    }
+    return item;
+  });
+};
 
 export const useRundownClipboardOperations = ({
   items,
@@ -55,19 +83,25 @@ export const useRundownClipboardOperations = ({
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
       
-      if (insertAfterIndex !== undefined) {
-        setItems(prevItems => {
-          const newItems = [...prevItems];
-          newItems.splice(insertAfterIndex! + 1, 0, ...itemsToPaste);
-          return newItems;
-        });
-      } else {
-        addMultipleRows(itemsToPaste, calculateEndTime);
-      }
+      setItems(prevItems => {
+        let newItems;
+        
+        if (insertAfterIndex !== undefined) {
+          // Insert at the specified position
+          newItems = [...prevItems];
+          newItems.splice(insertAfterIndex + 1, 0, ...itemsToPaste);
+        } else {
+          // Insert at the end
+          newItems = [...prevItems, ...itemsToPaste];
+        }
+        
+        // Update header segment names for all headers in the correct order
+        return updateHeaderSegmentNames(newItems);
+      });
       
       markAsChanged();
     }
-  }, [clipboardItems, selectedRows, items, setItems, addMultipleRows, calculateEndTime, markAsChanged]);
+  }, [clipboardItems, selectedRows, items, setItems, markAsChanged]);
 
   return {
     handleCopySelectedRows,
