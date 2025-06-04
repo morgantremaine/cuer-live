@@ -20,12 +20,21 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
 
   const saveWithDate = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
-    saveBlueprint(title, updatedLists, showDate, silent);
+    return saveBlueprint(title, updatedLists, showDate, silent);
   }, [saveBlueprint, showDate]);
 
   const createItemsHash = useCallback((items: RundownItem[]) => {
     return JSON.stringify(items.map(item => ({ id: item.id, name: item.name, segmentName: item.segmentName })));
   }, []);
+
+  const { updateCheckedItems, isSaving, hasPendingSave } = useBlueprintCheckboxes(
+    lists,
+    setLists,
+    rundownTitle,
+    showDate,
+    saveBlueprint,
+    initialized
+  );
 
   const { initializationCompleted } = useBlueprintInitialization(
     rundownId,
@@ -37,16 +46,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setShowDate,
     setInitialized,
     setLastItemsHash,
-    createItemsHash
-  );
-
-  const { updateCheckedItems } = useBlueprintCheckboxes(
-    lists,
-    setLists,
-    rundownTitle,
-    showDate,
-    saveBlueprint,
-    initializationCompleted
+    createItemsHash,
+    hasPendingSave
   );
 
   const { addNewList, deleteList, renameList, refreshAllLists } = useBlueprintOperations(
@@ -59,9 +60,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   );
 
   // Refresh list content when items actually change (but preserve checkbox states)
-  // Only do this after initialization is complete
+  // Only do this after initialization is complete and no pending saves
   useEffect(() => {
-    if (!initializationCompleted || !initialized || items.length === 0 || lists.length === 0) {
+    if (!initializationCompleted || !initialized || items.length === 0 || lists.length === 0 || hasPendingSave) {
       return;
     }
 
@@ -83,7 +84,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       // Save silently
       saveBlueprint(rundownTitle, refreshedLists, showDate, true);
     }
-  }, [items, initializationCompleted, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash]);
+  }, [items, initializationCompleted, initialized, lists, rundownTitle, showDate, saveBlueprint, lastItemsHash, createItemsHash, hasPendingSave]);
 
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);

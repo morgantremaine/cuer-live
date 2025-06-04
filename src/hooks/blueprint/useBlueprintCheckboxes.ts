@@ -11,22 +11,18 @@ export const useBlueprintCheckboxes = (
   initializationCompleted: boolean
 ) => {
   const savingRef = useRef(false);
+  const pendingSaveRef = useRef<Promise<void> | null>(null);
 
   const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
-    // Prevent checkbox updates during initialization
-    if (!initializationCompleted) {
-      console.log('Ignoring checkbox update - initialization not completed');
-      return;
-    }
-
-    // Prevent concurrent saves
-    if (savingRef.current) {
-      console.log('Ignoring checkbox update - save in progress');
-      return;
-    }
-
+    // Always allow checkbox updates regardless of initialization state
     console.log('Updating checked items for list:', listId, 'checkedItems:', checkedItems);
     
+    // Prevent concurrent saves by waiting for pending save to complete
+    if (pendingSaveRef.current) {
+      console.log('Waiting for pending save to complete...');
+      await pendingSaveRef.current;
+    }
+
     savingRef.current = true;
     
     try {
@@ -40,17 +36,25 @@ export const useBlueprintCheckboxes = (
       console.log('Updated lists:', updatedLists);
       setLists(updatedLists);
       
-      // Save immediately
-      await saveBlueprint(rundownTitle, updatedLists, showDate, true);
+      // Make save synchronous and store the promise
+      const savePromise = saveBlueprint(rundownTitle, updatedLists, showDate, true);
+      pendingSaveRef.current = savePromise;
+      
+      await savePromise;
       console.log('Checkbox changes saved successfully');
+      
+      pendingSaveRef.current = null;
     } catch (error) {
       console.error('Failed to save checkbox changes:', error);
+      pendingSaveRef.current = null;
     } finally {
       savingRef.current = false;
     }
-  }, [lists, rundownTitle, saveBlueprint, showDate, initializationCompleted]);
+  }, [lists, rundownTitle, saveBlueprint, showDate]);
 
   return {
-    updateCheckedItems
+    updateCheckedItems,
+    isSaving: savingRef.current,
+    hasPendingSave: pendingSaveRef.current !== null
   };
 };
