@@ -179,7 +179,6 @@ const RegularRow = ({
         <td 
           className={`px-2 py-1 text-sm font-mono align-middle`}
           style={{ color: textColor || undefined, width: '40px' }}
-          onClick={handleRowClick}
         >
           <div className="flex items-center space-x-1">
             {isCurrentlyPlaying && (
@@ -196,7 +195,6 @@ const RegularRow = ({
             key={column.id}
             className="align-middle"
             style={{ width: getColumnWidth(column) }}
-            onClick={handleRowClick}
           >
             <CellRenderer
               column={column}

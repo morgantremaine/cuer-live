@@ -151,7 +151,6 @@ const HeaderRow = ({
         <td 
           className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 
           style={{ width: '40px' }}
-          onClick={handleRowClick}
         >
           <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
         </td>
@@ -160,7 +159,6 @@ const HeaderRow = ({
             key={column.id} 
             className="px-1 py-2 align-middle" 
             style={{ width: getColumnWidth(column) }}
-            onClick={handleRowClick}
           >
             {column.key === 'segmentName' ? (
               <input
