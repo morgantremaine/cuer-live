@@ -8,23 +8,38 @@ export const useBlueprintCheckboxManager = (
   showDate: string,
   saveBlueprint: (title: string, lists: BlueprintList[], showDate: string, silent?: boolean) => Promise<void>
 ) => {
-  // Central store for checkbox states - this is the single source of truth
+  // This is the single source of truth for checkbox states
   const checkboxStatesRef = useRef<Map<string, Record<string, boolean>>>(new Map());
   const [isUpdating, setIsUpdating] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingSaveRef = useRef<boolean>(false);
+  const latestListsRef = useRef<BlueprintList[]>([]);
 
   // Initialize checkbox states from saved blueprint data
   const initializeCheckboxStates = useCallback((lists: BlueprintList[]) => {
+    // CRITICAL: Only initialize if we don't have pending saves
+    if (pendingSaveRef.current) {
+      console.log('Skipping checkbox initialization - save in progress');
+      return;
+    }
+
     console.log('Initializing checkbox states from lists:', lists.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
     
+    // Clear existing states first
+    checkboxStatesRef.current.clear();
+    
+    // Initialize with saved states
     lists.forEach(list => {
       if (list.checkedItems && Object.keys(list.checkedItems).length > 0) {
         checkboxStatesRef.current.set(list.id, { ...list.checkedItems });
       }
     });
+
+    // Store the latest lists for saving
+    latestListsRef.current = lists;
   }, []);
 
-  // Apply checkbox states to any list array - this ensures states are never lost
+  // Apply checkbox states to any list array
   const applyCheckboxStates = useCallback((lists: BlueprintList[]): BlueprintList[] => {
     return lists.map(list => ({
       ...list,
@@ -32,12 +47,15 @@ export const useBlueprintCheckboxManager = (
     }));
   }, []);
 
-  // Update checkbox state for a specific list
+  // Update checkbox state and save
   const updateCheckboxState = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
     console.log('Updating checkbox state for list:', listId, 'checkedItems:', checkedItems);
     
     // Update our central store immediately
     checkboxStatesRef.current.set(listId, { ...checkedItems });
+    
+    // Mark that we have a pending save to block re-initialization
+    pendingSaveRef.current = true;
     setIsUpdating(true);
 
     // Clear any existing timeout
@@ -48,34 +66,36 @@ export const useBlueprintCheckboxManager = (
     // Debounce the save operation
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        console.log('Saving checkbox changes to database');
+        console.log('Starting checkbox save operation');
         
-        // We need to get the current lists and apply our checkbox states
-        // Since we don't have direct access to lists here, we'll trigger a save
-        // through a callback that the parent component provides
-        if (onSaveCheckboxStates) {
-          await onSaveCheckboxStates();
-        }
+        // Apply current checkbox states to the latest lists
+        const listsWithUpdatedCheckboxes = applyCheckboxStates(latestListsRef.current);
+        
+        console.log('Saving lists with checkbox states:', listsWithUpdatedCheckboxes.map(l => ({ id: l.id, checkedItems: l.checkedItems })));
+        
+        // Save to database
+        await saveBlueprint(rundownTitle, listsWithUpdatedCheckboxes, showDate, true);
         
         console.log('Checkbox changes saved successfully');
       } catch (error) {
         console.error('Failed to save checkbox changes:', error);
       } finally {
+        // Clear pending state
+        pendingSaveRef.current = false;
         setIsUpdating(false);
+        saveTimeoutRef.current = null;
       }
-    }, 500);
-  }, []);
+    }, 300); // Reduced debounce time for faster saves
+  }, [rundownTitle, showDate, saveBlueprint, applyCheckboxStates]);
 
-  // Callback that parent component will provide to handle saves
-  let onSaveCheckboxStates: (() => Promise<void>) | null = null;
-
-  const setOnSaveCheckboxStates = useCallback((callback: () => Promise<void>) => {
-    onSaveCheckboxStates = callback;
+  // Update the latest lists reference (called when lists change)
+  const updateLatestLists = useCallback((lists: BlueprintList[]) => {
+    latestListsRef.current = lists;
   }, []);
 
   // Check if we have pending updates
   const hasPendingUpdates = useCallback(() => {
-    return isUpdating || saveTimeoutRef.current !== null;
+    return pendingSaveRef.current || isUpdating || saveTimeoutRef.current !== null;
   }, [isUpdating]);
 
   // Wait for pending updates to complete
@@ -90,11 +110,11 @@ export const useBlueprintCheckboxManager = (
         }
       }, 50);
       
-      // Timeout after 2 seconds
+      // Timeout after 3 seconds
       setTimeout(() => {
         clearInterval(checkInterval);
         resolve();
-      }, 2000);
+      }, 3000);
     });
   }, [hasPendingUpdates]);
 
@@ -111,7 +131,7 @@ export const useBlueprintCheckboxManager = (
     initializeCheckboxStates,
     applyCheckboxStates,
     updateCheckboxState,
-    setOnSaveCheckboxStates,
+    updateLatestLists,
     isUpdating,
     hasPendingUpdates,
     waitForPendingUpdates

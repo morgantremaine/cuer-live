@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { BlueprintList } from '@/types/blueprint';
@@ -35,10 +34,14 @@ const BlueprintListCard = ({
   const { toast } = useToast();
 
   const handleCheckboxChange = (itemIndex: number, checked: boolean) => {
+    console.log('BlueprintListCard: checkbox change for item', itemIndex, 'checked:', checked);
+    
     const updatedCheckedItems = {
       ...list.checkedItems,
       [itemIndex]: checked
     };
+    
+    console.log('BlueprintListCard: calling onUpdateCheckedItems with:', updatedCheckedItems);
     onUpdateCheckedItems(list.id, updatedCheckedItems);
   };
 

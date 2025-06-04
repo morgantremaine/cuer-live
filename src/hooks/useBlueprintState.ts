@@ -21,7 +21,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     initializeCheckboxStates,
     applyCheckboxStates,
     updateCheckboxState,
-    setOnSaveCheckboxStates,
+    updateLatestLists,
     isUpdating,
     hasPendingUpdates,
     waitForPendingUpdates
@@ -32,30 +32,29 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     console.log('Setting lists with checkbox state preservation');
     const listsWithCheckboxes = applyCheckboxStates(newLists);
     setListsInternal(listsWithCheckboxes);
-  }, [applyCheckboxStates]);
+    // Update the latest lists reference in the checkbox manager
+    updateLatestLists(listsWithCheckboxes);
+  }, [applyCheckboxStates, updateLatestLists]);
 
-  // Checkbox update handler
+  // Checkbox update handler - this is the main interface for checkbox changes
   const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
-    // Update the checkbox state in our manager
-    await updateCheckboxState(listId, checkedItems);
+    console.log('Blueprint state: updating checked items for list:', listId, 'checkedItems:', checkedItems);
     
-    // Update the local state immediately
-    setListsInternal(currentLists => 
-      currentLists.map(list => 
+    // Update local state immediately for UI responsiveness
+    setListsInternal(currentLists => {
+      const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, checkedItems } : list
-      )
-    );
-  }, [updateCheckboxState]);
-
-  // Set up the save callback for the checkbox manager
-  useEffect(() => {
-    setOnSaveCheckboxStates(async () => {
-      const listsWithCheckboxes = applyCheckboxStates(lists);
-      await saveBlueprint(rundownTitle, listsWithCheckboxes, showDate, true);
+      );
+      // Update the checkbox manager's latest lists reference
+      updateLatestLists(updatedLists);
+      return updatedLists;
     });
-  }, [lists, rundownTitle, showDate, saveBlueprint, applyCheckboxStates, setOnSaveCheckboxStates]);
+    
+    // Update the checkbox manager state and trigger save
+    await updateCheckboxState(listId, checkedItems);
+  }, [updateCheckboxState, updateLatestLists]);
 
-  // Initialize blueprint data
+  // Initialize blueprint data - this runs once when the component loads
   useEffect(() => {
     if (!loading && items.length > 0 && !initialized) {
       console.log('Initializing blueprint state with items:', items.length);
@@ -63,14 +62,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       if (savedBlueprint && savedBlueprint.lists.length > 0) {
         console.log('Loading saved blueprint with', savedBlueprint.lists.length, 'lists');
         
-        // Initialize checkbox states first
-        initializeCheckboxStates(savedBlueprint.lists);
-        
-        // Create lists with fresh items but preserved checkbox states
+        // Create lists with fresh items
         const refreshedLists = savedBlueprint.lists.map((list: BlueprintList) => ({
           ...list,
           items: generateListFromColumn(items, list.sourceColumn)
         }));
+        
+        // Initialize checkbox states first
+        initializeCheckboxStates(refreshedLists);
         
         // Apply checkbox states and set lists
         setLists(refreshedLists);
@@ -95,10 +94,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       setInitialized(true);
     }
   }, [loading, items, initialized, savedBlueprint, setLists, initializeCheckboxStates]);
-
-  const createItemsHash = useCallback((items: RundownItem[]) => {
-    return JSON.stringify(items.map(item => ({ id: item.id, name: item.name, segmentName: item.segmentName })));
-  }, []);
 
   const saveWithDate = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
     return saveBlueprint(title, updatedLists, showDate, silent);
