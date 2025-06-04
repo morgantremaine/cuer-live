@@ -39,6 +39,8 @@ interface RundownMainContentProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  onAddRowAfter?: (itemId: string) => void;
+  onAddHeaderAfter?: (itemId: string) => void;
   showColumnManager: boolean;
   setShowColumnManager: (show: boolean) => void;
   handleAddColumn: (name: string) => void;
@@ -87,6 +89,8 @@ const RundownMainContent = ({
   onDeleteSelectedRows,
   onPasteRows,
   onClearSelection,
+  onAddRowAfter,
+  onAddHeaderAfter,
   showColumnManager,
   setShowColumnManager,
   handleAddColumn,
@@ -100,6 +104,11 @@ const RundownMainContent = ({
   currentSegmentName,
   totalDuration
 }: RundownMainContentProps) => {
+  console.log('RundownMainContent - Add functions:', {
+    onAddRowAfter: !!onAddRowAfter,
+    onAddHeaderAfter: !!onAddHeaderAfter
+  });
+
   return (
     <>
       <RundownContent
@@ -135,6 +144,8 @@ const RundownMainContent = ({
         onDeleteSelectedRows={onDeleteSelectedRows}
         onPasteRows={onPasteRows}
         onClearSelection={onClearSelection}
+        onAddRowAfter={onAddRowAfter}
+        onAddHeaderAfter={onAddHeaderAfter}
       />
       
       {showColumnManager && (

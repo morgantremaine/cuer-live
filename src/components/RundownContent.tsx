@@ -38,6 +38,8 @@ interface RundownContentProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  onAddRowAfter?: (itemId: string) => void;
+  onAddHeaderAfter?: (itemId: string) => void;
 }
 
 const RundownContent = ({
@@ -72,8 +74,15 @@ const RundownContent = ({
   onCopySelectedRows,
   onDeleteSelectedRows,
   onPasteRows,
-  onClearSelection
+  onClearSelection,
+  onAddRowAfter,
+  onAddHeaderAfter
 }: RundownContentProps) => {
+  console.log('RundownContent - Add functions:', {
+    onAddRowAfter: !!onAddRowAfter,
+    onAddHeaderAfter: !!onAddHeaderAfter
+  });
+
   return (
     <div className="relative">
       <ScrollArea className="w-full h-[calc(100vh-200px)]">
@@ -111,6 +120,8 @@ const RundownContent = ({
             onDeleteSelectedRows={onDeleteSelectedRows}
             onPasteRows={onPasteRows}
             onClearSelection={onClearSelection}
+            onAddRowAfter={onAddRowAfter}
+            onAddHeaderAfter={onAddHeaderAfter}
           />
         </div>
         <ScrollBar orientation="horizontal" />

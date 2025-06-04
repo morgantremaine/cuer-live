@@ -78,6 +78,12 @@ const RegularRow = ({
   isDragging,
   getColumnWidth
 }: RegularRowProps) => {
+  console.log('RegularRow render - Add functions available:', {
+    onAddRowAfter: !!onAddRowAfter,
+    onAddHeaderAfter: !!onAddHeaderAfter,
+    itemId: item.id
+  });
+
   const isFloated = item.isFloating || item.isFloated;
 
   const handleRowClick = (e: React.MouseEvent) => {
@@ -104,37 +110,31 @@ const RegularRow = ({
     onToggleFloat(item.id);
   };
 
-  // Calculate row styling with proper color handling
-  let rowClassName = 'border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer';
+  // Calculate row styling with improved color handling
+  let rowClasses = 'border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer';
   let rowStyle: React.CSSProperties = {};
 
-  // Priority order: currently playing > completed > floated > custom color
+  // Priority order: selection > currently playing > completed > floated > custom color
+  if (isSelected) {
+    rowClasses += ' ring-2 ring-blue-500 ring-inset';
+  }
+
   if (isCurrentlyPlaying) {
-    rowClassName += ' bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500';
+    rowClasses += ' bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500';
   } else if (status === 'completed') {
-    rowClassName += ' bg-green-50 dark:bg-green-900/20';
+    rowClasses += ' bg-green-50 dark:bg-green-900/20';
   } else if (isFloated) {
     rowStyle.backgroundColor = '#dc2626'; // red-600
     rowStyle.color = 'white';
-  } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF') {
-    // Apply custom color only if it's not white
+  } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== 'white') {
+    // Apply custom color only if it's not white/transparent
     rowStyle.backgroundColor = item.color;
     rowStyle.color = getContrastTextColor(item.color);
   }
 
-  if (isSelected) {
-    rowClassName += ' ring-2 ring-blue-500 ring-inset';
-  }
-
   if (isDragging || isDraggingMultiple) {
-    rowClassName += ' opacity-50';
+    rowClasses += ' opacity-50';
   }
-
-  console.log('RegularRow render - Add functions available:', {
-    onAddRowAfter: !!onAddRowAfter,
-    onAddHeaderAfter: !!onAddHeaderAfter,
-    itemId: item.id
-  });
 
   return (
     <RundownContextMenu
@@ -155,7 +155,7 @@ const RegularRow = ({
       onAddHeaderAfter={onAddHeaderAfter}
     >
       <tr
-        className={rowClassName}
+        className={rowClasses}
         style={rowStyle}
         onClick={handleRowClick}
         draggable
