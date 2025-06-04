@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useMemo } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 
 export const useRundownItems = (markAsChanged: () => void) => {
@@ -108,14 +108,53 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [markAsChanged]);
 
   const getRowNumber = useCallback((index: number) => {
-    return (index + 1).toString();
-  }, []);
+    if (!items[index]) return '1';
+    
+    const item = items[index];
+    
+    // For headers, return their segment name (A, B, C, etc.)
+    if (isHeaderItem(item)) {
+      return item.segmentName || item.rowNumber || 'A';
+    }
+    
+    // For regular items, find the current segment and count within that segment
+    let currentSegment = 'A';
+    let regularCountInSegment = 0;
+    
+    // Go backwards to find the most recent header
+    for (let i = index - 1; i >= 0; i--) {
+      if (isHeaderItem(items[i])) {
+        currentSegment = items[i].segmentName || items[i].rowNumber || 'A';
+        break;
+      }
+    }
+    
+    // Count regular items in the current segment up to this index
+    let segmentStartIndex = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (isHeaderItem(items[i])) {
+        if ((items[i].segmentName || items[i].rowNumber) === currentSegment) {
+          segmentStartIndex = i + 1;
+          break;
+        }
+      }
+    }
+    
+    for (let i = segmentStartIndex; i < index; i++) {
+      if (!isHeaderItem(items[i])) {
+        regularCountInSegment++;
+      }
+    }
+    
+    return `${currentSegment}${regularCountInSegment + 1}`;
+  }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {
+    // Only include non-floated items in the total runtime calculation
     let totalMinutes = 0;
     
     items.forEach(item => {
-      if (item.type === 'regular' && item.duration) {
+      if (item.type === 'regular' && item.duration && !item.isFloating && !item.isFloated) {
         const [hours, minutes, seconds] = item.duration.split(':').map(Number);
         totalMinutes += hours * 60 + minutes + seconds / 60;
       }
@@ -129,22 +168,27 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [items]);
 
   const calculateHeaderDuration = useCallback((headerIndex: number) => {
+    if (headerIndex < 0 || headerIndex >= items.length || !isHeaderItem(items[headerIndex])) {
+      return '00:00:00';
+    }
+  
     let totalMinutes = 0;
-    
-    for (let i = headerIndex + 1; i < items.length; i++) {
-      const item = items[i];
-      if (item.type === 'header') break;
-      
-      if (item.type === 'regular' && item.duration) {
-        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
+    let i = headerIndex + 1;
+  
+    // Sum up durations of non-floated items until next header
+    while (i < items.length && !isHeaderItem(items[i])) {
+      // Only count non-floated items
+      if (items[i].duration && !items[i].isFloating && !items[i].isFloated) {
+        const [hours, minutes, seconds] = items[i].duration.split(':').map(Number);
         totalMinutes += hours * 60 + minutes + seconds / 60;
       }
+      i++;
     }
-
+  
     const hours = Math.floor(totalMinutes / 60);
     const minutes = Math.floor(totalMinutes % 60);
     const seconds = Math.floor((totalMinutes % 1) * 60);
-
+  
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [items]);
 
