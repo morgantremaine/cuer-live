@@ -12,6 +12,10 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
   
+  // Prevent concurrent operations
+  const operationLockRef = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Track initialization to prevent multiple runs
   const initializationRef = useRef<{
     completed: boolean;
@@ -52,9 +56,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
                              items.length > 0 && 
                              rundownId &&
                              rundownTitle &&
-                             (!initializationRef.current.completed || initializationRef.current.rundownId !== rundownId);
+                             (!initializationRef.current.completed || initializationRef.current.rundownId !== rundownId) &&
+                             !operationLockRef.current;
 
     if (shouldInitialize) {
+      operationLockRef.current = true;
       console.log('Initializing blueprint state with items:', items.length);
       
       if (savedBlueprint && savedBlueprint.lists.length > 0) {
@@ -97,6 +103,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         rundownId: rundownId
       };
       setInitialized(true);
+      operationLockRef.current = false;
     }
   }, [loading, items, initialized, savedBlueprint, rundownId, rundownTitle, generateConsistentListId]);
 
@@ -106,14 +113,39 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       console.log('Rundown changed, resetting initialization');
       initializationRef.current.completed = false;
       setInitialized(false);
+      operationLockRef.current = false;
+      
+      // Clear any pending saves
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
     }
   }, [rundownId]);
 
-  const saveWithDate = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
-    return saveBlueprint(title, updatedLists, showDate, silent);
+  // Debounced save function
+  const debouncedSave = useCallback((title: string, updatedLists: BlueprintList[], silent = false) => {
+    if (operationLockRef.current) return;
+    
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced save
+    saveTimeoutRef.current = setTimeout(async () => {
+      if (!operationLockRef.current) {
+        operationLockRef.current = true;
+        try {
+          await saveBlueprint(title, updatedLists, showDate, silent);
+        } finally {
+          operationLockRef.current = false;
+        }
+      }
+    }, silent ? 100 : 500); // Shorter delay for silent saves (checkbox changes)
   }, [saveBlueprint, showDate]);
 
-  // Checkbox update handler with immediate database save
+  // Checkbox update handler with debounced save
   const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
     console.log('Blueprint state: updating checked items for list:', listId, 'checkedItems:', checkedItems);
     
@@ -123,33 +155,39 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         list.id === listId ? { ...list, checkedItems } : list
       );
       
-      // Save to database immediately (no debouncing)
-      console.log('Saving checkbox changes immediately to database');
-      saveBlueprint(rundownTitle, updatedLists, showDate, true);
+      // Save with debouncing
+      console.log('Saving checkbox changes with debouncing');
+      debouncedSave(rundownTitle, updatedLists, true);
       
       return updatedLists;
     });
-  }, [rundownTitle, showDate, saveBlueprint]);
+  }, [rundownTitle, debouncedSave]);
 
   const addNewList = useCallback(async (name: string, sourceColumn: string) => {
+    if (operationLockRef.current) {
+      console.log('Operation in progress, skipping add new list');
+      return;
+    }
+    
     console.log('Adding new list:', name, 'for column:', sourceColumn);
+    operationLockRef.current = true;
     
-    const newList: BlueprintList = {
-      id: generateConsistentListId(sourceColumn, rundownId, lists),
-      name,
-      sourceColumn,
-      items: generateListFromColumn(items, sourceColumn),
-      checkedItems: {}
-    };
-    
-    const updatedLists = [...lists, newList];
-    console.log('Updated lists count:', updatedLists.length);
-    
-    // Update state first
-    setLists(updatedLists);
-    
-    // Save immediately and wait for completion - use await to ensure it completes
     try {
+      const newList: BlueprintList = {
+        id: generateConsistentListId(sourceColumn, rundownId, lists),
+        name,
+        sourceColumn,
+        items: generateListFromColumn(items, sourceColumn),
+        checkedItems: {}
+      };
+      
+      const updatedLists = [...lists, newList];
+      console.log('Updated lists count:', updatedLists.length);
+      
+      // Update state first
+      setLists(updatedLists);
+      
+      // Save immediately without debouncing for new lists
       console.log('Saving new list to database with', updatedLists.length, 'total lists');
       await saveBlueprint(rundownTitle, updatedLists, showDate, false);
       console.log('New list saved successfully');
@@ -157,16 +195,22 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       console.error('Failed to save new list:', error);
       // Revert state on error
       setLists(lists);
+    } finally {
+      operationLockRef.current = false;
     }
   }, [items, lists, rundownTitle, saveBlueprint, showDate, generateConsistentListId, rundownId]);
 
   const deleteList = useCallback((listId: string) => {
+    if (operationLockRef.current) return;
+    
     const updatedLists = lists.filter(list => list.id !== listId);
     setLists(updatedLists);
-    saveWithDate(rundownTitle, updatedLists);
-  }, [lists, rundownTitle, saveWithDate]);
+    debouncedSave(rundownTitle, updatedLists);
+  }, [lists, rundownTitle, debouncedSave]);
 
   const renameList = useCallback((listId: string, newName: string) => {
+    if (operationLockRef.current) return;
+    
     const updatedLists = lists.map(list => {
       if (list.id === listId) {
         return { ...list, name: newName };
@@ -174,25 +218,38 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       return list;
     });
     setLists(updatedLists);
-    saveWithDate(rundownTitle, updatedLists);
-  }, [lists, rundownTitle, saveWithDate]);
+    debouncedSave(rundownTitle, updatedLists);
+  }, [lists, rundownTitle, debouncedSave]);
 
   const refreshAllLists = useCallback(() => {
+    if (operationLockRef.current) return;
+    
     const refreshedLists = lists.map(list => ({
       ...list,
       items: generateListFromColumn(items, list.sourceColumn)
       // IMPORTANT: Keep existing checkbox states during refresh
     }));
     setLists(refreshedLists);
-    saveWithDate(rundownTitle, refreshedLists, true);
-  }, [items, lists, rundownTitle, saveWithDate]);
+    debouncedSave(rundownTitle, refreshedLists, true);
+  }, [items, lists, rundownTitle, debouncedSave]);
 
   const updateShowDate = useCallback((newDate: string) => {
+    if (operationLockRef.current) return;
+    
     setShowDate(newDate);
-    saveBlueprint(rundownTitle, lists, newDate, true);
-  }, [rundownTitle, lists, saveBlueprint]);
+    debouncedSave(rundownTitle, lists, true);
+  }, [rundownTitle, lists, debouncedSave]);
 
-  const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, saveWithDate, rundownTitle);
+  const dragAndDropHandlers = useBlueprintDragAndDrop(lists, setLists, debouncedSave, rundownTitle);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     lists,

@@ -32,12 +32,17 @@ export const useBlueprintStorage = (rundownId: string) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Prevent duplicate loads
+  const loadingRef = useRef(false);
+  const lastLoadedRundownRef = useRef<string>('');
 
   const loadBlueprint = async () => {
-    if (!user || !rundownId) {
+    if (!user || !rundownId || loadingRef.current || rundownId === lastLoadedRundownRef.current) {
       return savedBlueprint;
     }
 
+    loadingRef.current = true;
     setLoading(true);
     
     try {
@@ -55,12 +60,14 @@ export const useBlueprintStorage = (rundownId: string) => {
 
       console.log('Blueprint loaded from database:', data ? `${data.lists.length} lists` : 'no blueprint found');
       setSavedBlueprint(data);
+      lastLoadedRundownRef.current = rundownId;
       return data;
     } catch (error) {
       console.error('Error loading blueprint:', error);
       return null;
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   };
 
@@ -165,8 +172,17 @@ export const useBlueprintStorage = (rundownId: string) => {
     }
   };
 
+  // Reset when rundown changes
   useEffect(() => {
-    if (user && rundownId) {
+    if (rundownId !== lastLoadedRundownRef.current) {
+      setSavedBlueprint(null);
+      lastLoadedRundownRef.current = '';
+      loadingRef.current = false;
+    }
+  }, [rundownId]);
+
+  useEffect(() => {
+    if (user && rundownId && rundownId !== lastLoadedRundownRef.current) {
       loadBlueprint();
     }
   }, [user, rundownId]);
