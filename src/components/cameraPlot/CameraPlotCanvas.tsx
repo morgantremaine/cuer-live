@@ -18,7 +18,7 @@ interface CameraPlotCanvasProps {
   onAddElement: (type: string, x: number, y: number) => void;
   onUpdateElement: (elementId: string, updates: Partial<CameraElement>) => void;
   onDeleteElement: (elementId: string) => void;
-  onDuplicateElement?: (element: CameraElement) => void;
+  onDuplicateElement?: (elementId: string) => void;
   onSelectElement: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
