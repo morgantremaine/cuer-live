@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,6 +53,7 @@ export const useBlueprintStorage = (rundownId: string) => {
         return null;
       }
 
+      console.log('Blueprint loaded from database:', data ? `${data.lists.length} lists` : 'no blueprint found');
       setSavedBlueprint(data);
       return data;
     } catch (error) {
@@ -75,6 +77,8 @@ export const useBlueprintStorage = (rundownId: string) => {
       console.error('Cannot save blueprint: missing user or rundownId');
       return;
     }
+
+    console.log('Saving blueprint with', lists.length, 'lists to database');
 
     try {
       // CRITICAL: Only include camera_plots in the update if it's explicitly provided
@@ -117,6 +121,7 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
+        console.log('Blueprint updated successfully with', data.lists.length, 'lists');
         setSavedBlueprint(data);
       } else {
         // Create new blueprint
@@ -138,6 +143,7 @@ export const useBlueprintStorage = (rundownId: string) => {
           return;
         }
 
+        console.log('Blueprint created successfully with', data.lists.length, 'lists');
         setSavedBlueprint(data);
       }
 

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -144,14 +145,18 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     const updatedLists = [...lists, newList];
     console.log('Updated lists count:', updatedLists.length);
     
+    // Update state first
     setLists(updatedLists);
     
-    // Save immediately and wait for completion
+    // Save immediately and wait for completion - use await to ensure it completes
     try {
+      console.log('Saving new list to database with', updatedLists.length, 'total lists');
       await saveBlueprint(rundownTitle, updatedLists, showDate, false);
       console.log('New list saved successfully');
     } catch (error) {
       console.error('Failed to save new list:', error);
+      // Revert state on error
+      setLists(lists);
     }
   }, [items, lists, rundownTitle, saveBlueprint, showDate, generateConsistentListId, rundownId]);
 
