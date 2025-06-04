@@ -78,8 +78,6 @@ const RundownContent = ({
   onAddRow,
   onAddHeader
 }: RundownContentProps) => {
-  console.log('RundownContent: onAddRow exists?', !!onAddRow);
-  console.log('RundownContent: onAddHeader exists?', !!onAddHeader);
 
   return (
     <div className="relative">

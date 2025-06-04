@@ -35,34 +35,23 @@ export const useRowEventHandlers = ({
     const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
     const isResizeHandle = target.classList.contains('resize-handle') || target.closest('.resize-handle');
     
-    console.log('Row click:', {
-      target: target.tagName,
-      isInput,
-      isResizeHandle,
-      classList: target.className,
-      itemId: item.id,
-      index
-    });
-    
     if (isInput || isResizeHandle) {
-      console.log('Row: Ignoring click on input or resize handle');
       return;
     }
     
     e.stopPropagation();
     
     if (onRowSelect) {
-      console.log('Row: Calling onRowSelect for item', item.id, 'at index', index);
       onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
     }
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    console.log('Right-click detected on row:', item.id);
     e.preventDefault();
     e.stopPropagation();
     
     if (onRowSelect) {
-      console.log('Row: Right-click selecting row', item.id, 'at index', index);
       onRowSelect(item.id, index, false, false);
     }
     

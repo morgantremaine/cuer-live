@@ -82,9 +82,6 @@ const RundownTable = ({
   currentHighlight
 }: RundownTableProps) => {
   
-  console.log('RundownTable: onAddRow exists?', !!onAddRow);
-  console.log('RundownTable: onAddHeader exists?', !!onAddHeader);
-  
   return (
     <div 
       className="w-full"
