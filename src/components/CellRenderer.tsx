@@ -20,7 +20,7 @@ interface CellRendererProps {
   width?: string;
 }
 
-const CellRenderer = ({
+const CellRenderer = React.memo(({
   column,
   item,
   cellRefs,
@@ -31,13 +31,9 @@ const CellRenderer = ({
   onKeyDown,
   width
 }: CellRendererProps) => {
-  console.log(`CellRenderer: Rendering column ${column.key} for item ${item.id}, isCustom: ${column.isCustom}`);
-  
   const getCellValue = (column: Column) => {
     if (column.isCustom) {
-      const customValue = item.customFields?.[column.key] || '';
-      console.log(`CellRenderer: Custom field ${column.key} value:`, customValue);
-      return customValue;
+      return item.customFields?.[column.key] || '';
     }
     
     // Special handling for duration column - default to '00:00' if empty or if it's '00:00:00'
@@ -71,12 +67,10 @@ const CellRenderer = ({
 
   const handleCellClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row selection when clicking on cells
-    console.log(`CellRenderer: Cell clicked - item: ${item.id}, field: ${cellRefKey}`);
     onCellClick(item.id, cellRefKey);
   };
 
   const handleUpdateValue = (newValue: string) => {
-    console.log(`CellRenderer: Updating ${updateFieldKey} with value:`, newValue);
     onUpdateItem(item.id, updateFieldKey, newValue);
   };
 
@@ -103,7 +97,6 @@ const CellRenderer = ({
 
   // Custom field cells
   if (column.isCustom) {
-    console.log(`CellRenderer: Rendering custom field cell for ${column.key} with value:`, value);
     return (
       <CustomFieldCell
         value={value}
@@ -135,6 +128,8 @@ const CellRenderer = ({
       onKeyDown={onKeyDown}
     />
   );
-};
+});
+
+CellRenderer.displayName = 'CellRenderer';
 
 export default CellRenderer;

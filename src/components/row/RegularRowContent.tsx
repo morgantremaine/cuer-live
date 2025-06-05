@@ -20,7 +20,7 @@ interface RegularRowContentProps {
   getColumnWidth: (column: Column) => string;
 }
 
-const RegularRowContent = ({
+const RegularRowContent = React.memo(({
   item,
   rowNumber,
   columns,
@@ -70,6 +70,8 @@ const RegularRowContent = ({
       ))}
     </>
   );
-};
+});
+
+RegularRowContent.displayName = 'RegularRowContent';
 
 export default RegularRowContent;

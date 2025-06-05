@@ -11,7 +11,7 @@ export const useTimeCalculations = (
   const { timeToSeconds } = useRundownCalculations(items);
   const lastProcessedRef = useRef<string>('');
   const isProcessingRef = useRef(false);
-  const batchUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Stable functions with useCallback
   const secondsToTime = useCallback((seconds: number) => {
@@ -28,16 +28,6 @@ export const useTimeCalculations = (
     const startSeconds = timeToSeconds(safeStartTime);
     const durationSeconds = timeToSeconds(safeDuration);
     return secondsToTime(startSeconds + durationSeconds);
-  }, [timeToSeconds, secondsToTime]);
-
-  const calculateElapsedTime = useCallback((startTime: string, rundownStartTime: string) => {
-    const safeStartTime = startTime || '00:00:00';
-    const safeRundownStartTime = rundownStartTime || '00:00:00';
-    
-    const startSeconds = timeToSeconds(safeStartTime);
-    const rundownStartSeconds = timeToSeconds(safeRundownStartTime);
-    const elapsedSeconds = startSeconds - rundownStartSeconds;
-    return secondsToTime(Math.max(0, elapsedSeconds));
   }, [timeToSeconds, secondsToTime]);
 
   const getRowStatus = useCallback((item: RundownItem, currentTime: Date) => {
@@ -58,128 +48,106 @@ export const useTimeCalculations = (
     return 'upcoming';
   }, [timeToSeconds]);
 
-  // Create a more stable signature that ignores frequently changing fields
-  const currentSignature = useMemo(() => {
-    const essentialData = items.map(item => {
-      // Only include fields that affect time calculations
-      const key = `${item.id}:${item.type}:${item.duration || '00:00:00'}:${item.isFloating ? '1' : '0'}`;
-      return key;
+  // Create a stable signature that focuses only on essential data for time calculations
+  const timeCalculationSignature = useMemo(() => {
+    // Only include data that actually affects time calculations
+    const essentialData = items.map((item, index) => {
+      return `${item.id}:${item.type}:${item.duration || '00:00:00'}:${item.isFloating ? '1' : '0'}:${index}`;
     }).join('|');
     return `${items.length}-${rundownStartTime}-${essentialData}`;
   }, [items, rundownStartTime]);
 
-  // Batched update function to prevent rapid successive updates
-  const performBatchedUpdate = useCallback((updates: Array<{ id: string; field: string; value: string }>) => {
-    if (batchUpdateTimeoutRef.current) {
-      clearTimeout(batchUpdateTimeoutRef.current);
+  // Debounced time calculation to prevent rapid successive updates
+  useEffect(() => {
+    // Skip if already processing or no changes
+    if (isProcessingRef.current || !items.length || !rundownStartTime) {
+      return;
     }
 
-    batchUpdateTimeoutRef.current = setTimeout(() => {
-      // Group updates by item ID to minimize calls
-      const updatesByItem = new Map<string, Array<{ field: string; value: string }>>();
-      
-      updates.forEach(update => {
-        if (!updatesByItem.has(update.id)) {
-          updatesByItem.set(update.id, []);
-        }
-        updatesByItem.get(update.id)!.push({ field: update.field, value: update.value });
-      });
+    // Skip if signature hasn't changed
+    if (lastProcessedRef.current === timeCalculationSignature) {
+      return;
+    }
 
-      // Apply updates
-      updatesByItem.forEach((itemUpdates, itemId) => {
-        itemUpdates.forEach(update => {
-          updateItem(itemId, update.field, update.value);
+    // Clear any existing timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    // Debounce the calculation
+    updateTimeoutRef.current = setTimeout(() => {
+      isProcessingRef.current = true;
+      
+      try {
+        let currentTime = rundownStartTime || '00:00:00';
+        const batchUpdates: Array<{ id: string; field: string; value: string }> = [];
+
+        // Calculate segment names for headers
+        let headerCount = 0;
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        
+        items.forEach((item, index) => {
+          if (isHeaderItem(item)) {
+            const expectedSegmentName = letters[headerCount] || 'A';
+            if (item.segmentName !== expectedSegmentName) {
+              batchUpdates.push({ id: item.id, field: 'segmentName', value: expectedSegmentName });
+            }
+            headerCount++;
+          }
         });
-      });
 
-      isProcessingRef.current = false;
-    }, 10); // Small delay to batch updates
-  }, [updateItem]);
-
-  // Optimized recalculation with reduced frequency
-  useEffect(() => {
-    if (!items.length || !rundownStartTime || isProcessingRef.current) return;
-
-    // Skip if we've already processed this exact state
-    if (lastProcessedRef.current === currentSignature) return;
-
-    isProcessingRef.current = true;
-    let currentTime = rundownStartTime || '00:00:00';
-    const updates: Array<{ id: string; field: string; value: string }> = [];
-
-    try {
-      // First pass: assign segment names to headers that don't have them
-      let headerCount = 0;
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      
-      items.forEach((item, index) => {
-        if (isHeaderItem(item)) {
-          const expectedSegmentName = letters[headerCount] || 'A';
-          if (!item.segmentName || item.segmentName !== expectedSegmentName) {
-            updates.push({ id: item.id, field: 'segmentName', value: expectedSegmentName });
+        // Calculate times for all items
+        items.forEach((item, index) => {
+          if (isHeaderItem(item)) {
+            // Headers start and end at the same time
+            if (item.startTime !== currentTime) {
+              batchUpdates.push({ id: item.id, field: 'startTime', value: currentTime });
+            }
+            if (item.endTime !== currentTime) {
+              batchUpdates.push({ id: item.id, field: 'endTime', value: currentTime });
+            }
+          } else {
+            // Regular items
+            const itemDuration = item.duration || '00:00:00';
+            const expectedEndTime = calculateEndTime(currentTime, itemDuration);
+            
+            if (item.startTime !== currentTime) {
+              batchUpdates.push({ id: item.id, field: 'startTime', value: currentTime });
+            }
+            
+            if (item.endTime !== expectedEndTime) {
+              batchUpdates.push({ id: item.id, field: 'endTime', value: expectedEndTime });
+            }
+            
+            // Advance time only for non-floating items
+            if (!item.isFloating && !item.isFloated) {
+              currentTime = expectedEndTime;
+            }
           }
-          headerCount++;
+        });
+
+        // Apply all updates at once if there are changes
+        if (batchUpdates.length > 0) {
+          batchUpdates.forEach(update => {
+            updateItem(update.id, update.field, update.value);
+          });
         }
-      });
 
-      // Second pass: calculate times only for items that actually need updates
-      items.forEach((item, index) => {
-        const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
-
-        if (isHeaderItem(item)) {
-          // Headers start and end at the same time
-          if (item.startTime !== currentTime) {
-            updates.push({ id: item.id, field: 'startTime', value: currentTime });
-          }
-          if (item.endTime !== currentTime) {
-            updates.push({ id: item.id, field: 'endTime', value: currentTime });
-          }
-          if (item.elapsedTime !== expectedElapsedTime) {
-            updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
-          }
-        } else {
-          // Regular items
-          const itemDuration = item.duration || '00:00:00';
-          const expectedEndTime = calculateEndTime(currentTime, itemDuration);
-          
-          if (item.startTime !== currentTime) {
-            updates.push({ id: item.id, field: 'startTime', value: currentTime });
-          }
-          
-          if (item.endTime !== expectedEndTime) {
-            updates.push({ id: item.id, field: 'endTime', value: expectedEndTime });
-          }
-
-          if (item.elapsedTime !== expectedElapsedTime) {
-            updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
-          }
-          
-          // Advance time only for non-floating items
-          if (!item.isFloating && !item.isFloated) {
-            currentTime = expectedEndTime;
-          }
-        }
-      });
-
-      // Apply batched updates only if there are actual changes
-      if (updates.length > 0) {
-        performBatchedUpdate(updates);
-      } else {
+        lastProcessedRef.current = timeCalculationSignature;
+      } catch (error) {
+        console.error('Error in time calculations:', error);
+      } finally {
         isProcessingRef.current = false;
       }
+    }, 50); // 50ms debounce
 
-      lastProcessedRef.current = currentSignature;
-    } catch (error) {
-      console.error('Error in time calculations:', error);
-      isProcessingRef.current = false;
-    }
-  }, [currentSignature, calculateElapsedTime, calculateEndTime, performBatchedUpdate, rundownStartTime]);
+  }, [timeCalculationSignature, calculateEndTime, updateItem, rundownStartTime, items]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (batchUpdateTimeoutRef.current) {
-        clearTimeout(batchUpdateTimeoutRef.current);
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
     };
   }, []);

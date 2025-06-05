@@ -60,15 +60,17 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     
     // Count regular items in the current segment up to this index
     let segmentStartIndex = 0;
-    for (let i = 0; i < items.length; i++) {
+    // Find where this segment starts
+    for (let i = 0; i <= index; i++) {
       if (isHeaderItem(items[i]) && segmentNameMap.get(i) === currentSegment) {
         segmentStartIndex = i + 1;
         break;
       }
     }
     
+    // Count regular items from segment start to current index
     for (let i = segmentStartIndex; i < index; i++) {
-      if (!isHeaderItem(items[i])) {
+      if (i < items.length && !isHeaderItem(items[i])) {
         regularCountInSegment++;
       }
     }
