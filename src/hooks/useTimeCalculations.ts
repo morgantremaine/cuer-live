@@ -57,15 +57,15 @@ export const useTimeCalculations = (
     return 'upcoming';
   }, [timeToSeconds]);
 
-  // Memoize the signature to prevent unnecessary recalculations
-  const currentSignature = useMemo(() => 
-    `${items.length}-${rundownStartTime}-${items.map(item => 
-      `${item.id}:${item.type}:${item.duration || '00:00:00'}`
-    ).join(',')}`, 
-    [items.length, rundownStartTime, items.map(item => `${item.id}:${item.type}:${item.duration || '00:00:00'}`).join(',')]
-  );
+  // Create a stable signature based only on essential data
+  const currentSignature = useMemo(() => {
+    const essentialData = items.map(item => 
+      `${item.id}:${item.type}:${item.duration || '00:00:00'}:${item.isFloating ? '1' : '0'}`
+    ).join('|');
+    return `${items.length}-${rundownStartTime}-${essentialData}`;
+  }, [items, rundownStartTime]);
 
-  // Optimized recalculation with stable dependencies
+  // Optimized recalculation with batched updates
   useEffect(() => {
     if (!items.length || !rundownStartTime || isProcessingRef.current) return;
 
@@ -91,20 +91,23 @@ export const useTimeCalculations = (
         }
       });
 
-      // Second pass: calculate times
+      // Second pass: calculate times only for items that need updates
       items.forEach((item, index) => {
         const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
 
         if (isHeaderItem(item)) {
-          if (item.startTime !== currentTime || item.endTime !== currentTime) {
+          // Headers start and end at the same time
+          if (item.startTime !== currentTime) {
             updates.push({ id: item.id, field: 'startTime', value: currentTime });
+          }
+          if (item.endTime !== currentTime) {
             updates.push({ id: item.id, field: 'endTime', value: currentTime });
           }
-          
           if (item.elapsedTime !== expectedElapsedTime) {
             updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
           }
         } else {
+          // Regular items
           const itemDuration = item.duration || '00:00:00';
           const expectedEndTime = calculateEndTime(currentTime, itemDuration);
           
@@ -120,16 +123,20 @@ export const useTimeCalculations = (
             updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
           }
           
+          // Advance time only for non-floating items
           if (!item.isFloating && !item.isFloated) {
             currentTime = expectedEndTime;
           }
         }
       });
 
-      // Batch updates for better performance - only if there are actual changes
+      // Apply batched updates - only if there are actual changes
       if (updates.length > 0) {
-        updates.forEach(update => {
-          updateItem(update.id, update.field, update.value);
+        // Use requestAnimationFrame to batch DOM updates
+        requestAnimationFrame(() => {
+          updates.forEach(update => {
+            updateItem(update.id, update.field, update.value);
+          });
         });
       }
 
@@ -139,7 +146,7 @@ export const useTimeCalculations = (
     } finally {
       isProcessingRef.current = false;
     }
-  }, [currentSignature, calculateElapsedTime, calculateEndTime, updateItem, rundownStartTime, items]);
+  }, [currentSignature, calculateElapsedTime, calculateEndTime, updateItem, rundownStartTime]);
 
   return {
     calculateEndTime,

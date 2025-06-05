@@ -92,13 +92,27 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
+  // Determine background color and text color
+  const isFloated = item.isFloating || item.isFloated;
+  const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF';
+  
+  let backgroundColor: string | undefined;
+  let textColor: string | undefined;
+  
+  if (isFloated) {
+    backgroundColor = '#991b1b'; // red-800
+    textColor = 'white';
+  } else if (hasCustomColor) {
+    backgroundColor = item.color;
+    textColor = getContrastTextColor(item.color);
+  }
+  // For default white rows, let CSS classes handle the styling
 
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
       selectedRows={selectedRows}
-      isFloated={item.isFloating || item.isFloated}
+      isFloated={isFloated}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
@@ -115,8 +129,8 @@ const RegularRow = (props: RegularRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
-          color: textColor || undefined
+          backgroundColor,
+          color: textColor
         }}
         draggable
         onClick={handleRowClick}

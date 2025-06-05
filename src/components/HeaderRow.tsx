@@ -11,28 +11,29 @@ interface HeaderRowProps {
   item: RundownItem;
   index: number;
   rowNumber: string;
+  headerDuration: string;
+  status: 'upcoming' | 'current' | 'completed';
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
-  headerDuration: string;
+  isSelected?: boolean;
   selectedRowsCount?: number;
   selectedRows?: Set<string>;
-  isSelected?: boolean;
-  showColorPicker: string | null;
   hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
-  onToggleColorPicker: (itemId: string) => void;
-  onColorSelect: (itemId: string, color: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
   isDragging: boolean;
@@ -43,6 +44,7 @@ const HeaderRow = (props: HeaderRowProps) => {
   const {
     item,
     index,
+    headerDuration,
     selectedRowsCount = 1,
     selectedRows,
     isSelected = false,
@@ -82,10 +84,6 @@ const HeaderRow = (props: HeaderRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  const handleContextMenuFloat = () => {
-    // Headers don't float, but we'll keep the interface consistent
-  };
-
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -96,7 +94,6 @@ const HeaderRow = (props: HeaderRowProps) => {
       itemId={item.id}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
-      onToggleFloat={handleContextMenuFloat}
       onColorPicker={handleContextMenuColor}
       onColorSelect={onColorSelect}
       onPaste={handleContextMenuPaste}
@@ -105,18 +102,18 @@ const HeaderRow = (props: HeaderRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         draggable
+        onClick={handleRowClick}
+        onContextMenu={handleContextMenu}
         onDragStart={(e) => props.onDragStart(e, index)}
         onDragOver={props.onDragOver}
         onDrop={(e) => props.onDrop(e, index)}
-        onClick={handleRowClick}
-        onContextMenu={handleContextMenu}
       >
         <HeaderRowContent
           item={item}
           columns={props.columns}
-          headerDuration={props.headerDuration}
+          headerDuration={headerDuration}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}

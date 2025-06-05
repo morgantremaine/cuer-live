@@ -21,7 +21,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     return 0;
   }, []);
 
-  // Memoize segment name calculation based on header positions
+  // Stable segment name calculation based on header positions
   const segmentNameMap = useMemo(() => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const map = new Map<number, string>();
