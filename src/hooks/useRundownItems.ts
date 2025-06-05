@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { generateId } from '@/utils/idGenerator';
@@ -63,7 +64,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       id: generateId(),
       type,
       rowNumber: '',
-      name: type === 'header' ? '' : '', // Don't set default text for headers
+      name: '',
       startTime: '00:00:00',
       duration: type === 'header' ? '' : '00:00',
       endTime: '00:00:00',
