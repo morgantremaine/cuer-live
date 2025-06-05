@@ -31,27 +31,26 @@ export const useRundownDataLoader = ({
   const params = useParams<{ id: string }>();
   const paramId = params.id;
   const loadedRundownIdRef = useRef<string | null>(null);
-  const hasLoadedRef = useRef(false);
   const isLoadingRef = useRef(false);
 
   useEffect(() => {
-    // Only proceed if we have rundowns loaded and not currently loading
+    // Skip if storage is still loading or we're already loading
     if (loading || isLoadingRef.current) return;
     
     const currentRundownId = rundownId || paramId;
     
     // If no rundown ID, this is a new rundown - don't load anything
     if (!currentRundownId) {
-      // Reset state for new rundown
+      // Reset state for new rundown only if we previously had a loaded rundown
       if (loadedRundownIdRef.current) {
+        console.log('Switching to new rundown, resetting loader state');
         loadedRundownIdRef.current = null;
-        hasLoadedRef.current = false;
       }
       return;
     }
 
     // Don't reload if we've already loaded this exact rundown
-    if (loadedRundownIdRef.current === currentRundownId && hasLoadedRef.current) {
+    if (loadedRundownIdRef.current === currentRundownId) {
       return;
     }
 
@@ -67,51 +66,50 @@ export const useRundownDataLoader = ({
     // Mark as loading to prevent concurrent loads
     isLoadingRef.current = true;
     
-    // Use setTimeout to ensure this happens after current render cycle
-    setTimeout(() => {
-      try {
-        // Set the rundown data
-        setRundownTitle(rundown.title);
-        
-        if (rundown.timezone) {
-          setTimezone(rundown.timezone);
-        }
-        
-        if (rundown.startTime || rundown.start_time) {
-          setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
-        }
-        
-        if (rundown.columns) {
-          handleLoadLayout(rundown.columns);
-        }
-
-        // Load the items - ENSURE they have customFields
-        if (rundown.items && Array.isArray(rundown.items)) {
-          console.log('Setting rundown items:', rundown.items.length);
-          const itemsWithCustomFields = rundown.items.map(item => ({
-            ...item,
-            customFields: item.customFields || {}
-          }));
-          setItems(itemsWithCustomFields);
-        }
-
-        // Mark as successfully loaded
-        loadedRundownIdRef.current = currentRundownId;
-        hasLoadedRef.current = true;
-
-        // Call the callback with the loaded rundown
-        if (onRundownLoaded) {
-          onRundownLoaded(rundown);
-        }
-      } finally {
-        // Reset loading flag
-        isLoadingRef.current = false;
+    // Load the rundown data immediately
+    try {
+      // Set the rundown data
+      setRundownTitle(rundown.title);
+      
+      if (rundown.timezone) {
+        setTimezone(rundown.timezone);
       }
-    }, 50);
+      
+      if (rundown.startTime || rundown.start_time) {
+        setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
+      }
+      
+      if (rundown.columns) {
+        handleLoadLayout(rundown.columns);
+      }
+
+      // Load the items - ENSURE they have customFields
+      if (rundown.items && Array.isArray(rundown.items)) {
+        console.log('Setting rundown items:', rundown.items.length);
+        const itemsWithCustomFields = rundown.items.map(item => ({
+          ...item,
+          customFields: item.customFields || {}
+        }));
+        setItems(itemsWithCustomFields);
+      }
+
+      // Mark as successfully loaded
+      loadedRundownIdRef.current = currentRundownId;
+
+      // Call the callback with the loaded rundown
+      if (onRundownLoaded) {
+        onRundownLoaded(rundown);
+      }
+    } finally {
+      // Reset loading flag after a short delay to ensure all updates are processed
+      setTimeout(() => {
+        isLoadingRef.current = false;
+      }, 100);
+    }
   }, [
     rundownId, 
     paramId, 
-    savedRundowns.length, // Only depend on length, not the entire array
+    savedRundowns,
     loading
   ]);
 
@@ -121,7 +119,6 @@ export const useRundownDataLoader = ({
     if (loadedRundownIdRef.current && loadedRundownIdRef.current !== currentRundownId) {
       console.log('Rundown ID changed, resetting loader state');
       loadedRundownIdRef.current = null;
-      hasLoadedRef.current = false;
       isLoadingRef.current = false;
     }
   }, [rundownId, paramId]);

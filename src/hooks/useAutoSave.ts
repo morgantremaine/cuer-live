@@ -9,7 +9,6 @@ import { useChangeTracking } from './useChangeTracking';
 export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSaveDataRef = useRef<string>('');
   const saveInProgressRef = useRef(false);
   const lastSaveAttemptRef = useRef<number>(0);
 
@@ -23,31 +22,41 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
-  // Stable debounced save function with rate limiting
+  // Debounced save function
   const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
     const now = Date.now();
     
-    // Rate limiting - prevent saves within 5 seconds of each other
-    if (now - lastSaveAttemptRef.current < 5000) {
-      console.log('Save rate limited');
+    // Rate limiting - prevent saves within 3 seconds of each other
+    if (now - lastSaveAttemptRef.current < 3000) {
+      console.log('Save rate limited, skipping');
       return;
     }
 
     if (!user || saveInProgressRef.current) {
+      console.log('Save blocked - no user or save in progress');
       return;
     }
 
-    // Prevent overlapping saves
+    // Validate we have data to save
+    if (!Array.isArray(itemsToSave) || itemsToSave.length === 0) {
+      console.log('Save blocked - no items to save');
+      return;
+    }
+
     saveInProgressRef.current = true;
     setIsLoading(true);
     lastSaveAttemptRef.current = now;
+
+    console.log('Starting auto-save for:', titleToSave, 'with', itemsToSave.length, 'items');
 
     try {
       const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
       
       if (success) {
+        console.log('Auto-save successful');
         markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
       } else {
+        console.log('Auto-save failed');
         setHasUnsavedChanges(true);
       }
     } catch (error) {
@@ -59,45 +68,32 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     }
   }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
-  // Auto-save effect with stronger guards
+  // Auto-save effect
   useEffect(() => {
-    // Don't save if not initialized, no changes, no user, or save in progress
+    // Only attempt save if we have unsaved changes and are initialized
     if (!hasUnsavedChanges || !isInitialized || !user || saveInProgressRef.current) {
       return;
     }
 
     // Don't save if we don't have meaningful data
     if (!Array.isArray(items) || items.length === 0) {
+      console.log('Skipping save - no items');
       return;
     }
 
-    // Create signature to avoid duplicate saves
-    const currentDataSignature = JSON.stringify({ 
-      itemsCount: items.length, 
-      title: rundownTitle, 
-      columnsCount: columns?.length || 0, 
-      timezone, 
-      startTime,
-      timestamp: Math.floor(Date.now() / 10000) // Round to 10 second intervals
-    });
-    
-    // Skip if this exact data was already saved recently
-    if (lastSaveDataRef.current === currentDataSignature) {
-      return;
-    }
-
-    lastSaveDataRef.current = currentDataSignature;
+    console.log('Scheduling auto-save due to changes');
 
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Schedule save with longer debounce to prevent spam
+    // Schedule save with debounce
     debounceTimeoutRef.current = setTimeout(() => {
+      console.log('Executing scheduled auto-save');
       debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       debounceTimeoutRef.current = null;
-    }, 5000); // Longer delay to prevent excessive saves
+    }, 2000); // 2 second debounce
 
   }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
 
