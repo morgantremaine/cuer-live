@@ -19,7 +19,6 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   // Initialize instance ID only once
   if (!instanceIdRef.current) {
     instanceIdRef.current = ++instanceCounter;
-    console.log(`📊 useChangeTracking instance #${instanceIdRef.current} created`);
   }
 
   // Create signature only when values actually change
@@ -42,44 +41,27 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     
     // Check if we have meaningful data to initialize with
     const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
-    
-    console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect:`, {
-      alreadyInitialized: initializedRef.current,
-      isLoading: isLoadingRef.current,
-      itemsLength: items.length,
-      title: rundownTitle,
-      hasInitialData: hasInitialDataRef.current
-    });
 
     // Only initialize once we have meaningful data and haven't initialized before
     if (hasMeaningfulData && !hasInitialDataRef.current) {
       hasInitialDataRef.current = true;
       
-      console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect: Has meaningful data: true`);
-      console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect: Initializing with signature length: ${currentSignature.length}`);
-      
       lastSavedDataRef.current = currentSignature;
       initializedRef.current = true;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
-    } else {
-      console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect: Has meaningful data: false`);
     }
   }, [items.length, rundownTitle]); // Minimal dependencies to prevent loops
 
   // Track changes after initialization - only check when signature changes
   useEffect(() => {
     if (!initializedRef.current || isLoadingRef.current) {
-      console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Skipping - not initialized or loading`);
       return;
     }
 
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
-    console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Has changes: ${hasChanges} Current hasUnsavedChanges: ${hasUnsavedChanges}`);
-    
     if (hasChanges !== hasUnsavedChanges) {
-      console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Updating hasUnsavedChanges to: ${hasChanges}`);
       setHasUnsavedChanges(hasChanges);
     }
   }, [currentSignature, hasUnsavedChanges]); // Only depend on actual changes
