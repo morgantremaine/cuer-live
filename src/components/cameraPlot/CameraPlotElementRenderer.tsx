@@ -42,7 +42,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
           style={baseStyle}
         >
           <img 
-            src="/lovable-uploads/53aede73-ec59-4307-8be5-74cb3cf7b36c.png" 
+            src="/lovable-uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
             alt="Person"
             className="w-12 h-12 object-contain"
           />

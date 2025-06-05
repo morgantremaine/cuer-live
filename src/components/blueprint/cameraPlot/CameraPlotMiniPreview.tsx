@@ -101,7 +101,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
               />
             );
           } else if (element.type === 'person') {
-            // Make person icons larger and use new uploaded image without triangle background
+            // Make person icons larger and use new uploaded image
             const personSize = Math.max(width, height) * 1.5; // 50% larger
             const personX = x + (width - personSize) / 2;
             const personY = y + (height - personSize) / 2;
@@ -109,7 +109,7 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
             return (
               <image
                 key={`${element.id}-${index}`}
-                href="/lovable-uploads/53aede73-ec59-4307-8be5-74cb3cf7b36c.png"
+                href="/lovable-uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png"
                 x={personX}
                 y={personY}
                 width={personSize}
