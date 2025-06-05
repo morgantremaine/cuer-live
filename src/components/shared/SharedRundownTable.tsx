@@ -19,14 +19,14 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
     <div className="overflow-hidden border rounded-lg print:border-gray-400 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
       <table className="w-full">
         <thead>
-          <tr className="bg-gray-200 dark:bg-gray-700">
-            <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300">
+          <tr className="bg-blue-600 dark:bg-blue-700">
+            <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-white">
               #
             </th>
             {visibleColumns.map((column) => (
               <th
                 key={column.id}
-                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
+                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-white"
               >
                 {column.name}
               </th>
@@ -55,7 +55,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
               };
               rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
             } else if (isHeaderItem(item)) {
-              rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold';
+              rowClass = 'bg-blue-600 dark:bg-blue-700 text-white font-semibold';
             } else {
               rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
             }
@@ -97,7 +97,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       return (
                         <td 
                           key={column.id} 
-                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700 text-gray-200 dark:text-gray-300"
                         >
                           <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
                         </td>
