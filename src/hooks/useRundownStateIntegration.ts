@@ -44,15 +44,13 @@ export const useRundownStateIntegration = (
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
       const currentCustomFields = item.customFields || {};
-      originalUpdateItem(id, {
-        customFields: {
-          ...currentCustomFields,
-          [customFieldKey]: value
-        }
-      });
+      originalUpdateItem(id, 'customFields', JSON.stringify({
+        ...currentCustomFields,
+        [customFieldKey]: value
+      }));
     } else {
       // Handle standard fields
-      originalUpdateItem(id, { [field]: value });
+      originalUpdateItem(id, field, value);
     }
   }, [originalUpdateItem, items]);
 

@@ -149,16 +149,24 @@ export const useRundownItems = (markAsChanged?: () => void) => {
     toggleFloat(id);
   }, [toggleFloat]);
 
-  // Add missing calculateTotalRuntime function
+  // Add missing calculateTotalRuntime function - returns formatted string
   const calculateTotalRuntime = useCallback(() => {
-    // Basic implementation - can be enhanced later
-    return items.reduce((total, item) => {
+    const totalSeconds = items.reduce((total, item) => {
       if (item.type === 'regular' && item.duration) {
         const [minutes, seconds] = item.duration.split(':').map(Number);
         return total + (minutes * 60) + seconds;
       }
       return total;
     }, 0);
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [items]);
 
   // Add missing calculateHeaderDuration function

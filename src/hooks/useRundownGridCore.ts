@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -101,7 +100,7 @@ export const useRundownGridCore = () => {
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   // Wrapped functions that save state before making changes - update to support insertion after selected rows
-  const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
+  const wrappedAddRow = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     
     // Find the index of the last selected row if multiple rows are selected
@@ -125,9 +124,9 @@ export const useRundownGridCore = () => {
     
     // Call addRow with the insertion index
     if (insertAfterIndex !== undefined) {
-      addRow(calculateEndTimeFn, insertAfterIndex);
+      addRow(insertAfterIndex);
     } else {
-      addRow(calculateEndTimeFn);
+      addRow();
     }
   }, [addRow, saveState, items, columns, rundownTitle]);
 
