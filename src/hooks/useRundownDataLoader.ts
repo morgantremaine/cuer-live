@@ -81,14 +81,14 @@ export const useRundownDataLoader = ({
     setLoadingComplete
   });
 
-  // Reset loaded reference when rundown ID changes - but less frequently
+  // Reset loaded reference when rundown ID changes - but only when actually needed
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
-    if (loadedRef.current !== currentRundownId) {
+    if (currentRundownId && loadedRef.current && loadedRef.current !== currentRundownId) {
       console.log('Data loader: Resetting loading state for rundown ID change:', currentRundownId);
       resetLoadingState(currentRundownId);
     }
-  }, [rundownId, paramId, resetLoadingState, loadedRef]);
+  }, [rundownId, paramId]); // Removed resetLoadingState and loadedRef from dependencies to prevent loops
 
   // Cleanup on unmount
   useEffect(() => {

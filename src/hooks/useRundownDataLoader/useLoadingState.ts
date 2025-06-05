@@ -11,11 +11,14 @@ export const useLoadingState = () => {
   const evaluationCooldownRef = useRef<NodeJS.Timeout | null>(null);
 
   const resetLoadingState = (currentRundownId?: string) => {
-    if (loadedRef.current && loadedRef.current !== currentRundownId) {
+    // Only reset if we're switching to a different rundown
+    if (currentRundownId && loadedRef.current !== currentRundownId) {
+      console.log('Loading state: Resetting for new rundown:', currentRundownId);
       loadedRef.current = null;
       isLoadingRef.current = false;
       userHasInteractedRef.current = false;
       initialLoadCompleteRef.current = false;
+      lastEvaluationRef.current = 0;
       
       if (loadTimerRef.current) {
         clearTimeout(loadTimerRef.current);
@@ -30,6 +33,7 @@ export const useLoadingState = () => {
   };
 
   const setLoadingComplete = (rundownId: string) => {
+    console.log('Loading state: Marking as loaded:', rundownId);
     loadedRef.current = rundownId;
     setTimeout(() => {
       isLoadingRef.current = false;
@@ -38,8 +42,8 @@ export const useLoadingState = () => {
   };
 
   const setLoadingStarted = (rundownId: string) => {
+    console.log('Loading state: Starting load for:', rundownId);
     isLoadingRef.current = true;
-    loadedRef.current = rundownId;
     userHasInteractedRef.current = false;
   };
 

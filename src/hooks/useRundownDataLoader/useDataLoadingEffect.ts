@@ -45,7 +45,7 @@ export const useDataLoadingEffect = ({
   setLoadingStarted,
   setLoadingComplete
 }: UseDataLoadingEffectProps) => {
-  // Main data loading effect - reduced frequency and optimized conditions
+  // Main data loading effect - only run when we have valid conditions
   useEffect(() => {
     // Early returns with minimal logging
     if (loading || savedRundowns.length === 0) {
@@ -59,6 +59,7 @@ export const useDataLoadingEffect = ({
 
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) {
+      console.log('Data loader: No rundown found for ID:', currentRundownId);
       return;
     }
 
@@ -69,13 +70,16 @@ export const useDataLoadingEffect = ({
 
     // Only evaluate if enough time has passed since last evaluation
     const now = Date.now();
-    if (now - lastEvaluationRef.current < 3000) {
+    if (now - lastEvaluationRef.current < 2000) {
       return;
     }
+
+    console.log('Data loader: Evaluating load conditions for:', currentRundownId);
 
     // Debounce the evaluation
     evaluationCooldownRef.current = setTimeout(() => {
       if (!shouldLoadRundown(currentRundownId, rundown)) {
+        console.log('Data loader: Should not load rundown - conditions not met');
         return;
       }
 
@@ -115,7 +119,7 @@ export const useDataLoadingEffect = ({
             clearTimeout(loadTimerRef.current);
           }
           
-          console.log('Data loader: About to call setItems with:', itemsToLoad);
+          console.log('Data loader: About to call setItems with:', itemsToLoad.length, 'items');
           setItems(itemsToLoad);
           console.log('Data loader: setItems call completed');
         } else {
@@ -135,25 +139,12 @@ export const useDataLoadingEffect = ({
       }
 
       setLoadingComplete(currentRundownId);
-    }, 1000); // Increased timeout to reduce frequency
+    }, 500); // Reduced timeout for more responsive loading
 
   }, [
     rundownId, 
     paramId, 
     loading, 
-    savedRundowns.length,
-    setRundownTitle, 
-    setTimezone, 
-    setRundownStartTime, 
-    handleLoadLayout,
-    setItems,
-    onRundownLoaded,
-    shouldLoadRundown,
-    setLoadingStarted,
-    setLoadingComplete,
-    userHasInteractedRef,
-    loadTimerRef,
-    evaluationCooldownRef,
-    lastEvaluationRef
-  ]);
+    savedRundowns.length // Only depend on length to avoid triggering on every array change
+  ]); // Simplified dependencies to prevent constant re-triggers
 };
