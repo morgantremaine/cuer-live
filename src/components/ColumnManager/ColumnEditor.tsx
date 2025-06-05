@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -9,12 +8,19 @@ interface ColumnEditorProps {
 
 const ColumnEditor = React.memo(({ onAddColumn }: ColumnEditorProps) => {
   const [newColumnName, setNewColumnName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleAddColumn = useCallback(() => {
     console.log('ColumnEditor handleAddColumn called with:', newColumnName);
     if (newColumnName.trim()) {
       onAddColumn(newColumnName.trim());
       setNewColumnName('');
+      // Keep focus on input after adding
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 0);
     }
   }, [newColumnName, onAddColumn]);
 
@@ -34,6 +40,7 @@ const ColumnEditor = React.memo(({ onAddColumn }: ColumnEditorProps) => {
       <h3 className="text-sm font-medium text-gray-900 dark:text-white">Add New Column</h3>
       <div className="flex space-x-2">
         <input
+          ref={inputRef}
           type="text"
           value={newColumnName}
           onChange={handleInputChange}
@@ -47,6 +54,9 @@ const ColumnEditor = React.memo(({ onAddColumn }: ColumnEditorProps) => {
       </div>
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Only re-render if onAddColumn reference changes
+  return prevProps.onAddColumn === nextProps.onAddColumn;
 });
 
 ColumnEditor.displayName = 'ColumnEditor';

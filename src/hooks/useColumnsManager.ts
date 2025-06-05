@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useMemo } from 'react';
 
 export interface Column {
@@ -27,10 +26,10 @@ const DEFAULT_COLUMNS: Column[] = [
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
   const isLoadingLayoutRef = useRef(false);
-  const markAsChangedCallbackRef = useRef(markAsChanged);
+  const markAsChangedRef = useRef(markAsChanged);
   
-  // Keep the callback ref up to date without causing re-renders
-  markAsChangedCallbackRef.current = markAsChanged;
+  // Keep the callback ref up to date
+  markAsChangedRef.current = markAsChanged;
 
   // Memoize safe columns and visible columns to prevent unnecessary recalculations
   const safeColumns = useMemo(() => {
@@ -43,8 +42,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   // Stable function to call markAsChanged without causing re-renders
   const triggerMarkAsChanged = useCallback(() => {
-    if (markAsChangedCallbackRef.current && !isLoadingLayoutRef.current) {
-      markAsChangedCallbackRef.current();
+    if (markAsChangedRef.current && !isLoadingLayoutRef.current) {
+      markAsChangedRef.current();
     }
   }, []);
 
@@ -131,7 +130,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [triggerMarkAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
-    // Prevent multiple simultaneous layout loads
+    // Prevent multiple simultaneous layout loads and auto-save loops
     if (isLoadingLayoutRef.current) {
       console.log('Layout load already in progress, skipping');
       return;
@@ -200,19 +199,21 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       console.log('Setting new columns from layout:', mergedColumns);
       setColumns(mergedColumns);
       
-      // DON'T trigger markAsChanged for layout loads to prevent auto-save loop
+      // CRITICAL: Don't trigger markAsChanged for layout loads to prevent auto-save loop
       
     } catch (error) {
       console.error('Error loading layout:', error);
     } finally {
-      // Reset the loading flag after a delay
+      // Reset the loading flag after a longer delay to ensure all re-renders are complete
       setTimeout(() => {
         isLoadingLayoutRef.current = false;
-      }, 100);
+        console.log('Layout loading flag reset');
+      }, 500);
     }
   }, []); // No dependencies to keep this function completely stable
 
-  return {
+  // Return memoized object to prevent unnecessary re-renders of consuming components
+  return useMemo(() => ({
     columns: safeColumns,
     visibleColumns,
     handleAddColumn,
@@ -222,5 +223,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  };
+  }), [
+    safeColumns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth
+  ]);
 };

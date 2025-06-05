@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
@@ -38,12 +38,39 @@ const ColumnManager = React.memo(({
   onRenameColumn,
   onClose 
 }: ColumnManagerProps) => {
-  console.log('ColumnManager: onRenameColumn function available:', !!onRenameColumn);
   
   const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout } = useColumnLayoutStorage();
 
-  // Memoize stable props to prevent child re-renders
-  const stableLayoutProps = useMemo(() => ({
+  // Create stable callback wrappers to prevent child re-renders
+  const stableOnAddColumn = useCallback((name: string) => {
+    console.log('ColumnManager: stableOnAddColumn called with:', name);
+    onAddColumn(name);
+  }, [onAddColumn]);
+
+  const stableOnReorderColumns = useCallback((newColumns: Column[]) => {
+    onReorderColumns(newColumns);
+  }, [onReorderColumns]);
+
+  const stableOnToggleColumnVisibility = useCallback((columnId: string) => {
+    onToggleColumnVisibility(columnId);
+  }, [onToggleColumnVisibility]);
+
+  const stableOnDeleteColumn = useCallback((columnId: string) => {
+    onDeleteColumn(columnId);
+  }, [onDeleteColumn]);
+
+  const stableOnRenameColumn = useCallback((columnId: string, newName: string) => {
+    if (onRenameColumn) {
+      onRenameColumn(columnId, newName);
+    }
+  }, [onRenameColumn]);
+
+  const stableOnLoadLayout = useCallback((layoutColumns: Column[]) => {
+    onLoadLayout(layoutColumns);
+  }, [onLoadLayout]);
+
+  // Memoize layout props to prevent LayoutManager re-renders
+  const layoutProps = useMemo(() => ({
     columns,
     savedLayouts,
     loading,
@@ -51,16 +78,17 @@ const ColumnManager = React.memo(({
     onUpdateLayout: updateLayout,
     onRenameLayout: renameLayout,
     onDeleteLayout: deleteLayout,
-    onLoadLayout
-  }), [columns, savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout, onLoadLayout]);
+    onLoadLayout: stableOnLoadLayout
+  }), [columns, savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout, stableOnLoadLayout]);
 
-  const stableColumnListProps = useMemo(() => ({
+  // Memoize column list props to prevent ColumnList re-renders
+  const columnListProps = useMemo(() => ({
     columns,
-    onReorderColumns,
-    onToggleColumnVisibility,
-    onDeleteColumn,
-    onRenameColumn
-  }), [columns, onReorderColumns, onToggleColumnVisibility, onDeleteColumn, onRenameColumn]);
+    onReorderColumns: stableOnReorderColumns,
+    onToggleColumnVisibility: stableOnToggleColumnVisibility,
+    onDeleteColumn: stableOnDeleteColumn,
+    onRenameColumn: stableOnRenameColumn
+  }), [columns, stableOnReorderColumns, stableOnToggleColumnVisibility, stableOnDeleteColumn, stableOnRenameColumn]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -73,11 +101,11 @@ const ColumnManager = React.memo(({
         </div>
         
         <div className="p-4 space-y-4">
-          <LayoutManager {...stableLayoutProps} />
+          <LayoutManager {...layoutProps} />
 
-          <ColumnEditor onAddColumn={onAddColumn} />
+          <ColumnEditor onAddColumn={stableOnAddColumn} />
 
-          <ColumnList {...stableColumnListProps} />
+          <ColumnList {...columnListProps} />
         </div>
 
         <div className="flex justify-end space-x-2 p-4 border-t border-gray-200 dark:border-gray-600">
@@ -87,6 +115,18 @@ const ColumnManager = React.memo(({
         </div>
       </div>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return (
+    prevProps.columns === nextProps.columns &&
+    prevProps.onAddColumn === nextProps.onAddColumn &&
+    prevProps.onReorderColumns === nextProps.onReorderColumns &&
+    prevProps.onDeleteColumn === nextProps.onDeleteColumn &&
+    prevProps.onToggleColumnVisibility === nextProps.onToggleColumnVisibility &&
+    prevProps.onLoadLayout === nextProps.onLoadLayout &&
+    prevProps.onRenameColumn === nextProps.onRenameColumn &&
+    prevProps.onClose === nextProps.onClose
   );
 });
 

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { GripVertical, Eye, EyeOff, Trash2, Edit, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Column } from '@/hooks/useColumnsManager';
@@ -29,38 +29,80 @@ const ColumnItem = React.memo(({
 }: ColumnItemProps) => {
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnName, setEditingColumnName] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
 
-  const startEditingColumn = (column: Column) => {
+  const startEditingColumn = useCallback((column: Column) => {
     console.log('Starting to edit column:', column.id, column.name);
     setEditingColumnId(column.id);
     setEditingColumnName(column.name);
-  };
+    // Focus the input after state update
+    setTimeout(() => {
+      if (editInputRef.current) {
+        editInputRef.current.focus();
+      }
+    }, 0);
+  }, []);
 
-  const cancelEditingColumn = () => {
+  const cancelEditingColumn = useCallback(() => {
     console.log('Canceling edit for column:', editingColumnId);
     setEditingColumnId(null);
     setEditingColumnName('');
-  };
+  }, [editingColumnId]);
 
-  const handleRenameColumnSubmit = (columnId: string) => {
+  const handleRenameColumnSubmit = useCallback((columnId: string) => {
     console.log('Submitting rename for column:', columnId, 'new name:', editingColumnName);
     if (editingColumnName.trim() && onRenameColumn) {
       onRenameColumn(columnId, editingColumnName.trim());
       setEditingColumnId(null);
       setEditingColumnName('');
     }
-  };
+  }, [editingColumnName, onRenameColumn]);
+
+  const handleToggleVisibilityClick = useCallback(() => {
+    onToggleVisibility(column.id);
+  }, [onToggleVisibility, column.id]);
+
+  const handleDeleteClick = useCallback(() => {
+    onDeleteColumn(column.id);
+  }, [onDeleteColumn, column.id]);
+
+  const handleEditClick = useCallback(() => {
+    startEditingColumn(column);
+  }, [startEditingColumn, column]);
+
+  const handleSubmitEdit = useCallback(() => {
+    handleRenameColumnSubmit(column.id);
+  }, [handleRenameColumnSubmit, column.id]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingColumnName(e.target.value);
+  }, []);
+
+  const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleRenameColumnSubmit(column.id);
+    } else if (e.key === 'Escape') {
+      cancelEditingColumn();
+    }
+  }, [handleRenameColumnSubmit, column.id, cancelEditingColumn]);
+
+  const handleDragStartWrapper = useCallback((e: React.DragEvent) => {
+    onDragStart(e, index);
+  }, [onDragStart, index]);
+
+  const handleDropWrapper = useCallback((e: React.DragEvent) => {
+    onDrop(e, index);
+  }, [onDrop, index]);
 
   return (
     <div
-      key={`column-item-${column.id}`} // Stable key to prevent focus loss
       className={`flex items-center justify-between p-2 border border-gray-200 dark:border-gray-600 rounded cursor-move ${
         draggedColumnIndex === index ? 'bg-blue-100 dark:bg-blue-900 opacity-50' : 'bg-gray-50 dark:bg-gray-700'
       }`}
       draggable
-      onDragStart={(e) => onDragStart(e, index)}
+      onDragStart={handleDragStartWrapper}
       onDragOver={onDragOver}
-      onDrop={(e) => onDrop(e, index)}
+      onDrop={handleDropWrapper}
     >
       <div className="flex items-center space-x-2 flex-1">
         <GripVertical className="h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -68,24 +110,17 @@ const ColumnItem = React.memo(({
           {editingColumnId === column.id ? (
             <div className="flex items-center space-x-2">
               <input
-                key={`edit-input-${column.id}`} // Stable key for input
+                ref={editInputRef}
                 type="text"
                 value={editingColumnName}
-                onChange={(e) => setEditingColumnName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleRenameColumnSubmit(column.id);
-                  } else if (e.key === 'Escape') {
-                    cancelEditingColumn();
-                  }
-                }}
+                onChange={handleInputChange}
+                onKeyDown={handleInputKeyDown}
                 className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoFocus
               />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleRenameColumnSubmit(column.id)}
+                onClick={handleSubmitEdit}
                 className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 h-6 w-6 p-0"
               >
                 <Check className="h-3 w-3" />
@@ -106,10 +141,7 @@ const ColumnItem = React.memo(({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    console.log('Edit button clicked for column:', column.id);
-                    startEditingColumn(column);
-                  }}
+                  onClick={handleEditClick}
                   className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 h-6 w-6 p-0"
                   title="Rename column"
                 >
@@ -130,7 +162,7 @@ const ColumnItem = React.memo(({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onToggleVisibility(column.id)}
+          onClick={handleToggleVisibilityClick}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 h-6 w-6 p-0"
         >
           {column.isVisible !== false ? (
@@ -143,7 +175,7 @@ const ColumnItem = React.memo(({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onDeleteColumn(column.id)}
+            onClick={handleDeleteClick}
             className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 h-6 w-6 p-0"
           >
             <Trash2 className="h-3 w-3" />
@@ -151,6 +183,23 @@ const ColumnItem = React.memo(({
         )}
       </div>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.column.id === nextProps.column.id &&
+    prevProps.column.name === nextProps.column.name &&
+    prevProps.column.width === nextProps.column.width &&
+    prevProps.column.isVisible === nextProps.column.isVisible &&
+    prevProps.column.isCustom === nextProps.column.isCustom &&
+    prevProps.index === nextProps.index &&
+    prevProps.draggedColumnIndex === nextProps.draggedColumnIndex &&
+    prevProps.onDragStart === nextProps.onDragStart &&
+    prevProps.onDragOver === nextProps.onDragOver &&
+    prevProps.onDrop === nextProps.onDrop &&
+    prevProps.onToggleVisibility === nextProps.onToggleVisibility &&
+    prevProps.onDeleteColumn === nextProps.onDeleteColumn &&
+    prevProps.onRenameColumn === nextProps.onRenameColumn
   );
 });
 
