@@ -92,21 +92,23 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  // Determine background color and text color
+  // Determine background color and text color for inline styles
   const isFloated = item.isFloating || item.isFloated;
-  const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF';
+  const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
   
-  let backgroundColor: string | undefined;
-  let textColor: string | undefined;
+  let inlineBackgroundColor: string | undefined;
+  let inlineTextColor: string | undefined;
   
   if (isFloated) {
-    backgroundColor = '#991b1b'; // red-800
-    textColor = 'white';
+    // Floated items: red background, white text (handled by CSS classes)
+    inlineBackgroundColor = undefined;
+    inlineTextColor = undefined;
   } else if (hasCustomColor) {
-    backgroundColor = item.color;
-    textColor = getContrastTextColor(item.color);
+    // Custom color items: use inline styles
+    inlineBackgroundColor = item.color;
+    inlineTextColor = getContrastTextColor(item.color);
   }
-  // For default white rows, let CSS classes handle the styling
+  // For default white/gray rows, let CSS classes handle the styling
 
   return (
     <RundownContextMenu
@@ -129,8 +131,8 @@ const RegularRow = (props: RegularRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor,
-          color: textColor
+          backgroundColor: inlineBackgroundColor,
+          color: inlineTextColor
         }}
         draggable
         onClick={handleRowClick}
@@ -144,7 +146,7 @@ const RegularRow = (props: RegularRowProps) => {
           rowNumber={props.rowNumber}
           columns={props.columns}
           cellRefs={props.cellRefs}
-          textColor={textColor}
+          textColor={inlineTextColor}
           isCurrentlyPlaying={props.isCurrentlyPlaying}
           isDraggingMultiple={isDraggingMultiple}
           isSelected={isSelected}

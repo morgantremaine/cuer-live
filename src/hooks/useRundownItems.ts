@@ -1,10 +1,15 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
+import { useRundownCalculations } from './useRundownCalculations';
 
 export const useRundownItems = (markAsChanged?: () => void) => {
   const [items, setItems] = useState<RundownItem[]>(defaultRundownItems);
+
+  // Use the proper calculation system for row numbering
+  const { getRowNumber, calculateTotalRuntime, calculateHeaderDuration } = useRundownCalculations(items);
 
   const updateItem = useCallback((id: string, field: string, value: string) => {
     console.log(`useRundownItems: updateItem called - id: ${id}, field: ${field}, value:`, value);
@@ -197,57 +202,6 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       markAsChanged();
     }
   }, [markAsChanged]);
-
-  const getRowNumber = useCallback((index: number) => {
-    let rowNumber = 1;
-    for (let i = 0; i < index; i++) {
-      if (!isHeaderItem(items[i])) {
-        rowNumber++;
-      }
-    }
-    return isHeaderItem(items[index]) ? items[index].segmentName || 'H' : rowNumber.toString();
-  }, [items]);
-
-  const calculateTotalRuntime = useCallback(() => {
-    const totalMinutes = items.reduce((total, item) => {
-      if (!isHeaderItem(item) && !item.isFloating && item.duration) {
-        const [minutes, seconds] = item.duration.split(':').map(Number);
-        return total + minutes + (seconds / 60);
-      }
-      return total;
-    }, 0);
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.floor(totalMinutes % 60);
-    const seconds = Math.floor((totalMinutes % 1) * 60);
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [items]);
-
-  const calculateHeaderDuration = useCallback((headerIndex: number) => {
-    if (!isHeaderItem(items[headerIndex])) return '00:00';
-    
-    let totalMinutes = 0;
-    let i = headerIndex + 1;
-    
-    while (i < items.length && !isHeaderItem(items[i])) {
-      const item = items[i];
-      if (!item.isFloating && item.duration) {
-        const [minutes, seconds] = item.duration.split(':').map(Number);
-        totalMinutes += minutes + (seconds / 60);
-      }
-      i++;
-    }
-    
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.floor(totalMinutes % 60);
-    const seconds = Math.floor((totalMinutes % 1) * 60);
-    
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [items]);
 
   return useMemo(() => ({
     items,

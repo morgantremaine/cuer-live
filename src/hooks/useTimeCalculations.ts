@@ -11,6 +11,7 @@ export const useTimeCalculations = (
   const { timeToSeconds } = useRundownCalculations(items);
   const lastProcessedRef = useRef<string>('');
   const isProcessingRef = useRef(false);
+  const batchUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Stable functions with useCallback
   const secondsToTime = useCallback((seconds: number) => {
@@ -57,15 +58,45 @@ export const useTimeCalculations = (
     return 'upcoming';
   }, [timeToSeconds]);
 
-  // Create a stable signature based only on essential data
+  // Create a more stable signature that ignores frequently changing fields
   const currentSignature = useMemo(() => {
-    const essentialData = items.map(item => 
-      `${item.id}:${item.type}:${item.duration || '00:00:00'}:${item.isFloating ? '1' : '0'}`
-    ).join('|');
+    const essentialData = items.map(item => {
+      // Only include fields that affect time calculations
+      const key = `${item.id}:${item.type}:${item.duration || '00:00:00'}:${item.isFloating ? '1' : '0'}`;
+      return key;
+    }).join('|');
     return `${items.length}-${rundownStartTime}-${essentialData}`;
   }, [items, rundownStartTime]);
 
-  // Optimized recalculation with batched updates
+  // Batched update function to prevent rapid successive updates
+  const performBatchedUpdate = useCallback((updates: Array<{ id: string; field: string; value: string }>) => {
+    if (batchUpdateTimeoutRef.current) {
+      clearTimeout(batchUpdateTimeoutRef.current);
+    }
+
+    batchUpdateTimeoutRef.current = setTimeout(() => {
+      // Group updates by item ID to minimize calls
+      const updatesByItem = new Map<string, Array<{ field: string; value: string }>>();
+      
+      updates.forEach(update => {
+        if (!updatesByItem.has(update.id)) {
+          updatesByItem.set(update.id, []);
+        }
+        updatesByItem.get(update.id)!.push({ field: update.field, value: update.value });
+      });
+
+      // Apply updates
+      updatesByItem.forEach((itemUpdates, itemId) => {
+        itemUpdates.forEach(update => {
+          updateItem(itemId, update.field, update.value);
+        });
+      });
+
+      isProcessingRef.current = false;
+    }, 10); // Small delay to batch updates
+  }, [updateItem]);
+
+  // Optimized recalculation with reduced frequency
   useEffect(() => {
     if (!items.length || !rundownStartTime || isProcessingRef.current) return;
 
@@ -91,7 +122,7 @@ export const useTimeCalculations = (
         }
       });
 
-      // Second pass: calculate times only for items that need updates
+      // Second pass: calculate times only for items that actually need updates
       items.forEach((item, index) => {
         const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
 
@@ -130,23 +161,28 @@ export const useTimeCalculations = (
         }
       });
 
-      // Apply batched updates - only if there are actual changes
+      // Apply batched updates only if there are actual changes
       if (updates.length > 0) {
-        // Use requestAnimationFrame to batch DOM updates
-        requestAnimationFrame(() => {
-          updates.forEach(update => {
-            updateItem(update.id, update.field, update.value);
-          });
-        });
+        performBatchedUpdate(updates);
+      } else {
+        isProcessingRef.current = false;
       }
 
       lastProcessedRef.current = currentSignature;
     } catch (error) {
       console.error('Error in time calculations:', error);
-    } finally {
       isProcessingRef.current = false;
     }
-  }, [currentSignature, calculateElapsedTime, calculateEndTime, updateItem, rundownStartTime]);
+  }, [currentSignature, calculateElapsedTime, calculateEndTime, performBatchedUpdate, rundownStartTime]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (batchUpdateTimeoutRef.current) {
+        clearTimeout(batchUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     calculateEndTime,
