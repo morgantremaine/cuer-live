@@ -11,16 +11,13 @@ export const useRundownItems = (markAsChanged?: () => void) => {
   // Use the proper calculation system for row numbering
   const { getRowNumber, calculateTotalRuntime, calculateHeaderDuration } = useRundownCalculations(items);
 
-  const updateItem = useCallback((id: string, field: string, value: string) => {
-    console.log(`useRundownItems: updateItem called - id: ${id}, field: ${field}, value:`, value);
-    
+  const updateItem = useCallback((id: string, field: string, value: string) => {    
     setItems(prevItems => {
       const newItems = prevItems.map(item => {
         if (item.id === id) {
           // Handle nested custom field updates
           if (field.startsWith('customFields.')) {
             const customFieldKey = field.replace('customFields.', '');
-            console.log(`useRundownItems: Updating custom field ${customFieldKey} to:`, value);
             
             const updatedItem = {
               ...item,
@@ -29,19 +26,16 @@ export const useRundownItems = (markAsChanged?: () => void) => {
                 [customFieldKey]: value
               }
             };
-            console.log(`useRundownItems: Updated item:`, updatedItem);
             return updatedItem;
           }
           
           // Handle regular field updates
           const updatedItem = { ...item, [field]: value };
-          console.log(`useRundownItems: Updated regular field ${field}:`, updatedItem);
           return updatedItem;
         }
         return item;
       });
       
-      console.log(`useRundownItems: New items array:`, newItems);
       return newItems;
     });
     
