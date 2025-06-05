@@ -49,10 +49,9 @@ export const useSimpleRundownState = (
     checkForChanges(itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime);
   }
 
-  // Auto-save - only when we have a valid rundown ID
-  // Use conditional hook pattern to completely skip auto-save when no rundown
-  const autoSaveResult = rundownId ? useSimpleAutoSave(
-    rundownId,
+  // Auto-save - always call the hook but pass undefined when no rundown
+  const { isSaving } = useSimpleAutoSave(
+    rundownId, // Can be undefined - hook will handle this
     itemsHook.items,
     rundownTitle,
     columnsHook.columns,
@@ -61,9 +60,7 @@ export const useSimpleRundownState = (
     hasUnsavedChanges,
     isInitialized,
     markAsSaved
-  ) : { isSaving: false };
-
-  const { isSaving } = autoSaveResult;
+  );
 
   return {
     // Items
