@@ -34,6 +34,7 @@ export const useRundownWrappedOperations = ({
 }: UseRundownWrappedOperationsProps) => {
   
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRows?: Set<string>) => {
+    console.log('Wrapped operations: Adding row with selected rows:', selectedRows?.size || 0);
     saveState(items, columns, rundownTitle, 'Add Row');
     
     // Find the index of the last selected row if multiple rows are selected
@@ -46,6 +47,7 @@ export const useRundownWrappedOperations = ({
       
       if (selectedIndices.length > 0) {
         insertAfterIndex = Math.max(...selectedIndices);
+        console.log('Wrapped operations: Inserting row after index:', insertAfterIndex);
       }
     }
     
@@ -54,6 +56,7 @@ export const useRundownWrappedOperations = ({
   }, [addRow, saveState, items, columns, rundownTitle]);
 
   const wrappedAddHeader = useCallback((selectedRows?: Set<string>) => {
+    console.log('Wrapped operations: Adding header with selected rows:', selectedRows?.size || 0);
     saveState(items, columns, rundownTitle, 'Add Header');
     
     // Find the index of the last selected row if multiple rows are selected
@@ -66,6 +69,7 @@ export const useRundownWrappedOperations = ({
       
       if (selectedIndices.length > 0) {
         insertAfterIndex = Math.max(...selectedIndices);
+        console.log('Wrapped operations: Inserting header after index:', insertAfterIndex);
       }
     }
     

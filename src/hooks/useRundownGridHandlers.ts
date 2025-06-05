@@ -1,10 +1,11 @@
+
 import { useCallback } from 'react';
 import { useRundownHandlers } from '@/hooks/useRundownHandlers';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
-  addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRows?: Set<string>) => void;
+  addHeader: (selectedRows?: Set<string>) => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
   deleteMultipleRows: (ids: string[]) => void;
@@ -57,8 +58,8 @@ export const useRundownGridHandlers = ({
     handleDeleteColumnWithCleanup
   } = useRundownHandlers({
     updateItem,
-    addRow,
-    addHeader,
+    addRow: (calcFn) => addRow(calcFn, selectedRows),
+    addHeader: () => addHeader(selectedRows),
     deleteRow,
     toggleFloatRow,
     deleteMultipleRows,
@@ -72,13 +73,15 @@ export const useRundownGridHandlers = ({
     markAsChanged
   });
 
-  const handleAddRow = useCallback((selectedRowId?: string | null) => {
-    addRow(calculateEndTime, selectedRowId, selectedRows);
+  const handleAddRow = useCallback(() => {
+    console.log('Grid handlers: Adding row with selected rows:', selectedRows.size);
+    addRow(calculateEndTime, selectedRows);
     markAsChanged();
   }, [addRow, calculateEndTime, selectedRows, markAsChanged]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string | null) => {
-    addHeader(selectedRowId, selectedRows);
+  const handleAddHeader = useCallback(() => {
+    console.log('Grid handlers: Adding header with selected rows:', selectedRows.size);
+    addHeader(selectedRows);
     markAsChanged();
   }, [addHeader, selectedRows, markAsChanged]);
 
