@@ -12,7 +12,7 @@ export const useRundownStateIntegration = (
   rundownStartTime: string,
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void,
-  undoHistory?: any[]
+  getUndoHistory?: () => any[]
 ) => {
   // Items management with change tracking
   const {
@@ -43,14 +43,14 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save integration - now includes undo history
+  // Auto-save integration - now uses a function to get undo history
   const { hasUnsavedChanges, isSaving, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
     items,
     rundownTitle,
     columns,
     timezone,
     rundownStartTime,
-    undoHistory
+    getUndoHistory
   );
 
   // Wrapped addRow that supports insertion at specific index

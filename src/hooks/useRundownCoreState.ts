@@ -6,6 +6,7 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
+import { useCallback } from 'react';
 
 export const useRundownCoreState = () => {
   // Core state management
@@ -38,7 +39,12 @@ export const useRundownCoreState = () => {
     currentColumns: [] // Will be updated after state integration
   });
 
-  // Rundown data integration - now includes undo history
+  // Create a function to get current undo history
+  const getUndoHistory = useCallback(() => {
+    return undoHistory;
+  }, [undoHistory]);
+
+  // Rundown data integration - now includes undo history getter function
   const {
     items,
     setItems,
@@ -70,7 +76,7 @@ export const useRundownCoreState = () => {
     rundownStartTime,
     setRundownTitleDirectly, 
     setTimezoneDirectly,
-    undoHistory
+    getUndoHistory
   );
 
   // Use data loader with undo history loading - now includes setItems
