@@ -31,7 +31,7 @@ export const useRundownStateCoordination = () => {
   // Get interaction handlers - fix the setItems call to match expected signature
   const interactions = useRundownGridInteractions(
     coreState.items,
-    (items) => coreState.setItems(items), // Wrap to match expected signature
+    coreState.setItems, // Direct reference, not wrapped
     coreState.updateItem,
     coreState.addRow,
     coreState.addHeader,

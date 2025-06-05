@@ -8,16 +8,16 @@ import { useParams } from 'react-router-dom';
 
 export const useRundownGridInteractions = (
   items: RundownItem[],
-  setItems: (items: RundownItem[]) => void,
+  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   updateItem: (id: string, field: keyof RundownItem, value: any) => void,
-  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void,
-  addHeader: (insertAfterIndex?: number) => void,
+  addRow: (calculateEndTime: any, selectedRows?: Set<string>) => void,
+  addHeader: (selectedRows?: Set<string>) => void,
   deleteRow: (id: string) => void,
   toggleFloatRow: (id: string) => void,
   deleteMultipleRows: (ids: string[]) => void,
   addMultipleRows: (newItems: RundownItem[], insertAfterIndex?: number) => void,
   handleDeleteColumn: (columnId: string) => void,
-  calculateEndTime: (item: RundownItem, prevEndTime?: string) => string,
+  calculateEndTime: any,
   selectColor: (id: string, color: string) => void,
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void
@@ -53,18 +53,18 @@ export const useRundownGridInteractions = (
   const [colorPickerRowId, setColorPickerRowId] = useState<string | null>(null);
 
   // Enhanced row operations that mark user actions
-  const enhancedAddRow = useCallback((calculateEndTimeFunc: any, insertAfterIndex?: number) => {
+  const enhancedAddRow = useCallback((calculateEndTimeFunc: any, selectedRows?: Set<string>) => {
     if (rundownId) {
       markGlobalUserAction(rundownId);
     }
-    addRow(calculateEndTimeFunc, insertAfterIndex);
+    addRow(calculateEndTimeFunc, selectedRows);
   }, [addRow, rundownId]);
 
-  const enhancedAddHeader = useCallback((insertAfterIndex?: number) => {
+  const enhancedAddHeader = useCallback((selectedRows?: Set<string>) => {
     if (rundownId) {
       markGlobalUserAction(rundownId);
     }
-    addHeader(insertAfterIndex);
+    addHeader(selectedRows);
   }, [addHeader, rundownId]);
 
   const enhancedDeleteRow = useCallback((id: string) => {

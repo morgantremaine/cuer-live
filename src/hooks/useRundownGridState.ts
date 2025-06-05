@@ -26,13 +26,19 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - passing the correct calculateEndTime function
+  // Row operations - fix function signatures to match expected interface
   const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection: interactions.clearSelection,
-    addRow: coreState.addRow,
-    addHeader: coreState.addHeader,
+    addRow: (calculateEndTime: any, insertAfterIndex?: number) => {
+      // Convert interface: ignore insertAfterIndex, use selectedRows instead
+      coreState.addRow(calculateEndTime, interactions.selectedRows);
+    },
+    addHeader: (insertAfterIndex?: number) => {
+      // Convert interface: ignore insertAfterIndex, use selectedRows instead  
+      coreState.addHeader(interactions.selectedRows);
+    },
     calculateEndTime: coreState.calculateEndTime
   });
 
