@@ -19,7 +19,10 @@ export const useRundownGridState = () => {
     selectedRows: interactions.selectedRows,
     clearSelection: interactions.clearSelection,
     addMultipleRows: (items: any[], calculateEndTime: (startTime: string, duration: string) => string) => {
-      coreState.addMultipleRows(items, calculateEndTime);
+      coreState.addMultipleRows(items, undefined, (item, prevEndTime) => {
+        // Convert the signature to match what addMultipleRows expects
+        return calculateEndTime(item.startTime || prevEndTime || '00:00:00', item.duration || '00:00:30');
+      });
     },
     calculateEndTime: coreState.calculateEndTime,
     markAsChanged: coreState.markAsChanged,
@@ -30,9 +33,9 @@ export const useRundownGridState = () => {
 
   // Create properly wrapped functions that match the expected signatures
   const handleAddRow = useCallback(() => {
-    // Call addRow with the calculateEndTime function as expected
-    coreState.addRow(coreState.calculateEndTime);
-  }, [coreState.addRow, coreState.calculateEndTime]);
+    // Call addRow with the correct signature - no arguments needed
+    coreState.addRow();
+  }, [coreState.addRow]);
 
   const handleAddHeader = useCallback(() => {
     // Call addHeader with no parameters as expected
