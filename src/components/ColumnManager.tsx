@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
@@ -28,7 +28,7 @@ interface ColumnManagerProps {
   onClose: () => void;
 }
 
-const ColumnManager = ({ 
+const ColumnManager = React.memo(({ 
   columns, 
   onAddColumn, 
   onReorderColumns, 
@@ -42,6 +42,26 @@ const ColumnManager = ({
   
   const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout } = useColumnLayoutStorage();
 
+  // Memoize stable props to prevent child re-renders
+  const stableLayoutProps = useMemo(() => ({
+    columns,
+    savedLayouts,
+    loading,
+    onSaveLayout: saveLayout,
+    onUpdateLayout: updateLayout,
+    onRenameLayout: renameLayout,
+    onDeleteLayout: deleteLayout,
+    onLoadLayout
+  }), [columns, savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout, onLoadLayout]);
+
+  const stableColumnListProps = useMemo(() => ({
+    columns,
+    onReorderColumns,
+    onToggleColumnVisibility,
+    onDeleteColumn,
+    onRenameColumn
+  }), [columns, onReorderColumns, onToggleColumnVisibility, onDeleteColumn, onRenameColumn]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -53,26 +73,11 @@ const ColumnManager = ({
         </div>
         
         <div className="p-4 space-y-4">
-          <LayoutManager
-            columns={columns}
-            savedLayouts={savedLayouts}
-            loading={loading}
-            onSaveLayout={saveLayout}
-            onUpdateLayout={updateLayout}
-            onRenameLayout={renameLayout}
-            onDeleteLayout={deleteLayout}
-            onLoadLayout={onLoadLayout}
-          />
+          <LayoutManager {...stableLayoutProps} />
 
           <ColumnEditor onAddColumn={onAddColumn} />
 
-          <ColumnList
-            columns={columns}
-            onReorderColumns={onReorderColumns}
-            onToggleColumnVisibility={onToggleColumnVisibility}
-            onDeleteColumn={onDeleteColumn}
-            onRenameColumn={onRenameColumn}
-          />
+          <ColumnList {...stableColumnListProps} />
         </div>
 
         <div className="flex justify-end space-x-2 p-4 border-t border-gray-200 dark:border-gray-600">
@@ -83,6 +88,8 @@ const ColumnManager = ({
       </div>
     </div>
   );
-};
+});
+
+ColumnManager.displayName = 'ColumnManager';
 
 export default ColumnManager;

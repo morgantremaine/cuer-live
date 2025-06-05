@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useMemo } from 'react';
 
 export interface Column {
@@ -42,12 +43,13 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   // Stable function to call markAsChanged without causing re-renders
   const triggerMarkAsChanged = useCallback(() => {
-    if (markAsChangedCallbackRef.current) {
+    if (markAsChangedCallbackRef.current && !isLoadingLayoutRef.current) {
       markAsChangedCallbackRef.current();
     }
   }, []);
 
   const handleAddColumn = useCallback((name: string) => {
+    console.log('handleAddColumn called with:', name);
     const newColumn: Column = {
       id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
@@ -62,6 +64,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       const safePrev = Array.isArray(prev) ? prev : DEFAULT_COLUMNS;
       const newColumns = [...safePrev];
       newColumns.splice(1, 0, newColumn);
+      console.log('Adding new column, new columns array:', newColumns);
       return newColumns;
     });
     
@@ -197,7 +200,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       console.log('Setting new columns from layout:', mergedColumns);
       setColumns(mergedColumns);
       
-      // Don't trigger markAsChanged for layout loads to avoid auto-save conflicts
+      // DON'T trigger markAsChanged for layout loads to prevent auto-save loop
       
     } catch (error) {
       console.error('Error loading layout:', error);
