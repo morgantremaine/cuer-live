@@ -7,10 +7,8 @@ export const useSimpleChangeTracking = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedStateRef = useRef<string>('');
-  const isLoadingRef = useRef(false);
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastChangeCheckRef = useRef<string>('');
-  const stableReferenceRef = useRef<boolean>(false);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const createStateSignature = useCallback((
     items: RundownItem[], 
@@ -29,7 +27,7 @@ export const useSimpleChangeTracking = () => {
         rowNumber: item.rowNumber
       })), 
       title, 
-      columns: columns?.map(col => ({ id: col.id, name: col.name, visible: col.visible })), 
+      columns: columns?.map(col => ({ id: col.id, name: col.name, isVisible: col.isVisible })), 
       timezone, 
       startTime 
     });
@@ -42,20 +40,10 @@ export const useSimpleChangeTracking = () => {
     timezone?: string, 
     startTime?: string
   ) => {
-    console.log('Simple change tracking: Initialize called with:', {
-      itemsLength: items.length,
-      title,
-      isInitialized,
-      isLoading: isLoadingRef.current
-    });
+    console.log('Simple change tracking: Initialize called');
 
     if (isInitialized) {
       console.log('Simple change tracking: Already initialized, skipping');
-      return;
-    }
-
-    if (isLoadingRef.current) {
-      console.log('Simple change tracking: Still loading, delaying initialization');
       return;
     }
 
@@ -64,19 +52,12 @@ export const useSimpleChangeTracking = () => {
       return;
     }
 
-    // Clear any existing timeout
-    if (initializationTimeoutRef.current) {
-      clearTimeout(initializationTimeoutRef.current);
-    }
-    
-    // Immediate initialization if we have stable data
     const signature = createStateSignature(items, title, columns, timezone, startTime);
     lastSavedStateRef.current = signature;
     lastChangeCheckRef.current = signature;
     setIsInitialized(true);
     setHasUnsavedChanges(false);
-    stableReferenceRef.current = true;
-    console.log('Simple change tracking: Successfully initialized with signature length:', signature.length, 'items:', items.length);
+    console.log('Simple change tracking: Successfully initialized');
   }, [isInitialized, createStateSignature]);
 
   const checkForChanges = useCallback((
@@ -86,24 +67,31 @@ export const useSimpleChangeTracking = () => {
     timezone?: string, 
     startTime?: string
   ) => {
-    if (!isInitialized || isLoadingRef.current || items.length === 0 || !stableReferenceRef.current) {
+    if (!isInitialized || items.length === 0) {
       return;
     }
 
-    const currentSignature = createStateSignature(items, title, columns, timezone, startTime);
-    
-    // Only check for changes if the signature actually changed from the last check
-    if (currentSignature === lastChangeCheckRef.current) {
-      return;
+    // Debounce the change check to prevent excessive calls
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
-    
-    lastChangeCheckRef.current = currentSignature;
-    const hasChanges = currentSignature !== lastSavedStateRef.current;
-    
-    if (hasChanges !== hasUnsavedChanges) {
-      setHasUnsavedChanges(hasChanges);
-      console.log('Simple change tracking: Changes detected:', hasChanges, 'signature diff:', hasChanges ? 'YES' : 'NO');
-    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      const currentSignature = createStateSignature(items, title, columns, timezone, startTime);
+      
+      // Only check for changes if the signature actually changed from the last check
+      if (currentSignature === lastChangeCheckRef.current) {
+        return;
+      }
+      
+      lastChangeCheckRef.current = currentSignature;
+      const hasChanges = currentSignature !== lastSavedStateRef.current;
+      
+      if (hasChanges !== hasUnsavedChanges) {
+        setHasUnsavedChanges(hasChanges);
+        console.log('Simple change tracking: Changes detected:', hasChanges);
+      }
+    }, 100);
   }, [isInitialized, hasUnsavedChanges, createStateSignature]);
 
   const markAsSaved = useCallback((
@@ -117,46 +105,24 @@ export const useSimpleChangeTracking = () => {
     lastSavedStateRef.current = signature;
     lastChangeCheckRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Simple change tracking: Marked as saved, signature length:', signature.length);
+    console.log('Simple change tracking: Marked as saved');
   }, [createStateSignature]);
 
   const markAsChanged = useCallback(() => {
-    if (isInitialized && !isLoadingRef.current && stableReferenceRef.current) {
+    if (isInitialized) {
       setHasUnsavedChanges(true);
       console.log('Simple change tracking: Marked as changed');
-    } else {
-      console.log('Simple change tracking: Cannot mark as changed:', {
-        isInitialized,
-        isLoading: isLoadingRef.current,
-        stable: stableReferenceRef.current
-      });
     }
   }, [isInitialized]);
-
-  const setIsLoading = useCallback((loading: boolean) => {
-    isLoadingRef.current = loading;
-    console.log('Simple change tracking: Set loading to:', loading);
-    
-    if (!loading) {
-      // Small delay to ensure data is stable before allowing change tracking
-      setTimeout(() => {
-        stableReferenceRef.current = true;
-        console.log('Simple change tracking: Data stabilized, ready for change tracking');
-      }, 100);
-    } else {
-      stableReferenceRef.current = false;
-    }
-  }, []);
 
   const reset = useCallback(() => {
     setIsInitialized(false);
     setHasUnsavedChanges(false);
     lastSavedStateRef.current = '';
     lastChangeCheckRef.current = '';
-    stableReferenceRef.current = false;
-    if (initializationTimeoutRef.current) {
-      clearTimeout(initializationTimeoutRef.current);
-      initializationTimeoutRef.current = null;
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
     }
     console.log('Simple change tracking: Reset state');
   }, []);
@@ -164,8 +130,8 @@ export const useSimpleChangeTracking = () => {
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
   }, []);
@@ -177,7 +143,6 @@ export const useSimpleChangeTracking = () => {
     checkForChanges,
     markAsSaved,
     markAsChanged,
-    setIsLoading,
     reset
   };
 };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import { useSimpleRundownState } from '@/hooks/useSimpleRundownState';
@@ -9,6 +9,9 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 
 const RundownIndexContent = () => {
+  // Create cellRefs with proper type
+  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+
   // Use only the basic state management
   const basicState = useRundownBasicState();
   
@@ -77,14 +80,14 @@ const RundownIndexContent = () => {
         items={rundownState.items}
         visibleColumns={rundownState.visibleColumns}
         columns={rundownState.columns}
-        showColorPicker={false}
-        cellRefs={{}}
+        showColorPicker={null}
+        cellRefs={cellRefs}
         selectedRows={new Set()}
-        draggedItemIndex={-1}
+        draggedItemIndex={null}
         isDraggingMultiple={false}
-        dropTargetIndex={-1}
-        currentSegmentId=""
-        getColumnWidth={() => 150}
+        dropTargetIndex={null}
+        currentSegmentId={null}
+        getColumnWidth={() => "150px"}
         updateColumnWidth={() => {}}
         getRowNumber={rundownState.getRowNumber}
         getRowStatus={() => 'upcoming'}
@@ -111,7 +114,7 @@ const RundownIndexContent = () => {
         onClearSelection={() => {}}
         selectedRowId={null}
         isPlaying={false}
-        timeRemaining=""
+        timeRemaining={0}
         onPlay={() => {}}
         onPause={() => {}}
         onForward={() => {}}
@@ -132,7 +135,7 @@ const RundownIndexContent = () => {
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={() => {}}
         canUndo={false}
-        lastAction=""
+        lastAction={null}
       />
       
       <CuerChatButton rundownData={rundownData} />
