@@ -37,7 +37,7 @@ export const useRundownGridState = () => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
   
-  // Drag and drop
+  // Drag and drop - fix: remove the extra markAsChanged parameter
   const { 
     draggedItemIndex, 
     isDraggingMultiple, 
@@ -46,7 +46,7 @@ export const useRundownGridState = () => {
     handleDragOver,
     handleDragLeave,
     handleDrop
-  } = useDragAndDrop(coreState.items, coreState.setItems, selectedRows, coreState.markAsChanged);
+  } = useDragAndDrop(coreState.items, coreState.setItems, selectedRows);
 
   // Resizable columns
   const { getColumnWidth, updateColumnWidth } = useResizableColumns(
@@ -55,7 +55,11 @@ export const useRundownGridState = () => {
   );
 
   // Time calculations
-  const { calculateEndTime } = useTimeCalculations(rundownStartTime);
+  const { calculateEndTime, getRowStatus } = useTimeCalculations(
+    coreState.items,
+    coreState.updateItem,
+    rundownStartTime
+  );
   
   // Add current time separately
   const currentTime = new Date();
@@ -74,7 +78,7 @@ export const useRundownGridState = () => {
   const canUndo = undoHook.canUndo;
   const lastAction = undoHook.lastAction;
 
-  // Playback controls
+  // Playback controls - fix: provide the required 3 parameters
   const { 
     isPlaying, 
     timeRemaining, 
@@ -82,7 +86,7 @@ export const useRundownGridState = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(coreState.items, currentTime);
+  } = usePlaybackControls(coreState.items, currentTime, rundownStartTime);
 
   // Clipboard management
   const { clipboardItems, copyItems, hasClipboardData } = useRundownClipboard();
@@ -145,11 +149,6 @@ export const useRundownGridState = () => {
   });
 
   // Helper functions
-  const getRowStatus = (item: any, currentTime: Date): 'upcoming' | 'current' | 'completed' => {
-    // Simple status calculation - can be enhanced later
-    return 'upcoming';
-  };
-
   const handleToggleColorPicker = (itemId: string) => {
     setShowColorPicker(showColorPicker === itemId ? null : itemId);
   };
@@ -214,6 +213,7 @@ export const useRundownGridState = () => {
     
     // Time and playback
     calculateEndTime,
+    getRowStatus,
     isPlaying,
     timeRemaining,
     play,
@@ -241,7 +241,6 @@ export const useRundownGridState = () => {
     updateItem: handleUpdateItem, // Alias for compatibility
     
     // Helper functions
-    getRowStatus,
     handleToggleColorPicker,
     selectColor
   }), [
@@ -271,6 +270,7 @@ export const useRundownGridState = () => {
     canUndo,
     lastAction,
     calculateEndTime,
+    getRowStatus,
     isPlaying,
     timeRemaining,
     play,
