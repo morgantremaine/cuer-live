@@ -55,7 +55,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
               };
               rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
             } else if (isHeaderItem(item)) {
-              rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold';
+              rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white border-l-4 border-gray-400 dark:border-gray-600 font-semibold';
             } else {
               rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
             }
