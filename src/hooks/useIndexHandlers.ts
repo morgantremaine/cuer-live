@@ -6,11 +6,11 @@ import { RundownItem } from '@/types/rundown';
 interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
-  rundownId?: string;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string, selectedRows?: Set<string>) => void;
-  addHeader: (selectedRowId?: string, selectedRows?: Set<string>) => void;
+  rundownId: string | undefined;
+  addRow: (insertAfterIndex?: number) => void;
+  addHeader: (insertAfterIndex?: number) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
-  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[]) => void;
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[]) => void;
   setRundownStartTime: (time: string) => void;
   setTimezone: (timezone: string) => void;
   markAsChanged: () => void;
@@ -42,38 +42,60 @@ export const useIndexHandlers = ({
 
   const handleOpenTeleprompter = useCallback(() => {
     if (rundownId) {
-      // Open teleprompter in new window/tab
-      window.open(`/teleprompter/${rundownId}`, '_blank', 'noopener,noreferrer');
-    } else {
-      // For new rundowns, navigate to teleprompter with current data
-      const teleprompterUrl = `/teleprompter?items=${encodeURIComponent(JSON.stringify(items))}`;
-      window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
+      window.open(`/teleprompter/${rundownId}`, '_blank');
     }
-  }, [rundownId, items]);
+  }, [rundownId]);
 
   const handleRowSelect = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
   }, [toggleRowSelection, items]);
 
-  const handleAddRow = useCallback(() => {
-    if (selectedRows.size > 0) {
-      // Add after the last selected row
-      addRow(calculateEndTime, undefined, selectedRows);
-    } else {
-      // Add at the end
-      addRow(calculateEndTime);
+  // Convert selectedRows to insertAfterIndex for addRow/addHeader
+  const handleAddRow = useCallback((selectedRowId?: string, selectedRows?: Set<string>) => {
+    let insertAfterIndex: number | undefined = undefined;
+    
+    if (selectedRows && selectedRows.size > 0) {
+      // Find the highest index among selected rows
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      // Single row selection fallback
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
     }
-  }, [addRow, calculateEndTime, selectedRows]);
+    
+    addRow(insertAfterIndex);
+  }, [addRow, items]);
 
-  const handleAddHeader = useCallback(() => {
-    if (selectedRows.size > 0) {
-      // Add after the last selected row
-      addHeader(undefined, selectedRows);
-    } else {
-      // Add at the end
-      addHeader();
+  const handleAddHeader = useCallback((selectedRowId?: string, selectedRows?: Set<string>) => {
+    let insertAfterIndex: number | undefined = undefined;
+    
+    if (selectedRows && selectedRows.size > 0) {
+      // Find the highest index among selected rows
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      // Single row selection fallback
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
     }
-  }, [addHeader, selectedRows]);
+    
+    addHeader(insertAfterIndex);
+  }, [addHeader, items]);
 
   return {
     handleRundownStartTimeChange,
