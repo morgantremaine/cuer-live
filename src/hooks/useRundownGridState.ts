@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useRef } from 'react';
 import { useRundownDataManagement } from './useRundownDataManagement';
 import { useRundownClipboard } from './useRundownClipboard';
@@ -144,8 +143,7 @@ export const useRundownGridState = () => {
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection,
     addRow: wrappedAddRow,
-    addHeader: wrappedAddHeader,
-    calculateEndTime
+    addHeader: wrappedAddHeader
   });
 
   // Helper functions
