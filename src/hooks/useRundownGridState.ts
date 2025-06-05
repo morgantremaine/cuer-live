@@ -1,3 +1,4 @@
+
 import { useMemo, useState, useRef } from 'react';
 import { useRundownDataManagement } from './useRundownDataManagement';
 import { useRundownClipboard } from './useRundownClipboard';
@@ -77,7 +78,7 @@ export const useRundownGridState = () => {
   const canUndo = undoHook.canUndo;
   const lastAction = undoHook.lastAction;
 
-  // Playback controls - fix: provide the required 3 parameters
+  // Playback controls - fix: provide the required parameters properly
   const { 
     isPlaying, 
     timeRemaining, 
@@ -85,7 +86,7 @@ export const useRundownGridState = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(coreState.items, currentTime, rundownStartTime);
+  } = usePlaybackControls(coreState.items, coreState.updateItem);
 
   // Clipboard management
   const { clipboardItems, copyItems, hasClipboardData } = useRundownClipboard();
@@ -143,7 +144,8 @@ export const useRundownGridState = () => {
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection,
     addRow: wrappedAddRow,
-    addHeader: wrappedAddHeader
+    addHeader: wrappedAddHeader,
+    calculateEndTime
   });
 
   // Helper functions
