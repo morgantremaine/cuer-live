@@ -1,5 +1,4 @@
 
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
@@ -11,6 +10,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
+  const saveInProgressRef = useRef(false);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -22,13 +22,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
-  // Create a debounced save function that's stable across renders
+  // Stable debounced save function
   const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
-    if (!user || isSaving) {
+    if (!user || saveInProgressRef.current) {
       return;
     }
 
-    // Mark as loading to prevent change detection during save
+    // Prevent overlapping saves
+    saveInProgressRef.current = true;
     setIsLoading(true);
 
     try {
@@ -44,19 +45,32 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       setHasUnsavedChanges(true);
     } finally {
       setIsLoading(false);
+      saveInProgressRef.current = false;
     }
-  }, [user, isSaving, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
+  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
-  // Main effect that schedules saves
+  // Auto-save effect with proper guards
   useEffect(() => {
-    if (!hasUnsavedChanges || !isInitialized || !user) {
+    // Don't save if not initialized, no changes, no user, or save in progress
+    if (!hasUnsavedChanges || !isInitialized || !user || saveInProgressRef.current) {
       return;
     }
 
-    // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
+    // Don't save if we don't have meaningful data
+    if (!Array.isArray(items) || items.length === 0) {
+      return;
+    }
+
+    // Create signature to avoid duplicate saves
+    const currentDataSignature = JSON.stringify({ 
+      itemsCount: items.length, 
+      title: rundownTitle, 
+      columnsCount: columns?.length || 0, 
+      timezone, 
+      startTime 
+    });
     
-    // Only schedule if data actually changed
+    // Skip if this exact data was already saved
     if (lastSaveDataRef.current === currentDataSignature) {
       return;
     }
@@ -68,11 +82,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Schedule new save
+    // Schedule save with longer debounce to prevent spam
     debounceTimeoutRef.current = setTimeout(() => {
       debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       debounceTimeoutRef.current = null;
-    }, 2000);
+    }, 3000); // Longer delay to prevent excessive saves
 
   }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
 
@@ -85,14 +99,9 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     };
   }, []);
 
-  const markAsChangedCallback = () => {
-    markAsChanged();
-  };
-
   return {
     hasUnsavedChanges,
-    isSaving,
-    markAsChanged: markAsChangedCallback
+    isSaving: isSaving || saveInProgressRef.current,
+    markAsChanged
   };
 };
-
