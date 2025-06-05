@@ -48,9 +48,10 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
               rowClass = 'bg-red-600 text-white';
             } else if (hasCustomColor) {
               // Use inline styles for custom colors
+              const contrastColor = getContrastTextColor(item.color);
               customStyles = {
-                backgroundColor: `${item.color} !important`,
-                color: `${getContrastTextColor(item.color)} !important`
+                backgroundColor: item.color,
+                color: contrastColor
               };
               rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
             } else if (isHeaderItem(item)) {
@@ -67,7 +68,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   ${isCurrentSegment ? 'border-l-4 border-red-500' : ''}
                   print:break-inside-avoid
                 `}
-                style={customStyles}
+                style={hasCustomColor && !isFloated ? customStyles : undefined}
               >
                 <td className="px-3 py-2 whitespace-nowrap text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700">
                   {isCurrentSegment && (

@@ -92,7 +92,7 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  // Apply inline styles for custom colors (not floated, as that's handled by CSS)
+  // Apply inline styles for custom colors with !important to override CSS classes
   const isFloated = item.isFloating || item.isFloated;
   const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
   
@@ -100,11 +100,12 @@ const RegularRow = (props: RegularRowProps) => {
   let textColor: string | undefined;
   
   if (hasCustomColor && !isFloated) {
+    const contrastColor = getContrastTextColor(item.color);
     customStyles = {
-      backgroundColor: `${item.color} !important`,
-      color: `${getContrastTextColor(item.color)} !important`
+      backgroundColor: item.color,
+      color: contrastColor
     };
-    textColor = getContrastTextColor(item.color);
+    textColor = contrastColor;
   }
 
   return (
@@ -127,7 +128,7 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
-        style={customStyles}
+        style={hasCustomColor && !isFloated ? customStyles : undefined}
         draggable
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
