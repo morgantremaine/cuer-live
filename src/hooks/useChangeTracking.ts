@@ -17,6 +17,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const instanceIdRef = useRef<number>();
   const lastChangeCheckRef = useRef<number>(0);
   const preventResetRef = useRef(false);
+  const lastItemCountRef = useRef<number>(0);
   
   // Initialize instance ID only once
   if (!instanceIdRef.current) {
@@ -55,7 +56,17 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
     console.log('Change tracking: Checking initialization with', items.length, 'items, title:', rundownTitle);
 
-    // If we already have meaningful data loaded, don't reset
+    // Prevent reinitialization if we already have data and items count is increasing
+    // This indicates data is being loaded, not reset
+    if (hasInitialDataRef.current && items.length > lastItemCountRef.current && items.length > 4) {
+      console.log('Change tracking: Preventing reset - data is being loaded, items increased from', lastItemCountRef.current, 'to', items.length);
+      preventResetRef.current = true;
+      // Update the baseline without triggering reinitialization
+      lastSavedDataRef.current = currentSignature;
+      return;
+    }
+
+    // If we already have meaningful data loaded, don't reset unless it's clearly a new session
     if (hasInitialDataRef.current && items.length >= 4 && rundownTitle !== 'Live Broadcast Rundown') {
       console.log('Change tracking: Preventing reset - already have loaded data');
       preventResetRef.current = true;
@@ -64,6 +75,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
     if (hasMeaningfulData && !hasInitialDataRef.current) {
       hasInitialDataRef.current = true;
+      lastItemCountRef.current = items.length;
       
       lastSavedDataRef.current = currentSignature;
       initializedRef.current = true;
@@ -79,6 +91,9 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     if (!initializedRef.current || isLoadingRef.current) {
       return;
     }
+
+    // Update last item count
+    lastItemCountRef.current = items.length;
 
     // Only check for changes if signature actually changed and enough time has passed
     if (lastSavedDataRef.current !== currentSignature) {
@@ -100,6 +115,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       startTime: savedStartTime 
     });
     lastSavedDataRef.current = signature;
+    lastItemCountRef.current = savedItems.length;
     setHasUnsavedChanges(false);
     console.log('Change tracking: Marked as saved with', savedItems.length, 'items');
   }, []);

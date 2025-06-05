@@ -89,7 +89,9 @@ export const useDataLoadingEffect = ({
     console.log('Data loader: Items to load:', itemsToLoad?.length || 0, 'items');
     
     try {
-      // Set the rundown metadata
+      // Set the rundown metadata FIRST and with direct setters to avoid triggering change tracking
+      console.log('Data loader: Setting rundown metadata - title:', rundown.title, 'timezone:', rundown.timezone, 'start_time:', rundown.start_time);
+      
       setRundownTitle(rundown.title);
       
       if (rundown.timezone) {
@@ -97,9 +99,10 @@ export const useDataLoadingEffect = ({
       }
       
       if (rundown.start_time) {
-        setRundownStartTime(rundown.start_time || '09:00:00');
+        setRundownStartTime(rundown.start_time);
       }
       
+      // Load columns
       if (rundown.columns) {
         handleLoadLayout(rundown.columns);
       }
@@ -127,7 +130,7 @@ export const useDataLoadingEffect = ({
       setTimeout(() => {
         setLoadingComplete(currentRundownId);
         console.log('Data loader: Load process completed for:', currentRundownId);
-      }, 100);
+      }, 150); // Increased delay to ensure state settles
 
     } catch (error) {
       console.error('Data loader: Error during loading process:', error);

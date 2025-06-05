@@ -19,6 +19,7 @@ interface UseRundownDataLoaderProps {
   handleLoadLayout: (columns: Column[]) => void;
   setItems: (items: RundownItem[]) => void;
   onRundownLoaded?: (rundown: SavedRundown) => void;
+  setIsLoading?: (loading: boolean) => void; // Add this for change tracking coordination
 }
 
 export const useRundownDataLoader = ({
@@ -30,7 +31,8 @@ export const useRundownDataLoader = ({
   setRundownStartTime,
   handleLoadLayout,
   setItems,
-  onRundownLoaded
+  onRundownLoaded,
+  setIsLoading
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
   const paramId = params.id;
@@ -60,6 +62,13 @@ export const useRundownDataLoader = ({
   // Track user interactions
   useUserInteractionTracking({ userHasInteractedRef });
 
+  // Notify change tracking when we start/stop loading
+  useEffect(() => {
+    if (setIsLoading) {
+      setIsLoading(isLoadingRef.current);
+    }
+  }, [setIsLoading]);
+
   // Main data loading effect
   useDataLoadingEffect({
     rundownId,
@@ -77,11 +86,17 @@ export const useRundownDataLoader = ({
     loadTimerRef,
     evaluationCooldownRef,
     lastEvaluationRef,
-    setLoadingStarted,
-    setLoadingComplete
+    setLoadingStarted: (id: string) => {
+      setLoadingStarted(id);
+      if (setIsLoading) setIsLoading(true);
+    },
+    setLoadingComplete: (id: string) => {
+      setLoadingComplete(id);
+      if (setIsLoading) setIsLoading(false);
+    }
   });
 
-  // Reset loading state when rundown ID changes - prevent unnecessary resets
+  // Reset loading state when rundown ID changes
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
     const currentLoadedId = loadedRef.current;
@@ -100,6 +115,7 @@ export const useRundownDataLoader = ({
 
   // Return a flag to indicate if data loader is active for this rundown
   return {
-    isDataLoaderActive: Boolean(rundownId || paramId)
+    isDataLoaderActive: Boolean(rundownId || paramId),
+    isLoading: isLoadingRef.current
   };
 };
