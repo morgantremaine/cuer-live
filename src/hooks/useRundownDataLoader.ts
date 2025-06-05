@@ -97,6 +97,7 @@ export const useRundownDataLoader = ({
     // Debounce the evaluation to prevent excessive calls
     evaluationCooldownRef.current = setTimeout(() => {
       if (!shouldLoadRundown(currentRundownId, rundown)) {
+        console.log('Data loader: Should not load rundown - conditions not met');
         return;
       }
 
@@ -105,6 +106,7 @@ export const useRundownDataLoader = ({
       
       // Get items to load using extracted utility
       const itemsToLoad = getItemsToLoad(rundown);
+      console.log('Data loader: Items to load:', itemsToLoad?.length || 0, 'items');
       
       // Set the rundown data
       setRundownTitle(rundown.title);
@@ -123,19 +125,32 @@ export const useRundownDataLoader = ({
 
       // Load the rundown items with validation
       if (itemsToLoad && Array.isArray(itemsToLoad)) {
-        if (loadTimerRef.current) {
-          clearTimeout(loadTimerRef.current);
-        }
+        console.log('Data loader: Setting items directly with', itemsToLoad.length, 'items');
         
-        loadTimerRef.current = setTimeout(() => {
-          if (!userHasInteractedRef.current && 
-              !checkRecentAutoSave(currentRundownId) && 
-              !checkUserChangedSinceAutoSave(currentRundownId)) {
-            setItems(itemsToLoad);
+        // Check conditions before setting items
+        const canSetItems = !userHasInteractedRef.current && 
+                           !checkRecentAutoSave(currentRundownId) && 
+                           !checkUserChangedSinceAutoSave(currentRundownId);
+        
+        console.log('Data loader: Can set items?', canSetItems, {
+          userHasInteracted: userHasInteractedRef.current,
+          recentAutoSave: checkRecentAutoSave(currentRundownId),
+          userChangedSinceAutoSave: checkUserChangedSinceAutoSave(currentRundownId)
+        });
+        
+        if (canSetItems) {
+          if (loadTimerRef.current) {
+            clearTimeout(loadTimerRef.current);
           }
-          loadTimerRef.current = null;
-        }, 50);
+          
+          // Set items immediately instead of using a timer
+          setItems(itemsToLoad);
+          console.log('Data loader: Items set successfully');
+        } else {
+          console.log('Data loader: Skipping item setting due to user interaction or recent changes');
+        }
       } else {
+        console.log('Data loader: No items to load, setting empty array');
         if (!userHasInteractedRef.current && 
             !checkRecentAutoSave(currentRundownId) && 
             !checkUserChangedSinceAutoSave(currentRundownId)) {
@@ -148,7 +163,7 @@ export const useRundownDataLoader = ({
       }
 
       setLoadingComplete(currentRundownId);
-    }, 500);
+    }, 100); // Reduced timeout for faster loading
 
   }, [
     rundownId, 
