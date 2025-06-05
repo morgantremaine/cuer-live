@@ -1,6 +1,7 @@
 
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 interface DashboardHeaderProps {
   userEmail?: string
@@ -8,6 +9,12 @@ interface DashboardHeaderProps {
 }
 
 const DashboardHeader = ({ userEmail, onSignOut }: DashboardHeaderProps) => {
+  const navigate = useNavigate()
+
+  const handleEmailClick = () => {
+    navigate('/account')
+  }
+
   return (
     <div className="bg-gray-800 shadow-sm border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,7 +27,12 @@ const DashboardHeader = ({ userEmail, onSignOut }: DashboardHeaderProps) => {
             />
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-300">Welcome, {userEmail}</span>
+            <button
+              onClick={handleEmailClick}
+              className="text-sm text-gray-300 hover:text-white transition-colors cursor-pointer underline-offset-4 hover:underline"
+            >
+              Welcome, {userEmail}
+            </button>
             <Button
               variant="ghost"
               size="sm"
