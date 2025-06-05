@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
@@ -13,77 +13,68 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  // Items management with change tracking
-  const {
-    items,
-    setItems,
-    updateItem: originalUpdateItem,
-    addRow: originalAddRow,
-    addHeader: originalAddHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  // Items management - pass markAsChanged to track changes
+  const itemsHook = useRundownItems(markAsChanged);
 
-  // Enhanced updateItem to handle both standard and custom fields properly
-  const updateItem = useCallback((id: string, field: string, value: string) => {
-    if (!Array.isArray(items) || items.length === 0) {
-      return;
-    }
-
-    const item = items.find(i => i.id === id);
-    if (!item) return;
-
-    // Handle custom fields vs standard fields
-    if (field.startsWith('custom_')) {
-      originalUpdateItem(id, `customFields.${field}`, value);
-    } else if (field.startsWith('customFields.')) {
-      originalUpdateItem(id, field, value);
-    } else {
-      originalUpdateItem(id, field, value);
-    }
-  }, [originalUpdateItem, items]);
-
-  // Columns manager
+  // Columns manager - pass markAsChanged to track changes
   const columnsManager = useColumnsManager(markAsChanged);
 
-  // Auto-save with clean dependencies
-  const { hasUnsavedChanges, isSaving } = useAutoSave(
-    items,
+  // Auto-save with the current state - this should be the ONLY auto-save call
+  const autoSaveResult = useAutoSave(
+    itemsHook.items,
     rundownTitle,
     columnsManager.columns,
     timezone,
     rundownStartTime
   );
 
-  // Wrapped functions
-  const addRow = useCallback((insertAfterIndex?: number) => {
-    originalAddRow('regular');
-  }, [originalAddRow]);
+  // Enhanced updateItem to handle both standard and custom fields
+  const updateItem = useCallback((id: string, field: string, value: string) => {
+    if (!Array.isArray(itemsHook.items) || itemsHook.items.length === 0) {
+      return;
+    }
 
-  const addHeader = useCallback((insertAfterIndex?: number) => {
-    originalAddHeader(insertAfterIndex);
-  }, [originalAddHeader]);
+    const item = itemsHook.items.find(i => i.id === id);
+    if (!item) return;
+
+    // Handle custom fields vs standard fields
+    if (field.startsWith('custom_')) {
+      itemsHook.updateItem(id, `customFields.${field}`, value);
+    } else if (field.startsWith('customFields.')) {
+      itemsHook.updateItem(id, field, value);
+    } else {
+      itemsHook.updateItem(id, field, value);
+    }
+  }, [itemsHook]);
+
+  // Simple add functions
+  const addRow = useCallback(() => {
+    itemsHook.addRow('regular');
+  }, [itemsHook]);
+
+  const addHeader = useCallback(() => {
+    itemsHook.addHeader();
+  }, [itemsHook]);
 
   return {
-    items,
-    setItems,
+    // Items
+    items: itemsHook.items,
+    setItems: itemsHook.setItems,
     updateItem,
     addRow,
     addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
+    deleteRow: itemsHook.deleteRow,
+    deleteMultipleRows: itemsHook.deleteMultipleRows,
+    addMultipleRows: itemsHook.addMultipleRows,
+    getRowNumber: itemsHook.getRowNumber,
+    toggleFloatRow: itemsHook.toggleFloatRow,
+    calculateTotalRuntime: itemsHook.calculateTotalRuntime,
+    calculateHeaderDuration: itemsHook.calculateHeaderDuration,
+    // Columns
     ...columnsManager,
-    hasUnsavedChanges,
-    isSaving
+    // Auto-save
+    hasUnsavedChanges: autoSaveResult.hasUnsavedChanges,
+    isSaving: autoSaveResult.isSaving,
+    triggerSave: autoSaveResult.triggerSave
   };
 };
