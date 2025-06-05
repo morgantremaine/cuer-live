@@ -43,8 +43,8 @@ export const useRundownCore = () => {
     items,
     setItems,
     updateItem,
-    addRow,
-    addHeader,
+    addRow: originalAddRow,
+    addHeader: originalAddHeader,
     deleteRow,
     deleteMultipleRows,
     addMultipleRows,
@@ -78,16 +78,29 @@ export const useRundownCore = () => {
     currentColumns: columns
   });
 
-  // Wrapped functions that save state before making changes
-  const wrappedAddRow = useCallback((calculateEndTimeFn: any, insertAfterIndex?: number) => {
+  // Standardized functions with undo support - use insertAfterIndex pattern
+  const wrappedAddRow = useCallback((insertAfterIndex?: number) => {
     saveState(items, columns, rundownTitle, 'Add Row');
-    addRow(calculateEndTimeFn, insertAfterIndex);
-  }, [addRow, saveState, items, columns, rundownTitle]);
+    originalAddRow((startTime: string, duration: string) => {
+      // Simple time calculation
+      const [hours, minutes, seconds] = startTime.split(':').map(Number);
+      const [durHours, durMinutes, durSeconds] = duration.split(':').map(Number);
+      
+      const totalSeconds = (hours * 3600 + minutes * 60 + seconds) + 
+                          (durHours * 3600 + durMinutes * 60 + durSeconds);
+      
+      const endHours = Math.floor(totalSeconds / 3600);
+      const endMinutes = Math.floor((totalSeconds % 3600) / 60);
+      const endSecs = totalSeconds % 60;
+      
+      return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:${endSecs.toString().padStart(2, '0')}`;
+    }, insertAfterIndex);
+  }, [originalAddRow, saveState, items, columns, rundownTitle]);
 
   const wrappedAddHeader = useCallback((insertAfterIndex?: number) => {
     saveState(items, columns, rundownTitle, 'Add Header');
-    addHeader(insertAfterIndex);
-  }, [addHeader, saveState, items, columns, rundownTitle]);
+    originalAddHeader(insertAfterIndex);
+  }, [originalAddHeader, saveState, items, columns, rundownTitle]);
 
   const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
     saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
@@ -152,7 +165,7 @@ export const useRundownCore = () => {
     columns,
     visibleColumns,
     
-    // Operations
+    // Operations with standardized signatures
     addRow: wrappedAddRow,
     addHeader: wrappedAddHeader,
     deleteRow,

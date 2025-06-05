@@ -57,15 +57,6 @@ export const useRundownGridState = () => {
     // Simple implementation
   };
 
-  // Standardized add functions that handle both interface patterns
-  const handleAddRow = () => {
-    operations.handleAddRow(operations.calculateEndTime, undefined, uiState.selectedRows);
-  };
-
-  const handleAddHeader = () => {
-    operations.handleAddHeader(undefined, uiState.selectedRows);
-  };
-
   return useMemo(() => ({
     // Core state
     ...coreState,
@@ -82,15 +73,11 @@ export const useRundownGridState = () => {
     handleCellClick,
     handleKeyDown,
     
-    // Standardized handlers that work with both interface patterns
-    handleAddRow,
-    handleAddHeader,
-    
-    // Additional handlers for compatibility
+    // Direct operation handlers (no parameter conversion needed)
     onUpdateItem: handleUpdateItem,
     onRowSelect: handleRowSelection,
-    onAddRow: handleAddRow,
-    onAddHeader: handleAddHeader,
+    onAddRow: operations.handleAddRow,
+    onAddHeader: operations.handleAddHeader,
     onDeleteSelectedRows: operations.handleDeleteSelectedRows,
     onCopySelectedRows: operations.handleCopySelectedRows,
     onPasteRows: operations.handlePasteRows,
@@ -103,7 +90,7 @@ export const useRundownGridState = () => {
     onDrop: uiState.handleDrop,
     onClearSelection: uiState.clearSelection,
     
-    // Missing property mappings
+    // Property mappings
     selectColor: operations.handleColorSelect,
     handleUndo: operations.handleUndo,
     canUndo: operations.canUndo,
@@ -113,8 +100,6 @@ export const useRundownGridState = () => {
     uiState,
     operations,
     handleRowSelection,
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader
+    handleUpdateItem
   ]);
 };

@@ -9,7 +9,7 @@ export const useRundownOperations = (
   items: RundownItem[],
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   updateItem: (id: string, field: string, value: string) => void,
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => void,
+  addRow: (insertAfterIndex?: number) => void,
   addHeader: (insertAfterIndex?: number) => void,
   deleteMultipleRows: (ids: string[]) => void,
   addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void,
@@ -66,10 +66,10 @@ export const useRundownOperations = (
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  const handleAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string, selectedRows?: Set<string>) => {
+  const handleAddRow = useCallback(() => {
     // Find the index of the last selected row if multiple rows are selected
     let insertAfterIndex: number | undefined = undefined;
-    if (selectedRows && selectedRows.size > 0) {
+    if (selectedRows.size > 0) {
       // Find the highest index among selected rows
       const selectedIndices = Array.from(selectedRows).map(id => 
         items.findIndex(item => item.id === id)
@@ -77,22 +77,16 @@ export const useRundownOperations = (
       
       if (selectedIndices.length > 0) {
         insertAfterIndex = Math.max(...selectedIndices);
-      }
-    } else if (selectedRowId) {
-      // Single row selection fallback
-      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
-      if (selectedIndex !== -1) {
-        insertAfterIndex = selectedIndex;
       }
     }
     
-    addRow(calculateEndTimeFn, insertAfterIndex);
-  }, [addRow, items]);
+    addRow(insertAfterIndex);
+  }, [addRow, items, selectedRows]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string, selectedRows?: Set<string>) => {
+  const handleAddHeader = useCallback(() => {
     // Find the index of the last selected row if multiple rows are selected
     let insertAfterIndex: number | undefined = undefined;
-    if (selectedRows && selectedRows.size > 0) {
+    if (selectedRows.size > 0) {
       // Find the highest index among selected rows
       const selectedIndices = Array.from(selectedRows).map(id => 
         items.findIndex(item => item.id === id)
@@ -100,17 +94,11 @@ export const useRundownOperations = (
       
       if (selectedIndices.length > 0) {
         insertAfterIndex = Math.max(...selectedIndices);
-      }
-    } else if (selectedRowId) {
-      // Single row selection fallback
-      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
-      if (selectedIndex !== -1) {
-        insertAfterIndex = selectedIndex;
       }
     }
     
     addHeader(insertAfterIndex);
-  }, [addHeader, items]);
+  }, [addHeader, items, selectedRows]);
 
   const handleColorSelect = useCallback((id: string, color: string) => {
     updateItem(id, 'color', color);

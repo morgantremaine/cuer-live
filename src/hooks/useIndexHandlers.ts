@@ -50,11 +50,11 @@ export const useIndexHandlers = ({
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
   }, [toggleRowSelection, items]);
 
-  // Convert selectedRows to insertAfterIndex for addRow/addHeader
-  const handleAddRow = useCallback((selectedRowId?: string, selectedRows?: Set<string>) => {
+  // Standardized handlers that use insertAfterIndex
+  const handleAddRow = useCallback(() => {
     let insertAfterIndex: number | undefined = undefined;
     
-    if (selectedRows && selectedRows.size > 0) {
+    if (selectedRows.size > 0) {
       // Find the highest index among selected rows
       const selectedIndices = Array.from(selectedRows).map(id => 
         items.findIndex(item => item.id === id)
@@ -62,22 +62,16 @@ export const useIndexHandlers = ({
       
       if (selectedIndices.length > 0) {
         insertAfterIndex = Math.max(...selectedIndices);
-      }
-    } else if (selectedRowId) {
-      // Single row selection fallback
-      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
-      if (selectedIndex !== -1) {
-        insertAfterIndex = selectedIndex;
       }
     }
     
     addRow(insertAfterIndex);
-  }, [addRow, items]);
+  }, [addRow, items, selectedRows]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string, selectedRows?: Set<string>) => {
+  const handleAddHeader = useCallback(() => {
     let insertAfterIndex: number | undefined = undefined;
     
-    if (selectedRows && selectedRows.size > 0) {
+    if (selectedRows.size > 0) {
       // Find the highest index among selected rows
       const selectedIndices = Array.from(selectedRows).map(id => 
         items.findIndex(item => item.id === id)
@@ -86,16 +80,10 @@ export const useIndexHandlers = ({
       if (selectedIndices.length > 0) {
         insertAfterIndex = Math.max(...selectedIndices);
       }
-    } else if (selectedRowId) {
-      // Single row selection fallback
-      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
-      if (selectedIndex !== -1) {
-        insertAfterIndex = selectedIndex;
-      }
     }
     
     addHeader(insertAfterIndex);
-  }, [addHeader, items]);
+  }, [addHeader, items, selectedRows]);
 
   return {
     handleRundownStartTimeChange,
