@@ -53,7 +53,9 @@ export const useRundownGridState = () => {
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
-    handleDeleteSelectedRows
+    handleDeleteSelectedRows,
+    // Add missing handleUndo
+    handleUndo: coreState.handleUndo
   }), [
     coreState,
     interactions,

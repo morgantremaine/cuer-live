@@ -8,10 +8,10 @@ export const useRundownStateCoordination = () => {
   // Get core state
   const coreState = useRundownCoreState();
   
-  // Get interaction handlers - fix the setItems signature and add selectColor
+  // Get interaction handlers - pass all required parameters with correct signatures
   const interactions = useRundownGridInteractions(
     coreState.items,
-    (items: any[]) => coreState.setItems(() => items), // Fix: wrap in function
+    coreState.setItems,
     coreState.updateItem,
     coreState.addRow,
     coreState.addHeader,
@@ -21,7 +21,7 @@ export const useRundownStateCoordination = () => {
     coreState.addMultipleRows,
     coreState.handleDeleteColumn,
     coreState.calculateEndTime,
-    coreState.selectColor, // Add selectColor from coreState
+    coreState.selectColor,
     coreState.markAsChanged,
     coreState.setRundownTitle
   );

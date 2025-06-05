@@ -86,7 +86,7 @@ export const useRundownCoreState = () => {
     // Data management
     ...dataManagement,
     
-    // Calculations
+    // Calculations - include calculateEndTime
     ...calculations,
     
     // Playback
