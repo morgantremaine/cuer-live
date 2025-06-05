@@ -27,8 +27,8 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-blue-100 dark:bg-blue-900 opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
-    // Headers should always be blue
-    rowClass = 'bg-blue-600 dark:bg-blue-700 border-l-4 border-blue-800 dark:border-blue-500 font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 text-white';
+    // Headers should use darker blue colors to match the original design
+    rowClass = 'bg-blue-800 dark:bg-blue-800 border-l-4 border-blue-900 dark:border-blue-600 font-semibold hover:bg-blue-900 dark:hover:bg-blue-700 text-white';
   } else if (isFloating || isFloated) {
     // Floating/floated items should be red
     rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
