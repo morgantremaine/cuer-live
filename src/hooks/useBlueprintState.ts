@@ -73,12 +73,12 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       
       // Save silently after a delay
       setTimeout(() => {
-        saveBlueprint(updatedLists, true);
+        saveBlueprint(rundownTitle, updatedLists, showDate, true);
       }, 500);
       
       return updatedLists;
     });
-  }, [saveBlueprint]);
+  }, [saveBlueprint, rundownTitle, showDate]);
 
   // Add new list
   const addNewList = useCallback((name: string, sourceColumn: string) => {
@@ -92,19 +92,19 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     
     setLists(currentLists => {
       const updatedLists = [...currentLists, newList];
-      saveBlueprint(updatedLists, false);
+      saveBlueprint(rundownTitle, updatedLists, showDate, false);
       return updatedLists;
     });
-  }, [items, generateListId, saveBlueprint]);
+  }, [items, generateListId, saveBlueprint, rundownTitle, showDate]);
 
   // Delete list
   const deleteList = useCallback((listId: string) => {
     setLists(currentLists => {
       const updatedLists = currentLists.filter(list => list.id !== listId);
-      saveBlueprint(updatedLists, false);
+      saveBlueprint(rundownTitle, updatedLists, showDate, false);
       return updatedLists;
     });
-  }, [saveBlueprint]);
+  }, [saveBlueprint, rundownTitle, showDate]);
 
   // Rename list
   const renameList = useCallback((listId: string, newName: string) => {
@@ -112,10 +112,10 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, name: newName } : list
       );
-      saveBlueprint(updatedLists, true);
+      saveBlueprint(rundownTitle, updatedLists, showDate, true);
       return updatedLists;
     });
-  }, [saveBlueprint]);
+  }, [saveBlueprint, rundownTitle, showDate]);
 
   // Refresh all lists
   const refreshAllLists = useCallback(() => {
@@ -124,18 +124,18 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         ...list,
         items: generateListFromColumn(items, list.sourceColumn)
       }));
-      saveBlueprint(refreshedLists, true);
+      saveBlueprint(rundownTitle, refreshedLists, showDate, true);
       return refreshedLists;
     });
-  }, [items, saveBlueprint]);
+  }, [items, saveBlueprint, rundownTitle, showDate]);
 
   // Update show date
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
     setTimeout(() => {
-      saveBlueprint(lists, true);
+      saveBlueprint(rundownTitle, lists, newDate, true);
     }, 100);
-  }, [lists, saveBlueprint]);
+  }, [lists, saveBlueprint, rundownTitle]);
 
   return {
     lists,
