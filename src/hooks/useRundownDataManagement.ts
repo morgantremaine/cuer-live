@@ -2,28 +2,32 @@
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
+import { useRundownBasicState } from './useRundownBasicState';
 
 export const useRundownDataManagement = (rundownId: string) => {
-  // Initialize undo system - fix: call without arguments
+  // Get basic state management
+  const basicState = useRundownBasicState();
+  
+  // Initialize undo system
   const undoSystem = useRundownUndo();
   
-  // Initialize storage - fix: call without arguments
+  // Initialize storage
   const storage = useRundownStorage();
   
-  // Create a dummy markAsChanged function if not available
-  const markAsChanged = () => {};
-  
-  // Initialize state integration with dummy values for missing properties
+  // Initialize state integration with all required parameters
   const stateIntegration = useRundownStateIntegration(
-    markAsChanged,
-    '', // rundownTitle fallback
-    'UTC', // timezone fallback
-    '', // rundownStartTime fallback
-    () => {}, // setRundownTitleDirectly fallback
-    () => {} // setTimezoneDirectly fallback
+    basicState.markAsChanged,
+    basicState.rundownTitle,
+    basicState.timezone,
+    basicState.rundownStartTime,
+    basicState.setRundownTitleDirectly,
+    basicState.setTimezoneDirectly
   );
 
   return {
+    // Basic state
+    ...basicState,
+    
     // Storage operations
     ...storage,
     
