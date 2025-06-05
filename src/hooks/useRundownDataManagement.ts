@@ -36,19 +36,23 @@ export const useRundownDataManagement = (rundownId: string) => {
     setTimezone: basicState.setTimezoneDirectly,
     setRundownStartTime: basicState.setRundownStartTimeDirectly,
     handleLoadLayout: stateIntegration.handleLoadLayout,
-    setItems: stateIntegration.setItems, // Pass the setItems function
+    setItems: stateIntegration.setItems,
     onRundownLoaded: (rundown) => {
       console.log('Rundown loaded successfully:', rundown.title);
     }
   });
 
-  // Initialize with default items if this is a new rundown
+  // Initialize with default items if this is a new rundown - improved logic
   useEffect(() => {
-    if (!rundownId && stateIntegration.items.length === 0) {
+    // Only initialize default items if:
+    // 1. No rundownId (new rundown)
+    // 2. Storage is not loading 
+    // 3. Items array is empty
+    if (!rundownId && !storage.loading && stateIntegration.items.length === 0) {
       console.log('Initializing new rundown with default items');
       stateIntegration.setItems(defaultRundownItems);
     }
-  }, [rundownId, stateIntegration.items.length, stateIntegration.setItems]);
+  }, [rundownId, storage.loading, stateIntegration.items.length, stateIntegration.setItems]);
 
   return {
     // Basic state

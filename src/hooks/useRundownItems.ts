@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+
+import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -107,52 +108,54 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Simplified and reliable getRowNumber function - force recalculation
-  const getRowNumber = useCallback((index: number) => {
-    if (index < 0 || index >= items.length) return '';
-    
-    const item = items[index];
-    if (!item) return '';
-    
-    // For headers, count how many headers we've seen so far
-    if (item.type === 'header') {
-      let headerCount = 0;
-      for (let i = 0; i <= index; i++) {
-        if (items[i]?.type === 'header') {
-          headerCount++;
-        }
-      }
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      return letters[headerCount - 1] || 'A';
-    }
-    
-    // For regular items, find which segment they belong to
-    let currentSegmentLetter = 'A';
-    let itemCountInSegment = 0;
-    
-    // Go through items up to current index
-    for (let i = 0; i <= index; i++) {
-      const currentItem = items[i];
-      if (!currentItem) continue;
+  // Use useMemo to ensure getRowNumber updates when items change
+  const getRowNumber = useMemo(() => {
+    return (index: number) => {
+      if (index < 0 || index >= items.length) return '';
       
-      if (currentItem.type === 'header') {
-        // Update which segment we're in
+      const item = items[index];
+      if (!item) return '';
+      
+      // For headers, count how many headers we've seen so far
+      if (item.type === 'header') {
         let headerCount = 0;
-        for (let j = 0; j <= i; j++) {
-          if (items[j]?.type === 'header') {
+        for (let i = 0; i <= index; i++) {
+          if (items[i]?.type === 'header') {
             headerCount++;
           }
         }
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        currentSegmentLetter = letters[headerCount - 1] || 'A';
-        itemCountInSegment = 0; // Reset count for new segment
-      } else if (currentItem.type === 'regular') {
-        itemCountInSegment++;
+        return letters[headerCount - 1] || 'A';
       }
-    }
-    
-    return `${currentSegmentLetter}${itemCountInSegment}`;
-  }, [items]); // This dependency ensures the function updates when items change
+      
+      // For regular items, find which segment they belong to
+      let currentSegmentLetter = 'A';
+      let itemCountInSegment = 0;
+      
+      // Go through items up to current index
+      for (let i = 0; i <= index; i++) {
+        const currentItem = items[i];
+        if (!currentItem) continue;
+        
+        if (currentItem.type === 'header') {
+          // Update which segment we're in
+          let headerCount = 0;
+          for (let j = 0; j <= i; j++) {
+            if (items[j]?.type === 'header') {
+              headerCount++;
+            }
+          }
+          const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+          currentSegmentLetter = letters[headerCount - 1] || 'A';
+          itemCountInSegment = 0; // Reset count for new segment
+        } else if (currentItem.type === 'regular') {
+          itemCountInSegment++;
+        }
+      }
+      
+      return `${currentSegmentLetter}${itemCountInSegment}`;
+    };
+  }, [items]); // Now properly memoized with items dependency
 
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prevItems => {
