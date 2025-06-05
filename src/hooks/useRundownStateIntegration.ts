@@ -1,4 +1,3 @@
-
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
@@ -22,10 +21,11 @@ export const useRundownStateIntegration = (
     stableMarkAsChangedRef.current();
   }, []);
 
-  // Initialize hooks once and keep them stable
+  // Track initialization state to prevent overwrites
   const [hooksInitialized, setHooksInitialized] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   
-  // Items management with change tracking - initialize once
+  // Initialize hooks once and keep them stable
   const itemsHook = useRundownItems(stableMarkAsChanged);
   
   // Columns management - initialize once
@@ -48,7 +48,7 @@ export const useRundownStateIntegration = (
   const autoSave = useAutoSave(
     stableItems,
     rundownTitle,
-    changeTracking.hasUnsavedChanges && changeTracking.isInitialized,
+    changeTracking.hasUnsavedChanges && changeTracking.isInitialized && !isInitializing,
     changeTracking.markAsSaved,
     stableColumns,
     timezone,
@@ -56,19 +56,28 @@ export const useRundownStateIntegration = (
     getUndoHistory
   );
 
-  // Mark hooks as initialized on first render
+  // Mark initialization as complete after a reasonable delay
   useEffect(() => {
     if (!hooksInitialized) {
       setHooksInitialized(true);
+      // Allow some time for data loading to complete
+      const timer = setTimeout(() => {
+        console.log('State integration: Initialization period ended, enabling auto-save');
+        setIsInitializing(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
     }
   }, [hooksInitialized]);
 
   // Memoize wrapped functions to prevent recreation
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+    console.log('State integration: Adding row');
     itemsHook.addRow(calculateEndTime, insertAfterIndex);
   }, [itemsHook.addRow]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
+    console.log('State integration: Adding header');
     itemsHook.addHeader(insertAfterIndex);
   }, [itemsHook.addHeader]);
 

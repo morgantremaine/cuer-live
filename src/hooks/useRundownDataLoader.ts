@@ -32,6 +32,7 @@ export const useRundownDataLoader = ({
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
+  const initializationCompleteRef = useRef(false);
 
   useEffect(() => {
     if (loading || savedRundowns.length === 0 || isLoadingRef.current) return;
@@ -42,6 +43,7 @@ export const useRundownDataLoader = ({
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
+    console.log('Data loader: Starting to load rundown', currentRundownId);
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
     
@@ -49,16 +51,20 @@ export const useRundownDataLoader = ({
     let itemsToLoad = rundown.items || [];
     
     if ((!itemsToLoad || itemsToLoad.length === 0) && rundown.undo_history && Array.isArray(rundown.undo_history) && rundown.undo_history.length > 0) {
+      console.log('Data loader: Looking for items in undo history');
       // Look through undo history to find the most recent state with items
       for (let i = rundown.undo_history.length - 1; i >= 0; i--) {
         const historyEntry = rundown.undo_history[i];
         
         if (historyEntry && historyEntry.items && Array.isArray(historyEntry.items) && historyEntry.items.length > 0) {
           itemsToLoad = historyEntry.items;
+          console.log('Data loader: Found items in undo history entry', i, 'with', itemsToLoad.length, 'items');
           break;
         }
       }
     }
+    
+    console.log('Data loader: Setting rundown data for', currentRundownId);
     
     // Set the rundown data
     setRundownTitle(rundown.title);
@@ -75,10 +81,12 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // Load the rundown items
+    // Load the rundown items - only if we haven't started user interactions
     if (itemsToLoad && Array.isArray(itemsToLoad)) {
+      console.log('Data loader: Setting items count:', itemsToLoad.length);
       setItems(itemsToLoad);
     } else {
+      console.log('Data loader: No items to load, setting empty array');
       setItems([]);
     }
 
@@ -87,8 +95,10 @@ export const useRundownDataLoader = ({
       onRundownLoaded(rundown);
     }
 
-    // Reset loading flag
+    // Mark initialization as complete after a short delay to prevent interference
     setTimeout(() => {
+      console.log('Data loader: Initialization complete for', currentRundownId);
+      initializationCompleteRef.current = true;
       isLoadingRef.current = false;
     }, 100);
   }, [
@@ -108,8 +118,10 @@ export const useRundownDataLoader = ({
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
+      console.log('Data loader: Rundown ID changed, resetting loader state');
       loadedRef.current = null;
       isLoadingRef.current = false;
+      initializationCompleteRef.current = false;
     }
   }, [rundownId, paramId]);
 };
