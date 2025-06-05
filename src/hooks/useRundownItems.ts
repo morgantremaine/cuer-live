@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -48,6 +49,9 @@ export const useRundownItems = (markAsChanged?: () => void) => {
   const addRow = useCallback((calculateEndTime: (item: RundownItem, prevEndTime?: string) => string, insertAfterIndex?: number) => {
     const newItem: RundownItem = {
       id: uuidv4(),
+      type: 'regular',
+      rowNumber: '',
+      name: '',
       segmentName: '',
       talent: '',
       script: '',
@@ -59,7 +63,8 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       elapsedTime: '',
       notes: '',
       color: '#ffffff',
-      customFields: {} // Initialize empty custom fields
+      isFloating: false,
+      customFields: {}
     };
 
     setItems(prevItems => {
@@ -95,14 +100,21 @@ export const useRundownItems = (markAsChanged?: () => void) => {
     const newHeader: RundownItem = {
       id: uuidv4(),
       type: 'header',
-      segmentName: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+      rowNumber: '',
       name: 'New Header',
-      notes: '',
+      segmentName: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      duration: '00:00:00',
       startTime: '',
       endTime: '',
       elapsedTime: '',
+      notes: '',
       color: '#ffffff',
-      customFields: {} // Initialize empty custom fields
+      isFloating: false,
+      customFields: {}
     };
 
     setItems(prevItems => {
