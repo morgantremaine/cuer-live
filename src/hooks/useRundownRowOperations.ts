@@ -5,8 +5,8 @@ interface UseRundownRowOperationsProps {
   selectedRows: Set<string>;
   deleteMultipleRows: (ids: string[]) => void;
   clearSelection: () => void;
-  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void;
-  addHeader: (insertAfterIndex?: number) => void;
+  addRow: () => void;
+  addHeader: () => void;
   calculateEndTime: any;
 }
 
@@ -27,12 +27,10 @@ export const useRundownRowOperations = ({
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handleAddRow = useCallback(() => {
-    // Use the interface that expects insertAfterIndex
-    addRow(calculateEndTime);
-  }, [addRow, calculateEndTime]);
+    addRow();
+  }, [addRow]);
 
   const handleAddHeader = useCallback(() => {
-    // Use the interface that expects insertAfterIndex
     addHeader();
   }, [addHeader]);
 

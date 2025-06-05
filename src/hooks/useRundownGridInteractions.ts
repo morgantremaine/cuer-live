@@ -10,7 +10,7 @@ export const useRundownGridInteractions = (
   items: RundownItem[],
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   updateItem: (id: string, field: keyof RundownItem, value: any) => void,
-  addRow: (calculateEndTime: any, selectedRows?: Set<string>) => void,
+  addRow: (selectedRows?: Set<string>) => void,
   addHeader: (selectedRows?: Set<string>) => void,
   deleteRow: (id: string) => void,
   toggleFloatRow: (id: string) => void,
@@ -34,7 +34,7 @@ export const useRundownGridInteractions = (
     selectAll
   } = useMultiRowSelection();
 
-  // Drag and drop - now uses the correct setItems signature
+  // Drag and drop - ensure setItems uses the updater pattern correctly
   const {
     draggedItemIndex,
     isDraggingMultiple,
@@ -54,11 +54,11 @@ export const useRundownGridInteractions = (
   const [colorPickerRowId, setColorPickerRowId] = useState<string | null>(null);
 
   // Enhanced row operations that mark user actions
-  const enhancedAddRow = useCallback((calculateEndTimeFunc: any, selectedRows?: Set<string>) => {
+  const enhancedAddRow = useCallback((selectedRows?: Set<string>) => {
     if (rundownId) {
       markGlobalUserAction(rundownId);
     }
-    addRow(calculateEndTimeFunc, selectedRows);
+    addRow(selectedRows);
   }, [addRow, rundownId]);
 
   const enhancedAddHeader = useCallback((selectedRows?: Set<string>) => {
