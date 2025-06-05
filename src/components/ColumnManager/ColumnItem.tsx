@@ -16,7 +16,7 @@ interface ColumnItemProps {
   onRenameColumn?: (columnId: string, newName: string) => void;
 }
 
-const ColumnItem = ({
+const ColumnItem = React.memo(({
   column,
   index,
   draggedColumnIndex,
@@ -29,14 +29,6 @@ const ColumnItem = ({
 }: ColumnItemProps) => {
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnName, setEditingColumnName] = useState('');
-
-  console.log('ColumnItem render:', {
-    columnId: column.id,
-    columnName: column.name,
-    isCustom: column.isCustom,
-    hasRenameFunction: !!onRenameColumn,
-    isEditing: editingColumnId === column.id
-  });
 
   const startEditingColumn = (column: Column) => {
     console.log('Starting to edit column:', column.id, column.name);
@@ -61,6 +53,7 @@ const ColumnItem = ({
 
   return (
     <div
+      key={`column-item-${column.id}`} // Stable key to prevent focus loss
       className={`flex items-center justify-between p-2 border border-gray-200 dark:border-gray-600 rounded cursor-move ${
         draggedColumnIndex === index ? 'bg-blue-100 dark:bg-blue-900 opacity-50' : 'bg-gray-50 dark:bg-gray-700'
       }`}
@@ -75,6 +68,7 @@ const ColumnItem = ({
           {editingColumnId === column.id ? (
             <div className="flex items-center space-x-2">
               <input
+                key={`edit-input-${column.id}`} // Stable key for input
                 type="text"
                 value={editingColumnName}
                 onChange={(e) => setEditingColumnName(e.target.value)}
@@ -158,6 +152,8 @@ const ColumnItem = ({
       </div>
     </div>
   );
-};
+});
+
+ColumnItem.displayName = 'ColumnItem';
 
 export default ColumnItem;

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useMemo } from 'react';
 
 export interface Column {
@@ -27,10 +26,10 @@ const DEFAULT_COLUMNS: Column[] = [
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
   const isLoadingLayoutRef = useRef(false);
-  const lastMarkAsChangedRef = useRef<(() => void) | undefined>();
+  const markAsChangedCallbackRef = useRef(markAsChanged);
   
-  // Update the ref when markAsChanged changes to avoid stale closures
-  lastMarkAsChangedRef.current = markAsChanged;
+  // Keep the callback ref up to date without causing re-renders
+  markAsChangedCallbackRef.current = markAsChanged;
 
   // Memoize safe columns and visible columns to prevent unnecessary recalculations
   const safeColumns = useMemo(() => {
@@ -43,8 +42,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   // Stable function to call markAsChanged without causing re-renders
   const triggerMarkAsChanged = useCallback(() => {
-    if (lastMarkAsChangedRef.current) {
-      lastMarkAsChangedRef.current();
+    if (markAsChangedCallbackRef.current) {
+      markAsChangedCallbackRef.current();
     }
   }, []);
 
@@ -135,12 +134,26 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return;
     }
     
-    console.log('Starting layout load with:', layoutColumns);
+    console.log('Starting layout load with columns:', layoutColumns);
     isLoadingLayoutRef.current = true;
 
-    // Validate input
+    // Validate input - must be an array of columns
     if (!Array.isArray(layoutColumns)) {
-      console.warn('Invalid layout columns data, keeping current columns');
+      console.warn('Invalid layout columns data - not an array:', layoutColumns);
+      isLoadingLayoutRef.current = false;
+      return;
+    }
+
+    // Validate that each item looks like a column
+    const isValidColumnArray = layoutColumns.every(col => 
+      col && 
+      typeof col === 'object' && 
+      typeof col.id === 'string' && 
+      typeof col.name === 'string'
+    );
+
+    if (!isValidColumnArray) {
+      console.warn('Invalid layout columns data - invalid column structure:', layoutColumns);
       isLoadingLayoutRef.current = false;
       return;
     }
@@ -184,6 +197,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       console.log('Setting new columns from layout:', mergedColumns);
       setColumns(mergedColumns);
       
+      // Don't trigger markAsChanged for layout loads to avoid auto-save conflicts
+      
     } catch (error) {
       console.error('Error loading layout:', error);
     } finally {
@@ -192,7 +207,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         isLoadingLayoutRef.current = false;
       }, 100);
     }
-  }, []);
+  }, []); // No dependencies to keep this function completely stable
 
   return {
     columns: safeColumns,
