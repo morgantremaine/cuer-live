@@ -20,17 +20,17 @@ export const useAutoSaveOperations = () => {
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
     if (isSaving) {
-      console.log('Auto-save: Save already in progress');
+      console.log('Auto-save: Save already in progress, skipping');
       return false;
     }
 
     if (!user) {
-      console.error('Auto-save: No user authenticated');
+      console.error('Auto-save: No authenticated user');
       return false;
     }
 
     if (!rundownTitle || rundownTitle.trim() === '') {
-      console.error('Auto-save: Empty title');
+      console.error('Auto-save: No title provided');
       return false;
     }
 
@@ -39,39 +39,35 @@ export const useAutoSaveOperations = () => {
       return false;
     }
 
+    setIsSaving(true);
+
     try {
-      setIsSaving(true);
-      console.log(`Auto-save: Starting save - isNew: ${isNewRundown}, id: ${rundownId}`);
+      console.log(`Auto-save: Starting save operation - isNew: ${isNewRundown}, id: ${rundownId}, items: ${items.length}`);
       
       if (isNewRundown) {
         console.log('Auto-save: Saving new rundown');
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
-          console.log('Auto-save: New rundown saved, navigating to:', result.id);
-          
-          // Navigate immediately then refresh storage
+          console.log('Auto-save: New rundown saved successfully, navigating to:', result.id);
           navigate(`/rundown/${result.id}`, { replace: true });
-          
           // Refresh storage in background
-          setTimeout(() => {
-            loadRundowns();
-          }, 100);
-          
+          setTimeout(() => loadRundowns(), 100);
           return true;
         } else {
-          throw new Error('Failed to save new rundown');
+          console.error('Auto-save: Failed to save new rundown - no ID returned');
+          return false;
         }
       } else if (rundownId) {
         console.log('Auto-save: Updating existing rundown');
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, startTime);
-        console.log('Auto-save: Existing rundown updated');
+        console.log('Auto-save: Existing rundown updated successfully');
         return true;
       }
       
       return false;
     } catch (error) {
-      console.error('Auto-save: Save failed:', error);
+      console.error('Auto-save: Save operation failed:', error);
       return false;
     } finally {
       setIsSaving(false);

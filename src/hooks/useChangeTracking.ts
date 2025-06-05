@@ -7,28 +7,27 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedDataRef = useRef<string>('');
-  const initializationRef = useRef(false);
+  const initOnceRef = useRef(false);
 
-  // Create a signature for tracking changes
+  // Simple signature for tracking changes
   const currentSignature = useMemo(() => {
     return JSON.stringify({ 
+      title: rundownTitle || '',
       itemsCount: items.length,
-      title: rundownTitle, 
       columnsCount: columns?.length || 0,
       timezone: timezone || '', 
-      startTime: startTime || '',
-      itemsHash: items.map(item => `${item.id}-${item.name || item.segmentName || ''}-${item.type}`).join('|')
+      startTime: startTime || ''
     });
-  }, [items, rundownTitle, columns, timezone, startTime]);
+  }, [items.length, rundownTitle, columns?.length, timezone, startTime]);
 
-  // Initialize ONCE when we have meaningful data
+  // Initialize only once when we have data
   useEffect(() => {
-    if (!initializationRef.current && items.length > 0) {
+    if (!initOnceRef.current && items.length > 0) {
       console.log('Change tracking: Initializing once');
       lastSavedDataRef.current = currentSignature;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
-      initializationRef.current = true;
+      initOnceRef.current = true;
     }
   }, [currentSignature, items.length]);
 
@@ -37,19 +36,16 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     if (!isInitialized) return;
 
     const hasChanges = lastSavedDataRef.current !== currentSignature;
-    if (hasChanges !== hasUnsavedChanges) {
-      setHasUnsavedChanges(hasChanges);
-    }
-  }, [currentSignature, isInitialized, hasUnsavedChanges]);
+    setHasUnsavedChanges(hasChanges);
+  }, [currentSignature, isInitialized]);
 
   const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
     const signature = JSON.stringify({ 
+      title: savedTitle || '',
       itemsCount: savedItems.length,
-      title: savedTitle, 
       columnsCount: savedColumns?.length || 0, 
       timezone: savedTimezone || '', 
-      startTime: savedStartTime || '',
-      itemsHash: savedItems.map(item => `${item.id}-${item.name || item.segmentName || ''}-${item.type}`).join('|')
+      startTime: savedStartTime || ''
     });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
@@ -58,14 +54,12 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
   const markAsChanged = () => {
     if (isInitialized) {
-      console.log('Change tracking: Manually marked as changed');
       setHasUnsavedChanges(true);
     }
   };
 
   return {
     hasUnsavedChanges,
-    setHasUnsavedChanges,
     markAsSaved,
     markAsChanged,
     isInitialized

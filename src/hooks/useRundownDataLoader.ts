@@ -31,19 +31,20 @@ export const useRundownDataLoader = ({
   const params = useParams<{ id: string }>();
   const paramId = params.id;
   const loadedRundownIdRef = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
-    // Skip if storage is still loading
-    if (loading) {
+    // Skip if storage is still loading or we're already loading
+    if (loading || isLoadingRef.current) {
       return;
     }
     
     const currentRundownId = rundownId || paramId;
     
-    // If no rundown ID, this is a new rundown - reset state if needed
+    // If no rundown ID, this is a new rundown
     if (!currentRundownId) {
       if (loadedRundownIdRef.current) {
-        console.log('Data loader: Switching to new rundown, resetting');
+        console.log('Data loader: Switching to new rundown');
         loadedRundownIdRef.current = null;
       }
       return;
@@ -62,40 +63,46 @@ export const useRundownDataLoader = ({
       return;
     }
 
-    // Load the rundown data
-    console.log('Data loader: Loading rundown:', rundown.title);
-    
-    setRundownTitle(rundown.title);
-    
-    if (rundown.timezone) {
-      setTimezone(rundown.timezone);
-    }
-    
-    if (rundown.startTime || rundown.start_time) {
-      setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
-    }
-    
-    if (rundown.columns) {
-      handleLoadLayout(rundown.columns);
-    }
+    // Set loading flag to prevent concurrent loads
+    isLoadingRef.current = true;
 
-    if (rundown.items && Array.isArray(rundown.items)) {
-      console.log('Data loader: Loading items:', rundown.items.length);
-      const itemsWithCustomFields = rundown.items.map(item => ({
-        ...item,
-        customFields: item.customFields || {}
-      }));
-      setItems(itemsWithCustomFields);
+    try {
+      console.log('Data loader: Loading rundown:', rundown.title);
+      
+      setRundownTitle(rundown.title);
+      
+      if (rundown.timezone) {
+        setTimezone(rundown.timezone);
+      }
+      
+      if (rundown.startTime || rundown.start_time) {
+        setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
+      }
+      
+      if (rundown.columns) {
+        handleLoadLayout(rundown.columns);
+      }
+
+      if (rundown.items && Array.isArray(rundown.items)) {
+        console.log('Data loader: Loading items:', rundown.items.length);
+        const itemsWithCustomFields = rundown.items.map(item => ({
+          ...item,
+          customFields: item.customFields || {}
+        }));
+        setItems(itemsWithCustomFields);
+      }
+
+      // Mark as loaded
+      loadedRundownIdRef.current = currentRundownId;
+
+      if (onRundownLoaded) {
+        onRundownLoaded(rundown);
+      }
+
+      console.log('Data loader: Rundown loaded successfully');
+    } finally {
+      isLoadingRef.current = false;
     }
-
-    // Mark as loaded
-    loadedRundownIdRef.current = currentRundownId;
-
-    if (onRundownLoaded) {
-      onRundownLoaded(rundown);
-    }
-
-    console.log('Data loader: Rundown loaded successfully');
   }, [rundownId, paramId, savedRundowns, loading]);
 
   // Reset when rundown ID changes
@@ -104,6 +111,7 @@ export const useRundownDataLoader = ({
     if (loadedRundownIdRef.current && loadedRundownIdRef.current !== currentRundownId) {
       console.log('Data loader: Rundown ID changed, resetting');
       loadedRundownIdRef.current = null;
+      isLoadingRef.current = false;
     }
   }, [rundownId, paramId]);
 };

@@ -40,22 +40,18 @@ export const useRundownStateIntegration = (
 
     // Handle custom fields vs standard fields
     if (field.startsWith('custom_')) {
-      // For custom columns, we need to update the customFields object
-      // Use the nested field syntax that originalUpdateItem already supports
       originalUpdateItem(id, `customFields.${field}`, value);
     } else if (field.startsWith('customFields.')) {
-      // Handle nested custom field updates - pass through as-is
       originalUpdateItem(id, field, value);
     } else {
-      // Handle standard fields normally
       originalUpdateItem(id, field, value);
     }
   }, [originalUpdateItem, items]);
 
-  // Stable columns manager
+  // Columns manager
   const columnsManager = useColumnsManager(markAsChanged);
 
-  // Auto-save functionality
+  // Auto-save with simplified dependency
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     items,
     rundownTitle,
@@ -64,7 +60,7 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  // Wrapped functions that don't interfere with typing
+  // Wrapped functions
   const addRow = useCallback((insertAfterIndex?: number) => {
     originalAddRow('regular');
   }, [originalAddRow]);
