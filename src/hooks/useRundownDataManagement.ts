@@ -17,7 +17,7 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Initialize storage
   const storage = useRundownStorage();
   
-  // Initialize state integration with all required parameters
+  // Initialize state integration
   const stateIntegration = useRundownStateIntegration(
     basicState.markAsChanged,
     basicState.rundownTitle,
@@ -42,23 +42,20 @@ export const useRundownDataManagement = (rundownId: string) => {
     }
   });
 
-  // Initialize with default items for new rundowns ONLY - better logic
+  // Initialize with default items for new rundowns ONLY when storage is loaded and no items exist
   useEffect(() => {
-    // Only run for new rundowns (no rundownId) and only once
+    // Only run for new rundowns (no rundownId)
     if (rundownId) return;
     
     // Wait for storage to finish loading
     if (storage.loading) return;
     
-    // Only initialize if we haven't already set items and title is still default
-    const isDefaultState = basicState.rundownTitle === 'Live Broadcast Rundown' && 
-                           stateIntegration.items.length === 0;
-    
-    if (isDefaultState) {
-      console.log('Initializing new rundown with default items (one-time only)');
+    // Only initialize if we haven't set any items yet
+    if (stateIntegration.items.length === 0) {
+      console.log('Initializing new rundown with default items');
       stateIntegration.setItems(defaultRundownItems);
     }
-  }, [rundownId, storage.loading, basicState.rundownTitle, stateIntegration.items.length]);
+  }, [rundownId, storage.loading, stateIntegration.items.length, stateIntegration.setItems]);
 
   return {
     // Basic state

@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
-import { useAutoSave } from './useAutoSave';
+import { useRundownAutoSave } from './useRundownAutoSave';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateIntegration = (
@@ -13,20 +13,21 @@ export const useRundownStateIntegration = (
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void
 ) => {
-  // Items management - pass markAsChanged to track changes
+  // Items management
   const itemsHook = useRundownItems(markAsChanged);
-
-  // Columns manager - pass markAsChanged to track changes
+  
+  // Columns manager
   const columnsManager = useColumnsManager(markAsChanged);
 
-  // Auto-save with the current state - this should be the ONLY auto-save call
-  const autoSaveResult = useAutoSave(
-    itemsHook.items,
+  // Auto-save with the new simplified system
+  const autoSave = useRundownAutoSave({
+    items: itemsHook.items,
     rundownTitle,
-    columnsManager.columns,
+    columns: columnsManager.columns,
     timezone,
-    rundownStartTime
-  );
+    startTime: rundownStartTime,
+    markAsChanged
+  });
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
@@ -49,7 +50,7 @@ export const useRundownStateIntegration = (
 
   // Simple add functions
   const addRow = useCallback(() => {
-    itemsHook.addRow('regular');
+    itemsHook.addRow();
   }, [itemsHook]);
 
   const addHeader = useCallback(() => {
@@ -73,8 +74,8 @@ export const useRundownStateIntegration = (
     // Columns
     ...columnsManager,
     // Auto-save
-    hasUnsavedChanges: autoSaveResult.hasUnsavedChanges,
-    isSaving: autoSaveResult.isSaving,
-    triggerSave: autoSaveResult.triggerSave
+    hasUnsavedChanges: autoSave.hasUnsavedChanges,
+    isSaving: autoSave.isSaving,
+    triggerSave: autoSave.triggerSave
   };
 };

@@ -32,7 +32,7 @@ export const useRundownGridCore = () => {
   // Get storage functionality
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
 
-  // Rundown data integration
+  // Rundown data integration with simplified auto-save
   const {
     items,
     setItems,

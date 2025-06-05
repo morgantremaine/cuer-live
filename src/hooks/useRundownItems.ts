@@ -1,13 +1,11 @@
-
 import { useState, useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { generateId } from '@/utils/idGenerator';
 import { useUndo } from './useUndo';
-import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownItems = (markAsChanged?: () => void) => {
-  // Initialize with default items instead of empty array
-  const [items, setItems] = useState<RundownItem[]>(defaultRundownItems);
+  // Initialize with empty array - data will be loaded by useRundownDataLoader
+  const [items, setItems] = useState<RundownItem[]>([]);
   const {
     undo: undoItems,
     redo: redoItems,
@@ -15,7 +13,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
     canUndo,
     canRedo,
     lastAction
-  } = useUndo<RundownItem[]>(defaultRundownItems, setItems);
+  } = useUndo<RundownItem[]>([], setItems);
 
   const updateItem = useCallback((id: string, field: string, value: string) => {
     setItemsWithHistory(prev => {
