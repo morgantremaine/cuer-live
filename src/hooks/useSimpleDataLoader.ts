@@ -31,33 +31,16 @@ export const useSimpleDataLoader = ({
   const params = useParams<{ id: string }>();
   const rundownId = params.id;
   const loadedRef = useRef<string | null>(null);
-
-  console.log('Simple data loader: Current params and rundown ID:', {
-    paramsId: params.id,
-    rundownId,
-    loadedRef: loadedRef.current
-  });
+  const loadingRef = useRef<boolean>(false);
 
   useEffect(() => {
-    console.log('Simple data loader: Effect triggered with:', {
-      loading,
-      rundownId,
-      savedRundownsLength: savedRundowns.length,
-      loadedRef: loadedRef.current
-    });
-
-    if (loading || !rundownId || !savedRundowns.length) {
-      console.log('Simple data loader: Early return due to:', {
-        loading,
-        rundownId: !!rundownId,
-        hasSavedRundowns: savedRundowns.length > 0
-      });
+    // Prevent loading if already loading or if we don't have all required data
+    if (loading || !rundownId || !savedRundowns.length || loadingRef.current) {
       return;
     }
 
-    // Skip if already loaded
+    // Skip if already loaded this rundown
     if (loadedRef.current === rundownId) {
-      console.log('Simple data loader: Already loaded rundown:', rundownId);
       return;
     }
 
@@ -68,6 +51,7 @@ export const useSimpleDataLoader = ({
     }
 
     console.log('Simple data loader: Loading rundown:', rundownId);
+    loadingRef.current = true;
     setIsLoading(true);
 
     try {
@@ -91,19 +75,21 @@ export const useSimpleDataLoader = ({
     } catch (error) {
       console.error('Simple data loader: Error loading rundown:', error);
     } finally {
+      loadingRef.current = false;
       setIsLoading(false);
     }
-  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout, setItems, setIsLoading, onRundownLoaded]);
+  }, [rundownId, savedRundowns.length, loading]); // Removed savedRundowns from dependencies
 
   // Reset when rundown changes
   useEffect(() => {
     if (rundownId && loadedRef.current && rundownId !== loadedRef.current) {
       console.log('Simple data loader: Rundown ID changed from', loadedRef.current, 'to', rundownId, '- resetting loaded state');
       loadedRef.current = null;
+      loadingRef.current = false;
     }
   }, [rundownId]);
 
   return {
-    isLoading: loadedRef.current !== rundownId
+    isLoading: loadingRef.current
   };
 };

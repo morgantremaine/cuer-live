@@ -21,20 +21,21 @@ export const useSimpleAutoSave = (
   const lastSaveDataRef = useRef<string>('');
   const saveInProgressRef = useRef<boolean>(false);
   const consecutiveSaveAttemptsRef = useRef<number>(0);
+  const lastSaveAttemptRef = useRef<number>(0);
 
   useEffect(() => {
     // Validate rundownId first
     if (!rundownId || rundownId === ':id' || rundownId.trim() === '') {
-      console.log('Simple auto-save: Skipping save - invalid rundownId:', rundownId);
       return;
     }
 
     if (!isInitialized || !hasUnsavedChanges || saveInProgressRef.current) {
-      console.log('Simple auto-save: Skipping save - conditions not met:', { 
-        isInitialized, 
-        hasUnsavedChanges, 
-        saveInProgress: saveInProgressRef.current 
-      });
+      return;
+    }
+
+    // Rate limiting: don't attempt save more than once every 2 seconds
+    const now = Date.now();
+    if (now - lastSaveAttemptRef.current < 2000) {
       return;
     }
 
@@ -48,12 +49,11 @@ export const useSimpleAutoSave = (
     });
 
     if (currentData === lastSaveDataRef.current) {
-      console.log('Simple auto-save: Skipping save - no data changes detected');
       return;
     }
 
     // Prevent excessive save attempts
-    if (consecutiveSaveAttemptsRef.current > 5) {
+    if (consecutiveSaveAttemptsRef.current > 3) {
       console.log('Simple auto-save: Too many consecutive save attempts, backing off');
       consecutiveSaveAttemptsRef.current = 0;
       return;
@@ -64,13 +64,14 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
 
-    console.log('Simple auto-save: Scheduling save for rundown:', rundownId, 'attempt:', consecutiveSaveAttemptsRef.current + 1);
+    lastSaveAttemptRef.current = now;
     consecutiveSaveAttemptsRef.current++;
+
+    console.log('Simple auto-save: Scheduling save for rundown:', rundownId, 'attempt:', consecutiveSaveAttemptsRef.current);
 
     // Longer debounce to prevent excessive saves
     saveTimeoutRef.current = setTimeout(async () => {
       if (saveInProgressRef.current) {
-        console.log('Simple auto-save: Save already in progress, skipping');
         return;
       }
 
@@ -92,7 +93,7 @@ export const useSimpleAutoSave = (
         saveInProgressRef.current = false;
         setIsSaving(false);
       }
-    }, 3000); // Increased from 2000 to 3000ms
+    }, 5000); // Increased from 3000 to 5000ms
 
     return () => {
       if (saveTimeoutRef.current) {

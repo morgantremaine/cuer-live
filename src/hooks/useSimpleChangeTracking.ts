@@ -10,6 +10,7 @@ export const useSimpleChangeTracking = () => {
   const lastSavedStateRef = useRef<string>('');
   const lastChangeCheckRef = useRef<string>('');
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const skipNextChangeCheckRef = useRef<boolean>(false);
 
   const createStateSignature = useCallback((
     items: RundownItem[], 
@@ -41,15 +42,11 @@ export const useSimpleChangeTracking = () => {
     timezone?: string, 
     startTime?: string
   ) => {
-    console.log('Simple change tracking: Initialize called');
-
     if (isInitialized) {
-      console.log('Simple change tracking: Already initialized, skipping');
       return;
     }
 
     if (items.length === 0) {
-      console.log('Simple change tracking: No items, will initialize when items are loaded');
       return;
     }
 
@@ -58,6 +55,7 @@ export const useSimpleChangeTracking = () => {
     lastChangeCheckRef.current = signature;
     setIsInitialized(true);
     setHasUnsavedChanges(false);
+    skipNextChangeCheckRef.current = true; // Skip the next change check to prevent immediate triggering
     console.log('Simple change tracking: Successfully initialized');
   }, [isInitialized, createStateSignature]);
 
@@ -72,11 +70,18 @@ export const useSimpleChangeTracking = () => {
       return;
     }
 
-    // Debounce the change check to prevent excessive calls
+    // Skip this check if we just initialized
+    if (skipNextChangeCheckRef.current) {
+      skipNextChangeCheckRef.current = false;
+      return;
+    }
+
+    // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
+    // Longer debounce to prevent excessive calls
     debounceTimeoutRef.current = setTimeout(() => {
       const currentSignature = createStateSignature(items, title, columns, timezone, startTime);
       
@@ -92,7 +97,7 @@ export const useSimpleChangeTracking = () => {
         setHasUnsavedChanges(hasChanges);
         console.log('Simple change tracking: Changes detected:', hasChanges);
       }
-    }, 100);
+    }, 500); // Increased debounce time
   }, [isInitialized, hasUnsavedChanges, createStateSignature]);
 
   const markAsSaved = useCallback((
@@ -110,7 +115,7 @@ export const useSimpleChangeTracking = () => {
   }, [createStateSignature]);
 
   const markAsChanged = useCallback(() => {
-    if (isInitialized) {
+    if (isInitialized && !skipNextChangeCheckRef.current) {
       setHasUnsavedChanges(true);
       console.log('Simple change tracking: Marked as changed');
     }
@@ -122,6 +127,7 @@ export const useSimpleChangeTracking = () => {
     setIsLoading(false);
     lastSavedStateRef.current = '';
     lastChangeCheckRef.current = '';
+    skipNextChangeCheckRef.current = false;
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = null;
