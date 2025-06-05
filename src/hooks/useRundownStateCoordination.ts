@@ -1,14 +1,34 @@
 
-import { useMemo } from 'react';
-import { useRundownCoreState } from './useRundownCoreState';
+import { useCallback, useMemo, useRef } from 'react';
+import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
-import { useRundownUIState } from './useRundownUIState';
+import { useRundownGridUI } from './useRundownGridUI';
+import { useResizableColumns } from './useResizableColumns';
 
 export const useRundownStateCoordination = () => {
-  // Get core state
-  const coreState = useRundownCoreState();
+  const coreState = useRundownGridCore();
   
-  // Get interaction handlers - pass all required parameters with correct signatures
+  // Stable refs to prevent infinite loops
+  const stableUpdateItemRef = useRef(coreState.updateItem);
+  const stableMarkAsChangedRef = useRef(coreState.markAsChanged);
+  
+  // Update refs when core functions change
+  stableUpdateItemRef.current = coreState.updateItem;
+  stableMarkAsChangedRef.current = coreState.markAsChanged;
+
+  // Stable color selection function
+  const handleColorSelection = useCallback((id: string, color: string) => {
+    stableUpdateItemRef.current(id, 'color', color);
+    stableMarkAsChangedRef.current();
+  }, []);
+
+  // Use resizable columns with width change handler
+  const { getColumnWidth, updateColumnWidth } = useResizableColumns(
+    coreState.columns, 
+    coreState.handleUpdateColumnWidth
+  );
+
+  // Get interaction handlers
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
@@ -21,26 +41,33 @@ export const useRundownStateCoordination = () => {
     coreState.addMultipleRows,
     coreState.handleDeleteColumn,
     coreState.calculateEndTime,
-    coreState.selectColor,
+    handleColorSelection,
     coreState.markAsChanged,
     coreState.setRundownTitle
   );
-  
-  // Get UI state - fix: provide the required parameters
-  const uiState = useRundownUIState(
+
+  // Get UI state
+  const uiState = useRundownGridUI(
     coreState.items,
     coreState.visibleColumns,
-    interactions.selectedRows,
-    interactions.draggedItemIndex,
-    interactions.isDraggingMultiple,
-    interactions.dropTargetIndex,
-    interactions.colorPickerRowId
+    coreState.columns,
+    coreState.updateItem,
+    coreState.currentSegmentId,
+    coreState.currentTime,
+    coreState.markAsChanged
   );
 
-  // Memoize the coordinated state
-  return useMemo(() => ({
+  // Override the UI state's selectColor with our stable version
+  const stableUIState = useMemo(() => ({
+    ...uiState,
+    selectColor: handleColorSelection,
+    getColumnWidth,
+    updateColumnWidth
+  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth]);
+
+  return {
     coreState,
     interactions,
-    uiState
-  }), [coreState, interactions, uiState]);
+    uiState: stableUIState
+  };
 };

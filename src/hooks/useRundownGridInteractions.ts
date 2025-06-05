@@ -28,21 +28,22 @@ export const useRundownGridInteractions = (
   // Multi-row selection
   const {
     selectedRows,
-    toggleRowSelection,
+    selectRow,
+    selectMultipleRows,
     clearSelection,
-    selectAll
+    isRowSelected
   } = useMultiRowSelection();
 
   // Drag and drop
   const {
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
+    draggedItems,
+    dragOverIndex,
+    isDragging,
     handleDragStart,
     handleDragOver,
-    handleDragLeave,
+    handleDragEnd,
     handleDrop
-  } = useDragAndDrop(items, (newItems: RundownItem[]) => setItems(newItems), selectedRows);
+  } = useDragAndDrop(items, setItems, selectedRows, clearSelection);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -125,11 +126,6 @@ export const useRundownGridInteractions = (
     setColorPickerRowId(null);
   }, []);
 
-  // Row selection wrapper to match expected interface
-  const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
-  }, [toggleRowSelection, items]);
-
   // Close context menu on click outside
   useEffect(() => {
     const handleClickOutside = () => {
@@ -145,17 +141,17 @@ export const useRundownGridInteractions = (
   return {
     // Selection
     selectedRows,
-    toggleRowSelection,
+    selectRow,
+    selectMultipleRows,
     clearSelection,
-    selectAll,
-    handleRowSelection,
+    isRowSelected,
     // Drag and drop
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
+    draggedItems,
+    dragOverIndex,
+    isDragging,
     handleDragStart,
     handleDragOver,
-    handleDragLeave,
+    handleDragEnd,
     handleDrop,
     // Context menu
     contextMenu,
@@ -170,7 +166,6 @@ export const useRundownGridInteractions = (
     deleteRow: enhancedDeleteRow,
     toggleFloatRow: enhancedToggleFloatRow,
     updateItem: enhancedUpdateItem,
-    handleUpdateItem: enhancedUpdateItem,
     selectColor: enhancedSelectColor,
     setRundownTitle: enhancedSetRundownTitle,
     // Pass through operations

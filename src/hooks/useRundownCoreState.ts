@@ -1,132 +1,176 @@
 
-import { useMemo, useCallback } from 'react';
 import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownDataManagement } from './useRundownDataManagement';
-import { useRundownCalculations } from './useRundownCalculations';
+import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
-import { useColumnsManager } from './useColumnsManager';
-import { useRundownUndo } from './useRundownUndo';
+import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
-import { useAutoSaveOperations } from './useAutoSaveOperations';
-import { useParams } from 'react-router-dom';
-import { RundownItem } from '@/types/rundown';
+import { useRundownStorage } from './useRundownStorage';
+import { useRundownUndo } from './useRundownUndo';
+import { useCallback } from 'react';
 
 export const useRundownCoreState = () => {
-  const params = useParams<{ id: string }>();
-  const rundownId = params.id;
-
-  // Basic state management
-  const basicState = useRundownBasicState();
-  
-  // Data management (items, CRUD operations) - fix: only pass markAsChanged
-  const dataManagement = useRundownDataManagement(basicState.markAsChanged);
-  
-  // Calculations (time, totals, etc.) - fix: pass the required parameters
-  const calculations = useRundownCalculations(dataManagement.items, basicState.rundownStartTime, basicState.timezone);
-  
-  // Playback controls - fix: pass the required parameters  
-  const playback = usePlaybackControls(dataManagement.items, basicState.rundownStartTime, basicState.timezone);
-  
-  // Column management
-  const columns = useColumnsManager(basicState.markAsChanged);
-
-  // Undo system
-  const undo = useRundownUndo({
+  // Core state management
+  const {
+    currentTime,
+    timezone,
+    setTimezone,
+    setTimezoneDirectly,
+    showColumnManager,
+    setShowColumnManager,
+    rundownTitle,
+    setRundownTitle,
+    setRundownTitleDirectly,
+    rundownStartTime,
+    setRundownStartTime,
+    setRundownStartTimeDirectly,
     rundownId,
-    updateRundown: undefined, // Will be set by auto-save
-    currentTitle: basicState.rundownTitle,
-    currentItems: dataManagement.items,
-    currentColumns: columns.columns
+    markAsChanged
+  } = useRundownBasicState();
+
+  // Get storage functionality
+  const { savedRundowns, loading, updateRundown } = useRundownStorage();
+
+  // Undo functionality with persistence - pass current state
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory, undoHistory } = useRundownUndo({
+    rundownId,
+    updateRundown,
+    currentTitle: rundownTitle,
+    currentItems: [], // Will be updated after state integration
+    currentColumns: [] // Will be updated after state integration
   });
 
-  // Auto-save operations
-  const autoSave = useAutoSaveOperations();
+  // Create a function to get current undo history
+  const getUndoHistory = useCallback(() => {
+    return undoHistory;
+  }, [undoHistory]);
 
-  // Data loading
+  // Rundown data integration - now includes undo history getter function
+  const {
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
+    hasUnsavedChanges,
+    isSaving
+  } = useRundownStateIntegration(
+    markAsChanged, 
+    rundownTitle, 
+    timezone, 
+    rundownStartTime,
+    setRundownTitleDirectly, 
+    setTimezoneDirectly,
+    getUndoHistory
+  );
+
+  // Use data loader with undo history loading - now includes setItems
   useRundownDataLoader({
     rundownId,
-    savedRundowns: [], // This will be populated by the storage hook
-    loading: false,
-    setRundownTitle: basicState.setRundownTitleDirectly,
-    setTimezone: basicState.setTimezoneDirectly,
-    setRundownStartTime: basicState.setRundownStartTime,
-    handleLoadLayout: columns.handleLoadLayout,
-    setItems: dataManagement.setItems,
+    savedRundowns,
+    loading,
+    setRundownTitle: setRundownTitleDirectly,
+    setTimezone: setTimezoneDirectly,
+    setRundownStartTime: setRundownStartTimeDirectly,
+    handleLoadLayout,
+    setItems,
     onRundownLoaded: (rundown) => {
       if (rundown.undo_history) {
-        undo.loadUndoHistory(rundown.undo_history);
+        console.log('Loading undo history:', rundown.undo_history.length, 'entries');
+        loadUndoHistory(rundown.undo_history);
       }
     }
   });
 
-  // Add selectColor function
-  const selectColor = useCallback((id: string, color: string) => {
-    dataManagement.updateItem(id, 'color', color);
-    basicState.markAsChanged();
-  }, [dataManagement.updateItem, basicState.markAsChanged]);
+  // Playback controls
+  const { 
+    isPlaying, 
+    currentSegmentId, 
+    timeRemaining, 
+    play, 
+    pause, 
+    forward, 
+    backward 
+  } = usePlaybackControls(items, updateItem);
 
-  // Add handleUndo function
-  const handleUndo = useCallback(() => {
-    const action = undo.undo(
-      dataManagement.setItems, 
-      columns.handleLoadLayout, 
-      basicState.setRundownTitleDirectly
-    );
-    if (action) {
-      basicState.markAsChanged();
-      console.log(`Undid: ${action}`);
-    }
-  }, [undo, dataManagement.setItems, columns.handleLoadLayout, basicState.setRundownTitleDirectly, basicState.markAsChanged]);
+  // Time calculations
+  const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Add hasUnsavedChanges state
-  const hasUnsavedChanges = false; // This should come from auto-save or change tracking
-
-  return useMemo(() => ({
+  return {
     // Basic state
-    ...basicState,
+    currentTime,
+    timezone,
+    setTimezone,
+    setTimezoneDirectly,
+    showColumnManager,
+    setShowColumnManager,
+    rundownTitle,
+    setRundownTitle,
+    setRundownTitleDirectly,
+    rundownStartTime,
+    setRundownStartTime,
+    setRundownStartTimeDirectly,
     rundownId,
-    
-    // Data management
-    ...dataManagement,
-    
-    // Calculations - include calculateEndTime
-    ...calculations,
-    
-    // Playback
-    ...playback,
-    
-    // Columns
-    ...columns,
-    
-    // Auto-save state
-    hasUnsavedChanges,
-    isSaving: autoSave.isSaving,
+    markAsChanged,
 
-    // Color selection
-    selectColor,
+    // Items and data
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    visibleColumns,
+    columns,
+
+    // Playback
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward,
+
+    // Column management
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
+
+    // Save state
+    hasUnsavedChanges,
+    isSaving,
+    calculateEndTime,
 
     // Undo functionality
-    handleUndo,
-    canUndo: undo.canUndo,
-    lastAction: undo.lastAction,
-    saveState: undo.saveState,
-    undo: undo.undo,
-    loadUndoHistory: undo.loadUndoHistory
-  }), [
-    basicState,
-    rundownId,
-    dataManagement,
-    calculations,
-    playback,
-    columns,
-    hasUnsavedChanges,
-    autoSave.isSaving,
-    selectColor,
-    handleUndo,
-    undo.canUndo,
-    undo.lastAction,
-    undo.saveState,
-    undo.undo,
-    undo.loadUndoHistory
-  ]);
+    saveState,
+    undo,
+    canUndo,
+    lastAction
+  };
 };
