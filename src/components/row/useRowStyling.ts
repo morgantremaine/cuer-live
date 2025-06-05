@@ -1,4 +1,5 @@
 
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -27,8 +28,8 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-blue-100 dark:bg-blue-900 opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
-    // Headers should use dark gray colors to match the original design
-    rowClass = 'bg-gray-700 dark:bg-gray-700 border-l-4 border-gray-800 dark:border-gray-600 font-semibold hover:bg-gray-800 dark:hover:bg-gray-600 text-white';
+    // Headers: #e5e7eb in light mode, #212936 in dark mode
+    rowClass = 'border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:opacity-90 text-gray-900 dark:text-white';
   } else if (isFloating || isFloated) {
     // Floating/floated items should be red
     rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
@@ -36,8 +37,8 @@ export const useRowStyling = ({
     // Custom color - let the inline style handle it, just add hover effect
     rowClass = 'hover:opacity-90';
   } else {
-    // Default white/gray rows for regular items
-    rowClass = 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
+    // Default rows: #ffffff in light mode, #394150 in dark mode
+    rowClass = 'hover:opacity-90';
   }
 
   // Add selection ring if selected
@@ -47,3 +48,4 @@ export const useRowStyling = ({
 
   return { rowClass };
 };
+
