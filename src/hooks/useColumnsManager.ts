@@ -25,7 +25,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
-  const visibleColumns = columns.filter(col => col.isVisible !== false);
+  // Ensure columns is always an array before filtering
+  const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -40,6 +41,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     
     // Insert the new column right after the segment name column (index 1)
     setColumns(prev => {
+      if (!Array.isArray(prev)) return [newColumn];
       const newColumns = [...prev];
       newColumns.splice(1, 0, newColumn);
       return newColumns;
@@ -52,6 +54,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
+    if (!Array.isArray(newColumns)) return;
     setColumns(newColumns);
     if (markAsChanged) {
       markAsChanged();
@@ -60,6 +63,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setColumns(prev => {
+      if (!Array.isArray(prev)) return [];
       const filtered = prev.filter(col => col.id !== columnId);
       return filtered;
     });
@@ -70,6 +74,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
     setColumns(prev => {
+      if (!Array.isArray(prev)) return [];
       const updated = prev.map(col => {
         if (col.id === columnId) {
           return { ...col, name: newName };
@@ -85,6 +90,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
     setColumns(prev => {
+      if (!Array.isArray(prev)) return [];
       const updated = prev.map(col => {
         if (col.id === columnId) {
           const newVisibility = col.isVisible !== false ? false : true;
@@ -101,6 +107,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumns(prev => {
+      if (!Array.isArray(prev)) return [];
       const updated = prev.map(col => {
         if (col.id === columnId) {
           return { ...col, width: `${width}px` };
@@ -115,7 +122,19 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
+    // Validate that layoutColumns is an array
+    if (!Array.isArray(layoutColumns)) {
+      console.error('handleLoadLayout: layoutColumns is not an array', layoutColumns);
+      return;
+    }
+
     setColumns(prevColumns => {
+      // Ensure prevColumns is an array
+      if (!Array.isArray(prevColumns)) {
+        console.error('handleLoadLayout: prevColumns is not an array', prevColumns);
+        return layoutColumns; // Return the layout columns as fallback
+      }
+
       // Define essential built-in columns that should always be preserved
       const essentialBuiltInColumns = [
         { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
@@ -186,7 +205,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   return {
-    columns,
+    columns: Array.isArray(columns) ? columns : [],
     visibleColumns,
     handleAddColumn,
     handleReorderColumns,

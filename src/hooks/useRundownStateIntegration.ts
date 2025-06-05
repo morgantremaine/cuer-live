@@ -31,6 +31,12 @@ export const useRundownStateIntegration = (
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
+    // Ensure items is an array before finding
+    if (!Array.isArray(items)) {
+      console.error('Items is not an array in updateItem:', items);
+      return;
+    }
+
     const item = items.find(i => i.id === id);
     if (!item) return;
 
@@ -65,9 +71,9 @@ export const useRundownStateIntegration = (
 
   // Auto-save functionality
   const { hasUnsavedChanges, isSaving } = useAutoSave(
-    items,
+    Array.isArray(items) ? items : [],
     rundownTitle,
-    columns,
+    Array.isArray(columns) ? columns : [],
     timezone,
     rundownStartTime
   );
@@ -83,7 +89,7 @@ export const useRundownStateIntegration = (
   }, [originalAddHeader]);
 
   return {
-    items,
+    items: Array.isArray(items) ? items : [],
     setItems,
     updateItem,
     addRow,
@@ -95,8 +101,8 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    columns,
-    visibleColumns,
+    columns: Array.isArray(columns) ? columns : [],
+    visibleColumns: Array.isArray(visibleColumns) ? visibleColumns : [],
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
