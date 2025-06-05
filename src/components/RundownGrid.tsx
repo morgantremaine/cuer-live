@@ -50,25 +50,30 @@ const RundownGrid = () => {
 
   // Add keyboard shortcut for Cmd/Ctrl + Enter to add new segment
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Cmd/Ctrl + Enter
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleAddRow();
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd/Ctrl + Enter or Cmd/Ctrl + Return
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter')) {
+        // Only trigger if we're not in an input field
+        const activeElement = document.activeElement;
+        const isInInput = activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' || 
+          activeElement.contentEditable === 'true'
+        );
+        
+        if (!isInInput) {
+          e.preventDefault();
+          handleAddRow();
+        }
       }
     };
 
-    // Add event listener to the grid container
-    const gridElement = gridRef.current;
-    if (gridElement) {
-      gridElement.addEventListener('keydown', handleKeyDown);
-    }
+    // Add event listener to document to capture keyboard events globally
+    document.addEventListener('keydown', handleGlobalKeyDown);
 
     // Cleanup event listener
     return () => {
-      if (gridElement) {
-        gridElement.removeEventListener('keydown', handleKeyDown);
-      }
+      document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, [handleAddRow]);
 
