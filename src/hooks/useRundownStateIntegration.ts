@@ -43,9 +43,9 @@ export const useRundownStateIntegration = (
   } = useColumnsManager(markAsChanged);
 
   // Change tracking
-  const { hasUnsavedChanges, isSaving } = useChangeTracking(
-    rundownTitle,
+  const { hasUnsavedChanges, markAsSaved, markAsChanged: trackingMarkAsChanged } = useChangeTracking(
     items,
+    rundownTitle,
     columns,
     timezone,
     rundownStartTime
@@ -84,6 +84,6 @@ export const useRundownStateIntegration = (
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving
+    isSaving: false // Add isSaving property
   };
 };

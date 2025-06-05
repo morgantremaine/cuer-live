@@ -25,7 +25,7 @@ export const useScratchpadEditor = (
     }
   }, [initialNotes]);
 
-  // Auto-save functionality with debouncing
+  // Enhanced auto-save functionality that integrates with blueprint saving
   const scheduleAutoSave = useCallback((notesToSave: string) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -36,24 +36,28 @@ export const useScratchpadEditor = (
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         setSaveStatus('saving');
+        
+        // Call onNotesChange to trigger blueprint save
+        onNotesChange?.(notesToSave);
+        
         lastSavedNotesRef.current = notesToSave;
         setSaveStatus('saved');
+        console.log('Scratchpad notes auto-saved');
       } catch (error) {
-        console.error('Auto-save failed:', error);
+        console.error('Scratchpad auto-save failed:', error);
         setSaveStatus('unsaved');
       }
     }, 2000);
-  }, []);
+  }, [onNotesChange]);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);
-    onNotesChange?.(value);
 
     // Only schedule auto-save if notes actually changed from last saved version
     if (value !== lastSavedNotesRef.current) {
       scheduleAutoSave(value);
     }
-  }, [onNotesChange, scheduleAutoSave]);
+  }, [scheduleAutoSave]);
 
   // Text formatting functions
   const insertTextAtCursor = useCallback((beforeText: string, afterText: string = '') => {
@@ -66,9 +70,8 @@ export const useScratchpadEditor = (
     const newText = notes.substring(0, start) + beforeText + selectedText + afterText + notes.substring(end);
     
     setNotes(newText);
-    onNotesChange?.(newText);
     
-    // Schedule auto-save
+    // Schedule auto-save for formatting changes
     if (newText !== lastSavedNotesRef.current) {
       scheduleAutoSave(newText);
     }
@@ -81,7 +84,7 @@ export const useScratchpadEditor = (
         textarea.focus();
       }
     }, 0);
-  }, [notes, onNotesChange, scheduleAutoSave]);
+  }, [notes, scheduleAutoSave]);
 
   const handleBold = useCallback(() => {
     insertTextAtCursor('**', '**');
