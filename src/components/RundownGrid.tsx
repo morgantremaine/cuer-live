@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { useRundownGridUI } from '@/hooks/useRundownGridUI';
@@ -8,6 +8,7 @@ import { useCellNavigation } from '@/hooks/useCellNavigation';
 
 const RundownGrid = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  const gridRef = useRef<HTMLDivElement>(null);
   
   const {
     items,
@@ -47,6 +48,30 @@ const RundownGrid = () => {
     items
   );
 
+  // Add keyboard shortcut for Cmd/Ctrl + Enter to add new segment
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd/Ctrl + Enter
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleAddRow();
+      }
+    };
+
+    // Add event listener to the grid container
+    const gridElement = gridRef.current;
+    if (gridElement) {
+      gridElement.addEventListener('keydown', handleKeyDown);
+    }
+
+    // Cleanup event listener
+    return () => {
+      if (gridElement) {
+        gridElement.removeEventListener('keydown', handleKeyDown);
+      }
+    };
+  }, [handleAddRow]);
+
   // Create a wrapper function that matches the expected signature
   const handleColorSelect = (id: string, color: string) => {
     handleUpdateItem(id, 'color', color);
@@ -57,42 +82,48 @@ const RundownGrid = () => {
   console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
 
   return (
-    <RundownTable
-      items={items}
-      visibleColumns={visibleColumns}
-      currentTime={currentTime}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      dropTargetIndex={dropTargetIndex}
-      currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={updateColumnWidth}
-      getRowNumber={getRowNumber}
-      getRowStatus={getRowStatus}
-      calculateHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={handleUpdateItem}
-      onCellClick={handleCellClick}
-      onKeyDown={handleKeyDown}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
-      onDeleteRow={deleteRow}
-      onToggleFloat={toggleFloatRow}
-      onRowSelect={handleRowSelection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onCopySelectedRows={handleCopySelectedRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
-      onPasteRows={handlePasteRows}
-      onClearSelection={clearSelection}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
-    />
+    <div 
+      ref={gridRef}
+      tabIndex={0}
+      className="focus:outline-none"
+    >
+      <RundownTable
+        items={items}
+        visibleColumns={visibleColumns}
+        currentTime={currentTime}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
+        hasClipboardData={hasClipboardData}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={updateColumnWidth}
+        getRowNumber={getRowNumber}
+        getRowStatus={getRowStatus}
+        calculateHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={handleUpdateItem}
+        onCellClick={handleCellClick}
+        onKeyDown={handleKeyDown}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={handleColorSelect}
+        onDeleteRow={deleteRow}
+        onToggleFloat={toggleFloatRow}
+        onRowSelect={handleRowSelection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onCopySelectedRows={handleCopySelectedRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
+        onPasteRows={handlePasteRows}
+        onClearSelection={clearSelection}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
+      />
+    </div>
   );
 };
 
