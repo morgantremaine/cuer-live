@@ -33,6 +33,7 @@ export const useRundownDataLoader = ({
   const loadedRundownIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
   const loadAttemptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef<number>(0);
 
   useEffect(() => {
     // Skip if storage is still loading or we're already loading
@@ -46,6 +47,7 @@ export const useRundownDataLoader = ({
       if (loadedRundownIdRef.current) {
         console.log('Switching to new rundown, resetting loader state');
         loadedRundownIdRef.current = null;
+        retryCountRef.current = 0;
       }
       return;
     }
@@ -61,24 +63,33 @@ export const useRundownDataLoader = ({
       loadAttemptTimeoutRef.current = null;
     }
 
+    // Reset retry count for new rundown
+    if (loadedRundownIdRef.current !== currentRundownId) {
+      retryCountRef.current = 0;
+    }
+
     // Try to find the rundown in saved rundowns
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     
     if (!rundown) {
-      // If rundown not found, it might be a newly saved rundown that hasn't been loaded yet
-      // Wait a moment for the storage to refresh, then try again
-      console.log('Rundown not found, waiting for storage refresh:', currentRundownId);
-      
-      loadAttemptTimeoutRef.current = setTimeout(() => {
-        const retryRundown = savedRundowns.find(r => r.id === currentRundownId);
-        if (!retryRundown) {
-          console.log('Rundown still not found after retry:', currentRundownId);
-          return;
-        }
+      // Only retry a few times to avoid infinite loops
+      if (retryCountRef.current < 3) {
+        console.log(`Rundown not found, waiting for storage refresh (attempt ${retryCountRef.current + 1}):`, currentRundownId);
+        retryCountRef.current++;
         
-        // Load the rundown now that it's available
-        loadRundownData(retryRundown, currentRundownId);
-      }, 1000);
+        loadAttemptTimeoutRef.current = setTimeout(() => {
+          const retryRundown = savedRundowns.find(r => r.id === currentRundownId);
+          if (!retryRundown) {
+            console.log('Rundown still not found after retry:', currentRundownId);
+            return;
+          }
+          
+          // Load the rundown now that it's available
+          loadRundownData(retryRundown, currentRundownId);
+        }, 1000);
+      } else {
+        console.log('Max retries reached for rundown:', currentRundownId);
+      }
       
       return;
     }
@@ -92,6 +103,12 @@ export const useRundownDataLoader = ({
   ]);
 
   const loadRundownData = (rundown: SavedRundown, currentRundownId: string) => {
+    // Prevent loading the same rundown multiple times
+    if (loadedRundownIdRef.current === currentRundownId && !isLoadingRef.current) {
+      console.log('Rundown already loaded, skipping:', currentRundownId);
+      return;
+    }
+
     console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
     
     // Mark as loading to prevent concurrent loads
@@ -123,8 +140,9 @@ export const useRundownDataLoader = ({
         setItems(itemsWithCustomFields);
       }
 
-      // Mark as successfully loaded
+      // Mark as successfully loaded BEFORE calling callback
       loadedRundownIdRef.current = currentRundownId;
+      retryCountRef.current = 0;
 
       // Call the callback with the loaded rundown
       if (onRundownLoaded) {
@@ -145,6 +163,7 @@ export const useRundownDataLoader = ({
       console.log('Rundown ID changed, resetting loader state');
       loadedRundownIdRef.current = null;
       isLoadingRef.current = false;
+      retryCountRef.current = 0;
       
       // Clear any pending load attempts
       if (loadAttemptTimeoutRef.current) {
