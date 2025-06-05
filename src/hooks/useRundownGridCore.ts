@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -5,8 +6,9 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
-import { useCallback, useEffect } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { useRundownGridWrappedFunctions } from './useRundownGridWrappedFunctions';
+import { useRundownGridKeyboardHandlers } from './useRundownGridKeyboardHandlers';
+import { useCallback } from 'react';
 
 export const useRundownGridCore = () => {
   // Core state management
@@ -64,10 +66,10 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Undo functionality with persistence - fix: call without arguments, then pass state separately
+  // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Use data loader with undo history loading - ADD setItems here
+  // Use data loader with undo history loading
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -76,7 +78,7 @@ export const useRundownGridCore = () => {
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout,
-    setItems, // Add the missing setItems function
+    setItems,
     onRundownLoaded: (rundown) => {
       // Load undo history when rundown is loaded
       if (rundown.undo_history) {
@@ -99,57 +101,32 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Wrapped functions that save state before making changes - fix function calls to match new signatures
-  const wrappedAddRow = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
-    saveState(items, columns, rundownTitle, 'Add Row');
-    // The addRow function now expects 0 arguments, so just call it directly
-    addRow();
-  }, [addRow, saveState, items, columns, rundownTitle]);
-
-  const wrappedAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
-    saveState(items, columns, rundownTitle, 'Add Header');
-    // The addHeader function now expects 0 arguments, so just call it directly
-    addHeader();
-  }, [addHeader, saveState, items, columns, rundownTitle]);
-
-  const wrappedDeleteRow = useCallback((id: string) => {
-    saveState(items, columns, rundownTitle, 'Delete Row');
-    deleteRow(id);
-  }, [deleteRow, saveState, items, columns, rundownTitle]);
-
-  const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
-    saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
-    deleteMultipleRows(ids);
-  }, [deleteMultipleRows, saveState, items, columns, rundownTitle]);
-
-  const wrappedToggleFloatRow = useCallback((id: string) => {
-    saveState(items, columns, rundownTitle, 'Toggle Float');
-    toggleFloatRow(id);
-  }, [toggleFloatRow, saveState, items, columns, rundownTitle]);
-
-  const wrappedSetItems = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
-    const newItems = typeof updater === 'function' ? updater(items) : updater;
-    // Only save state if items actually changed
-    if (JSON.stringify(newItems) !== JSON.stringify(items)) {
-      saveState(items, columns, rundownTitle, 'Move Rows');
-    }
-    setItems(updater);
-  }, [setItems, saveState, items, columns, rundownTitle]);
-
-  const wrappedAddMultipleRows = useCallback((newItems: RundownItem[], calculateEndTimeFn: any) => {
-    saveState(items, columns, rundownTitle, 'Paste Rows');
-    addMultipleRows(newItems);
-  }, [addMultipleRows, saveState, items, columns, rundownTitle]);
-
-  const wrappedSetRundownTitle = useCallback((title: string) => {
-    if (title !== rundownTitle) {
-      saveState(items, columns, rundownTitle, 'Change Title');
-    }
-    setRundownTitle(title);
-  }, [setRundownTitle, saveState, items, columns, rundownTitle]);
+  // Get wrapped functions with undo support
+  const {
+    wrappedAddRow,
+    wrappedAddHeader,
+    wrappedDeleteRow,
+    wrappedDeleteMultipleRows,
+    wrappedToggleFloatRow,
+    wrappedSetItems,
+    wrappedAddMultipleRows,
+    wrappedSetRundownTitle
+  } = useRundownGridWrappedFunctions({
+    items,
+    columns,
+    rundownTitle,
+    saveState,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    toggleFloatRow,
+    setItems,
+    setRundownTitle
+  });
 
   const handleUndo = useCallback(() => {
-    // Fix: call undo with only the required arguments
     const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);
     if (action) {
       markAsChanged();
@@ -157,20 +134,11 @@ export const useRundownGridCore = () => {
     }
   }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged]);
 
-  // Keyboard shortcut for undo
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        if (canUndo) {
-          handleUndo();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, canUndo]);
+  // Setup keyboard handlers
+  useRundownGridKeyboardHandlers({
+    canUndo,
+    handleUndo
+  });
 
   return {
     // Basic state
