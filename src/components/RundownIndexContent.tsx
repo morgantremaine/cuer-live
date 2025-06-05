@@ -1,5 +1,6 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import { useSimpleRundownState } from '@/hooks/useSimpleRundownState';
@@ -9,6 +10,10 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 
 const RundownIndexContent = () => {
+  const navigate = useNavigate();
+  const params = useParams<{ id: string }>();
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  
   // Create cellRefs with proper type
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
@@ -16,7 +21,68 @@ const RundownIndexContent = () => {
   const basicState = useRundownBasicState();
   
   // Get storage functionality
-  const { savedRundowns, loading } = useRundownStorage();
+  const { savedRundowns, loading, saveRundown } = useRundownStorage();
+
+  // Handle new rundown creation when on /rundown without ID
+  useEffect(() => {
+    const createNewRundown = async () => {
+      if (!params.id && window.location.pathname === '/rundown' && !isCreatingNew && !loading) {
+        console.log('RundownIndexContent: Creating new rundown');
+        setIsCreatingNew(true);
+        
+        try {
+          // Create a new rundown with default values
+          const newRundown = await saveRundown(
+            'Untitled Rundown',
+            [], // Empty items array
+            undefined, // No custom columns
+            'America/New_York', // Default timezone
+            '10:00:00' // Default start time
+          );
+          
+          if (newRundown && newRundown.id) {
+            console.log('RundownIndexContent: New rundown created, redirecting to:', newRundown.id);
+            navigate(`/rundown/${newRundown.id}`);
+          }
+        } catch (error) {
+          console.error('RundownIndexContent: Failed to create new rundown:', error);
+          setIsCreatingNew(false);
+        }
+      }
+    };
+
+    createNewRundown();
+  }, [params.id, isCreatingNew, loading, saveRundown, navigate]);
+
+  // Show loading state while creating new rundown
+  if (!params.id && (isCreatingNew || loading)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-4">Creating New Rundown...</h2>
+          <p className="text-gray-600">Please wait while we set up your rundown.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If we're still on /rundown without an ID and not creating, something went wrong
+  if (!params.id) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-4">Error</h2>
+          <p className="text-gray-600">Unable to create new rundown. Please try again.</p>
+          <button 
+            onClick={() => navigate('/dashboard')} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   // Use simple data loader
   const dataLoader = useSimpleDataLoader({
