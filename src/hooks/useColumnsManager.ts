@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 
 export interface Column {
   id: string;
@@ -25,8 +25,14 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
-  // Ensure columns is always an array before filtering
-  const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
+  // Stable ref to prevent re-creating the markAsChanged callback
+  const markAsChangedRef = useRef(markAsChanged);
+  markAsChangedRef.current = markAsChanged;
+
+  // Memoize visible columns to prevent unnecessary re-renders
+  const visibleColumns = useMemo(() => {
+    return Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
+  }, [columns]);
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -39,7 +45,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       isVisible: true
     };
     
-    // Insert the new column right after the segment name column (index 1)
     setColumns(prev => {
       if (!Array.isArray(prev)) return [newColumn];
       const newColumns = [...prev];
@@ -47,19 +52,18 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return newColumns;
     });
     
-    // Mark as changed when adding a column
-    if (markAsChanged) {
-      markAsChanged();
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
     }
-  }, [markAsChanged]);
+  }, []);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
     if (!Array.isArray(newColumns)) return;
     setColumns(newColumns);
-    if (markAsChanged) {
-      markAsChanged();
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
     }
-  }, [markAsChanged]);
+  }, []);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -67,10 +71,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       const filtered = prev.filter(col => col.id !== columnId);
       return filtered;
     });
-    if (markAsChanged) {
-      markAsChanged();
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
     }
-  }, [markAsChanged]);
+  }, []);
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
     setColumns(prev => {
@@ -83,10 +87,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
     }
-  }, [markAsChanged]);
+  }, []);
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -100,10 +104,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
     }
-  }, [markAsChanged]);
+  }, []);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumns(prev => {
@@ -116,26 +120,23 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
     }
-  }, [markAsChanged]);
+  }, []);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
-    // Validate that layoutColumns is an array
     if (!Array.isArray(layoutColumns)) {
       console.error('handleLoadLayout: layoutColumns is not an array', layoutColumns);
       return;
     }
 
     setColumns(prevColumns => {
-      // Ensure prevColumns is an array
       if (!Array.isArray(prevColumns)) {
         console.error('handleLoadLayout: prevColumns is not an array', prevColumns);
-        return layoutColumns; // Return the layout columns as fallback
+        return layoutColumns;
       }
 
-      // Define essential built-in columns that should always be preserved
       const essentialBuiltInColumns = [
         { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
@@ -149,12 +150,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
-      // Filter out the "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
         col.id !== 'element' && col.key !== 'element'
       );
 
-      // Update column names for backward compatibility with old saved layouts
       const updatedLayoutColumns = filteredLayoutColumns.map(col => {
         if (col.id === 'startTime' && col.name === 'Start Time') {
           return { ...col, name: 'Start' };
@@ -168,23 +167,20 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return col;
       });
 
-      // Merge updated layout columns with essential built-in columns
       const mergedColumns: Column[] = [];
       const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
 
-      // First, add all columns from updated layout (preserving order, custom columns, and widths)
       updatedLayoutColumns.forEach(layoutCol => {
         mergedColumns.push(layoutCol);
       });
 
-      // Then, add any missing essential built-in columns
       essentialBuiltInColumns.forEach(essentialCol => {
         if (!layoutColumnIds.has(essentialCol.id)) {
           mergedColumns.push(essentialCol);
         }
       });
 
-      // Only mark as changed if columns are actually different
+      // Only update if columns are actually different to prevent infinite loops
       const isSame = prevColumns.length === mergedColumns.length && 
         prevColumns.every((col, index) => 
           col.id === mergedColumns[index]?.id && 
@@ -194,15 +190,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         );
       
       if (isSame) {
-        return prevColumns; // Don't update if columns are the same
+        return prevColumns;
       }
       
-      if (markAsChanged) {
-        markAsChanged();
+      if (markAsChangedRef.current) {
+        markAsChangedRef.current();
       }
       return mergedColumns;
     });
-  }, [markAsChanged]);
+  }, []);
 
   return {
     columns: Array.isArray(columns) ? columns : [],
