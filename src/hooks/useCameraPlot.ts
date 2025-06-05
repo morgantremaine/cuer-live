@@ -6,15 +6,19 @@ import { useCameraPlotSceneOperations } from './cameraPlot/operations/useCameraP
 // Re-export types for backwards compatibility
 export type { CameraElement, CameraPlotScene, CameraPlotData } from './cameraPlot/core/useCameraPlotData';
 
-export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly = false) => {
+export const useCameraPlot = (
+  rundownId: string, 
+  rundownTitle: string, 
+  readOnly = false,
+  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
+) => {
   const {
     plots,
     setPlots,
     isInitialized,
     reloadPlots,
-    savedBlueprint,
-    saveBlueprint
-  } = useCameraPlotData(rundownId, rundownTitle, readOnly);
+    saveBlueprint: legacySaveBlueprint
+  } = useCameraPlotData(rundownId, rundownTitle, readOnly, saveBlueprint);
 
   // Auto-save functionality - pass the correct saveBlueprint function
   useCameraPlotAutoSave(
@@ -23,7 +27,7 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
     rundownId,
     rundownTitle,
     readOnly,
-    saveBlueprint
+    legacySaveBlueprint
   );
 
   // Scene operations

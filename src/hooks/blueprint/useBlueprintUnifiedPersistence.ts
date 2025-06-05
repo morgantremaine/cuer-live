@@ -23,7 +23,7 @@ export const useBlueprintUnifiedPersistence = (
     try {
       console.log('Blueprint unified: Loading blueprint for rundown:', rundownId);
       
-      // Check for multiple blueprints and get the most complete one
+      // Check for multiple blueprints and get the most recent one
       const { data: blueprints, error } = await supabase
         .from('blueprints')
         .select('*')

@@ -32,7 +32,7 @@ const CrewList = ({
     deleteRow,
     updateMember,
     reorderMembers
-  } = useCrewList(rundownId, rundownTitle);
+  } = useCrewList(rundownId, rundownTitle, saveBlueprint);
 
   const {
     draggedRowId,
