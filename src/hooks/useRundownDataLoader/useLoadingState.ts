@@ -35,10 +35,8 @@ export const useLoadingState = () => {
   const setLoadingComplete = (rundownId: string) => {
     console.log('Loading state: Marking as loaded:', rundownId);
     loadedRef.current = rundownId;
-    setTimeout(() => {
-      isLoadingRef.current = false;
-      initialLoadCompleteRef.current = true;
-    }, 100);
+    isLoadingRef.current = false;
+    initialLoadCompleteRef.current = true;
   };
 
   const setLoadingStarted = (rundownId: string) => {

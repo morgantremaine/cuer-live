@@ -16,34 +16,42 @@ export const validateLoadingConditions = (
     loadedId,
     initialLoadComplete,
     isLoading,
-    recentAutoSave: checkRecentAutoSave(currentRundownId),
-    userChangedSinceAutoSave: checkUserChangedSinceAutoSave(currentRundownId)
+    hasDirectItems: rundown.items?.length || 0,
+    hasUndoHistory: rundown.undo_history?.length || 0
   });
 
-  // Critical safeguards only - reduced logging
-  if (checkRecentAutoSave(currentRundownId)) {
-    console.log('Validation: Blocked - recent auto-save');
-    return { shouldLoad: false, reason: 'recent auto-save' };
-  }
-
-  if (userHasInteracted) {
-    console.log('Validation: Blocked - user has already interacted');
-    return { shouldLoad: false, reason: 'user has already interacted' };
-  }
-
-  if (checkUserChangedSinceAutoSave(currentRundownId)) {
-    console.log('Validation: Blocked - user changed since auto-save');
-    return { shouldLoad: false, reason: 'user changed since auto-save' };
-  }
-
-  if (loadedId === currentRundownId && initialLoadComplete) {
-    console.log('Validation: Blocked - already loaded');
-    return { shouldLoad: false, reason: 'already loaded' };
-  }
-
+  // Don't load if already loading
   if (isLoading) {
     console.log('Validation: Blocked - already loading');
     return { shouldLoad: false, reason: 'already loading' };
+  }
+
+  // Don't load if already loaded and complete
+  if (loadedId === currentRundownId && initialLoadComplete) {
+    console.log('Validation: Blocked - already loaded and complete');
+    return { shouldLoad: false, reason: 'already loaded' };
+  }
+
+  // Allow loading if we have data to load (either direct items or undo history)
+  const hasItemsToLoad = (rundown.items && rundown.items.length > 0) || 
+                        (rundown.undo_history && rundown.undo_history.length > 0);
+  
+  if (!hasItemsToLoad) {
+    console.log('Validation: Blocked - no items to load');
+    return { shouldLoad: false, reason: 'no items to load' };
+  }
+
+  // Only check these conditions if user has already interacted
+  if (userHasInteracted) {
+    if (checkRecentAutoSave(currentRundownId)) {
+      console.log('Validation: Blocked - recent auto-save and user has interacted');
+      return { shouldLoad: false, reason: 'recent auto-save with user interaction' };
+    }
+
+    if (checkUserChangedSinceAutoSave(currentRundownId)) {
+      console.log('Validation: Blocked - user changed since auto-save');
+      return { shouldLoad: false, reason: 'user changed since auto-save' };
+    }
   }
 
   console.log('Validation: Passed - should load');
@@ -51,24 +59,27 @@ export const validateLoadingConditions = (
 };
 
 export const getItemsToLoad = (rundown: SavedRundown) => {
-  let itemsToLoad = rundown.items || [];
+  // First, try to get items directly
+  if (rundown.items && Array.isArray(rundown.items) && rundown.items.length > 0) {
+    console.log('Getting items to load - using direct items:', rundown.items.length);
+    return rundown.items;
+  }
   
-  console.log('Getting items to load - direct items:', itemsToLoad?.length || 0);
-  
-  if ((!itemsToLoad || itemsToLoad.length === 0) && rundown.undo_history && Array.isArray(rundown.undo_history) && rundown.undo_history.length > 0) {
+  // If no direct items, check undo history for the most recent saved state
+  if (rundown.undo_history && Array.isArray(rundown.undo_history) && rundown.undo_history.length > 0) {
     console.log('No direct items, checking undo history:', rundown.undo_history.length, 'entries');
     
+    // Look for the most recent entry with items (search from newest to oldest)
     for (let i = rundown.undo_history.length - 1; i >= 0; i--) {
       const historyEntry = rundown.undo_history[i];
       
       if (historyEntry && historyEntry.items && Array.isArray(historyEntry.items) && historyEntry.items.length > 0) {
-        itemsToLoad = historyEntry.items;
-        console.log('Found items in undo history entry', i, ':', itemsToLoad.length, 'items');
-        break;
+        console.log('Found items in undo history entry', i, ':', historyEntry.items.length, 'items');
+        return historyEntry.items;
       }
     }
   }
   
-  console.log('Final items to load:', itemsToLoad?.length || 0);
-  return itemsToLoad;
+  console.log('No items found in rundown or undo history');
+  return [];
 };

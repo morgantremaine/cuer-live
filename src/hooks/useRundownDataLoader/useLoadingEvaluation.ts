@@ -22,8 +22,8 @@ export const useLoadingEvaluation = ({
   const shouldLoadRundown = useCallback((currentRundownId: string, rundown: SavedRundown) => {
     const now = Date.now();
     
-    // Increased debounce time to prevent excessive evaluations
-    if (now - lastEvaluationRef.current < 3000) {
+    // Reduced debounce time for more responsive loading
+    if (now - lastEvaluationRef.current < 1000) {
       return false;
     }
     lastEvaluationRef.current = now;
@@ -37,6 +37,7 @@ export const useLoadingEvaluation = ({
       isLoadingRef.current
     );
 
+    console.log('Should load rundown decision:', validation.shouldLoad, validation.reason || '');
     return validation.shouldLoad;
   }, [userHasInteractedRef, loadedRef, initialLoadCompleteRef, isLoadingRef, lastEvaluationRef]);
 
