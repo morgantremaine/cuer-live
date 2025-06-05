@@ -7,6 +7,7 @@ interface HeaderRowContentProps {
   item: RundownItem;
   columns: Column[];
   headerDuration: string;
+  rowNumber: string; // Add this prop to use the calculated row number
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -18,6 +19,7 @@ const HeaderRowContent = ({
   item,
   columns,
   headerDuration,
+  rowNumber, // Use the calculated row number
   cellRefs,
   onUpdateItem,
   onCellClick,
@@ -30,7 +32,7 @@ const HeaderRowContent = ({
         className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 
         style={{ width: '40px' }}
       >
-        <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
+        <span className="text-lg font-bold text-gray-900 dark:text-white">{rowNumber}</span>
       </td>
       {columns.map((column, columnIndex) => (
         <td 

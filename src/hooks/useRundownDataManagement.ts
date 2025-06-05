@@ -42,23 +42,19 @@ export const useRundownDataManagement = (rundownId: string) => {
     }
   });
 
-  // Initialize with default items if this is a new rundown - improved logic with debugging
+  // Initialize with default items for new rundowns - simplified logic
   useEffect(() => {
-    console.log('Default items effect running:', {
-      rundownId: rundownId,
-      storageLoading: storage.loading,
-      itemsLength: stateIntegration.items.length,
-      shouldInitialize: !rundownId && !storage.loading && stateIntegration.items.length === 0
-    });
+    // Only run for new rundowns (no rundownId)
+    if (rundownId) return;
     
-    // Only initialize default items if:
-    // 1. No rundownId (new rundown)
-    // 2. Storage is not loading 
-    // 3. Items array is empty
-    if (!rundownId && !storage.loading && stateIntegration.items.length === 0) {
-      console.log('Initializing new rundown with default items');
-      stateIntegration.setItems(defaultRundownItems);
-    }
+    // Wait for storage to finish loading
+    if (storage.loading) return;
+    
+    // Only initialize if items are empty
+    if (stateIntegration.items.length > 0) return;
+    
+    console.log('Initializing new rundown with default items');
+    stateIntegration.setItems(defaultRundownItems);
   }, [rundownId, storage.loading, stateIntegration.items.length, stateIntegration.setItems]);
 
   return {

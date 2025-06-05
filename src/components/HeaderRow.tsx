@@ -42,6 +42,7 @@ const HeaderRow = (props: HeaderRowProps) => {
   const {
     item,
     index,
+    rowNumber,
     selectedRowsCount = 1,
     selectedRows,
     isSelected = false,
@@ -116,6 +117,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           item={item}
           columns={props.columns}
           headerDuration={props.headerDuration}
+          rowNumber={rowNumber}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
