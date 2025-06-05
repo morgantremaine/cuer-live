@@ -28,13 +28,22 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Get interaction handlers - fix the setItems call to match expected signature
+  // Create adapter functions that match the expected signatures for useRundownGridInteractions
+  const adaptedAddRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+    coreState.addRow(calculateEndTime, insertAfterIndex);
+  }, [coreState.addRow]);
+
+  const adaptedAddHeader = useCallback((insertAfterIndex?: number) => {
+    coreState.addHeader(insertAfterIndex);
+  }, [coreState.addHeader]);
+
+  // Get interaction handlers - use adapted functions with correct signatures
   const interactions = useRundownGridInteractions(
     coreState.items,
-    coreState.setItems, // Direct reference, not wrapped
+    coreState.setItems,
     coreState.updateItem,
-    coreState.addRow,
-    coreState.addHeader,
+    adaptedAddRow,
+    adaptedAddHeader,
     coreState.deleteRow,
     coreState.toggleFloatRow,
     coreState.deleteMultipleRows,
