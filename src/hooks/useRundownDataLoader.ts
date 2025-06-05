@@ -41,6 +41,7 @@ export const useRundownDataLoader = ({
     userHasInteractedRef,
     loadTimerRef,
     initialLoadCompleteRef,
+    lastEvaluationRef,
     evaluationCooldownRef,
     resetLoadingState,
     setLoadingComplete,
@@ -53,7 +54,7 @@ export const useRundownDataLoader = ({
     loadedRef,
     initialLoadCompleteRef,
     isLoadingRef,
-    lastEvaluationRef: { current: 0 }
+    lastEvaluationRef
   });
 
   // Track user interactions to prevent overwriting their changes
