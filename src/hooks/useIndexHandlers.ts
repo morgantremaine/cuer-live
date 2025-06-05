@@ -46,16 +46,20 @@ export const useIndexHandlers = ({
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
   }, [toggleRowSelection, items]);
 
-  // Create wrapper functions that match the expected signature
-  const handleAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string) => {
+  // Simple handlers that match what RundownIndexContent expects
+  const handleAddRow = useCallback(() => {
+    const selectedRowsArray = Array.from(selectedRows);
+    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
     const selectedRowsSet = selectedRows.size > 0 ? selectedRows : undefined;
     addRow(selectedRowId, selectedRowsSet);
     markAsChanged();
   }, [addRow, selectedRows, markAsChanged]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string | null, selectedRowsSet?: Set<string>) => {
-    const effectiveSelectedRows = selectedRowsSet || (selectedRows.size > 0 ? selectedRows : undefined);
-    addHeader(selectedRowId, effectiveSelectedRows);
+  const handleAddHeader = useCallback(() => {
+    const selectedRowsArray = Array.from(selectedRows);
+    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+    const selectedRowsSet = selectedRows.size > 0 ? selectedRows : undefined;
+    addHeader(selectedRowId, selectedRowsSet);
     markAsChanged();
   }, [addHeader, selectedRows, markAsChanged]);
 
