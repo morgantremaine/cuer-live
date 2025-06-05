@@ -9,52 +9,47 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const lastSavedDataRef = useRef<string>('');
   const initializationRef = useRef(false);
 
-  // Create a simple signature for change tracking
+  // Create a signature for tracking changes
   const currentSignature = useMemo(() => {
     return JSON.stringify({ 
       itemsCount: items.length,
       title: rundownTitle, 
       columnsCount: columns?.length || 0,
-      timezone, 
-      startTime,
-      // Sample of items for change detection
-      itemsSample: items.slice(0, 2).map(item => ({ 
-        id: item.id, 
-        name: item.segmentName || item.name
-      }))
+      timezone: timezone || '', 
+      startTime: startTime || '',
+      itemsHash: items.map(item => `${item.id}-${item.name || item.segmentName || ''}-${item.type}`).join('|')
     });
-  }, [items.length, rundownTitle, columns?.length, timezone, startTime, items]);
+  }, [items, rundownTitle, columns, timezone, startTime]);
 
   // Initialize ONCE when we have meaningful data
   useEffect(() => {
-    if (!initializationRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
-      console.log('Change tracking: Initializing');
+    if (!initializationRef.current && items.length > 0) {
+      console.log('Change tracking: Initializing once');
       lastSavedDataRef.current = currentSignature;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
       initializationRef.current = true;
     }
-  }, [currentSignature, items.length, rundownTitle]);
+  }, [currentSignature, items.length]);
 
   // Track changes after initialization
   useEffect(() => {
     if (!isInitialized) return;
 
     const hasChanges = lastSavedDataRef.current !== currentSignature;
-    setHasUnsavedChanges(hasChanges);
-  }, [currentSignature, isInitialized]);
+    if (hasChanges !== hasUnsavedChanges) {
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [currentSignature, isInitialized, hasUnsavedChanges]);
 
   const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
     const signature = JSON.stringify({ 
       itemsCount: savedItems.length,
       title: savedTitle, 
       columnsCount: savedColumns?.length || 0, 
-      timezone: savedTimezone, 
-      startTime: savedStartTime,
-      itemsSample: savedItems.slice(0, 2).map(item => ({ 
-        id: item.id, 
-        name: item.segmentName || item.name
-      }))
+      timezone: savedTimezone || '', 
+      startTime: savedStartTime || '',
+      itemsHash: savedItems.map(item => `${item.id}-${item.name || item.segmentName || ''}-${item.type}`).join('|')
     });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
@@ -68,21 +63,11 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     }
   };
 
-  const setIsLoading = (loading: boolean) => {
-    console.log('Change tracking: Setting loading state:', loading);
-    if (loading) {
-      // Reset initialization when starting to load new data
-      initializationRef.current = false;
-      setIsInitialized(false);
-    }
-  };
-
   return {
     hasUnsavedChanges,
     setHasUnsavedChanges,
     markAsSaved,
     markAsChanged,
-    isInitialized,
-    setIsLoading
+    isInitialized
   };
 };

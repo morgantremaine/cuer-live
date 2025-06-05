@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
@@ -8,68 +9,66 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const { user } = useAuth();
   const { isSaving, performSave } = useAutoSaveOperations();
   
-  // Track last saved state to prevent unnecessary saves
+  // Simple state tracking
   const lastSavedStateRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasUnsavedChangesRef = useRef(false);
+  const isInitializedRef = useRef(false);
   
-  // Create current state signature
-  const currentSignature = JSON.stringify({
-    itemsCount: items.length,
-    title: rundownTitle,
-    columnsCount: columns?.length || 0,
-    timezone,
-    startTime,
-    // Only include first few items to keep signature manageable
-    itemsSample: items.slice(0, 3).map(item => ({
-      id: item.id,
-      name: item.segmentName || item.name,
-      duration: item.duration
-    }))
-  });
+  // Create state signature for comparison
+  const createSignature = useCallback(() => {
+    return JSON.stringify({
+      title: rundownTitle,
+      itemsCount: items.length,
+      columnsCount: columns?.length || 0,
+      timezone: timezone || '',
+      startTime: startTime || '',
+      // Include first few items to detect content changes
+      itemsSnapshot: items.slice(0, 2).map(item => ({
+        id: item.id,
+        name: item.name || item.segmentName || '',
+        type: item.type
+      }))
+    });
+  }, [items, rundownTitle, columns, timezone, startTime]);
 
-  // Initialize on first load
+  const currentSignature = createSignature();
+
+  // Initialize once when we have data
   useEffect(() => {
-    if (lastSavedStateRef.current === '' && items.length > 0) {
-      console.log('Auto-save: Initializing with current state');
+    if (!isInitializedRef.current && items.length > 0 && user) {
+      console.log('Auto-save: Initializing once with data');
       lastSavedStateRef.current = currentSignature;
-      hasUnsavedChangesRef.current = false;
+      isInitializedRef.current = true;
     }
-  }, [currentSignature, items.length]);
+  }, [currentSignature, items.length, user]);
 
-  // Track changes
+  // Auto-save when changes are detected
   useEffect(() => {
-    // Skip if not initialized or already saving
-    if (lastSavedStateRef.current === '' || isSaving) {
+    // Don't save if not initialized or already saving
+    if (!isInitializedRef.current || isSaving || !user) {
       return;
     }
 
-    // Check if state has actually changed
+    // Check if state has changed
     const hasChanges = lastSavedStateRef.current !== currentSignature;
     
-    if (hasChanges !== hasUnsavedChangesRef.current) {
-      hasUnsavedChangesRef.current = hasChanges;
-      console.log('Auto-save: Changes detected:', hasChanges);
-    }
-
-    // Only auto-save if we have changes and meaningful data
-    if (hasChanges && user && items.length > 0 && rundownTitle.trim() !== '') {
+    if (hasChanges && items.length > 0 && rundownTitle.trim()) {
+      console.log('Auto-save: Scheduling save for changes');
+      
       // Clear any existing timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
-      // Debounce the save operation
+      // Debounce the save
       saveTimeoutRef.current = setTimeout(async () => {
-        console.log('Auto-save: Executing save operation');
-        
         try {
+          console.log('Auto-save: Executing save');
           const success = await performSave(items, rundownTitle, columns, timezone, startTime);
           
           if (success) {
-            console.log('Auto-save: Save successful');
             lastSavedStateRef.current = currentSignature;
-            hasUnsavedChangesRef.current = false;
+            console.log('Auto-save: Save successful');
           } else {
             console.log('Auto-save: Save failed');
           }
@@ -79,22 +78,36 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       }, 2000); // 2 second debounce
     }
 
+    // Cleanup timeout on unmount
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [currentSignature, user, items, rundownTitle, columns, timezone, startTime, isSaving, performSave]);
+  }, [currentSignature, isSaving, user, items, rundownTitle, columns, timezone, startTime, performSave]);
 
-  // Mark as changed manually
-  const markAsChanged = useCallback(() => {
-    console.log('Auto-save: Manually marked as changed');
-    hasUnsavedChangesRef.current = true;
-  }, []);
+  // Manual save trigger
+  const triggerSave = useCallback(async () => {
+    if (!user || isSaving) return false;
+    
+    try {
+      const success = await performSave(items, rundownTitle, columns, timezone, startTime);
+      if (success) {
+        lastSavedStateRef.current = currentSignature;
+      }
+      return success;
+    } catch (error) {
+      console.error('Manual save error:', error);
+      return false;
+    }
+  }, [user, isSaving, performSave, items, rundownTitle, columns, timezone, startTime, currentSignature]);
+
+  // Check if we have unsaved changes
+  const hasUnsavedChanges = isInitializedRef.current && lastSavedStateRef.current !== currentSignature;
 
   return {
-    hasUnsavedChanges: hasUnsavedChangesRef.current,
+    hasUnsavedChanges,
     isSaving,
-    markAsChanged
+    triggerSave
   };
 };

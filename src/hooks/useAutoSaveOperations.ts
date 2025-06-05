@@ -19,25 +19,23 @@ export const useAutoSaveOperations = () => {
   const isNewRundown = !rundownId;
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
-    // Prevent concurrent saves
     if (isSaving) {
-      console.log('Auto-save: Save already in progress, skipping');
+      console.log('Auto-save: Save already in progress');
       return false;
     }
 
     if (!user) {
-      console.error('Auto-save: Cannot save - user not authenticated');
+      console.error('Auto-save: No user authenticated');
       return false;
     }
 
-    // Validate data
     if (!rundownTitle || rundownTitle.trim() === '') {
-      console.error('Auto-save: Cannot save - title is empty');
+      console.error('Auto-save: Empty title');
       return false;
     }
 
     if (!Array.isArray(items) || items.length === 0) {
-      console.log('Auto-save: Cannot save - no items to save');
+      console.log('Auto-save: No items to save');
       return false;
     }
 
@@ -50,14 +48,19 @@ export const useAutoSaveOperations = () => {
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
-          console.log('Auto-save: New rundown saved, ID:', result.id);
+          console.log('Auto-save: New rundown saved, navigating to:', result.id);
           
-          // Refresh storage and navigate
-          await loadRundowns();
+          // Navigate immediately then refresh storage
           navigate(`/rundown/${result.id}`, { replace: true });
+          
+          // Refresh storage in background
+          setTimeout(() => {
+            loadRundowns();
+          }, 100);
+          
           return true;
         } else {
-          throw new Error('Failed to save new rundown - no ID returned');
+          throw new Error('Failed to save new rundown');
         }
       } else if (rundownId) {
         console.log('Auto-save: Updating existing rundown');
