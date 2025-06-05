@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 
 export interface Column {
   id: string;
@@ -27,10 +27,26 @@ const DEFAULT_COLUMNS: Column[] = [
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
   const isLoadingLayoutRef = useRef(false);
+  const lastMarkAsChangedRef = useRef<(() => void) | undefined>();
+  
+  // Update the ref when markAsChanged changes to avoid stale closures
+  lastMarkAsChangedRef.current = markAsChanged;
 
-  // Ensure columns is always an array and calculate visibleColumns safely
-  const safeColumns = Array.isArray(columns) ? columns : DEFAULT_COLUMNS;
-  const visibleColumns = safeColumns.filter(col => col.isVisible !== false);
+  // Memoize safe columns and visible columns to prevent unnecessary recalculations
+  const safeColumns = useMemo(() => {
+    return Array.isArray(columns) ? columns : DEFAULT_COLUMNS;
+  }, [columns]);
+
+  const visibleColumns = useMemo(() => {
+    return safeColumns.filter(col => col.isVisible !== false);
+  }, [safeColumns]);
+
+  // Stable function to call markAsChanged without causing re-renders
+  const triggerMarkAsChanged = useCallback(() => {
+    if (lastMarkAsChangedRef.current) {
+      lastMarkAsChangedRef.current();
+    }
+  }, []);
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -50,19 +66,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return newColumns;
     });
     
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    triggerMarkAsChanged();
+  }, [triggerMarkAsChanged]);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
     if (Array.isArray(newColumns)) {
       setColumns(newColumns);
-      if (markAsChanged) {
-        markAsChanged();
-      }
+      triggerMarkAsChanged();
     }
-  }, [markAsChanged]);
+  }, [triggerMarkAsChanged]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -70,10 +82,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       const filtered = safePrev.filter(col => col.id !== columnId);
       return filtered;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    triggerMarkAsChanged();
+  }, [triggerMarkAsChanged]);
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
     setColumns(prev => {
@@ -86,10 +96,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    triggerMarkAsChanged();
+  }, [triggerMarkAsChanged]);
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -103,10 +111,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    triggerMarkAsChanged();
+  }, [triggerMarkAsChanged]);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumns(prev => {
@@ -119,91 +125,74 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    triggerMarkAsChanged();
+  }, [triggerMarkAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     // Prevent multiple simultaneous layout loads
     if (isLoadingLayoutRef.current) {
+      console.log('Layout load already in progress, skipping');
       return;
     }
+    
+    console.log('Starting layout load with:', layoutColumns);
     isLoadingLayoutRef.current = true;
 
-    setColumns(prevColumns => {
-      try {
-        // Ensure we have valid input
-        if (!Array.isArray(layoutColumns)) {
-          console.warn('Invalid layout columns data, keeping current columns');
-          return prevColumns;
+    // Validate input
+    if (!Array.isArray(layoutColumns)) {
+      console.warn('Invalid layout columns data, keeping current columns');
+      isLoadingLayoutRef.current = false;
+      return;
+    }
+
+    try {
+      // Filter out the "Element" column from layout columns
+      const filteredLayoutColumns = layoutColumns.filter(col => 
+        col.id !== 'element' && col.key !== 'element'
+      );
+
+      // Update column names for backward compatibility with old saved layouts
+      const updatedLayoutColumns = filteredLayoutColumns.map(col => {
+        if (col.id === 'startTime' && col.name === 'Start Time') {
+          return { ...col, name: 'Start' };
         }
-
-        const safePrevColumns = Array.isArray(prevColumns) ? prevColumns : DEFAULT_COLUMNS;
-
-        // Filter out the "Element" column from layout columns
-        const filteredLayoutColumns = layoutColumns.filter(col => 
-          col.id !== 'element' && col.key !== 'element'
-        );
-
-        // Update column names for backward compatibility with old saved layouts
-        const updatedLayoutColumns = filteredLayoutColumns.map(col => {
-          if (col.id === 'startTime' && col.name === 'Start Time') {
-            return { ...col, name: 'Start' };
-          }
-          if (col.id === 'endTime' && col.name === 'End Time') {
-            return { ...col, name: 'End' };
-          }
-          if (col.id === 'elapsedTime' && col.name === 'Elapsed Time') {
-            return { ...col, name: 'Elapsed' };
-          }
-          return col;
-        });
-
-        // Merge updated layout columns with essential built-in columns
-        const mergedColumns: Column[] = [];
-        const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
-
-        // First, add all columns from updated layout (preserving order, custom columns, and widths)
-        updatedLayoutColumns.forEach(layoutCol => {
-          mergedColumns.push(layoutCol);
-        });
-
-        // Then, add any missing essential built-in columns
-        DEFAULT_COLUMNS.forEach(essentialCol => {
-          if (!layoutColumnIds.has(essentialCol.id)) {
-            mergedColumns.push(essentialCol);
-          }
-        });
-
-        // Check if columns are actually different before updating
-        const isSame = safePrevColumns.length === mergedColumns.length && 
-          safePrevColumns.every((col, index) => {
-            const merged = mergedColumns[index];
-            return merged && 
-              col.id === merged.id && 
-              col.name === merged.name &&
-              col.isVisible === merged.isVisible &&
-              col.width === merged.width;
-          });
-        
-        if (isSame) {
-          return safePrevColumns; // Don't update if columns are the same
+        if (col.id === 'endTime' && col.name === 'End Time') {
+          return { ...col, name: 'End' };
         }
-        
-        // Only mark as changed if this is not an initial load
-        if (markAsChanged && safePrevColumns !== DEFAULT_COLUMNS) {
-          markAsChanged();
+        if (col.id === 'elapsedTime' && col.name === 'Elapsed Time') {
+          return { ...col, name: 'Elapsed' };
         }
-        return mergedColumns;
-      } finally {
-        // Reset the loading flag after a short delay to prevent rapid successive calls
-        setTimeout(() => {
-          isLoadingLayoutRef.current = false;
-        }, 100);
-      }
-    });
-  }, [markAsChanged]);
+        return col;
+      });
+
+      // Merge updated layout columns with essential built-in columns
+      const mergedColumns: Column[] = [];
+      const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
+
+      // First, add all columns from updated layout (preserving order, custom columns, and widths)
+      updatedLayoutColumns.forEach(layoutCol => {
+        mergedColumns.push(layoutCol);
+      });
+
+      // Then, add any missing essential built-in columns
+      DEFAULT_COLUMNS.forEach(essentialCol => {
+        if (!layoutColumnIds.has(essentialCol.id)) {
+          mergedColumns.push(essentialCol);
+        }
+      });
+
+      console.log('Setting new columns from layout:', mergedColumns);
+      setColumns(mergedColumns);
+      
+    } catch (error) {
+      console.error('Error loading layout:', error);
+    } finally {
+      // Reset the loading flag after a delay
+      setTimeout(() => {
+        isLoadingLayoutRef.current = false;
+      }, 100);
+    }
+  }, []);
 
   return {
     columns: safeColumns,
