@@ -58,8 +58,12 @@ export const useRundownGridHandlers = ({
     handleDeleteColumnWithCleanup
   } = useRundownHandlers({
     updateItem,
-    addRow,
-    addHeader,
+    addRow: (selectedRowId?: string | null, selectedRows?: Set<string>) => {
+      addRow(selectedRowId, selectedRows);
+    },
+    addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => {
+      addHeader(selectedRowId, selectedRows);
+    },
     deleteRow,
     toggleFloatRow,
     deleteMultipleRows,

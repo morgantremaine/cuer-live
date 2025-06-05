@@ -4,8 +4,8 @@ import { RundownItem } from './useRundownItems';
 
 interface UseRundownHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string) => void;
-  addHeader: () => void;
+  addRow: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
   deleteMultipleRows: (ids: string[]) => void;
@@ -36,13 +36,13 @@ export const useRundownHandlers = ({
     markAsChanged();
   }, [updateItem, markAsChanged]);
 
-  const handleAddRow = useCallback(() => {
-    addRow(calculateEndTime);
+  const handleAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => {
+    addRow(selectedRowId, selectedRows);
     markAsChanged();
-  }, [addRow, calculateEndTime, markAsChanged]);
+  }, [addRow, markAsChanged]);
 
-  const handleAddHeader = useCallback(() => {
-    addHeader();
+  const handleAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
+    addHeader(selectedRowId, selectedRows);
     markAsChanged();
   }, [addHeader, markAsChanged]);
 
