@@ -11,21 +11,25 @@ export interface Column {
   isVisible?: boolean;
 }
 
-export const useColumnsManager = (markAsChanged?: () => void) => {
-  const [columns, setColumns] = useState<Column[]>([
-    { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-    { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-    { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
-  ]);
+const DEFAULT_COLUMNS: Column[] = [
+  { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+  { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+];
 
-  const visibleColumns = columns.filter(col => col.isVisible !== false);
+export const useColumnsManager = (markAsChanged?: () => void) => {
+  const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
+
+  // Ensure columns is always an array and calculate visibleColumns safely
+  const safeColumns = Array.isArray(columns) ? columns : DEFAULT_COLUMNS;
+  const visibleColumns = safeColumns.filter(col => col.isVisible !== false);
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -38,29 +42,31 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       isVisible: true
     };
     
-    // Insert the new column right after the segment name column (index 1)
     setColumns(prev => {
-      const newColumns = [...prev];
+      const safePrev = Array.isArray(prev) ? prev : DEFAULT_COLUMNS;
+      const newColumns = [...safePrev];
       newColumns.splice(1, 0, newColumn);
       return newColumns;
     });
     
-    // Mark as changed when adding a column
     if (markAsChanged) {
       markAsChanged();
     }
   }, [markAsChanged]);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
-    setColumns(newColumns);
-    if (markAsChanged) {
-      markAsChanged();
+    if (Array.isArray(newColumns)) {
+      setColumns(newColumns);
+      if (markAsChanged) {
+        markAsChanged();
+      }
     }
   }, [markAsChanged]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setColumns(prev => {
-      const filtered = prev.filter(col => col.id !== columnId);
+      const safePrev = Array.isArray(prev) ? prev : DEFAULT_COLUMNS;
+      const filtered = safePrev.filter(col => col.id !== columnId);
       return filtered;
     });
     if (markAsChanged) {
@@ -70,7 +76,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
     setColumns(prev => {
-      const updated = prev.map(col => {
+      const safePrev = Array.isArray(prev) ? prev : DEFAULT_COLUMNS;
+      const updated = safePrev.map(col => {
         if (col.id === columnId) {
           return { ...col, name: newName };
         }
@@ -85,7 +92,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
     setColumns(prev => {
-      const updated = prev.map(col => {
+      const safePrev = Array.isArray(prev) ? prev : DEFAULT_COLUMNS;
+      const updated = safePrev.map(col => {
         if (col.id === columnId) {
           const newVisibility = col.isVisible !== false ? false : true;
           return { ...col, isVisible: newVisibility };
@@ -101,7 +109,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumns(prev => {
-      const updated = prev.map(col => {
+      const safePrev = Array.isArray(prev) ? prev : DEFAULT_COLUMNS;
+      const updated = safePrev.map(col => {
         if (col.id === columnId) {
           return { ...col, width: `${width}px` };
         }
@@ -116,19 +125,13 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     setColumns(prevColumns => {
-      // Define essential built-in columns that should always be preserved
-      const essentialBuiltInColumns = [
-        { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-        { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-        { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
-      ];
+      // Ensure we have valid input
+      if (!Array.isArray(layoutColumns)) {
+        console.warn('Invalid layout columns data, using default columns');
+        return DEFAULT_COLUMNS;
+      }
+
+      const safePrevColumns = Array.isArray(prevColumns) ? prevColumns : DEFAULT_COLUMNS;
 
       // Filter out the "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
@@ -159,15 +162,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
 
       // Then, add any missing essential built-in columns
-      essentialBuiltInColumns.forEach(essentialCol => {
+      DEFAULT_COLUMNS.forEach(essentialCol => {
         if (!layoutColumnIds.has(essentialCol.id)) {
           mergedColumns.push(essentialCol);
         }
       });
 
       // Only mark as changed if columns are actually different
-      const isSame = prevColumns.length === mergedColumns.length && 
-        prevColumns.every((col, index) => 
+      const isSame = safePrevColumns.length === mergedColumns.length && 
+        safePrevColumns.every((col, index) => 
           col.id === mergedColumns[index]?.id && 
           col.name === mergedColumns[index]?.name &&
           col.isVisible === mergedColumns[index]?.isVisible &&
@@ -175,7 +178,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         );
       
       if (isSame) {
-        return prevColumns; // Don't update if columns are the same
+        return safePrevColumns; // Don't update if columns are the same
       }
       
       if (markAsChanged) {
@@ -186,7 +189,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   return {
-    columns,
+    columns: safeColumns,
     visibleColumns,
     handleAddColumn,
     handleReorderColumns,

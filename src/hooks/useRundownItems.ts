@@ -39,12 +39,13 @@ export const useRundownItems = (markAsChanged: () => void) => {
     };
 
     setItems(prev => {
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prev.length) {
-        const newItems = [...prev];
+      const safePrev = Array.isArray(prev) ? prev : [];
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < safePrev.length) {
+        const newItems = [...safePrev];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
         return newItems;
       } else {
-        return [...prev, newItem];
+        return [...safePrev, newItem];
       }
     });
     markAsChanged();
@@ -72,12 +73,13 @@ export const useRundownItems = (markAsChanged: () => void) => {
     };
 
     setItems(prev => {
+      const safePrev = Array.isArray(prev) ? prev : [];
       let newItems;
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < prev.length) {
-        newItems = [...prev];
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < safePrev.length) {
+        newItems = [...safePrev];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
       } else {
-        newItems = [...prev, newItem];
+        newItems = [...safePrev, newItem];
       }
 
       // Renumber all headers after insertion
@@ -98,7 +100,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
 
   const deleteRow = useCallback((id: string) => {
     setItems(prev => {
-      const filteredItems = prev.filter(item => item.id !== id);
+      const safePrev = Array.isArray(prev) ? prev : [];
+      const filteredItems = safePrev.filter(item => item.id !== id);
       
       // Renumber headers after deletion
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -118,7 +121,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prev => {
-      const filteredItems = prev.filter(item => !ids.includes(item.id));
+      const safePrev = Array.isArray(prev) ? prev : [];
+      const filteredItems = safePrev.filter(item => !ids.includes(item.id));
       
       // Renumber headers after deletion
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -137,22 +141,37 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [markAsChanged]);
 
   const addMultipleRows = useCallback((newItems: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => {
-    setItems(prev => [...prev, ...newItems]);
+    setItems(prev => {
+      const safePrev = Array.isArray(prev) ? prev : [];
+      const safeNewItems = Array.isArray(newItems) ? newItems : [];
+      return [...safePrev, ...safeNewItems];
+    });
     markAsChanged();
   }, [markAsChanged]);
 
   const toggleFloatRow = useCallback((id: string) => {
-    setItems(prev => 
-      prev.map(item => 
+    setItems(prev => {
+      const safePrev = Array.isArray(prev) ? prev : [];
+      return safePrev.map(item => 
         item.id === id ? { ...item, isFloating: !item.isFloating } : item
-      )
-    );
+      );
+    });
     markAsChanged();
   }, [markAsChanged]);
 
   return {
-    items,
-    setItems,
+    items: Array.isArray(items) ? items : [],
+    setItems: (newItems: RundownItem[] | ((prev: RundownItem[]) => RundownItem[])) => {
+      if (typeof newItems === 'function') {
+        setItems(prev => {
+          const safePrev = Array.isArray(prev) ? prev : [];
+          const result = newItems(safePrev);
+          return Array.isArray(result) ? result : [];
+        });
+      } else {
+        setItems(Array.isArray(newItems) ? newItems : []);
+      }
+    },
     updateItem,
     addRow,
     addHeader,
