@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
@@ -103,13 +104,13 @@ export const useAutoSave = (
       debounceTimeoutRef.current = null;
     }
 
-    // Set new timeout
+    // Set new timeout - reduced to 2 seconds
     debounceTimeoutRef.current = setTimeout(() => {
       if (!isUnmountedRef.current) {
         debounceTimeoutRef.current = null;
         executeSave();
       }
-    }, 3000);
+    }, 2000);
 
     // Cleanup function
     return () => {
