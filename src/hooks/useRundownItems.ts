@@ -1,177 +1,234 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { useRundownCalculations } from './useRundownCalculations';
+import { defaultRundownItems } from '@/data/defaultRundownItems';
 
-export const useRundownItems = (markAsChanged: () => void) => {
-  const [items, setItems] = useState<RundownItem[]>([]);
-  
-  // Use centralized calculations
-  const { getRowNumber, calculateTotalRuntime, calculateHeaderDuration } = useRundownCalculations(items);
+export const useRundownItems = (markAsChanged?: () => void) => {
+  const [items, setItems] = useState<RundownItem[]>(defaultRundownItems);
 
   const updateItem = useCallback((id: string, field: string, value: string) => {
-    setItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-    markAsChanged();
+    console.log(`useRundownItems: updateItem called - id: ${id}, field: ${field}, value:`, value);
+    
+    setItems(prevItems => {
+      const newItems = prevItems.map(item => {
+        if (item.id === id) {
+          // Handle nested custom field updates
+          if (field.startsWith('customFields.')) {
+            const customFieldKey = field.replace('customFields.', '');
+            console.log(`useRundownItems: Updating custom field ${customFieldKey} to:`, value);
+            
+            const updatedItem = {
+              ...item,
+              customFields: {
+                ...item.customFields,
+                [customFieldKey]: value
+              }
+            };
+            console.log(`useRundownItems: Updated item:`, updatedItem);
+            return updatedItem;
+          }
+          
+          // Handle regular field updates
+          const updatedItem = { ...item, [field]: value };
+          console.log(`useRundownItems: Updated regular field ${field}:`, updatedItem);
+          return updatedItem;
+        }
+        return item;
+      });
+      
+      console.log(`useRundownItems: New items array:`, newItems);
+      return newItems;
+    });
+    
+    if (markAsChanged) {
+      markAsChanged();
+    }
   }, [markAsChanged]);
 
-  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
+  const addRow = useCallback((calculateEndTime: (item: RundownItem, prevEndTime?: string) => string, insertAfterIndex?: number) => {
     const newItem: RundownItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular',
-      rowNumber: '',
-      name: '',
-      duration: '00:01:00',
-      startTime: '00:00:00',
-      endTime: '00:01:00',
-      elapsedTime: '00:00:00',
+      id: uuidv4(),
+      segmentName: '',
       talent: '',
       script: '',
       gfx: '',
       video: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      status: 'upcoming' as const
-    };
-
-    setItems(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < safePrev.length) {
-        const newItems = [...safePrev];
-        newItems.splice(insertAfterIndex + 1, 0, newItem);
-        return newItems;
-      } else {
-        return [...safePrev, newItem];
-      }
-    });
-    markAsChanged();
-  }, [markAsChanged]);
-
-  const addHeader = useCallback((insertAfterIndex?: number) => {
-    const newItem: RundownItem = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'header',
-      rowNumber: '',
-      name: 'New Header',
-      duration: '',
+      duration: '00:00',
       startTime: '',
       endTime: '',
       elapsedTime: '',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
       notes: '',
-      color: '',
-      isFloating: false,
-      status: 'upcoming' as const,
-      segmentName: 'A' // Will be recalculated by time calculations
+      color: '#ffffff',
+      customFields: {} // Initialize empty custom fields
     };
 
-    setItems(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      let newItems;
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < safePrev.length) {
-        newItems = [...safePrev];
-        newItems.splice(insertAfterIndex + 1, 0, newItem);
-      } else {
-        newItems = [...safePrev, newItem];
-      }
-
-      // Renumber all headers after insertion
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let currentHeaderIndex = 0;
+    setItems(prevItems => {
+      const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
+      const newItems = [...prevItems];
       
-      return newItems.map((item) => {
-        if (isHeaderItem(item)) {
-          const updatedItem = { ...item, segmentName: letters[currentHeaderIndex] || 'A' };
-          currentHeaderIndex++;
-          return updatedItem;
+      // Calculate times
+      const prevItem = targetIndex > 0 ? newItems[targetIndex - 1] : null;
+      const prevEndTime = prevItem?.endTime || '00:00:00';
+      newItem.startTime = prevEndTime;
+      newItem.endTime = calculateEndTime(newItem, prevEndTime);
+      
+      newItems.splice(targetIndex, 0, newItem);
+      
+      // Recalculate subsequent times
+      for (let i = targetIndex + 1; i < newItems.length; i++) {
+        if (!isHeaderItem(newItems[i])) {
+          const prevEndTime = newItems[i - 1]?.endTime || '00:00:00';
+          newItems[i].startTime = prevEndTime;
+          newItems[i].endTime = calculateEndTime(newItems[i], prevEndTime);
         }
-        return item;
-      });
+      }
+      
+      return newItems;
     });
-    markAsChanged();
+    
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
+
+  const addHeader = useCallback((insertAfterIndex?: number) => {
+    const newHeader: RundownItem = {
+      id: uuidv4(),
+      type: 'header',
+      segmentName: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+      name: 'New Header',
+      notes: '',
+      startTime: '',
+      endTime: '',
+      elapsedTime: '',
+      color: '#ffffff',
+      customFields: {} // Initialize empty custom fields
+    };
+
+    setItems(prevItems => {
+      const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
+      const newItems = [...prevItems];
+      newItems.splice(targetIndex, 0, newHeader);
+      return newItems;
+    });
+    
+    if (markAsChanged) {
+      markAsChanged();
+    }
   }, [markAsChanged]);
 
   const deleteRow = useCallback((id: string) => {
-    setItems(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      const filteredItems = safePrev.filter(item => item.id !== id);
-      
-      // Renumber headers after deletion
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let headerIndex = 0;
-      
-      return filteredItems.map(item => {
-        if (isHeaderItem(item)) {
-          const updatedItem = { ...item, segmentName: letters[headerIndex] || 'A' };
-          headerIndex++;
-          return updatedItem;
-        }
-        return item;
-      });
-    });
-    markAsChanged();
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
+    if (markAsChanged) {
+      markAsChanged();
+    }
   }, [markAsChanged]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
-    setItems(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      const filteredItems = safePrev.filter(item => !ids.includes(item.id));
-      
-      // Renumber headers after deletion
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let headerIndex = 0;
-      
-      return filteredItems.map(item => {
-        if (isHeaderItem(item)) {
-          const updatedItem = { ...item, segmentName: letters[headerIndex] || 'A' };
-          headerIndex++;
-          return updatedItem;
-        }
-        return item;
-      });
-    });
-    markAsChanged();
+    setItems(prevItems => prevItems.filter(item => !ids.includes(item.id)));
+    if (markAsChanged) {
+      markAsChanged();
+    }
   }, [markAsChanged]);
 
-  const addMultipleRows = useCallback((newItems: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => {
-    setItems(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      const safeNewItems = Array.isArray(newItems) ? newItems : [];
-      return [...safePrev, ...safeNewItems];
+  const addMultipleRows = useCallback((newItems: RundownItem[], insertAfterIndex?: number, calculateEndTime?: (item: RundownItem, prevEndTime?: string) => string) => {
+    setItems(prevItems => {
+      const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
+      const itemsWithIds = newItems.map(item => ({
+        ...item,
+        id: uuidv4(),
+        customFields: item.customFields || {} // Ensure custom fields exist
+      }));
+      
+      const newItemsArray = [...prevItems];
+      newItemsArray.splice(targetIndex, 0, ...itemsWithIds);
+      
+      // Recalculate times if calculateEndTime is provided
+      if (calculateEndTime) {
+        for (let i = targetIndex; i < newItemsArray.length; i++) {
+          if (!isHeaderItem(newItemsArray[i])) {
+            const prevEndTime = i > 0 ? newItemsArray[i - 1]?.endTime || '00:00:00' : '00:00:00';
+            newItemsArray[i].startTime = prevEndTime;
+            newItemsArray[i].endTime = calculateEndTime(newItemsArray[i], prevEndTime);
+          }
+        }
+      }
+      
+      return newItemsArray;
     });
-    markAsChanged();
+    
+    if (markAsChanged) {
+      markAsChanged();
+    }
   }, [markAsChanged]);
 
   const toggleFloatRow = useCallback((id: string) => {
-    setItems(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      return safePrev.map(item => 
-        item.id === id ? { ...item, isFloating: !item.isFloating } : item
-      );
-    });
-    markAsChanged();
+    setItems(prevItems => 
+      prevItems.map(item => 
+        item.id === id 
+          ? { ...item, isFloating: !item.isFloating }
+          : item
+      )
+    );
+    if (markAsChanged) {
+      markAsChanged();
+    }
   }, [markAsChanged]);
 
-  return {
-    items: Array.isArray(items) ? items : [],
-    setItems: (newItems: RundownItem[] | ((prev: RundownItem[]) => RundownItem[])) => {
-      if (typeof newItems === 'function') {
-        setItems(prev => {
-          const safePrev = Array.isArray(prev) ? prev : [];
-          const result = newItems(safePrev);
-          return Array.isArray(result) ? result : [];
-        });
-      } else {
-        setItems(Array.isArray(newItems) ? newItems : []);
+  const getRowNumber = useCallback((index: number) => {
+    let rowNumber = 1;
+    for (let i = 0; i < index; i++) {
+      if (!isHeaderItem(items[i])) {
+        rowNumber++;
       }
-    },
+    }
+    return isHeaderItem(items[index]) ? items[index].segmentName || 'H' : rowNumber.toString();
+  }, [items]);
+
+  const calculateTotalRuntime = useCallback(() => {
+    const totalMinutes = items.reduce((total, item) => {
+      if (!isHeaderItem(item) && !item.isFloating && item.duration) {
+        const [minutes, seconds] = item.duration.split(':').map(Number);
+        return total + minutes + (seconds / 60);
+      }
+      return total;
+    }, 0);
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.floor((totalMinutes % 1) * 60);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [items]);
+
+  const calculateHeaderDuration = useCallback((headerIndex: number) => {
+    if (!isHeaderItem(items[headerIndex])) return '00:00';
+    
+    let totalMinutes = 0;
+    let i = headerIndex + 1;
+    
+    while (i < items.length && !isHeaderItem(items[i])) {
+      const item = items[i];
+      if (!item.isFloating && item.duration) {
+        const [minutes, seconds] = item.duration.split(':').map(Number);
+        totalMinutes += minutes + (seconds / 60);
+      }
+      i++;
+    }
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.floor((totalMinutes % 1) * 60);
+    
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [items]);
+
+  return useMemo(() => ({
+    items,
+    setItems,
     updateItem,
     addRow,
     addHeader,
@@ -182,5 +239,18 @@ export const useRundownItems = (markAsChanged: () => void) => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  };
+  }), [
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration
+  ]);
 };
