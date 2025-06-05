@@ -21,10 +21,6 @@ export const useRundownStateIntegration = (
     stableMarkAsChangedRef.current();
   }, []);
 
-  // Track initialization state to prevent overwrites
-  const [hooksInitialized, setHooksInitialized] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
-  
   // Initialize hooks once and keep them stable
   const itemsHook = useRundownItems(stableMarkAsChanged);
   
@@ -44,31 +40,17 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  // Auto-save integration - simplified with stable dependencies
+  // Auto-save integration - restored to simple working state
   const autoSave = useAutoSave(
     stableItems,
     rundownTitle,
-    changeTracking.hasUnsavedChanges && changeTracking.isInitialized && !isInitializing,
+    changeTracking.hasUnsavedChanges && changeTracking.isInitialized,
     changeTracking.markAsSaved,
     stableColumns,
     timezone,
     rundownStartTime,
     getUndoHistory
   );
-
-  // Mark initialization as complete after a reasonable delay
-  useEffect(() => {
-    if (!hooksInitialized) {
-      setHooksInitialized(true);
-      // Allow some time for data loading to complete
-      const timer = setTimeout(() => {
-        console.log('State integration: Initialization period ended, enabling auto-save');
-        setIsInitializing(false);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [hooksInitialized]);
 
   // Memoize wrapped functions to prevent recreation
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {

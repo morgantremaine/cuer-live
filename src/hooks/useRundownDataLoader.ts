@@ -32,7 +32,24 @@ export const useRundownDataLoader = ({
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
-  const initializationCompleteRef = useRef(false);
+  const userHasInteractedRef = useRef(false);
+  const loadTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track user interactions to prevent overwriting their changes
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      userHasInteractedRef.current = true;
+    };
+
+    // Listen for user interactions that indicate they've started working
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
+    
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, []);
 
   useEffect(() => {
     if (loading || savedRundowns.length === 0 || isLoadingRef.current) return;
@@ -46,6 +63,9 @@ export const useRundownDataLoader = ({
     console.log('Data loader: Starting to load rundown', currentRundownId);
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
+    
+    // Reset user interaction flag for new rundown
+    userHasInteractedRef.current = false;
     
     // Check undo history for items if main items array is empty
     let itemsToLoad = rundown.items || [];
@@ -81,13 +101,35 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // Load the rundown items - only if we haven't started user interactions
+    // Load the rundown items - but only if user hasn't started interacting
     if (itemsToLoad && Array.isArray(itemsToLoad)) {
       console.log('Data loader: Setting items count:', itemsToLoad.length);
-      setItems(itemsToLoad);
+      
+      // For new rundowns, delay the item loading slightly to allow user interaction to be detected
+      if (!userHasInteractedRef.current) {
+        // Clear any existing timer
+        if (loadTimerRef.current) {
+          clearTimeout(loadTimerRef.current);
+        }
+        
+        loadTimerRef.current = setTimeout(() => {
+          // Only load items if user still hasn't interacted
+          if (!userHasInteractedRef.current) {
+            setItems(itemsToLoad);
+            console.log('Data loader: Items loaded after delay');
+          } else {
+            console.log('Data loader: Skipping item load - user has interacted');
+          }
+          loadTimerRef.current = null;
+        }, 50); // Very short delay to catch user interactions
+      } else {
+        console.log('Data loader: Skipping item load - user already interacted');
+      }
     } else {
       console.log('Data loader: No items to load, setting empty array');
-      setItems([]);
+      if (!userHasInteractedRef.current) {
+        setItems([]);
+      }
     }
 
     // Call the callback with the loaded rundown
@@ -95,10 +137,9 @@ export const useRundownDataLoader = ({
       onRundownLoaded(rundown);
     }
 
-    // Mark initialization as complete after a short delay to prevent interference
+    // Mark initialization as complete
     setTimeout(() => {
       console.log('Data loader: Initialization complete for', currentRundownId);
-      initializationCompleteRef.current = true;
       isLoadingRef.current = false;
     }, 100);
   }, [
@@ -121,7 +162,22 @@ export const useRundownDataLoader = ({
       console.log('Data loader: Rundown ID changed, resetting loader state');
       loadedRef.current = null;
       isLoadingRef.current = false;
-      initializationCompleteRef.current = false;
+      userHasInteractedRef.current = false;
+      
+      // Clear any pending timer
+      if (loadTimerRef.current) {
+        clearTimeout(loadTimerRef.current);
+        loadTimerRef.current = null;
+      }
     }
   }, [rundownId, paramId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (loadTimerRef.current) {
+        clearTimeout(loadTimerRef.current);
+      }
+    };
+  }, []);
 };
