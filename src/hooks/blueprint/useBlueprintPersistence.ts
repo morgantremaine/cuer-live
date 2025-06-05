@@ -37,7 +37,14 @@ export const useBlueprintPersistence = (
     }
   }, [user, rundownId, setSavedBlueprint]);
 
-  const saveBlueprint = useCallback(async (updatedLists: BlueprintList[], silent = false) => {
+  const saveBlueprint = useCallback(async (
+    updatedLists: BlueprintList[], 
+    silent = false, 
+    showDateOverride?: string,
+    notes?: string,
+    crewData?: any[],
+    cameraPlots?: any[]
+  ) => {
     if (!user || !rundownId) return;
 
     try {
@@ -46,7 +53,10 @@ export const useBlueprintPersistence = (
         rundown_id: rundownId,
         rundown_title: rundownTitle,
         lists: updatedLists,
-        show_date: showDate,
+        show_date: showDateOverride || showDate,
+        notes: notes || savedBlueprint?.notes || '',
+        crew_data: crewData || savedBlueprint?.crew_data || [],
+        camera_plots: cameraPlots || savedBlueprint?.camera_plots || [],
         updated_at: new Date().toISOString()
       };
 

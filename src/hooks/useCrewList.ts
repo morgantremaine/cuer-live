@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { CrewMember } from '@/types/crew';
+import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 
 export const useCrewList = (rundownId: string, rundownTitle: string) => {
   const [crewMembers, setCrewMembers] = useState<CrewMember[]>(() => {
@@ -15,13 +15,52 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
 
-  // Initialize crew data
+  // Get blueprint persistence functions
+  const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
+    rundownId,
+    rundownTitle,
+    '', // showDate not needed for crew
+    savedBlueprint,
+    setSavedBlueprint
+  );
+
+  // Initialize crew data and load from blueprint if exists
   useEffect(() => {
-    if (!isInitialized) {
-      setIsInitialized(true);
+    if (!isInitialized && rundownId) {
+      const initializeCrewData = async () => {
+        try {
+          const blueprintData = await loadBlueprint();
+          if (blueprintData?.crew_data && Array.isArray(blueprintData.crew_data)) {
+            setCrewMembers(blueprintData.crew_data);
+          }
+        } catch (error) {
+          // Silently handle error, keep default data
+        }
+        setIsInitialized(true);
+      };
+      initializeCrewData();
     }
-  }, [isInitialized]);
+  }, [isInitialized, rundownId, loadBlueprint]);
+
+  // Auto-save crew data changes
+  const saveCrewData = async (updatedMembers: CrewMember[]) => {
+    if (!isInitialized) return;
+    
+    try {
+      await saveBlueprint(
+        savedBlueprint?.lists || [],
+        true, // silent save
+        savedBlueprint?.show_date,
+        savedBlueprint?.notes,
+        updatedMembers,
+        savedBlueprint?.camera_plots
+      );
+    } catch (error) {
+      // Silently handle save errors
+    }
+  };
 
   const addRow = () => {
     const newMember: CrewMember = {
@@ -31,19 +70,26 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
       phone: '',
       email: ''
     };
-    setCrewMembers([...crewMembers, newMember]);
+    const updatedMembers = [...crewMembers, newMember];
+    setCrewMembers(updatedMembers);
+    saveCrewData(updatedMembers);
   };
 
   const deleteRow = (id: string) => {
     if (crewMembers.length > 1) {
-      setCrewMembers(crewMembers.filter(member => member.id !== id));
+      const updatedMembers = crewMembers.filter(member => member.id !== id);
+      setCrewMembers(updatedMembers);
+      saveCrewData(updatedMembers);
     }
   };
 
   const updateMember = (id: string, field: keyof Omit<CrewMember, 'id'>, value: string) => {
-    setCrewMembers(crewMembers.map(member =>
+    const updatedMembers = crewMembers.map(member =>
       member.id === id ? { ...member, [field]: value } : member
-    ));
+    );
+    setCrewMembers(updatedMembers);
+    // Debounce the save to avoid too many calls during typing
+    setTimeout(() => saveCrewData(updatedMembers), 1000);
   };
 
   const reorderMembers = (draggedIndex: number, targetIndex: number) => {
@@ -51,6 +97,7 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
     const [draggedMember] = newMembers.splice(draggedIndex, 1);
     newMembers.splice(targetIndex, 0, draggedMember);
     setCrewMembers(newMembers);
+    saveCrewData(newMembers);
   };
 
   return {
