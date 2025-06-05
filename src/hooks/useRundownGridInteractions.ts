@@ -10,8 +10,8 @@ export const useRundownGridInteractions = (
   items: RundownItem[],
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   updateItem: (id: string, field: keyof RundownItem, value: any) => void,
-  addRow: (selectedRows?: Set<string>) => void,
-  addHeader: (selectedRows?: Set<string>) => void,
+  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void,
+  addHeader: (insertAfterIndex?: number) => void,
   deleteRow: (id: string) => void,
   toggleFloatRow: (id: string) => void,
   deleteMultipleRows: (ids: string[]) => void,
@@ -54,18 +54,18 @@ export const useRundownGridInteractions = (
   const [colorPickerRowId, setColorPickerRowId] = useState<string | null>(null);
 
   // Enhanced row operations that mark user actions
-  const enhancedAddRow = useCallback((selectedRows?: Set<string>) => {
+  const enhancedAddRow = useCallback((calculateEndTimeFunc: any, insertAfterIndex?: number) => {
     if (rundownId) {
       markGlobalUserAction(rundownId);
     }
-    addRow(selectedRows);
+    addRow(calculateEndTimeFunc, insertAfterIndex);
   }, [addRow, rundownId]);
 
-  const enhancedAddHeader = useCallback((selectedRows?: Set<string>) => {
+  const enhancedAddHeader = useCallback((insertAfterIndex?: number) => {
     if (rundownId) {
       markGlobalUserAction(rundownId);
     }
-    addHeader(selectedRows);
+    addHeader(insertAfterIndex);
   }, [addHeader, rundownId]);
 
   const enhancedDeleteRow = useCallback((id: string) => {

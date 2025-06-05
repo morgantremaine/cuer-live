@@ -26,16 +26,18 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Create component-compatible functions (parameterless)
+  // Create properly wrapped functions that match the expected signatures
   const handleAddRow = useCallback(() => {
-    coreState.addRow(coreState.calculateEndTime, interactions.selectedRows);
-  }, [coreState.addRow, coreState.calculateEndTime, interactions.selectedRows]);
+    // Call addRow with the calculateEndTime function as expected
+    coreState.addRow(coreState.calculateEndTime);
+  }, [coreState.addRow, coreState.calculateEndTime]);
 
   const handleAddHeader = useCallback(() => {
-    coreState.addHeader(interactions.selectedRows);
-  }, [coreState.addHeader, interactions.selectedRows]);
+    // Call addHeader with no parameters as expected
+    coreState.addHeader();
+  }, [coreState.addHeader]);
 
-  // Row operations with component-compatible functions
+  // Row operations with properly wrapped functions
   const { handleDeleteSelectedRows } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
@@ -45,17 +47,19 @@ export const useRundownGridState = () => {
     calculateEndTime: coreState.calculateEndTime
   });
 
-  // Memoize the complete state object
+  // Memoize the complete state object with all required properties
   return useMemo(() => ({
     // Core state
     ...coreState,
-    // Interaction handlers - include all expected properties
+    // Interaction handlers
     ...interactions,
-    // UI state
+    // UI state  
     ...uiState,
-    // Component-compatible handlers (parameterless)
+    // Properly wrapped handlers
     handleAddRow,
     handleAddHeader,
+    addRow: handleAddRow, // Alias for compatibility
+    addHeader: handleAddHeader, // Alias for compatibility
     // Clipboard functionality
     clipboardItems,
     copyItems,
@@ -63,16 +67,14 @@ export const useRundownGridState = () => {
     handleCopySelectedRows,
     handlePasteRows,
     handleDeleteSelectedRows,
-    // Add missing drag and drop properties that components expect
-    draggedItemIndex: interactions.draggedItems?.length > 0 ? 0 : -1,
-    isDraggingMultiple: interactions.isDragging && interactions.selectedRows.size > 1,
-    dropTargetIndex: interactions.dragOverIndex || -1,
-    // Add missing handler properties
+    // Additional compatibility properties
+    draggedItemIndex: interactions.draggedItemIndex || -1,
+    isDraggingMultiple: interactions.isDraggingMultiple || false,
+    dropTargetIndex: interactions.dropTargetIndex || -1,
     handleUpdateItem: interactions.updateItem,
     handleRowSelection: interactions.toggleRowSelection,
-    handleDragLeave: interactions.handleDragLeave || (() => {}),
-    // Add missing selection methods
-    toggleRowSelection: interactions.toggleRowSelection
+    selectColor: interactions.selectColor,
+    clearSelection: interactions.clearSelection
   }), [
     coreState,
     interactions,
