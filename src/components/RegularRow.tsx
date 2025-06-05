@@ -142,8 +142,8 @@ const RegularRow = (props: RegularRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor: inlineBackgroundColor + ' !important',
-          color: inlineTextColor + ' !important'
+          backgroundColor: `${inlineBackgroundColor} !important`,
+          color: `${inlineTextColor} !important`
         }}
         draggable
         onClick={handleRowClick}

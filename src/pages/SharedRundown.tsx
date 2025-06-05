@@ -11,21 +11,23 @@ const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error } = useSharedRundownState();
   const { isDark } = useTheme();
 
+  console.log('SharedRundown theme debug:', { isDark });
+
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-        <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading rundown...</div>
+      <div className={`min-h-screen flex items-center justify-center`} style={{ backgroundColor: isDark ? '#111827' : '#ffffff' }}>
+        <div style={{ color: isDark ? '#d1d5db' : '#6b7280' }} className="text-lg">Loading rundown...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`min-h-screen flex items-center justify-center`} style={{ backgroundColor: isDark ? '#111827' : '#ffffff' }}>
         <div className="text-center">
           <div className="text-lg text-red-600 mb-2">Error loading rundown</div>
-          <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{error}</div>
-          <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'} mt-4`}>
+          <div style={{ color: isDark ? '#9ca3af' : '#6b7280' }} className="text-sm">{error}</div>
+          <div style={{ color: isDark ? '#6b7280' : '#6b7280' }} className="text-xs mt-4">
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -35,10 +37,10 @@ const SharedRundown = () => {
 
   if (!rundownData) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`min-h-screen flex items-center justify-center`} style={{ backgroundColor: isDark ? '#111827' : '#ffffff' }}>
         <div className="text-center">
-          <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>Rundown not found</div>
-          <div className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+          <div style={{ color: isDark ? '#d1d5db' : '#6b7280' }} className="text-lg mb-2">Rundown not found</div>
+          <div style={{ color: isDark ? '#6b7280' : '#6b7280' }} className="text-sm">
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -49,7 +51,7 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(rundownData.columns);
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-white'} p-4 print:p-2`}>
+    <div className="min-h-screen p-4 print:p-2" style={{ backgroundColor: isDark ? '#111827' : '#ffffff' }}>
       <SharedRundownHeader
         title={rundownData.title}
         currentTime={currentTime}

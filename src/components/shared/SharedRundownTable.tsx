@@ -26,6 +26,8 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
   const regularRowBackgroundColor = isDark ? '#394150' : '#ffffff';
   const headerTextColor = isDark ? '#ffffff' : '#1f2937';
   const regularTextColor = isDark ? '#ffffff' : '#1f2937';
+  const tableBackgroundColor = isDark ? '#111827' : '#ffffff';
+  const borderColor = isDark ? '#374151' : '#e5e7eb';
 
   console.log('SharedRundownTable colors:', { 
     headerBackgroundColor, 
@@ -36,28 +38,28 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
   });
 
   return (
-    <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
+    <div className="overflow-hidden border rounded-lg print:border-gray-400" style={{ borderColor, backgroundColor: tableBackgroundColor }}>
       <table className="w-full">
         <thead>
           <tr style={{ backgroundColor: headerBackgroundColor }}>
             <th 
-              className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b border-gray-200 print:border-gray-400"
-              style={{ color: isDark ? '#9ca3af' : '#6b7280' }}
+              className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400"
+              style={{ color: isDark ? '#9ca3af' : '#6b7280', borderColor }}
             >
               #
             </th>
             {visibleColumns.map((column) => (
               <th
                 key={column.id}
-                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b border-gray-200 print:border-gray-400"
-                style={{ color: isDark ? '#9ca3af' : '#6b7280' }}
+                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400"
+                style={{ color: isDark ? '#9ca3af' : '#6b7280', borderColor }}
               >
                 {column.name}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 print:divide-gray-400">
+        <tbody style={{ borderColor }} className="print:divide-gray-400">
           {items.map((item, index) => {
             // Only non-header items can be current segments
             const isCurrentSegment = !isHeaderItem(item) && currentSegmentId === item.id;
@@ -91,13 +93,14 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   print:break-inside-avoid
                 `}
                 style={{ 
-                  backgroundColor: rowBackgroundColor + ' !important',
-                  color: rowTextColor + ' !important'
+                  backgroundColor: `${rowBackgroundColor} !important`,
+                  color: `${rowTextColor} !important`,
+                  borderBottom: `1px solid ${borderColor}`
                 }}
               >
                 <td 
-                  className="px-3 py-2 whitespace-nowrap text-sm border-r border-gray-200 print:border-gray-400"
-                  style={{ color: rowTextColor + ' !important' }}
+                  className="px-3 py-2 whitespace-nowrap text-sm border-r print:border-gray-400"
+                  style={{ color: `${rowTextColor} !important`, borderColor }}
                 >
                   {isCurrentSegment && (
                     <span className="text-red-600 mr-1">▶</span>
@@ -116,8 +119,8 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       return (
                         <td 
                           key={column.id} 
-                          className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
-                          style={{ color: rowTextColor + ' !important' }}
+                          className="px-3 py-2 text-sm border-r print:border-gray-400"
+                          style={{ color: `${rowTextColor} !important`, borderColor }}
                         >
                           <div className="break-words whitespace-pre-wrap">{value}</div>
                         </td>
@@ -126,8 +129,8 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       return (
                         <td 
                           key={column.id} 
-                          className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
-                          style={{ color: isDark ? '#9ca3af' : '#6b7280' }}
+                          className="px-3 py-2 text-sm border-r print:border-gray-400"
+                          style={{ color: isDark ? '#9ca3af' : '#6b7280', borderColor }}
                         >
                           <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
                         </td>
@@ -136,8 +139,8 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       return (
                         <td 
                           key={column.id} 
-                          className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
-                          style={{ color: rowTextColor + ' !important' }}
+                          className="px-3 py-2 text-sm border-r print:border-gray-400"
+                          style={{ color: `${rowTextColor} !important`, borderColor }}
                         >
                           <div className="break-words whitespace-pre-wrap">{getCellValue(item, column)}</div>
                         </td>
@@ -150,8 +153,8 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   return (
                     <td
                       key={column.id}
-                      className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
-                      style={{ color: rowTextColor + ' !important' }}
+                      className="px-3 py-2 text-sm border-r print:border-gray-400"
+                      style={{ color: `${rowTextColor} !important`, borderColor }}
                     >
                       <div className="break-words whitespace-pre-wrap">{value}</div>
                     </td>

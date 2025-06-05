@@ -122,8 +122,8 @@ const HeaderRow = (props: HeaderRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor: headerBackgroundColor + ' !important',
-          color: headerTextColor + ' !important'
+          backgroundColor: `${headerBackgroundColor} !important`,
+          color: `${headerTextColor} !important`
         }}
         draggable
         onClick={handleRowClick}
