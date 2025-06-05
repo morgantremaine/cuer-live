@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
@@ -21,13 +21,29 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     return 0;
   }, []);
 
+  // Memoize segment name calculation based on header positions
+  const segmentNameMap = useMemo(() => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const map = new Map<number, string>();
+    let headerCount = 0;
+    
+    items.forEach((item, index) => {
+      if (isHeaderItem(item)) {
+        map.set(index, letters[headerCount] || 'A');
+        headerCount++;
+      }
+    });
+    
+    return map;
+  }, [items]);
+
   const getRowNumber = useCallback((index: number) => {
     const item = items[index];
     if (!item) return '1';
     
     // For headers, return their segment name (A, B, C, etc.)
     if (isHeaderItem(item)) {
-      return item.segmentName || 'A';
+      return segmentNameMap.get(index) || 'A';
     }
     
     // For regular items, find the current segment and count within that segment
@@ -37,7 +53,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Go backwards to find the most recent header
     for (let i = index - 1; i >= 0; i--) {
       if (isHeaderItem(items[i])) {
-        currentSegment = items[i].segmentName || 'A';
+        currentSegment = segmentNameMap.get(i) || 'A';
         break;
       }
     }
@@ -45,7 +61,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Count regular items in the current segment up to this index
     let segmentStartIndex = 0;
     for (let i = 0; i < items.length; i++) {
-      if (isHeaderItem(items[i]) && items[i].segmentName === currentSegment) {
+      if (isHeaderItem(items[i]) && segmentNameMap.get(i) === currentSegment) {
         segmentStartIndex = i + 1;
         break;
       }
@@ -58,7 +74,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     }
     
     return `${currentSegment}${regularCountInSegment + 1}`;
-  }, [items]);
+  }, [items, segmentNameMap]);
 
   const calculateTotalRuntime = useCallback(() => {
     // Only include non-floated items in the total runtime calculation
@@ -111,20 +127,10 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
   }, [items, timeToSeconds]);
 
-  // Fixed function to calculate proper segment names based on header position
+  // Stable function to calculate proper segment names based on header position
   const calculateSegmentName = useCallback((headerIndex: number) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let headerCount = 0;
-    
-    // Count how many headers come before this one
-    for (let i = 0; i < headerIndex; i++) {
-      if (isHeaderItem(items[i])) {
-        headerCount++;
-      }
-    }
-    
-    return letters[headerCount] || 'A';
-  }, [items]);
+    return segmentNameMap.get(headerIndex) || 'A';
+  }, [segmentNameMap]);
 
   return {
     getRowNumber,

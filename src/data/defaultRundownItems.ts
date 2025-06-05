@@ -20,6 +20,7 @@ export const defaultRundownItems: RundownItem[] = [
     isFloating: false,
     segmentName: 'A',
     status: 'upcoming',
+    customFields: {}
   },
   {
     id: '2',
@@ -27,7 +28,7 @@ export const defaultRundownItems: RundownItem[] = [
     rowNumber: '1',
     name: '',
     startTime: '00:00:00',
-    duration: '00:00:00',
+    duration: '00:00',
     endTime: '00:00:00',
     elapsedTime: '00:00:00',
     talent: '',
@@ -35,10 +36,11 @@ export const defaultRundownItems: RundownItem[] = [
     gfx: '',
     video: '',
     notes: '',
-    color: '',
+    color: '#ffffff',
     isFloating: false,
     isFloated: false,
     status: 'upcoming',
+    customFields: {}
   },
   {
     id: '3',
@@ -46,7 +48,7 @@ export const defaultRundownItems: RundownItem[] = [
     rowNumber: '2',
     name: '',
     startTime: '00:00:00',
-    duration: '00:00:00',
+    duration: '00:00',
     endTime: '00:00:00',
     elapsedTime: '00:00:00',
     talent: '',
@@ -54,10 +56,11 @@ export const defaultRundownItems: RundownItem[] = [
     gfx: '',
     video: '',
     notes: '',
-    color: '',
+    color: '#ffffff',
     isFloating: false,
     isFloated: false,
     status: 'upcoming',
+    customFields: {}
   },
   {
     id: '4',
@@ -65,7 +68,7 @@ export const defaultRundownItems: RundownItem[] = [
     rowNumber: '3',
     name: '',
     startTime: '00:00:00',
-    duration: '00:00:00',
+    duration: '00:00',
     endTime: '00:00:00',
     elapsedTime: '00:00:00',
     talent: '',
@@ -73,9 +76,10 @@ export const defaultRundownItems: RundownItem[] = [
     gfx: '',
     video: '',
     notes: '',
-    color: '',
+    color: '#ffffff',
     isFloating: false,
     isFloated: false,
     status: 'upcoming',
+    customFields: {}
   },
 ];

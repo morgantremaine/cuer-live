@@ -125,7 +125,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
         endTime: '',
         elapsedTime: '',
         notes: '',
-        color: '#ffffff',
+        color: '#3B82F6',
         isFloating: false,
         customFields: {}
       };

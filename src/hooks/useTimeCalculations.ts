@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useRundownCalculations } from './useRundownCalculations';
 
@@ -8,27 +8,28 @@ export const useTimeCalculations = (
   updateItem: (id: string, field: string, value: string) => void, 
   rundownStartTime: string
 ) => {
-  const { calculateSegmentName, timeToSeconds } = useRundownCalculations(items);
+  const { timeToSeconds } = useRundownCalculations(items);
   const lastProcessedRef = useRef<string>('');
   const isProcessingRef = useRef(false);
 
-  const secondsToTime = (seconds: number) => {
+  // Stable functions with useCallback
+  const secondsToTime = useCallback((seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
-  const calculateEndTime = (startTime: string, duration: string) => {
+  const calculateEndTime = useCallback((startTime: string, duration: string) => {
     const safeStartTime = startTime || '00:00:00';
     const safeDuration = duration || '00:00:00';
     
     const startSeconds = timeToSeconds(safeStartTime);
     const durationSeconds = timeToSeconds(safeDuration);
     return secondsToTime(startSeconds + durationSeconds);
-  };
+  }, [timeToSeconds, secondsToTime]);
 
-  const calculateElapsedTime = (startTime: string, rundownStartTime: string) => {
+  const calculateElapsedTime = useCallback((startTime: string, rundownStartTime: string) => {
     const safeStartTime = startTime || '00:00:00';
     const safeRundownStartTime = rundownStartTime || '00:00:00';
     
@@ -36,9 +37,9 @@ export const useTimeCalculations = (
     const rundownStartSeconds = timeToSeconds(safeRundownStartTime);
     const elapsedSeconds = startSeconds - rundownStartSeconds;
     return secondsToTime(Math.max(0, elapsedSeconds));
-  };
+  }, [timeToSeconds, secondsToTime]);
 
-  const getRowStatus = (item: RundownItem, currentTime: Date) => {
+  const getRowStatus = useCallback((item: RundownItem, currentTime: Date) => {
     const formatTime = (time: Date) => {
       return time.toLocaleTimeString('en-US', { hour12: false });
     };
@@ -54,16 +55,19 @@ export const useTimeCalculations = (
       return 'completed';
     }
     return 'upcoming';
-  };
+  }, [timeToSeconds]);
 
-  // Optimized recalculation - only process when necessary and prevent infinite loops
+  // Memoize the signature to prevent unnecessary recalculations
+  const currentSignature = useMemo(() => 
+    `${items.length}-${rundownStartTime}-${items.map(item => 
+      `${item.id}:${item.type}:${item.duration || '00:00:00'}`
+    ).join(',')}`, 
+    [items.length, rundownStartTime, items.map(item => `${item.id}:${item.type}:${item.duration || '00:00:00'}`).join(',')]
+  );
+
+  // Optimized recalculation with stable dependencies
   useEffect(() => {
     if (!items.length || !rundownStartTime || isProcessingRef.current) return;
-
-    // Create a more stable signature that won't change unnecessarily
-    const currentSignature = `${items.length}-${rundownStartTime}-${items.map(item => 
-      `${item.id}:${item.type}:${item.duration || '00:00:00'}:${item.segmentName || ''}`
-    ).join(',')}`;
 
     // Skip if we've already processed this exact state
     if (lastProcessedRef.current === currentSignature) return;
@@ -135,7 +139,7 @@ export const useTimeCalculations = (
     } finally {
       isProcessingRef.current = false;
     }
-  }, [items.length, rundownStartTime, items.map(item => `${item.id}-${item.type}-${item.duration || '00:00:00'}-${item.segmentName || ''}`).join(','), calculateSegmentName, calculateElapsedTime, calculateEndTime, updateItem]);
+  }, [currentSignature, calculateElapsedTime, calculateEndTime, updateItem, rundownStartTime, items]);
 
   return {
     calculateEndTime,
