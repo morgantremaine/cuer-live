@@ -108,18 +108,18 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Fixed getRowNumber function that matches the expected signature
+  // Simplified getRowNumber function
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
     const item = items[index];
     if (!item) return '';
     
-    // For headers, return their segment letter
+    // For headers, calculate segment letter
     if (item.type === 'header') {
       let headerCount = 0;
       for (let i = 0; i <= index; i++) {
-        if (items[i] && items[i].type === 'header') {
+        if (items[i]?.type === 'header') {
           headerCount++;
         }
       }
@@ -127,17 +127,16 @@ export const useRundownItems = (markAsChanged: () => void) => {
       return letters[headerCount - 1] || 'A';
     }
     
-    // For regular items, find the current segment and count within that segment
+    // For regular items, find current segment and number within segment
     let currentSegmentLetter = 'A';
-    let regularCountInSegment = 0;
+    let itemsInCurrentSegment = 0;
     
-    // Find the most recent header before this index
+    // Find the most recent header before this item
     for (let i = index - 1; i >= 0; i--) {
-      if (items[i] && items[i].type === 'header') {
-        // Found the header for this segment
+      if (items[i]?.type === 'header') {
         let headerCount = 0;
         for (let j = 0; j <= i; j++) {
-          if (items[j] && items[j].type === 'header') {
+          if (items[j]?.type === 'header') {
             headerCount++;
           }
         }
@@ -147,31 +146,32 @@ export const useRundownItems = (markAsChanged: () => void) => {
       }
     }
     
-    // Count regular items in the current segment up to this index
-    let segmentStartIndex = 0;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i] && items[i].type === 'header') {
-        let headerCount = 0;
-        for (let j = 0; j <= i; j++) {
-          if (items[j] && items[j].type === 'header') {
-            headerCount++;
+    // Count regular items in current segment up to this item
+    for (let i = 0; i < index; i++) {
+      if (items[i]?.type === 'regular') {
+        // Check if this item is in the current segment
+        let itemSegment = 'A';
+        for (let j = i - 1; j >= 0; j--) {
+          if (items[j]?.type === 'header') {
+            let headerCount = 0;
+            for (let k = 0; k <= j; k++) {
+              if (items[k]?.type === 'header') {
+                headerCount++;
+              }
+            }
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            itemSegment = letters[headerCount - 1] || 'A';
+            break;
           }
         }
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        if ((letters[headerCount - 1] || 'A') === currentSegmentLetter) {
-          segmentStartIndex = i + 1;
-          break;
+        
+        if (itemSegment === currentSegmentLetter) {
+          itemsInCurrentSegment++;
         }
       }
     }
     
-    for (let i = segmentStartIndex; i < index; i++) {
-      if (items[i] && items[i].type === 'regular') {
-        regularCountInSegment++;
-      }
-    }
-    
-    return `${currentSegmentLetter}${regularCountInSegment + 1}`;
+    return `${currentSegmentLetter}${itemsInCurrentSegment + 1}`;
   }, [items]);
 
   const toggleFloatRow = useCallback((id: string) => {
@@ -209,7 +209,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     }
   }, [items]);
 
-  // Fixed calculateHeaderDuration function that matches the expected signature
+  // Simplified calculateHeaderDuration function
   const calculateHeaderDuration = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
