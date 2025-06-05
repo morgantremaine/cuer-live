@@ -7,7 +7,7 @@ interface HeaderRowContentProps {
   item: RundownItem;
   columns: Column[];
   headerDuration: string;
-  rowNumber: string; // Add this prop to use the calculated row number
+  rowNumber: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -19,7 +19,7 @@ const HeaderRowContent = ({
   item,
   columns,
   headerDuration,
-  rowNumber, // Use the calculated row number
+  rowNumber,
   cellRefs,
   onUpdateItem,
   onCellClick,
@@ -42,9 +42,25 @@ const HeaderRowContent = ({
         >
           {column.key === 'segmentName' ? (
             <input
+              ref={el => el && (cellRefs.current[`${item.id}-segmentName`] = el)}
+              type="text"
+              value={item.name || ''}
+              onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCellClick(item.id, 'name');
+              }}
+              onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
+              className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-base w-full font-bold"
+              placeholder="Segment Name"
+            />
+          ) : column.key === 'duration' ? (
+            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">({headerDuration})</span>
+          ) : column.key === 'notes' ? (
+            <input
               ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
               type="text"
-              value={item.notes}
+              value={item.notes || ''}
               onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
               onClick={(e) => {
                 e.stopPropagation();
@@ -52,11 +68,22 @@ const HeaderRowContent = ({
               }}
               onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
               className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-base w-full"
+              placeholder="Notes"
             />
-          ) : column.key === 'duration' ? (
-            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">({headerDuration})</span>
-          ) : column.key === 'notes' ? (
-            null
+          ) : column.isCustom ? (
+            <input
+              ref={el => el && (cellRefs.current[`${item.id}-${column.key}`] = el)}
+              type="text"
+              value={(item as any)[column.key] || ''}
+              onChange={(e) => onUpdateItem(item.id, column.key, e.target.value)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCellClick(item.id, column.key);
+              }}
+              onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+              className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-base w-full"
+              placeholder={column.name}
+            />
           ) : null}
         </td>
       ))}

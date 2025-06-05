@@ -29,8 +29,9 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems(markAsChanged);
 
-  // Create a wrapper for updateItem to match expected signature (id, field, value)
+  // Enhanced updateItem to handle custom fields properly
   const updateItem = useCallback((id: string, field: string, value: string) => {
+    // Handle both standard and custom fields
     originalUpdateItem(id, { [field]: value });
   }, [originalUpdateItem]);
 
