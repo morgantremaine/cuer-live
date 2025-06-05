@@ -1,135 +1,242 @@
 
-import { useState, useCallback } from 'react';
-import { RundownItem } from '@/types/rundown';
-import { generateId } from '@/utils/idGenerator';
-import { useUndo } from './useUndo';
+import { useState, useCallback, useMemo } from 'react';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { v4 as uuidv4 } from 'uuid';
 
-export const useRundownItems = (markAsChanged?: () => void) => {
+export type { RundownItem } from '@/types/rundown';
+
+export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
-  const {
-    undo: undoItems,
-    redo: redoItems,
-    set: setItemsWithHistory,
-    canUndo,
-    canRedo,
-    lastAction
-  } = useUndo<RundownItem[]>([], setItems);
 
-  const updateItem = useCallback((id: string, field: string, value: string) => {
-    setItemsWithHistory(prev => {
-      return prev.map(item => {
-        if (item.id === id) {
-          // Handle nested customFields updates
-          if (field.startsWith('customFields.')) {
-            const customFieldKey = field.split('.')[1];
-            return {
-              ...item,
-              customFields: {
-                ...item.customFields,
-                [customFieldKey]: value
-              }
-            };
-          } else {
-            return { ...item, [field]: value };
-          }
-        }
-        return item;
-      });
+  const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
+    setItems(prevItems => {
+      const newItems = prevItems.map(item => 
+        item.id === id ? { ...item, ...updates } : item
+      );
+      markAsChanged();
+      return newItems;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged, setItemsWithHistory]);
+  }, [markAsChanged]);
 
-  const deleteRow = useCallback((id: string) => {
-    setItemsWithHistory(prev => prev.filter(item => item.id !== id));
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged, setItemsWithHistory]);
-
-  const toggleFloat = useCallback((id: string) => {
-    setItemsWithHistory(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, isFloating: !item.isFloating, isFloated: !item.isFloating } : item
-      )
-    );
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged, setItemsWithHistory]);
-
-  const addRow = useCallback((type: 'regular' | 'header' = 'regular') => {
+  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
     const newItem: RundownItem = {
-      id: generateId(),
-      type,
+      id: uuidv4(),
+      type: 'regular',
       rowNumber: '',
       name: '',
-      startTime: '00:00:00',
-      duration: type === 'header' ? '' : '00:00',
-      endTime: '00:00:00',
-      elapsedTime: '00:00:00',
+      startTime: '',
+      duration: '',
+      endTime: '',
+      elapsedTime: '',
       talent: '',
       script: '',
       gfx: '',
       video: '',
       notes: '',
-      color: '#FFFFFF',
-      isFloating: false,
-      customFields: {}
+      color: '',
+      isFloating: false
     };
 
-    setItemsWithHistory(prev => [...prev, newItem]);
-    
-    // Mark as changed when adding a row
-    if (markAsChanged) {
+    setItems(prevItems => {
+      let newItems;
+      if (insertAfterIndex !== undefined) {
+        newItems = [...prevItems];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
+      } else {
+        newItems = [...prevItems, newItem];
+      }
+      
       markAsChanged();
-    }
-  }, [markAsChanged, setItemsWithHistory]);
-
-  const pasteRows = useCallback((pastedItems: RundownItem[]) => {
-    // Generate new IDs for the pasted items
-    const newItems = pastedItems.map(item => ({ ...item, id: generateId() }));
-    setItemsWithHistory(prev => [...prev, ...newItems]);
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged, setItemsWithHistory]);
-
-  const reorderItems = useCallback((startIndex: number, endIndex: number) => {
-    setItemsWithHistory(prevItems => {
-      const reorderedItems = [...prevItems];
-      const [movedItem] = reorderedItems.splice(startIndex, 1);
-      reorderedItems.splice(endIndex, 0, movedItem);
-      return reorderedItems;
+      return newItems;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged, setItemsWithHistory]);
+  }, [markAsChanged]);
 
-  const deleteAllRows = useCallback(() => {
-    setItemsWithHistory([]);
-    if (markAsChanged) {
+  const addHeader = useCallback((insertAfterIndex?: number) => {
+    const newItem: RundownItem = {
+      id: uuidv4(),
+      type: 'header',
+      rowNumber: '',
+      name: 'New Header',
+      startTime: '',
+      duration: '',
+      endTime: '',
+      elapsedTime: '',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
+      isFloating: false
+    };
+
+    setItems(prevItems => {
+      let newItems;
+      if (insertAfterIndex !== undefined) {
+        newItems = [...prevItems];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
+      } else {
+        newItems = [...prevItems, newItem];
+      }
+      
       markAsChanged();
+      return newItems;
+    });
+  }, [markAsChanged]);
+
+  const deleteRow = useCallback((id: string) => {
+    setItems(prevItems => {
+      const newItems = prevItems.filter(item => item.id !== id);
+      markAsChanged();
+      return newItems;
+    });
+  }, [markAsChanged]);
+
+  const deleteMultipleRows = useCallback((ids: string[]) => {
+    setItems(prevItems => {
+      const newItems = prevItems.filter(item => !ids.includes(item.id));
+      markAsChanged();
+      return newItems;
+    });
+  }, [markAsChanged]);
+
+  const addMultipleRows = useCallback((newItems: RundownItem[]) => {
+    setItems(prevItems => {
+      const allItems = [...prevItems, ...newItems];
+      markAsChanged();
+      return allItems;
+    });
+  }, [markAsChanged]);
+
+  // Change back to useCallback but force re-calculation by making it depend on items
+  const getRowNumber = useCallback((index: number) => {
+    if (index < 0 || index >= items.length) return '';
+    
+    const item = items[index];
+    if (!item) return '';
+    
+    // For headers, count how many headers we've seen so far
+    if (item.type === 'header') {
+      let headerCount = 0;
+      for (let i = 0; i <= index; i++) {
+        if (items[i]?.type === 'header') {
+          headerCount++;
+        }
+      }
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      return letters[headerCount - 1] || 'A';
     }
-  }, [markAsChanged, setItemsWithHistory]);
+    
+    // For regular items, find which segment they belong to
+    let currentSegmentLetter = 'A';
+    let itemCountInSegment = 0;
+    
+    // Go through items up to current index
+    for (let i = 0; i <= index; i++) {
+      const currentItem = items[i];
+      if (!currentItem) continue;
+      
+      if (currentItem.type === 'header') {
+        // Update which segment we're in
+        let headerCount = 0;
+        for (let j = 0; j <= i; j++) {
+          if (items[j]?.type === 'header') {
+            headerCount++;
+          }
+        }
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        currentSegmentLetter = letters[headerCount - 1] || 'A';
+        itemCountInSegment = 0; // Reset count for new segment
+      } else if (currentItem.type === 'regular') {
+        itemCountInSegment++;
+      }
+    }
+    
+    return `${currentSegmentLetter}${itemCountInSegment}`;
+  }, [items]);
+
+  const toggleFloatRow = useCallback((id: string) => {
+    setItems(prevItems => {
+      const newItems = prevItems.map(item => 
+        item.id === id ? { ...item, isFloating: !item.isFloating } : item
+      );
+      markAsChanged();
+      return newItems;
+    });
+  }, [markAsChanged]);
+
+  const calculateTotalRuntime = useCallback(() => {
+    let totalSeconds = 0;
+    items.forEach(item => {
+      if (item.type === 'regular' && item.duration) {
+        const duration = item.duration;
+        const parts = duration.split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0]) || 0;
+          const seconds = parseInt(parts[1]) || 0;
+          totalSeconds += minutes * 60 + seconds;
+        }
+      }
+    });
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  }, [items]);
+
+  const calculateHeaderDuration = useCallback((index: number) => {
+    if (index < 0 || index >= items.length) return '';
+    
+    const headerItem = items[index];
+    if (!headerItem || headerItem.type !== 'header') return '';
+    
+    let totalSeconds = 0;
+    
+    // Sum up durations of all regular items after this header until the next header
+    for (let i = index + 1; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'header') break; // Stop at next header
+      
+      if (item.type === 'regular' && item.duration) {
+        const duration = item.duration;
+        const parts = duration.split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0]) || 0;
+          const seconds = parseInt(parts[1]) || 0;
+          totalSeconds += minutes * 60 + seconds;
+        }
+      }
+    }
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  }, [items]);
 
   return {
     items,
-    updateItem,
-    deleteRow,
-    toggleFloat,
-    addRow,
-    pasteRows,
-    reorderItems,
-    deleteAllRows,
     setItems,
-    undoItems,
-    redoItems,
-    canUndo,
-    canRedo,
-    lastAction,
-    setItemsWithHistory
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration
   };
 };
