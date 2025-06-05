@@ -42,7 +42,7 @@ const RegularRowContent = ({
       >
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
-            <Play className="h-3 w-3 text-green-500 fill-green-500" />
+            <Play className="h-4 w-4 text-green-500 fill-green-500 scale-125" />
           )}
           <span>{rowNumber}</span>
           {isDraggingMultiple && isSelected && (
