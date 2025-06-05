@@ -12,9 +12,16 @@ interface BlueprintScratchpadProps {
   rundownTitle: string;
   initialNotes?: string;
   onNotesChange?: (notes: string) => void;
+  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void;
 }
 
-const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNotesChange }: BlueprintScratchpadProps) => {
+const BlueprintScratchpad = ({ 
+  rundownId, 
+  rundownTitle, 
+  initialNotes = '', 
+  onNotesChange, 
+  saveBlueprint 
+}: BlueprintScratchpadProps) => {
   const {
     notes,
     isEditing,

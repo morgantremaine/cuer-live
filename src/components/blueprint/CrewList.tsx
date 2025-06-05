@@ -3,10 +3,19 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, GripVertical } from 'lucide-react';
-import { CrewListProps } from '@/types/crew';
 import { useCrewList } from '@/hooks/useCrewList';
 import { useCrewRowDragDrop } from '@/hooks/useCrewRowDragDrop';
 import CrewTable from './crew/CrewTable';
+
+interface CrewListProps {
+  rundownId: string;
+  rundownTitle: string;
+  isDragging?: boolean;
+  onDragStart?: (e: React.DragEvent, id: string) => void;
+  onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: () => void;
+  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void;
+}
 
 const CrewList = ({ 
   rundownId, 
@@ -14,7 +23,8 @@ const CrewList = ({
   isDragging, 
   onDragStart, 
   onDragEnterContainer, 
-  onDragEnd 
+  onDragEnd,
+  saveBlueprint
 }: CrewListProps) => {
   const {
     crewMembers,

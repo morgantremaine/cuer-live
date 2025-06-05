@@ -14,6 +14,7 @@ interface CameraPlotProps {
   onDragStart?: (e: React.DragEvent, id: string) => void;
   onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
   onDragEnd?: () => void;
+  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void;
 }
 
 const CameraPlot = ({ 
@@ -22,7 +23,8 @@ const CameraPlot = ({
   isDragging, 
   onDragStart, 
   onDragEnterContainer, 
-  onDragEnd 
+  onDragEnd,
+  saveBlueprint
 }: CameraPlotProps) => {
   const { scenes, reloadPlots } = useCameraPlotScenes(rundownId, true);
   const navigate = useNavigate();

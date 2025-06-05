@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -155,9 +154,10 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
     }
   };
 
-  // Legacy saveBlueprint function for compatibility
-  const saveBlueprint = async (title: string, lists: any[], showDate?: string, silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => {
-    // This function is kept for compatibility but the auto-save above handles the actual saving
+  // Unified saveBlueprint function for compatibility with useCameraPlotAutoSave
+  const saveBlueprint = async (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => {
+    // This function provides compatibility but the auto-save above handles the actual saving
+    console.log('CameraPlotData: saveBlueprint called with camera plots:', cameraPlots?.length);
   };
 
   return {

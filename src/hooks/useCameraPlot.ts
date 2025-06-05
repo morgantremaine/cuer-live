@@ -16,14 +16,13 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
     saveBlueprint
   } = useCameraPlotData(rundownId, rundownTitle, readOnly);
 
-  // Auto-save functionality
+  // Auto-save functionality - pass the correct saveBlueprint function
   useCameraPlotAutoSave(
     plots,
     isInitialized,
     rundownId,
     rundownTitle,
     readOnly,
-    savedBlueprint,
     saveBlueprint
   );
 

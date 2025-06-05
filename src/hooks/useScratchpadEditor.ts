@@ -7,7 +7,8 @@ export const useScratchpadEditor = (
   rundownId: string,
   rundownTitle: string,
   initialNotes: string = '',
-  onNotesChange?: (notes: string) => void
+  onNotesChange?: (notes: string) => void,
+  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
 ) => {
   const [notes, setNotes] = useState(initialNotes);
   const [isEditing, setIsEditing] = useState(false);
@@ -36,6 +37,12 @@ export const useScratchpadEditor = (
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         setSaveStatus('saving');
+        
+        // Use the unified save function if provided
+        if (saveBlueprint) {
+          await saveBlueprint(undefined, true, notesToSave);
+        }
+        
         lastSavedNotesRef.current = notesToSave;
         setSaveStatus('saved');
       } catch (error) {
@@ -43,7 +50,7 @@ export const useScratchpadEditor = (
         setSaveStatus('unsaved');
       }
     }, 2000);
-  }, []);
+  }, [saveBlueprint]);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);
