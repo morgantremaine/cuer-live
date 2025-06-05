@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -59,6 +60,9 @@ const HeaderRow = (props: HeaderRowProps) => {
 
   const { isDark } = useTheme();
 
+  // Debug theme detection
+  console.log('HeaderRow theme debug:', { isDark, itemId: item.id });
+
   const { rowClass } = useRowStyling({
     isDragging,
     isSelected,
@@ -91,9 +95,11 @@ const HeaderRow = (props: HeaderRowProps) => {
     // No-op for headers
   };
 
-  // Headers: theme-based colors
+  // Headers: theme-based colors with correct values
   const headerBackgroundColor = isDark ? '#212936' : '#e5e7eb';
-  const headerTextColor = isDark ? '#ffffff' : '#1f2937'; // gray-800 for light mode
+  const headerTextColor = isDark ? '#ffffff' : '#1f2937';
+
+  console.log('HeaderRow colors:', { headerBackgroundColor, headerTextColor, isDark });
 
   return (
     <RundownContextMenu
@@ -116,8 +122,8 @@ const HeaderRow = (props: HeaderRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor: headerBackgroundColor,
-          color: headerTextColor
+          backgroundColor: headerBackgroundColor + ' !important',
+          color: headerTextColor + ' !important'
         }}
         draggable
         onClick={handleRowClick}

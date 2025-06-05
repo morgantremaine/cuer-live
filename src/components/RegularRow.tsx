@@ -63,6 +63,9 @@ const RegularRow = (props: RegularRowProps) => {
 
   const { isDark } = useTheme();
 
+  // Debug theme detection
+  console.log('RegularRow theme debug:', { isDark, itemId: item.id });
+
   const { rowClass } = useRowStyling({
     isDragging,
     isDraggingMultiple,
@@ -100,7 +103,7 @@ const RegularRow = (props: RegularRowProps) => {
   const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
   
   let inlineBackgroundColor: string;
-  let inlineTextColor: string | undefined;
+  let inlineTextColor: string;
   
   if (isFloated) {
     // Floated items: red background, white text
@@ -111,10 +114,12 @@ const RegularRow = (props: RegularRowProps) => {
     inlineBackgroundColor = item.color;
     inlineTextColor = getContrastTextColor(item.color);
   } else {
-    // Default rows: theme-based colors
+    // Default rows: theme-based colors with correct values
     inlineBackgroundColor = isDark ? '#394150' : '#ffffff';
-    inlineTextColor = isDark ? '#ffffff' : '#1f2937'; // gray-800 for light mode
+    inlineTextColor = isDark ? '#ffffff' : '#1f2937';
   }
+
+  console.log('RegularRow colors:', { inlineBackgroundColor, inlineTextColor, isDark, isFloated, hasCustomColor });
 
   return (
     <RundownContextMenu
@@ -137,8 +142,8 @@ const RegularRow = (props: RegularRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor: inlineBackgroundColor,
-          color: inlineTextColor
+          backgroundColor: inlineBackgroundColor + ' !important',
+          color: inlineTextColor + ' !important'
         }}
         draggable
         onClick={handleRowClick}

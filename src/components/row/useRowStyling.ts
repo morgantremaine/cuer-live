@@ -27,14 +27,14 @@ export const useRowStyling = ({
       rowClass = 'opacity-50';
     }
   } else if (isHeader) {
-    // Headers: only border and font styling, no background colors
-    rowClass = 'border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:opacity-90 text-gray-900 dark:text-white';
+    // Headers: only border and font styling, NO background colors
+    rowClass = 'border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:opacity-90';
   } else if (isFloating || isFloated) {
-    // Floating/floated items: only text color and border, background handled by inline styles
-    rowClass = 'text-white border-l-4 border-red-600';
+    // Floating/floated items: only border, NO background colors
+    rowClass = 'border-l-4 border-red-600';
   } else {
-    // Default rows: only hover effect, background handled by inline styles
-    rowClass = 'hover:opacity-90 text-gray-900 dark:text-white';
+    // Default rows: only hover effect, NO background colors
+    rowClass = 'hover:opacity-90';
   }
 
   // Add selection ring if selected
