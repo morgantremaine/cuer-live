@@ -36,6 +36,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setSavedBlueprint
   );
 
+  // Create a simplified save function for drag/drop operations
+  const saveLists = useCallback(async (updatedLists: BlueprintList[], silent?: boolean) => {
+    await saveBlueprint(rundownTitle, updatedLists, showDate, silent);
+  }, [saveBlueprint, rundownTitle, showDate]);
+
   const {
     draggedListId,
     insertionIndex,
@@ -45,7 +50,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     handleDragLeave,
     handleDrop,
     handleDragEnd
-  } = useBlueprintDragDrop(lists, setLists, saveBlueprint);
+  } = useBlueprintDragDrop(lists, setLists, saveLists);
 
   useBlueprintInitialization(
     user,
