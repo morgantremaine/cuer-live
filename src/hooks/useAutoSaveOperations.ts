@@ -47,8 +47,13 @@ export const useAutoSaveOperations = () => {
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
-          // Refresh the rundowns list after saving to ensure the new rundown is available
+          // Wait for storage refresh to complete before navigating
+          console.log('Waiting for storage refresh before navigation...');
           await loadRundowns();
+          
+          // Add a small delay to ensure the refresh is fully processed
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           navigate(`/rundown/${result.id}`, { replace: true });
           return true;
         } else {
