@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -67,7 +68,7 @@ export const useRundownGridCore = () => {
   // Undo functionality with persistence - fix: call without arguments, then pass state separately
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Use data loader with undo history loading
+  // Use data loader with undo history loading - ADD setItems here
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -76,6 +77,7 @@ export const useRundownGridCore = () => {
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout,
+    setItems, // Add the missing setItems function
     onRundownLoaded: (rundown) => {
       // Load undo history when rundown is loaded
       if (rundown.undo_history) {
