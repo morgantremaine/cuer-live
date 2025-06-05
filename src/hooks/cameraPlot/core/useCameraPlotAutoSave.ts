@@ -8,14 +8,13 @@ export const useCameraPlotAutoSave = (
   rundownId: string,
   rundownTitle: string,
   readOnly: boolean,
-  saveBlueprint: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
+  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
 ) => {
   const lastSaveRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const isSavingRef = useRef(false);
 
   useEffect(() => {
-    if (!isInitialized || readOnly || plots.length === 0 || isSavingRef.current) {
+    if (!isInitialized || readOnly || !saveBlueprint) {
       return;
     }
 
@@ -32,19 +31,14 @@ export const useCameraPlotAutoSave = (
       
       // Debounce the save operation
       saveTimeoutRef.current = setTimeout(() => {
-        if (!isSavingRef.current) {
-          isSavingRef.current = true;
-          console.log('Camera plot auto-save: Saving', plots.length, 'camera plots');
-          
-          try {
-            // Use the unified save function with just camera plots
-            saveBlueprint(undefined, true, undefined, undefined, plots);
-            console.log('Camera plot auto-save: Save completed successfully');
-          } catch (error) {
-            console.error('Camera plot auto-save: Error saving camera plots:', error);
-          } finally {
-            isSavingRef.current = false;
-          }
+        console.log('Camera plot auto-save: Saving', plots.length, 'camera plots to unified system');
+        
+        try {
+          // Use the unified save function with just camera plots
+          saveBlueprint(undefined, true, undefined, undefined, plots);
+          console.log('Camera plot auto-save: Save completed successfully');
+        } catch (error) {
+          console.error('Camera plot auto-save: Error saving camera plots:', error);
         }
       }, 1000);
     }
@@ -54,5 +48,5 @@ export const useCameraPlotAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, saveBlueprint]);
+  }, [plots, isInitialized, readOnly, saveBlueprint]);
 };

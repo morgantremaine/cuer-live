@@ -39,8 +39,6 @@ export const useCameraPlotData = (
   const [plots, setPlots] = useState<CameraPlotScene[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const { user } = useAuth();
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastSaveStateRef = useRef<string>('');
 
   // Load camera plot data from blueprint
   useEffect(() => {
@@ -48,6 +46,7 @@ export const useCameraPlotData = (
     
     const loadCameraPlotData = async () => {
       try {
+        console.log('Camera plot data: Loading camera plots for rundown:', rundownId);
         const { data, error } = await supabase
           .from('blueprints')
           .select('*')
@@ -56,10 +55,13 @@ export const useCameraPlotData = (
           .maybeSingle();
 
         if (!error && data && data.camera_plots && Array.isArray(data.camera_plots) && data.camera_plots.length > 0) {
+          console.log('Camera plot data: Loaded', data.camera_plots.length, 'camera plots');
           setPlots(data.camera_plots);
+        } else {
+          console.log('Camera plot data: No camera plots found in blueprint');
         }
       } catch (error) {
-        console.error('Error loading camera plot data:', error);
+        console.error('Camera plot data: Error loading camera plot data:', error);
       } finally {
         setIsInitialized(true);
       }
@@ -68,35 +70,11 @@ export const useCameraPlotData = (
     loadCameraPlotData();
   }, [rundownId, rundownTitle, user]);
 
-  // Auto-save with debouncing using unified save function
-  useEffect(() => {
-    if (!isInitialized || readOnly || !saveBlueprint) return;
-
-    const currentState = JSON.stringify(plots);
-    if (currentState === lastSaveStateRef.current) return;
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    lastSaveStateRef.current = currentState;
-
-    saveTimeoutRef.current = setTimeout(() => {
-      console.log('Camera plot: Auto-saving camera plots with', plots.length, 'scenes');
-      saveBlueprint(undefined, true, undefined, undefined, plots);
-    }, 1000);
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [plots, isInitialized, readOnly, saveBlueprint]);
-
   const reloadPlots = async () => {
     if (!user || !rundownId) return;
     
     try {
+      console.log('Camera plot data: Reloading camera plots');
       const { data, error } = await supabase
         .from('blueprints')
         .select('*')
@@ -105,17 +83,11 @@ export const useCameraPlotData = (
         .maybeSingle();
 
       if (!error && data && data.camera_plots && Array.isArray(data.camera_plots)) {
+        console.log('Camera plot data: Reloaded', data.camera_plots.length, 'camera plots');
         setPlots(data.camera_plots);
       }
     } catch (error) {
-      console.error('Error reloading camera plots:', error);
-    }
-  };
-
-  // Unified saveBlueprint function for compatibility with useCameraPlotAutoSave
-  const legacySaveBlueprint = async (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => {
-    if (saveBlueprint) {
-      await saveBlueprint(lists, silent, notes, crewData, cameraPlots);
+      console.error('Camera plot data: Error reloading camera plots:', error);
     }
   };
 
@@ -124,6 +96,6 @@ export const useCameraPlotData = (
     setPlots,
     isInitialized,
     reloadPlots,
-    saveBlueprint: legacySaveBlueprint
+    saveBlueprint // Return the passed saveBlueprint function directly
   };
 };
