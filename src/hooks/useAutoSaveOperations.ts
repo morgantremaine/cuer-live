@@ -6,8 +6,11 @@ import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
-// Global tracker for recent auto-save operations
+// Global tracker for recent auto-save operations with extended window
 const recentAutoSaves = new Map<string, number>();
+
+// Global tracker for user actions after auto-save
+const userActionsAfterAutoSave = new Map<string, number>();
 
 export const useAutoSaveOperations = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -22,15 +25,35 @@ export const useAutoSaveOperations = () => {
 
   const isNewRundown = !rundownId;
 
-  // Function to check if a rundown was recently auto-saved
+  // Function to check if a rundown was recently auto-saved (extended to 5 seconds)
   const wasRecentlyAutoSaved = useCallback((id: string) => {
     const saveTime = recentAutoSaves.get(id);
     if (!saveTime) return false;
     
-    // Consider "recent" as within the last 2 seconds
-    const isRecent = Date.now() - saveTime < 2000;
-    console.log('Checking if rundown was recently auto-saved:', { id, saveTime, isRecent });
+    // Extended window to 5 seconds to account for async operations
+    const isRecent = Date.now() - saveTime < 5000;
+    console.log('Checking if rundown was recently auto-saved:', { id, saveTime, isRecent, timeSince: Date.now() - saveTime });
     return isRecent;
+  }, []);
+
+  // Function to check if user has made changes since auto-save
+  const hasUserChangedSinceAutoSave = useCallback((id: string) => {
+    const userActionTime = userActionsAfterAutoSave.get(id);
+    const autoSaveTime = recentAutoSaves.get(id);
+    
+    if (!userActionTime || !autoSaveTime) return false;
+    
+    const hasChanged = userActionTime > autoSaveTime;
+    console.log('Checking user changes since auto-save:', { id, userActionTime, autoSaveTime, hasChanged });
+    return hasChanged;
+  }, []);
+
+  // Function to mark user action after auto-save
+  const markUserAction = useCallback((id: string) => {
+    if (id) {
+      userActionsAfterAutoSave.set(id, Date.now());
+      console.log('Marked user action for rundown:', id);
+    }
   }, []);
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string, undoHistory?: any[]) => {
@@ -106,15 +129,31 @@ export const useAutoSaveOperations = () => {
     isSaving,
     performSave,
     isNewRundown,
-    wasRecentlyAutoSaved
+    wasRecentlyAutoSaved,
+    hasUserChangedSinceAutoSave,
+    markUserAction
   };
 };
 
-// Export the function to check recent auto-saves globally
+// Export functions to check states globally
 export const checkRecentAutoSave = (rundownId: string): boolean => {
   const saveTime = recentAutoSaves.get(rundownId);
   if (!saveTime) return false;
   
-  const isRecent = Date.now() - saveTime < 2000;
+  const isRecent = Date.now() - saveTime < 5000; // Extended to 5 seconds
   return isRecent;
+};
+
+export const checkUserChangedSinceAutoSave = (rundownId: string): boolean => {
+  const userActionTime = userActionsAfterAutoSave.get(rundownId);
+  const autoSaveTime = recentAutoSaves.get(rundownId);
+  
+  if (!userActionTime || !autoSaveTime) return false;
+  return userActionTime > autoSaveTime;
+};
+
+export const markGlobalUserAction = (rundownId: string): void => {
+  if (rundownId) {
+    userActionsAfterAutoSave.set(rundownId, Date.now());
+  }
 };

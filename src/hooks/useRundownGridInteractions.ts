@@ -1,91 +1,178 @@
 
-import { useRundownInteractionHandlers } from './useRundownInteractionHandlers';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { useMultiRowSelection } from './useMultiRowSelection';
+import { useDragAndDrop } from './useDragAndDrop';
+import { markGlobalUserAction } from './useAutoSaveOperations';
+import { useParams } from 'react-router-dom';
 
 export const useRundownGridInteractions = (
   items: RundownItem[],
-  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
-  updateItem: (id: string, field: string, value: string) => void,
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string) => void,
-  addHeader: () => void,
+  setItems: (items: RundownItem[]) => void,
+  updateItem: (id: string, field: keyof RundownItem, value: any) => void,
+  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void,
+  addHeader: (insertAfterIndex?: number) => void,
   deleteRow: (id: string) => void,
   toggleFloatRow: (id: string) => void,
   deleteMultipleRows: (ids: string[]) => void,
-  addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void,
+  addMultipleRows: (newItems: RundownItem[], insertAfterIndex?: number) => void,
   handleDeleteColumn: (columnId: string) => void,
-  calculateEndTime: (startTime: string, duration: string) => string,
+  calculateEndTime: (item: RundownItem, prevEndTime?: string) => string,
   selectColor: (id: string, color: string) => void,
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void
 ) => {
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id;
+
+  // Multi-row selection
   const {
     selectedRows,
-    toggleRowSelection,
+    selectRow,
+    selectMultipleRows,
     clearSelection,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
+    isRowSelected
+  } = useMultiRowSelection();
+
+  // Drag and drop
+  const {
+    draggedItems,
+    dragOverIndex,
+    isDragging,
     handleDragStart,
     handleDragOver,
-    handleDragLeave,
+    handleDragEnd,
+    handleDrop
+  } = useDragAndDrop(items, setItems, selectedRows, clearSelection);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    rowId: string;
+  } | null>(null);
+  const [colorPickerRowId, setColorPickerRowId] = useState<string | null>(null);
+
+  // Enhanced row operations that mark user actions
+  const enhancedAddRow = useCallback((calculateEndTimeFunc: any, insertAfterIndex?: number) => {
+    if (rundownId) {
+      markGlobalUserAction(rundownId);
+    }
+    addRow(calculateEndTimeFunc, insertAfterIndex);
+  }, [addRow, rundownId]);
+
+  const enhancedAddHeader = useCallback((insertAfterIndex?: number) => {
+    if (rundownId) {
+      markGlobalUserAction(rundownId);
+    }
+    addHeader(insertAfterIndex);
+  }, [addHeader, rundownId]);
+
+  const enhancedDeleteRow = useCallback((id: string) => {
+    if (rundownId) {
+      markGlobalUserAction(rundownId);
+    }
+    deleteRow(id);
+  }, [deleteRow, rundownId]);
+
+  const enhancedToggleFloatRow = useCallback((id: string) => {
+    if (rundownId) {
+      markGlobalUserAction(rundownId);
+    }
+    toggleFloatRow(id);
+  }, [toggleFloatRow, rundownId]);
+
+  const enhancedUpdateItem = useCallback((id: string, field: keyof RundownItem, value: any) => {
+    if (rundownId) {
+      markGlobalUserAction(rundownId);
+    }
+    updateItem(id, field, value);
+  }, [updateItem, rundownId]);
+
+  const enhancedSelectColor = useCallback((id: string, color: string) => {
+    if (rundownId) {
+      markGlobalUserAction(rundownId);
+    }
+    selectColor(id, color);
+  }, [selectColor, rundownId]);
+
+  const enhancedSetRundownTitle = useCallback((title: string) => {
+    if (rundownId) {
+      markGlobalUserAction(rundownId);
+    }
+    setRundownTitle(title);
+  }, [setRundownTitle, rundownId]);
+
+  // Context menu handlers
+  const handleRightClick = useCallback((event: React.MouseEvent, rowId: string) => {
+    event.preventDefault();
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      rowId
+    });
+  }, []);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleColorPicker = useCallback((rowId: string) => {
+    setColorPickerRowId(rowId);
+    closeContextMenu();
+  }, [closeContextMenu]);
+
+  const closeColorPicker = useCallback(() => {
+    setColorPickerRowId(null);
+  }, []);
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      closeContextMenu();
+    };
+
+    if (contextMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [contextMenu, closeContextMenu]);
+
+  return {
+    // Selection
+    selectedRows,
+    selectRow,
+    selectMultipleRows,
+    clearSelection,
+    isRowSelected,
+    // Drag and drop
+    draggedItems,
+    dragOverIndex,
+    isDragging,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
     handleDrop,
-    clipboardItems,
-    copyItems,
-    hasClipboardData,
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    handleDeleteColumnWithCleanup,
-    handleCopySelectedRows,
-    handleRowSelection,
-    handleTitleChange
-  } = useRundownInteractionHandlers(
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    toggleFloatRow,
+    // Context menu
+    contextMenu,
+    colorPickerRowId,
+    handleRightClick,
+    closeContextMenu,
+    handleColorPicker,
+    closeColorPicker,
+    // Enhanced operations with user action tracking
+    addRow: enhancedAddRow,
+    addHeader: enhancedAddHeader,
+    deleteRow: enhancedDeleteRow,
+    toggleFloatRow: enhancedToggleFloatRow,
+    updateItem: enhancedUpdateItem,
+    selectColor: enhancedSelectColor,
+    setRundownTitle: enhancedSetRundownTitle,
+    // Pass through operations
     deleteMultipleRows,
     addMultipleRows,
     handleDeleteColumn,
     calculateEndTime,
-    selectColor,
-    markAsChanged,
-    setRundownTitle
-  );
-
-  return {
-    selectedRows,
-    toggleRowSelection,
-    clearSelection,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    clipboardItems,
-    copyItems,
-    hasClipboardData,
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    handleDeleteColumnWithCleanup,
-    handleCopySelectedRows,
-    handleRowSelection,
-    handleTitleChange
+    markAsChanged
   };
 };
