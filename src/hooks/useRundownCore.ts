@@ -6,6 +6,7 @@ import { useColumnsManager } from './useColumnsManager';
 import { useChangeTracking } from './useChangeTracking';
 import { useRundownStorage } from './useRundownStorage';
 import { useAutoSave } from './useAutoSave';
+import { useRundownUndo } from './useRundownUndo';
 
 export const useRundownCore = () => {
   const params = useParams<{ id: string }>();
@@ -66,7 +67,59 @@ export const useRundownCore = () => {
   } = useColumnsManager(markAsChanged);
 
   // Storage
-  const { savedRundowns, loading } = useRundownStorage();
+  const { savedRundowns, loading, updateRundown } = useRundownStorage();
+
+  // Undo functionality
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
+    rundownId,
+    updateRundown,
+    currentTitle: rundownTitle,
+    currentItems: items,
+    currentColumns: columns
+  });
+
+  // Wrapped functions that save state before making changes
+  const wrappedAddRow = useCallback((calculateEndTimeFn: any, insertAfterIndex?: number) => {
+    saveState(items, columns, rundownTitle, 'Add Row');
+    addRow(calculateEndTimeFn, insertAfterIndex);
+  }, [addRow, saveState, items, columns, rundownTitle]);
+
+  const wrappedAddHeader = useCallback((insertAfterIndex?: number) => {
+    saveState(items, columns, rundownTitle, 'Add Header');
+    addHeader(insertAfterIndex);
+  }, [addHeader, saveState, items, columns, rundownTitle]);
+
+  const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
+    saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
+    deleteMultipleRows(ids);
+  }, [deleteMultipleRows, saveState, items, columns, rundownTitle]);
+
+  const wrappedToggleFloatRow = useCallback((id: string) => {
+    saveState(items, columns, rundownTitle, 'Toggle Float');
+    toggleFloatRow(id);
+  }, [toggleFloatRow, saveState, items, columns, rundownTitle]);
+
+  const wrappedSetItems = useCallback((updater: (prev: any[]) => any[]) => {
+    const newItems = typeof updater === 'function' ? updater(items) : updater;
+    // Only save state if items actually changed
+    if (JSON.stringify(newItems) !== JSON.stringify(items)) {
+      saveState(items, columns, rundownTitle, 'Move Rows');
+    }
+    setItems(updater);
+  }, [setItems, saveState, items, columns, rundownTitle]);
+
+  const wrappedAddMultipleRows = useCallback((newItems: any[], calculateEndTimeFn: any) => {
+    saveState(items, columns, rundownTitle, 'Paste Rows');
+    addMultipleRows(newItems, calculateEndTimeFn);
+  }, [addMultipleRows, saveState, items, columns, rundownTitle]);
+
+  const handleUndo = useCallback(() => {
+    const action = undo(setItems, (cols) => handleLoadLayout(cols), setRundownTitle);
+    if (action) {
+      markAsChanged();
+      console.log(`Undid: ${action}`);
+    }
+  }, [undo, setItems, handleLoadLayout, setRundownTitle, markAsChanged]);
 
   // Auto-save
   const { isSaving } = useAutoSave({
@@ -94,18 +147,18 @@ export const useRundownCore = () => {
     
     // Data
     items,
-    setItems,
+    setItems: wrappedSetItems,
     updateItem,
     columns,
     visibleColumns,
     
     // Operations
-    addRow,
-    addHeader,
+    addRow: wrappedAddRow,
+    addHeader: wrappedAddHeader,
     deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    toggleFloatRow,
+    deleteMultipleRows: wrappedDeleteMultipleRows,
+    addMultipleRows: wrappedAddMultipleRows,
+    toggleFloatRow: wrappedToggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
     
@@ -124,6 +177,11 @@ export const useRundownCore = () => {
     hasUnsavedChanges,
     isSaving,
     markAsChanged,
-    markAsSaved
+    markAsSaved,
+    
+    // Undo functionality
+    handleUndo,
+    canUndo,
+    lastAction
   };
 };

@@ -20,7 +20,10 @@ export const useRundownOperations = (
   clipboardItems: RundownItem[],
   copyItems: (items: RundownItem[]) => void,
   hasClipboardData: boolean,
-  markAsChanged: () => void
+  markAsChanged: () => void,
+  handleUndo?: () => void,
+  canUndo?: boolean,
+  lastAction?: string | null
 ) => {
   // Time calculations
   const { calculateEndTime, getRowStatus } = useTimeCalculations(
@@ -63,13 +66,51 @@ export const useRundownOperations = (
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  const handleAddRow = useCallback(() => {
-    addRow(calculateEndTime);
-  }, [addRow, calculateEndTime]);
+  const handleAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string, selectedRows?: Set<string>) => {
+    // Find the index of the last selected row if multiple rows are selected
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRows && selectedRows.size > 0) {
+      // Find the highest index among selected rows
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      // Single row selection fallback
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
+    
+    addRow(calculateEndTimeFn, insertAfterIndex);
+  }, [addRow, items]);
 
-  const handleAddHeader = useCallback(() => {
-    addHeader();
-  }, [addHeader]);
+  const handleAddHeader = useCallback((selectedRowId?: string, selectedRows?: Set<string>) => {
+    // Find the index of the last selected row if multiple rows are selected
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRows && selectedRows.size > 0) {
+      // Find the highest index among selected rows
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      // Single row selection fallback
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
+    
+    addHeader(insertAfterIndex);
+  }, [addHeader, items]);
 
   const handleColorSelect = useCallback((id: string, color: string) => {
     updateItem(id, 'color', color);
@@ -106,6 +147,11 @@ export const useRundownOperations = (
     handleAddRow,
     handleAddHeader,
     handleColorSelect,
-    handleToggleFloat
+    handleToggleFloat,
+    
+    // Undo functionality
+    handleUndo,
+    canUndo,
+    lastAction
   };
 };

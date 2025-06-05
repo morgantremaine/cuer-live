@@ -32,7 +32,10 @@ export const useRundownGridState = () => {
     uiState.clipboardItems,
     uiState.copyItems,
     uiState.hasClipboardData,
-    coreState.markAsChanged
+    coreState.markAsChanged,
+    coreState.handleUndo,
+    coreState.canUndo,
+    coreState.lastAction
   );
 
   // Row selection handler
@@ -85,7 +88,13 @@ export const useRundownGridState = () => {
     onDragOver: uiState.handleDragOver,
     onDragLeave: uiState.handleDragLeave,
     onDrop: uiState.handleDrop,
-    onClearSelection: uiState.clearSelection
+    onClearSelection: uiState.clearSelection,
+    
+    // Missing property mappings
+    selectColor: operations.handleColorSelect,
+    handleUndo: operations.handleUndo,
+    canUndo: operations.canUndo,
+    lastAction: operations.lastAction
   }), [
     coreState,
     uiState,
