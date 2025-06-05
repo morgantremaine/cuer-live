@@ -65,7 +65,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setLoading,
     setShowDate,
     loadBlueprint,
-    saveBlueprint,
+    saveLists, // Use saveLists instead of saveBlueprint
     generateListId
   );
 
