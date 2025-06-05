@@ -84,6 +84,11 @@ const HeaderRow = (props: HeaderRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
+  // Headers don't support floating, so provide a no-op function
+  const handleToggleFloat = () => {
+    // No-op for headers
+  };
+
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -94,6 +99,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       itemId={item.id}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
+      onToggleFloat={handleToggleFloat}
       onColorPicker={handleContextMenuColor}
       onColorSelect={onColorSelect}
       onPaste={handleContextMenuPaste}
