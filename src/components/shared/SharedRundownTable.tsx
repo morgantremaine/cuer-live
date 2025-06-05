@@ -3,6 +3,7 @@ import React from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { useRundownCalculations } from '@/hooks/useRundownCalculations';
+import { useTheme } from '@/hooks/useTheme';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -11,13 +12,18 @@ interface SharedRundownTableProps {
 }
 
 const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
+  const { isDark } = useTheme();
   // Use centralized calculation hook
   const { calculateHeaderDuration } = useRundownCalculations(items);
+
+  // Define colors based on theme
+  const headerBackgroundColor = isDark ? '#212936' : '#e5e7eb';
+  const regularRowBackgroundColor = isDark ? '#394150' : '#ffffff';
 
   return (
     <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
       <table className="w-full">
-        <thead className="bg-gray-50 print:bg-gray-100">
+        <thead style={{ backgroundColor: headerBackgroundColor }}>
           <tr>
             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400">
               #
@@ -32,22 +38,34 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
+        <tbody className="divide-y divide-gray-200 print:divide-gray-400">
           {items.map((item, index) => {
             // Only non-header items can be current segments
             const isCurrentSegment = !isHeaderItem(item) && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
             
+            // Determine row background color
+            let rowBackgroundColor;
+            if (isFloated) {
+              rowBackgroundColor = '#dc2626'; // red-600
+            } else if (item.color !== '#ffffff' && item.color && !isFloated) {
+              rowBackgroundColor = item.color;
+            } else if (isHeaderItem(item)) {
+              rowBackgroundColor = headerBackgroundColor;
+            } else {
+              rowBackgroundColor = regularRowBackgroundColor;
+            }
+            
             return (
               <tr
                 key={item.id}
                 className={`
-                  ${isHeaderItem(item) ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
-                  ${isCurrentSegment ? 'bg-red-50 border-l-4 border-red-500' : ''}
-                  ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                  ${isHeaderItem(item) ? 'font-semibold' : ''}
+                  ${isCurrentSegment ? 'border-l-4 border-red-500' : ''}
+                  ${isFloated ? 'text-white opacity-75' : ''}
                   print:break-inside-avoid
                 `}
-                style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
+                style={{ backgroundColor: rowBackgroundColor }}
               >
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                   {isCurrentSegment && (
