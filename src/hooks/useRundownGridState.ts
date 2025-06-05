@@ -18,7 +18,9 @@ export const useRundownGridState = () => {
     setItems: coreState.setItems,
     selectedRows: interactions.selectedRows,
     clearSelection: interactions.clearSelection,
-    addMultipleRows: coreState.addMultipleRows,
+    addMultipleRows: (items: any[], calculateEndTime: (startTime: string, duration: string) => string) => {
+      coreState.addMultipleRows(items, calculateEndTime);
+    },
     calculateEndTime: coreState.calculateEndTime,
     markAsChanged: coreState.markAsChanged,
     clipboardItems,
@@ -47,6 +49,17 @@ export const useRundownGridState = () => {
     calculateEndTime: coreState.calculateEndTime
   });
 
+  // Create handleUndo function
+  const handleUndo = useCallback(() => {
+    if (coreState.undo && coreState.setItems && coreState.handleLoadLayout && coreState.setRundownTitleDirectly) {
+      const action = coreState.undo(coreState.setItems, (cols) => coreState.handleLoadLayout(cols), coreState.setRundownTitleDirectly);
+      if (action) {
+        coreState.markAsChanged();
+        console.log(`Undid: ${action}`);
+      }
+    }
+  }, [coreState]);
+
   // Memoize the complete state object with all required properties
   return useMemo(() => ({
     // Core state
@@ -58,6 +71,7 @@ export const useRundownGridState = () => {
     // Properly wrapped handlers
     handleAddRow,
     handleAddHeader,
+    handleUndo,
     addRow: handleAddRow, // Alias for compatibility
     addHeader: handleAddHeader, // Alias for compatibility
     // Clipboard functionality
@@ -81,6 +95,7 @@ export const useRundownGridState = () => {
     uiState,
     handleAddRow,
     handleAddHeader,
+    handleUndo,
     clipboardItems,
     copyItems,
     hasClipboardData,
