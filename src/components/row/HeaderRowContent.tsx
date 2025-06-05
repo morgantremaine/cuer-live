@@ -68,23 +68,14 @@ const HeaderRowContent = ({
               }}
               onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
               className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-base w-full"
-              placeholder="Notes"
+              placeholder="Header Description"
             />
-          ) : column.isCustom ? (
-            <input
-              ref={el => el && (cellRefs.current[`${item.id}-${column.key}`] = el)}
-              type="text"
-              value={(item as any)[column.key] || ''}
-              onChange={(e) => onUpdateItem(item.id, column.key, e.target.value)}
-              onClick={(e) => {
-                e.stopPropagation();
-                onCellClick(item.id, column.key);
-              }}
-              onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-              className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-base w-full"
-              placeholder={column.name}
-            />
-          ) : null}
+          ) : (
+            // For all other columns (including custom columns), show empty cell for headers
+            <div className="px-1 py-0.5 text-sm text-gray-400 dark:text-gray-500">
+              {/* Empty cell - headers don't use these columns */}
+            </div>
+          )}
         </td>
       ))}
     </>

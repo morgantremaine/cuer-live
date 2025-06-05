@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { format } from 'date-fns';
 import { RundownItem } from '@/types/rundown';
 
 interface SharedRundownHeaderProps {
@@ -16,8 +15,6 @@ const SharedRundownHeader = ({
   title, 
   currentTime, 
   startTime, 
-  currentSegmentId, 
-  items,
   timezone = 'UTC'
 }: SharedRundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
@@ -64,17 +61,6 @@ const SharedRundownHeader = ({
           <div>Start: {startTime}</div>
         </div>
       </div>
-      
-      {currentSegmentId && (
-        <div className="bg-red-100 border-l-4 border-red-500 p-3 print:p-2">
-          <div className="flex items-center">
-            <div className="text-red-600 font-semibold mr-2">● LIVE</div>
-            <div className="text-red-800">
-              {items.find(item => item.id === currentSegmentId)?.name || 'Current Segment'}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

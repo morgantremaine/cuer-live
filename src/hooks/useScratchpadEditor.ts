@@ -1,112 +1,161 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-
-type SaveStatus = 'saved' | 'saving' | 'unsaved';
+import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 
 export const useScratchpadEditor = (
-  rundownId: string,
-  rundownTitle: string,
-  initialNotes: string = '',
+  rundownId: string, 
+  rundownTitle: string, 
+  initialNotes: string = '', 
   onNotesChange?: (notes: string) => void
 ) => {
   const [notes, setNotes] = useState(initialNotes);
   const [isEditing, setIsEditing] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedNotesRef = useRef(initialNotes);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
 
-  // Load notes from initial notes when they change
+  // Get blueprint persistence functions
+  const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
+    rundownId,
+    rundownTitle,
+    '', // showDate not needed for scratchpad
+    savedBlueprint,
+    setSavedBlueprint
+  );
+
+  // Load existing notes from blueprint
   useEffect(() => {
-    if (initialNotes && initialNotes !== lastSavedNotesRef.current) {
-      setNotes(initialNotes);
-      lastSavedNotesRef.current = initialNotes;
-      setSaveStatus('saved');
+    if (rundownId && !savedBlueprint) {
+      const loadNotes = async () => {
+        try {
+          const blueprintData = await loadBlueprint();
+          if (blueprintData?.notes) {
+            setNotes(blueprintData.notes);
+          }
+        } catch (error) {
+          // Silently handle error
+        }
+      };
+      loadNotes();
     }
-  }, [initialNotes]);
+  }, [rundownId, loadBlueprint, savedBlueprint]);
 
-  // Auto-save functionality with debouncing
-  const scheduleAutoSave = useCallback((notesToSave: string) => {
+  // Auto-save notes
+  const saveNotes = useCallback(async (notesToSave: string) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    setSaveStatus('unsaved');
-
+    setSaveStatus('saving');
+    
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        setSaveStatus('saving');
-        lastSavedNotesRef.current = notesToSave;
+        await saveBlueprint(
+          savedBlueprint?.lists || [],
+          true, // silent save
+          savedBlueprint?.show_date,
+          notesToSave,
+          savedBlueprint?.crew_data,
+          savedBlueprint?.camera_plots
+        );
         setSaveStatus('saved');
+        onNotesChange?.(notesToSave);
       } catch (error) {
-        console.error('Auto-save failed:', error);
-        setSaveStatus('unsaved');
+        setSaveStatus('error');
       }
-    }, 2000);
-  }, []);
+    }, 1000);
+  }, [saveBlueprint, savedBlueprint, onNotesChange]);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);
-    onNotesChange?.(value);
-
-    // Only schedule auto-save if notes actually changed from last saved version
-    if (value !== lastSavedNotesRef.current) {
-      scheduleAutoSave(value);
-    }
-  }, [onNotesChange, scheduleAutoSave]);
-
-  // Text formatting functions
-  const insertTextAtCursor = useCallback((beforeText: string, afterText: string = '') => {
-    if (!textareaRef.current) return;
-
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = notes.substring(start, end);
-    const newText = notes.substring(0, start) + beforeText + selectedText + afterText + notes.substring(end);
-    
-    setNotes(newText);
-    onNotesChange?.(newText);
-    
-    // Schedule auto-save
-    if (newText !== lastSavedNotesRef.current) {
-      scheduleAutoSave(newText);
-    }
-
-    // Restore cursor position
-    setTimeout(() => {
-      if (textarea) {
-        const newCursorPos = start + beforeText.length + selectedText.length;
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-        textarea.focus();
-      }
-    }, 0);
-  }, [notes, onNotesChange, scheduleAutoSave]);
+    saveNotes(value);
+  }, [saveNotes]);
 
   const handleBold = useCallback(() => {
-    insertTextAtCursor('**', '**');
-  }, [insertTextAtCursor]);
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = textarea.value.substring(start, end);
+      const newText = textarea.value.substring(0, start) + `**${selectedText}**` + textarea.value.substring(end);
+      setNotes(newText);
+      saveNotes(newText);
+      
+      // Set cursor position after the inserted text
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + 2, end + 2);
+      }, 0);
+    }
+  }, [saveNotes]);
 
   const handleItalic = useCallback(() => {
-    insertTextAtCursor('*', '*');
-  }, [insertTextAtCursor]);
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = textarea.value.substring(start, end);
+      const newText = textarea.value.substring(0, start) + `*${selectedText}*` + textarea.value.substring(end);
+      setNotes(newText);
+      saveNotes(newText);
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + 1, end + 1);
+      }, 0);
+    }
+  }, [saveNotes]);
 
   const handleUnderline = useCallback(() => {
-    insertTextAtCursor('<u>', '</u>');
-  }, [insertTextAtCursor]);
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = textarea.value.substring(start, end);
+      const newText = textarea.value.substring(0, start) + `<u>${selectedText}</u>` + textarea.value.substring(end);
+      setNotes(newText);
+      saveNotes(newText);
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + 3, end + 3);
+      }, 0);
+    }
+  }, [saveNotes]);
 
   const handleBulletList = useCallback(() => {
-    insertTextAtCursor('• ');
-  }, [insertTextAtCursor]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const lines = textarea.value.split('\n');
+      let currentLine = 0;
+      let charCount = 0;
+      
+      // Find which line the cursor is on
+      for (let i = 0; i < lines.length; i++) {
+        if (charCount + lines[i].length >= start) {
+          currentLine = i;
+          break;
+        }
+        charCount += lines[i].length + 1; // +1 for the newline character
       }
-    };
-  }, []);
+      
+      // Add bullet point to current line
+      if (!lines[currentLine].trim().startsWith('•')) {
+        lines[currentLine] = '• ' + lines[currentLine];
+      }
+      
+      const newText = lines.join('\n');
+      setNotes(newText);
+      saveNotes(newText);
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + 2, start + 2);
+      }, 0);
+    }
+  }, [saveNotes]);
 
   return {
     notes,

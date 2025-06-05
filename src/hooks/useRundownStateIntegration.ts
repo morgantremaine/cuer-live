@@ -29,11 +29,32 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems(markAsChanged);
 
-  // Enhanced updateItem to handle custom fields properly
+  // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
-    // Handle both standard and custom fields
-    originalUpdateItem(id, { [field]: value });
-  }, [originalUpdateItem]);
+    // Ensure items is an array before finding
+    if (!Array.isArray(items)) {
+      console.error('Items is not an array in updateItem:', items);
+      return;
+    }
+
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    // Handle custom fields vs standard fields
+    if (field.startsWith('customFields.')) {
+      const customFieldKey = field.replace('customFields.', '');
+      const currentCustomFields = item.customFields || {};
+      originalUpdateItem(id, {
+        customFields: {
+          ...currentCustomFields,
+          [customFieldKey]: value
+        }
+      });
+    } else {
+      // Handle standard fields
+      originalUpdateItem(id, { [field]: value });
+    }
+  }, [originalUpdateItem, items]);
 
   // Columns management
   const {
@@ -50,9 +71,9 @@ export const useRundownStateIntegration = (
 
   // Auto-save functionality
   const { hasUnsavedChanges, isSaving } = useAutoSave(
-    items,
+    Array.isArray(items) ? items : [],
     rundownTitle,
-    columns,
+    Array.isArray(columns) ? columns : [],
     timezone,
     rundownStartTime
   );
@@ -68,7 +89,7 @@ export const useRundownStateIntegration = (
   }, [originalAddHeader]);
 
   return {
-    items,
+    items: Array.isArray(items) ? items : [],
     setItems,
     updateItem,
     addRow,
@@ -80,8 +101,8 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    columns,
-    visibleColumns,
+    columns: Array.isArray(columns) ? columns : [],
+    visibleColumns: Array.isArray(visibleColumns) ? visibleColumns : [],
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,

@@ -1,22 +1,38 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CameraPlotScene } from './useCameraPlotData';
+import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 
 export const useCameraPlotAutoSave = (
   plots: CameraPlotScene[],
   isInitialized: boolean,
   rundownId: string,
   rundownTitle: string,
-  readOnly: boolean,
-  savedBlueprint: any,
-  saveBlueprint: (title: string, lists: any[], showDate?: string, silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
+  readOnly: boolean
 ) => {
   const lastSaveRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isSavingRef = useRef(false);
+  const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
+
+  // Get blueprint persistence functions
+  const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
+    rundownId,
+    rundownTitle,
+    '', // showDate not needed for camera plots
+    savedBlueprint,
+    setSavedBlueprint
+  );
+
+  // Load existing blueprint data on initialization
+  useEffect(() => {
+    if (rundownId && !savedBlueprint) {
+      loadBlueprint();
+    }
+  }, [rundownId, loadBlueprint, savedBlueprint]);
 
   useEffect(() => {
-    if (!isInitialized || readOnly || plots.length === 0 || isSavingRef.current) {
+    if (!isInitialized || readOnly || isSavingRef.current) {
       return;
     }
 
@@ -32,28 +48,28 @@ export const useCameraPlotAutoSave = (
       }
       
       // Debounce the save operation
-      saveTimeoutRef.current = setTimeout(() => {
+      saveTimeoutRef.current = setTimeout(async () => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
-          console.log('Auto-saving camera plots:', plots.length);
+          console.log('Auto-saving camera plots:', plots.length, 'plots with', plots.reduce((acc, plot) => acc + plot.elements.length, 0), 'total elements');
           
           try {
-            saveBlueprint(
-              rundownTitle,
+            await saveBlueprint(
               savedBlueprint?.lists || [],
-              savedBlueprint?.show_date,
               true, // silent save
+              savedBlueprint?.show_date,
               savedBlueprint?.notes,
               savedBlueprint?.crew_data,
               plots // Pass the camera plots
             );
+            console.log('Camera plots auto-save completed successfully');
           } catch (error) {
             console.error('Error auto-saving camera plots:', error);
           } finally {
             isSavingRef.current = false;
           }
         }
-      }, 1000); // Reduced debounce time to 1 second for better responsiveness
+      }, 1000);
     }
 
     return () => {
