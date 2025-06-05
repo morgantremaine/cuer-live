@@ -30,7 +30,7 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  } = useRundownItems();
 
   const {
     columns,

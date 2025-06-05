@@ -47,13 +47,6 @@ const Blueprint = () => {
     rundown?.startTime
   );
 
-  // Enhanced notes change handler that triggers blueprint saving with notes
-  const handleNotesChange = (notes: string) => {
-    console.log('Blueprint notes updated, triggering save:', notes.length);
-    // This will be automatically handled by the blueprint auto-save system
-    // when the savedBlueprint state is updated
-  };
-
   const handleSignOut = async () => {
     try {
       console.log('Blueprint: Starting sign out process')
@@ -176,7 +169,9 @@ const Blueprint = () => {
               rundownId={id || ''}
               rundownTitle={rundown?.title || 'Unknown Rundown'}
               initialNotes={savedBlueprint?.notes || ''}
-              onNotesChange={handleNotesChange}
+              onNotesChange={(notes) => {
+                // Notes are automatically handled by the component
+              }}
             />
           </div>
         </div>

@@ -15,15 +15,6 @@ interface BlueprintScratchpadProps {
 }
 
 const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNotesChange }: BlueprintScratchpadProps) => {
-  // Enhanced notes change handler that triggers blueprint saving
-  const handleNotesChangeWithSave = (notes: string) => {
-    onNotesChange?.(notes);
-    
-    // Trigger a blueprint save with the new notes
-    // This will be handled by the parent Blueprint component
-    console.log('Scratchpad triggering blueprint save with notes:', notes.length);
-  };
-
   const {
     notes,
     isEditing,
@@ -35,7 +26,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNot
     handleItalic,
     handleUnderline,
     handleBulletList
-  } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, handleNotesChangeWithSave);
+  } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, onNotesChange);
 
   return (
     <Card className="w-full mt-8 bg-gray-800 border-gray-700">

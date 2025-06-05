@@ -16,14 +16,14 @@ export const useCameraPlotAutoSave = (
   const isSavingRef = useRef(false);
 
   useEffect(() => {
-    if (!isInitialized || readOnly || isSavingRef.current) {
+    if (!isInitialized || readOnly || plots.length === 0 || isSavingRef.current) {
       return;
     }
 
     const currentState = JSON.stringify(plots);
     
-    // Only save if the state has actually changed and we have plots
-    if (currentState !== lastSaveRef.current && plots.length > 0) {
+    // Only save if the state has actually changed
+    if (currentState !== lastSaveRef.current) {
       lastSaveRef.current = currentState;
       
       // Clear any existing timeout
@@ -35,10 +35,9 @@ export const useCameraPlotAutoSave = (
       saveTimeoutRef.current = setTimeout(() => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
-          console.log('Auto-saving camera plots to blueprint:', plots.length);
+          console.log('Auto-saving camera plots:', plots.length);
           
           try {
-            // Enhanced save that properly integrates with blueprint persistence
             saveBlueprint(
               rundownTitle,
               savedBlueprint?.lists || [],
@@ -46,17 +45,15 @@ export const useCameraPlotAutoSave = (
               true, // silent save
               savedBlueprint?.notes,
               savedBlueprint?.crew_data,
-              plots // Pass the current camera plots
+              plots // Pass the camera plots
             );
-            
-            console.log('Camera plots auto-save completed');
           } catch (error) {
             console.error('Error auto-saving camera plots:', error);
           } finally {
             isSavingRef.current = false;
           }
         }
-      }, 1000);
+      }, 1000); // Reduced debounce time to 1 second for better responsiveness
     }
 
     return () => {
