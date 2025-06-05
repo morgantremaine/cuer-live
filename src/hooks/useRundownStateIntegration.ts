@@ -29,11 +29,26 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems(markAsChanged);
 
-  // Enhanced updateItem to handle custom fields properly
+  // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
-    // Handle both standard and custom fields
-    originalUpdateItem(id, { [field]: value });
-  }, [originalUpdateItem]);
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    // Handle custom fields vs standard fields
+    if (field.startsWith('customFields.')) {
+      const customFieldKey = field.replace('customFields.', '');
+      const currentCustomFields = item.customFields || {};
+      originalUpdateItem(id, {
+        customFields: {
+          ...currentCustomFields,
+          [customFieldKey]: value
+        }
+      });
+    } else {
+      // Handle standard fields
+      originalUpdateItem(id, { [field]: value });
+    }
+  }, [originalUpdateItem, items]);
 
   // Columns management
   const {

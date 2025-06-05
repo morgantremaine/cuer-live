@@ -50,7 +50,7 @@ const CellRenderer = ({
 
   // Use the column key for cell references and navigation
   const cellRefKey = column.key;
-  // Use the full path for updates
+  // Use the correct field path for updates - custom fields need the customFields prefix
   const updateFieldKey = column.isCustom ? `customFields.${column.key}` : column.key;
 
   const value = getCellValue(column);
