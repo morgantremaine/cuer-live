@@ -11,6 +11,8 @@ interface AuthContextType {
   signOut: () => Promise<void>
   updatePassword: (password: string) => Promise<{ error: any }>
   updateProfile: (fullName: string) => Promise<{ error: any }>
+  resetPassword: (email: string) => Promise<{ error: any }>
+  resendConfirmation: (email: string) => Promise<{ error: any }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -49,10 +51,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          full_name: fullName,
+        }
+      }
     })
 
-    if (data.user && !error) {
-      // Create profile
+    if (data.user && !error && !data.user.email_confirmed_at) {
+      // Create profile for unconfirmed users too
       const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         email,
@@ -115,8 +123,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: profileError }
   }
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    })
+    return { error }
+  }
+
+  const resendConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
+    })
+    return { error }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, updatePassword, updateProfile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      updatePassword, 
+      updateProfile, 
+      resetPassword, 
+      resendConfirmation 
+    }}>
       {children}
     </AuthContext.Provider>
   )

@@ -14,8 +14,11 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [resetEmail, setResetEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn, signUp } = useAuth()
+  const [showResetForm, setShowResetForm] = useState(false)
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false)
+  const { signIn, signUp, resetPassword, resendConfirmation } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -26,11 +29,20 @@ const Login = () => {
     const { error } = await signIn(email, password)
     
     if (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      })
+      if (error.message.includes('Email not confirmed')) {
+        setShowResendConfirmation(true)
+        toast({
+          title: 'Email not confirmed',
+          description: 'Please check your email and click the confirmation link, or resend the confirmation email.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        })
+      }
     } else {
       toast({
         title: 'Success',
@@ -57,12 +69,110 @@ const Login = () => {
     } else {
       toast({
         title: 'Success',
-        description: 'Account created successfully! Please check your email to verify your account.',
+        description: 'Account created successfully! Please check your email to verify your account before signing in.',
       })
-      navigate('/dashboard')
+      // Don't navigate to dashboard, user needs to confirm email first
     }
     
     setLoading(false)
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    
+    const { error } = await resetPassword(resetEmail)
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      })
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Password reset email sent! Check your inbox for further instructions.',
+      })
+      setShowResetForm(false)
+      setResetEmail('')
+    }
+    
+    setLoading(false)
+  }
+
+  const handleResendConfirmation = async () => {
+    setLoading(true)
+    
+    const { error } = await resendConfirmation(email)
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      })
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Confirmation email sent! Please check your inbox.',
+      })
+      setShowResendConfirmation(false)
+    }
+    
+    setLoading(false)
+  }
+
+  if (showResetForm) {
+    return (
+      <div className="dark min-h-screen flex flex-col bg-gray-900">
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-gray-800 border-gray-700">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-2">
+                <img 
+                  src="/lovable-uploads/d3829867-67da-4acb-a6d3-66561a4e60e7.png" 
+                  alt="Cuer Logo" 
+                  className="h-12 w-auto"
+                />
+              </div>
+              <CardTitle className="text-white">Reset Password</CardTitle>
+              <CardDescription className="text-gray-400">
+                Enter your email address and we'll send you a link to reset your password.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email" className="text-gray-300">Email</Label>
+                  <Input
+                    id="reset-email"
+                    name="email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="w-full text-gray-300 hover:bg-gray-700 hover:text-white"
+                  onClick={() => setShowResetForm(false)}
+                >
+                  Back to Sign In
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    )
   }
 
   return (
@@ -117,6 +227,32 @@ const Login = () => {
                   <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
                     {loading ? 'Signing In...' : 'Sign In'}
                   </Button>
+                  <div className="text-center space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowResetForm(true)}
+                      className="text-sm text-blue-400 hover:text-blue-300 underline"
+                    >
+                      Forgot your password?
+                    </button>
+                    {showResendConfirmation && (
+                      <div>
+                        <p className="text-sm text-gray-400 mb-2">
+                          Haven't received the confirmation email?
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleResendConfirmation}
+                          disabled={loading}
+                          className="text-gray-300 border-gray-600 hover:bg-gray-700"
+                        >
+                          {loading ? 'Sending...' : 'Resend Confirmation'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </form>
               </TabsContent>
               
