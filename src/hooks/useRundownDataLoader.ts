@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
 import { RundownItem } from '@/types/rundown';
+import { checkRecentAutoSave } from './useAutoSaveOperations';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -55,7 +56,16 @@ export const useRundownDataLoader = ({
     if (loading || savedRundowns.length === 0 || isLoadingRef.current) return;
     
     const currentRundownId = rundownId || paramId;
-    if (!currentRundownId || loadedRef.current === currentRundownId) return;
+    if (!currentRundownId) return;
+    
+    // CRITICAL FIX: Don't load if this rundown was just auto-saved
+    if (checkRecentAutoSave(currentRundownId)) {
+      console.log('Data loader: Skipping load - rundown was recently auto-saved:', currentRundownId);
+      return;
+    }
+    
+    // Don't reload the same rundown unless we're actually switching
+    if (loadedRef.current === currentRundownId) return;
 
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
@@ -112,22 +122,23 @@ export const useRundownDataLoader = ({
           clearTimeout(loadTimerRef.current);
         }
         
+        // Increased delay to 200ms to give more time for auto-save operations to complete
         loadTimerRef.current = setTimeout(() => {
-          // Only load items if user still hasn't interacted
-          if (!userHasInteractedRef.current) {
+          // Only load items if user still hasn't interacted AND rundown wasn't recently auto-saved
+          if (!userHasInteractedRef.current && !checkRecentAutoSave(currentRundownId)) {
             setItems(itemsToLoad);
             console.log('Data loader: Items loaded after delay');
           } else {
-            console.log('Data loader: Skipping item load - user has interacted');
+            console.log('Data loader: Skipping item load - user has interacted or rundown was auto-saved');
           }
           loadTimerRef.current = null;
-        }, 50); // Very short delay to catch user interactions
+        }, 200);
       } else {
         console.log('Data loader: Skipping item load - user already interacted');
       }
     } else {
       console.log('Data loader: No items to load, setting empty array');
-      if (!userHasInteractedRef.current) {
+      if (!userHasInteractedRef.current && !checkRecentAutoSave(currentRundownId)) {
         setItems([]);
       }
     }
