@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Calendar, MoreVertical, Play, Share2, Copy, Archive, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -93,56 +92,59 @@ const DashboardRundownGrid = ({
     }
   };
 
-  const handleDuplicateRundown = async (rundown: SavedRundown, e: React.MouseEvent) => {
+  const handleDuplicateRundown = async (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation();
     if (onDuplicate) {
-      onDuplicate(rundown.id, rundown.title, rundown.items, e);
+      onDuplicate(id, title, items, e);
     }
   };
 
-  const handleArchiveRundown = async (rundown: SavedRundown, e: React.MouseEvent) => {
+  const handleArchiveRundown = async (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (onArchive) {
-      onArchive(rundown.id, rundown.title, e);
+      onArchive(id, title, e);
     } else {
-      try {
-        await updateRundown(
-          rundown.id,
-          rundown.title,
-          rundown.items,
-          false, // silent
-          true, // archived
-          rundown.columns,
-          rundown.timezone,
-          rundown.startTime || rundown.start_time
-        );
-        
-        toast({
-          title: 'Rundown archived',
-          description: `"${rundown.title}" has been moved to archives.`,
-        });
-      } catch (error) {
-        console.error('Error archiving rundown:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to archive rundown.',
-          variant: 'destructive',
-        });
+      const rundown = rundowns.find(r => r.id === id);
+      if (rundown) {
+        try {
+          await updateRundown(
+            id,
+            title,
+            rundown.items,
+            false, // silent
+            true, // archived
+            rundown.columns,
+            rundown.timezone,
+            rundown.startTime || rundown.start_time
+          );
+          
+          toast({
+            title: 'Rundown archived',
+            description: `"${title}" has been moved to archives.`,
+          });
+        } catch (error) {
+          console.error('Error archiving rundown:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to archive rundown.',
+            variant: 'destructive',
+          });
+        }
       }
     }
   };
 
-  const handleUnarchiveRundown = async (rundown: SavedRundown, e: React.MouseEvent) => {
+  const handleUnarchiveRundown = async (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation();
     if (onUnarchive) {
-      onUnarchive(rundown.id, rundown.title, rundown.items, e);
+      onUnarchive(id, title, items, e);
     }
   };
 
-  const handleDeleteRundown = (rundown: SavedRundown, e: React.MouseEvent) => {
+  const handleDeleteRundown = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (onDelete) {
-      onDelete(rundown.id, rundown.title, e);
+      onDelete(id, title, e);
     }
   };
 
