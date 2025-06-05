@@ -9,6 +9,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const lastSavedDataRef = useRef<string>('');
   const isLoadingRef = useRef(false);
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = useRef(false); // Prevent multiple initializations
 
   // Create a stable signature for tracking changes
   const currentSignature = useMemo(() => {
@@ -22,9 +23,9 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     });
   }, [items, rundownTitle, columns?.length, timezone, startTime]);
 
-  // Initialize tracking once
+  // Initialize tracking once - PREVENT MULTIPLE INITIALIZATIONS
   useEffect(() => {
-    if (isInitialized || isLoadingRef.current) {
+    if (hasInitializedRef.current || isInitialized || isLoadingRef.current) {
       return;
     }
 
@@ -37,12 +38,15 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const hasData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
     
     if (hasData) {
+      // Mark that we've started initialization to prevent duplicates
+      hasInitializedRef.current = true;
+      
       initializationTimeoutRef.current = setTimeout(() => {
         if (!isInitialized && !isLoadingRef.current) {
           lastSavedDataRef.current = currentSignature;
           setIsInitialized(true);
           setHasUnsavedChanges(false);
-          console.log('Change tracking initialized with signature:', currentSignature.substring(0, 100));
+          console.log('Change tracking initialized ONCE with signature:', currentSignature.substring(0, 100));
         }
       }, 1000);
     }
@@ -54,16 +58,17 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     };
   }, [currentSignature, isInitialized, items.length, rundownTitle]);
 
-  // Track changes after initialization
+  // Track changes after initialization - SIMPLIFIED
   useEffect(() => {
-    if (!isInitialized || isLoadingRef.current) {
+    if (!isInitialized || isLoadingRef.current || !hasInitializedRef.current) {
       return;
     }
 
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
+    // Only update if there's actually a change in state
     if (hasChanges !== hasUnsavedChanges) {
-      console.log('Change detected:', hasChanges, 'Current vs Last:', currentSignature.substring(0, 50), 'vs', lastSavedDataRef.current.substring(0, 50));
+      console.log('Change detected:', hasChanges);
       setHasUnsavedChanges(hasChanges);
     }
   }, [currentSignature, isInitialized, hasUnsavedChanges]);
@@ -79,11 +84,11 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Marked as saved with signature:', signature.substring(0, 100));
+    console.log('Marked as saved');
   };
 
   const markAsChanged = () => {
-    if (!isLoadingRef.current && isInitialized) {
+    if (!isLoadingRef.current && isInitialized && hasInitializedRef.current) {
       console.log('Manually marked as changed');
       setHasUnsavedChanges(true);
     }
@@ -93,7 +98,9 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     console.log('Setting loading state:', loading);
     isLoadingRef.current = loading;
     if (loading) {
-      // Clear initialization when loading starts
+      // Reset initialization state when loading starts
+      hasInitializedRef.current = false;
+      setIsInitialized(false);
       if (initializationTimeoutRef.current) {
         clearTimeout(initializationTimeoutRef.current);
         initializationTimeoutRef.current = null;

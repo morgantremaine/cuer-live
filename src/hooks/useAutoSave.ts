@@ -68,8 +68,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     }
   }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
-  // Auto-save effect
+  // Auto-save effect - SIMPLIFIED to prevent infinite loops
   useEffect(() => {
+    // Clear any existing timeout first
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
+    }
+
     // Only attempt save if we have unsaved changes and are initialized
     if (!hasUnsavedChanges || !isInitialized || !user || saveInProgressRef.current) {
       return;
@@ -81,19 +87,10 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       return;
     }
 
-    console.log('Scheduling auto-save due to changes');
-
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Schedule save with debounce
-    debounceTimeoutRef.current = setTimeout(() => {
-      console.log('Executing scheduled auto-save');
-      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
-      debounceTimeoutRef.current = null;
-    }, 2000); // 2 second debounce
+    console.log('Executing auto-save immediately for changes');
+    
+    // Execute save immediately instead of scheduling
+    debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
 
   }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
 
