@@ -24,7 +24,8 @@ export const useSimpleRundownState = (
     checkForChanges,
     markAsSaved,
     markAsChanged,
-    setIsLoading
+    setIsLoading,
+    reset
   } = useSimpleChangeTracking();
 
   // Items management
@@ -32,6 +33,11 @@ export const useSimpleRundownState = (
   
   // Columns management
   const columnsHook = useColumnsManager(markAsChanged);
+
+  // Reset change tracking when no rundown ID
+  if (!rundownId && isInitialized) {
+    reset();
+  }
 
   // Initialize change tracking when data is ready AND we have a valid rundown ID
   if (!isInitialized && itemsHook.items.length > 0 && rundownId) {
@@ -44,8 +50,9 @@ export const useSimpleRundownState = (
   }
 
   // Auto-save - only when we have a valid rundown ID
-  const { isSaving } = useSimpleAutoSave(
-    rundownId, // This will be undefined when on root route, preventing auto-save
+  // Use conditional hook pattern to completely skip auto-save when no rundown
+  const autoSaveResult = rundownId ? useSimpleAutoSave(
+    rundownId,
     itemsHook.items,
     rundownTitle,
     columnsHook.columns,
@@ -54,7 +61,9 @@ export const useSimpleRundownState = (
     hasUnsavedChanges,
     isInitialized,
     markAsSaved
-  );
+  ) : { isSaving: false };
+
+  const { isSaving } = autoSaveResult;
 
   return {
     // Items
