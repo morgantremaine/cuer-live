@@ -6,8 +6,8 @@ import { Column } from './useColumnsManager';
 import { RundownItem } from '@/types/rundown';
 import { useLoadingState } from './useRundownDataLoader/useLoadingState';
 import { useLoadingEvaluation } from './useRundownDataLoader/useLoadingEvaluation';
-import { getItemsToLoad } from './useRundownDataLoader/loadingUtils';
-import { checkRecentAutoSave, checkUserChangedSinceAutoSave } from './useAutoSaveOperations';
+import { useUserInteractionTracking } from './useRundownDataLoader/useUserInteractionTracking';
+import { useDataLoadingEffect } from './useRundownDataLoader/useDataLoadingEffect';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -57,130 +57,29 @@ export const useRundownDataLoader = ({
     lastEvaluationRef
   });
 
-  // Track user interactions to prevent overwriting their changes
-  useEffect(() => {
-    const handleUserInteraction = () => {
-      console.log('User interaction detected, marking as interacted');
-      userHasInteractedRef.current = true;
-    };
+  // Track user interactions
+  useUserInteractionTracking({ userHasInteractedRef });
 
-    document.addEventListener('click', handleUserInteraction, { once: true });
-    document.addEventListener('keydown', handleUserInteraction, { once: true });
-    
-    return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-    };
-  }, []);
-
-  // Main data loading effect - reduced frequency and optimized conditions
-  useEffect(() => {
-    // Early returns with minimal logging
-    if (loading || savedRundowns.length === 0) {
-      return;
-    }
-    
-    const currentRundownId = rundownId || paramId;
-    if (!currentRundownId) {
-      return;
-    }
-
-    const rundown = savedRundowns.find(r => r.id === currentRundownId);
-    if (!rundown) {
-      return;
-    }
-
-    // Clear any existing evaluation cooldown
-    if (evaluationCooldownRef.current) {
-      clearTimeout(evaluationCooldownRef.current);
-    }
-
-    // Only evaluate if enough time has passed since last evaluation
-    const now = Date.now();
-    if (now - lastEvaluationRef.current < 2000) {
-      return;
-    }
-
-    // Debounce the evaluation
-    evaluationCooldownRef.current = setTimeout(() => {
-      if (!shouldLoadRundown(currentRundownId, rundown)) {
-        return;
-      }
-
-      console.log('Data loader: Loading rundown', currentRundownId);
-      setLoadingStarted(currentRundownId);
-      
-      // Get items to load using extracted utility
-      const itemsToLoad = getItemsToLoad(rundown);
-      console.log('Data loader: Items to load:', itemsToLoad?.length || 0, 'items');
-      
-      // Set the rundown data
-      setRundownTitle(rundown.title);
-      
-      if (rundown.timezone) {
-        setTimezone(rundown.timezone);
-      }
-      
-      if (rundown.start_time) {
-        setRundownStartTime(rundown.start_time || '09:00:00');
-      }
-      
-      if (rundown.columns) {
-        handleLoadLayout(rundown.columns);
-      }
-
-      // Load the rundown items with validation
-      if (itemsToLoad && Array.isArray(itemsToLoad)) {
-        console.log('Data loader: Setting items directly with', itemsToLoad.length, 'items');
-        
-        // Check conditions before setting items
-        const canSetItems = !userHasInteractedRef.current && 
-                           !checkRecentAutoSave(currentRundownId) && 
-                           !checkUserChangedSinceAutoSave(currentRundownId);
-        
-        if (canSetItems) {
-          if (loadTimerRef.current) {
-            clearTimeout(loadTimerRef.current);
-          }
-          
-          // Set items immediately and log the operation
-          console.log('Data loader: About to call setItems with:', itemsToLoad);
-          setItems(itemsToLoad);
-          console.log('Data loader: setItems call completed');
-        } else {
-          console.log('Data loader: Skipping item setting due to user interaction or recent changes');
-        }
-      } else {
-        console.log('Data loader: No items to load, setting empty array');
-        if (!userHasInteractedRef.current && 
-            !checkRecentAutoSave(currentRundownId) && 
-            !checkUserChangedSinceAutoSave(currentRundownId)) {
-          setItems([]);
-        }
-      }
-
-      if (onRundownLoaded) {
-        onRundownLoaded(rundown);
-      }
-
-      setLoadingComplete(currentRundownId);
-    }, 500); // Increased timeout to reduce frequency
-
-  }, [
-    rundownId, 
-    paramId, 
-    loading, 
-    savedRundowns.length,
-    setRundownTitle, 
-    setTimezone, 
-    setRundownStartTime, 
+  // Main data loading effect
+  useDataLoadingEffect({
+    rundownId,
+    paramId,
+    loading,
+    savedRundowns,
+    shouldLoadRundown,
+    setRundownTitle,
+    setTimezone,
+    setRundownStartTime,
     handleLoadLayout,
     setItems,
     onRundownLoaded,
-    shouldLoadRundown,
+    userHasInteractedRef,
+    loadTimerRef,
+    evaluationCooldownRef,
+    lastEvaluationRef,
     setLoadingStarted,
     setLoadingComplete
-  ]);
+  });
 
   // Reset loaded reference when rundown ID changes - but less frequently
   useEffect(() => {
@@ -189,7 +88,7 @@ export const useRundownDataLoader = ({
       console.log('Data loader: Resetting loading state for rundown ID change:', currentRundownId);
       resetLoadingState(currentRundownId);
     }
-  }, [rundownId, paramId, resetLoadingState]);
+  }, [rundownId, paramId, resetLoadingState, loadedRef]);
 
   // Cleanup on unmount
   useEffect(() => {
