@@ -1,9 +1,10 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Column } from './useColumnsManager';
 
 export const useResizableColumns = (initialColumns: Column[], onColumnWidthChange?: (columnId: string, width: number) => void) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Initialize column widths from the columns data
   useEffect(() => {
@@ -20,17 +21,22 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
   }, [initialColumns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
-    console.log('Updating column width in useResizableColumns:', columnId, width);
-    setColumnWidths(prev => ({
-      ...prev,
-      [columnId]: width
-    }));
-    
-    // Notify the parent component about the width change
-    if (onColumnWidthChange) {
-      console.log('Calling onColumnWidthChange callback');
-      onColumnWidthChange(columnId, width);
-    }
+    setColumnWidths(prev => {
+      const newWidths = { ...prev, [columnId]: width };
+      
+      // Debounce the callback to prevent excessive calls
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      
+      updateTimeoutRef.current = setTimeout(() => {
+        if (onColumnWidthChange) {
+          onColumnWidthChange(columnId, width);
+        }
+      }, 100); // Small delay to batch updates
+      
+      return newWidths;
+    });
   }, [onColumnWidthChange]);
 
   const getColumnWidth = useCallback((column: Column) => {
@@ -45,20 +51,29 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
     
     // Reduced default widths based on column type
     if (column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime') {
-      return '100px'; // Reduced from 120px
+      return '100px';
     }
     if (column.key === 'segmentName') {
-      return '150px'; // Reduced from 200px
+      return '150px';
     }
     if (column.key === 'notes') {
-      return '200px'; // Reduced from 300px
+      return '200px';
     }
-    return '120px'; // Reduced from 150px for custom columns
+    return '120px';
   }, [columnWidths]);
 
   const getColumnWidthsForSaving = useCallback(() => {
     return columnWidths;
   }, [columnWidths]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     columnWidths,

@@ -18,6 +18,7 @@ const ResizableColumnHeader = ({
   showLeftSeparator = false 
 }: ResizableColumnHeaderProps) => {
   const [isResizing, setIsResizing] = useState(false);
+  const [currentWidth, setCurrentWidth] = useState(parseInt(width));
   const startX = useRef(0);
   const startWidth = useRef(0);
 
@@ -28,13 +29,17 @@ const ResizableColumnHeader = ({
     
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
-      const newWidth = Math.max(50, startWidth.current + diff); // Reduced minimum width from 80px to 50px
-      console.log('ResizableColumnHeader calling onWidthChange:', column.id, newWidth);
-      onWidthChange(column.id, newWidth);
+      const newWidth = Math.max(50, startWidth.current + diff);
+      // Only update visual width during resize, don't trigger callbacks
+      setCurrentWidth(newWidth);
     };
 
     const handleMouseUp = () => {
       setIsResizing(false);
+      // Only call onWidthChange when resize is complete
+      const finalWidth = Math.max(50, startWidth.current + (event as MouseEvent).clientX - startX.current);
+      onWidthChange(column.id, finalWidth);
+      
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -43,10 +48,12 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const displayWidth = isResizing ? `${currentWidth}px` : width;
+
   return (
     <th 
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
-      style={{ width }}
+      style={{ width: displayWidth }}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />

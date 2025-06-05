@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { GripVertical, Eye, EyeOff, Trash2, Edit, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Column } from '@/hooks/useColumnsManager';
@@ -16,7 +16,7 @@ interface ColumnItemProps {
   onRenameColumn?: (columnId: string, newName: string) => void;
 }
 
-const ColumnItem = ({
+const ColumnItem = memo(({
   column,
   index,
   draggedColumnIndex,
@@ -30,34 +30,35 @@ const ColumnItem = ({
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnName, setEditingColumnName] = useState('');
 
-  console.log('ColumnItem render:', {
-    columnId: column.id,
-    columnName: column.name,
-    isCustom: column.isCustom,
-    hasRenameFunction: !!onRenameColumn,
-    isEditing: editingColumnId === column.id
-  });
-
-  const startEditingColumn = (column: Column) => {
-    console.log('Starting to edit column:', column.id, column.name);
+  const startEditingColumn = useCallback((column: Column) => {
     setEditingColumnId(column.id);
     setEditingColumnName(column.name);
-  };
+  }, []);
 
-  const cancelEditingColumn = () => {
-    console.log('Canceling edit for column:', editingColumnId);
+  const cancelEditingColumn = useCallback(() => {
     setEditingColumnId(null);
     setEditingColumnName('');
-  };
+  }, []);
 
-  const handleRenameColumnSubmit = (columnId: string) => {
-    console.log('Submitting rename for column:', columnId, 'new name:', editingColumnName);
+  const handleRenameColumnSubmit = useCallback((columnId: string) => {
     if (editingColumnName.trim() && onRenameColumn) {
       onRenameColumn(columnId, editingColumnName.trim());
       setEditingColumnId(null);
       setEditingColumnName('');
     }
-  };
+  }, [editingColumnName, onRenameColumn]);
+
+  const handleToggleVisibility = useCallback(() => {
+    onToggleVisibility(column.id);
+  }, [onToggleVisibility, column.id]);
+
+  const handleDeleteColumn = useCallback(() => {
+    onDeleteColumn(column.id);
+  }, [onDeleteColumn, column.id]);
+
+  const handleEditClick = useCallback(() => {
+    startEditingColumn(column);
+  }, [startEditingColumn, column]);
 
   return (
     <div
@@ -112,10 +113,7 @@ const ColumnItem = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    console.log('Edit button clicked for column:', column.id);
-                    startEditingColumn(column);
-                  }}
+                  onClick={handleEditClick}
                   className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 h-6 w-6 p-0"
                   title="Rename column"
                 >
@@ -136,7 +134,7 @@ const ColumnItem = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onToggleVisibility(column.id)}
+          onClick={handleToggleVisibility}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 h-6 w-6 p-0"
         >
           {column.isVisible !== false ? (
@@ -149,7 +147,7 @@ const ColumnItem = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onDeleteColumn(column.id)}
+            onClick={handleDeleteColumn}
             className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 h-6 w-6 p-0"
           >
             <Trash2 className="h-3 w-3" />
@@ -158,6 +156,8 @@ const ColumnItem = ({
       </div>
     </div>
   );
-};
+});
+
+ColumnItem.displayName = 'ColumnItem';
 
 export default ColumnItem;
