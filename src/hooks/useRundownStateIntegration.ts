@@ -41,7 +41,14 @@ export const useRundownStateIntegration = (
     if (!item) return;
 
     // Handle custom fields vs standard fields
-    if (field.startsWith('customFields.')) {
+    if (field.startsWith('custom_')) {
+      // For custom columns, store the value in customFields using the column ID
+      const currentCustomFields = item.customFields || {};
+      originalUpdateItem(id, 'customFields', JSON.stringify({
+        ...currentCustomFields,
+        [field]: value
+      }));
+    } else if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
       const currentCustomFields = item.customFields || {};
       originalUpdateItem(id, 'customFields', JSON.stringify({
@@ -54,24 +61,16 @@ export const useRundownStateIntegration = (
     }
   }, [originalUpdateItem, items]);
 
-  // Columns management
-  const {
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+  // Memoize columns manager to prevent re-creation
+  const columnsManager = useMemo(() => {
+    return useColumnsManager(markAsChanged);
+  }, [markAsChanged]);
 
   // Auto-save functionality
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
-    Array.isArray(columns) ? columns : [],
+    Array.isArray(columnsManager.columns) ? columnsManager.columns : [],
     timezone,
     rundownStartTime
   );
@@ -99,15 +98,7 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    columns: Array.isArray(columns) ? columns : [],
-    visibleColumns: Array.isArray(visibleColumns) ? visibleColumns : [],
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
+    ...columnsManager,
     hasUnsavedChanges,
     isSaving
   };

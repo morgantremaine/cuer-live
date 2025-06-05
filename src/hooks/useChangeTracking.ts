@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
 
@@ -11,33 +11,33 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const isLoadingRef = useRef(false);
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasInitializedOnceRef = useRef(false);
-  const lastInitializationKeyRef = useRef<string>('');
-  const previousSignatureRef = useRef<string>('');
+
+  // Stable signature that doesn't change on every render
+  const currentSignature = useMemo(() => {
+    return JSON.stringify({ 
+      itemsLength: items.length, 
+      title: rundownTitle, 
+      columnsLength: columns?.length || 0, 
+      timezone, 
+      startTime 
+    });
+  }, [items.length, rundownTitle, columns?.length, timezone, startTime]);
 
   // Initialize tracking after first meaningful load with delay
   useEffect(() => {
-    const initKey = `${rundownTitle}-${items.length}-${columns?.length || 0}`;
-    
-    if (lastInitializationKeyRef.current === initKey && hasInitializedOnceRef.current) {
-      return;
-    }
-
     if (initializationTimeoutRef.current) {
       clearTimeout(initializationTimeoutRef.current);
     }
 
     if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
       initializationTimeoutRef.current = setTimeout(() => {
-        const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
-        lastSavedDataRef.current = signature;
-        previousSignatureRef.current = signature;
-        lastInitializationKeyRef.current = initKey;
+        lastSavedDataRef.current = currentSignature;
         initialLoadRef.current = true;
         hasInitializedOnceRef.current = true;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
         console.log('Change tracking initialized');
-      }, 300); // Increased delay to prevent rapid re-initializations
+      }, 500);
     }
 
     return () => {
@@ -45,31 +45,28 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
         clearTimeout(initializationTimeoutRef.current);
       }
     };
-  }, [items.length, rundownTitle, columns?.length, timezone, startTime]);
+  }, [items.length, rundownTitle, currentSignature]);
 
-  // Track changes after initialization - with debouncing
+  // Track changes after initialization
   useEffect(() => {
     if (!isInitialized || isLoadingRef.current) return;
 
-    const currentSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
-    
-    // Only update if signature actually changed
-    if (currentSignature === previousSignatureRef.current) {
-      return;
-    }
-    
-    previousSignatureRef.current = currentSignature;
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
     if (hasChanges !== hasUnsavedChanges) {
       setHasUnsavedChanges(hasChanges);
     }
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, hasUnsavedChanges]);
+  }, [currentSignature, isInitialized, hasUnsavedChanges]);
 
   const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
-    const signature = JSON.stringify({ items: savedItems, title: savedTitle, columns: savedColumns, timezone: savedTimezone, startTime: savedStartTime });
+    const signature = JSON.stringify({ 
+      itemsLength: savedItems.length, 
+      title: savedTitle, 
+      columnsLength: savedColumns?.length || 0, 
+      timezone: savedTimezone, 
+      startTime: savedStartTime 
+    });
     lastSavedDataRef.current = signature;
-    previousSignatureRef.current = signature;
     setHasUnsavedChanges(false);
   };
 
