@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -97,28 +96,40 @@ export const useRundownItems = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
-    const newHeader: RundownItem = {
-      id: uuidv4(),
-      type: 'header',
-      rowNumber: '',
-      name: 'New Header',
-      segmentName: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      duration: '00:00:00',
-      startTime: '',
-      endTime: '',
-      elapsedTime: '',
-      notes: '',
-      color: '#ffffff',
-      isFloating: false,
-      customFields: {}
-    };
-
     setItems(prevItems => {
       const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
+      
+      // Calculate the correct segment name based on existing headers
+      let headerCount = 0;
+      for (let i = 0; i < targetIndex; i++) {
+        if (isHeaderItem(prevItems[i])) {
+          headerCount++;
+        }
+      }
+      
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const segmentName = letters[headerCount] || 'A';
+      
+      const newHeader: RundownItem = {
+        id: uuidv4(),
+        type: 'header',
+        rowNumber: '',
+        name: 'New Header',
+        segmentName: segmentName,
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        duration: '00:00:00',
+        startTime: '',
+        endTime: '',
+        elapsedTime: '',
+        notes: '',
+        color: '#ffffff',
+        isFloating: false,
+        customFields: {}
+      };
+
       const newItems = [...prevItems];
       newItems.splice(targetIndex, 0, newHeader);
       return newItems;
@@ -149,7 +160,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       const itemsWithIds = newItems.map(item => ({
         ...item,
         id: uuidv4(),
-        customFields: item.customFields || {} // Ensure custom fields exist
+        customFields: item.customFields || {}
       }));
       
       const newItemsArray = [...prevItems];
