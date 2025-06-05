@@ -26,12 +26,13 @@ export const useRundownRowOperations = ({
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  const handleAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string | null) => {
-    addRow(selectedRowId, selectedRows);
+  // Create functions that match the expected signatures for RundownGrid
+  const handleAddRow = useCallback(() => {
+    addRow(undefined, selectedRows);
   }, [addRow, selectedRows]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string | null) => {
-    addHeader(selectedRowId, selectedRows);
+  const handleAddHeader = useCallback(() => {
+    addHeader(undefined, selectedRows);
   }, [addHeader, selectedRows]);
 
   return {

@@ -1,9 +1,10 @@
+
 import { useCallback } from 'react';
 import { useRundownHandlers } from '@/hooks/useRundownHandlers';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addRow: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
@@ -72,15 +73,16 @@ export const useRundownGridHandlers = ({
     markAsChanged
   });
 
-  const handleAddRow = useCallback((selectedRowId?: string | null) => {
-    addRow(calculateEndTime, selectedRowId, selectedRows);
+  // Create wrapper functions that match expected signatures
+  const handleAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => {
+    addRow(selectedRowId, selectedRows);
     markAsChanged();
-  }, [addRow, calculateEndTime, selectedRows, markAsChanged]);
+  }, [addRow, markAsChanged]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string | null) => {
+  const handleAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     addHeader(selectedRowId, selectedRows);
     markAsChanged();
-  }, [addHeader, selectedRows, markAsChanged]);
+  }, [addHeader, markAsChanged]);
 
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
