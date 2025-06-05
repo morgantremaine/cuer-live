@@ -26,26 +26,22 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Create adapter functions to bridge interface gaps
-  const adaptedAddRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
-    // Convert from insertAfterIndex pattern to selectedRows pattern
-    // If we have an insertAfterIndex, we can ignore it since the core addRow uses selectedRows
-    coreState.addRow(calculateEndTime, interactions.selectedRows);
+  // Create component-compatible functions (parameterless)
+  const handleAddRow = useCallback(() => {
+    coreState.addRow(coreState.calculateEndTime, interactions.selectedRows);
   }, [coreState.addRow, coreState.calculateEndTime, interactions.selectedRows]);
 
-  const adaptedAddHeader = useCallback((insertAfterIndex?: number) => {
-    // Convert from insertAfterIndex pattern to selectedRows pattern
-    // If we have an insertAfterIndex, we can ignore it since the core addHeader uses selectedRows
+  const handleAddHeader = useCallback(() => {
     coreState.addHeader(interactions.selectedRows);
   }, [coreState.addHeader, interactions.selectedRows]);
 
-  // Row operations with adapted interfaces
+  // Row operations with component-compatible functions
   const { handleDeleteSelectedRows } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection: interactions.clearSelection,
-    addRow: adaptedAddRow,
-    addHeader: adaptedAddHeader,
+    addRow: handleAddRow,
+    addHeader: handleAddHeader,
     calculateEndTime: coreState.calculateEndTime
   });
 
@@ -57,9 +53,9 @@ export const useRundownGridState = () => {
     ...interactions,
     // UI state
     ...uiState,
-    // Override with adapted functions that match component expectations
-    handleAddRow: adaptedAddRow,
-    handleAddHeader: adaptedAddHeader,
+    // Component-compatible handlers (parameterless)
+    handleAddRow,
+    handleAddHeader,
     // Clipboard functionality
     clipboardItems,
     copyItems,
@@ -81,8 +77,8 @@ export const useRundownGridState = () => {
     coreState,
     interactions,
     uiState,
-    adaptedAddRow,
-    adaptedAddHeader,
+    handleAddRow,
+    handleAddHeader,
     clipboardItems,
     copyItems,
     hasClipboardData,

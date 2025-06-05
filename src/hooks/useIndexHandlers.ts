@@ -7,8 +7,8 @@ interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
   rundownId?: string;
-  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void;
-  addHeader: (insertAfterIndex?: number) => void;
+  addRow: (selectedRows?: Set<string>) => void;
+  addHeader: (selectedRows?: Set<string>) => void;
   calculateEndTime: any;
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   setRundownStartTime: (startTime: string) => void;
@@ -50,14 +50,12 @@ export const useIndexHandlers = ({
   }, [toggleRowSelection]);
 
   const handleAddRow = useCallback(() => {
-    // Use the interface that expects insertAfterIndex
-    addRow(calculateEndTime);
-  }, [addRow, calculateEndTime]);
+    addRow(selectedRows);
+  }, [addRow, selectedRows]);
 
   const handleAddHeader = useCallback(() => {
-    // Use the interface that expects insertAfterIndex
-    addHeader();
-  }, [addHeader]);
+    addHeader(selectedRows);
+  }, [addHeader, selectedRows]);
 
   return {
     handleRundownStartTimeChange,
