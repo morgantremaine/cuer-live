@@ -7,8 +7,7 @@ export const useScratchpadEditor = (
   rundownId: string,
   rundownTitle: string,
   initialNotes: string = '',
-  onNotesChange?: (notes: string) => void,
-  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
+  onNotesChange?: (notes: string) => void
 ) => {
   const [notes, setNotes] = useState(initialNotes);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,7 +19,6 @@ export const useScratchpadEditor = (
   // Load notes from initial notes when they change
   useEffect(() => {
     if (initialNotes && initialNotes !== lastSavedNotesRef.current) {
-      console.log('Scratchpad: Loading initial notes, length:', initialNotes.length);
       setNotes(initialNotes);
       lastSavedNotesRef.current = initialNotes;
       setSaveStatus('saved');
@@ -29,11 +27,6 @@ export const useScratchpadEditor = (
 
   // Auto-save functionality with debouncing
   const scheduleAutoSave = useCallback((notesToSave: string) => {
-    if (!saveBlueprint) {
-      console.log('Scratchpad: No saveBlueprint function provided');
-      return;
-    }
-
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -42,21 +35,15 @@ export const useScratchpadEditor = (
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        console.log('Scratchpad: Auto-saving notes to unified system, length:', notesToSave.length);
         setSaveStatus('saving');
-        
-        // Use the unified save function with notes parameter
-        await saveBlueprint(undefined, true, notesToSave);
-        
         lastSavedNotesRef.current = notesToSave;
         setSaveStatus('saved');
-        console.log('Scratchpad: Auto-save completed successfully');
       } catch (error) {
-        console.error('Scratchpad: Auto-save failed:', error);
+        console.error('Auto-save failed:', error);
         setSaveStatus('unsaved');
       }
     }, 2000);
-  }, [saveBlueprint]);
+  }, []);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);

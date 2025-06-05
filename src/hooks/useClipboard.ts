@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from './useRundownItems';
 
 export const useClipboard = () => {
   const [clipboardItems, setClipboardItems] = useState<RundownItem[]>([]);

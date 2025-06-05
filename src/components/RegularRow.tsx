@@ -4,7 +4,7 @@ import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
@@ -92,27 +92,13 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  // Apply inline styles for custom colors with !important to override CSS classes
-  const isFloated = item.isFloating || item.isFloated;
-  const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
-  
-  let customStyles: React.CSSProperties = {};
-  let textColor: string | undefined;
-  
-  if (hasCustomColor && !isFloated) {
-    const contrastColor = getContrastTextColor(item.color);
-    customStyles = {
-      backgroundColor: item.color,
-      color: contrastColor
-    };
-    textColor = contrastColor;
-  }
+  const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
 
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
       selectedRows={selectedRows}
-      isFloated={isFloated}
+      isFloated={item.isFloating || item.isFloated}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
@@ -128,7 +114,10 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
-        style={hasCustomColor && !isFloated ? customStyles : undefined}
+        style={{ 
+          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
+          color: textColor || undefined
+        }}
         draggable
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}

@@ -11,7 +11,7 @@ interface ColumnListProps {
   onRenameColumn?: (columnId: string, newName: string) => void;
 }
 
-const ColumnList = React.memo(({
+const ColumnList = ({
   columns,
   onReorderColumns,
   onToggleColumnVisibility,
@@ -54,7 +54,7 @@ const ColumnList = React.memo(({
       <div className="space-y-1 max-h-64 overflow-y-auto">
         {columns.map((column, index) => (
           <ColumnItem
-            key={`column-list-item-${column.id}`} // Stable key based on column ID
+            key={column.id}
             column={column}
             index={index}
             draggedColumnIndex={draggedColumnIndex}
@@ -69,8 +69,6 @@ const ColumnList = React.memo(({
       </div>
     </div>
   );
-});
-
-ColumnList.displayName = 'ColumnList';
+};
 
 export default ColumnList;

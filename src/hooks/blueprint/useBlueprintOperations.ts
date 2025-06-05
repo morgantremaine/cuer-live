@@ -10,7 +10,7 @@ export const useBlueprintOperations = (
   rundownTitle: string,
   showDate: string,
   saveLists: (updatedLists: BlueprintList[], silent?: boolean) => Promise<void>,
-  saveBlueprint: (title: string, lists: BlueprintList[], showDate: string, silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => Promise<any>,
+  saveBlueprint: (title: string, lists: BlueprintList[], showDate: string, silent?: boolean) => Promise<any>,
   loadBlueprint: () => Promise<any>,
   operationInProgressRef: React.MutableRefObject<boolean>
 ) => {
@@ -21,10 +21,8 @@ export const useBlueprintOperations = (
     return `${sourceColumn}_${timestamp}_${random}`;
   }, []);
 
-  // Checkbox update handler with better error handling
-  const updateCheckedItems = useCallback(async (listId: string, checkedItems: Record<string, boolean>) => {
-    console.log('Blueprint operations: Updating checked items for list:', listId);
-    
+  // Checkbox update handler
+  const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
     // Update local state immediately
     setLists(currentLists => {
       const updatedLists = currentLists.map(list => 
@@ -32,9 +30,7 @@ export const useBlueprintOperations = (
       );
       
       // Save with debouncing (silent=true means no toast notification)
-      saveLists(updatedLists, true).catch(error => {
-        console.error('Blueprint operations: Failed to save checked items:', error);
-      });
+      saveLists(updatedLists, true);
       
       return updatedLists;
     });
@@ -42,11 +38,9 @@ export const useBlueprintOperations = (
 
   const addNewList = useCallback(async (name: string, sourceColumn: string) => {
     if (operationInProgressRef.current) {
-      console.log('Blueprint operations: Add list operation already in progress');
       return;
     }
     
-    console.log('Blueprint operations: Adding new list:', name, sourceColumn);
     operationInProgressRef.current = true;
     
     try {
@@ -65,35 +59,30 @@ export const useBlueprintOperations = (
       
       // Save immediately without debouncing
       await saveBlueprint(rundownTitle, updatedLists, showDate, false);
-      console.log('Blueprint operations: New list saved successfully');
       
+      // Force reload lists after saving to ensure we have the latest data
+      await loadBlueprint();
     } catch (error) {
-      console.error('Blueprint operations: Failed to save new list:', error);
+      console.error('Failed to save new list:', error);
       // Revert on error
-      setLists(prevLists => prevLists.filter(list => list.name !== name));
+      setLists(prevLists => [...prevLists]);
     } finally {
       operationInProgressRef.current = false;
     }
-  }, [items, lists, rundownTitle, saveBlueprint, generateListId, showDate, setLists, operationInProgressRef]);
+  }, [items, lists, rundownTitle, saveBlueprint, loadBlueprint, generateListId, showDate, setLists, operationInProgressRef]);
 
   const deleteList = useCallback(async (listId: string) => {
     if (operationInProgressRef.current) {
-      console.log('Blueprint operations: Delete operation already in progress');
       return;
     }
     
-    console.log('Blueprint operations: Deleting list:', listId);
     operationInProgressRef.current = true;
-    
     try {
       const updatedLists = lists.filter(list => list.id !== listId);
       setLists(updatedLists);
       await saveBlueprint(rundownTitle, updatedLists, showDate, false);
-      console.log('Blueprint operations: List deleted successfully');
     } catch (error) {
-      console.error('Blueprint operations: Failed to delete list:', error);
-      // Revert on error
-      setLists(lists);
+      console.error('Failed to delete list:', error);
     } finally {
       operationInProgressRef.current = false;
     }
@@ -101,13 +90,10 @@ export const useBlueprintOperations = (
 
   const renameList = useCallback(async (listId: string, newName: string) => {
     if (operationInProgressRef.current) {
-      console.log('Blueprint operations: Rename operation already in progress');
       return;
     }
     
-    console.log('Blueprint operations: Renaming list:', listId, 'to:', newName);
     operationInProgressRef.current = true;
-    
     try {
       const updatedLists = lists.map(list => {
         if (list.id === listId) {
@@ -117,11 +103,8 @@ export const useBlueprintOperations = (
       });
       setLists(updatedLists);
       await saveBlueprint(rundownTitle, updatedLists, showDate, true);
-      console.log('Blueprint operations: List renamed successfully');
     } catch (error) {
-      console.error('Blueprint operations: Failed to rename list:', error);
-      // Revert on error
-      setLists(lists);
+      console.error('Failed to rename list:', error);
     } finally {
       operationInProgressRef.current = false;
     }
@@ -129,13 +112,10 @@ export const useBlueprintOperations = (
 
   const refreshAllLists = useCallback(async () => {
     if (operationInProgressRef.current) {
-      console.log('Blueprint operations: Refresh operation already in progress');
       return;
     }
     
-    console.log('Blueprint operations: Refreshing all lists');
     operationInProgressRef.current = true;
-    
     try {
       const refreshedLists = lists.map(list => ({
         ...list,
@@ -144,9 +124,8 @@ export const useBlueprintOperations = (
       }));
       setLists(refreshedLists);
       await saveBlueprint(rundownTitle, refreshedLists, showDate, true);
-      console.log('Blueprint operations: Lists refreshed successfully');
     } catch (error) {
-      console.error('Blueprint operations: Failed to refresh lists:', error);
+      console.error('Failed to refresh lists:', error);
     } finally {
       operationInProgressRef.current = false;
     }
@@ -154,18 +133,14 @@ export const useBlueprintOperations = (
 
   const updateShowDate = useCallback(async (newDate: string) => {
     if (operationInProgressRef.current) {
-      console.log('Blueprint operations: Update date operation already in progress');
       return;
     }
     
-    console.log('Blueprint operations: Updating show date to:', newDate);
     operationInProgressRef.current = true;
-    
     try {
       await saveBlueprint(rundownTitle, lists, newDate, true);
-      console.log('Blueprint operations: Show date updated successfully');
     } catch (error) {
-      console.error('Blueprint operations: Failed to update show date:', error);
+      console.error('Failed to update show date:', error);
     } finally {
       operationInProgressRef.current = false;
     }

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RegularRowContentProps {
@@ -20,7 +20,7 @@ interface RegularRowContentProps {
   getColumnWidth: (column: Column) => string;
 }
 
-const RegularRowContent = React.memo(({
+const RegularRowContent = ({
   item,
   rowNumber,
   columns,
@@ -70,8 +70,6 @@ const RegularRowContent = React.memo(({
       ))}
     </>
   );
-});
-
-RegularRowContent.displayName = 'RegularRowContent';
+};
 
 export default RegularRowContent;

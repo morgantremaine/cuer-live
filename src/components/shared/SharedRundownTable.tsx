@@ -1,9 +1,7 @@
 
 import React from 'react';
-import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
-import { useRundownCalculations } from '@/hooks/useRundownCalculations';
-import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -12,65 +10,83 @@ interface SharedRundownTableProps {
 }
 
 const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
-  // Use centralized calculation hook
-  const { calculateHeaderDuration } = useRundownCalculations(items);
+  // Calculate header duration (sum of all non-floated regular items until next header)
+  const calculateHeaderDuration = (headerIndex: number) => {
+    if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
+      return '00:00:00';
+    }
+
+    const timeToSeconds = (timeStr: string) => {
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return minutes * 60 + seconds;
+      } else if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return hours * 3600 + minutes * 60 + seconds;
+      }
+      return 0;
+    };
+
+    let totalSeconds = 0;
+    let i = headerIndex + 1;
+
+    while (i < items.length && items[i].type !== 'header') {
+      // Only count non-floated items in header duration
+      if (!items[i].isFloating && !items[i].isFloated) {
+        totalSeconds += timeToSeconds(items[i].duration || '00:00');
+      }
+      i++;
+    }
+
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  };
 
   return (
-    <div className="overflow-hidden border rounded-lg print:border-gray-400 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
+    <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
       <table className="w-full">
-        <thead>
-          <tr className="bg-gray-200 dark:bg-gray-700">
-            <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <thead className="bg-gray-50 print:bg-gray-100">
+          <tr>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400">
               #
             </th>
             {visibleColumns.map((column) => (
               <th
                 key={column.id}
-                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400"
               >
                 {column.name}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="print:divide-gray-400 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
           {items.map((item, index) => {
             // Only non-header items can be current segments
-            const isCurrentSegment = !isHeaderItem(item) && currentSegmentId === item.id;
+            const isCurrentSegment = item.type !== 'header' && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
-            const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
-            
-            // Determine row classes and custom styles
-            let rowClass = '';
-            let customStyles: React.CSSProperties = {};
-            
-            if (isFloated) {
-              rowClass = 'bg-red-600 text-white';
-            } else if (hasCustomColor) {
-              // Use inline styles for custom colors
-              const contrastColor = getContrastTextColor(item.color);
-              customStyles = {
-                backgroundColor: item.color,
-                color: contrastColor
-              };
-              rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
-            } else if (isHeaderItem(item)) {
-              rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white border-l-4 border-gray-400 dark:border-gray-600 font-semibold';
-            } else {
-              rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
-            }
             
             return (
               <tr
                 key={item.id}
                 className={`
-                  ${rowClass}
-                  ${isCurrentSegment ? 'border-l-4 border-red-500' : ''}
+                  ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
+                  ${isCurrentSegment ? 'bg-red-50 border-l-4 border-red-500' : ''}
+                  ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
                   print:break-inside-avoid
                 `}
-                style={hasCustomColor && !isFloated ? customStyles : undefined}
+                style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
               >
-                <td className="px-3 py-2 whitespace-nowrap text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                   {isCurrentSegment && (
                     <span className="text-red-600 mr-1">▶</span>
                   )}
@@ -82,44 +98,38 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 
                 {visibleColumns.map((column) => {
                   // For headers, handle special cases
-                  if (isHeaderItem(item)) {
-                    if (column.key === 'segmentName' || column.key === 'name') {
-                      const value = column.key === 'segmentName' ? (item.notes || item.name || '') : (item.name || '');
+                  if (item.type === 'header') {
+                    if (column.key === 'segmentName') {
+                      // Show the header description/notes
                       return (
-                        <td 
-                          key={column.id} 
-                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700"
-                        >
-                          <div className="break-words whitespace-pre-wrap">{value}</div>
+                        <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                          <div className="break-words whitespace-pre-wrap">{item.notes || item.name || ''}</div>
                         </td>
                       );
                     } else if (column.key === 'duration') {
+                      // Show the calculated header duration (excluding floated items)
                       return (
-                        <td 
-                          key={column.id} 
-                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
-                        >
+                        <td key={column.id} className="px-3 py-2 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400">
                           <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
                         </td>
                       );
                     } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+                      // Don't show time fields for headers
                       return (
-                        <td 
-                          key={column.id} 
-                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700"
-                        >
-                          <div className="break-words whitespace-pre-wrap">{getCellValue(item, column)}</div>
+                        <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                          <div className="break-words whitespace-pre-wrap"></div>
                         </td>
                       );
                     }
                   }
                   
+                  // For regular items, use the standard cell value
                   const value = getCellValue(item, column);
                   
                   return (
                     <td
                       key={column.id}
-                      className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700"
+                      className={`px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400 ${isFloated ? 'text-white' : 'text-gray-900'}`}
                     >
                       <div className="break-words whitespace-pre-wrap">{value}</div>
                     </td>

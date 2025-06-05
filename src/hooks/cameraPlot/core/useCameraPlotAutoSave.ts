@@ -8,13 +8,15 @@ export const useCameraPlotAutoSave = (
   rundownId: string,
   rundownTitle: string,
   readOnly: boolean,
-  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
+  savedBlueprint: any,
+  saveBlueprint: (title: string, lists: any[], showDate?: string, silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
 ) => {
   const lastSaveRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const isSavingRef = useRef(false);
 
   useEffect(() => {
-    if (!isInitialized || readOnly || !saveBlueprint) {
+    if (!isInitialized || readOnly || plots.length === 0 || isSavingRef.current) {
       return;
     }
 
@@ -31,16 +33,27 @@ export const useCameraPlotAutoSave = (
       
       // Debounce the save operation
       saveTimeoutRef.current = setTimeout(() => {
-        console.log('Camera plot auto-save: Saving', plots.length, 'camera plots to unified system');
-        
-        try {
-          // Use the unified save function with camera plots parameter
-          saveBlueprint(undefined, true, undefined, undefined, plots);
-          console.log('Camera plot auto-save: Save completed successfully');
-        } catch (error) {
-          console.error('Camera plot auto-save: Error saving camera plots:', error);
+        if (!isSavingRef.current) {
+          isSavingRef.current = true;
+          console.log('Auto-saving camera plots:', plots.length);
+          
+          try {
+            saveBlueprint(
+              rundownTitle,
+              savedBlueprint?.lists || [],
+              savedBlueprint?.show_date,
+              true, // silent save
+              savedBlueprint?.notes,
+              savedBlueprint?.crew_data,
+              plots // Pass the camera plots
+            );
+          } catch (error) {
+            console.error('Error auto-saving camera plots:', error);
+          } finally {
+            isSavingRef.current = false;
+          }
         }
-      }, 1000);
+      }, 1000); // Reduced debounce time to 1 second for better responsiveness
     }
 
     return () => {
@@ -48,5 +61,5 @@ export const useCameraPlotAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [plots, isInitialized, readOnly, saveBlueprint]);
+  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, savedBlueprint, saveBlueprint]);
 };

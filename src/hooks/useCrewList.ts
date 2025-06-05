@@ -1,15 +1,10 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { CrewMember } from '@/types/crew';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
 
-export const useCrewList = (
-  rundownId: string, 
-  rundownTitle: string,
-  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
-) => {
+export const useCrewList = (rundownId: string, rundownTitle: string) => {
   const [crewMembers, setCrewMembers] = useState<CrewMember[]>(() => {
+    // Initialize with 5 empty rows
     return Array.from({ length: 5 }, (_, index) => ({
       id: `crew-${index + 1}`,
       role: '',
@@ -20,60 +15,13 @@ export const useCrewList = (
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
-  const { user } = useAuth();
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastSaveStateRef = useRef<string>('');
 
-  // Load crew data from blueprint
+  // Initialize crew data
   useEffect(() => {
-    if (!user || !rundownId || isInitialized) return;
-
-    const loadCrewData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('blueprints')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('rundown_id', rundownId)
-          .maybeSingle();
-
-        if (!error && data && data.crew_data && Array.isArray(data.crew_data) && data.crew_data.length > 0) {
-          setCrewMembers(data.crew_data);
-        }
-      } catch (error) {
-        console.error('Error loading crew data:', error);
-      } finally {
-        setIsInitialized(true);
-      }
-    };
-
-    loadCrewData();
-  }, [user, rundownId, isInitialized]);
-
-  // Auto-save with debouncing using unified save function
-  useEffect(() => {
-    if (!isInitialized || !saveBlueprint) return;
-
-    const currentState = JSON.stringify(crewMembers);
-    if (currentState === lastSaveStateRef.current) return;
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    if (!isInitialized) {
+      setIsInitialized(true);
     }
-
-    lastSaveStateRef.current = currentState;
-
-    saveTimeoutRef.current = setTimeout(() => {
-      console.log('Crew list: Auto-saving crew data with', crewMembers.length, 'members');
-      saveBlueprint(undefined, true, undefined, crewMembers);
-    }, 1000);
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [crewMembers, isInitialized, saveBlueprint]);
+  }, [isInitialized]);
 
   const addRow = () => {
     const newMember: CrewMember = {

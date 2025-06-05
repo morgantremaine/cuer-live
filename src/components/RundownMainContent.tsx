@@ -2,7 +2,7 @@
 import React from 'react';
 import RundownContent from './RundownContent';
 import ColumnManager from './ColumnManager';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownMainContentProps {

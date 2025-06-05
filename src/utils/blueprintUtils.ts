@@ -5,7 +5,9 @@ import { RundownItem } from '@/types/rundown';
 export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): any[] => {
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
+    // Use notes field for header descriptions, fallback to segmentName if notes is empty
     const headerTexts = headerItems.map(item => item.notes || item.segmentName || item.rowNumber);
+    // Remove duplicates and filter out empty values
     return [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
   }
   
@@ -18,6 +20,7 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
     })
     .filter(value => value !== '');
   
+  // Remove duplicates using Set
   return [...new Set(values)];
 };
 
@@ -41,36 +44,31 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
 export const getAvailableColumns = (items: RundownItem[]): { key: string; name: string; }[] => {
   const columns = new Set<string>();
   
-  // Always include headers if they exist
+  // Always include headers
   if (items.some(item => item.type === 'header')) {
     columns.add('headers');
   }
   
-  // Check standard fields efficiently
+  // Check standard fields
   const standardFields = ['video', 'gfx', 'talent', 'audio', 'script'];
   standardFields.forEach(field => {
-    const hasField = items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '');
-    if (hasField) {
+    if (items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '')) {
       columns.add(field);
     }
   });
   
-  // Check custom fields - optimize to avoid duplicates
-  const customFields = new Set<string>();
+  // Check custom fields
   items.forEach(item => {
     if (item.customFields) {
       Object.keys(item.customFields).forEach(key => {
         if (item.customFields![key] && item.customFields![key] !== '') {
-          customFields.add(key);
+          columns.add(key);
         }
       });
     }
   });
   
-  // Add unique custom fields to columns
-  customFields.forEach(field => columns.add(field));
-  
-  // Convert to the expected format with key and name
+  // Convert to the expected format with key and name - change Headers to Blocks
   return Array.from(columns).map(column => ({
     key: column,
     name: column === 'headers' ? 'Blocks' : column.charAt(0).toUpperCase() + column.slice(1)

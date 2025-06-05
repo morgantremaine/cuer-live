@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Edit } from 'lucide-react';
-import { useCameraPlot } from '@/hooks/useCameraPlot';
+import { useCameraPlotScenes } from '@/hooks/cameraPlot/useCameraPlotScenes';
 import { useNavigate } from 'react-router-dom';
 import CameraPlotSceneGrid from './cameraPlot/CameraPlotSceneGrid';
 
@@ -14,7 +14,6 @@ interface CameraPlotProps {
   onDragStart?: (e: React.DragEvent, id: string) => void;
   onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
   onDragEnd?: () => void;
-  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void;
 }
 
 const CameraPlot = ({ 
@@ -23,10 +22,9 @@ const CameraPlot = ({
   isDragging, 
   onDragStart, 
   onDragEnterContainer, 
-  onDragEnd,
-  saveBlueprint
+  onDragEnd 
 }: CameraPlotProps) => {
-  const { plots, openPlotEditor, reloadPlots } = useCameraPlot(rundownId, rundownTitle, true, saveBlueprint);
+  const { scenes, reloadPlots } = useCameraPlotScenes(rundownId, true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,7 +70,7 @@ const CameraPlot = ({
         </div>
       </CardHeader>
       <CardContent>
-        <CameraPlotSceneGrid scenes={plots} onOpenEditor={handleOpenEditor} />
+        <CameraPlotSceneGrid scenes={scenes} onOpenEditor={handleOpenEditor} />
       </CardContent>
     </Card>
   );

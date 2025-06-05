@@ -1,12 +1,12 @@
 
 import { useCallback, useMemo, useRef } from 'react';
-import { useRundownCoreState } from './useRundownCoreState';
+import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
 import { useResizableColumns } from './useResizableColumns';
 
 export const useRundownStateCoordination = () => {
-  const coreState = useRundownCoreState();
+  const coreState = useRundownGridCore();
   
   // Stable refs to prevent infinite loops
   const stableUpdateItemRef = useRef(coreState.updateItem);
@@ -28,22 +28,13 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Create adapter functions for interactions
-  const adaptedAddRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
-    coreState.addRow(calculateEndTime, insertAfterIndex);
-  }, [coreState.addRow]);
-
-  const adaptedAddHeader = useCallback((insertAfterIndex?: number) => {
-    coreState.addHeader(insertAfterIndex);
-  }, [coreState.addHeader]);
-
   // Get interaction handlers
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
     coreState.updateItem,
-    adaptedAddRow,
-    adaptedAddHeader,
+    coreState.addRow,
+    coreState.addHeader,
     coreState.deleteRow,
     coreState.toggleFloatRow,
     coreState.deleteMultipleRows,
@@ -66,7 +57,7 @@ export const useRundownStateCoordination = () => {
     coreState.markAsChanged
   );
 
-  // Memoize the complete state object
+  // Override the UI state's selectColor with our stable version
   const stableUIState = useMemo(() => ({
     ...uiState,
     selectColor: handleColorSelection,

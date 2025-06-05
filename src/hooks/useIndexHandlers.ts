@@ -1,16 +1,16 @@
 
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from './useRundownItems';
 
 interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
   rundownId?: string;
-  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void;
-  addHeader: (insertAfterIndex?: number) => void;
-  calculateEndTime: any;
-  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => void;
+  addHeader: (selectedRowId?: string | null) => void;
+  calculateEndTime: (startTime: string, duration: string) => string;
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[]) => void;
   setRundownStartTime: (startTime: string) => void;
   setTimezone: (timezone: string) => void;
   markAsChanged: () => void;
@@ -46,16 +46,20 @@ export const useIndexHandlers = ({
   }, [navigate, rundownId]);
 
   const handleRowSelect = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick);
-  }, [toggleRowSelection]);
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
+  }, [toggleRowSelection, items]);
 
   const handleAddRow = useCallback(() => {
-    addRow(calculateEndTime);
-  }, [addRow, calculateEndTime]);
+    const selectedRowsArray = Array.from(selectedRows);
+    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+    addRow(calculateEndTime, selectedRowId);
+  }, [addRow, calculateEndTime, selectedRows]);
 
   const handleAddHeader = useCallback(() => {
-    addHeader();
-  }, [addHeader]);
+    const selectedRowsArray = Array.from(selectedRows);
+    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+    addHeader(selectedRowId);
+  }, [addHeader, selectedRows]);
 
   return {
     handleRundownStartTimeChange,

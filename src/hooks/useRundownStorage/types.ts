@@ -1,18 +1,26 @@
 
-import { RundownItem } from '@/types/rundown'
+import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
+
+interface UndoState {
+  items: RundownItem[];
+  columns: Column[];
+  title: string;
+  action: string;
+  timestamp: number;
+}
 
 export interface SavedRundown {
   id: string
   title: string
   items: RundownItem[]
-  created_at: string
-  updated_at: string
-  user_id: string
-  archived?: boolean
   columns?: Column[]
   timezone?: string
-  start_time?: string
+  created_at: string
+  updated_at: string
+  archived?: boolean
+  startTime?: string
+  start_time?: string // Also include the database field name
   icon?: string
-  undo_history?: any[]
+  undo_history?: UndoState[]
 }

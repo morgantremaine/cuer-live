@@ -12,16 +12,9 @@ interface BlueprintScratchpadProps {
   rundownTitle: string;
   initialNotes?: string;
   onNotesChange?: (notes: string) => void;
-  saveBlueprint?: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void;
 }
 
-const BlueprintScratchpad = ({ 
-  rundownId, 
-  rundownTitle, 
-  initialNotes = '', 
-  onNotesChange, 
-  saveBlueprint 
-}: BlueprintScratchpadProps) => {
+const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNotesChange }: BlueprintScratchpadProps) => {
   const {
     notes,
     isEditing,
@@ -33,7 +26,7 @@ const BlueprintScratchpad = ({
     handleItalic,
     handleUnderline,
     handleBulletList
-  } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, onNotesChange, saveBlueprint);
+  } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, onNotesChange);
 
   return (
     <Card className="w-full mt-8 bg-gray-800 border-gray-700">

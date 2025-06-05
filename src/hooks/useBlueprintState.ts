@@ -5,7 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn } from '@/utils/blueprintUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useBlueprintCore } from '@/hooks/blueprint/useBlueprintCore';
-import { useBlueprintUnifiedPersistence } from '@/hooks/blueprint/useBlueprintUnifiedPersistence';
+import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 import { useBlueprintDragDrop } from '@/hooks/blueprint/useBlueprintDragDrop';
 import { useBlueprintInitialization } from '@/hooks/blueprint/useBlueprintInitialization';
 
@@ -28,18 +28,13 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     generateListId
   } = useBlueprintCore(items);
 
-  const { loadBlueprint, saveBlueprint } = useBlueprintUnifiedPersistence(
+  const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
     rundownId,
     rundownTitle,
     showDate,
     savedBlueprint,
     setSavedBlueprint
   );
-
-  // Create a simplified save function for lists only
-  const saveLists = useCallback(async (updatedLists: BlueprintList[], silent?: boolean) => {
-    await saveBlueprint(updatedLists, silent);
-  }, [saveBlueprint]);
 
   const {
     draggedListId,
@@ -50,7 +45,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     handleDragLeave,
     handleDrop,
     handleDragEnd
-  } = useBlueprintDragDrop(lists, setLists, saveLists);
+  } = useBlueprintDragDrop(lists, setLists, saveBlueprint);
 
   useBlueprintInitialization(
     user,
@@ -65,21 +60,21 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setLoading,
     setShowDate,
     loadBlueprint,
-    saveLists,
+    saveBlueprint,
     generateListId
   );
 
-  // Update checked items with debouncing
+  // Update checked items
   const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
     setLists(currentLists => {
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, checkedItems } : list
       );
       
-      // Save with a slight delay to allow for rapid successive changes
+      // Save silently after a delay
       setTimeout(() => {
         saveBlueprint(updatedLists, true);
-      }, 300);
+      }, 500);
       
       return updatedLists;
     });
@@ -138,9 +133,9 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
     setTimeout(() => {
-      saveBlueprint(undefined, true);
+      saveBlueprint(lists, true);
     }, 100);
-  }, [saveBlueprint]);
+  }, [lists, saveBlueprint]);
 
   return {
     lists,
@@ -162,7 +157,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     handleDragLeave,
     handleDrop,
     handleDragEnd,
-    savedBlueprint,
-    saveBlueprint // Expose the unified save function for other components
+    savedBlueprint
   };
 };

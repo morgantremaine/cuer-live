@@ -1,5 +1,6 @@
+
 import { useCallback } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from './useRundownItems';
 
 interface UseRundownHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;

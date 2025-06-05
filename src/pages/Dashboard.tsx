@@ -7,7 +7,7 @@ import CreateNewButton from '@/components/CreateNewButton'
 import DashboardRundownGrid from '@/components/DashboardRundownGrid'
 import ConfirmationDialogs from '@/components/ConfirmationDialogs'
 import Footer from '@/components/Footer'
-import { RundownItem } from '@/types/rundown'
+import { RundownItem } from '@/hooks/useRundownItems'
 import { SavedRundown } from '@/hooks/useRundownStorage/types'
 
 const Dashboard = () => {

@@ -1,127 +1,139 @@
-
 import { useState, useCallback, useMemo } from 'react';
-import { RundownItem } from '@/types/rundown';
-import { defaultRundownItems } from '@/data/defaultRundownItems';
-import { useRundownCalculations } from './useRundownCalculations';
-import { updateRundownItem } from './useRundownItems/itemUpdater';
-import { createNewRow, createNewHeader, calculateTimeUpdates } from './useRundownItems/rowCreator';
-import { calculateHeaderSegmentName } from './useRundownItems/headerUtils';
+import { RundownItem, SegmentItem, HeaderItem } from '@/types/rundown';
+import { v4 as uuidv4 } from 'uuid';
 
-export const useRundownItems = (markAsChanged?: () => void) => {
-  const [items, setItems] = useState<RundownItem[]>(defaultRundownItems);
+export { RundownItem, SegmentItem, HeaderItem };
 
-  // Use the proper calculation system for row numbering
-  const { getRowNumber, calculateTotalRuntime, calculateHeaderDuration } = useRundownCalculations(items);
+export const useRundownItems = (markAsChanged: () => void) => {
+  const [items, setItems] = useState<RundownItem[]>([]);
 
-  const updateItem = useCallback((id: string, field: string, value: string) => {    
-    setItems(prevItems => {
-      const newItems = prevItems.map(item => {
-        if (item.id === id) {
-          return updateRundownItem(item, field, value);
-        }
-        return item;
-      });
-      
-      return newItems;
-    });
-    
-    if (markAsChanged) {
-      markAsChanged();
-    }
+  const updateItem = useCallback((id: string, field: string, value: string) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+    markAsChanged();
   }, [markAsChanged]);
 
-  const addRow = useCallback((calculateEndTime: (item: RundownItem, prevEndTime?: string) => string, insertAfterIndex?: number) => {
-    const newItem = createNewRow();
+  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
+    const newItem: SegmentItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'segment',
+      title: '',
+      duration: '00:01:00',
+      startTime: '00:00:00',
+      endTime: '00:01:00',
+      script: '',
+      status: 'upcoming' as const,
+      isFloated: false,
+      color: ''
+    };
 
-    setItems(prevItems => {
-      const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
-      const newItems = [...prevItems];
-      
-      // Calculate times
-      const prevItem = targetIndex > 0 ? newItems[targetIndex - 1] : null;
-      const prevEndTime = prevItem?.endTime || '00:00:00';
-      newItem.startTime = prevEndTime;
-      newItem.endTime = calculateEndTime(newItem, prevEndTime);
-      
-      newItems.splice(targetIndex, 0, newItem);
-      
-      return calculateTimeUpdates(newItems, targetIndex + 1, calculateEndTime);
+    setItems(prev => {
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
+        // Insert after the specified index
+        const newItems = [...prev];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
+        return newItems;
+      } else {
+        // Add at the end
+        return [...prev, newItem];
+      }
     });
-    
-    if (markAsChanged) {
-      markAsChanged();
-    }
+    markAsChanged();
   }, [markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
-    setItems(prevItems => {
-      const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
-      const segmentName = calculateHeaderSegmentName(prevItems, targetIndex);
-      const newHeader = createNewHeader(segmentName);
+    const newItem: HeaderItem = {
+      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'header',
+      title: 'New Header',
+      status: 'upcoming' as const,
+      isFloated: false,
+      color: ''
+    };
 
-      const newItems = [...prevItems];
-      newItems.splice(targetIndex, 0, newHeader);
-      return newItems;
+    setItems(prev => {
+      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
+        // Insert after the specified index
+        const newItems = [...prev];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
+        return newItems;
+      } else {
+        // Add at the end
+        return [...prev, newItem];
+      }
     });
-    
-    if (markAsChanged) {
-      markAsChanged();
-    }
+    markAsChanged();
   }, [markAsChanged]);
 
   const deleteRow = useCallback((id: string) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== id));
-    if (markAsChanged) {
-      markAsChanged();
-    }
+    setItems(prev => prev.filter(item => item.id !== id));
+    markAsChanged();
   }, [markAsChanged]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
-    setItems(prevItems => prevItems.filter(item => !ids.includes(item.id)));
-    if (markAsChanged) {
-      markAsChanged();
-    }
+    setItems(prev => prev.filter(item => !ids.includes(item.id)));
+    markAsChanged();
   }, [markAsChanged]);
 
-  const addMultipleRows = useCallback((newItems: RundownItem[], insertAfterIndex?: number, calculateEndTime?: (item: RundownItem, prevEndTime?: string) => string) => {
-    setItems(prevItems => {
-      const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
-      const itemsWithIds = newItems.map(item => ({
-        ...item,
-        id: item.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        customFields: item.customFields || {}
-      }));
-      
-      const newItemsArray = [...prevItems];
-      newItemsArray.splice(targetIndex, 0, ...itemsWithIds);
-      
-      // Recalculate times if calculateEndTime is provided
-      if (calculateEndTime) {
-        return calculateTimeUpdates(newItemsArray, targetIndex, calculateEndTime);
-      }
-      
-      return newItemsArray;
-    });
-    
-    if (markAsChanged) {
-      markAsChanged();
-    }
+  const addMultipleRows = useCallback((newItems: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => {
+    setItems(prev => [...prev, ...newItems]);
+    markAsChanged();
   }, [markAsChanged]);
 
   const toggleFloatRow = useCallback((id: string) => {
-    setItems(prevItems => 
-      prevItems.map(item => 
-        item.id === id 
-          ? { ...item, isFloating: !item.isFloating }
-          : item
+    setItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, isFloated: !item.isFloated } : item
       )
     );
-    if (markAsChanged) {
-      markAsChanged();
-    }
+    markAsChanged();
   }, [markAsChanged]);
 
-  return useMemo(() => ({
+  const getRowNumber = useCallback((index: number) => {
+    return (index + 1).toString();
+  }, []);
+
+  const calculateTotalRuntime = useCallback(() => {
+    let totalMinutes = 0;
+    
+    items.forEach(item => {
+      if (item.type === 'segment' && item.duration) {
+        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
+        totalMinutes += hours * 60 + minutes + seconds / 60;
+      }
+    });
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.floor((totalMinutes % 1) * 60);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [items]);
+
+  const calculateHeaderDuration = useCallback((headerIndex: number) => {
+    let totalMinutes = 0;
+    
+    for (let i = headerIndex + 1; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'header') break;
+      
+      if (item.type === 'segment' && item.duration) {
+        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
+        totalMinutes += hours * 60 + minutes + seconds / 60;
+      }
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.floor((totalMinutes % 1) * 60);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [items]);
+
+  return {
     items,
     setItems,
     updateItem,
@@ -134,18 +146,5 @@ export const useRundownItems = (markAsChanged?: () => void) => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  }), [
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration
-  ]);
+  };
 };

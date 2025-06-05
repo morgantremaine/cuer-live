@@ -1,13 +1,8 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
-import { RundownItem } from '@/types/rundown';
-import { useLoadingState } from './useRundownDataLoader/useLoadingState';
-import { useLoadingEvaluation } from './useRundownDataLoader/useLoadingEvaluation';
-import { useUserInteractionTracking } from './useRundownDataLoader/useUserInteractionTracking';
-import { useDataLoadingEffect } from './useRundownDataLoader/useDataLoadingEffect';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -17,9 +12,7 @@ interface UseRundownDataLoaderProps {
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
   handleLoadLayout: (columns: Column[]) => void;
-  setItems: (items: RundownItem[]) => void;
   onRundownLoaded?: (rundown: SavedRundown) => void;
-  setIsLoading?: (loading: boolean) => void; // Add this for change tracking coordination
 }
 
 export const useRundownDataLoader = ({
@@ -30,92 +23,88 @@ export const useRundownDataLoader = ({
   setTimezone,
   setRundownStartTime,
   handleLoadLayout,
-  setItems,
-  onRundownLoaded,
-  setIsLoading
+  onRundownLoaded
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
   const paramId = params.id;
-  
-  const {
-    loadedRef,
-    isLoadingRef,
-    userHasInteractedRef,
-    loadTimerRef,
-    initialLoadCompleteRef,
-    lastEvaluationRef,
-    evaluationCooldownRef,
-    resetLoadingState,
-    setLoadingComplete,
-    setLoadingStarted,
-    cleanup
-  } = useLoadingState();
+  const loadedRef = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
+  const lastLoadedDataRef = useRef<string>('');
 
-  const { shouldLoadRundown } = useLoadingEvaluation({
-    userHasInteractedRef,
-    loadedRef,
-    initialLoadCompleteRef,
-    isLoadingRef,
-    lastEvaluationRef
-  });
-
-  // Track user interactions
-  useUserInteractionTracking({ userHasInteractedRef });
-
-  // Notify change tracking when we start/stop loading
   useEffect(() => {
-    if (setIsLoading) {
-      setIsLoading(isLoadingRef.current);
-    }
-  }, [setIsLoading]);
+    // Only proceed if we have rundowns loaded and a specific rundown ID
+    if (loading || savedRundowns.length === 0 || isLoadingRef.current) return;
+    
+    const currentRundownId = rundownId || paramId;
+    if (!currentRundownId) return;
 
-  // Main data loading effect
-  useDataLoadingEffect({
-    rundownId,
-    paramId,
-    loading,
-    savedRundowns,
-    shouldLoadRundown,
-    setRundownTitle,
-    setTimezone,
-    setRundownStartTime,
+    // Prevent loading the same rundown multiple times
+    if (loadedRef.current === currentRundownId) return;
+
+    const rundown = savedRundowns.find(r => r.id === currentRundownId);
+    if (!rundown) return;
+
+    // Create a signature to check if data actually changed
+    const dataSignature = JSON.stringify({
+      title: rundown.title,
+      timezone: rundown.timezone,
+      startTime: rundown.startTime || rundown.start_time,
+      columnsLength: rundown.columns?.length || 0
+    });
+
+    // Skip if same data was already loaded
+    if (lastLoadedDataRef.current === dataSignature) return;
+
+    console.log('Loading rundown data:', rundown.title);
+    
+    // Mark as loading and loaded to prevent loops
+    isLoadingRef.current = true;
+    loadedRef.current = currentRundownId;
+    lastLoadedDataRef.current = dataSignature;
+    
+    // Set the rundown data
+    setRundownTitle(rundown.title);
+    
+    if (rundown.timezone) {
+      setTimezone(rundown.timezone);
+    }
+    
+    if (rundown.startTime || rundown.start_time) {
+      setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
+    }
+    
+    if (rundown.columns) {
+      handleLoadLayout(rundown.columns);
+    }
+
+    // Call the callback with the loaded rundown
+    if (onRundownLoaded) {
+      onRundownLoaded(rundown);
+    }
+
+    // Reset loading flag after a short delay
+    setTimeout(() => {
+      isLoadingRef.current = false;
+    }, 100);
+  }, [
+    rundownId, 
+    paramId, 
+    savedRundowns.length, // Use length instead of the array to prevent unnecessary re-runs
+    loading, 
+    setRundownTitle, 
+    setTimezone, 
+    setRundownStartTime, 
     handleLoadLayout,
-    setItems,
-    onRundownLoaded,
-    userHasInteractedRef,
-    loadTimerRef,
-    evaluationCooldownRef,
-    lastEvaluationRef,
-    setLoadingStarted: (id: string) => {
-      setLoadingStarted(id);
-      if (setIsLoading) setIsLoading(true);
-    },
-    setLoadingComplete: (id: string) => {
-      setLoadingComplete(id);
-      if (setIsLoading) setIsLoading(false);
-    }
-  });
+    onRundownLoaded
+  ]);
 
-  // Reset loading state when rundown ID changes
+  // Reset loaded reference when rundown ID changes
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
-    const currentLoadedId = loadedRef.current;
-    
-    // Only reset if we have a new rundown ID and it's different from what's loaded
-    if (currentRundownId && currentLoadedId && currentRundownId !== currentLoadedId) {
-      console.log('Data loader: Rundown ID changed from', currentLoadedId, 'to', currentRundownId);
-      resetLoadingState(currentRundownId);
+    if (loadedRef.current && loadedRef.current !== currentRundownId) {
+      loadedRef.current = null;
+      isLoadingRef.current = false;
+      lastLoadedDataRef.current = '';
     }
-  }, [rundownId, paramId, resetLoadingState]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
-
-  // Return a flag to indicate if data loader is active for this rundown
-  return {
-    isDataLoaderActive: Boolean(rundownId || paramId),
-    isLoading: isLoadingRef.current
-  };
+  }, [rundownId, paramId]);
 };

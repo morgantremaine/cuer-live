@@ -24,23 +24,18 @@ export const useRowStyling = ({
     if (isDraggingMultiple && isSelected) {
       rowClass = 'opacity-70';
     } else {
-      rowClass = 'opacity-50';
+      rowClass = isHeader ? 'bg-blue-100 dark:bg-blue-900 opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
-    // Headers: now use white/dark backgrounds (previously used by regular rows)
-    rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:opacity-90';
+    rowClass = 'bg-gray-200 dark:bg-gray-800 border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:bg-gray-300 dark:hover:bg-gray-700';
   } else if (isFloating || isFloated) {
-    // Floating/floated items: red background with white text
-    rowClass = 'bg-red-600 text-white border-l-4 border-red-600';
-  } else if (color && color !== '#ffffff' && color !== '#FFFFFF' && color !== '') {
-    // Custom color items: use new regular row classes
-    rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:opacity-90';
+    rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
+  } else if (color && color !== '#FFFFFF') {
+    rowClass = 'hover:opacity-90';
   } else {
-    // Default rows: now use gray backgrounds (previously used by headers)
-    rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:opacity-90';
+    rowClass = 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
   }
 
-  // Add selection ring if selected
   if (isSelected) {
     rowClass += ' ring-2 ring-inset ring-blue-500 border-blue-500';
   }

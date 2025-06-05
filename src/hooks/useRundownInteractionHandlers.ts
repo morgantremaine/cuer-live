@@ -24,7 +24,7 @@ export const useRundownInteractionHandlers = (
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
 
-  // Drag and drop - use the correct setItems signature
+  // Drag and drop - fix the function call to match expected signature
   const { 
     draggedItemIndex, 
     isDraggingMultiple,
@@ -33,12 +33,12 @@ export const useRundownInteractionHandlers = (
     handleDragOver,
     handleDragLeave,
     handleDrop 
-  } = useDragAndDrop(items, setItems, selectedRows);
+  } = useDragAndDrop(items, (newItems: RundownItem[]) => setItems(() => newItems), selectedRows);
 
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
 
-  // Grid handlers - use the correct setItems signature
+  // Grid handlers - fix the function call to match expected signature
   const {
     handleUpdateItem,
     handleAddRow,

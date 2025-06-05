@@ -41,35 +41,29 @@ export const useRundownBasicState = () => {
 
   // Direct setters without change tracking (for initial load)
   const setTimezoneDirectly = (newTimezone: string) => {
-    console.log('Basic state: Setting timezone directly to:', newTimezone);
     setTimezone(newTimezone);
   };
 
   const setRundownTitleDirectly = (newTitle: string) => {
-    console.log('Basic state: Setting title directly to:', newTitle);
     setRundownTitle(newTitle);
   };
 
   const setRundownStartTimeDirectly = (newStartTime: string) => {
-    console.log('Basic state: Setting start time directly to:', newStartTime);
     setRundownStartTime(newStartTime);
   };
 
   // Change-tracking setters (for user interactions)
   const setTimezoneWithChange = (newTimezone: string) => {
-    console.log('Basic state: Setting timezone with change tracking to:', newTimezone);
     setTimezone(newTimezone);
     markAsChanged();
   };
 
   const setRundownTitleWithChange = (newTitle: string) => {
-    console.log('Basic state: Setting title with change tracking to:', newTitle);
     setRundownTitle(newTitle);
     markAsChanged();
   };
 
   const setRundownStartTimeWithChange = (newStartTime: string) => {
-    console.log('Basic state: Setting start time with change tracking to:', newStartTime);
     setRundownStartTime(newStartTime);
     markAsChanged();
   };

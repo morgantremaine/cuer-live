@@ -20,7 +20,7 @@ interface CellRendererProps {
   width?: string;
 }
 
-const CellRenderer = React.memo(({
+const CellRenderer = ({
   column,
   item,
   cellRefs,
@@ -50,7 +50,7 @@ const CellRenderer = React.memo(({
 
   // Use the column key for cell references and navigation
   const cellRefKey = column.key;
-  // For custom fields, use the proper nested path for updates
+  // Use the full path for updates
   const updateFieldKey = column.isCustom ? `customFields.${column.key}` : column.key;
 
   const value = getCellValue(column);
@@ -67,10 +67,12 @@ const CellRenderer = React.memo(({
 
   const handleCellClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row selection when clicking on cells
+    // Use cellRefKey for navigation
     onCellClick(item.id, cellRefKey);
   };
 
   const handleUpdateValue = (newValue: string) => {
+    // Use updateFieldKey for actual updates
     onUpdateItem(item.id, updateFieldKey, newValue);
   };
 
@@ -128,8 +130,6 @@ const CellRenderer = React.memo(({
       onKeyDown={onKeyDown}
     />
   );
-});
-
-CellRenderer.displayName = 'CellRenderer';
+};
 
 export default CellRenderer;

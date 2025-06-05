@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface HeaderRowContentProps {
@@ -30,7 +30,7 @@ const HeaderRowContent = ({
         className="px-1 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle" 
         style={{ width: '40px' }}
       >
-        <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName || 'A'}</span>
+        <span className="text-lg font-bold text-gray-900 dark:text-white">{item.segmentName}</span>
       </td>
       {columns.map((column, columnIndex) => (
         <td 
@@ -38,27 +38,21 @@ const HeaderRowContent = ({
           className="px-1 py-2 align-middle" 
           style={{ width: getColumnWidth(column) }}
         >
-          {column.key === 'segmentName' || column.key === 'name' ? (
+          {column.key === 'segmentName' ? (
             <input
-              ref={el => el && (cellRefs.current[`${item.id}-${column.key}`] = el)}
+              ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
               type="text"
-              value={column.key === 'segmentName' ? item.notes : item.name}
-              onChange={(e) => onUpdateItem(item.id, column.key === 'segmentName' ? 'notes' : 'name', e.target.value)}
+              value={item.notes}
+              onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
               onClick={(e) => {
                 e.stopPropagation();
-                onCellClick(item.id, column.key === 'segmentName' ? 'notes' : 'name');
+                onCellClick(item.id, 'notes');
               }}
-              onKeyDown={(e) => onKeyDown(e, item.id, column.key === 'segmentName' ? 'notes' : 'name')}
+              onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
               className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-base w-full"
             />
           ) : column.key === 'duration' ? (
             <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">({headerDuration})</span>
-          ) : column.key === 'startTime' ? (
-            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">{item.startTime}</span>
-          ) : column.key === 'endTime' ? (
-            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">{item.endTime}</span>
-          ) : column.key === 'elapsedTime' ? (
-            <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">{item.elapsedTime}</span>
           ) : column.key === 'notes' ? (
             null
           ) : null}

@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { Column } from './useColumnsManager';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface UndoState {
   items: RundownItem[];
@@ -12,98 +13,131 @@ interface UndoState {
 
 interface UseRundownUndoProps {
   rundownId?: string;
-  updateRundown?: (id: string, title: string, items: RundownItem[], silent?: boolean, archived?: boolean, columns?: Column[], timezone?: string, startTime?: string, icon?: string, undoHistory?: any[]) => Promise<void>;
-  currentTitle: string;
-  currentItems: RundownItem[];
-  currentColumns: Column[];
+  updateRundown?: (id: string, title: string, items: RundownItem[], silent?: boolean, archived?: boolean, columns?: Column[], timezone?: string, startTime?: string, icon?: string, undoHistory?: UndoState[]) => Promise<void>;
+  currentTitle?: string;
+  currentItems?: RundownItem[];
+  currentColumns?: Column[];
 }
 
-export const useRundownUndo = ({ rundownId, updateRundown, currentTitle, currentItems, currentColumns }: UseRundownUndoProps) => {
-  const [undoHistory, setUndoHistory] = useState<UndoState[]>([]);
-  const [canUndo, setCanUndo] = useState(false);
-  const [lastAction, setLastAction] = useState<string>('');
+export const useRundownUndo = (props?: UseRundownUndoProps) => {
+  const [undoStack, setUndoStack] = useState<UndoState[]>([]);
+  const isUndoing = useRef(false);
+  const isSavingHistory = useRef(false);
+  const lastSavedHistoryRef = useRef<string>('');
 
-  // Update canUndo state whenever history changes
-  useEffect(() => {
-    setCanUndo(undoHistory.length > 0);
-  }, [undoHistory]);
+  // Load undo history when rundown is loaded
+  const loadUndoHistory = useCallback((history: UndoState[] = []) => {
+    setUndoStack(history.slice(-10)); // Keep only last 10 states
+  }, []);
 
-  const saveState = useCallback((items: RundownItem[], columns: Column[], title: string, action: string) => {
+  // Save undo history to database - with debouncing
+  const saveUndoHistoryToDatabase = useCallback(async (newStack: UndoState[]) => {
+    if (!props?.rundownId || !props.updateRundown || isSavingHistory.current) return;
+    if (!props.currentTitle || !props.currentItems || !props.currentColumns) return;
+    
+    // Prevent saving the same history multiple times
+    const historyKey = JSON.stringify(newStack);
+    if (lastSavedHistoryRef.current === historyKey) return;
+    
+    try {
+      isSavingHistory.current = true;
+      lastSavedHistoryRef.current = historyKey;
+      
+      // Update only the undo history, keeping all other fields as they are
+      await props.updateRundown(
+        props.rundownId,
+        props.currentTitle,
+        props.currentItems,
+        true, // silent update
+        false, // not archived
+        props.currentColumns,
+        undefined, // timezone - keep existing
+        undefined, // startTime - keep existing
+        undefined, // icon - keep existing
+        newStack // pass undo history
+      );
+    } catch (error) {
+      console.error('Failed to save undo history:', error);
+      // Reset the saved history key on error so we can try again
+      lastSavedHistoryRef.current = '';
+    } finally {
+      isSavingHistory.current = false;
+    }
+  }, [props?.rundownId, props?.updateRundown, props?.currentTitle, props?.currentItems, props?.currentColumns]);
+
+  const saveState = useCallback((
+    items: RundownItem[],
+    columns: Column[],
+    title: string,
+    action: string
+  ) => {
+    // Don't save state during undo operations or when saving history
+    if (isUndoing.current || isSavingHistory.current) return;
+
     const newState: UndoState = {
-      items: [...items],
-      columns: [...columns], 
+      items: JSON.parse(JSON.stringify(items)), // Deep clone
+      columns: JSON.parse(JSON.stringify(columns)), // Deep clone
       title,
       action,
       timestamp: Date.now()
     };
 
-    setUndoHistory(prev => {
-      const updated = [...prev, newState];
-      // Keep only last 50 states to prevent memory issues
-      const trimmed = updated.slice(-50);
+    setUndoStack(prev => {
+      const newStack = [...prev, newState];
+      // Keep only last 10 states to prevent memory issues
+      const trimmedStack = newStack.slice(-10);
       
-      // Auto-save undo history to database
-      if (rundownId && updateRundown) {
-        updateRundown(rundownId, currentTitle, currentItems, true, false, currentColumns, undefined, undefined, undefined, trimmed).catch(error => {
-          console.error('Failed to save undo history:', error);
-        });
+      // Save to database asynchronously with longer delay to reduce frequency
+      if (props?.rundownId && props?.updateRundown) {
+        setTimeout(() => saveUndoHistoryToDatabase(trimmedStack), 2000);
       }
       
-      return trimmed;
+      return trimmedStack;
     });
-    setLastAction(action);
-  }, [rundownId, updateRundown, currentTitle, currentItems, currentColumns]);
+  }, [saveUndoHistoryToDatabase, props?.rundownId, props?.updateRundown]);
 
   const undo = useCallback((
-    setItemsFn: (items: RundownItem[]) => void, 
-    setColumnsFn: (columns: Column[]) => void,
-    setTitleFn: (title: string) => void
+    setItems: (items: RundownItem[]) => void,
+    setColumns: (columns: Column[]) => void,
+    setTitle: (title: string) => void
   ) => {
-    if (undoHistory.length === 0) return null;
-    
-    // Get the previous state and remove it from history
-    setUndoHistory(prev => {
-      const newHistory = [...prev];
-      const lastState = newHistory.pop();
-      
-      if (lastState) {
-        // Apply the previous state
-        setItemsFn(lastState.items);
-        if (lastState.columns) {
-          setColumnsFn(lastState.columns);
-        }
-        setTitleFn(lastState.title);
-        
-        // Auto-save updated undo history to database
-        if (rundownId && updateRundown) {
-          updateRundown(rundownId, currentTitle, currentItems, true, false, currentColumns, undefined, undefined, undefined, newHistory).catch(error => {
-            console.error('Failed to save updated undo history after undo:', error);
-          });
-        }
-        
-        return newHistory;
-      }
-      return prev;
-    });
-    
-    return lastAction;
-  }, [undoHistory, lastAction, rundownId, updateRundown, currentTitle, currentItems, currentColumns]);
+    if (undoStack.length === 0) return null;
 
-  const loadUndoHistory = useCallback((history: UndoState[]) => {
-    if (Array.isArray(history)) {
-      setUndoHistory(history);
-      if (history.length > 0) {
-        setLastAction(history[history.length - 1].action);
-      }
+    const lastState = undoStack[undoStack.length - 1];
+    
+    // Mark that we're undoing to prevent saving this as a new state
+    isUndoing.current = true;
+    
+    // Restore the previous state
+    setItems(lastState.items);
+    setColumns(lastState.columns);
+    setTitle(lastState.title);
+    
+    // Remove the last state from the stack
+    const newStack = undoStack.slice(0, -1);
+    setUndoStack(newStack);
+    
+    // Save updated history to database with delay
+    if (props?.rundownId && props?.updateRundown) {
+      setTimeout(() => saveUndoHistoryToDatabase(newStack), 1000);
     }
-  }, []);
+    
+    // Reset the undoing flag after a delay
+    setTimeout(() => {
+      isUndoing.current = false;
+    }, 500); // Increased delay to prevent interference
+
+    return lastState.action;
+  }, [undoStack, saveUndoHistoryToDatabase, props?.rundownId, props?.updateRundown]);
+
+  const canUndo = undoStack.length > 0;
+  const lastAction = undoStack.length > 0 ? undoStack[undoStack.length - 1].action : null;
 
   return {
     saveState,
     undo,
     canUndo,
     lastAction,
-    loadUndoHistory,
-    undoHistory // Export undo history for auto-save
+    loadUndoHistory
   };
 };

@@ -4,16 +4,14 @@ import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
-import { useRundownDataLoader } from '@/hooks/useRundownDataLoader';
 
-export const useRundownDataManagement = (rundownTitle: string, timezone: string, rundownStartTime: string, setRundownTitleDirectly: (title: string) => void, setTimezoneDirectly: (timezone: string) => void, setRundownStartTimeDirectly: (startTime: string) => void) => {
+export const useRundownDataManagement = (rundownTitle: string, timezone: string) => {
   const params = useParams<{ id: string }>();
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { savedRundowns, loading } = useRundownStorage();
   const initializationRef = useRef<{ [key: string]: boolean }>({});
-  const dataLoaderActiveRef = useRef(false);
 
   const markAsChanged = useCallback(() => {
     console.log('Changes marked - triggering auto-save');
@@ -32,7 +30,7 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  } = useRundownItems();
 
   const {
     columns,
@@ -44,44 +42,31 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
     handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
-  // Use the data loader to handle loading existing rundowns
-  const { isDataLoaderActive, isLoading: dataLoaderIsLoading } = useRundownDataLoader({
-    rundownId,
-    savedRundowns,
-    loading,
-    setRundownTitle: setRundownTitleDirectly, // Use direct setters to avoid triggering change tracking
-    setTimezone: setTimezoneDirectly,
-    setRundownStartTime: setRundownStartTimeDirectly,
-    handleLoadLayout,
-    setItems,
-    onRundownLoaded: (rundown) => {
-      console.log('Data management: Rundown loaded via data loader:', rundown.id);
-    }
-  });
-
-  // Track when data loader is active
-  useEffect(() => {
-    dataLoaderActiveRef.current = isDataLoaderActive;
-    console.log('Data management: Data loader active status changed to:', isDataLoaderActive);
-  }, [isDataLoaderActive]);
-
-  // Only initialize for new rundowns when data loader is not active
+  // Initialize once per rundownId to prevent loops
   useEffect(() => {
     const initKey = rundownId || 'new';
     
-    if (initializationRef.current[initKey] || loading || dataLoaderActiveRef.current || dataLoaderIsLoading) {
+    if (initializationRef.current[initKey] || loading) {
       return;
     }
 
-    console.log('Data management: Initializing for new rundown:', initKey);
+    console.log('Initializing rundown data management for:', initKey);
     initializationRef.current[initKey] = true;
 
-    // Only handle new rundowns when data loader isn't active
-    if (!rundownId) {
-      console.log('Data management: Setting up new rundown');
-      // For new rundowns, the default data is already set by useRundownItems
+    // For existing rundowns, load the data
+    if (rundownId && savedRundowns.length > 0) {
+      const existingRundown = savedRundowns.find(r => r.id === rundownId);
+      if (existingRundown) {
+        console.log('Loading existing rundown data:', rundownId);
+        if (existingRundown.items) {
+          setItems(existingRundown.items);
+        }
+        if (existingRundown.columns) {
+          handleLoadLayout(existingRundown.columns);
+        }
+      }
     }
-  }, [rundownId, savedRundowns.length, loading, dataLoaderIsLoading]);
+  }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout]);
 
   // Clear initialization when rundown ID changes
   useEffect(() => {

@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { RundownItem } from '@/types/rundown'
+import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
 import { useToast } from '@/hooks/use-toast'
 import { SavedRundown } from './useRundownStorage/types'
