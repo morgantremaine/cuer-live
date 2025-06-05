@@ -7,8 +7,8 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Initialize undo system - fix: call without arguments
   const undoSystem = useRundownUndo();
   
-  // Initialize storage
-  const storage = useRundownStorage(rundownId);
+  // Initialize storage - fix: call without arguments
+  const storage = useRundownStorage();
   
   // Create a dummy markAsChanged function if not available
   const markAsChanged = () => {};
