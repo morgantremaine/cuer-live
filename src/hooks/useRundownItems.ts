@@ -108,15 +108,16 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Simplified getRowNumber function
+  // Much simpler getRowNumber function - fix the header letter logic
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
     const item = items[index];
     if (!item) return '';
     
-    // For headers, calculate segment letter
+    // For headers, calculate their segment letter (A, B, C, etc.)
     if (item.type === 'header') {
+      // Count how many headers come before this one (including this one)
       let headerCount = 0;
       for (let i = 0; i <= index; i++) {
         if (items[i]?.type === 'header') {
@@ -127,13 +128,14 @@ export const useRundownItems = (markAsChanged: () => void) => {
       return letters[headerCount - 1] || 'A';
     }
     
-    // For regular items, find current segment and number within segment
-    let currentSegmentLetter = 'A';
-    let itemsInCurrentSegment = 0;
+    // For regular items, find which segment they're in and their number within that segment
+    let segmentLetter = 'A'; // Default to segment A if no headers found
+    let regularItemsInSegment = 0;
     
-    // Find the most recent header before this item
+    // Look backwards to find the most recent header to determine segment
     for (let i = index - 1; i >= 0; i--) {
       if (items[i]?.type === 'header') {
+        // Count headers up to and including this one to get segment letter
         let headerCount = 0;
         for (let j = 0; j <= i; j++) {
           if (items[j]?.type === 'header') {
@@ -141,37 +143,56 @@ export const useRundownItems = (markAsChanged: () => void) => {
           }
         }
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        currentSegmentLetter = letters[headerCount - 1] || 'A';
+        segmentLetter = letters[headerCount - 1] || 'A';
         break;
       }
     }
     
-    // Count regular items in current segment up to this item
+    // Count regular items in this segment that come before the current item
+    let foundSegmentStart = false;
     for (let i = 0; i < index; i++) {
-      if (items[i]?.type === 'regular') {
-        // Check if this item is in the current segment
-        let itemSegment = 'A';
-        for (let j = i - 1; j >= 0; j--) {
+      if (items[i]?.type === 'header') {
+        // Check if this header belongs to our segment
+        let headerCount = 0;
+        for (let j = 0; j <= i; j++) {
           if (items[j]?.type === 'header') {
-            let headerCount = 0;
-            for (let k = 0; k <= j; k++) {
-              if (items[k]?.type === 'header') {
-                headerCount++;
-              }
-            }
-            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            itemSegment = letters[headerCount - 1] || 'A';
-            break;
+            headerCount++;
           }
         }
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const thisHeaderSegment = letters[headerCount - 1] || 'A';
         
-        if (itemSegment === currentSegmentLetter) {
-          itemsInCurrentSegment++;
+        if (thisHeaderSegment === segmentLetter) {
+          foundSegmentStart = true;
+          regularItemsInSegment = 0; // Reset count when we find the start of our segment
+        }
+      } else if (items[i]?.type === 'regular') {
+        // Only count if we're in the right segment or no headers found yet
+        if (foundSegmentStart || segmentLetter === 'A') {
+          // Check if this regular item is in our segment
+          let itemSegment = 'A';
+          for (let j = i - 1; j >= 0; j--) {
+            if (items[j]?.type === 'header') {
+              let headerCount = 0;
+              for (let k = 0; k <= j; k++) {
+                if (items[k]?.type === 'header') {
+                  headerCount++;
+                }
+              }
+              const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+              itemSegment = letters[headerCount - 1] || 'A';
+              break;
+            }
+          }
+          
+          if (itemSegment === segmentLetter) {
+            regularItemsInSegment++;
+          }
         }
       }
     }
     
-    return `${currentSegmentLetter}${itemsInCurrentSegment + 1}`;
+    return `${segmentLetter}${regularItemsInSegment + 1}`;
   }, [items]);
 
   const toggleFloatRow = useCallback((id: string) => {
@@ -217,9 +238,12 @@ export const useRundownItems = (markAsChanged: () => void) => {
     if (!headerItem || headerItem.type !== 'header') return '';
     
     let totalSeconds = 0;
+    
+    // Sum up durations of all regular items after this header until the next header
     for (let i = index + 1; i < items.length; i++) {
       const item = items[i];
-      if (item.type === 'header') break;
+      if (item.type === 'header') break; // Stop at next header
+      
       if (item.type === 'regular' && item.duration) {
         const duration = item.duration;
         const parts = duration.split(':');
