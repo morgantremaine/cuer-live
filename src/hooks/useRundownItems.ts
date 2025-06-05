@@ -1,136 +1,213 @@
-import { useState, useCallback, useMemo } from 'react';
-import { RundownItem, SegmentItem, HeaderItem } from '@/types/rundown';
+import { useState, useCallback } from 'react';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 
-export { RundownItem, SegmentItem, HeaderItem };
+export type { RundownItem } from '@/types/rundown';
 
 export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
 
-  const updateItem = useCallback((id: string, field: string, value: string) => {
-    setItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-    markAsChanged();
+  const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
+    setItems(prevItems => {
+      const newItems = prevItems.map(item => 
+        item.id === id ? { ...item, ...updates } : item
+      );
+      markAsChanged();
+      return newItems;
+    });
   }, [markAsChanged]);
 
-  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
-    const newItem: SegmentItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'segment',
-      title: '',
-      duration: '00:01:00',
-      startTime: '00:00:00',
-      endTime: '00:01:00',
+  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+    const newItem: RundownItem = {
+      id: uuidv4(),
+      type: 'regular',
+      segment_name: '',
+      estimated_duration: '',
       script: '',
-      status: 'upcoming' as const,
-      isFloated: false,
-      color: ''
+      talent: '',
+      technical_notes: '',
+      producer_notes: '',
+      graphics: '',
+      camera_direction: '',
+      audio: '',
+      lighting: '',
+      props: '',
+      rundown_order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    setItems(prev => {
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
-        // Insert after the specified index
-        const newItems = [...prev];
+    setItems(prevItems => {
+      let newItems;
+      if (insertAfterIndex !== undefined) {
+        newItems = [...prevItems];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
-        return newItems;
       } else {
-        // Add at the end
-        return [...prev, newItem];
+        newItems = [...prevItems, newItem];
       }
+      
+      // Update rundown_order for all items
+      newItems.forEach((item, index) => {
+        item.rundown_order = index;
+      });
+      
+      markAsChanged();
+      return newItems;
     });
-    markAsChanged();
   }, [markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
-    const newItem: HeaderItem = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    const newItem: RundownItem = {
+      id: uuidv4(),
       type: 'header',
-      title: 'New Header',
-      status: 'upcoming' as const,
-      isFloated: false,
-      color: ''
+      segment_name: 'New Header',
+      estimated_duration: '',
+      script: '',
+      talent: '',
+      technical_notes: '',
+      producer_notes: '',
+      graphics: '',
+      camera_direction: '',
+      audio: '',
+      lighting: '',
+      props: '',
+      rundown_order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    setItems(prev => {
-      if (insertAfterIndex !== undefined && insertAfterIndex >= 0) {
-        // Insert after the specified index
-        const newItems = [...prev];
+    setItems(prevItems => {
+      let newItems;
+      if (insertAfterIndex !== undefined) {
+        newItems = [...prevItems];
         newItems.splice(insertAfterIndex + 1, 0, newItem);
-        return newItems;
       } else {
-        // Add at the end
-        return [...prev, newItem];
+        newItems = [...prevItems, newItem];
       }
+      
+      // Update rundown_order for all items
+      newItems.forEach((item, index) => {
+        item.rundown_order = index;
+      });
+      
+      markAsChanged();
+      return newItems;
     });
-    markAsChanged();
   }, [markAsChanged]);
 
   const deleteRow = useCallback((id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
-    markAsChanged();
+    setItems(prevItems => {
+      const newItems = prevItems.filter(item => item.id !== id);
+      // Update rundown_order for remaining items
+      newItems.forEach((item, index) => {
+        item.rundown_order = index;
+      });
+      markAsChanged();
+      return newItems;
+    });
   }, [markAsChanged]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
-    setItems(prev => prev.filter(item => !ids.includes(item.id)));
-    markAsChanged();
-  }, [markAsChanged]);
-
-  const addMultipleRows = useCallback((newItems: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => {
-    setItems(prev => [...prev, ...newItems]);
-    markAsChanged();
-  }, [markAsChanged]);
-
-  const toggleFloatRow = useCallback((id: string) => {
-    setItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, isFloated: !item.isFloated } : item
-      )
-    );
-    markAsChanged();
-  }, [markAsChanged]);
-
-  const getRowNumber = useCallback((index: number) => {
-    return (index + 1).toString();
-  }, []);
-
-  const calculateTotalRuntime = useCallback(() => {
-    let totalMinutes = 0;
-    
-    items.forEach(item => {
-      if (item.type === 'segment' && item.duration) {
-        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
-        totalMinutes += hours * 60 + minutes + seconds / 60;
-      }
+    setItems(prevItems => {
+      const newItems = prevItems.filter(item => !ids.includes(item.id));
+      // Update rundown_order for remaining items
+      newItems.forEach((item, index) => {
+        item.rundown_order = index;
+      });
+      markAsChanged();
+      return newItems;
     });
+  }, [markAsChanged]);
 
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.floor(totalMinutes % 60);
-    const seconds = Math.floor((totalMinutes % 1) * 60);
+  const addMultipleRows = useCallback((newItems: RundownItem[]) => {
+    setItems(prevItems => {
+      const allItems = [...prevItems, ...newItems];
+      // Update rundown_order for all items
+      allItems.forEach((item, index) => {
+        item.rundown_order = index;
+      });
+      markAsChanged();
+      return allItems;
+    });
+  }, [markAsChanged]);
 
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  const getRowNumber = useCallback((itemId: string) => {
+    const item = items.find(item => item.id === itemId);
+    if (!item) return 0;
+    
+    let rowNumber = 1;
+    for (const currentItem of items) {
+      if (currentItem.id === itemId) break;
+      if (currentItem.type === 'regular') {
+        rowNumber++;
+      }
+    }
+    return rowNumber;
   }, [items]);
 
-  const calculateHeaderDuration = useCallback((headerIndex: number) => {
-    let totalMinutes = 0;
+  const toggleFloatRow = useCallback((id: string) => {
+    setItems(prevItems => {
+      const newItems = prevItems.map(item => 
+        item.id === id ? { ...item, is_floated: !item.is_floated } : item
+      );
+      markAsChanged();
+      return newItems;
+    });
+  }, [markAsChanged]);
+
+  const calculateTotalRuntime = useCallback(() => {
+    let totalSeconds = 0;
+    items.forEach(item => {
+      if (item.type === 'regular' && item.estimated_duration) {
+        const duration = item.estimated_duration;
+        const parts = duration.split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0]) || 0;
+          const seconds = parseInt(parts[1]) || 0;
+          totalSeconds += minutes * 60 + seconds;
+        }
+      }
+    });
     
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  }, [items]);
+
+  const calculateHeaderDuration = useCallback((headerId: string) => {
+    const headerIndex = items.findIndex(item => item.id === headerId);
+    if (headerIndex === -1) return '';
+    
+    let totalSeconds = 0;
     for (let i = headerIndex + 1; i < items.length; i++) {
       const item = items[i];
       if (item.type === 'header') break;
-      
-      if (item.type === 'segment' && item.duration) {
-        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
-        totalMinutes += hours * 60 + minutes + seconds / 60;
+      if (item.type === 'regular' && item.estimated_duration) {
+        const duration = item.estimated_duration;
+        const parts = duration.split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0]) || 0;
+          const seconds = parseInt(parts[1]) || 0;
+          totalSeconds += minutes * 60 + seconds;
+        }
       }
     }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.floor(totalMinutes % 60);
-    const seconds = Math.floor((totalMinutes % 1) * 60);
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
   }, [items]);
 
   return {
