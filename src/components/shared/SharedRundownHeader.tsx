@@ -37,7 +37,7 @@ const SharedRundownHeader = ({
           <h1 className="text-lg font-bold text-gray-900 print:text-xl line-clamp-2 leading-tight mb-1">
             {title}
           </h1>
-          <div className="text-xs text-gray-600 space-y-0.5">
+          <div className="text-xs text-gray-600 space-y-0.5 print:hidden">
             <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
             <div>Start: {startTime}</div>
           </div>
@@ -56,7 +56,7 @@ const SharedRundownHeader = ({
             {title}
           </h1>
         </div>
-        <div className="text-right text-sm text-gray-600 flex-shrink-0">
+        <div className="text-right text-sm text-gray-600 flex-shrink-0 print:hidden">
           <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           <div>Start: {startTime}</div>
         </div>

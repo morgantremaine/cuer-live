@@ -88,7 +88,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                   {isShowcallerCurrent && (
                     <span 
-                      className="text-green-600 mr-1 text-lg scale-125 inline-block"
+                      className="text-green-600 mr-1 text-lg scale-125 inline-block print:hidden"
                       style={{ textShadow: '0 0 1px black' }}
                     >
                       ▶
