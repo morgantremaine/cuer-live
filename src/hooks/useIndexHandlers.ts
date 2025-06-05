@@ -50,12 +50,12 @@ export const useIndexHandlers = ({
   }, [toggleRowSelection, items]);
 
   const handleAddRow = useCallback(() => {
-    // Pass the selected rows set to addRow
+    // Pass the calculateEndTime function and selected rows
     addRow(calculateEndTime, selectedRows);
   }, [addRow, calculateEndTime, selectedRows]);
 
   const handleAddHeader = useCallback(() => {
-    // Pass the selected rows set to addHeader
+    // Pass the selected rows to addHeader
     addHeader(selectedRows);
   }, [addHeader, selectedRows]);
 

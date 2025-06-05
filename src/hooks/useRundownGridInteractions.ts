@@ -28,22 +28,21 @@ export const useRundownGridInteractions = (
   // Multi-row selection
   const {
     selectedRows,
-    selectRow,
-    selectMultipleRows,
+    toggleRowSelection,
     clearSelection,
-    isRowSelected
+    selectAll
   } = useMultiRowSelection();
 
   // Drag and drop
   const {
-    draggedItems,
-    dragOverIndex,
-    isDragging,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
     handleDragStart,
     handleDragOver,
-    handleDragEnd,
+    handleDragLeave,
     handleDrop
-  } = useDragAndDrop(items, setItems, selectedRows, clearSelection);
+  } = useDragAndDrop(items, setItems, selectedRows);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -139,20 +138,28 @@ export const useRundownGridInteractions = (
   }, [contextMenu, closeContextMenu]);
 
   return {
-    // Selection
+    // Selection - provide all expected properties
     selectedRows,
-    selectRow,
-    selectMultipleRows,
+    toggleRowSelection,
     clearSelection,
-    isRowSelected,
-    // Drag and drop
-    draggedItems,
-    dragOverIndex,
-    isDragging,
+    selectAll,
+    selectRow: toggleRowSelection, // Alias for compatibility
+    selectMultipleRows: selectAll, // Alias for compatibility
+    isRowSelected: (id: string) => selectedRows.has(id), // Helper function
+    
+    // Drag and drop - provide all expected properties
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    draggedItems: selectedRows.size > 0 ? Array.from(selectedRows) : [], // Compatibility
+    dragOverIndex: dropTargetIndex, // Alias for compatibility
+    isDragging: draggedItemIndex !== -1, // Computed property
     handleDragStart,
     handleDragOver,
-    handleDragEnd,
+    handleDragLeave,
     handleDrop,
+    handleDragEnd: () => {}, // Placeholder for compatibility
+    
     // Context menu
     contextMenu,
     colorPickerRowId,
@@ -160,6 +167,7 @@ export const useRundownGridInteractions = (
     closeContextMenu,
     handleColorPicker,
     closeColorPicker,
+    
     // Enhanced operations with user action tracking
     addRow: enhancedAddRow,
     addHeader: enhancedAddHeader,
@@ -168,6 +176,7 @@ export const useRundownGridInteractions = (
     updateItem: enhancedUpdateItem,
     selectColor: enhancedSelectColor,
     setRundownTitle: enhancedSetRundownTitle,
+    
     // Pass through operations
     deleteMultipleRows,
     addMultipleRows,

@@ -26,7 +26,7 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - now passing calculateEndTime and using correct returned property names
+  // Row operations - passing the correct calculateEndTime function
   const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
@@ -40,11 +40,11 @@ export const useRundownGridState = () => {
   return useMemo(() => ({
     // Core state
     ...coreState,
-    // Interaction handlers
+    // Interaction handlers - include all expected properties
     ...interactions,
     // UI state
     ...uiState,
-    // Override with wrapped functions - use correct handler names
+    // Override with wrapped functions
     handleAddRow,
     handleAddHeader,
     // Clipboard functionality
@@ -53,7 +53,17 @@ export const useRundownGridState = () => {
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
-    handleDeleteSelectedRows
+    handleDeleteSelectedRows,
+    // Add missing drag and drop properties that components expect
+    draggedItemIndex: interactions.draggedItems?.length > 0 ? 0 : -1,
+    isDraggingMultiple: interactions.isDragging && interactions.selectedRows.size > 1,
+    dropTargetIndex: interactions.dragOverIndex || -1,
+    // Add missing handler properties
+    handleUpdateItem: interactions.updateItem,
+    handleRowSelection: interactions.selectRow || interactions.toggleRowSelection,
+    handleDragLeave: interactions.handleDragLeave || (() => {}),
+    // Add missing selection methods
+    toggleRowSelection: interactions.toggleRowSelection || interactions.selectRow
   }), [
     coreState,
     interactions,
