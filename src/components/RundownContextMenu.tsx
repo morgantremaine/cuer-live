@@ -83,14 +83,14 @@ const RundownContextMenu = memo(({
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
           {onAddRow && (
-            <ContextMenuItem onClick={onAddRow}>
+            <ContextMenuItem onClick={onAddRow} className="cursor-pointer">
               <Plus className="mr-2 h-4 w-4" />
               Add Segment
             </ContextMenuItem>
           )}
           
           {onAddHeader && (
-            <ContextMenuItem onClick={onAddHeader}>
+            <ContextMenuItem onClick={onAddHeader} className="cursor-pointer">
               <Plus className="mr-2 h-4 w-4" />
               Add Header
             </ContextMenuItem>
@@ -98,13 +98,13 @@ const RundownContextMenu = memo(({
           
           {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
           
-          <ContextMenuItem onClick={onCopy}>
+          <ContextMenuItem onClick={onCopy} className="cursor-pointer">
             <Copy className="mr-2 h-4 w-4" />
             {isMultipleSelection ? `Copy ${selectedCount} rows` : 'Copy row'}
           </ContextMenuItem>
           
           {hasClipboardData && onPaste && (
-            <ContextMenuItem onClick={onPaste}>
+            <ContextMenuItem onClick={onPaste} className="cursor-pointer">
               <ClipboardPaste className="mr-2 h-4 w-4" />
               Paste rows
             </ContextMenuItem>
@@ -112,7 +112,7 @@ const RundownContextMenu = memo(({
           
           <ContextMenuSeparator />
           
-          <ContextMenuItem onClick={handleContextMenuFloat}>
+          <ContextMenuItem onClick={handleContextMenuFloat} className="cursor-pointer">
             <span className="mr-2 h-4 w-4 flex items-center justify-center">🛟</span>
             {isFloated ? 
               (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
@@ -120,7 +120,7 @@ const RundownContextMenu = memo(({
             }
           </ContextMenuItem>
           
-          <ContextMenuItem onClick={onColorPicker}>
+          <ContextMenuItem onClick={onColorPicker} className="cursor-pointer">
             <Palette className="mr-2 h-4 w-4" />
             {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
           </ContextMenuItem>
@@ -128,13 +128,13 @@ const RundownContextMenu = memo(({
           <ContextMenuSeparator />
           
           {isMultipleSelection && onClearSelection && (
-            <ContextMenuItem onClick={onClearSelection}>
+            <ContextMenuItem onClick={onClearSelection} className="cursor-pointer">
               <X className="mr-2 h-4 w-4" />
               Clear selection
             </ContextMenuItem>
           )}
           
-          <ContextMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+          <ContextMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600 cursor-pointer">
             <Trash2 className="mr-2 h-4 w-4" />
             {isMultipleSelection ? `Delete ${selectedCount} rows` : 'Delete row'}
           </ContextMenuItem>
