@@ -42,27 +42,23 @@ export const useRundownDataManagement = (rundownId: string) => {
     }
   });
 
-  // Initialize with default items for new rundowns - fixed logic with better guards
+  // Initialize with default items for new rundowns ONLY - better logic
   useEffect(() => {
-    // Only run for new rundowns (no rundownId)
+    // Only run for new rundowns (no rundownId) and only once
     if (rundownId) return;
     
     // Wait for storage to finish loading
     if (storage.loading) return;
     
-    // Check if items are already initialized (prevent multiple initializations)
-    const currentItems = stateIntegration.items;
-    if (!Array.isArray(currentItems)) {
-      console.warn('Items is not an array, resetting to default items');
+    // Only initialize if we haven't already set items and title is still default
+    const isDefaultState = basicState.rundownTitle === 'Live Broadcast Rundown' && 
+                           stateIntegration.items.length === 0;
+    
+    if (isDefaultState) {
+      console.log('Initializing new rundown with default items (one-time only)');
       stateIntegration.setItems(defaultRundownItems);
-      return;
     }
-    
-    if (currentItems.length > 0) return;
-    
-    console.log('Initializing new rundown with default items');
-    stateIntegration.setItems(defaultRundownItems);
-  }, [rundownId, storage.loading, stateIntegration.items.length]);
+  }, [rundownId, storage.loading, basicState.rundownTitle, stateIntegration.items.length]);
 
   return {
     // Basic state
@@ -71,7 +67,7 @@ export const useRundownDataManagement = (rundownId: string) => {
     // Storage operations
     ...storage,
     
-    // State management - ensure all functions are exposed and arrays are validated
+    // State management
     ...stateIntegration,
     
     // Undo/Redo operations

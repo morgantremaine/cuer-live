@@ -30,37 +30,44 @@ export const useRundownDataLoader = ({
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
   const paramId = params.id;
-  const loadedRef = useRef<string | null>(null);
+  const loadedRundownIdRef = useRef<string | null>(null);
+  const hasLoadedRef = useRef(false);
   const isLoadingRef = useRef(false);
-  const lastLoadedDataRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Only proceed if we have rundowns loaded and a specific rundown ID
-    if (loading || savedRundowns.length === 0 || isLoadingRef.current) return;
+    // Only proceed if we have rundowns loaded and not currently loading
+    if (loading || isLoadingRef.current) return;
     
     const currentRundownId = rundownId || paramId;
-    if (!currentRundownId) return;
+    
+    // If no rundown ID, this is a new rundown - don't load anything
+    if (!currentRundownId) {
+      // Reset state for new rundown
+      if (loadedRundownIdRef.current) {
+        loadedRundownIdRef.current = null;
+        hasLoadedRef.current = false;
+      }
+      return;
+    }
 
-    // Prevent loading the same rundown multiple times
-    if (loadedRef.current === currentRundownId) return;
+    // Don't reload if we've already loaded this exact rundown
+    if (loadedRundownIdRef.current === currentRundownId && hasLoadedRef.current) {
+      return;
+    }
 
+    // Find the rundown in saved rundowns
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
-    if (!rundown) return;
-
-    // Create a signature to detect if we're trying to load the same data
-    const dataSignature = `${rundown.id}-${rundown.items?.length || 0}-${rundown.title}`;
-    if (lastLoadedDataRef.current === dataSignature) {
+    if (!rundown) {
+      console.log('Rundown not found:', currentRundownId);
       return;
     }
 
     console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
     
-    // Mark as loading and loaded to prevent loops
+    // Mark as loading to prevent concurrent loads
     isLoadingRef.current = true;
-    loadedRef.current = currentRundownId;
-    lastLoadedDataRef.current = dataSignature;
     
-    // Use setTimeout to break out of React's render cycle
+    // Use setTimeout to ensure this happens after current render cycle
     setTimeout(() => {
       try {
         // Set the rundown data
@@ -88,37 +95,34 @@ export const useRundownDataLoader = ({
           setItems(itemsWithCustomFields);
         }
 
+        // Mark as successfully loaded
+        loadedRundownIdRef.current = currentRundownId;
+        hasLoadedRef.current = true;
+
         // Call the callback with the loaded rundown
         if (onRundownLoaded) {
           onRundownLoaded(rundown);
         }
       } finally {
-        // Reset loading flag after a delay to prevent rapid re-triggers
-        setTimeout(() => {
-          isLoadingRef.current = false;
-        }, 1000);
+        // Reset loading flag
+        isLoadingRef.current = false;
       }
-    }, 100);
+    }, 50);
   }, [
     rundownId, 
     paramId, 
-    savedRundowns.length,
-    loading, 
-    setRundownTitle, 
-    setTimezone, 
-    setRundownStartTime, 
-    handleLoadLayout,
-    setItems,
-    onRundownLoaded
+    savedRundowns.length, // Only depend on length, not the entire array
+    loading
   ]);
 
-  // Reset loaded reference when rundown ID changes
+  // Reset when rundown ID changes
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
-    if (loadedRef.current && loadedRef.current !== currentRundownId) {
-      loadedRef.current = null;
+    if (loadedRundownIdRef.current && loadedRundownIdRef.current !== currentRundownId) {
+      console.log('Rundown ID changed, resetting loader state');
+      loadedRundownIdRef.current = null;
+      hasLoadedRef.current = false;
       isLoadingRef.current = false;
-      lastLoadedDataRef.current = null;
     }
   }, [rundownId, paramId]);
 };
