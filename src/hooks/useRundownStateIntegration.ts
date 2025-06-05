@@ -1,9 +1,9 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
-import { RundownItem } from '@/types/rundown';
+import { useChangeTracking } from './useChangeTracking';
 
 export const useRundownStateIntegration = (
   markAsChanged: () => void,
@@ -50,24 +50,36 @@ export const useRundownStateIntegration = (
   const stableTimezone = useMemo(() => timezone, [timezone]);
   const stableStartTime = useMemo(() => rundownStartTime, [rundownStartTime]);
 
-  // Auto-save integration - now uses stable values
-  const { hasUnsavedChanges, isSaving, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
+  // Change tracking - separate from auto-save
+  const { 
+    hasUnsavedChanges, 
+    markAsSaved,
+    isInitialized
+  } = useChangeTracking(stableItems, stableTitle, stableColumns, stableTimezone, stableStartTime);
+
+  // Auto-save integration - only initialize if change tracking is ready
+  const { isSaving } = useAutoSave(
     stableItems,
     stableTitle,
+    hasUnsavedChanges && isInitialized,
+    markAsSaved,
     stableColumns,
     stableTimezone,
     stableStartTime,
     getUndoHistory
   );
 
-  // Wrapped addRow that supports insertion at specific index
-  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
-    originalAddRow(calculateEndTime, insertAfterIndex);
+  // Wrapped functions
+  const addRow = useMemo(() => {
+    return (calculateEndTime: any, insertAfterIndex?: number) => {
+      originalAddRow(calculateEndTime, insertAfterIndex);
+    };
   }, [originalAddRow]);
 
-  // Wrapped addHeader that supports insertion at specific index  
-  const addHeader = useCallback((insertAfterIndex?: number) => {
-    originalAddHeader(insertAfterIndex);
+  const addHeader = useMemo(() => {
+    return (insertAfterIndex?: number) => {
+      originalAddHeader(insertAfterIndex);
+    };
   }, [originalAddHeader]);
 
   return {
