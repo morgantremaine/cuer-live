@@ -15,6 +15,9 @@ interface HeaderControlsProps {
   visibleColumns: any[];
   onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
 }
 
 const HeaderControls = ({
@@ -24,7 +27,10 @@ const HeaderControls = ({
   items,
   visibleColumns,
   onHighlightMatch,
-  onReplaceText
+  onReplaceText,
+  onUndo,
+  canUndo,
+  lastAction
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
@@ -60,6 +66,7 @@ const HeaderControls = ({
           onReplaceText={onReplaceText}
         />
       </div>
+      {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
           <span className="text-sm">{user.email}</span>
