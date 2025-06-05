@@ -5,7 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn } from '@/utils/blueprintUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useBlueprintCore } from '@/hooks/blueprint/useBlueprintCore';
-import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
+import { useBlueprintUnifiedPersistence } from '@/hooks/blueprint/useBlueprintUnifiedPersistence';
 import { useBlueprintDragDrop } from '@/hooks/blueprint/useBlueprintDragDrop';
 import { useBlueprintInitialization } from '@/hooks/blueprint/useBlueprintInitialization';
 
@@ -28,7 +28,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     generateListId
   } = useBlueprintCore(items);
 
-  const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
+  const { loadBlueprint, saveBlueprint } = useBlueprintUnifiedPersistence(
     rundownId,
     rundownTitle,
     showDate,
@@ -36,10 +36,10 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setSavedBlueprint
   );
 
-  // Create a simplified save function for drag/drop operations
+  // Create a simplified save function for lists only
   const saveLists = useCallback(async (updatedLists: BlueprintList[], silent?: boolean) => {
-    await saveBlueprint(rundownTitle, updatedLists, showDate, silent);
-  }, [saveBlueprint, rundownTitle, showDate]);
+    await saveBlueprint(updatedLists, silent);
+  }, [saveBlueprint]);
 
   const {
     draggedListId,
@@ -65,25 +65,25 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setLoading,
     setShowDate,
     loadBlueprint,
-    saveLists, // Use saveLists instead of saveBlueprint
+    saveLists,
     generateListId
   );
 
-  // Update checked items
+  // Update checked items with debouncing
   const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
     setLists(currentLists => {
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, checkedItems } : list
       );
       
-      // Save silently after a delay
+      // Save with a slight delay to allow for rapid successive changes
       setTimeout(() => {
-        saveBlueprint(rundownTitle, updatedLists, showDate, true);
-      }, 500);
+        saveBlueprint(updatedLists, true);
+      }, 300);
       
       return updatedLists;
     });
-  }, [saveBlueprint, rundownTitle, showDate]);
+  }, [saveBlueprint]);
 
   // Add new list
   const addNewList = useCallback((name: string, sourceColumn: string) => {
@@ -97,19 +97,19 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     
     setLists(currentLists => {
       const updatedLists = [...currentLists, newList];
-      saveBlueprint(rundownTitle, updatedLists, showDate, false);
+      saveBlueprint(updatedLists, false);
       return updatedLists;
     });
-  }, [items, generateListId, saveBlueprint, rundownTitle, showDate]);
+  }, [items, generateListId, saveBlueprint]);
 
   // Delete list
   const deleteList = useCallback((listId: string) => {
     setLists(currentLists => {
       const updatedLists = currentLists.filter(list => list.id !== listId);
-      saveBlueprint(rundownTitle, updatedLists, showDate, false);
+      saveBlueprint(updatedLists, false);
       return updatedLists;
     });
-  }, [saveBlueprint, rundownTitle, showDate]);
+  }, [saveBlueprint]);
 
   // Rename list
   const renameList = useCallback((listId: string, newName: string) => {
@@ -117,10 +117,10 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, name: newName } : list
       );
-      saveBlueprint(rundownTitle, updatedLists, showDate, true);
+      saveBlueprint(updatedLists, true);
       return updatedLists;
     });
-  }, [saveBlueprint, rundownTitle, showDate]);
+  }, [saveBlueprint]);
 
   // Refresh all lists
   const refreshAllLists = useCallback(() => {
@@ -129,18 +129,18 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         ...list,
         items: generateListFromColumn(items, list.sourceColumn)
       }));
-      saveBlueprint(rundownTitle, refreshedLists, showDate, true);
+      saveBlueprint(refreshedLists, true);
       return refreshedLists;
     });
-  }, [items, saveBlueprint, rundownTitle, showDate]);
+  }, [items, saveBlueprint]);
 
   // Update show date
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
     setTimeout(() => {
-      saveBlueprint(rundownTitle, lists, newDate, true);
+      saveBlueprint(undefined, true);
     }, 100);
-  }, [lists, saveBlueprint, rundownTitle]);
+  }, [saveBlueprint]);
 
   return {
     lists,
@@ -162,6 +162,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     handleDragLeave,
     handleDrop,
     handleDragEnd,
-    savedBlueprint
+    savedBlueprint,
+    saveBlueprint // Expose the unified save function for other components
   };
 };

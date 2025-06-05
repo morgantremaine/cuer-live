@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -39,12 +38,13 @@ const Blueprint = () => {
     handleDragLeave,
     handleDrop,
     handleDragEnd,
-    savedBlueprint
+    savedBlueprint,
+    saveBlueprint // Get the unified save function
   } = useBlueprintState(
     id || '',
     rundown?.title || 'Unknown Rundown',
     rundown?.items || [],
-    rundown?.start_time // Use start_time property instead of startTime
+    rundown?.start_time
   );
 
   const handleSignOut = async () => {
@@ -137,6 +137,7 @@ const Blueprint = () => {
             onDragStart={handleDragStart}
             onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 1)}
             onDragEnd={handleDragEnd}
+            saveBlueprint={saveBlueprint} // Pass the unified save function
           />
 
           {/* Insertion line for camera plot */}
@@ -151,6 +152,7 @@ const Blueprint = () => {
             onDragStart={handleDragStart}
             onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 2)}
             onDragEnd={handleDragEnd}
+            saveBlueprint={saveBlueprint} // Pass the unified save function
           />
 
           {/* Insertion line for scratchpad */}
@@ -169,9 +171,7 @@ const Blueprint = () => {
               rundownId={id || ''}
               rundownTitle={rundown?.title || 'Unknown Rundown'}
               initialNotes={savedBlueprint?.notes || ''}
-              onNotesChange={(notes) => {
-                // Notes are automatically handled by the component
-              }}
+              saveBlueprint={saveBlueprint} // Pass the unified save function
             />
           </div>
         </div>

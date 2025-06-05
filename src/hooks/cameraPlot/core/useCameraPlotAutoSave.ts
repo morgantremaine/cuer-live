@@ -8,8 +8,7 @@ export const useCameraPlotAutoSave = (
   rundownId: string,
   rundownTitle: string,
   readOnly: boolean,
-  savedBlueprint: any,
-  saveBlueprint: (title: string, lists: any[], showDate?: string, silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
+  saveBlueprint: (lists?: any[], silent?: boolean, notes?: string, crewData?: any[], cameraPlots?: any[]) => void
 ) => {
   const lastSaveRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -38,15 +37,8 @@ export const useCameraPlotAutoSave = (
           console.log('Camera plot auto-save: Saving', plots.length, 'camera plots');
           
           try {
-            saveBlueprint(
-              rundownTitle,
-              savedBlueprint?.lists || [],
-              savedBlueprint?.show_date,
-              true, // silent save
-              savedBlueprint?.notes,
-              savedBlueprint?.crew_data,
-              plots // Pass the camera plots
-            );
+            // Use the unified save function with just camera plots
+            saveBlueprint(undefined, true, undefined, undefined, plots);
             console.log('Camera plot auto-save: Save completed successfully');
           } catch (error) {
             console.error('Camera plot auto-save: Error saving camera plots:', error);
@@ -54,7 +46,7 @@ export const useCameraPlotAutoSave = (
             isSavingRef.current = false;
           }
         }
-      }, 1000); // Reduced debounce time to 1 second for better responsiveness
+      }, 1000);
     }
 
     return () => {
@@ -62,5 +54,5 @@ export const useCameraPlotAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, savedBlueprint, saveBlueprint]);
+  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, saveBlueprint]);
 };
