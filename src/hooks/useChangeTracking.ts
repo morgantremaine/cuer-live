@@ -15,14 +15,22 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const isLoadingRef = useRef(false);
   const hasInitialDataRef = useRef(false);
   const instanceIdRef = useRef<number>();
+  const lastChangeCheckRef = useRef<number>(0);
   
   // Initialize instance ID only once
   if (!instanceIdRef.current) {
     instanceIdRef.current = ++instanceCounter;
   }
 
-  // Create signature only when values actually change
+  // Create signature only when values actually change - optimized with debouncing
   const currentSignature = useMemo(() => {
+    const now = Date.now();
+    // Debounce signature calculation to prevent excessive computation
+    if (now - lastChangeCheckRef.current < 500) {
+      return lastSavedDataRef.current;
+    }
+    lastChangeCheckRef.current = now;
+    
     return JSON.stringify({ 
       items: items.map(item => ({ id: item.id, ...item })), 
       title: rundownTitle, 
@@ -34,7 +42,6 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
   // Initialize tracking ONLY ONCE when we first get meaningful data
   useEffect(() => {
-    // Skip if already initialized or currently loading
     if (initializedRef.current || isLoadingRef.current) {
       return;
     }
@@ -42,7 +49,6 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     // Check if we have meaningful data to initialize with
     const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
 
-    // Only initialize once we have meaningful data and haven't initialized before
     if (hasMeaningfulData && !hasInitialDataRef.current) {
       hasInitialDataRef.current = true;
       
@@ -51,20 +57,22 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       setIsInitialized(true);
       setHasUnsavedChanges(false);
     }
-  }, [items.length, rundownTitle]); // Minimal dependencies to prevent loops
+  }, [items.length, rundownTitle]);
 
-  // Track changes after initialization - only check when signature changes
+  // Track changes after initialization - optimized to reduce frequency
   useEffect(() => {
     if (!initializedRef.current || isLoadingRef.current) {
       return;
     }
 
-    const hasChanges = lastSavedDataRef.current !== currentSignature;
-    
-    if (hasChanges !== hasUnsavedChanges) {
-      setHasUnsavedChanges(hasChanges);
+    // Only check for changes if signature actually changed
+    if (lastSavedDataRef.current !== currentSignature) {
+      const hasChanges = true;
+      if (hasChanges !== hasUnsavedChanges) {
+        setHasUnsavedChanges(hasChanges);
+      }
     }
-  }, [currentSignature, hasUnsavedChanges]); // Only depend on actual changes
+  }, [currentSignature, hasUnsavedChanges]);
 
   // Stable callback functions
   const markAsSaved = useCallback((savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {

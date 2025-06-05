@@ -36,6 +36,8 @@ export const useRundownDataLoader = ({
   const userHasInteractedRef = useRef(false);
   const loadTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialLoadCompleteRef = useRef(false);
+  const lastEvaluationRef = useRef<number>(0);
+  const evaluationCooldownRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track user interactions to prevent overwriting their changes
   useEffect(() => {
@@ -43,9 +45,8 @@ export const useRundownDataLoader = ({
       userHasInteractedRef.current = true;
     };
 
-    // Listen for user interactions that indicate they've started working
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('keydown', handleUserInteraction);
+    document.addEventListener('click', handleUserInteraction, { once: true });
+    document.addEventListener('keydown', handleUserInteraction, { once: true });
     
     return () => {
       document.removeEventListener('click', handleUserInteraction);
@@ -53,156 +54,140 @@ export const useRundownDataLoader = ({
     };
   }, []);
 
-  // Helper function to validate if loading should proceed
+  // Helper function to validate if loading should proceed - with debouncing
   const shouldLoadRundown = (currentRundownId: string, rundown: SavedRundown) => {
-    console.log('Data loader: Evaluating load conditions for:', currentRundownId);
+    const now = Date.now();
+    
+    // Debounce evaluations to prevent excessive logging
+    if (now - lastEvaluationRef.current < 1000) {
+      return false;
+    }
+    lastEvaluationRef.current = now;
 
-    // First safeguard: Recent auto-save protection
+    // Critical safeguards only - reduced logging
     if (checkRecentAutoSave(currentRundownId)) {
-      console.log('Data loader: BLOCKED - rundown was recently auto-saved:', currentRundownId);
       return false;
     }
 
-    // Second safeguard: User interaction detection
     if (userHasInteractedRef.current) {
-      console.log('Data loader: BLOCKED - user has already interacted');
       return false;
     }
 
-    // Third safeguard: User changes since auto-save
     if (checkUserChangedSinceAutoSave(currentRundownId)) {
-      console.log('Data loader: BLOCKED - user has made changes since auto-save');
       return false;
     }
 
-    // Fourth safeguard: Already loaded this rundown
     if (loadedRef.current === currentRundownId && initialLoadCompleteRef.current) {
-      console.log('Data loader: BLOCKED - rundown already loaded and initialization complete');
       return false;
     }
 
-    // Fifth safeguard: Currently loading
     if (isLoadingRef.current) {
-      console.log('Data loader: BLOCKED - already loading');
       return false;
     }
 
-    console.log('Data loader: PROCEEDING - all safeguards passed for:', currentRundownId);
     return true;
   };
 
-  // Main data loading effect - refined trigger conditions
+  // Main data loading effect - optimized trigger conditions
   useEffect(() => {
+    // Early returns with minimal logging
     if (loading || savedRundowns.length === 0) {
-      console.log('Data loader: Waiting for storage to be ready');
       return;
     }
     
     const currentRundownId = rundownId || paramId;
     if (!currentRundownId) {
-      console.log('Data loader: No rundown ID available');
       return;
     }
 
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) {
-      console.log('Data loader: Rundown not found in storage:', currentRundownId);
       return;
     }
 
-    // Apply comprehensive validation before loading
-    if (!shouldLoadRundown(currentRundownId, rundown)) {
-      return;
+    // Clear any existing evaluation cooldown
+    if (evaluationCooldownRef.current) {
+      clearTimeout(evaluationCooldownRef.current);
     }
 
-    console.log('Data loader: Starting to load rundown', currentRundownId);
-    isLoadingRef.current = true;
-    loadedRef.current = currentRundownId;
-    
-    // Reset user interaction flag for new rundown
-    userHasInteractedRef.current = false;
-    
-    // Check undo history for items if main items array is empty
-    let itemsToLoad = rundown.items || [];
-    
-    if ((!itemsToLoad || itemsToLoad.length === 0) && rundown.undo_history && Array.isArray(rundown.undo_history) && rundown.undo_history.length > 0) {
-      console.log('Data loader: Looking for items in undo history');
-      // Look through undo history to find the most recent state with items
-      for (let i = rundown.undo_history.length - 1; i >= 0; i--) {
-        const historyEntry = rundown.undo_history[i];
-        
-        if (historyEntry && historyEntry.items && Array.isArray(historyEntry.items) && historyEntry.items.length > 0) {
-          itemsToLoad = historyEntry.items;
-          console.log('Data loader: Found items in undo history entry', i, 'with', itemsToLoad.length, 'items');
-          break;
+    // Debounce the evaluation to prevent excessive calls
+    evaluationCooldownRef.current = setTimeout(() => {
+      if (!shouldLoadRundown(currentRundownId, rundown)) {
+        return;
+      }
+
+      console.log('Data loader: Loading rundown', currentRundownId);
+      isLoadingRef.current = true;
+      loadedRef.current = currentRundownId;
+      
+      userHasInteractedRef.current = false;
+      
+      // Check undo history for items if main items array is empty
+      let itemsToLoad = rundown.items || [];
+      
+      if ((!itemsToLoad || itemsToLoad.length === 0) && rundown.undo_history && Array.isArray(rundown.undo_history) && rundown.undo_history.length > 0) {
+        for (let i = rundown.undo_history.length - 1; i >= 0; i--) {
+          const historyEntry = rundown.undo_history[i];
+          
+          if (historyEntry && historyEntry.items && Array.isArray(historyEntry.items) && historyEntry.items.length > 0) {
+            itemsToLoad = historyEntry.items;
+            break;
+          }
         }
       }
-    }
-    
-    console.log('Data loader: Setting rundown data for', currentRundownId);
-    
-    // Set the rundown data
-    setRundownTitle(rundown.title);
-    
-    if (rundown.timezone) {
-      setTimezone(rundown.timezone);
-    }
-    
-    if (rundown.start_time) {
-      setRundownStartTime(rundown.start_time || '09:00:00');
-    }
-    
-    if (rundown.columns) {
-      handleLoadLayout(rundown.columns);
-    }
-
-    // Load the rundown items with additional validation
-    if (itemsToLoad && Array.isArray(itemsToLoad)) {
-      console.log('Data loader: Setting items count:', itemsToLoad.length);
       
-      // Clear any existing timer
-      if (loadTimerRef.current) {
-        clearTimeout(loadTimerRef.current);
+      // Set the rundown data
+      setRundownTitle(rundown.title);
+      
+      if (rundown.timezone) {
+        setTimezone(rundown.timezone);
       }
       
-      // Reduced delay to 100ms but with more comprehensive checks
-      loadTimerRef.current = setTimeout(() => {
-        // Final validation before loading items
+      if (rundown.start_time) {
+        setRundownStartTime(rundown.start_time || '09:00:00');
+      }
+      
+      if (rundown.columns) {
+        handleLoadLayout(rundown.columns);
+      }
+
+      // Load the rundown items with validation
+      if (itemsToLoad && Array.isArray(itemsToLoad)) {
+        if (loadTimerRef.current) {
+          clearTimeout(loadTimerRef.current);
+        }
+        
+        loadTimerRef.current = setTimeout(() => {
+          if (!userHasInteractedRef.current && 
+              !checkRecentAutoSave(currentRundownId) && 
+              !checkUserChangedSinceAutoSave(currentRundownId)) {
+            setItems(itemsToLoad);
+          }
+          loadTimerRef.current = null;
+        }, 50); // Reduced delay
+      } else {
         if (!userHasInteractedRef.current && 
             !checkRecentAutoSave(currentRundownId) && 
             !checkUserChangedSinceAutoSave(currentRundownId)) {
-          setItems(itemsToLoad);
-          console.log('Data loader: Items loaded after delay');
-        } else {
-          console.log('Data loader: FINAL BLOCK - conditions changed during delay');
+          setItems([]);
         }
-        loadTimerRef.current = null;
-      }, 100);
-    } else {
-      console.log('Data loader: No items to load, setting empty array');
-      if (!userHasInteractedRef.current && 
-          !checkRecentAutoSave(currentRundownId) && 
-          !checkUserChangedSinceAutoSave(currentRundownId)) {
-        setItems([]);
       }
-    }
 
-    // Call the callback with the loaded rundown
-    if (onRundownLoaded) {
-      onRundownLoaded(rundown);
-    }
+      if (onRundownLoaded) {
+        onRundownLoaded(rundown);
+      }
 
-    // Mark initialization as complete
-    setTimeout(() => {
-      console.log('Data loader: Initialization complete for', currentRundownId);
-      isLoadingRef.current = false;
-      initialLoadCompleteRef.current = true;
-    }, 150);
+      setTimeout(() => {
+        isLoadingRef.current = false;
+        initialLoadCompleteRef.current = true;
+      }, 100);
+    }, 500); // Debounce evaluations by 500ms
+
   }, [
     rundownId, 
     paramId, 
-    // Removed savedRundowns.length from dependencies to prevent problematic re-runs
     loading, 
+    savedRundowns.length, // Only re-run when length actually changes
     setRundownTitle, 
     setTimezone, 
     setRundownStartTime, 
@@ -211,20 +196,23 @@ export const useRundownDataLoader = ({
     onRundownLoaded
   ]);
 
-  // Reset loaded reference when rundown ID changes (genuine navigation)
+  // Reset loaded reference when rundown ID changes
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
-      console.log('Data loader: Rundown ID changed, resetting loader state from', loadedRef.current, 'to', currentRundownId);
       loadedRef.current = null;
       isLoadingRef.current = false;
       userHasInteractedRef.current = false;
       initialLoadCompleteRef.current = false;
       
-      // Clear any pending timer
       if (loadTimerRef.current) {
         clearTimeout(loadTimerRef.current);
         loadTimerRef.current = null;
+      }
+      
+      if (evaluationCooldownRef.current) {
+        clearTimeout(evaluationCooldownRef.current);
+        evaluationCooldownRef.current = null;
       }
     }
   }, [rundownId, paramId]);
@@ -234,6 +222,9 @@ export const useRundownDataLoader = ({
     return () => {
       if (loadTimerRef.current) {
         clearTimeout(loadTimerRef.current);
+      }
+      if (evaluationCooldownRef.current) {
+        clearTimeout(evaluationCooldownRef.current);
       }
     };
   }, []);

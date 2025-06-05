@@ -22,6 +22,8 @@ export const useAutoSave = (
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const instanceIdRef = useRef<number>();
   const isUnmountedRef = useRef(false);
+  const lastSaveStateRef = useRef<string>('');
+  const saveInProgressRef = useRef(false);
   
   // Store all current values in refs to avoid dependency issues
   const currentValuesRef = useRef({
@@ -57,18 +59,39 @@ export const useAutoSave = (
 
   const { isSaving, performSave } = useAutoSaveOperations();
 
-  // Completely stable save function that uses refs
+  // Check if state has meaningfully changed to avoid unnecessary saves
+  const hasStateChanged = useCallback(() => {
+    const current = currentValuesRef.current;
+    const currentState = JSON.stringify({
+      items: current.items,
+      title: current.rundownTitle,
+      columns: current.columns,
+      timezone: current.timezone,
+      startTime: current.startTime
+    });
+    
+    if (currentState === lastSaveStateRef.current) {
+      return false;
+    }
+    
+    lastSaveStateRef.current = currentState;
+    return true;
+  }, []);
+
+  // Optimized save function that prevents duplicate saves
   const executeSave = useCallback(async () => {
-    if (isUnmountedRef.current) {
+    if (isUnmountedRef.current || saveInProgressRef.current) {
       return;
     }
     
     const current = currentValuesRef.current;
     
-    if (!current.user || isSaving) {
+    if (!current.user || isSaving || !hasStateChanged()) {
       return;
     }
 
+    saveInProgressRef.current = true;
+    
     try {
       const currentUndoHistory = current.getUndoHistory ? current.getUndoHistory() : undefined;
       
@@ -86,12 +109,14 @@ export const useAutoSave = (
       }
     } catch (error) {
       console.error('Auto-save error:', error);
+    } finally {
+      saveInProgressRef.current = false;
     }
-  }, [performSave, isSaving]); // Only depend on stable values from useAutoSaveOperations
+  }, [performSave, isSaving, hasStateChanged]);
 
-  // Main auto-save effect - ONLY depends on primitive values
+  // Main auto-save effect - increased debounce time to reduce frequency
   useEffect(() => {
-    if (isUnmountedRef.current) return;
+    if (isUnmountedRef.current || saveInProgressRef.current) return;
 
     // Only proceed if we have unsaved changes and a user
     if (!hasUnsavedChanges || !user) {
@@ -104,13 +129,13 @@ export const useAutoSave = (
       debounceTimeoutRef.current = null;
     }
 
-    // Set new timeout - reduced to 1 second
+    // Increased debounce time to reduce save frequency
     debounceTimeoutRef.current = setTimeout(() => {
-      if (!isUnmountedRef.current) {
+      if (!isUnmountedRef.current && !saveInProgressRef.current) {
         debounceTimeoutRef.current = null;
         executeSave();
       }
-    }, 1000);
+    }, 2000); // Increased from 1 second to 2 seconds
 
     // Cleanup function
     return () => {
