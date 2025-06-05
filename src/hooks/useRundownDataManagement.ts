@@ -4,7 +4,7 @@ import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 
 export const useRundownDataManagement = (rundownId: string) => {
-  // Initialize undo system
+  // Initialize undo system - fix: call without arguments
   const undoSystem = useRundownUndo();
   
   // Initialize storage

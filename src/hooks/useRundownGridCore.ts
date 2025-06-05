@@ -64,14 +64,8 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Undo functionality with persistence - pass current state
-  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
-    rundownId,
-    updateRundown,
-    currentTitle: rundownTitle,
-    currentItems: items,
-    currentColumns: columns
-  });
+  // Undo functionality with persistence - fix: call without arguments, then pass state separately
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
   // Use data loader with undo history loading
   useRundownDataLoader({
@@ -191,7 +185,7 @@ export const useRundownGridCore = () => {
 
   const wrappedAddMultipleRows = useCallback((newItems: RundownItem[], calculateEndTimeFn: any) => {
     saveState(items, columns, rundownTitle, 'Paste Rows');
-    addMultipleRows(newItems, calculateEndTimeFn);
+    addMultipleRows(newItems);
   }, [addMultipleRows, saveState, items, columns, rundownTitle]);
 
   const wrappedSetRundownTitle = useCallback((title: string) => {
@@ -202,7 +196,8 @@ export const useRundownGridCore = () => {
   }, [setRundownTitle, saveState, items, columns, rundownTitle]);
 
   const handleUndo = useCallback(() => {
-    const action = undo(setItems, (cols) => handleLoadLayout(cols), setRundownTitleDirectly);
+    // Fix: call undo with only the required arguments
+    const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);
     if (action) {
       markAsChanged();
       console.log(`Undid: ${action}`);

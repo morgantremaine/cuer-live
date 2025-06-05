@@ -47,10 +47,10 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Change tracking
+  // Change tracking - fix: pass items array instead of string
   const { hasUnsavedChanges } = useChangeTracking(
     rundownTitle,
-    items,
+    items, // This should be RundownItem[], not string
     columns,
     timezone,
     rundownStartTime
