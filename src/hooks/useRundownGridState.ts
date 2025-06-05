@@ -11,6 +11,7 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
 import { useCellNavigation } from './useCellNavigation';
 import { useRundownUndo } from './useRundownUndo';
+import { useRundownCalculations } from './useRundownCalculations';
 
 export const useRundownGridState = () => {
   // Basic state
@@ -37,7 +38,7 @@ export const useRundownGridState = () => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
   
-  // Drag and drop - fix: remove the extra markAsChanged parameter
+  // Drag and drop
   const { 
     draggedItemIndex, 
     isDraggingMultiple, 
@@ -60,6 +61,9 @@ export const useRundownGridState = () => {
     coreState.updateItem,
     rundownStartTime
   );
+
+  // Row calculations (numbering, lettering)
+  const { getRowNumber, calculateHeaderDuration } = useRundownCalculations(coreState.items);
   
   // Add current time separately
   const currentTime = new Date();
@@ -70,7 +74,7 @@ export const useRundownGridState = () => {
     coreState.items
   );
 
-  // Undo functionality - fix the destructuring
+  // Undo functionality
   const undoHook = useRundownUndo();
   const handleUndo = () => {
     return undoHook.undo(coreState.setItems, (columns: any) => {}, setRundownTitle);
@@ -78,7 +82,7 @@ export const useRundownGridState = () => {
   const canUndo = undoHook.canUndo;
   const lastAction = undoHook.lastAction;
 
-  // Playback controls - fix: provide the required parameters properly
+  // Playback controls
   const { 
     isPlaying, 
     timeRemaining, 
@@ -105,9 +109,8 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - create wrapper functions that properly handle the parameter conversion
+  // Row operations wrapper functions
   const wrappedAddRow = (calculateEndTimeFn: any, selectedRowId?: string) => {
-    // Convert selectedRowId to insertAfterIndex
     let insertAfterIndex: number | undefined = undefined;
     if (selectedRowId) {
       const selectedIndex = coreState.items.findIndex(item => item.id === selectedRowId);
@@ -119,7 +122,6 @@ export const useRundownGridState = () => {
   };
 
   const wrappedAddHeader = (selectedRowId?: string) => {
-    // Convert selectedRowId to insertAfterIndex
     let insertAfterIndex: number | undefined = undefined;
     if (selectedRowId) {
       const selectedIndex = coreState.items.findIndex(item => item.id === selectedRowId);
@@ -130,7 +132,7 @@ export const useRundownGridState = () => {
     coreState.addHeader(insertAfterIndex);
   };
 
-  // Create simplified versions for components that don't pass parameters
+  // Simple versions for components that don't pass parameters
   const handleAddRow = () => {
     coreState.addRow(calculateEndTime);
   };
@@ -214,6 +216,8 @@ export const useRundownGridState = () => {
     // Time and playback
     calculateEndTime,
     getRowStatus,
+    getRowNumber,
+    calculateHeaderDuration,
     isPlaying,
     timeRemaining,
     play,
@@ -229,16 +233,16 @@ export const useRundownGridState = () => {
     handlePasteRows,
     handleDeleteSelectedRows,
     
-    // Row operations - provide both versions
-    handleAddRow, // Simple version for components that don't pass parameters
-    handleAddHeader, // Simple version for components that don't pass parameters
-    addRow: wrappedAddRow, // Parameterized version for useIndexHandlers
-    addHeader: wrappedAddHeader, // Parameterized version for useIndexHandlers
+    // Row operations
+    handleAddRow,
+    handleAddHeader,
+    addRow: wrappedAddRow,
+    addHeader: wrappedAddHeader,
     
     // Item operations
     handleUpdateItem,
     handleRowSelection,
-    updateItem: handleUpdateItem, // Alias for compatibility
+    updateItem: handleUpdateItem,
     
     // Helper functions
     handleToggleColorPicker,
@@ -271,6 +275,8 @@ export const useRundownGridState = () => {
     lastAction,
     calculateEndTime,
     getRowStatus,
+    getRowNumber,
+    calculateHeaderDuration,
     isPlaying,
     timeRemaining,
     play,

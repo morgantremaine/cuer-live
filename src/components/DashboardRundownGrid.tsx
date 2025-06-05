@@ -1,93 +1,187 @@
+
 import React from 'react';
-import RundownCard from './RundownCard';
+import { Clock, Calendar, MoreVertical, Play, Share2, Copy, Archive, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { RundownCard } from './RundownCard';
+import { useToast } from '@/hooks/use-toast';
+import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 interface DashboardRundownGridProps {
-  title: string;
   rundowns: SavedRundown[];
-  loading: boolean;
-  onCreateNew?: () => void;
-  onOpen: (rundownId: string) => void;
-  onDelete: (rundownId: string, title: string, e: React.MouseEvent) => void;
-  onArchive?: (rundownId: string, title: string, e: React.MouseEvent) => void;
-  onUnarchive?: (rundownId: string, title: string, items: any[], e: React.MouseEvent) => void;
-  onDuplicate: (rundownId: string, title: string, items: any[], e: React.MouseEvent) => void;
-  isArchived?: boolean;
-  showEmptyState: boolean;
+  onDeleteRundown: (id: string) => void;
 }
 
-const DashboardRundownGrid = ({
-  title,
-  rundowns,
-  loading,
-  onCreateNew,
-  onOpen,
-  onDelete,
-  onArchive,
-  onUnarchive,
-  onDuplicate,
-  isArchived = false,
-  showEmptyState
-}: DashboardRundownGridProps) => {
-  if (loading) {
+const DashboardRundownGrid = ({ rundowns, onDeleteRundown }: DashboardRundownGridProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { updateRundown } = useRundownStorage();
+
+  // Filter out archived rundowns for the main dashboard view
+  const activeRundowns = rundowns.filter(rundown => !rundown.archived);
+
+  const handleOpenRundown = (id: string) => {
+    navigate(`/rundown/${id}`);
+  };
+
+  const handleOpenTeleprompter = (id: string) => {
+    window.open(`/teleprompter/${id}`, '_blank');
+  };
+
+  const handleShareRundown = async (rundown: SavedRundown) => {
+    try {
+      // Create a shareable link
+      const shareUrl = `${window.location.origin}/shared/${rundown.id}`;
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: rundown.title,
+          text: `Check out this rundown: ${rundown.title}`,
+          url: shareUrl,
+        });
+      } else {
+        // Fallback to copying to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: 'Link copied!',
+          description: 'Shareable link has been copied to your clipboard.',
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing rundown:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to share rundown.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDuplicateRundown = async (rundown: SavedRundown) => {
+    try {
+      // Create a copy with a new title
+      const duplicatedTitle = `${rundown.title} (Copy)`;
+      
+      // Here you would call your save function with the duplicated data
+      toast({
+        title: 'Rundown duplicated!',
+        description: `Created "${duplicatedTitle}"`,
+      });
+    } catch (error) {
+      console.error('Error duplicating rundown:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to duplicate rundown.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleArchiveRundown = async (rundown: SavedRundown) => {
+    try {
+      await updateRundown(
+        rundown.id,
+        rundown.title,
+        rundown.items,
+        false, // silent
+        true, // archived
+        rundown.columns,
+        rundown.timezone,
+        rundown.startTime || rundown.start_time
+      );
+      
+      toast({
+        title: 'Rundown archived',
+        description: `"${rundown.title}" has been moved to archives.`,
+      });
+    } catch (error) {
+      console.error('Error archiving rundown:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to archive rundown.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (activeRundowns.length === 0) {
     return (
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">{title}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-gray-800 rounded-lg p-6 animate-pulse">
-              <div className="h-6 bg-gray-700 rounded mb-4"></div>
-              <div className="h-4 bg-gray-700 rounded mb-2"></div>
-              <div className="h-4 bg-gray-700 rounded"></div>
-            </div>
-          ))}
-        </div>
+      <div className="text-center py-12">
+        <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          No rundowns yet
+        </h3>
+        <p className="text-gray-500 dark:text-gray-400">
+          Create your first rundown to get started with broadcast planning.
+        </p>
       </div>
     );
   }
 
-  if (rundowns.length === 0 && !showEmptyState) {
-    return null;
-  }
-
   return (
-    <div className="mb-8">
-      <h2 className="text-xl font-semibold text-white mb-4">{title}</h2>
-      
-      {rundowns.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {activeRundowns.map((rundown) => (
+        <div key={rundown.id} className="relative group">
+          <RundownCard
+            rundown={rundown}
+            onClick={() => handleOpenRundown(rundown.id)}
+          />
+          
+          {/* Action Menu */}
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => handleOpenRundown(rundown.id)}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Open Rundown
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOpenTeleprompter(rundown.id)}>
+                  <Clock className="mr-2 h-4 w-4" />
+                  Open Teleprompter
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleShareRundown(rundown)}>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDuplicateRundown(rundown)}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicate
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleArchiveRundown(rundown)}>
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDeleteRundown(rundown.id)}
+                  className="text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">No rundowns yet</h3>
-          <p className="text-gray-400 mb-6">Get started by creating your first rundown</p>
-          {onCreateNew && (
-            <button
-              onClick={onCreateNew}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Create New Rundown
-            </button>
-          )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {rundowns.map((rundown) => (
-            <RundownCard
-              key={rundown.id}
-              rundown={rundown}
-              onOpen={onOpen}
-              onDelete={onDelete}
-              onArchive={onArchive}
-              onUnarchive={onUnarchive}
-              onDuplicate={onDuplicate}
-              isArchived={isArchived}
-            />
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 };

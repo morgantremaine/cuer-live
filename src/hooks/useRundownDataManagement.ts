@@ -14,6 +14,7 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
   
   const { savedRundowns, loading } = useRundownStorage();
   const initializationRef = useRef<{ [key: string]: boolean }>({});
+  const preventDuplicateInit = useRef(false);
 
   // Change tracking with proper integration
   const { hasUnsavedChanges, markAsSaved, markAsChanged, isInitialized, setIsLoading } = useChangeTracking(
@@ -51,7 +52,7 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save functionality
+  // Auto-save functionality with debounce to prevent duplicate saves
   const { isSaving } = useAutoSave({
     rundownId,
     rundownTitle,
@@ -65,14 +66,15 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
   });
 
   // Initialize once per rundownId to prevent loops
-  useEffect(() => {
+  const initializeRundown = useCallback(() => {
     const initKey = rundownId || 'new';
     
-    if (initializationRef.current[initKey] || loading) {
+    if (initializationRef.current[initKey] || loading || preventDuplicateInit.current) {
       return;
     }
 
     console.log('Initializing rundown data management for:', initKey);
+    preventDuplicateInit.current = true;
     initializationRef.current[initKey] = true;
 
     // For existing rundowns, load the data
@@ -98,21 +100,28 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
           handleLoadLayout(existingRundown.columns);
         }
       }
-    } else if (!rundownId) {
-      // Initialize new rundown with default data
+    } else if (!rundownId && items.length === 0) {
+      // Initialize new rundown with default data only if no items exist
       console.log('Initializing new rundown with defaults');
       setRundownTitle('Live Broadcast Rundown');
       setTimezone('America/New_York');
       setRundownStartTime('09:00:00');
       
-      // Load default items if none exist
-      if (items.length === 0) {
-        import('@/data/defaultRundownItems').then(({ defaultRundownItems }) => {
-          setItems(defaultRundownItems);
-        });
-      }
+      // Load default items
+      import('@/data/defaultRundownItems').then(({ defaultRundownItems }) => {
+        setItems(defaultRundownItems);
+      });
     }
+
+    // Reset prevention flag after a delay
+    setTimeout(() => {
+      preventDuplicateInit.current = false;
+    }, 1000);
   }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout, setRundownTitle, setTimezone, setRundownStartTime, items.length]);
+
+  useEffect(() => {
+    initializeRundown();
+  }, [initializeRundown]);
 
   // Clear initialization when rundown ID changes
   useEffect(() => {
