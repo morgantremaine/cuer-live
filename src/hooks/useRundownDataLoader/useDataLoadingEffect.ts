@@ -138,6 +138,8 @@ export const useDataLoadingEffect = ({
     rundownId, 
     paramId, 
     loading, 
-    savedRundowns.length // Simplified dependencies
+    savedRundowns.length,
+    // Remove savedRundowns from dependencies to prevent reloading on every change
+    // We only need to know when savedRundowns.length changes
   ]);
 };

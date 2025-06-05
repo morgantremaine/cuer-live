@@ -81,7 +81,7 @@ export const useRundownDataLoader = ({
     setLoadingComplete
   });
 
-  // Reset loading state when rundown ID changes - but only when truly needed
+  // Reset loading state when rundown ID changes - prevent unnecessary resets
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
     const currentLoadedId = loadedRef.current;
@@ -91,10 +91,15 @@ export const useRundownDataLoader = ({
       console.log('Data loader: Rundown ID changed from', currentLoadedId, 'to', currentRundownId);
       resetLoadingState(currentRundownId);
     }
-  }, [rundownId, paramId]); // Keep dependencies minimal
+  }, [rundownId, paramId, resetLoadingState]);
 
   // Cleanup on unmount
   useEffect(() => {
     return cleanup;
   }, [cleanup]);
+
+  // Return a flag to indicate if data loader is active for this rundown
+  return {
+    isDataLoaderActive: Boolean(rundownId || paramId)
+  };
 };

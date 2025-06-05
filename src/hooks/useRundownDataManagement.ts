@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
@@ -11,6 +12,7 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
   
   const { savedRundowns, loading } = useRundownStorage();
   const initializationRef = useRef<{ [key: string]: boolean }>({});
+  const dataLoaderActiveRef = useRef(false);
 
   const markAsChanged = useCallback(() => {
     console.log('Changes marked - triggering auto-save');
@@ -41,31 +43,36 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
     handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
-  // Initialize once per rundownId to prevent loops
+  // Check if the data loader is handling this rundown
   useEffect(() => {
-    const initKey = rundownId || 'new';
-    
-    if (initializationRef.current[initKey] || loading) {
-      return;
-    }
-
-    console.log('Initializing rundown data management for:', initKey);
-    initializationRef.current[initKey] = true;
-
-    // For existing rundowns, load the data
     if (rundownId && savedRundowns.length > 0) {
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
-        console.log('Loading existing rundown data:', rundownId);
-        if (existingRundown.items) {
-          setItems(existingRundown.items);
-        }
-        if (existingRundown.columns) {
-          handleLoadLayout(existingRundown.columns);
-        }
+        dataLoaderActiveRef.current = true;
+        console.log('Data management: Data loader is active for rundown:', rundownId);
+        return;
       }
     }
-  }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout]);
+    dataLoaderActiveRef.current = false;
+  }, [rundownId, savedRundowns.length]);
+
+  // Only initialize for new rundowns or when data loader is not active
+  useEffect(() => {
+    const initKey = rundownId || 'new';
+    
+    if (initializationRef.current[initKey] || loading || dataLoaderActiveRef.current) {
+      return;
+    }
+
+    console.log('Data management: Initializing for new rundown:', initKey);
+    initializationRef.current[initKey] = true;
+
+    // Only handle new rundowns when data loader isn't active
+    if (!rundownId) {
+      console.log('Data management: Setting up new rundown');
+      // For new rundowns, the default data is already set by useRundownItems
+    }
+  }, [rundownId, savedRundowns.length, loading]);
 
   // Clear initialization when rundown ID changes
   useEffect(() => {

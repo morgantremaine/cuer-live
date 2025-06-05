@@ -16,6 +16,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const hasInitialDataRef = useRef(false);
   const instanceIdRef = useRef<number>();
   const lastChangeCheckRef = useRef<number>(0);
+  const preventResetRef = useRef(false);
   
   // Initialize instance ID only once
   if (!instanceIdRef.current) {
@@ -45,7 +46,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
   // Initialize tracking ONLY ONCE when we first get meaningful data
   useEffect(() => {
-    if (initializedRef.current || isLoadingRef.current) {
+    if (initializedRef.current || isLoadingRef.current || preventResetRef.current) {
       return;
     }
     
@@ -53,6 +54,13 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
 
     console.log('Change tracking: Checking initialization with', items.length, 'items, title:', rundownTitle);
+
+    // If we already have meaningful data loaded, don't reset
+    if (hasInitialDataRef.current && items.length >= 4 && rundownTitle !== 'Live Broadcast Rundown') {
+      console.log('Change tracking: Preventing reset - already have loaded data');
+      preventResetRef.current = true;
+      return;
+    }
 
     if (hasMeaningfulData && !hasInitialDataRef.current) {
       hasInitialDataRef.current = true;
@@ -106,6 +114,9 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const setIsLoading = useCallback((loading: boolean) => {
     console.log('Change tracking: Setting loading state to', loading);
     isLoadingRef.current = loading;
+    if (loading) {
+      preventResetRef.current = true;
+    }
   }, []);
 
   return {
