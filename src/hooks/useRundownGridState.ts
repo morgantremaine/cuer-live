@@ -33,9 +33,9 @@ export const useRundownGridState = () => {
 
   // Create properly wrapped functions that match the expected signatures
   const handleAddRow = useCallback(() => {
-    // Call addRow with the correct signature - no arguments needed
-    coreState.addRow();
-  }, [coreState.addRow]);
+    // Call addRow with the calculateEndTime function as required
+    coreState.addRow(coreState.calculateEndTime);
+  }, [coreState.addRow, coreState.calculateEndTime]);
 
   const handleAddHeader = useCallback(() => {
     // Call addHeader with no parameters as expected
