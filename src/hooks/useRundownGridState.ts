@@ -9,6 +9,8 @@ import { useDragAndDrop } from './useDragAndDrop';
 import { useResizableColumns } from './useResizableColumns';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
+import { useCellNavigation } from './useCellNavigation';
+import { useRundownUndo } from './useRundownUndo';
 
 export const useRundownGridState = () => {
   // Basic state
@@ -22,7 +24,7 @@ export const useRundownGridState = () => {
   // Refs for UI interaction
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
-  // Core data management - this is now our single source of truth
+  // Core data management - single source of truth
   const coreState = useRundownDataManagement(
     rundownTitle, 
     timezone, 
@@ -55,6 +57,15 @@ export const useRundownGridState = () => {
   // Time calculations
   const { calculateEndTime, currentTime } = useTimeCalculations(rundownStartTime);
 
+  // Cell navigation
+  const { handleCellClick, handleKeyDown } = useCellNavigation(
+    coreState.visibleColumns,
+    coreState.items
+  );
+
+  // Undo functionality
+  const { handleUndo, canUndo, lastAction } = useRundownUndo();
+
   // Playback controls
   const { 
     isPlaying, 
@@ -82,18 +93,22 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations
+  // Row operations - fix parameter signatures
   const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
     selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection,
-    addRow: coreState.addRow,
-    addHeader: coreState.addHeader,
+    addRow: (calculateEndTimeFn: any, insertAfterIndex?: number) => {
+      coreState.addRow(calculateEndTimeFn, insertAfterIndex);
+    },
+    addHeader: (insertAfterIndex?: number) => {
+      coreState.addHeader(insertAfterIndex);
+    },
     calculateEndTime
   });
 
   // Helper functions
-  const getRowStatus = (item: any, currentTime: Date) => {
+  const getRowStatus = (item: any, currentTime: Date): 'upcoming' | 'current' | 'completed' => {
     // Simple status calculation - can be enhanced later
     return 'upcoming';
   };
@@ -105,6 +120,15 @@ export const useRundownGridState = () => {
   const selectColor = (id: string, color: string) => {
     coreState.updateItem(id, 'color', color);
     setShowColorPicker(null);
+  };
+
+  // Additional handlers for compatibility
+  const handleUpdateItem = (id: string, field: string, value: string) => {
+    coreState.updateItem(id, field, value);
+  };
+
+  const handleRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, coreState.items);
   };
 
   // Memoize the complete state object
@@ -142,6 +166,15 @@ export const useRundownGridState = () => {
     getColumnWidth,
     updateColumnWidth,
     
+    // Cell navigation
+    handleCellClick,
+    handleKeyDown,
+    
+    // Undo functionality
+    handleUndo,
+    canUndo,
+    lastAction,
+    
     // Time and playback
     calculateEndTime,
     isPlaying,
@@ -162,6 +195,10 @@ export const useRundownGridState = () => {
     // Row operations
     handleAddRow,
     handleAddHeader,
+    
+    // Item operations
+    handleUpdateItem,
+    handleRowSelection,
     
     // Helper functions
     getRowStatus,
@@ -188,6 +225,11 @@ export const useRundownGridState = () => {
     handleDrop,
     getColumnWidth,
     updateColumnWidth,
+    handleCellClick,
+    handleKeyDown,
+    handleUndo,
+    canUndo,
+    lastAction,
     calculateEndTime,
     isPlaying,
     timeRemaining,
@@ -203,6 +245,8 @@ export const useRundownGridState = () => {
     handleDeleteSelectedRows,
     handleAddRow,
     handleAddHeader,
+    handleUpdateItem,
+    handleRowSelection,
     selectColor
   ]);
 };
