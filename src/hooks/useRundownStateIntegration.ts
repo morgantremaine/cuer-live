@@ -1,5 +1,4 @@
-
-import { useMemo, useCallback, useRef } from 'react';
+import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
@@ -14,60 +13,80 @@ export const useRundownStateIntegration = (
   setTimezoneDirectly: (timezone: string) => void,
   getUndoHistory?: () => any[]
 ) => {
-  // Use refs to track if hooks have been initialized to prevent recreation
-  const hooksInitializedRef = useRef(false);
+  // Stable version of markAsChanged
   const stableMarkAsChangedRef = useRef(markAsChanged);
   stableMarkAsChangedRef.current = markAsChanged;
-
-  // Stable mark as changed function
+  
   const stableMarkAsChanged = useCallback(() => {
     stableMarkAsChangedRef.current();
   }, []);
 
+  // Initialize hooks once and keep them stable
+  const [hooksInitialized, setHooksInitialized] = useState(false);
+  
   // Items management with change tracking - initialize once
   const itemsHook = useRundownItems(stableMarkAsChanged);
   
   // Columns management - initialize once
   const columnsHook = useColumnsManager(stableMarkAsChanged);
 
-  // Create stable values that don't change unless the actual data changes
+  // Stable values that only change when actual data changes
   const stableItems = useMemo(() => itemsHook.items, [itemsHook.items]);
   const stableColumns = useMemo(() => columnsHook.columns, [columnsHook.columns]);
-  const stableTitle = useMemo(() => rundownTitle, [rundownTitle]);
-  const stableTimezone = useMemo(() => timezone, [timezone]);
-  const stableStartTime = useMemo(() => rundownStartTime, [rundownStartTime]);
+  
+  // Use refs for frequently changing values to prevent re-renders
+  const stableTitleRef = useRef(rundownTitle);
+  const stableTimezoneRef = useRef(timezone);
+  const stableStartTimeRef = useRef(rundownStartTime);
+  
+  // Only update refs when values actually change
+  useEffect(() => {
+    stableTitleRef.current = rundownTitle;
+  }, [rundownTitle]);
+  
+  useEffect(() => {
+    stableTimezoneRef.current = timezone;
+  }, [timezone]);
+  
+  useEffect(() => {
+    stableStartTimeRef.current = rundownStartTime;
+  }, [rundownStartTime]);
 
-  // Change tracking - only initialize once per hook lifecycle
-  const changeTracking = useChangeTracking(stableItems, stableTitle, stableColumns, stableTimezone, stableStartTime);
+  // Change tracking - only create once and keep stable
+  const changeTracking = useChangeTracking(
+    stableItems, 
+    stableTitleRef.current, 
+    stableColumns, 
+    stableTimezoneRef.current, 
+    stableStartTimeRef.current
+  );
 
-  // Auto-save integration - only initialize if change tracking is ready
+  // Auto-save integration - only create once
   const autoSave = useAutoSave(
     stableItems,
-    stableTitle,
+    stableTitleRef.current,
     changeTracking.hasUnsavedChanges && changeTracking.isInitialized,
     changeTracking.markAsSaved,
     stableColumns,
-    stableTimezone,
-    stableStartTime,
+    stableTimezoneRef.current,
+    stableStartTimeRef.current,
     getUndoHistory
   );
 
-  // Mark hooks as initialized after first render
-  if (!hooksInitializedRef.current) {
-    hooksInitializedRef.current = true;
-  }
+  // Mark hooks as initialized on first render
+  useEffect(() => {
+    if (!hooksInitialized) {
+      setHooksInitialized(true);
+    }
+  }, [hooksInitialized]);
 
-  // Stable wrapped functions - memoize to prevent recreation
-  const addRow = useMemo(() => {
-    return (calculateEndTime: any, insertAfterIndex?: number) => {
-      itemsHook.addRow(calculateEndTime, insertAfterIndex);
-    };
+  // Memoize wrapped functions to prevent recreation
+  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+    itemsHook.addRow(calculateEndTime, insertAfterIndex);
   }, [itemsHook.addRow]);
 
-  const addHeader = useMemo(() => {
-    return (insertAfterIndex?: number) => {
-      itemsHook.addHeader(insertAfterIndex);
-    };
+  const addHeader = useCallback((insertAfterIndex?: number) => {
+    itemsHook.addHeader(insertAfterIndex);
   }, [itemsHook.addHeader]);
 
   return {
