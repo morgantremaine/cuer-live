@@ -11,6 +11,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
   const saveInProgressRef = useRef(false);
+  const lastSaveAttemptRef = useRef<number>(0);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -22,8 +23,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
-  // Stable debounced save function
+  // Stable debounced save function with rate limiting
   const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
+    const now = Date.now();
+    
+    // Rate limiting - prevent saves within 5 seconds of each other
+    if (now - lastSaveAttemptRef.current < 5000) {
+      console.log('Save rate limited');
+      return;
+    }
+
     if (!user || saveInProgressRef.current) {
       return;
     }
@@ -31,6 +40,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     // Prevent overlapping saves
     saveInProgressRef.current = true;
     setIsLoading(true);
+    lastSaveAttemptRef.current = now;
 
     try {
       const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
@@ -49,7 +59,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     }
   }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
-  // Auto-save effect with proper guards
+  // Auto-save effect with stronger guards
   useEffect(() => {
     // Don't save if not initialized, no changes, no user, or save in progress
     if (!hasUnsavedChanges || !isInitialized || !user || saveInProgressRef.current) {
@@ -67,10 +77,11 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       title: rundownTitle, 
       columnsCount: columns?.length || 0, 
       timezone, 
-      startTime 
+      startTime,
+      timestamp: Math.floor(Date.now() / 10000) // Round to 10 second intervals
     });
     
-    // Skip if this exact data was already saved
+    // Skip if this exact data was already saved recently
     if (lastSaveDataRef.current === currentDataSignature) {
       return;
     }
@@ -86,7 +97,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     debounceTimeoutRef.current = setTimeout(() => {
       debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       debounceTimeoutRef.current = null;
-    }, 3000); // Longer delay to prevent excessive saves
+    }, 5000); // Longer delay to prevent excessive saves
 
   }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
 
