@@ -1,12 +1,12 @@
 
 import { useCallback, useMemo, useRef } from 'react';
-import { useRundownGridCore } from './useRundownGridCore';
+import { useRundownCoreState } from './useRundownCoreState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
 import { useResizableColumns } from './useResizableColumns';
 
 export const useRundownStateCoordination = () => {
-  const coreState = useRundownGridCore();
+  const coreState = useRundownCoreState();
   
   // Stable refs to prevent infinite loops
   const stableUpdateItemRef = useRef(coreState.updateItem);
@@ -28,21 +28,16 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Create adapter functions that match the expected signatures for useRundownGridInteractions
-  // These functions need to match the signature: (calculateEndTime: any, insertAfterIndex?: number) => void
+  // Create adapter functions for interactions
   const adaptedAddRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
-    // Call the core addRow function with just the calculateEndTime function
-    // The core function may have a different signature, so we'll call it with the expected parameters
-    coreState.addRow(calculateEndTime);
+    coreState.addRow(calculateEndTime, insertAfterIndex);
   }, [coreState.addRow]);
 
   const adaptedAddHeader = useCallback((insertAfterIndex?: number) => {
-    // Call the core addHeader function without the insertAfterIndex parameter
-    // The core function may have a different signature
-    coreState.addHeader();
+    coreState.addHeader(insertAfterIndex);
   }, [coreState.addHeader]);
 
-  // Get interaction handlers - use adapted functions with correct signatures
+  // Get interaction handlers
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
@@ -71,7 +66,7 @@ export const useRundownStateCoordination = () => {
     coreState.markAsChanged
   );
 
-  // Override the UI state's selectColor with our stable version
+  // Memoize the complete state object
   const stableUIState = useMemo(() => ({
     ...uiState,
     selectColor: handleColorSelection,

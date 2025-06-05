@@ -1,15 +1,15 @@
 
 import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownStateIntegration } from './useRundownStateIntegration';
+import { useSimpleRundownState } from './useSimpleRundownState';
+import { useSimpleDataLoader } from './useSimpleDataLoader';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useTimeCalculations } from './useTimeCalculations';
-import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useCallback } from 'react';
 
 export const useRundownCoreState = () => {
-  // Core state management
+  // Basic state management
   const {
     currentTime,
     timezone,
@@ -30,68 +30,30 @@ export const useRundownCoreState = () => {
   // Get storage functionality
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
 
-  // Undo functionality with persistence - pass current state
-  const { saveState, undo, canUndo, lastAction, loadUndoHistory, undoHistory } = useRundownUndo({
+  // Simplified rundown state
+  const simplifiedState = useSimpleRundownState(rundownTitle, timezone, rundownStartTime);
+
+  // Undo functionality
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
     rundownId,
     updateRundown,
     currentTitle: rundownTitle,
-    currentItems: [], // Will be updated after state integration
-    currentColumns: [] // Will be updated after state integration
+    currentItems: simplifiedState.items,
+    currentColumns: simplifiedState.columns
   });
 
-  // Create a function to get current undo history
-  const getUndoHistory = useCallback(() => {
-    return undoHistory;
-  }, [undoHistory]);
-
-  // Rundown data integration - now includes undo history getter function
-  const {
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving
-  } = useRundownStateIntegration(
-    markAsChanged, 
-    rundownTitle, 
-    timezone, 
-    rundownStartTime,
-    setRundownTitleDirectly, 
-    setTimezoneDirectly,
-    getUndoHistory
-  );
-
-  // Use data loader with undo history loading - now includes setItems
-  useRundownDataLoader({
-    rundownId,
+  // Simple data loader
+  useSimpleDataLoader({
     savedRundowns,
     loading,
     setRundownTitle: setRundownTitleDirectly,
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
-    handleLoadLayout,
-    setItems,
+    handleLoadLayout: simplifiedState.handleLoadLayout,
+    setItems: simplifiedState.setItems,
+    setIsLoading: simplifiedState.setIsLoading,
     onRundownLoaded: (rundown) => {
       if (rundown.undo_history) {
-        console.log('Loading undo history:', rundown.undo_history.length, 'entries');
         loadUndoHistory(rundown.undo_history);
       }
     }
@@ -106,10 +68,10 @@ export const useRundownCoreState = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(items, updateItem);
+  } = usePlaybackControls(simplifiedState.items, simplifiedState.updateItem);
 
   // Time calculations
-  const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
+  const { calculateEndTime } = useTimeCalculations(simplifiedState.items, simplifiedState.updateItem, rundownStartTime);
 
   return {
     // Basic state
@@ -128,21 +90,8 @@ export const useRundownCoreState = () => {
     rundownId,
     markAsChanged,
 
-    // Items and data
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
-    visibleColumns,
-    columns,
+    // Simplified state
+    ...simplifiedState,
 
     // Playback
     isPlaying,
@@ -153,18 +102,7 @@ export const useRundownCoreState = () => {
     forward,
     backward,
 
-    // Column management
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-
-    // Save state
-    hasUnsavedChanges,
-    isSaving,
+    // Time calculations
     calculateEndTime,
 
     // Undo functionality
