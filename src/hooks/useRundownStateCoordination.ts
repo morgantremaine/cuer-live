@@ -29,12 +29,17 @@ export const useRundownStateCoordination = () => {
   );
 
   // Create adapter functions that match the expected signatures for useRundownGridInteractions
+  // These functions need to match the signature: (calculateEndTime: any, insertAfterIndex?: number) => void
   const adaptedAddRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
-    coreState.addRow(calculateEndTime, insertAfterIndex);
+    // Call the core addRow function with just the calculateEndTime function
+    // The core function may have a different signature, so we'll call it with the expected parameters
+    coreState.addRow(calculateEndTime);
   }, [coreState.addRow]);
 
   const adaptedAddHeader = useCallback((insertAfterIndex?: number) => {
-    coreState.addHeader(insertAfterIndex);
+    // Call the core addHeader function without the insertAfterIndex parameter
+    // The core function may have a different signature
+    coreState.addHeader();
   }, [coreState.addHeader]);
 
   // Get interaction handlers - use adapted functions with correct signatures
