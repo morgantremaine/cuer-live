@@ -1,9 +1,12 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
 import { RundownItem } from '@/types/rundown';
+import { useLoadingState } from './useRundownDataLoader/useLoadingState';
+import { useLoadingEvaluation } from './useRundownDataLoader/useLoadingEvaluation';
+import { getItemsToLoad } from './useRundownDataLoader/loadingUtils';
 import { checkRecentAutoSave, checkUserChangedSinceAutoSave } from './useAutoSaveOperations';
 
 interface UseRundownDataLoaderProps {
@@ -31,13 +34,27 @@ export const useRundownDataLoader = ({
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
   const paramId = params.id;
-  const loadedRef = useRef<string | null>(null);
-  const isLoadingRef = useRef(false);
-  const userHasInteractedRef = useRef(false);
-  const loadTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const initialLoadCompleteRef = useRef(false);
-  const lastEvaluationRef = useRef<number>(0);
-  const evaluationCooldownRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const {
+    loadedRef,
+    isLoadingRef,
+    userHasInteractedRef,
+    loadTimerRef,
+    initialLoadCompleteRef,
+    evaluationCooldownRef,
+    resetLoadingState,
+    setLoadingComplete,
+    setLoadingStarted,
+    cleanup
+  } = useLoadingState();
+
+  const { shouldLoadRundown } = useLoadingEvaluation({
+    userHasInteractedRef,
+    loadedRef,
+    initialLoadCompleteRef,
+    isLoadingRef,
+    lastEvaluationRef: { current: 0 }
+  });
 
   // Track user interactions to prevent overwriting their changes
   useEffect(() => {
@@ -53,40 +70,6 @@ export const useRundownDataLoader = ({
       document.removeEventListener('keydown', handleUserInteraction);
     };
   }, []);
-
-  // Helper function to validate if loading should proceed - with debouncing
-  const shouldLoadRundown = (currentRundownId: string, rundown: SavedRundown) => {
-    const now = Date.now();
-    
-    // Debounce evaluations to prevent excessive logging
-    if (now - lastEvaluationRef.current < 1000) {
-      return false;
-    }
-    lastEvaluationRef.current = now;
-
-    // Critical safeguards only - reduced logging
-    if (checkRecentAutoSave(currentRundownId)) {
-      return false;
-    }
-
-    if (userHasInteractedRef.current) {
-      return false;
-    }
-
-    if (checkUserChangedSinceAutoSave(currentRundownId)) {
-      return false;
-    }
-
-    if (loadedRef.current === currentRundownId && initialLoadCompleteRef.current) {
-      return false;
-    }
-
-    if (isLoadingRef.current) {
-      return false;
-    }
-
-    return true;
-  };
 
   // Main data loading effect - optimized trigger conditions
   useEffect(() => {
@@ -117,24 +100,10 @@ export const useRundownDataLoader = ({
       }
 
       console.log('Data loader: Loading rundown', currentRundownId);
-      isLoadingRef.current = true;
-      loadedRef.current = currentRundownId;
+      setLoadingStarted(currentRundownId);
       
-      userHasInteractedRef.current = false;
-      
-      // Check undo history for items if main items array is empty
-      let itemsToLoad = rundown.items || [];
-      
-      if ((!itemsToLoad || itemsToLoad.length === 0) && rundown.undo_history && Array.isArray(rundown.undo_history) && rundown.undo_history.length > 0) {
-        for (let i = rundown.undo_history.length - 1; i >= 0; i--) {
-          const historyEntry = rundown.undo_history[i];
-          
-          if (historyEntry && historyEntry.items && Array.isArray(historyEntry.items) && historyEntry.items.length > 0) {
-            itemsToLoad = historyEntry.items;
-            break;
-          }
-        }
-      }
+      // Get items to load using extracted utility
+      const itemsToLoad = getItemsToLoad(rundown);
       
       // Set the rundown data
       setRundownTitle(rundown.title);
@@ -164,7 +133,7 @@ export const useRundownDataLoader = ({
             setItems(itemsToLoad);
           }
           loadTimerRef.current = null;
-        }, 50); // Reduced delay
+        }, 50);
       } else {
         if (!userHasInteractedRef.current && 
             !checkRecentAutoSave(currentRundownId) && 
@@ -177,55 +146,33 @@ export const useRundownDataLoader = ({
         onRundownLoaded(rundown);
       }
 
-      setTimeout(() => {
-        isLoadingRef.current = false;
-        initialLoadCompleteRef.current = true;
-      }, 100);
-    }, 500); // Debounce evaluations by 500ms
+      setLoadingComplete(currentRundownId);
+    }, 500);
 
   }, [
     rundownId, 
     paramId, 
     loading, 
-    savedRundowns.length, // Only re-run when length actually changes
+    savedRundowns.length,
     setRundownTitle, 
     setTimezone, 
     setRundownStartTime, 
     handleLoadLayout,
     setItems,
-    onRundownLoaded
+    onRundownLoaded,
+    shouldLoadRundown,
+    setLoadingStarted,
+    setLoadingComplete
   ]);
 
   // Reset loaded reference when rundown ID changes
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
-    if (loadedRef.current && loadedRef.current !== currentRundownId) {
-      loadedRef.current = null;
-      isLoadingRef.current = false;
-      userHasInteractedRef.current = false;
-      initialLoadCompleteRef.current = false;
-      
-      if (loadTimerRef.current) {
-        clearTimeout(loadTimerRef.current);
-        loadTimerRef.current = null;
-      }
-      
-      if (evaluationCooldownRef.current) {
-        clearTimeout(evaluationCooldownRef.current);
-        evaluationCooldownRef.current = null;
-      }
-    }
-  }, [rundownId, paramId]);
+    resetLoadingState(currentRundownId);
+  }, [rundownId, paramId, resetLoadingState]);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (loadTimerRef.current) {
-        clearTimeout(loadTimerRef.current);
-      }
-      if (evaluationCooldownRef.current) {
-        clearTimeout(evaluationCooldownRef.current);
-      }
-    };
-  }, []);
+    return cleanup;
+  }, [cleanup]);
 };
