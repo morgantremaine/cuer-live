@@ -19,30 +19,43 @@ export const useSimpleAutoSave = (
   const { updateRundown } = useRundownStorage();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
+  const saveInProgressRef = useRef<boolean>(false);
+  const consecutiveSaveAttemptsRef = useRef<number>(0);
 
   useEffect(() => {
-    console.log('Simple auto-save: Effect triggered with:', {
-      rundownId,
-      isInitialized,
-      hasUnsavedChanges,
-      itemsLength: items.length
-    });
-
     // Validate rundownId first
     if (!rundownId || rundownId === ':id' || rundownId.trim() === '') {
       console.log('Simple auto-save: Skipping save - invalid rundownId:', rundownId);
       return;
     }
 
-    if (!isInitialized || !hasUnsavedChanges) {
-      console.log('Simple auto-save: Skipping save - not initialized or no changes:', { isInitialized, hasUnsavedChanges });
+    if (!isInitialized || !hasUnsavedChanges || saveInProgressRef.current) {
+      console.log('Simple auto-save: Skipping save - conditions not met:', { 
+        isInitialized, 
+        hasUnsavedChanges, 
+        saveInProgress: saveInProgressRef.current 
+      });
       return;
     }
 
     // Create signature to prevent duplicate saves
-    const currentData = JSON.stringify({ items, rundownTitle, columns, timezone, rundownStartTime });
+    const currentData = JSON.stringify({ 
+      items: items.map(item => ({ id: item.id, name: item.name, startTime: item.startTime, duration: item.duration })), 
+      rundownTitle, 
+      columns: columns.map(col => ({ id: col.id, name: col.name })), 
+      timezone, 
+      rundownStartTime 
+    });
+
     if (currentData === lastSaveDataRef.current) {
       console.log('Simple auto-save: Skipping save - no data changes detected');
+      return;
+    }
+
+    // Prevent excessive save attempts
+    if (consecutiveSaveAttemptsRef.current > 5) {
+      console.log('Simple auto-save: Too many consecutive save attempts, backing off');
+      consecutiveSaveAttemptsRef.current = 0;
       return;
     }
 
@@ -51,26 +64,35 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
 
-    console.log('Simple auto-save: Scheduling save for rundown:', rundownId);
+    console.log('Simple auto-save: Scheduling save for rundown:', rundownId, 'attempt:', consecutiveSaveAttemptsRef.current + 1);
+    consecutiveSaveAttemptsRef.current++;
 
-    // Debounce the save
+    // Longer debounce to prevent excessive saves
     saveTimeoutRef.current = setTimeout(async () => {
+      if (saveInProgressRef.current) {
+        console.log('Simple auto-save: Save already in progress, skipping');
+        return;
+      }
+
       try {
+        saveInProgressRef.current = true;
         setIsSaving(true);
         console.log('Simple auto-save: Starting save for rundown:', rundownId, 'with', items.length, 'items');
         
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, rundownStartTime);
 
         lastSaveDataRef.current = currentData;
+        consecutiveSaveAttemptsRef.current = 0; // Reset on successful save
         markAsSaved(items, rundownTitle, columns, timezone, rundownStartTime);
         console.log('Simple auto-save: Save completed successfully');
       } catch (error) {
         console.error('Simple auto-save: Save failed for rundown:', rundownId, 'Error:', error);
-        // Don't update lastSaveDataRef on failure so it will retry
+        consecutiveSaveAttemptsRef.current = Math.max(0, consecutiveSaveAttemptsRef.current - 1);
       } finally {
+        saveInProgressRef.current = false;
         setIsSaving(false);
       }
-    }, 2000);
+    }, 3000); // Increased from 2000 to 3000ms
 
     return () => {
       if (saveTimeoutRef.current) {

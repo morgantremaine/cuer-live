@@ -4,6 +4,8 @@ import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useSimpleChangeTracking } from './useSimpleChangeTracking';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
+import { useSimpleDataLoader } from './useSimpleDataLoader';
+import { useRundownStorage } from './useRundownStorage';
 import { useParams } from 'react-router-dom';
 
 export const useSimpleRundownState = (
@@ -18,6 +20,9 @@ export const useSimpleRundownState = (
   const rundownId = rawId && rawId !== ':id' && rawId.trim() !== '' ? rawId : undefined;
 
   console.log('Simple rundown state: Current rundown ID:', rundownId, 'from params:', rawId, 'pathname:', window.location.pathname);
+
+  // Get storage functionality
+  const { savedRundowns, loading } = useRundownStorage();
 
   // If we don't have a rundown ID, we shouldn't initialize any rundown functionality
   if (!rundownId) {
@@ -80,6 +85,25 @@ export const useSimpleRundownState = (
   // Columns management
   const columnsHook = useColumnsManager(markAsChanged);
 
+  // Data loader with proper integration
+  const dataLoader = useSimpleDataLoader({
+    savedRundowns,
+    loading,
+    setRundownTitle: () => {}, // Will be handled by parent
+    setTimezone: () => {}, // Will be handled by parent
+    setRundownStartTime: () => {}, // Will be handled by parent
+    handleLoadLayout: columnsHook.handleLoadLayout,
+    setItems: itemsHook.setItems,
+    setIsLoading,
+    onRundownLoaded: (rundown) => {
+      console.log('Simple rundown state: Rundown loaded callback triggered for:', rundown.id);
+      // Initialize change tracking after data is loaded
+      setTimeout(() => {
+        initialize(itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime);
+      }, 500);
+    }
+  });
+
   // Reset change tracking when no rundown ID
   useEffect(() => {
     if (!rundownId && isInitialized) {
@@ -87,27 +111,6 @@ export const useSimpleRundownState = (
       reset();
     }
   }, [rundownId, isInitialized, reset]);
-
-  // Initialize change tracking when data is ready AND we have a valid rundown ID
-  useEffect(() => {
-    if (!rundownId) {
-      console.log('Simple rundown state: No rundown ID, skipping initialization');
-      return;
-    }
-
-    if (isInitialized) {
-      console.log('Simple rundown state: Already initialized');
-      return;
-    }
-
-    if (itemsHook.items.length === 0) {
-      console.log('Simple rundown state: No items yet, waiting for data load');
-      return;
-    }
-
-    console.log('Simple rundown state: Attempting to initialize with rundown ID:', rundownId, 'and', itemsHook.items.length, 'items');
-    initialize(itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime);
-  }, [rundownId, isInitialized, itemsHook.items.length, rundownTitle, columnsHook.columns, timezone, rundownStartTime, initialize]);
 
   // Check for changes only if we have a valid rundown ID and are initialized
   useEffect(() => {
