@@ -13,7 +13,7 @@ export const useAutoSaveOperations = () => {
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
-  const { updateRundown, saveRundown } = useRundownStorage();
+  const { updateRundown, saveRundown, loadRundowns } = useRundownStorage();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -47,6 +47,8 @@ export const useAutoSaveOperations = () => {
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
+          // Refresh the rundowns list after saving to ensure the new rundown is available
+          await loadRundowns();
           navigate(`/rundown/${result.id}`, { replace: true });
           return true;
         } else {
@@ -69,7 +71,7 @@ export const useAutoSaveOperations = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, user, isNewRundown, rundownId, saveRundown, updateRundown, navigate]);
+  }, [isSaving, user, isNewRundown, rundownId, saveRundown, updateRundown, navigate, loadRundowns]);
 
   return {
     isSaving,

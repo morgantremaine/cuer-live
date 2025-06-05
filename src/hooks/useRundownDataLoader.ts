@@ -32,6 +32,7 @@ export const useRundownDataLoader = ({
   const paramId = params.id;
   const loadedRundownIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
+  const loadAttemptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Skip if storage is still loading or we're already loading
@@ -54,19 +55,48 @@ export const useRundownDataLoader = ({
       return;
     }
 
-    // Find the rundown in saved rundowns
+    // Clear any pending load attempts
+    if (loadAttemptTimeoutRef.current) {
+      clearTimeout(loadAttemptTimeoutRef.current);
+      loadAttemptTimeoutRef.current = null;
+    }
+
+    // Try to find the rundown in saved rundowns
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
+    
     if (!rundown) {
-      console.log('Rundown not found:', currentRundownId);
+      // If rundown not found, it might be a newly saved rundown that hasn't been loaded yet
+      // Wait a moment for the storage to refresh, then try again
+      console.log('Rundown not found, waiting for storage refresh:', currentRundownId);
+      
+      loadAttemptTimeoutRef.current = setTimeout(() => {
+        const retryRundown = savedRundowns.find(r => r.id === currentRundownId);
+        if (!retryRundown) {
+          console.log('Rundown still not found after retry:', currentRundownId);
+          return;
+        }
+        
+        // Load the rundown now that it's available
+        loadRundownData(retryRundown, currentRundownId);
+      }, 1000);
+      
       return;
     }
 
+    loadRundownData(rundown, currentRundownId);
+  }, [
+    rundownId, 
+    paramId, 
+    savedRundowns,
+    loading
+  ]);
+
+  const loadRundownData = (rundown: SavedRundown, currentRundownId: string) => {
     console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
     
     // Mark as loading to prevent concurrent loads
     isLoadingRef.current = true;
     
-    // Load the rundown data immediately
     try {
       // Set the rundown data
       setRundownTitle(rundown.title);
@@ -106,12 +136,7 @@ export const useRundownDataLoader = ({
         isLoadingRef.current = false;
       }, 100);
     }
-  }, [
-    rundownId, 
-    paramId, 
-    savedRundowns,
-    loading
-  ]);
+  };
 
   // Reset when rundown ID changes
   useEffect(() => {
@@ -120,6 +145,21 @@ export const useRundownDataLoader = ({
       console.log('Rundown ID changed, resetting loader state');
       loadedRundownIdRef.current = null;
       isLoadingRef.current = false;
+      
+      // Clear any pending load attempts
+      if (loadAttemptTimeoutRef.current) {
+        clearTimeout(loadAttemptTimeoutRef.current);
+        loadAttemptTimeoutRef.current = null;
+      }
     }
   }, [rundownId, paramId]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (loadAttemptTimeoutRef.current) {
+        clearTimeout(loadAttemptTimeoutRef.current);
+      }
+    };
+  }, []);
 };
