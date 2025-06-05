@@ -64,7 +64,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       id: generateId(),
       type,
       rowNumber: '',
-      name: '',
+      name: '', // Empty for both types - placeholder will handle display
       startTime: '00:00:00',
       duration: type === 'header' ? '' : '00:00',
       endTime: '00:00:00',
