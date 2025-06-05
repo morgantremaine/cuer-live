@@ -5,8 +5,12 @@ import { RundownItem } from '@/types/rundown';
 export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): any[] => {
   if (sourceColumn === 'headers') {
     const headerItems = items.filter(item => item.type === 'header');
-    // Use notes field for header descriptions, fallback to segmentName if notes is empty
-    const headerTexts = headerItems.map(item => item.notes || item.segmentName || item.rowNumber);
+    // Get header names (segment names) and descriptions (notes), prioritizing names
+    const headerTexts = headerItems.map(item => {
+      // Prioritize the name field (segment name), then fall back to notes if name is empty
+      const headerText = item.name && item.name.trim() !== '' ? item.name : item.notes;
+      return headerText || `Header ${item.rowNumber || ''}`;
+    });
     // Remove duplicates and filter out empty values
     return [...new Set(headerTexts)].filter(value => value && value.trim() !== '');
   }
