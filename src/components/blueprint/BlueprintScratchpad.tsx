@@ -33,7 +33,7 @@ const BlueprintScratchpad = ({
     handleItalic,
     handleUnderline,
     handleBulletList
-  } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, onNotesChange);
+  } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, onNotesChange, saveBlueprint);
 
   return (
     <Card className="w-full mt-8 bg-gray-800 border-gray-700">

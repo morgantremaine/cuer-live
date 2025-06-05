@@ -42,7 +42,7 @@ export const useSimpleAutoSave = (
         setIsSaving(true);
         console.log('Simple auto-save: Saving rundown with', items.length, 'items');
         
-        await updateRundown(rundownId, rundownTitle, items, false, false, columns, timezone, rundownStartTime);
+        await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, rundownStartTime);
 
         lastSaveDataRef.current = currentData;
         markAsSaved(items, rundownTitle, columns, timezone, rundownStartTime);

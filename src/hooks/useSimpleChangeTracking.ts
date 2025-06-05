@@ -39,14 +39,14 @@ export const useSimpleChangeTracking = () => {
         clearTimeout(initializationTimeoutRef.current);
       }
       
-      // Add a small delay to ensure all data is loaded
+      // Add a longer delay to ensure all data is fully loaded and stabilized
       initializationTimeoutRef.current = setTimeout(() => {
         const signature = createStateSignature(items, title, columns, timezone, startTime);
         lastSavedStateRef.current = signature;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
-        console.log('Simple change tracking: Initialized with delay');
-      }, 100);
+        console.log('Simple change tracking: Initialized with delay, signature length:', signature.length);
+      }, 500);
     }
   }, [isInitialized, createStateSignature]);
 
@@ -64,7 +64,7 @@ export const useSimpleChangeTracking = () => {
     
     if (hasChanges !== hasUnsavedChanges) {
       setHasUnsavedChanges(hasChanges);
-      console.log('Simple change tracking: Changes detected:', hasChanges);
+      console.log('Simple change tracking: Changes detected:', hasChanges, 'current vs saved length:', currentSignature.length, lastSavedStateRef.current.length);
     }
   }, [isInitialized, hasUnsavedChanges, createStateSignature]);
 
@@ -78,7 +78,7 @@ export const useSimpleChangeTracking = () => {
     const signature = createStateSignature(items, title, columns, timezone, startTime);
     lastSavedStateRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Simple change tracking: Marked as saved');
+    console.log('Simple change tracking: Marked as saved, signature length:', signature.length);
   }, [createStateSignature]);
 
   const markAsChanged = useCallback(() => {
@@ -90,11 +90,8 @@ export const useSimpleChangeTracking = () => {
 
   const setIsLoading = useCallback((loading: boolean) => {
     isLoadingRef.current = loading;
-    if (!loading && !isInitialized) {
-      // Auto-initialize when loading completes
-      setIsInitialized(true);
-    }
-  }, [isInitialized]);
+    console.log('Simple change tracking: Set loading to:', loading);
+  }, []);
 
   // Cleanup timeout on unmount
   useEffect(() => {

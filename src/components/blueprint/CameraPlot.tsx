@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Edit } from 'lucide-react';
-import { useCameraPlotScenes } from '@/hooks/cameraPlot/useCameraPlotScenes';
+import { useCameraPlot } from '@/hooks/useCameraPlot';
 import { useNavigate } from 'react-router-dom';
 import CameraPlotSceneGrid from './cameraPlot/CameraPlotSceneGrid';
 
@@ -26,7 +26,7 @@ const CameraPlot = ({
   onDragEnd,
   saveBlueprint
 }: CameraPlotProps) => {
-  const { scenes, reloadPlots } = useCameraPlotScenes(rundownId, true);
+  const { plots, openPlotEditor, reloadPlots } = useCameraPlot(rundownId, rundownTitle, true, saveBlueprint);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,7 +72,7 @@ const CameraPlot = ({
         </div>
       </CardHeader>
       <CardContent>
-        <CameraPlotSceneGrid scenes={scenes} onOpenEditor={handleOpenEditor} />
+        <CameraPlotSceneGrid scenes={plots} onOpenEditor={handleOpenEditor} />
       </CardContent>
     </Card>
   );
