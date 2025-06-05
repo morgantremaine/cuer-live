@@ -55,7 +55,10 @@ export const useRundownGridState = () => {
   );
 
   // Time calculations
-  const { calculateEndTime, currentTime } = useTimeCalculations(rundownStartTime);
+  const { calculateEndTime } = useTimeCalculations(rundownStartTime);
+  
+  // Add current time separately
+  const currentTime = new Date();
 
   // Cell navigation
   const { handleCellClick, handleKeyDown } = useCellNavigation(
@@ -63,8 +66,11 @@ export const useRundownGridState = () => {
     coreState.items
   );
 
-  // Undo functionality
-  const { handleUndo, canUndo, lastAction } = useRundownUndo();
+  // Undo functionality - fix the destructuring
+  const undoHook = useRundownUndo();
+  const handleUndo = undoHook.undo;
+  const canUndo = undoHook.canUndo;
+  const lastAction = undoHook.lastAction;
 
   // Playback controls
   const { 
@@ -93,17 +99,37 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - fix parameter signatures
-  const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
+  // Row operations - create wrapper functions that convert between parameter types
+  const wrappedAddRow = (calculateEndTimeFn: any, selectedRowId?: string) => {
+    // Convert selectedRowId to insertAfterIndex
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRowId) {
+      const selectedIndex = coreState.items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
+    coreState.addRow(calculateEndTimeFn, insertAfterIndex);
+  };
+
+  const wrappedAddHeader = (selectedRowId?: string) => {
+    // Convert selectedRowId to insertAfterIndex
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRowId) {
+      const selectedIndex = coreState.items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
+    coreState.addHeader(insertAfterIndex);
+  };
+
+  const { handleDeleteSelectedRows } = useRundownRowOperations({
     selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection,
-    addRow: (calculateEndTimeFn: any, insertAfterIndex?: number) => {
-      coreState.addRow(calculateEndTimeFn, insertAfterIndex);
-    },
-    addHeader: (insertAfterIndex?: number) => {
-      coreState.addHeader(insertAfterIndex);
-    },
+    addRow: wrappedAddRow,
+    addHeader: wrappedAddHeader,
     calculateEndTime
   });
 
@@ -193,8 +219,8 @@ export const useRundownGridState = () => {
     handleDeleteSelectedRows,
     
     // Row operations
-    handleAddRow,
-    handleAddHeader,
+    handleAddRow: wrappedAddRow,
+    handleAddHeader: wrappedAddHeader,
     
     // Item operations
     handleUpdateItem,
@@ -243,8 +269,8 @@ export const useRundownGridState = () => {
     handleCopySelectedRows,
     handlePasteRows,
     handleDeleteSelectedRows,
-    handleAddRow,
-    handleAddHeader,
+    wrappedAddRow,
+    wrappedAddHeader,
     handleUpdateItem,
     handleRowSelection,
     selectColor
