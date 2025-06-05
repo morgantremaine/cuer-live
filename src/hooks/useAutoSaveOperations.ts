@@ -21,6 +21,7 @@ export const useAutoSaveOperations = () => {
 
   const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
     if (isSaving) {
+      console.log('Save already in progress, skipping');
       return false;
     }
 
@@ -42,29 +43,33 @@ export const useAutoSaveOperations = () => {
 
     try {
       setIsSaving(true);
+      console.log(`Performing save - isNewRundown: ${isNewRundown}, rundownId: ${rundownId}`);
       
       if (isNewRundown) {
+        console.log('Saving new rundown:', { title: rundownTitle, itemsCount: items.length });
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
-          // Wait for storage refresh to complete before navigating
-          console.log('Waiting for storage refresh before navigation...');
+          console.log('New rundown saved successfully with ID:', result.id);
+          
+          // Force a storage refresh and wait for it
+          console.log('Refreshing storage after save...');
           await loadRundowns();
           
-          // Add a small delay to ensure the refresh is fully processed
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Add extra time to ensure the refresh propagates
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
+          console.log('Navigating to new rundown:', result.id);
           navigate(`/rundown/${result.id}`, { replace: true });
           return true;
         } else {
           throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
-        // Ensure timezone and startTime are properly passed - don't default to undefined
-        const saveTimezone = timezone || null;
-        const saveStartTime = startTime || null;
-        
-        await updateRundown(rundownId, rundownTitle, items, true, false, columns, saveTimezone, saveStartTime);
+        console.log('Updating existing rundown:', rundownId);
+        // For existing rundowns, use silent update
+        await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, startTime);
+        console.log('Existing rundown updated successfully');
         return true;
       }
       

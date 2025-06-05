@@ -8,7 +8,6 @@ import { useChangeTracking } from './useChangeTracking';
 
 export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
   const { user } = useAuth();
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveInProgressRef = useRef(false);
   const lastSaveAttemptRef = useRef<number>(0);
 
@@ -22,12 +21,12 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
-  // Debounced save function
+  // Auto-save function
   const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
     const now = Date.now();
     
-    // Rate limiting - prevent saves within 3 seconds of each other
-    if (now - lastSaveAttemptRef.current < 3000) {
+    // Rate limiting - prevent saves within 2 seconds of each other
+    if (now - lastSaveAttemptRef.current < 2000) {
       console.log('Save rate limited, skipping');
       return;
     }
@@ -68,40 +67,27 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     }
   }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
-  // Auto-save effect - SIMPLIFIED to prevent infinite loops
+  // Auto-save trigger - simplified
   useEffect(() => {
-    // Clear any existing timeout first
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-      debounceTimeoutRef.current = null;
-    }
-
-    // Only attempt save if we have unsaved changes and are initialized
+    // Only save if we have unsaved changes and are initialized
     if (!hasUnsavedChanges || !isInitialized || !user || saveInProgressRef.current) {
       return;
     }
 
     // Don't save if we don't have meaningful data
     if (!Array.isArray(items) || items.length === 0) {
-      console.log('Skipping save - no items');
       return;
     }
 
-    console.log('Executing auto-save immediately for changes');
+    console.log('Triggering auto-save for changes');
     
-    // Execute save immediately instead of scheduling
-    debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
+    // Use a small timeout to debounce rapid changes
+    const timeoutId = setTimeout(() => {
+      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
+    }, 1000);
 
+    return () => clearTimeout(timeoutId);
   }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return {
     hasUnsavedChanges,
