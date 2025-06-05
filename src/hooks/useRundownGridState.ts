@@ -12,6 +12,13 @@ export const useRundownGridState = () => {
   // Clipboard management
   const { clipboardItems, copyItems, hasClipboardData } = useRundownClipboard();
   
+  // Create an adapter function that converts between the two calculateEndTime signatures
+  const adaptedCalculateEndTime = useCallback((item: any, prevEndTime?: string) => {
+    const startTime = prevEndTime || item.startTime || '00:00:00';
+    const duration = item.duration || '00:00:30';
+    return coreState.calculateEndTime(startTime, duration);
+  }, [coreState.calculateEndTime]);
+  
   // Clipboard operations that integrate with rundown state
   const { handleCopySelectedRows, handlePasteRows } = useRundownClipboardOperations({
     items: coreState.items,
@@ -19,10 +26,7 @@ export const useRundownGridState = () => {
     selectedRows: interactions.selectedRows,
     clearSelection: interactions.clearSelection,
     addMultipleRows: (items: any[], calculateEndTime: (startTime: string, duration: string) => string) => {
-      coreState.addMultipleRows(items, undefined, (item, prevEndTime) => {
-        // Convert the signature to match what addMultipleRows expects
-        return calculateEndTime(item.startTime || prevEndTime || '00:00:00', item.duration || '00:00:30');
-      });
+      coreState.addMultipleRows(items, undefined, adaptedCalculateEndTime);
     },
     calculateEndTime: coreState.calculateEndTime,
     markAsChanged: coreState.markAsChanged,
@@ -33,9 +37,9 @@ export const useRundownGridState = () => {
 
   // Create properly wrapped functions that match the expected signatures
   const handleAddRow = useCallback(() => {
-    // Call addRow with the calculateEndTime function as required
-    coreState.addRow(coreState.calculateEndTime);
-  }, [coreState.addRow, coreState.calculateEndTime]);
+    // Call addRow with the adapted calculateEndTime function
+    coreState.addRow(adaptedCalculateEndTime);
+  }, [coreState.addRow, adaptedCalculateEndTime]);
 
   const handleAddHeader = useCallback(() => {
     // Call addHeader with no parameters as expected
