@@ -8,6 +8,7 @@ export const useSimpleChangeTracking = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedStateRef = useRef<string>('');
   const isLoadingRef = useRef(false);
+  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const createStateSignature = useCallback((
     items: RundownItem[], 
@@ -33,11 +34,19 @@ export const useSimpleChangeTracking = () => {
     startTime?: string
   ) => {
     if (!isInitialized && !isLoadingRef.current) {
-      const signature = createStateSignature(items, title, columns, timezone, startTime);
-      lastSavedStateRef.current = signature;
-      setIsInitialized(true);
-      setHasUnsavedChanges(false);
-      console.log('Simple change tracking: Initialized');
+      // Clear any existing timeout
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+      
+      // Add a small delay to ensure all data is loaded
+      initializationTimeoutRef.current = setTimeout(() => {
+        const signature = createStateSignature(items, title, columns, timezone, startTime);
+        lastSavedStateRef.current = signature;
+        setIsInitialized(true);
+        setHasUnsavedChanges(false);
+        console.log('Simple change tracking: Initialized with delay');
+      }, 100);
     }
   }, [isInitialized, createStateSignature]);
 
@@ -55,6 +64,7 @@ export const useSimpleChangeTracking = () => {
     
     if (hasChanges !== hasUnsavedChanges) {
       setHasUnsavedChanges(hasChanges);
+      console.log('Simple change tracking: Changes detected:', hasChanges);
     }
   }, [isInitialized, hasUnsavedChanges, createStateSignature]);
 
@@ -74,6 +84,7 @@ export const useSimpleChangeTracking = () => {
   const markAsChanged = useCallback(() => {
     if (isInitialized && !isLoadingRef.current) {
       setHasUnsavedChanges(true);
+      console.log('Simple change tracking: Marked as changed');
     }
   }, [isInitialized]);
 
@@ -84,6 +95,15 @@ export const useSimpleChangeTracking = () => {
       setIsInitialized(true);
     }
   }, [isInitialized]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     hasUnsavedChanges,

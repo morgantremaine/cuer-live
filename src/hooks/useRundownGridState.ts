@@ -35,16 +35,42 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Create properly wrapped functions that match the expected signatures
+  // Create properly wrapped functions that use selected rows for insertion
   const handleAddRow = useCallback(() => {
-    // Call addRow with the adapted calculateEndTime function
-    coreState.addRow(adaptedCalculateEndTime);
-  }, [coreState.addRow, adaptedCalculateEndTime]);
+    // Find the highest index among selected rows for insertion
+    let insertAfterIndex: number | undefined = undefined;
+    if (interactions.selectedRows && interactions.selectedRows.size > 0) {
+      const selectedIndices = Array.from(interactions.selectedRows).map(id => 
+        coreState.items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+        console.log('Grid state: Inserting row after index:', insertAfterIndex);
+      }
+    }
+    
+    // Call addRow with the adapted calculateEndTime function and insertion index
+    coreState.addRow(adaptedCalculateEndTime, insertAfterIndex);
+  }, [coreState.addRow, adaptedCalculateEndTime, interactions.selectedRows, coreState.items]);
 
   const handleAddHeader = useCallback(() => {
-    // Call addHeader with no parameters as expected
-    coreState.addHeader();
-  }, [coreState.addHeader]);
+    // Find the highest index among selected rows for insertion
+    let insertAfterIndex: number | undefined = undefined;
+    if (interactions.selectedRows && interactions.selectedRows.size > 0) {
+      const selectedIndices = Array.from(interactions.selectedRows).map(id => 
+        coreState.items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+        console.log('Grid state: Inserting header after index:', insertAfterIndex);
+      }
+    }
+    
+    // Call addHeader with insertion index
+    coreState.addHeader(insertAfterIndex);
+  }, [coreState.addHeader, interactions.selectedRows, coreState.items]);
 
   // Row operations with properly wrapped functions
   const { handleDeleteSelectedRows } = useRundownRowOperations({
