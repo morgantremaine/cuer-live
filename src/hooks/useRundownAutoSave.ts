@@ -35,42 +35,35 @@ export const useRundownAutoSave = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedStateRef = useRef<string>('');
   const isInitializedRef = useRef(false);
-  const stableItemsRef = useRef<RundownItem[]>([]);
 
-  // Create a stable signature that doesn't change unnecessarily
-  const createStateSignature = useCallback(() => {
-    if (!items || !Array.isArray(items) || !rundownTitle.trim()) return '';
+  // Create a stable signature using JSON.stringify on the actual data
+  const createStateSignature = useCallback((currentItems: RundownItem[], currentTitle: string, currentTimezone?: string, currentStartTime?: string) => {
+    if (!currentItems || !Array.isArray(currentItems) || !currentTitle.trim()) return '';
     
-    // Only update stable items if items have actually changed
-    const itemsString = JSON.stringify(items);
-    const lastItemsString = JSON.stringify(stableItemsRef.current);
-    
-    if (itemsString !== lastItemsString) {
-      stableItemsRef.current = [...items];
-    }
-    
-    return JSON.stringify({
-      title: rundownTitle.trim(),
-      itemsCount: stableItemsRef.current.length,
-      timezone: timezone || '',
-      startTime: startTime || '',
-      itemsHash: stableItemsRef.current.map(item => `${item.id}-${item.name}-${item.duration}-${item.type}`).join('|')
+    // Create a deterministic signature based on actual data values
+    const signature = JSON.stringify({
+      title: currentTitle.trim(),
+      itemsCount: currentItems.length,
+      timezone: currentTimezone || '',
+      startTime: currentStartTime || '',
+      itemsHash: currentItems.map(item => `${item.id}-${item.name}-${item.duration}-${item.type}-${JSON.stringify(item.customFields || {})}`).join('|')
     });
-  }, [items, rundownTitle, timezone, startTime]);
+    
+    return signature;
+  }, []); // No dependencies to keep it stable
 
   // Initialize baseline when we have valid data
   useEffect(() => {
     if (!isInitializedRef.current && items.length > 0 && rundownTitle.trim() && user) {
-      const signature = createStateSignature();
+      const signature = createStateSignature(items, rundownTitle, timezone, startTime);
       if (signature) {
         lastSavedStateRef.current = signature;
-        stableItemsRef.current = [...items];
         isInitializedRef.current = true;
         setHasUnsavedChanges(false);
         console.log('Auto-save: Initialized baseline for', rundownId || 'new rundown');
       }
     }
-  }, [items.length, rundownTitle, user, createStateSignature, rundownId]);
+  }, [items.length, rundownTitle, user, rundownId]); // Minimal dependencies
 
   // Perform the actual save operation
   const performSave = useCallback(async () => {
@@ -85,7 +78,7 @@ export const useRundownAutoSave = ({
     }
 
     setIsSaving(true);
-    console.log('Auto-save: Executing scheduled save', { rundownId, title: rundownTitle, itemsCount: items.length });
+    console.log('Auto-save: Executing save operation', { rundownId, title: rundownTitle, itemsCount: items.length });
 
     try {
       if (rundownId) {
@@ -104,9 +97,8 @@ export const useRundownAutoSave = ({
       }
 
       // Update baseline after successful save
-      const newSignature = createStateSignature();
+      const newSignature = createStateSignature(items, rundownTitle, timezone, startTime);
       lastSavedStateRef.current = newSignature;
-      stableItemsRef.current = [...items];
       setHasUnsavedChanges(false);
       
       return true;
@@ -118,13 +110,13 @@ export const useRundownAutoSave = ({
     }
   }, [isSaving, user, rundownTitle, items, rundownId, updateRundown, saveRundown, columns, timezone, startTime, navigate, createStateSignature]);
 
-  // Auto-save when changes are detected
+  // Auto-save when changes are detected - using a separate effect with proper dependencies
   useEffect(() => {
     if (!isInitializedRef.current || isSaving || !user) {
       return;
     }
 
-    const currentSignature = createStateSignature();
+    const currentSignature = createStateSignature(items, rundownTitle, timezone, startTime);
     if (!currentSignature) return;
     
     const hasChanges = lastSavedStateRef.current !== currentSignature;
@@ -151,7 +143,7 @@ export const useRundownAutoSave = ({
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [createStateSignature, isSaving, user, performSave]);
+  }, [items, rundownTitle, timezone, startTime, isSaving, user, performSave, createStateSignature]);
 
   // Manual save trigger
   const triggerSave = useCallback(async () => {
