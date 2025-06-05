@@ -51,7 +51,7 @@ export const useRundownStateIntegration = (
   // Columns manager
   const columnsManager = useColumnsManager(markAsChanged);
 
-  // Auto-save with simplified dependency
+  // Auto-save with clean dependencies
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     items,
     rundownTitle,

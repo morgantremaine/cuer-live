@@ -42,26 +42,26 @@ export const useAutoSaveOperations = () => {
     setIsSaving(true);
 
     try {
-      console.log(`Auto-save: Starting save operation - isNew: ${isNewRundown}, id: ${rundownId}, items: ${items.length}`);
+      console.log(`Auto-save: Starting save - isNew: ${isNewRundown}, id: ${rundownId}, items: ${items.length}`);
       
       if (isNewRundown) {
         console.log('Auto-save: Saving new rundown');
         const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
         
         if (result?.id) {
-          console.log('Auto-save: New rundown saved successfully, navigating to:', result.id);
+          console.log('Auto-save: New rundown saved, navigating to:', result.id);
           navigate(`/rundown/${result.id}`, { replace: true });
-          // Refresh storage in background
+          // Refresh storage
           setTimeout(() => loadRundowns(), 100);
           return true;
         } else {
-          console.error('Auto-save: Failed to save new rundown - no ID returned');
+          console.error('Auto-save: Failed to save new rundown');
           return false;
         }
       } else if (rundownId) {
         console.log('Auto-save: Updating existing rundown');
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, startTime);
-        console.log('Auto-save: Existing rundown updated successfully');
+        console.log('Auto-save: Existing rundown updated');
         return true;
       }
       

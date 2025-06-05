@@ -9,59 +9,57 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const { user } = useAuth();
   const { isSaving, performSave } = useAutoSaveOperations();
   
-  const lastSavedStateRef = useRef<string>('');
+  const lastSavedDataRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitializedRef = useRef(false);
   
-  // Create a simple signature for change detection
+  // Create signature for change detection
   const createSignature = useCallback(() => {
     return JSON.stringify({
       title: rundownTitle || '',
       itemsCount: items.length,
       timezone: timezone || '',
       startTime: startTime || '',
-      // Just check the first item's basic properties to detect real changes
-      firstItemName: items[0]?.name || '',
-      lastItemName: items[items.length - 1]?.name || ''
+      itemsData: items.map(item => ({ id: item.id, name: item.name, duration: item.duration }))
     });
   }, [items, rundownTitle, timezone, startTime]);
 
   const currentSignature = createSignature();
 
-  // Initialize once when we have meaningful data
+  // Initialize baseline once
   useEffect(() => {
-    if (!isInitializedRef.current && items.length > 0 && user && rundownTitle) {
-      console.log('Auto-save: Initializing with', items.length, 'items');
-      lastSavedStateRef.current = currentSignature;
+    if (!isInitializedRef.current && items.length > 0 && user && rundownTitle.trim()) {
+      console.log('Auto-save: Initializing baseline');
+      lastSavedDataRef.current = currentSignature;
       isInitializedRef.current = true;
     }
   }, [currentSignature, items.length, user, rundownTitle]);
 
-  // Auto-save when changes are detected
+  // Auto-save when changes detected
   useEffect(() => {
-    if (!isInitializedRef.current || isSaving || !user) {
+    if (!isInitializedRef.current || isSaving || !user || !rundownTitle.trim()) {
       return;
     }
 
-    const hasChanges = lastSavedStateRef.current !== currentSignature;
+    const hasChanges = lastSavedDataRef.current !== currentSignature;
     
-    if (hasChanges && items.length > 0 && rundownTitle.trim()) {
+    if (hasChanges && items.length > 0) {
       console.log('Auto-save: Changes detected, scheduling save');
       
-      // Clear any existing timeout
+      // Clear existing timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
-      // Debounce the save
+      // Schedule save with debounce
       saveTimeoutRef.current = setTimeout(async () => {
-        console.log('Auto-save: Executing save operation');
+        console.log('Auto-save: Executing save');
         try {
           const success = await performSave(items, rundownTitle, columns, timezone, startTime);
           
           if (success) {
-            lastSavedStateRef.current = currentSignature;
-            console.log('Auto-save: Save successful');
+            lastSavedDataRef.current = currentSignature;
+            console.log('Auto-save: Save completed successfully');
           } else {
             console.log('Auto-save: Save failed');
           }
@@ -76,25 +74,25 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [currentSignature, isSaving, user, items, rundownTitle, columns, timezone, startTime, performSave]);
+  }, [currentSignature, isSaving, user, rundownTitle, items, columns, timezone, startTime, performSave]);
 
-  // Manual save function
+  const hasUnsavedChanges = isInitializedRef.current && lastSavedDataRef.current !== currentSignature;
+
   const triggerSave = useCallback(async () => {
-    if (!user || isSaving) return false;
+    if (!user || isSaving || !rundownTitle.trim()) return false;
     
     try {
       const success = await performSave(items, rundownTitle, columns, timezone, startTime);
       if (success) {
-        lastSavedStateRef.current = currentSignature;
+        lastSavedDataRef.current = currentSignature;
+        console.log('Manual save: Completed successfully');
       }
       return success;
     } catch (error) {
-      console.error('Manual save error:', error);
+      console.error('Manual save: Error:', error);
       return false;
     }
   }, [user, isSaving, performSave, items, rundownTitle, columns, timezone, startTime, currentSignature]);
-
-  const hasUnsavedChanges = isInitializedRef.current && lastSavedStateRef.current !== currentSignature;
 
   return {
     hasUnsavedChanges,

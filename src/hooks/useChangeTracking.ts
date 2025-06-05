@@ -9,7 +9,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const lastSavedDataRef = useRef<string>('');
   const initOnceRef = useRef(false);
 
-  // Simple signature for tracking changes
+  // Create signature for tracking changes
   const currentSignature = useMemo(() => {
     return JSON.stringify({ 
       title: rundownTitle || '',
@@ -20,10 +20,10 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     });
   }, [items.length, rundownTitle, columns?.length, timezone, startTime]);
 
-  // Initialize only once when we have data
+  // Initialize once when we have data
   useEffect(() => {
     if (!initOnceRef.current && items.length > 0) {
-      console.log('Change tracking: Initializing once');
+      console.log('Change tracking: Initializing baseline');
       lastSavedDataRef.current = currentSignature;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
@@ -55,6 +55,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const markAsChanged = () => {
     if (isInitialized) {
       setHasUnsavedChanges(true);
+      console.log('Change tracking: Marked as changed');
     }
   };
 
