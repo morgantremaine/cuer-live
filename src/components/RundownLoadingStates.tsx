@@ -11,7 +11,7 @@ interface RundownLoadingStatesProps {
 const RundownLoadingStates = ({ isCreatingNew, loading, hasParamsId }: RundownLoadingStatesProps) => {
   const navigate = useNavigate();
 
-  // Show loading state while creating new rundown
+  // Show loading state while creating new rundown (only when we don't have an ID yet)
   if (!hasParamsId && (isCreatingNew || loading)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -24,7 +24,7 @@ const RundownLoadingStates = ({ isCreatingNew, loading, hasParamsId }: RundownLo
   }
 
   // If we're still on /rundown without an ID and not creating, something went wrong
-  if (!hasParamsId) {
+  if (!hasParamsId && !isCreatingNew && !loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -41,6 +41,7 @@ const RundownLoadingStates = ({ isCreatingNew, loading, hasParamsId }: RundownLo
     );
   }
 
+  // Return null to allow the main interface to render
   return null;
 };
 

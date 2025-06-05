@@ -11,7 +11,7 @@ const RundownIndexContent = () => {
 
   const hasParamsId = Boolean(params.id);
 
-  // Handle loading states first
+  // Check if we should show loading states
   const loadingComponent = (
     <RundownLoadingStates 
       isCreatingNew={isCreatingNew}
@@ -20,7 +20,8 @@ const RundownIndexContent = () => {
     />
   );
 
-  if (loadingComponent) {
+  // If loading component returns something (not null), show it
+  if (loadingComponent && React.isValidElement(loadingComponent)) {
     return loadingComponent;
   }
 
