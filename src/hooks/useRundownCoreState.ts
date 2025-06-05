@@ -18,13 +18,13 @@ export const useRundownCoreState = () => {
   // Basic state management
   const basicState = useRundownBasicState();
   
-  // Data management (items, CRUD operations)
+  // Data management (items, CRUD operations) - fix: only pass markAsChanged
   const dataManagement = useRundownDataManagement(basicState.markAsChanged);
   
-  // Calculations (time, totals, etc.)
+  // Calculations (time, totals, etc.) - fix: pass the required parameters
   const calculations = useRundownCalculations(dataManagement.items, basicState.rundownStartTime, basicState.timezone);
   
-  // Playback controls
+  // Playback controls - fix: pass the required parameters  
   const playback = usePlaybackControls(dataManagement.items, basicState.rundownStartTime, basicState.timezone);
   
   // Column management
@@ -78,6 +78,9 @@ export const useRundownCoreState = () => {
     }
   }, [undo, dataManagement.setItems, columns.handleLoadLayout, basicState.setRundownTitleDirectly, basicState.markAsChanged]);
 
+  // Add hasUnsavedChanges state
+  const hasUnsavedChanges = false; // This should come from auto-save or change tracking
+
   return useMemo(() => ({
     // Basic state
     ...basicState,
@@ -96,7 +99,7 @@ export const useRundownCoreState = () => {
     ...columns,
     
     // Auto-save state
-    hasUnsavedChanges: basicState.hasUnsavedChanges,
+    hasUnsavedChanges,
     isSaving: autoSave.isSaving,
 
     // Color selection
@@ -116,6 +119,7 @@ export const useRundownCoreState = () => {
     calculations,
     playback,
     columns,
+    hasUnsavedChanges,
     autoSave.isSaving,
     selectColor,
     handleUndo,

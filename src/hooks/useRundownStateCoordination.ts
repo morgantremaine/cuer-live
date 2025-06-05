@@ -26,8 +26,16 @@ export const useRundownStateCoordination = () => {
     coreState.setRundownTitle
   );
   
-  // Get UI state
-  const uiState = useRundownUIState();
+  // Get UI state - fix: provide the required parameters
+  const uiState = useRundownUIState(
+    coreState.items,
+    coreState.visibleColumns,
+    interactions.selectedRows,
+    interactions.draggedItemIndex,
+    interactions.isDraggingMultiple,
+    interactions.dropTargetIndex,
+    interactions.colorPickerRowId
+  );
 
   // Memoize the coordinated state
   return useMemo(() => ({

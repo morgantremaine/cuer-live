@@ -1,20 +1,17 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 
-export const useRundownDataManagement = (rundownTitle: string, timezone: string) => {
+export const useRundownDataManagement = (markAsChanged: () => void) => {
   const params = useParams<{ id: string }>();
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { savedRundowns, loading } = useRundownStorage();
   const initializationRef = useRef<{ [key: string]: boolean }>({});
-
-  const markAsChanged = useCallback(() => {
-    console.log('Changes marked - triggering auto-save');
-  }, []);
 
   const {
     items,
