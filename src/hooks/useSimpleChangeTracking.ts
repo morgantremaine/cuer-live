@@ -6,6 +6,7 @@ import { Column } from './useColumnsManager';
 export const useSimpleChangeTracking = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const lastSavedStateRef = useRef<string>('');
   const lastChangeCheckRef = useRef<string>('');
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -118,6 +119,7 @@ export const useSimpleChangeTracking = () => {
   const reset = useCallback(() => {
     setIsInitialized(false);
     setHasUnsavedChanges(false);
+    setIsLoading(false);
     lastSavedStateRef.current = '';
     lastChangeCheckRef.current = '';
     if (debounceTimeoutRef.current) {
@@ -139,6 +141,8 @@ export const useSimpleChangeTracking = () => {
   return {
     hasUnsavedChanges,
     isInitialized,
+    isLoading,
+    setIsLoading,
     initialize,
     checkForChanges,
     markAsSaved,
