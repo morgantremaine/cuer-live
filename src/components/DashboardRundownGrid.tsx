@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, Calendar, MoreVertical, Play, Share2, Copy, Archive, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,14 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { RundownItem } from '@/hooks/useRundownItems';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 
 interface DashboardRundownGridProps {
   title?: string;
@@ -59,43 +52,10 @@ const DashboardRundownGrid = ({
     }
   };
 
-  const handleOpenTeleprompter = (id: string) => {
-    window.open(`/teleprompter/${id}`, '_blank');
-  };
-
-  const handleShareRundown = async (rundown: SavedRundown) => {
-    try {
-      // Create a shareable link
-      const shareUrl = `${window.location.origin}/shared/${rundown.id}`;
-      
-      if (navigator.share) {
-        await navigator.share({
-          title: rundown.title,
-          text: `Check out this rundown: ${rundown.title}`,
-          url: shareUrl,
-        });
-      } else {
-        // Fallback to copying to clipboard
-        await navigator.clipboard.writeText(shareUrl);
-        toast({
-          title: 'Link copied!',
-          description: 'Shareable link has been copied to your clipboard.',
-        });
-      }
-    } catch (error) {
-      console.error('Error sharing rundown:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to share rundown.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDuplicateRundown = async (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
+  const handleDeleteRundown = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onDuplicate) {
-      onDuplicate(id, title, items, e);
+    if (onDelete) {
+      onDelete(id, title, e);
     }
   };
 
@@ -141,10 +101,10 @@ const DashboardRundownGrid = ({
     }
   };
 
-  const handleDeleteRundown = (id: string, title: string, e: React.MouseEvent) => {
+  const handleDuplicateRundown = async (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onDelete) {
-      onDelete(id, title, e);
+    if (onDuplicate) {
+      onDuplicate(id, title, items, e);
     }
   };
 
