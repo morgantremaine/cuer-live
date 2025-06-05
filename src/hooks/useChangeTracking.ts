@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
@@ -13,23 +13,23 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const isLoadingRef = useRef(false);
   const hasInitialDataRef = useRef(false);
   const instanceIdRef = useRef(++instanceCounter);
+  const itemsLengthRef = useRef(items.length);
+  const titleRef = useRef(rundownTitle);
 
   console.log(`📊 useChangeTracking instance #${instanceIdRef.current} created`);
 
-  // Memoize the signature creation to prevent unnecessary recalculations
-  const createSignature = useMemo(() => {
-    return (dataItems: RundownItem[], title: string, cols?: Column[], tz?: string, st?: string) => {
-      return JSON.stringify({ 
-        items: dataItems.map(item => ({ id: item.id, ...item })), 
-        title, 
-        columns: cols, 
-        timezone: tz, 
-        startTime: st 
-      });
-    };
+  // Stable signature creation function
+  const createSignature = useCallback((dataItems: RundownItem[], title: string, cols?: Column[], tz?: string, st?: string) => {
+    return JSON.stringify({ 
+      items: dataItems.map(item => ({ id: item.id, ...item })), 
+      title, 
+      columns: cols, 
+      timezone: tz, 
+      startTime: st 
+    });
   }, []);
 
-  // Stable current signature
+  // Memoize current signature but only recalculate when actual content changes
   const currentSignature = useMemo(() => {
     return createSignature(items, rundownTitle, columns, timezone, startTime);
   }, [items, rundownTitle, columns, timezone, startTime, createSignature]);
@@ -63,12 +63,16 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       initializedRef.current = true;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
+      
+      // Store initial values to prevent false change detection
+      itemsLengthRef.current = items.length;
+      titleRef.current = rundownTitle;
     } else {
       console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect: Has meaningful data: false`);
     }
   }, [items.length, rundownTitle, currentSignature]);
 
-  // Track changes after initialization - this should run on every change
+  // Track changes after initialization - use refs to prevent excessive calls
   useEffect(() => {
     console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect:`, {
       isInitialized: initializedRef.current,
@@ -82,6 +86,15 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       return;
     }
 
+    // Only check for changes if something actually changed
+    const itemsChanged = itemsLengthRef.current !== items.length;
+    const titleChanged = titleRef.current !== rundownTitle;
+    
+    if (!itemsChanged && !titleChanged) {
+      // No major changes detected, skip expensive signature comparison
+      return;
+    }
+
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
     console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Has changes: ${hasChanges} Current hasUnsavedChanges: ${hasUnsavedChanges}`);
@@ -89,24 +102,33 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     if (hasChanges !== hasUnsavedChanges) {
       console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Updating hasUnsavedChanges to: ${hasChanges}`);
       setHasUnsavedChanges(hasChanges);
+      
+      // Update refs to current values
+      itemsLengthRef.current = items.length;
+      titleRef.current = rundownTitle;
     }
   }, [currentSignature, hasUnsavedChanges, items.length, rundownTitle]);
 
-  const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
+  // Stable callback functions
+  const markAsSaved = useCallback((savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
     const signature = createSignature(savedItems, savedTitle, savedColumns, savedTimezone, savedStartTime);
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
-  };
+    
+    // Update refs
+    itemsLengthRef.current = savedItems.length;
+    titleRef.current = savedTitle;
+  }, [createSignature]);
 
-  const markAsChanged = () => {
+  const markAsChanged = useCallback(() => {
     if (!isLoadingRef.current && initializedRef.current) {
       setHasUnsavedChanges(true);
     }
-  };
+  }, []);
 
-  const setIsLoading = (loading: boolean) => {
+  const setIsLoading = useCallback((loading: boolean) => {
     isLoadingRef.current = loading;
-  };
+  }, []);
 
   return {
     hasUnsavedChanges,

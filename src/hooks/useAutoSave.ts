@@ -24,7 +24,28 @@ export const useAutoSave = (
   const lastSaveAttemptRef = useRef<number>(0);
   const instanceIdRef = useRef<number>();
   const isUnmountedRef = useRef(false);
-  const isInitializedRef = useRef(false);
+  
+  // Store latest values in refs to avoid dependency issues
+  const latestValuesRef = useRef({
+    items,
+    rundownTitle,
+    columns,
+    timezone,
+    startTime,
+    getUndoHistory,
+    markAsSaved
+  });
+
+  // Update refs whenever values change
+  latestValuesRef.current = {
+    items,
+    rundownTitle,
+    columns,
+    timezone,
+    startTime,
+    getUndoHistory,
+    markAsSaved
+  };
 
   // Initialize instance ID only once
   if (!instanceIdRef.current) {
@@ -35,7 +56,7 @@ export const useAutoSave = (
 
   const { isSaving, performSave } = useAutoSaveOperations();
 
-  // Stable save function that captures current state when called
+  // Stable save function that uses refs to get current values
   const executeSave = useCallback(async () => {
     if (isUnmountedRef.current) {
       console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Skipping save - component unmounted`);
@@ -65,20 +86,30 @@ export const useAutoSave = (
     console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Starting save operation`);
 
     try {
-      const currentUndoHistory = getUndoHistory ? getUndoHistory() : undefined;
+      const {
+        items: currentItems,
+        rundownTitle: currentTitle,
+        columns: currentColumns,
+        timezone: currentTimezone,
+        startTime: currentStartTime,
+        getUndoHistory: currentGetUndoHistory,
+        markAsSaved: currentMarkAsSaved
+      } = latestValuesRef.current;
+
+      const currentUndoHistory = currentGetUndoHistory ? currentGetUndoHistory() : undefined;
       
       const success = await performSave(
-        items, 
-        rundownTitle, 
-        columns, 
-        timezone, 
-        startTime, 
+        currentItems, 
+        currentTitle, 
+        currentColumns, 
+        currentTimezone, 
+        currentStartTime, 
         currentUndoHistory
       );
       
       if (success && !isUnmountedRef.current) {
         console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save successful`);
-        markAsSaved(items, rundownTitle, columns, timezone, startTime);
+        currentMarkAsSaved(currentItems, currentTitle, currentColumns, currentTimezone, currentStartTime);
       } else if (!isUnmountedRef.current) {
         console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save failed`);
       }
@@ -89,17 +120,11 @@ export const useAutoSave = (
         isExecutingSaveRef.current = false;
       }
     }
-  }, [user, performSave, markAsSaved, isSaving, items, rundownTitle, columns, timezone, startTime, getUndoHistory]);
+  }, [user, performSave, isSaving]); // Only depend on stable values
 
-  // Main auto-save effect - triggers when changes are detected
+  // Main auto-save effect - only depends on hasUnsavedChanges and user
   useEffect(() => {
     if (isUnmountedRef.current) return;
-
-    // Initialize only once per instance
-    if (!isInitializedRef.current) {
-      isInitializedRef.current = true;
-      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Initialized`);
-    }
 
     console.log(`🔧 Auto-save instance #${instanceIdRef.current} effect:`, {
       hasUnsavedChanges,
@@ -114,7 +139,7 @@ export const useAutoSave = (
 
     // Clear any existing timeout
     if (debounceTimeoutRef.current) {
-      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Clearing existing timeout`);
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Cleanup - clearing timeout`);
       clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = null;
     }
@@ -132,12 +157,12 @@ export const useAutoSave = (
     // Cleanup function
     return () => {
       if (debounceTimeoutRef.current) {
-        console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Cleanup - clearing timeout`);
+        console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Effect cleanup - clearing timeout`);
         clearTimeout(debounceTimeoutRef.current);
         debounceTimeoutRef.current = null;
       }
     };
-  }, [hasUnsavedChanges, user, executeSave]);
+  }, [hasUnsavedChanges, user, executeSave]); // Minimal dependencies
 
   // Cleanup on unmount
   useEffect(() => {

@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
@@ -14,97 +14,85 @@ export const useRundownStateIntegration = (
   setTimezoneDirectly: (timezone: string) => void,
   getUndoHistory?: () => any[]
 ) => {
-  // Items management with change tracking
-  const {
-    items,
-    setItems,
-    updateItem,
-    addRow: originalAddRow,
-    addHeader: originalAddHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  // Use refs to track if hooks have been initialized to prevent recreation
+  const hooksInitializedRef = useRef(false);
+  const stableMarkAsChangedRef = useRef(markAsChanged);
+  stableMarkAsChangedRef.current = markAsChanged;
 
-  // Columns management
-  const {
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+  // Stable mark as changed function
+  const stableMarkAsChanged = useCallback(() => {
+    stableMarkAsChangedRef.current();
+  }, []);
 
-  // Stable memoized values to prevent infinite re-renders
-  const stableItems = useMemo(() => items, [items]);
-  const stableColumns = useMemo(() => columns, [columns]);
+  // Items management with change tracking - initialize once
+  const itemsHook = useRundownItems(stableMarkAsChanged);
+  
+  // Columns management - initialize once
+  const columnsHook = useColumnsManager(stableMarkAsChanged);
+
+  // Create stable values that don't change unless the actual data changes
+  const stableItems = useMemo(() => itemsHook.items, [itemsHook.items]);
+  const stableColumns = useMemo(() => columnsHook.columns, [columnsHook.columns]);
   const stableTitle = useMemo(() => rundownTitle, [rundownTitle]);
   const stableTimezone = useMemo(() => timezone, [timezone]);
   const stableStartTime = useMemo(() => rundownStartTime, [rundownStartTime]);
 
-  // Change tracking - separate from auto-save
-  const { 
-    hasUnsavedChanges, 
-    markAsSaved,
-    isInitialized
-  } = useChangeTracking(stableItems, stableTitle, stableColumns, stableTimezone, stableStartTime);
+  // Change tracking - only initialize once per hook lifecycle
+  const changeTracking = useChangeTracking(stableItems, stableTitle, stableColumns, stableTimezone, stableStartTime);
 
   // Auto-save integration - only initialize if change tracking is ready
-  const { isSaving } = useAutoSave(
+  const autoSave = useAutoSave(
     stableItems,
     stableTitle,
-    hasUnsavedChanges && isInitialized,
-    markAsSaved,
+    changeTracking.hasUnsavedChanges && changeTracking.isInitialized,
+    changeTracking.markAsSaved,
     stableColumns,
     stableTimezone,
     stableStartTime,
     getUndoHistory
   );
 
-  // Wrapped functions
+  // Mark hooks as initialized after first render
+  if (!hooksInitializedRef.current) {
+    hooksInitializedRef.current = true;
+  }
+
+  // Stable wrapped functions - memoize to prevent recreation
   const addRow = useMemo(() => {
     return (calculateEndTime: any, insertAfterIndex?: number) => {
-      originalAddRow(calculateEndTime, insertAfterIndex);
+      itemsHook.addRow(calculateEndTime, insertAfterIndex);
     };
-  }, [originalAddRow]);
+  }, [itemsHook.addRow]);
 
   const addHeader = useMemo(() => {
     return (insertAfterIndex?: number) => {
-      originalAddHeader(insertAfterIndex);
+      itemsHook.addHeader(insertAfterIndex);
     };
-  }, [originalAddHeader]);
+  }, [itemsHook.addHeader]);
 
   return {
     items: stableItems,
-    setItems,
-    updateItem,
+    setItems: itemsHook.setItems,
+    updateItem: itemsHook.updateItem,
     addRow,
     addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration,
+    deleteRow: itemsHook.deleteRow,
+    deleteMultipleRows: itemsHook.deleteMultipleRows,
+    addMultipleRows: itemsHook.addMultipleRows,
+    getRowNumber: itemsHook.getRowNumber,
+    toggleFloatRow: itemsHook.toggleFloatRow,
+    calculateTotalRuntime: itemsHook.calculateTotalRuntime,
+    calculateHeaderDuration: itemsHook.calculateHeaderDuration,
     columns: stableColumns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving
+    visibleColumns: columnsHook.visibleColumns,
+    handleAddColumn: columnsHook.handleAddColumn,
+    handleReorderColumns: columnsHook.handleReorderColumns,
+    handleDeleteColumn: columnsHook.handleDeleteColumn,
+    handleRenameColumn: columnsHook.handleRenameColumn,
+    handleToggleColumnVisibility: columnsHook.handleToggleColumnVisibility,
+    handleLoadLayout: columnsHook.handleLoadLayout,
+    handleUpdateColumnWidth: columnsHook.handleUpdateColumnWidth,
+    hasUnsavedChanges: changeTracking.hasUnsavedChanges,
+    isSaving: autoSave.isSaving
   };
 };
