@@ -100,9 +100,6 @@ const RundownHeaderSection = ({
         onHighlightMatch={onHighlightMatch}
         onReplaceText={onReplaceText}
         currentHighlight={currentHighlight}
-        onUndo={onUndo}
-        canUndo={canUndo}
-        lastAction={lastAction}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}

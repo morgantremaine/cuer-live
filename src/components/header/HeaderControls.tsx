@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, LogOut, Undo } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
@@ -15,9 +15,6 @@ interface HeaderControlsProps {
   visibleColumns: any[];
   onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
-  onUndo: () => void;
-  canUndo: boolean;
-  lastAction: string | null;
 }
 
 const HeaderControls = ({
@@ -27,10 +24,7 @@ const HeaderControls = ({
   items,
   visibleColumns,
   onHighlightMatch,
-  onReplaceText,
-  onUndo,
-  canUndo,
-  lastAction
+  onReplaceText
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
@@ -66,16 +60,6 @@ const HeaderControls = ({
           onReplaceText={onReplaceText}
         />
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onUndo}
-        disabled={!canUndo}
-        title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
-        className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
-      >
-        <Undo className="h-4 w-4" />
-      </Button>
       {user ? (
         <div className="flex items-center space-x-2 relative">
           <span className="text-sm">{user.email}</span>
