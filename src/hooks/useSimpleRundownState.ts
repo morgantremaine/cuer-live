@@ -13,10 +13,54 @@ export const useSimpleRundownState = (
 ) => {
   const params = useParams<{ id: string }>();
   const rawId = params.id;
-  // Apply the same filtering logic as useRundownBasicState
-  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
+  
+  // More defensive filtering - only proceed if we have a valid ID
+  const rundownId = rawId && rawId !== ':id' && rawId.trim() !== '' ? rawId : undefined;
 
-  console.log('Simple rundown state: Current rundown ID:', rundownId, 'from params:', rawId);
+  console.log('Simple rundown state: Current rundown ID:', rundownId, 'from params:', rawId, 'pathname:', window.location.pathname);
+
+  // If we don't have a rundown ID, we shouldn't initialize any rundown functionality
+  if (!rundownId) {
+    console.log('Simple rundown state: No valid rundown ID, returning minimal state');
+    
+    // Return a minimal state that won't cause errors
+    const itemsHook = useRundownItems(() => {}); // No-op change handler
+    const columnsHook = useColumnsManager(() => {}); // No-op change handler
+    
+    return {
+      // Items
+      items: itemsHook.items,
+      setItems: itemsHook.setItems,
+      updateItem: itemsHook.updateItem,
+      addRow: itemsHook.addRow,
+      addHeader: itemsHook.addHeader,
+      deleteRow: itemsHook.deleteRow,
+      deleteMultipleRows: itemsHook.deleteMultipleRows,
+      addMultipleRows: itemsHook.addMultipleRows,
+      getRowNumber: itemsHook.getRowNumber,
+      toggleFloatRow: itemsHook.toggleFloatRow,
+      calculateTotalRuntime: itemsHook.calculateTotalRuntime,
+      calculateHeaderDuration: itemsHook.calculateHeaderDuration,
+      
+      // Columns
+      columns: columnsHook.columns,
+      visibleColumns: columnsHook.visibleColumns,
+      handleAddColumn: columnsHook.handleAddColumn,
+      handleReorderColumns: columnsHook.handleReorderColumns,
+      handleDeleteColumn: columnsHook.handleDeleteColumn,
+      handleRenameColumn: columnsHook.handleRenameColumn,
+      handleToggleColumnVisibility: columnsHook.handleToggleColumnVisibility,
+      handleLoadLayout: columnsHook.handleLoadLayout,
+      handleUpdateColumnWidth: columnsHook.handleUpdateColumnWidth,
+      
+      // State - all false/disabled when no rundown ID
+      hasUnsavedChanges: false,
+      isSaving: false,
+      isInitialized: false,
+      setIsLoading: () => {},
+      markAsChanged: () => {}
+    };
+  }
 
   // Simple change tracking
   const {
@@ -72,9 +116,9 @@ export const useSimpleRundownState = (
     }
   }, [rundownId, isInitialized, itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime, checkForChanges]);
 
-  // Auto-save - always call the hook but pass undefined when no rundown
+  // Auto-save - only call when we have a valid rundown ID
   const { isSaving } = useSimpleAutoSave(
-    rundownId, // Can be undefined - hook will handle this
+    rundownId, // Will be undefined for invalid routes
     itemsHook.items,
     rundownTitle,
     columnsHook.columns,
@@ -112,8 +156,8 @@ export const useSimpleRundownState = (
     handleUpdateColumnWidth: columnsHook.handleUpdateColumnWidth,
     
     // State
-    hasUnsavedChanges: rundownId ? hasUnsavedChanges : false, // No unsaved changes when no rundown
-    isSaving: rundownId ? isSaving : false, // Not saving when no rundown
+    hasUnsavedChanges: rundownId ? hasUnsavedChanges : false,
+    isSaving: rundownId ? isSaving : false,
     isInitialized,
     setIsLoading,
     markAsChanged
