@@ -68,7 +68,9 @@ export const useRundownGridState = () => {
 
   // Undo functionality - fix the destructuring
   const undoHook = useRundownUndo();
-  const handleUndo = undoHook.undo;
+  const handleUndo = () => {
+    return undoHook.undo(coreState.setItems, (columns: any) => {}, setRundownTitle);
+  };
   const canUndo = undoHook.canUndo;
   const lastAction = undoHook.lastAction;
 
@@ -99,7 +101,7 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - create wrapper functions that convert between parameter types
+  // Row operations - create wrapper functions that properly handle the parameter conversion
   const wrappedAddRow = (calculateEndTimeFn: any, selectedRowId?: string) => {
     // Convert selectedRowId to insertAfterIndex
     let insertAfterIndex: number | undefined = undefined;
@@ -122,6 +124,15 @@ export const useRundownGridState = () => {
       }
     }
     coreState.addHeader(insertAfterIndex);
+  };
+
+  // Create simplified versions for components that don't pass parameters
+  const handleAddRow = () => {
+    coreState.addRow(calculateEndTime);
+  };
+
+  const handleAddHeader = () => {
+    coreState.addHeader();
   };
 
   const { handleDeleteSelectedRows } = useRundownRowOperations({
@@ -218,13 +229,16 @@ export const useRundownGridState = () => {
     handlePasteRows,
     handleDeleteSelectedRows,
     
-    // Row operations
-    handleAddRow: wrappedAddRow,
-    handleAddHeader: wrappedAddHeader,
+    // Row operations - provide both versions
+    handleAddRow, // Simple version for components that don't pass parameters
+    handleAddHeader, // Simple version for components that don't pass parameters
+    addRow: wrappedAddRow, // Parameterized version for useIndexHandlers
+    addHeader: wrappedAddHeader, // Parameterized version for useIndexHandlers
     
     // Item operations
     handleUpdateItem,
     handleRowSelection,
+    updateItem: handleUpdateItem, // Alias for compatibility
     
     // Helper functions
     getRowStatus,
@@ -269,6 +283,8 @@ export const useRundownGridState = () => {
     handleCopySelectedRows,
     handlePasteRows,
     handleDeleteSelectedRows,
+    handleAddRow,
+    handleAddHeader,
     wrappedAddRow,
     wrappedAddHeader,
     handleUpdateItem,
