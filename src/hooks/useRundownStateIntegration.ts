@@ -79,8 +79,8 @@ export const useRundownStateIntegration = (
   );
 
   // Wrapped addRow that supports insertion at specific index
-  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
-    originalAddRow(calculateEndTime, insertAfterIndex);
+  const addRow = useCallback((insertAfterIndex?: number) => {
+    originalAddRow('regular');
   }, [originalAddRow]);
 
   // Wrapped addHeader that supports insertion at specific index  
