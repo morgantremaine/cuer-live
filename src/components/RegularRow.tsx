@@ -92,7 +92,7 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  // Only apply inline styles for custom colors (not floated, as that's handled by CSS)
+  // Apply inline styles for custom colors (not floated, as that's handled by CSS)
   const isFloated = item.isFloating || item.isFloated;
   const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
   
