@@ -95,6 +95,18 @@ export const useSimpleChangeTracking = () => {
     console.log('Simple change tracking: Set loading to:', loading);
   }, []);
 
+  // Reset state when no longer on a rundown page
+  const reset = useCallback(() => {
+    setIsInitialized(false);
+    setHasUnsavedChanges(false);
+    lastSavedStateRef.current = '';
+    if (initializationTimeoutRef.current) {
+      clearTimeout(initializationTimeoutRef.current);
+      initializationTimeoutRef.current = null;
+    }
+    console.log('Simple change tracking: Reset state');
+  }, []);
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -111,6 +123,7 @@ export const useSimpleChangeTracking = () => {
     checkForChanges,
     markAsSaved,
     markAsChanged,
-    setIsLoading
+    setIsLoading,
+    reset
   };
 };
