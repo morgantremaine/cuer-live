@@ -20,11 +20,15 @@ export const useBlueprintPersistence = (
     
     try {
       console.log('Blueprint persistence: Loading blueprint for rundown:', rundownId);
+      
+      // Get the most recent blueprint for this rundown (in case there are multiple)
       const { data, error } = await supabase
         .from('blueprints')
         .select('*')
         .eq('user_id', user.id)
         .eq('rundown_id', rundownId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -57,7 +61,7 @@ export const useBlueprintPersistence = (
 
     console.log('Blueprint persistence: Saving blueprint with:', {
       title,
-      listsCount: lists.length,
+      listsCount: lists?.length,
       showDate,
       notesLength: notes?.length,
       crewDataCount: crewData?.length,
@@ -125,7 +129,7 @@ export const useBlueprintPersistence = (
       }
       throw error;
     }
-  }, [user, rundownId, rundownTitle, savedBlueprint, setSavedBlueprint, toast]);
+  }, [user, rundownId, savedBlueprint, setSavedBlueprint, toast]);
 
   return {
     loadBlueprint,
