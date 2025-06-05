@@ -7,17 +7,17 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Initialize undo system
   const undoSystem = useRundownUndo();
   
-  // Initialize storage with undo callback
-  const storage = useRundownStorage(rundownId, undoSystem.saveState);
+  // Initialize storage
+  const storage = useRundownStorage(rundownId);
   
   // Initialize state integration with storage's markAsChanged
   const stateIntegration = useRundownStateIntegration(
-    storage.markAsChanged,
-    storage.rundownTitle,
-    storage.timezone,
-    storage.rundownStartTime,
-    storage.setRundownTitleDirectly,
-    storage.setTimezoneDirectly
+    storage.markAsChanged || (() => {}),
+    storage.rundownTitle || '',
+    storage.timezone || 'UTC',
+    storage.rundownStartTime || '',
+    storage.setRundownTitleDirectly || (() => {}),
+    storage.setTimezoneDirectly || (() => {})
   );
 
   return {

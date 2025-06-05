@@ -17,7 +17,7 @@ export const useRundownStateIntegration = (
   const {
     items,
     setItems,
-    updateItem,
+    updateItem: originalUpdateItem,
     addRow: originalAddRow,
     addHeader: originalAddHeader,
     deleteRow,
@@ -28,6 +28,11 @@ export const useRundownStateIntegration = (
     calculateTotalRuntime,
     calculateHeaderDuration
   } = useRundownItems(markAsChanged);
+
+  // Create a wrapper for updateItem to match expected signature (id, field, value)
+  const updateItem = useCallback((id: string, field: string, value: string) => {
+    originalUpdateItem(id, { [field]: value });
+  }, [originalUpdateItem]);
 
   // Columns management
   const {

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,20 +22,19 @@ export const useRundownItems = (markAsChanged: () => void) => {
     const newItem: RundownItem = {
       id: uuidv4(),
       type: 'regular',
-      segment_name: '',
-      estimated_duration: '',
-      script: '',
+      rowNumber: '',
+      name: '',
+      startTime: '',
+      duration: '',
+      endTime: '',
+      elapsedTime: '',
       talent: '',
-      technical_notes: '',
-      producer_notes: '',
-      graphics: '',
-      camera_direction: '',
-      audio: '',
-      lighting: '',
-      props: '',
-      rundown_order: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
+      isFloating: false
     };
 
     setItems(prevItems => {
@@ -45,11 +45,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
       } else {
         newItems = [...prevItems, newItem];
       }
-      
-      // Update rundown_order for all items
-      newItems.forEach((item, index) => {
-        item.rundown_order = index;
-      });
       
       markAsChanged();
       return newItems;
@@ -60,20 +55,19 @@ export const useRundownItems = (markAsChanged: () => void) => {
     const newItem: RundownItem = {
       id: uuidv4(),
       type: 'header',
-      segment_name: 'New Header',
-      estimated_duration: '',
-      script: '',
+      rowNumber: '',
+      name: 'New Header',
+      startTime: '',
+      duration: '',
+      endTime: '',
+      elapsedTime: '',
       talent: '',
-      technical_notes: '',
-      producer_notes: '',
-      graphics: '',
-      camera_direction: '',
-      audio: '',
-      lighting: '',
-      props: '',
-      rundown_order: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
+      isFloating: false
     };
 
     setItems(prevItems => {
@@ -85,11 +79,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
         newItems = [...prevItems, newItem];
       }
       
-      // Update rundown_order for all items
-      newItems.forEach((item, index) => {
-        item.rundown_order = index;
-      });
-      
       markAsChanged();
       return newItems;
     });
@@ -98,10 +87,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
       const newItems = prevItems.filter(item => item.id !== id);
-      // Update rundown_order for remaining items
-      newItems.forEach((item, index) => {
-        item.rundown_order = index;
-      });
       markAsChanged();
       return newItems;
     });
@@ -110,10 +95,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prevItems => {
       const newItems = prevItems.filter(item => !ids.includes(item.id));
-      // Update rundown_order for remaining items
-      newItems.forEach((item, index) => {
-        item.rundown_order = index;
-      });
       markAsChanged();
       return newItems;
     });
@@ -122,10 +103,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const addMultipleRows = useCallback((newItems: RundownItem[]) => {
     setItems(prevItems => {
       const allItems = [...prevItems, ...newItems];
-      // Update rundown_order for all items
-      allItems.forEach((item, index) => {
-        item.rundown_order = index;
-      });
       markAsChanged();
       return allItems;
     });
@@ -148,7 +125,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prevItems => {
       const newItems = prevItems.map(item => 
-        item.id === id ? { ...item, is_floated: !item.is_floated } : item
+        item.id === id ? { ...item, isFloating: !item.isFloating } : item
       );
       markAsChanged();
       return newItems;
@@ -158,8 +135,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const calculateTotalRuntime = useCallback(() => {
     let totalSeconds = 0;
     items.forEach(item => {
-      if (item.type === 'regular' && item.estimated_duration) {
-        const duration = item.estimated_duration;
+      if (item.type === 'regular' && item.duration) {
+        const duration = item.duration;
         const parts = duration.split(':');
         if (parts.length === 2) {
           const minutes = parseInt(parts[0]) || 0;
@@ -188,8 +165,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
     for (let i = headerIndex + 1; i < items.length; i++) {
       const item = items[i];
       if (item.type === 'header') break;
-      if (item.type === 'regular' && item.estimated_duration) {
-        const duration = item.estimated_duration;
+      if (item.type === 'regular' && item.duration) {
+        const duration = item.duration;
         const parts = duration.split(':');
         if (parts.length === 2) {
           const minutes = parseInt(parts[0]) || 0;
