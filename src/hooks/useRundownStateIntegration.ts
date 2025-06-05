@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useChangeTracking } from './useChangeTracking';
+import { useAutoSave } from './useAutoSave';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateIntegration = (
@@ -47,8 +48,8 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Change tracking - fix: pass parameters in correct order (items first, then rundownTitle)
-  const { hasUnsavedChanges } = useChangeTracking(
+  // Auto-save functionality
+  const { hasUnsavedChanges, isSaving, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
     items,
     rundownTitle,
     columns,
@@ -89,6 +90,6 @@ export const useRundownStateIntegration = (
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving: false // Add the missing isSaving property
+    isSaving
   };
 };

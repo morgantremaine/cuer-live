@@ -108,16 +108,15 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Much simpler getRowNumber function - fix the header letter logic
+  // Simple and reliable getRowNumber function
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
     const item = items[index];
     if (!item) return '';
     
-    // For headers, calculate their segment letter (A, B, C, etc.)
+    // For headers, find which segment letter they should be
     if (item.type === 'header') {
-      // Count how many headers come before this one (including this one)
       let headerCount = 0;
       for (let i = 0; i <= index; i++) {
         if (items[i]?.type === 'header') {
@@ -128,14 +127,14 @@ export const useRundownItems = (markAsChanged: () => void) => {
       return letters[headerCount - 1] || 'A';
     }
     
-    // For regular items, find which segment they're in and their number within that segment
-    let segmentLetter = 'A'; // Default to segment A if no headers found
+    // For regular items, find which segment they're in
+    let segmentLetter = 'A';
     let regularItemsInSegment = 0;
     
-    // Look backwards to find the most recent header to determine segment
+    // Look backwards to find the most recent header
     for (let i = index - 1; i >= 0; i--) {
       if (items[i]?.type === 'header') {
-        // Count headers up to and including this one to get segment letter
+        // Count how many headers we've seen up to this point
         let headerCount = 0;
         for (let j = 0; j <= i; j++) {
           if (items[j]?.type === 'header') {
@@ -148,11 +147,11 @@ export const useRundownItems = (markAsChanged: () => void) => {
       }
     }
     
-    // Count regular items in this segment that come before the current item
-    let foundSegmentStart = false;
+    // Count regular items in this segment before the current item
+    let foundHeaderForSegment = false;
     for (let i = 0; i < index; i++) {
       if (items[i]?.type === 'header') {
-        // Check if this header belongs to our segment
+        // Check if this is the header for our segment
         let headerCount = 0;
         for (let j = 0; j <= i; j++) {
           if (items[j]?.type === 'header') {
@@ -160,16 +159,16 @@ export const useRundownItems = (markAsChanged: () => void) => {
           }
         }
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const thisHeaderSegment = letters[headerCount - 1] || 'A';
+        const thisHeaderLetter = letters[headerCount - 1] || 'A';
         
-        if (thisHeaderSegment === segmentLetter) {
-          foundSegmentStart = true;
-          regularItemsInSegment = 0; // Reset count when we find the start of our segment
+        if (thisHeaderLetter === segmentLetter) {
+          foundHeaderForSegment = true;
+          regularItemsInSegment = 0; // Reset count
         }
       } else if (items[i]?.type === 'regular') {
-        // Only count if we're in the right segment or no headers found yet
-        if (foundSegmentStart || segmentLetter === 'A') {
-          // Check if this regular item is in our segment
+        // Only count if we're in the right segment or no headers yet
+        if (foundHeaderForSegment || segmentLetter === 'A') {
+          // Check which segment this item belongs to
           let itemSegment = 'A';
           for (let j = i - 1; j >= 0; j--) {
             if (items[j]?.type === 'header') {
@@ -230,7 +229,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
     }
   }, [items]);
 
-  // Simplified calculateHeaderDuration function
   const calculateHeaderDuration = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     

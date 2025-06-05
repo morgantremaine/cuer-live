@@ -26,7 +26,7 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
-  // Initialize with default items if this is a new rundown - fix the condition
+  // Initialize with default items if this is a new rundown
   useEffect(() => {
     if (!rundownId && stateIntegration.items.length === 0) {
       console.log('Initializing new rundown with default items');
