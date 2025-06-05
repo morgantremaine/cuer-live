@@ -32,7 +32,7 @@ export const useCameraPlotAutoSave = (
   }, [rundownId, loadBlueprint, savedBlueprint]);
 
   useEffect(() => {
-    if (!isInitialized || readOnly || plots.length === 0 || isSavingRef.current) {
+    if (!isInitialized || readOnly || isSavingRef.current) {
       return;
     }
 
@@ -51,7 +51,7 @@ export const useCameraPlotAutoSave = (
       saveTimeoutRef.current = setTimeout(async () => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
-          console.log('Auto-saving camera plots:', plots.length);
+          console.log('Auto-saving camera plots:', plots.length, 'plots with', plots.reduce((acc, plot) => acc + plot.elements.length, 0), 'total elements');
           
           try {
             await saveBlueprint(
@@ -62,6 +62,7 @@ export const useCameraPlotAutoSave = (
               savedBlueprint?.crew_data,
               plots // Pass the camera plots
             );
+            console.log('Camera plots auto-save completed successfully');
           } catch (error) {
             console.error('Error auto-saving camera plots:', error);
           } finally {
