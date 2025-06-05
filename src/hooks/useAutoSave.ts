@@ -104,13 +104,13 @@ export const useAutoSave = (
       debounceTimeoutRef.current = null;
     }
 
-    // Set new timeout - reduced to 2 seconds
+    // Set new timeout - reduced to 1 second
     debounceTimeoutRef.current = setTimeout(() => {
       if (!isUnmountedRef.current) {
         debounceTimeoutRef.current = null;
         executeSave();
       }
-    }, 2000);
+    }, 1000);
 
     // Cleanup function
     return () => {
