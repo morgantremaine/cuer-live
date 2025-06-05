@@ -49,7 +49,8 @@ const Index = () => {
           <h2 className="text-xl font-semibold mb-4">Loading...</h2>
           <p className="text-gray-600">Redirecting...</p>
         </div>
-      );
+      </div>
+    );
   }
 
   // Validate that the rundown ID is not a placeholder
@@ -62,7 +63,7 @@ const Index = () => {
           <h2 className="text-xl font-semibold mb-4">Invalid Route</h2>
           <p className="text-gray-600">Redirecting to dashboard...</p>
         </div>
-      );
+      </div>
     );
   }
 
