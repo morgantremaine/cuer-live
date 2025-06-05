@@ -60,6 +60,7 @@ export const useRundownDataLoader = ({
   // Track user interactions to prevent overwriting their changes
   useEffect(() => {
     const handleUserInteraction = () => {
+      console.log('User interaction detected, marking as interacted');
       userHasInteractedRef.current = true;
     };
 
@@ -107,6 +108,7 @@ export const useRundownDataLoader = ({
       // Get items to load using extracted utility
       const itemsToLoad = getItemsToLoad(rundown);
       console.log('Data loader: Items to load:', itemsToLoad?.length || 0, 'items');
+      console.log('Data loader: Items data:', itemsToLoad);
       
       // Set the rundown data
       setRundownTitle(rundown.title);
@@ -143,9 +145,15 @@ export const useRundownDataLoader = ({
             clearTimeout(loadTimerRef.current);
           }
           
-          // Set items immediately instead of using a timer
+          // Set items immediately and log the operation
+          console.log('Data loader: About to call setItems with:', itemsToLoad);
           setItems(itemsToLoad);
-          console.log('Data loader: Items set successfully');
+          console.log('Data loader: setItems call completed');
+          
+          // Add a small delay to check if items were actually set
+          setTimeout(() => {
+            console.log('Data loader: Items should be set now - checking...');
+          }, 50);
         } else {
           console.log('Data loader: Skipping item setting due to user interaction or recent changes');
         }
@@ -184,6 +192,7 @@ export const useRundownDataLoader = ({
   // Reset loaded reference when rundown ID changes
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
+    console.log('Data loader: Resetting loading state for rundown ID change:', currentRundownId);
     resetLoadingState(currentRundownId);
   }, [rundownId, paramId, resetLoadingState]);
 

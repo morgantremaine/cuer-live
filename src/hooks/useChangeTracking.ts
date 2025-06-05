@@ -31,13 +31,16 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     }
     lastChangeCheckRef.current = now;
     
-    return JSON.stringify({ 
+    const signature = JSON.stringify({ 
       items: items.map(item => ({ id: item.id, ...item })), 
       title: rundownTitle, 
       columns, 
       timezone, 
       startTime 
     });
+    
+    console.log('Change tracking: Creating signature with', items.length, 'items');
+    return signature;
   }, [items, rundownTitle, JSON.stringify(columns), timezone, startTime]);
 
   // Initialize tracking ONLY ONCE when we first get meaningful data
@@ -49,6 +52,8 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     // Check if we have meaningful data to initialize with
     const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
 
+    console.log('Change tracking: Checking initialization with', items.length, 'items, title:', rundownTitle);
+
     if (hasMeaningfulData && !hasInitialDataRef.current) {
       hasInitialDataRef.current = true;
       
@@ -56,8 +61,10 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       initializedRef.current = true;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
+      
+      console.log('Change tracking: Initialized with', items.length, 'items');
     }
-  }, [items.length, rundownTitle]);
+  }, [items.length, rundownTitle, currentSignature]);
 
   // Track changes after initialization - optimized to reduce frequency
   useEffect(() => {
@@ -68,11 +75,12 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     // Only check for changes if signature actually changed
     if (lastSavedDataRef.current !== currentSignature) {
       const hasChanges = true;
+      console.log('Change tracking: Detected changes, items count:', items.length);
       if (hasChanges !== hasUnsavedChanges) {
         setHasUnsavedChanges(hasChanges);
       }
     }
-  }, [currentSignature, hasUnsavedChanges]);
+  }, [currentSignature, hasUnsavedChanges, items.length]);
 
   // Stable callback functions
   const markAsSaved = useCallback((savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
@@ -85,15 +93,18 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
+    console.log('Change tracking: Marked as saved with', savedItems.length, 'items');
   }, []);
 
   const markAsChanged = useCallback(() => {
     if (!isLoadingRef.current && initializedRef.current) {
+      console.log('Change tracking: Manually marked as changed');
       setHasUnsavedChanges(true);
     }
   }, []);
 
   const setIsLoading = useCallback((loading: boolean) => {
+    console.log('Change tracking: Setting loading state to', loading);
     isLoadingRef.current = loading;
   }, []);
 
