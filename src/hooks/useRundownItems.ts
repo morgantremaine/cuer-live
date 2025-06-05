@@ -108,14 +108,14 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Simple and reliable getRowNumber function
+  // Fixed and simplified getRowNumber function
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
     const item = items[index];
     if (!item) return '';
     
-    // For headers, find which segment letter they should be
+    // For headers, count how many headers we've seen so far
     if (item.type === 'header') {
       let headerCount = 0;
       for (let i = 0; i <= index; i++) {
@@ -127,14 +127,17 @@ export const useRundownItems = (markAsChanged: () => void) => {
       return letters[headerCount - 1] || 'A';
     }
     
-    // For regular items, find which segment they're in
-    let segmentLetter = 'A';
-    let regularItemsInSegment = 0;
+    // For regular items, find which segment they belong to
+    let currentSegmentLetter = 'A';
+    let itemCountInSegment = 0;
     
-    // Look backwards to find the most recent header
-    for (let i = index - 1; i >= 0; i--) {
-      if (items[i]?.type === 'header') {
-        // Count how many headers we've seen up to this point
+    // Go through items up to current index
+    for (let i = 0; i <= index; i++) {
+      const currentItem = items[i];
+      if (!currentItem) continue;
+      
+      if (currentItem.type === 'header') {
+        // Update which segment we're in
         let headerCount = 0;
         for (let j = 0; j <= i; j++) {
           if (items[j]?.type === 'header') {
@@ -142,56 +145,14 @@ export const useRundownItems = (markAsChanged: () => void) => {
           }
         }
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        segmentLetter = letters[headerCount - 1] || 'A';
-        break;
+        currentSegmentLetter = letters[headerCount - 1] || 'A';
+        itemCountInSegment = 0; // Reset count for new segment
+      } else if (currentItem.type === 'regular') {
+        itemCountInSegment++;
       }
     }
     
-    // Count regular items in this segment before the current item
-    let foundHeaderForSegment = false;
-    for (let i = 0; i < index; i++) {
-      if (items[i]?.type === 'header') {
-        // Check if this is the header for our segment
-        let headerCount = 0;
-        for (let j = 0; j <= i; j++) {
-          if (items[j]?.type === 'header') {
-            headerCount++;
-          }
-        }
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const thisHeaderLetter = letters[headerCount - 1] || 'A';
-        
-        if (thisHeaderLetter === segmentLetter) {
-          foundHeaderForSegment = true;
-          regularItemsInSegment = 0; // Reset count
-        }
-      } else if (items[i]?.type === 'regular') {
-        // Only count if we're in the right segment or no headers yet
-        if (foundHeaderForSegment || segmentLetter === 'A') {
-          // Check which segment this item belongs to
-          let itemSegment = 'A';
-          for (let j = i - 1; j >= 0; j--) {
-            if (items[j]?.type === 'header') {
-              let headerCount = 0;
-              for (let k = 0; k <= j; k++) {
-                if (items[k]?.type === 'header') {
-                  headerCount++;
-                }
-              }
-              const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-              itemSegment = letters[headerCount - 1] || 'A';
-              break;
-            }
-          }
-          
-          if (itemSegment === segmentLetter) {
-            regularItemsInSegment++;
-          }
-        }
-      }
-    }
-    
-    return `${segmentLetter}${regularItemsInSegment + 1}`;
+    return `${currentSegmentLetter}${itemCountInSegment}`;
   }, [items]);
 
   const toggleFloatRow = useCallback((id: string) => {

@@ -2,7 +2,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
-import { useChangeTracking } from './useChangeTracking';
 import { useAutoSave } from './useAutoSave';
 import { RundownItem } from '@/types/rundown';
 
@@ -49,7 +48,7 @@ export const useRundownStateIntegration = (
   } = useColumnsManager(markAsChanged);
 
   // Auto-save functionality
-  const { hasUnsavedChanges, isSaving, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
+  const { hasUnsavedChanges, isSaving } = useAutoSave(
     items,
     rundownTitle,
     columns,
