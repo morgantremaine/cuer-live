@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useDragAndDrop = (
   items: RundownItem[], 
-  setItems: (items: RundownItem[]) => void,
+  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   selectedRows: Set<string>
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -79,42 +80,44 @@ export const useDragAndDrop = (
     const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
     const { isMultiple, selectedIds } = dragData;
 
-    let newItems: RundownItem[];
-    let hasHeaderMoved = false;
+    // Use the updater pattern for setItems
+    setItems((prevItems) => {
+      let newItems: RundownItem[];
+      let hasHeaderMoved = false;
 
-    if (isMultiple && selectedIds.length > 1) {
-      // Handle multiple item drag
-      const selectedItems = items.filter(item => selectedIds.includes(item.id));
-      const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));
-      
-      // Check if any selected items are headers
-      hasHeaderMoved = selectedItems.some(item => item.type === 'header');
-      
-      // Insert selected items at the drop position
-      newItems = [...nonSelectedItems];
-      newItems.splice(dropIndex, 0, ...selectedItems);
-    } else {
-      // Handle single item drag (existing logic)
-      if (draggedItemIndex === dropIndex) {
-        setDraggedItemIndex(null);
-        setIsDraggingMultiple(false);
-        return;
+      if (isMultiple && selectedIds.length > 1) {
+        // Handle multiple item drag
+        const selectedItems = prevItems.filter(item => selectedIds.includes(item.id));
+        const nonSelectedItems = prevItems.filter(item => !selectedIds.includes(item.id));
+        
+        // Check if any selected items are headers
+        hasHeaderMoved = selectedItems.some(item => item.type === 'header');
+        
+        // Insert selected items at the drop position
+        newItems = [...nonSelectedItems];
+        newItems.splice(dropIndex, 0, ...selectedItems);
+      } else {
+        // Handle single item drag (existing logic)
+        if (draggedItemIndex === dropIndex) {
+          return prevItems; // No change
+        }
+
+        const draggedItem = prevItems[draggedItemIndex];
+        hasHeaderMoved = draggedItem.type === 'header';
+
+        newItems = [...prevItems];
+        newItems.splice(draggedItemIndex, 1);
+        newItems.splice(dropIndex, 0, draggedItem);
       }
-
-      const draggedItem = items[draggedItemIndex];
-      hasHeaderMoved = draggedItem.type === 'header';
-
-      newItems = [...items];
-      newItems.splice(draggedItemIndex, 1);
-      newItems.splice(dropIndex, 0, draggedItem);
-    }
+      
+      // If any headers were moved, renumber all headers
+      if (hasHeaderMoved) {
+        newItems = renumberItems(newItems);
+      }
+      
+      return newItems;
+    });
     
-    // If any headers were moved, renumber all headers
-    if (hasHeaderMoved) {
-      newItems = renumberItems(newItems);
-    }
-    
-    setItems(newItems);
     setDraggedItemIndex(null);
     setIsDraggingMultiple(false);
   };

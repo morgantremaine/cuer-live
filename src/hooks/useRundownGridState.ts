@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useRundownStateCoordination } from './useRundownStateCoordination';
 import { useRundownClipboard } from './useRundownClipboard';
 import { useRundownClipboardOperations } from './useRundownClipboardOperations';
@@ -26,19 +26,26 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - fix function signatures to match expected interface
-  const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
+  // Create adapter functions to bridge interface gaps
+  const adaptedAddRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+    // Convert from insertAfterIndex pattern to selectedRows pattern
+    // If we have an insertAfterIndex, we can ignore it since the core addRow uses selectedRows
+    coreState.addRow(calculateEndTime, interactions.selectedRows);
+  }, [coreState.addRow, coreState.calculateEndTime, interactions.selectedRows]);
+
+  const adaptedAddHeader = useCallback((insertAfterIndex?: number) => {
+    // Convert from insertAfterIndex pattern to selectedRows pattern
+    // If we have an insertAfterIndex, we can ignore it since the core addHeader uses selectedRows
+    coreState.addHeader(interactions.selectedRows);
+  }, [coreState.addHeader, interactions.selectedRows]);
+
+  // Row operations with adapted interfaces
+  const { handleDeleteSelectedRows } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection: interactions.clearSelection,
-    addRow: (calculateEndTime: any, insertAfterIndex?: number) => {
-      // Convert interface: ignore insertAfterIndex, use selectedRows instead
-      coreState.addRow(calculateEndTime, interactions.selectedRows);
-    },
-    addHeader: (insertAfterIndex?: number) => {
-      // Convert interface: ignore insertAfterIndex, use selectedRows instead  
-      coreState.addHeader(interactions.selectedRows);
-    },
+    addRow: adaptedAddRow,
+    addHeader: adaptedAddHeader,
     calculateEndTime: coreState.calculateEndTime
   });
 
@@ -50,9 +57,9 @@ export const useRundownGridState = () => {
     ...interactions,
     // UI state
     ...uiState,
-    // Override with wrapped functions
-    handleAddRow,
-    handleAddHeader,
+    // Override with adapted functions that match component expectations
+    handleAddRow: adaptedAddRow,
+    handleAddHeader: adaptedAddHeader,
     // Clipboard functionality
     clipboardItems,
     copyItems,
@@ -66,16 +73,16 @@ export const useRundownGridState = () => {
     dropTargetIndex: interactions.dragOverIndex || -1,
     // Add missing handler properties
     handleUpdateItem: interactions.updateItem,
-    handleRowSelection: interactions.selectRow || interactions.toggleRowSelection,
+    handleRowSelection: interactions.toggleRowSelection,
     handleDragLeave: interactions.handleDragLeave || (() => {}),
     // Add missing selection methods
-    toggleRowSelection: interactions.toggleRowSelection || interactions.selectRow
+    toggleRowSelection: interactions.toggleRowSelection
   }), [
     coreState,
     interactions,
     uiState,
-    handleAddRow,
-    handleAddHeader,
+    adaptedAddRow,
+    adaptedAddHeader,
     clipboardItems,
     copyItems,
     hasClipboardData,

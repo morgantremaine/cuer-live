@@ -29,11 +29,12 @@ export const useRundownGridInteractions = (
   const {
     selectedRows,
     toggleRowSelection,
+    toggleRowSelectionWithItems,
     clearSelection,
     selectAll
   } = useMultiRowSelection();
 
-  // Drag and drop
+  // Drag and drop - now uses the correct setItems signature
   const {
     draggedItemIndex,
     isDraggingMultiple,
@@ -102,6 +103,12 @@ export const useRundownGridInteractions = (
     setRundownTitle(title);
   }, [setRundownTitle, rundownId]);
 
+  // Create a wrapper for row selection that can handle both 4 and 5 parameter calls
+  const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    // Use the enhanced version that includes the items array for shift-click functionality
+    toggleRowSelectionWithItems(itemId, index, isShiftClick, isCtrlClick, items);
+  }, [toggleRowSelectionWithItems, items]);
+
   // Context menu handlers
   const handleRightClick = useCallback((event: React.MouseEvent, rowId: string) => {
     event.preventDefault();
@@ -140,10 +147,10 @@ export const useRundownGridInteractions = (
   return {
     // Selection - provide all expected properties
     selectedRows,
-    toggleRowSelection,
+    toggleRowSelection: handleRowSelection, // Use the wrapper that handles both signatures
     clearSelection,
     selectAll,
-    selectRow: toggleRowSelection, // Alias for compatibility
+    selectRow: handleRowSelection, // Alias for compatibility
     selectMultipleRows: selectAll, // Alias for compatibility
     isRowSelected: (id: string) => selectedRows.has(id), // Helper function
     

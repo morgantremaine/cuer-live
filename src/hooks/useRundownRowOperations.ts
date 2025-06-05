@@ -27,12 +27,12 @@ export const useRundownRowOperations = ({
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handleAddRow = useCallback(() => {
-    // Use the converted interface that expects insertAfterIndex
+    // Use the interface that expects insertAfterIndex
     addRow(calculateEndTime);
   }, [addRow, calculateEndTime]);
 
   const handleAddHeader = useCallback(() => {
-    // Use the converted interface that expects insertAfterIndex
+    // Use the interface that expects insertAfterIndex
     addHeader();
   }, [addHeader]);
 
