@@ -4,6 +4,7 @@ import { useRundownStateCoordination } from './useRundownStateCoordination';
 import { useRundownClipboard } from './useRundownClipboard';
 import { useRundownClipboardOperations } from './useRundownClipboardOperations';
 import { useRundownRowOperations } from './useRundownRowOperations';
+import { getRowNumber } from '@/utils/sharedRundownUtils';
 
 export const useRundownGridState = () => {
   // Get coordinated state from all subsystems
@@ -36,6 +37,9 @@ export const useRundownGridState = () => {
     calculateEndTime: coreState.calculateEndTime
   });
 
+  // Use the proper row numbering function from shared utilities
+  const getRowNumberForIndex = (index: number) => getRowNumber(index, coreState.items);
+
   // Memoize the complete state object
   return useMemo(() => ({
     // Core state
@@ -50,6 +54,8 @@ export const useRundownGridState = () => {
     // Simple handlers for RundownGrid (expects no params)
     onAddRow: simpleAddRow,
     onAddHeader: simpleAddHeader,
+    // Override getRowNumber with proper implementation
+    getRowNumber: getRowNumberForIndex,
     // Clipboard functionality
     clipboardItems,
     copyItems,
@@ -63,6 +69,7 @@ export const useRundownGridState = () => {
     uiState,
     simpleAddRow,
     simpleAddHeader,
+    getRowNumberForIndex,
     clipboardItems,
     copyItems,
     hasClipboardData,
