@@ -91,8 +91,9 @@ const HeaderRow = (props: HeaderRowProps) => {
     // No-op for headers
   };
 
-  // Headers: #e5e7eb in light mode, #212936 in dark mode
+  // Headers: theme-based colors
   const headerBackgroundColor = isDark ? '#212936' : '#e5e7eb';
+  const headerTextColor = isDark ? '#ffffff' : '#1f2937'; // gray-800 for light mode
 
   return (
     <RundownContextMenu
@@ -115,7 +116,8 @@ const HeaderRow = (props: HeaderRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor: headerBackgroundColor
+          backgroundColor: headerBackgroundColor,
+          color: headerTextColor
         }}
         draggable
         onClick={handleRowClick}

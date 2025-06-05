@@ -4,6 +4,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { useRundownCalculations } from '@/hooks/useRundownCalculations';
 import { useTheme } from '@/hooks/useTheme';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -16,22 +17,28 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
   // Use centralized calculation hook
   const { calculateHeaderDuration } = useRundownCalculations(items);
 
-  // Define colors based on theme
+  // Define colors based on theme - same as main app
   const headerBackgroundColor = isDark ? '#212936' : '#e5e7eb';
   const regularRowBackgroundColor = isDark ? '#394150' : '#ffffff';
+  const headerTextColor = isDark ? '#ffffff' : '#1f2937'; // gray-800 for light mode
+  const regularTextColor = isDark ? '#ffffff' : '#1f2937'; // gray-800 for light mode
 
   return (
     <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
       <table className="w-full">
-        <thead style={{ backgroundColor: headerBackgroundColor }}>
-          <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400">
+        <thead>
+          <tr style={{ backgroundColor: headerBackgroundColor }}>
+            <th 
+              className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b border-gray-200 print:border-gray-400"
+              style={{ color: isDark ? '#9ca3af' : '#6b7280' }}
+            >
               #
             </th>
             {visibleColumns.map((column) => (
               <th
                 key={column.id}
-                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400"
+                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b border-gray-200 print:border-gray-400"
+                style={{ color: isDark ? '#9ca3af' : '#6b7280' }}
               >
                 {column.name}
               </th>
@@ -43,17 +50,24 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             // Only non-header items can be current segments
             const isCurrentSegment = !isHeaderItem(item) && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
+            const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
             
             // Determine row background color
-            let rowBackgroundColor;
+            let rowBackgroundColor: string;
+            let rowTextColor: string;
+            
             if (isFloated) {
               rowBackgroundColor = '#dc2626'; // red-600
-            } else if (item.color !== '#ffffff' && item.color && !isFloated) {
+              rowTextColor = '#ffffff';
+            } else if (hasCustomColor) {
               rowBackgroundColor = item.color;
+              rowTextColor = getContrastTextColor(item.color);
             } else if (isHeaderItem(item)) {
               rowBackgroundColor = headerBackgroundColor;
+              rowTextColor = headerTextColor;
             } else {
               rowBackgroundColor = regularRowBackgroundColor;
+              rowTextColor = regularTextColor;
             }
             
             return (
@@ -62,12 +76,17 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 className={`
                   ${isHeaderItem(item) ? 'font-semibold' : ''}
                   ${isCurrentSegment ? 'border-l-4 border-red-500' : ''}
-                  ${isFloated ? 'text-white opacity-75' : ''}
                   print:break-inside-avoid
                 `}
-                style={{ backgroundColor: rowBackgroundColor }}
+                style={{ 
+                  backgroundColor: rowBackgroundColor,
+                  color: rowTextColor
+                }}
               >
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                <td 
+                  className="px-3 py-2 whitespace-nowrap text-sm border-r border-gray-200 print:border-gray-400"
+                  style={{ color: rowTextColor }}
+                >
                   {isCurrentSegment && (
                     <span className="text-red-600 mr-1">▶</span>
                   )}
@@ -84,21 +103,33 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       // Show the header description/notes for segmentName, actual name for name
                       const value = column.key === 'segmentName' ? (item.notes || item.name || '') : (item.name || '');
                       return (
-                        <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                        <td 
+                          key={column.id} 
+                          className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
+                          style={{ color: rowTextColor }}
+                        >
                           <div className="break-words whitespace-pre-wrap">{value}</div>
                         </td>
                       );
                     } else if (column.key === 'duration') {
                       // Show the calculated header duration (excluding floated items)
                       return (
-                        <td key={column.id} className="px-3 py-2 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400">
+                        <td 
+                          key={column.id} 
+                          className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
+                          style={{ color: isDark ? '#9ca3af' : '#6b7280' }}
+                        >
                           <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
                         </td>
                       );
                     } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
                       // Show time fields for headers
                       return (
-                        <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                        <td 
+                          key={column.id} 
+                          className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
+                          style={{ color: rowTextColor }}
+                        >
                           <div className="break-words whitespace-pre-wrap">{getCellValue(item, column)}</div>
                         </td>
                       );
@@ -111,7 +142,8 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   return (
                     <td
                       key={column.id}
-                      className={`px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400 ${isFloated ? 'text-white' : 'text-gray-900'}`}
+                      className="px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400"
+                      style={{ color: rowTextColor }}
                     >
                       <div className="break-words whitespace-pre-wrap">{value}</div>
                     </td>

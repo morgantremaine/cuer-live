@@ -99,21 +99,21 @@ const RegularRow = (props: RegularRowProps) => {
   const isFloated = item.isFloating || item.isFloated;
   const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
   
-  let inlineBackgroundColor: string | undefined;
+  let inlineBackgroundColor: string;
   let inlineTextColor: string | undefined;
   
   if (isFloated) {
-    // Floated items: red background, white text (handled by CSS classes)
-    inlineBackgroundColor = undefined;
-    inlineTextColor = undefined;
+    // Floated items: red background, white text
+    inlineBackgroundColor = '#dc2626'; // red-600
+    inlineTextColor = '#ffffff';
   } else if (hasCustomColor) {
     // Custom color items: use inline styles
     inlineBackgroundColor = item.color;
     inlineTextColor = getContrastTextColor(item.color);
   } else {
-    // Default rows: #ffffff in light mode, #394150 in dark mode
+    // Default rows: theme-based colors
     inlineBackgroundColor = isDark ? '#394150' : '#ffffff';
-    inlineTextColor = undefined; // Let CSS classes handle text color
+    inlineTextColor = isDark ? '#ffffff' : '#1f2937'; // gray-800 for light mode
   }
 
   return (
