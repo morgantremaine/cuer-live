@@ -34,7 +34,7 @@ export const useCameraPlotAutoSave = (
         console.log('Camera plot auto-save: Saving', plots.length, 'camera plots to unified system');
         
         try {
-          // Use the unified save function with just camera plots
+          // Use the unified save function with camera plots parameter
           saveBlueprint(undefined, true, undefined, undefined, plots);
           console.log('Camera plot auto-save: Save completed successfully');
         } catch (error) {

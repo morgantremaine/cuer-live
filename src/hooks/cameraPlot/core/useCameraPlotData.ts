@@ -96,6 +96,6 @@ export const useCameraPlotData = (
     setPlots,
     isInitialized,
     reloadPlots,
-    saveBlueprint // Return the passed saveBlueprint function directly
+    saveBlueprint // Return the passed saveBlueprint function
   };
 };

@@ -16,18 +16,17 @@ export const useCameraPlot = (
     plots,
     setPlots,
     isInitialized,
-    reloadPlots,
-    saveBlueprint: legacySaveBlueprint
+    reloadPlots
   } = useCameraPlotData(rundownId, rundownTitle, readOnly, saveBlueprint);
 
-  // Auto-save functionality - pass the correct saveBlueprint function
+  // Auto-save functionality - use the passed saveBlueprint function
   useCameraPlotAutoSave(
     plots,
     isInitialized,
     rundownId,
     rundownTitle,
     readOnly,
-    legacySaveBlueprint
+    saveBlueprint
   );
 
   // Scene operations

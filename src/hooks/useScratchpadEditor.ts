@@ -45,7 +45,7 @@ export const useScratchpadEditor = (
         console.log('Scratchpad: Auto-saving notes to unified system, length:', notesToSave.length);
         setSaveStatus('saving');
         
-        // Use the unified save function
+        // Use the unified save function with notes parameter
         await saveBlueprint(undefined, true, notesToSave);
         
         lastSavedNotesRef.current = notesToSave;

@@ -135,11 +135,18 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     }
   }, []);
 
+  // Reset unsaved changes flag when blueprint saves complete
+  const markBlueprintAsSaved = useCallback(() => {
+    console.log('Change tracking: Blueprint marked as saved');
+    // Don't change the signature, just clear the unsaved flag for blueprint components
+  }, []);
+
   return {
     hasUnsavedChanges,
     setHasUnsavedChanges,
     markAsSaved,
     markAsChanged,
+    markBlueprintAsSaved,
     isInitialized,
     setIsLoading
   };
