@@ -6,12 +6,21 @@ import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
+// Add a global counter to track hook instances
+let hookInstanceCounter = 0;
+
 export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string, undoHistory?: any[]) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isExecutingSaveRef = useRef(false);
   const lastSaveAttemptRef = useRef<number>(0);
-  const effectRunCountRef = useRef(0);
+  const instanceIdRef = useRef<number>();
+
+  // Assign instance ID only once
+  if (!instanceIdRef.current) {
+    instanceIdRef.current = ++hookInstanceCounter;
+    console.log(`🔧 useAutoSave instance #${instanceIdRef.current} created`);
+  }
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -27,16 +36,16 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   const executeSave = useCallback(async () => {
     const now = Date.now();
     
-    console.log('Auto-save: executeSave called at', new Date().toISOString());
+    console.log(`🔧 Auto-save instance #${instanceIdRef.current}: executeSave called at`, new Date().toISOString());
     
     // Prevent duplicate saves within 1 second
     if (now - lastSaveAttemptRef.current < 1000) {
-      console.log('Auto-save: Skipping duplicate save attempt');
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Skipping duplicate save attempt`);
       return;
     }
     
     if (!user || isSaving || isExecutingSaveRef.current) {
-      console.log('Auto-save: Save blocked:', { 
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save blocked:`, { 
         hasUser: !!user, 
         isSaving, 
         isExecuting: isExecutingSaveRef.current 
@@ -46,7 +55,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
     lastSaveAttemptRef.current = now;
     isExecutingSaveRef.current = true;
-    console.log('Auto-save: Starting save operation at', new Date().toISOString());
+    console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Starting save operation at`, new Date().toISOString());
     
     setIsLoading(true);
 
@@ -61,14 +70,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       );
       
       if (success) {
-        console.log('Auto-save: Save completed successfully at', new Date().toISOString());
+        console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save completed successfully at`, new Date().toISOString());
         markAsSaved(items, rundownTitle, columns, timezone, startTime);
       } else {
-        console.log('Auto-save: Save failed');
+        console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save failed`);
         setHasUnsavedChanges(true);
       }
     } catch (error) {
-      console.error('Auto-save error:', error);
+      console.error(`🔧 Auto-save instance #${instanceIdRef.current} error:`, error);
       setHasUnsavedChanges(true);
     } finally {
       setIsLoading(false);
@@ -78,10 +87,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
 
   // Main auto-save effect - triggers when changes are detected
   useEffect(() => {
-    effectRunCountRef.current += 1;
-    const runNumber = effectRunCountRef.current;
-    
-    console.log(`Auto-save effect run #${runNumber}:`, {
+    console.log(`🔧 Auto-save instance #${instanceIdRef.current} effect:`, {
       hasUnsavedChanges,
       isInitialized,
       hasUser: !!user,
@@ -89,29 +95,29 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     });
 
     if (!hasUnsavedChanges || !isInitialized || !user) {
-      console.log(`Auto-save effect #${runNumber}: Early return - conditions not met`);
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Early return - conditions not met`);
       return;
     }
 
     // Clear any existing timeout
     if (debounceTimeoutRef.current) {
-      console.log(`Auto-save effect #${runNumber}: Clearing existing timeout`);
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Clearing existing timeout`);
       clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = null;
     }
 
-    console.log(`Auto-save effect #${runNumber}: Scheduling save in 3 seconds`);
+    console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Scheduling save in 3 seconds`);
 
     // Set new timeout
     debounceTimeoutRef.current = setTimeout(() => {
-      console.log(`Auto-save effect #${runNumber}: Timeout reached, executing save`);
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Timeout reached, executing save`);
       debounceTimeoutRef.current = null;
       executeSave();
     }, 3000);
 
     // Cleanup function
     return () => {
-      console.log(`Auto-save effect #${runNumber}: Cleanup called`);
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Cleanup called`);
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
         debounceTimeoutRef.current = null;
@@ -122,6 +128,7 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: UNMOUNTING`);
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }

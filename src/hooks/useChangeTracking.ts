@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
+// Add a global counter to track hook instances
+let changeTrackingInstanceCounter = 0;
+
 export const useChangeTracking = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -10,8 +13,13 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const initializedRef = useRef(false);
   const isLoadingRef = useRef(false);
   const hasInitialDataRef = useRef(false);
-  const initEffectRunCountRef = useRef(0);
-  const changeEffectRunCountRef = useRef(0);
+  const instanceIdRef = useRef<number>();
+
+  // Assign instance ID only once
+  if (!instanceIdRef.current) {
+    instanceIdRef.current = ++changeTrackingInstanceCounter;
+    console.log(`📊 useChangeTracking instance #${instanceIdRef.current} created`);
+  }
 
   // Create a stable signature for the data
   const createSignature = (dataItems: RundownItem[], title: string, cols?: Column[], tz?: string, st?: string) => {
@@ -26,10 +34,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
   // Initialize tracking ONLY ONCE when we first get meaningful data
   useEffect(() => {
-    initEffectRunCountRef.current += 1;
-    const runNumber = initEffectRunCountRef.current;
-    
-    console.log(`Change tracking init effect run #${runNumber}:`, {
+    console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect:`, {
       alreadyInitialized: initializedRef.current,
       isLoading: isLoadingRef.current,
       itemsLength: items.length,
@@ -39,21 +44,21 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
     // Skip if already initialized or currently loading
     if (initializedRef.current || isLoadingRef.current) {
-      console.log(`Change tracking init effect #${runNumber}: Skipping - already initialized or loading`);
+      console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect: Skipping - already initialized or loading`);
       return;
     }
     
     // Check if we have meaningful data to initialize with
     const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
     
-    console.log(`Change tracking init effect #${runNumber}: Has meaningful data:`, hasMeaningfulData);
+    console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect: Has meaningful data:`, hasMeaningfulData);
     
     // Only initialize once we have meaningful data and haven't initialized before
     if (hasMeaningfulData && !hasInitialDataRef.current) {
       hasInitialDataRef.current = true;
       const signature = createSignature(items, rundownTitle, columns, timezone, startTime);
       
-      console.log(`Change tracking init effect #${runNumber}: Initializing with signature length:`, signature.length);
+      console.log(`📊 Change tracking instance #${instanceIdRef.current} init effect: Initializing with signature length:`, signature.length);
       
       lastSavedDataRef.current = signature;
       initializedRef.current = true;
@@ -64,10 +69,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
 
   // Track changes after initialization - this should run on every change
   useEffect(() => {
-    changeEffectRunCountRef.current += 1;
-    const runNumber = changeEffectRunCountRef.current;
-    
-    console.log(`Change tracking change effect run #${runNumber}:`, {
+    console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect:`, {
       isInitialized: initializedRef.current,
       isLoading: isLoadingRef.current,
       itemsLength: items.length,
@@ -75,17 +77,17 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     });
 
     if (!initializedRef.current || isLoadingRef.current) {
-      console.log(`Change tracking change effect #${runNumber}: Skipping - not initialized or loading`);
+      console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Skipping - not initialized or loading`);
       return;
     }
 
     const currentSignature = createSignature(items, rundownTitle, columns, timezone, startTime);
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
-    console.log(`Change tracking change effect #${runNumber}: Has changes:`, hasChanges, 'Current hasUnsavedChanges:', hasUnsavedChanges);
+    console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Has changes:`, hasChanges, 'Current hasUnsavedChanges:', hasUnsavedChanges);
     
     if (hasChanges !== hasUnsavedChanges) {
-      console.log(`Change tracking change effect #${runNumber}: Updating hasUnsavedChanges to:`, hasChanges);
+      console.log(`📊 Change tracking instance #${instanceIdRef.current} change effect: Updating hasUnsavedChanges to:`, hasChanges);
       setHasUnsavedChanges(hasChanges);
     }
   }, [items, rundownTitle, columns, timezone, startTime, hasUnsavedChanges]);
@@ -94,12 +96,12 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const signature = createSignature(savedItems, savedTitle, savedColumns, savedTimezone, savedStartTime);
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Marked as saved with signature length:', signature.length);
+    console.log(`📊 Change tracking instance #${instanceIdRef.current}: Marked as saved with signature length:`, signature.length);
   };
 
   const markAsChanged = () => {
     if (!isLoadingRef.current && initializedRef.current) {
-      console.log('Manually marking as changed');
+      console.log(`📊 Change tracking instance #${instanceIdRef.current}: Manually marking as changed`);
       setHasUnsavedChanges(true);
     }
   };
@@ -107,9 +109,16 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const setIsLoading = (loading: boolean) => {
     isLoadingRef.current = loading;
     if (loading) {
-      console.log('Setting loading state, preventing change detection');
+      console.log(`📊 Change tracking instance #${instanceIdRef.current}: Setting loading state, preventing change detection`);
     }
   };
+
+  // Cleanup logging
+  useEffect(() => {
+    return () => {
+      console.log(`📊 Change tracking instance #${instanceIdRef.current}: UNMOUNTING`);
+    };
+  }, []);
 
   return {
     hasUnsavedChanges,
