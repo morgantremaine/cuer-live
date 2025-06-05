@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useSimpleChangeTracking } from './useSimpleChangeTracking';
@@ -15,6 +15,8 @@ export const useSimpleRundownState = (
   const rawId = params.id;
   // Apply the same filtering logic as useRundownBasicState
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
+
+  console.log('Simple rundown state: Current rundown ID:', rundownId, 'from params:', rawId);
 
   // Simple change tracking
   const {
@@ -35,19 +37,40 @@ export const useSimpleRundownState = (
   const columnsHook = useColumnsManager(markAsChanged);
 
   // Reset change tracking when no rundown ID
-  if (!rundownId && isInitialized) {
-    reset();
-  }
+  useEffect(() => {
+    if (!rundownId && isInitialized) {
+      console.log('Simple rundown state: No rundown ID, resetting change tracking');
+      reset();
+    }
+  }, [rundownId, isInitialized, reset]);
 
   // Initialize change tracking when data is ready AND we have a valid rundown ID
-  if (!isInitialized && itemsHook.items.length > 0 && rundownId) {
-    initialize(itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime);
-  }
+  useEffect(() => {
+    if (!rundownId) {
+      console.log('Simple rundown state: No rundown ID, skipping initialization');
+      return;
+    }
 
-  // Check for changes only if we have a valid rundown ID
-  if (rundownId) {
-    checkForChanges(itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime);
-  }
+    if (isInitialized) {
+      console.log('Simple rundown state: Already initialized');
+      return;
+    }
+
+    if (itemsHook.items.length === 0) {
+      console.log('Simple rundown state: No items yet, waiting for data load');
+      return;
+    }
+
+    console.log('Simple rundown state: Attempting to initialize with rundown ID:', rundownId, 'and', itemsHook.items.length, 'items');
+    initialize(itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime);
+  }, [rundownId, isInitialized, itemsHook.items.length, rundownTitle, columnsHook.columns, timezone, rundownStartTime, initialize]);
+
+  // Check for changes only if we have a valid rundown ID and are initialized
+  useEffect(() => {
+    if (rundownId && isInitialized) {
+      checkForChanges(itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime);
+    }
+  }, [rundownId, isInitialized, itemsHook.items, rundownTitle, columnsHook.columns, timezone, rundownStartTime, checkForChanges]);
 
   // Auto-save - always call the hook but pass undefined when no rundown
   const { isSaving } = useSimpleAutoSave(

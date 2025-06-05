@@ -21,6 +21,13 @@ export const useSimpleAutoSave = (
   const lastSaveDataRef = useRef<string>('');
 
   useEffect(() => {
+    console.log('Simple auto-save: Effect triggered with:', {
+      rundownId,
+      isInitialized,
+      hasUnsavedChanges,
+      itemsLength: items.length
+    });
+
     // Validate rundownId first
     if (!rundownId || rundownId === ':id' || rundownId.trim() === '') {
       console.log('Simple auto-save: Skipping save - invalid rundownId:', rundownId);
@@ -43,6 +50,8 @@ export const useSimpleAutoSave = (
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
+
+    console.log('Simple auto-save: Scheduling save for rundown:', rundownId);
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {

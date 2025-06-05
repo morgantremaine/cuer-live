@@ -32,13 +32,32 @@ export const useSimpleDataLoader = ({
   const rundownId = params.id;
   const loadedRef = useRef<string | null>(null);
 
+  console.log('Simple data loader: Current params and rundown ID:', {
+    paramsId: params.id,
+    rundownId,
+    loadedRef: loadedRef.current
+  });
+
   useEffect(() => {
+    console.log('Simple data loader: Effect triggered with:', {
+      loading,
+      rundownId,
+      savedRundownsLength: savedRundowns.length,
+      loadedRef: loadedRef.current
+    });
+
     if (loading || !rundownId || !savedRundowns.length) {
+      console.log('Simple data loader: Early return due to:', {
+        loading,
+        rundownId: !!rundownId,
+        hasSavedRundowns: savedRundowns.length > 0
+      });
       return;
     }
 
     // Skip if already loaded
     if (loadedRef.current === rundownId) {
+      console.log('Simple data loader: Already loaded rundown:', rundownId);
       return;
     }
 
@@ -74,11 +93,12 @@ export const useSimpleDataLoader = ({
     } finally {
       setIsLoading(false);
     }
-  }, [rundownId, savedRundowns, loading]);
+  }, [rundownId, savedRundowns, loading, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout, setItems, setIsLoading, onRundownLoaded]);
 
   // Reset when rundown changes
   useEffect(() => {
     if (rundownId && loadedRef.current && rundownId !== loadedRef.current) {
+      console.log('Simple data loader: Rundown ID changed from', loadedRef.current, 'to', rundownId, '- resetting loaded state');
       loadedRef.current = null;
     }
   }, [rundownId]);

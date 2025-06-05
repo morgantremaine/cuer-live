@@ -33,21 +33,41 @@ export const useSimpleChangeTracking = () => {
     timezone?: string, 
     startTime?: string
   ) => {
-    if (!isInitialized && !isLoadingRef.current && items.length > 0) {
-      // Clear any existing timeout
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
-      
-      // Add a longer delay to ensure all data is fully loaded and stabilized
-      initializationTimeoutRef.current = setTimeout(() => {
-        const signature = createStateSignature(items, title, columns, timezone, startTime);
-        lastSavedStateRef.current = signature;
-        setIsInitialized(true);
-        setHasUnsavedChanges(false);
-        console.log('Simple change tracking: Initialized with delay, signature length:', signature.length, 'items:', items.length);
-      }, 1000); // Increased delay to 1 second
+    console.log('Simple change tracking: Initialize called with:', {
+      itemsLength: items.length,
+      title,
+      isInitialized,
+      isLoading: isLoadingRef.current
+    });
+
+    if (isInitialized) {
+      console.log('Simple change tracking: Already initialized, skipping');
+      return;
     }
+
+    if (isLoadingRef.current) {
+      console.log('Simple change tracking: Still loading, skipping initialization');
+      return;
+    }
+
+    if (items.length === 0) {
+      console.log('Simple change tracking: No items, skipping initialization');
+      return;
+    }
+
+    // Clear any existing timeout
+    if (initializationTimeoutRef.current) {
+      clearTimeout(initializationTimeoutRef.current);
+    }
+    
+    // Use a shorter delay and initialize immediately if we have data
+    initializationTimeoutRef.current = setTimeout(() => {
+      const signature = createStateSignature(items, title, columns, timezone, startTime);
+      lastSavedStateRef.current = signature;
+      setIsInitialized(true);
+      setHasUnsavedChanges(false);
+      console.log('Simple change tracking: Successfully initialized with signature length:', signature.length, 'items:', items.length);
+    }, 500); // Reduced delay to 500ms
   }, [isInitialized, createStateSignature]);
 
   const checkForChanges = useCallback((
@@ -58,6 +78,11 @@ export const useSimpleChangeTracking = () => {
     startTime?: string
   ) => {
     if (!isInitialized || isLoadingRef.current || items.length === 0) {
+      console.log('Simple change tracking: Skipping change check:', {
+        isInitialized,
+        isLoading: isLoadingRef.current,
+        itemsLength: items.length
+      });
       return;
     }
 
@@ -66,7 +91,7 @@ export const useSimpleChangeTracking = () => {
     
     if (hasChanges !== hasUnsavedChanges) {
       setHasUnsavedChanges(hasChanges);
-      console.log('Simple change tracking: Changes detected:', hasChanges, 'current vs saved length:', currentSignature.length, lastSavedStateRef.current.length);
+      console.log('Simple change tracking: Changes detected:', hasChanges);
     }
   }, [isInitialized, hasUnsavedChanges, createStateSignature]);
 
@@ -87,13 +112,23 @@ export const useSimpleChangeTracking = () => {
     if (isInitialized && !isLoadingRef.current) {
       setHasUnsavedChanges(true);
       console.log('Simple change tracking: Marked as changed');
+    } else {
+      console.log('Simple change tracking: Cannot mark as changed:', {
+        isInitialized,
+        isLoading: isLoadingRef.current
+      });
     }
   }, [isInitialized]);
 
   const setIsLoading = useCallback((loading: boolean) => {
     isLoadingRef.current = loading;
     console.log('Simple change tracking: Set loading to:', loading);
-  }, []);
+    
+    // If we're done loading and have data, try to initialize immediately
+    if (!loading && !isInitialized) {
+      console.log('Simple change tracking: Loading finished, will attempt delayed initialization');
+    }
+  }, [isInitialized]);
 
   // Reset state when no longer on a rundown page
   const reset = useCallback(() => {
