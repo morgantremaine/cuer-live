@@ -19,6 +19,7 @@ export const useBlueprintPersistence = (
     if (!user || !rundownId) return null;
     
     try {
+      console.log('Blueprint persistence: Loading blueprint for rundown:', rundownId);
       const { data, error } = await supabase
         .from('blueprints')
         .select('*')
@@ -27,32 +28,59 @@ export const useBlueprintPersistence = (
         .maybeSingle();
 
       if (error) {
+        console.error('Blueprint persistence: Error loading blueprint:', error);
         return null;
       }
 
+      console.log('Blueprint persistence: Loaded blueprint:', data);
       setSavedBlueprint(data);
       return data;
     } catch (error) {
+      console.error('Blueprint persistence: Exception loading blueprint:', error);
       return null;
     }
   }, [user, rundownId, setSavedBlueprint]);
 
-  const saveBlueprint = useCallback(async (updatedLists: BlueprintList[], silent = false) => {
-    if (!user || !rundownId) return;
+  const saveBlueprint = useCallback(async (
+    title: string, 
+    lists: BlueprintList[], 
+    showDate?: string, 
+    silent?: boolean, 
+    notes?: string, 
+    crewData?: any[], 
+    cameraPlots?: any[]
+  ) => {
+    if (!user || !rundownId) {
+      console.log('Blueprint persistence: Cannot save - no user or rundownId');
+      return;
+    }
+
+    console.log('Blueprint persistence: Saving blueprint with:', {
+      title,
+      listsCount: lists.length,
+      showDate,
+      notesLength: notes?.length,
+      crewDataCount: crewData?.length,
+      cameraPlotsCount: cameraPlots?.length
+    });
 
     try {
       const blueprintData = {
         user_id: user.id,
         rundown_id: rundownId,
-        rundown_title: rundownTitle,
-        lists: updatedLists,
+        rundown_title: title,
+        lists: lists,
         show_date: showDate,
+        notes: notes || savedBlueprint?.notes,
+        crew_data: crewData || savedBlueprint?.crew_data,
+        camera_plots: cameraPlots || savedBlueprint?.camera_plots,
         updated_at: new Date().toISOString()
       };
 
       let result;
       
-      if (savedBlueprint) {
+      if (savedBlueprint?.id) {
+        console.log('Blueprint persistence: Updating existing blueprint:', savedBlueprint.id);
         const { data, error } = await supabase
           .from('blueprints')
           .update(blueprintData)
@@ -64,6 +92,7 @@ export const useBlueprintPersistence = (
         if (error) throw error;
         result = data;
       } else {
+        console.log('Blueprint persistence: Creating new blueprint');
         const { data, error } = await supabase
           .from('blueprints')
           .insert(blueprintData)
@@ -74,6 +103,7 @@ export const useBlueprintPersistence = (
         result = data;
       }
       
+      console.log('Blueprint persistence: Save successful:', result);
       setSavedBlueprint(result);
 
       if (!silent) {
@@ -82,7 +112,10 @@ export const useBlueprintPersistence = (
           description: 'Blueprint saved successfully!',
         });
       }
+      
+      return result;
     } catch (error) {
+      console.error('Blueprint persistence: Save failed:', error);
       if (!silent) {
         toast({
           title: 'Error',
@@ -90,8 +123,9 @@ export const useBlueprintPersistence = (
           variant: 'destructive',
         });
       }
+      throw error;
     }
-  }, [user, rundownId, rundownTitle, showDate, savedBlueprint, setSavedBlueprint, toast]);
+  }, [user, rundownId, rundownTitle, savedBlueprint, setSavedBlueprint, toast]);
 
   return {
     loadBlueprint,
