@@ -33,7 +33,7 @@ export const useSimpleChangeTracking = () => {
     timezone?: string, 
     startTime?: string
   ) => {
-    if (!isInitialized && !isLoadingRef.current) {
+    if (!isInitialized && !isLoadingRef.current && items.length > 0) {
       // Clear any existing timeout
       if (initializationTimeoutRef.current) {
         clearTimeout(initializationTimeoutRef.current);
@@ -45,8 +45,8 @@ export const useSimpleChangeTracking = () => {
         lastSavedStateRef.current = signature;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
-        console.log('Simple change tracking: Initialized with delay, signature length:', signature.length);
-      }, 500);
+        console.log('Simple change tracking: Initialized with delay, signature length:', signature.length, 'items:', items.length);
+      }, 1000); // Increased delay to 1 second
     }
   }, [isInitialized, createStateSignature]);
 
@@ -57,7 +57,9 @@ export const useSimpleChangeTracking = () => {
     timezone?: string, 
     startTime?: string
   ) => {
-    if (!isInitialized || isLoadingRef.current) return;
+    if (!isInitialized || isLoadingRef.current || items.length === 0) {
+      return;
+    }
 
     const currentSignature = createStateSignature(items, title, columns, timezone, startTime);
     const hasChanges = currentSignature !== lastSavedStateRef.current;

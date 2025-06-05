@@ -12,7 +12,9 @@ export const useSimpleRundownState = (
   rundownStartTime: string
 ) => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id;
+  const rawId = params.id;
+  // Apply the same filtering logic as useRundownBasicState
+  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
 
   // Simple change tracking
   const {

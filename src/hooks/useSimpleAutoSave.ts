@@ -21,13 +21,21 @@ export const useSimpleAutoSave = (
   const lastSaveDataRef = useRef<string>('');
 
   useEffect(() => {
-    if (!rundownId || !isInitialized || !hasUnsavedChanges) {
+    // Validate rundownId first
+    if (!rundownId || rundownId === ':id' || rundownId.trim() === '') {
+      console.log('Simple auto-save: Skipping save - invalid rundownId:', rundownId);
+      return;
+    }
+
+    if (!isInitialized || !hasUnsavedChanges) {
+      console.log('Simple auto-save: Skipping save - not initialized or no changes:', { isInitialized, hasUnsavedChanges });
       return;
     }
 
     // Create signature to prevent duplicate saves
     const currentData = JSON.stringify({ items, rundownTitle, columns, timezone, rundownStartTime });
     if (currentData === lastSaveDataRef.current) {
+      console.log('Simple auto-save: Skipping save - no data changes detected');
       return;
     }
 
@@ -40,15 +48,16 @@ export const useSimpleAutoSave = (
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         setIsSaving(true);
-        console.log('Simple auto-save: Saving rundown with', items.length, 'items');
+        console.log('Simple auto-save: Starting save for rundown:', rundownId, 'with', items.length, 'items');
         
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, timezone, rundownStartTime);
 
         lastSaveDataRef.current = currentData;
         markAsSaved(items, rundownTitle, columns, timezone, rundownStartTime);
-        console.log('Simple auto-save: Save completed');
+        console.log('Simple auto-save: Save completed successfully');
       } catch (error) {
-        console.error('Simple auto-save: Save failed:', error);
+        console.error('Simple auto-save: Save failed for rundown:', rundownId, 'Error:', error);
+        // Don't update lastSaveDataRef on failure so it will retry
       } finally {
         setIsSaving(false);
       }
