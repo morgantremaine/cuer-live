@@ -22,11 +22,11 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     instanceIdRef.current = ++instanceCounter;
   }
 
-  // Create signature only when values actually change - optimized with debouncing
+  // Create signature only when values actually change - increased debouncing
   const currentSignature = useMemo(() => {
     const now = Date.now();
-    // Debounce signature calculation to prevent excessive computation
-    if (now - lastChangeCheckRef.current < 500) {
+    // Increased debounce to reduce excessive computation
+    if (now - lastChangeCheckRef.current < 1000) {
       return lastSavedDataRef.current;
     }
     lastChangeCheckRef.current = now;
@@ -66,13 +66,13 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     }
   }, [items.length, rundownTitle, currentSignature]);
 
-  // Track changes after initialization - optimized to reduce frequency
+  // Track changes after initialization - reduced frequency
   useEffect(() => {
     if (!initializedRef.current || isLoadingRef.current) {
       return;
     }
 
-    // Only check for changes if signature actually changed
+    // Only check for changes if signature actually changed and enough time has passed
     if (lastSavedDataRef.current !== currentSignature) {
       const hasChanges = true;
       console.log('Change tracking: Detected changes, items count:', items.length);

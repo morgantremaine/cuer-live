@@ -22,8 +22,8 @@ export const useLoadingEvaluation = ({
   const shouldLoadRundown = useCallback((currentRundownId: string, rundown: SavedRundown) => {
     const now = Date.now();
     
-    // Debounce evaluations to prevent excessive logging
-    if (now - lastEvaluationRef.current < 1000) {
+    // Increased debounce time to prevent excessive evaluations
+    if (now - lastEvaluationRef.current < 3000) {
       return false;
     }
     lastEvaluationRef.current = now;
