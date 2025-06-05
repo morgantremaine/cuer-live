@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -7,6 +6,7 @@ import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { useTheme } from '@/hooks/useTheme';
 
 interface RegularRowProps {
   item: RundownItem;
@@ -60,6 +60,8 @@ const RegularRow = (props: RegularRowProps) => {
     isDragging
   } = props;
 
+  const { isDark } = useTheme();
+
   const { rowClass } = useRowStyling({
     isDragging,
     isDraggingMultiple,
@@ -107,8 +109,11 @@ const RegularRow = (props: RegularRowProps) => {
     // Custom color items: use inline styles
     inlineBackgroundColor = item.color;
     inlineTextColor = getContrastTextColor(item.color);
+  } else {
+    // Default rows: #ffffff in light mode, #394150 in dark mode
+    inlineBackgroundColor = isDark ? '#394150' : '#ffffff';
+    inlineTextColor = undefined; // Let CSS classes handle text color
   }
-  // For default white/gray rows, let CSS classes handle the styling
 
   return (
     <RundownContextMenu

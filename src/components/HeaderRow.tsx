@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -6,6 +5,7 @@ import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
+import { useTheme } from '@/hooks/useTheme';
 
 interface HeaderRowProps {
   item: RundownItem;
@@ -57,6 +57,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     isDragging
   } = props;
 
+  const { isDark } = useTheme();
+
   const { rowClass } = useRowStyling({
     isDragging,
     isSelected,
@@ -89,6 +91,9 @@ const HeaderRow = (props: HeaderRowProps) => {
     // No-op for headers
   };
 
+  // Headers: #e5e7eb in light mode, #212936 in dark mode
+  const headerBackgroundColor = isDark ? '#212936' : '#e5e7eb';
+
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -109,6 +114,9 @@ const HeaderRow = (props: HeaderRowProps) => {
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
+        style={{ 
+          backgroundColor: headerBackgroundColor
+        }}
         draggable
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
