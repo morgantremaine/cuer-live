@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export interface Column {
   id: string;
@@ -26,6 +26,7 @@ const DEFAULT_COLUMNS: Column[] = [
 
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
+  const isLoadingLayoutRef = useRef(false);
 
   // Ensure columns is always an array and calculate visibleColumns safely
   const safeColumns = Array.isArray(columns) ? columns : DEFAULT_COLUMNS;
@@ -33,9 +34,9 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
-      id: `custom_${Date.now()}`,
+      id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
-      key: `custom_${Date.now()}`,
+      key: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       width: '150px',
       isCustom: true,
       isEditable: true,
@@ -124,67 +125,83 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
+    // Prevent multiple simultaneous layout loads
+    if (isLoadingLayoutRef.current) {
+      return;
+    }
+    isLoadingLayoutRef.current = true;
+
     setColumns(prevColumns => {
-      // Ensure we have valid input
-      if (!Array.isArray(layoutColumns)) {
-        console.warn('Invalid layout columns data, using default columns');
-        return DEFAULT_COLUMNS;
-      }
-
-      const safePrevColumns = Array.isArray(prevColumns) ? prevColumns : DEFAULT_COLUMNS;
-
-      // Filter out the "Element" column from layout columns
-      const filteredLayoutColumns = layoutColumns.filter(col => 
-        col.id !== 'element' && col.key !== 'element'
-      );
-
-      // Update column names for backward compatibility with old saved layouts
-      const updatedLayoutColumns = filteredLayoutColumns.map(col => {
-        if (col.id === 'startTime' && col.name === 'Start Time') {
-          return { ...col, name: 'Start' };
+      try {
+        // Ensure we have valid input
+        if (!Array.isArray(layoutColumns)) {
+          console.warn('Invalid layout columns data, keeping current columns');
+          return prevColumns;
         }
-        if (col.id === 'endTime' && col.name === 'End Time') {
-          return { ...col, name: 'End' };
-        }
-        if (col.id === 'elapsedTime' && col.name === 'Elapsed Time') {
-          return { ...col, name: 'Elapsed' };
-        }
-        return col;
-      });
 
-      // Merge updated layout columns with essential built-in columns
-      const mergedColumns: Column[] = [];
-      const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
+        const safePrevColumns = Array.isArray(prevColumns) ? prevColumns : DEFAULT_COLUMNS;
 
-      // First, add all columns from updated layout (preserving order, custom columns, and widths)
-      updatedLayoutColumns.forEach(layoutCol => {
-        mergedColumns.push(layoutCol);
-      });
-
-      // Then, add any missing essential built-in columns
-      DEFAULT_COLUMNS.forEach(essentialCol => {
-        if (!layoutColumnIds.has(essentialCol.id)) {
-          mergedColumns.push(essentialCol);
-        }
-      });
-
-      // Only mark as changed if columns are actually different
-      const isSame = safePrevColumns.length === mergedColumns.length && 
-        safePrevColumns.every((col, index) => 
-          col.id === mergedColumns[index]?.id && 
-          col.name === mergedColumns[index]?.name &&
-          col.isVisible === mergedColumns[index]?.isVisible &&
-          col.width === mergedColumns[index]?.width
+        // Filter out the "Element" column from layout columns
+        const filteredLayoutColumns = layoutColumns.filter(col => 
+          col.id !== 'element' && col.key !== 'element'
         );
-      
-      if (isSame) {
-        return safePrevColumns; // Don't update if columns are the same
+
+        // Update column names for backward compatibility with old saved layouts
+        const updatedLayoutColumns = filteredLayoutColumns.map(col => {
+          if (col.id === 'startTime' && col.name === 'Start Time') {
+            return { ...col, name: 'Start' };
+          }
+          if (col.id === 'endTime' && col.name === 'End Time') {
+            return { ...col, name: 'End' };
+          }
+          if (col.id === 'elapsedTime' && col.name === 'Elapsed Time') {
+            return { ...col, name: 'Elapsed' };
+          }
+          return col;
+        });
+
+        // Merge updated layout columns with essential built-in columns
+        const mergedColumns: Column[] = [];
+        const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
+
+        // First, add all columns from updated layout (preserving order, custom columns, and widths)
+        updatedLayoutColumns.forEach(layoutCol => {
+          mergedColumns.push(layoutCol);
+        });
+
+        // Then, add any missing essential built-in columns
+        DEFAULT_COLUMNS.forEach(essentialCol => {
+          if (!layoutColumnIds.has(essentialCol.id)) {
+            mergedColumns.push(essentialCol);
+          }
+        });
+
+        // Check if columns are actually different before updating
+        const isSame = safePrevColumns.length === mergedColumns.length && 
+          safePrevColumns.every((col, index) => {
+            const merged = mergedColumns[index];
+            return merged && 
+              col.id === merged.id && 
+              col.name === merged.name &&
+              col.isVisible === merged.isVisible &&
+              col.width === merged.width;
+          });
+        
+        if (isSame) {
+          return safePrevColumns; // Don't update if columns are the same
+        }
+        
+        // Only mark as changed if this is not an initial load
+        if (markAsChanged && safePrevColumns !== DEFAULT_COLUMNS) {
+          markAsChanged();
+        }
+        return mergedColumns;
+      } finally {
+        // Reset the loading flag after a short delay to prevent rapid successive calls
+        setTimeout(() => {
+          isLoadingLayoutRef.current = false;
+        }, 100);
       }
-      
-      if (markAsChanged) {
-        markAsChanged();
-      }
-      return mergedColumns;
     });
   }, [markAsChanged]);
 
