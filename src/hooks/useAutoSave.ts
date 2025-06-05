@@ -1,97 +1,100 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
-import { useChangeTracking } from './useChangeTracking';
 
 export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
   const { user } = useAuth();
-  const saveInProgressRef = useRef(false);
-  const lastSaveAttemptRef = useRef<number>(0);
-
   const { isSaving, performSave } = useAutoSaveOperations();
-  const { 
-    hasUnsavedChanges, 
-    setHasUnsavedChanges, 
-    markAsSaved, 
-    markAsChanged,
-    isInitialized,
-    setIsLoading
-  } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
+  
+  // Track last saved state to prevent unnecessary saves
+  const lastSavedStateRef = useRef<string>('');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasUnsavedChangesRef = useRef(false);
+  
+  // Create current state signature
+  const currentSignature = JSON.stringify({
+    itemsCount: items.length,
+    title: rundownTitle,
+    columnsCount: columns?.length || 0,
+    timezone,
+    startTime,
+    // Only include first few items to keep signature manageable
+    itemsSample: items.slice(0, 3).map(item => ({
+      id: item.id,
+      name: item.segmentName || item.name,
+      duration: item.duration
+    }))
+  });
 
-  // Auto-save function
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
-    const now = Date.now();
-    
-    // Rate limiting - prevent saves within 2 seconds of each other
-    if (now - lastSaveAttemptRef.current < 2000) {
-      console.log('Save rate limited, skipping');
-      return;
-    }
-
-    if (!user || saveInProgressRef.current) {
-      console.log('Save blocked - no user or save in progress');
-      return;
-    }
-
-    // Validate we have data to save
-    if (!Array.isArray(itemsToSave) || itemsToSave.length === 0) {
-      console.log('Save blocked - no items to save');
-      return;
-    }
-
-    saveInProgressRef.current = true;
-    setIsLoading(true);
-    lastSaveAttemptRef.current = now;
-
-    console.log('Starting auto-save for:', titleToSave, 'with', itemsToSave.length, 'items');
-
-    try {
-      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
-      
-      if (success) {
-        console.log('Auto-save successful');
-        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
-      } else {
-        console.log('Auto-save failed');
-        setHasUnsavedChanges(true);
-      }
-    } catch (error) {
-      console.error('Auto-save error:', error);
-      setHasUnsavedChanges(true);
-    } finally {
-      setIsLoading(false);
-      saveInProgressRef.current = false;
-    }
-  }, [user, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
-
-  // Auto-save trigger - simplified
+  // Initialize on first load
   useEffect(() => {
-    // Only save if we have unsaved changes and are initialized
-    if (!hasUnsavedChanges || !isInitialized || !user || saveInProgressRef.current) {
+    if (lastSavedStateRef.current === '' && items.length > 0) {
+      console.log('Auto-save: Initializing with current state');
+      lastSavedStateRef.current = currentSignature;
+      hasUnsavedChangesRef.current = false;
+    }
+  }, [currentSignature, items.length]);
+
+  // Track changes
+  useEffect(() => {
+    // Skip if not initialized or already saving
+    if (lastSavedStateRef.current === '' || isSaving) {
       return;
     }
 
-    // Don't save if we don't have meaningful data
-    if (!Array.isArray(items) || items.length === 0) {
-      return;
-    }
-
-    console.log('Triggering auto-save for changes');
+    // Check if state has actually changed
+    const hasChanges = lastSavedStateRef.current !== currentSignature;
     
-    // Use a small timeout to debounce rapid changes
-    const timeoutId = setTimeout(() => {
-      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
-    }, 1000);
+    if (hasChanges !== hasUnsavedChangesRef.current) {
+      hasUnsavedChangesRef.current = hasChanges;
+      console.log('Auto-save: Changes detected:', hasChanges);
+    }
 
-    return () => clearTimeout(timeoutId);
-  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
+    // Only auto-save if we have changes and meaningful data
+    if (hasChanges && user && items.length > 0 && rundownTitle.trim() !== '') {
+      // Clear any existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Debounce the save operation
+      saveTimeoutRef.current = setTimeout(async () => {
+        console.log('Auto-save: Executing save operation');
+        
+        try {
+          const success = await performSave(items, rundownTitle, columns, timezone, startTime);
+          
+          if (success) {
+            console.log('Auto-save: Save successful');
+            lastSavedStateRef.current = currentSignature;
+            hasUnsavedChangesRef.current = false;
+          } else {
+            console.log('Auto-save: Save failed');
+          }
+        } catch (error) {
+          console.error('Auto-save: Save error:', error);
+        }
+      }, 2000); // 2 second debounce
+    }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [currentSignature, user, items, rundownTitle, columns, timezone, startTime, isSaving, performSave]);
+
+  // Mark as changed manually
+  const markAsChanged = useCallback(() => {
+    console.log('Auto-save: Manually marked as changed');
+    hasUnsavedChangesRef.current = true;
+  }, []);
 
   return {
-    hasUnsavedChanges,
-    isSaving: isSaving || saveInProgressRef.current,
+    hasUnsavedChanges: hasUnsavedChangesRef.current,
+    isSaving,
     markAsChanged
   };
 };

@@ -7,106 +7,73 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedDataRef = useRef<string>('');
-  const isLoadingRef = useRef(false);
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initializationRef = useRef(false);
 
-  // Create a stable signature for tracking changes
+  // Create a simple signature for change tracking
   const currentSignature = useMemo(() => {
     return JSON.stringify({ 
       itemsCount: items.length,
-      itemsData: items.slice(0, 3).map(item => ({ 
-        id: item.id, 
-        name: item.segmentName || item.name, 
-        duration: item.duration 
-      })),
       title: rundownTitle, 
       columnsCount: columns?.length || 0,
       timezone, 
-      startTime 
+      startTime,
+      // Sample of items for change detection
+      itemsSample: items.slice(0, 2).map(item => ({ 
+        id: item.id, 
+        name: item.segmentName || item.name
+      }))
     });
-  }, [items, rundownTitle, columns?.length, timezone, startTime]);
+  }, [items.length, rundownTitle, columns?.length, timezone, startTime, items]);
 
-  // Initialize tracking ONCE
+  // Initialize ONCE when we have meaningful data
   useEffect(() => {
-    if (isInitialized || isLoadingRef.current) {
-      return;
+    if (!initializationRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+      console.log('Change tracking: Initializing');
+      lastSavedDataRef.current = currentSignature;
+      setIsInitialized(true);
+      setHasUnsavedChanges(false);
+      initializationRef.current = true;
     }
-
-    // Clear any existing timeout
-    if (initializationTimeoutRef.current) {
-      clearTimeout(initializationTimeoutRef.current);
-    }
-
-    // Only initialize if we have meaningful data
-    const hasData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
-    
-    if (hasData) {
-      initializationTimeoutRef.current = setTimeout(() => {
-        if (!isInitialized && !isLoadingRef.current) {
-          lastSavedDataRef.current = currentSignature;
-          setIsInitialized(true);
-          setHasUnsavedChanges(false);
-          console.log('Change tracking initialized with data');
-        }
-      }, 500); // Reduced timeout
-    }
-
-    return () => {
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
-    };
-  }, [currentSignature, isInitialized, items.length, rundownTitle]);
+  }, [currentSignature, items.length, rundownTitle]);
 
   // Track changes after initialization
   useEffect(() => {
-    if (!isInitialized || isLoadingRef.current) {
-      return;
-    }
+    if (!isInitialized) return;
 
     const hasChanges = lastSavedDataRef.current !== currentSignature;
-    
-    if (hasChanges !== hasUnsavedChanges) {
-      console.log('Change detected:', hasChanges);
-      setHasUnsavedChanges(hasChanges);
-    }
-  }, [currentSignature, isInitialized, hasUnsavedChanges]);
+    setHasUnsavedChanges(hasChanges);
+  }, [currentSignature, isInitialized]);
 
   const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
     const signature = JSON.stringify({ 
       itemsCount: savedItems.length,
-      itemsData: savedItems.slice(0, 3).map(item => ({ 
-        id: item.id, 
-        name: item.segmentName || item.name, 
-        duration: item.duration 
-      })),
       title: savedTitle, 
       columnsCount: savedColumns?.length || 0, 
       timezone: savedTimezone, 
-      startTime: savedStartTime 
+      startTime: savedStartTime,
+      itemsSample: savedItems.slice(0, 2).map(item => ({ 
+        id: item.id, 
+        name: item.segmentName || item.name
+      }))
     });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Marked as saved');
+    console.log('Change tracking: Marked as saved');
   };
 
   const markAsChanged = () => {
-    if (!isLoadingRef.current && isInitialized) {
-      console.log('Manually marked as changed');
+    if (isInitialized) {
+      console.log('Change tracking: Manually marked as changed');
       setHasUnsavedChanges(true);
     }
   };
 
   const setIsLoading = (loading: boolean) => {
-    console.log('Setting loading state:', loading);
-    isLoadingRef.current = loading;
+    console.log('Change tracking: Setting loading state:', loading);
     if (loading) {
-      // Reset initialization when loading starts
+      // Reset initialization when starting to load new data
+      initializationRef.current = false;
       setIsInitialized(false);
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-        initializationTimeoutRef.current = null;
-      }
     }
   };
 
