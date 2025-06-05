@@ -4,8 +4,10 @@ import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { useChangeTracking } from '@/hooks/useChangeTracking';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
-export const useRundownDataManagement = (rundownTitle: string, timezone: string) => {
+export const useRundownDataManagement = (rundownTitle: string, timezone: string, rundownStartTime: string, setRundownTitle: (title: string) => void, setTimezone: (timezone: string) => void, setRundownStartTime: (startTime: string) => void) => {
   const params = useParams<{ id: string }>();
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
@@ -13,9 +15,14 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
   const { savedRundowns, loading } = useRundownStorage();
   const initializationRef = useRef<{ [key: string]: boolean }>({});
 
-  const markAsChanged = useCallback(() => {
-    console.log('Changes marked - triggering auto-save');
-  }, []);
+  // Change tracking with proper integration
+  const { hasUnsavedChanges, markAsSaved, markAsChanged, isInitialized, setIsLoading } = useChangeTracking(
+    [], // Will be updated with actual items below
+    rundownTitle,
+    [], // Will be updated with actual columns below
+    timezone,
+    rundownStartTime
+  );
 
   const {
     items,
@@ -39,8 +46,23 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
     handleReorderColumns,
     handleDeleteColumn,
     handleToggleColumnVisibility,
-    handleLoadLayout
+    handleLoadLayout,
+    handleRenameColumn,
+    handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
+
+  // Auto-save functionality
+  const { isSaving } = useAutoSave({
+    rundownId,
+    rundownTitle,
+    items,
+    columns,
+    timezone,
+    rundownStartTime,
+    hasUnsavedChanges,
+    markAsSaved,
+    setIsLoading
+  });
 
   // Initialize once per rundownId to prevent loops
   useEffect(() => {
@@ -58,6 +80,17 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
         console.log('Loading existing rundown data:', rundownId);
+        
+        // Set rundown metadata
+        setRundownTitle(existingRundown.title);
+        if (existingRundown.timezone) {
+          setTimezone(existingRundown.timezone);
+        }
+        if (existingRundown.startTime || existingRundown.start_time) {
+          setRundownStartTime(existingRundown.startTime || existingRundown.start_time || '09:00:00');
+        }
+        
+        // Load items and columns
         if (existingRundown.items) {
           setItems(existingRundown.items);
         }
@@ -65,8 +98,21 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
           handleLoadLayout(existingRundown.columns);
         }
       }
+    } else if (!rundownId) {
+      // Initialize new rundown with default data
+      console.log('Initializing new rundown with defaults');
+      setRundownTitle('Live Broadcast Rundown');
+      setTimezone('America/New_York');
+      setRundownStartTime('09:00:00');
+      
+      // Load default items if none exist
+      if (items.length === 0) {
+        import('@/data/defaultRundownItems').then(({ defaultRundownItems }) => {
+          setItems(defaultRundownItems);
+        });
+      }
     }
-  }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout]);
+  }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout, setRundownTitle, setTimezone, setRundownStartTime, items.length]);
 
   // Clear initialization when rundown ID changes
   useEffect(() => {
@@ -96,10 +142,15 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string)
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
+    handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
+    handleUpdateColumnWidth,
     savedRundowns,
     loading,
     markAsChanged,
+    hasUnsavedChanges,
+    isSaving,
+    markAsSaved
   };
 };
