@@ -26,7 +26,7 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - now passing calculateEndTime and using correct returned property names
+  // Row operations - fix the parameter types to match what's expected
   const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,

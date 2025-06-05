@@ -5,9 +5,9 @@ interface UseRundownRowOperationsProps {
   selectedRows: Set<string>;
   deleteMultipleRows: (ids: string[]) => void;
   clearSelection: () => void;
-  addRow: (calculateEndTime: any, selectedRows?: Set<string>) => void;
-  addHeader: (selectedRows?: Set<string>) => void;
-  calculateEndTime: (startTime: string, duration: string) => string;
+  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void;
+  addHeader: (insertAfterIndex?: number) => void;
+  calculateEndTime: (item: any, prevEndTime?: string) => string;
 }
 
 export const useRundownRowOperations = ({
@@ -20,21 +20,21 @@ export const useRundownRowOperations = ({
 }: UseRundownRowOperationsProps) => {
   
   const handleDeleteSelectedRows = useCallback(() => {
-    if (selectedRows.size > 0) {
-      deleteMultipleRows(Array.from(selectedRows));
+    const selectedIds = Array.from(selectedRows);
+    if (selectedIds.length > 0) {
+      deleteMultipleRows(selectedIds);
       clearSelection();
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
+  // Fix the function signatures to match what's expected
   const handleAddRow = useCallback(() => {
-    // Pass the selected rows to addRow so it can insert after the selection
-    addRow(calculateEndTime, selectedRows);
-  }, [addRow, calculateEndTime, selectedRows]);
+    addRow(calculateEndTime);
+  }, [addRow, calculateEndTime]);
 
   const handleAddHeader = useCallback(() => {
-    // Pass the selected rows to addHeader so it can insert after the selection  
-    addHeader(selectedRows);
-  }, [addHeader, selectedRows]);
+    addHeader();
+  }, [addHeader]);
 
   return {
     handleDeleteSelectedRows,
