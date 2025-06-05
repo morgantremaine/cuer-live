@@ -34,42 +34,24 @@ export const useRundownStateIntegration = (
   const stableItems = useMemo(() => itemsHook.items, [itemsHook.items]);
   const stableColumns = useMemo(() => columnsHook.columns, [columnsHook.columns]);
   
-  // Use refs for frequently changing values to prevent re-renders
-  const stableTitleRef = useRef(rundownTitle);
-  const stableTimezoneRef = useRef(timezone);
-  const stableStartTimeRef = useRef(rundownStartTime);
-  
-  // Only update refs when values actually change
-  useEffect(() => {
-    stableTitleRef.current = rundownTitle;
-  }, [rundownTitle]);
-  
-  useEffect(() => {
-    stableTimezoneRef.current = timezone;
-  }, [timezone]);
-  
-  useEffect(() => {
-    stableStartTimeRef.current = rundownStartTime;
-  }, [rundownStartTime]);
-
-  // Change tracking - only create once and keep stable
+  // Change tracking - stable throughout component lifecycle
   const changeTracking = useChangeTracking(
     stableItems, 
-    stableTitleRef.current, 
+    rundownTitle, 
     stableColumns, 
-    stableTimezoneRef.current, 
-    stableStartTimeRef.current
+    timezone, 
+    rundownStartTime
   );
 
-  // Auto-save integration - only create once
+  // Auto-save integration - use actual primitive values for dependencies
   const autoSave = useAutoSave(
     stableItems,
-    stableTitleRef.current,
+    rundownTitle,
     changeTracking.hasUnsavedChanges && changeTracking.isInitialized,
     changeTracking.markAsSaved,
     stableColumns,
-    stableTimezoneRef.current,
-    stableStartTimeRef.current,
+    timezone,
+    rundownStartTime,
     getUndoHistory
   );
 

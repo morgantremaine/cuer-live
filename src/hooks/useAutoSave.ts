@@ -24,6 +24,12 @@ export const useAutoSave = (
   const lastSaveAttemptRef = useRef<number>(0);
   const instanceIdRef = useRef<number>();
   const isUnmountedRef = useRef(false);
+  const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+  const userRef = useRef(user);
+  
+  // Update refs immediately when values change
+  hasUnsavedChangesRef.current = hasUnsavedChanges;
+  userRef.current = user;
   
   // Store latest values in refs to avoid dependency issues
   const latestValuesRef = useRef({
@@ -71,9 +77,9 @@ export const useAutoSave = (
       return;
     }
     
-    if (!user || isSaving || isExecutingSaveRef.current) {
+    if (!userRef.current || isSaving || isExecutingSaveRef.current) {
       console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save blocked`, {
-        hasUser: !!user,
+        hasUser: !!userRef.current,
         isSaving,
         isExecuting: isExecutingSaveRef.current
       });
@@ -120,26 +126,26 @@ export const useAutoSave = (
         isExecutingSaveRef.current = false;
       }
     }
-  }, [user, performSave, isSaving]); // Only depend on stable values
+  }, [performSave, isSaving]);
 
-  // Main auto-save effect - only depends on hasUnsavedChanges and user
+  // Main auto-save effect - ONLY depends on stable values
   useEffect(() => {
     if (isUnmountedRef.current) return;
 
     console.log(`🔧 Auto-save instance #${instanceIdRef.current} effect:`, {
-      hasUnsavedChanges,
-      hasUser: !!user,
+      hasUnsavedChanges: hasUnsavedChangesRef.current,
+      hasUser: !!userRef.current,
       currentTimeout: !!debounceTimeoutRef.current
     });
 
-    if (!hasUnsavedChanges || !user) {
+    if (!hasUnsavedChangesRef.current || !userRef.current) {
       console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Early return - conditions not met`);
       return;
     }
 
     // Clear any existing timeout
     if (debounceTimeoutRef.current) {
-      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Cleanup - clearing timeout`);
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Effect cleanup - clearing timeout`);
       clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = null;
     }
@@ -162,7 +168,7 @@ export const useAutoSave = (
         debounceTimeoutRef.current = null;
       }
     };
-  }, [hasUnsavedChanges, user, executeSave]); // Minimal dependencies
+  }, [hasUnsavedChanges, user, executeSave]); // Only depend on the actual primitive values that matter
 
   // Cleanup on unmount
   useEffect(() => {
