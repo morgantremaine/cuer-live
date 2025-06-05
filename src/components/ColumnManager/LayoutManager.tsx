@@ -64,9 +64,7 @@ const LayoutManager = ({
   };
 
   const handleLoadLayout = (layout: any) => {
-    // CRITICAL FIX: Pass only the columns array, not the entire layout object
-    console.log('Loading layout with columns:', layout.columns);
-    onLoadLayout(layout.columns);
+    onLoadLayout(layout);
     setShowLoadLayout(false);
   };
 

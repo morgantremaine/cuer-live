@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback } from 'react';
 
 export interface Column {
   id: string;
@@ -25,14 +25,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
-  // Use refs to prevent recreating callbacks
-  const markAsChangedRef = useRef(markAsChanged);
-  markAsChangedRef.current = markAsChanged;
-
-  // Stable visible columns computation
-  const visibleColumns = useMemo(() => {
-    return columns.filter(col => col.isVisible !== false);
-  }, [columns]);
+  const visibleColumns = columns.filter(col => col.isVisible !== false);
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -45,67 +38,85 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       isVisible: true
     };
     
+    // Insert the new column right after the segment name column (index 1)
     setColumns(prev => {
       const newColumns = [...prev];
-      newColumns.splice(1, 0, newColumn); // Insert after segment name
+      newColumns.splice(1, 0, newColumn);
       return newColumns;
     });
     
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
+    // Mark as changed when adding a column
+    if (markAsChanged) {
+      markAsChanged();
     }
-  }, []);
+  }, [markAsChanged]);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
     setColumns(newColumns);
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
+    if (markAsChanged) {
+      markAsChanged();
     }
-  }, []);
+  }, [markAsChanged]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
-    setColumns(prev => prev.filter(col => col.id !== columnId));
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
+    setColumns(prev => {
+      const filtered = prev.filter(col => col.id !== columnId);
+      return filtered;
+    });
+    if (markAsChanged) {
+      markAsChanged();
     }
-  }, []);
+  }, [markAsChanged]);
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
-    setColumns(prev => prev.map(col => 
-      col.id === columnId ? { ...col, name: newName } : col
-    ));
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
+    setColumns(prev => {
+      const updated = prev.map(col => {
+        if (col.id === columnId) {
+          return { ...col, name: newName };
+        }
+        return col;
+      });
+      return updated;
+    });
+    if (markAsChanged) {
+      markAsChanged();
     }
-  }, []);
+  }, [markAsChanged]);
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
-    setColumns(prev => prev.map(col => 
-      col.id === columnId 
-        ? { ...col, isVisible: col.isVisible !== false ? false : true }
-        : col
-    ));
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
+    setColumns(prev => {
+      const updated = prev.map(col => {
+        if (col.id === columnId) {
+          const newVisibility = col.isVisible !== false ? false : true;
+          return { ...col, isVisible: newVisibility };
+        }
+        return col;
+      });
+      return updated;
+    });
+    if (markAsChanged) {
+      markAsChanged();
     }
-  }, []);
+  }, [markAsChanged]);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
-    setColumns(prev => prev.map(col => 
-      col.id === columnId ? { ...col, width: `${width}px` } : col
-    ));
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
+    setColumns(prev => {
+      const updated = prev.map(col => {
+        if (col.id === columnId) {
+          return { ...col, width: `${width}px` };
+        }
+        return col;
+      });
+      return updated;
+    });
+    if (markAsChanged) {
+      markAsChanged();
     }
-  }, []);
+  }, [markAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
-    if (!Array.isArray(layoutColumns)) {
-      return;
-    }
-
     setColumns(prevColumns => {
-      // Essential built-in columns that must always exist
+      // Define essential built-in columns that should always be preserved
       const essentialBuiltInColumns = [
         { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
@@ -119,50 +130,60 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
-      // Filter out invalid columns
+      // Filter out the "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
-        col.id && col.name && col.id !== 'element' && col.key !== 'element'
+        col.id !== 'element' && col.key !== 'element'
       );
 
-      // Build merged columns array
-      const mergedColumns: Column[] = [];
-      const layoutColumnIds = new Set(filteredLayoutColumns.map(col => col.id));
-
-      // Add layout columns first
-      filteredLayoutColumns.forEach(layoutCol => {
-        mergedColumns.push({
-          ...layoutCol,
-          name: layoutCol.name === 'Start Time' ? 'Start' : 
-                layoutCol.name === 'End Time' ? 'End' :
-                layoutCol.name === 'Elapsed Time' ? 'Elapsed' : layoutCol.name
-        });
+      // Update column names for backward compatibility with old saved layouts
+      const updatedLayoutColumns = filteredLayoutColumns.map(col => {
+        if (col.id === 'startTime' && col.name === 'Start Time') {
+          return { ...col, name: 'Start' };
+        }
+        if (col.id === 'endTime' && col.name === 'End Time') {
+          return { ...col, name: 'End' };
+        }
+        if (col.id === 'elapsedTime' && col.name === 'Elapsed Time') {
+          return { ...col, name: 'Elapsed' };
+        }
+        return col;
       });
 
-      // Add missing essential columns
+      // Merge updated layout columns with essential built-in columns
+      const mergedColumns: Column[] = [];
+      const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
+
+      // First, add all columns from updated layout (preserving order, custom columns, and widths)
+      updatedLayoutColumns.forEach(layoutCol => {
+        mergedColumns.push(layoutCol);
+      });
+
+      // Then, add any missing essential built-in columns
       essentialBuiltInColumns.forEach(essentialCol => {
         if (!layoutColumnIds.has(essentialCol.id)) {
           mergedColumns.push(essentialCol);
         }
       });
 
-      // Only update if actually different to prevent loops
+      // Only mark as changed if columns are actually different
       const isSame = prevColumns.length === mergedColumns.length && 
-        prevColumns.every((col, index) => {
-          const mergedCol = mergedColumns[index];
-          return mergedCol && 
-            col.id === mergedCol.id && 
-            col.name === mergedCol.name &&
-            col.isVisible === mergedCol.isVisible &&
-            col.width === mergedCol.width;
-        });
+        prevColumns.every((col, index) => 
+          col.id === mergedColumns[index]?.id && 
+          col.name === mergedColumns[index]?.name &&
+          col.isVisible === mergedColumns[index]?.isVisible &&
+          col.width === mergedColumns[index]?.width
+        );
       
       if (isSame) {
-        return prevColumns;
+        return prevColumns; // Don't update if columns are the same
       }
       
+      if (markAsChanged) {
+        markAsChanged();
+      }
       return mergedColumns;
     });
-  }, []);
+  }, [markAsChanged]);
 
   return {
     columns,

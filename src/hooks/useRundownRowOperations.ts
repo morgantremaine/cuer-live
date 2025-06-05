@@ -5,7 +5,7 @@ interface UseRundownRowOperationsProps {
   selectedRows: Set<string>;
   deleteMultipleRows: (ids: string[]) => void;
   clearSelection: () => void;
-  addRow: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
 }
@@ -26,13 +26,12 @@ export const useRundownRowOperations = ({
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  // Create functions that match the expected signatures for RundownGrid
-  const handleAddRow = useCallback(() => {
-    addRow(undefined, selectedRows);
-  }, [addRow, selectedRows]);
+  const handleAddRow = useCallback((selectedRowId?: string | null) => {
+    addRow(calculateEndTime, selectedRowId, selectedRows);
+  }, [addRow, calculateEndTime, selectedRows]);
 
-  const handleAddHeader = useCallback(() => {
-    addHeader(undefined, selectedRows);
+  const handleAddHeader = useCallback((selectedRowId?: string | null) => {
+    addHeader(selectedRowId, selectedRows);
   }, [addHeader, selectedRows]);
 
   return {

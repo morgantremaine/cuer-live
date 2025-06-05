@@ -4,7 +4,6 @@ import { useRundownStateCoordination } from './useRundownStateCoordination';
 import { useRundownClipboard } from './useRundownClipboard';
 import { useRundownClipboardOperations } from './useRundownClipboardOperations';
 import { useRundownRowOperations } from './useRundownRowOperations';
-import { getRowNumber } from '@/utils/sharedRundownUtils';
 
 export const useRundownGridState = () => {
   // Get coordinated state from all subsystems
@@ -27,8 +26,8 @@ export const useRundownGridState = () => {
     hasClipboardData
   });
 
-  // Row operations - create simple handlers for RundownGrid
-  const { handleDeleteSelectedRows, handleAddRow: simpleAddRow, handleAddHeader: simpleAddHeader } = useRundownRowOperations({
+  // Row operations - now passing calculateEndTime and using correct returned property names
+  const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
     selectedRows: interactions.selectedRows,
     deleteMultipleRows: coreState.deleteMultipleRows,
     clearSelection: interactions.clearSelection,
@@ -36,9 +35,6 @@ export const useRundownGridState = () => {
     addHeader: coreState.addHeader,
     calculateEndTime: coreState.calculateEndTime
   });
-
-  // Use the proper row numbering function from shared utilities
-  const getRowNumberForIndex = (index: number) => getRowNumber(index, coreState.items);
 
   // Memoize the complete state object
   return useMemo(() => ({
@@ -48,14 +44,9 @@ export const useRundownGridState = () => {
     ...interactions,
     // UI state
     ...uiState,
-    // Complex handlers for IndexContent (expects calculateEndTime param)
-    handleAddRow: interactions.handleAddRow,
-    handleAddHeader: interactions.handleAddHeader,
-    // Simple handlers for RundownGrid (expects no params)
-    onAddRow: simpleAddRow,
-    onAddHeader: simpleAddHeader,
-    // Override getRowNumber with proper implementation
-    getRowNumber: getRowNumberForIndex,
+    // Override with wrapped functions - use correct handler names
+    handleAddRow,
+    handleAddHeader,
     // Clipboard functionality
     clipboardItems,
     copyItems,
@@ -67,9 +58,8 @@ export const useRundownGridState = () => {
     coreState,
     interactions,
     uiState,
-    simpleAddRow,
-    simpleAddHeader,
-    getRowNumberForIndex,
+    handleAddRow,
+    handleAddHeader,
     clipboardItems,
     copyItems,
     hasClipboardData,

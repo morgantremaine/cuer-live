@@ -1,16 +1,17 @@
 
 import { useCallback } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { useNavigate } from 'react-router-dom';
+import { RundownItem } from './useRundownItems';
 
 interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
-  rundownId: string;
-  addRow: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
-  addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  rundownId?: string;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => void;
+  addHeader: (selectedRowId?: string | null) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
-  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[]) => void;
-  setRundownStartTime: (time: string) => void;
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[]) => void;
+  setRundownStartTime: (startTime: string) => void;
   setTimezone: (timezone: string) => void;
   markAsChanged: () => void;
 }
@@ -27,8 +28,10 @@ export const useIndexHandlers = ({
   setTimezone,
   markAsChanged
 }: UseIndexHandlersProps) => {
-  const handleRundownStartTimeChange = useCallback((time: string) => {
-    setRundownStartTime(time);
+  const navigate = useNavigate();
+
+  const handleRundownStartTimeChange = useCallback((startTime: string) => {
+    setRundownStartTime(startTime);
     markAsChanged();
   }, [setRundownStartTime, markAsChanged]);
 
@@ -38,30 +41,25 @@ export const useIndexHandlers = ({
   }, [setTimezone, markAsChanged]);
 
   const handleOpenTeleprompter = useCallback(() => {
-    const teleprompterUrl = `/teleprompter?rundownId=${rundownId}`;
-    window.open(teleprompterUrl, '_blank');
-  }, [rundownId]);
+    if (!rundownId) return;
+    navigate(`/teleprompter/${rundownId}`);
+  }, [navigate, rundownId]);
 
   const handleRowSelect = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
   }, [toggleRowSelection, items]);
 
-  // Simple handlers that match what RundownIndexContent expects
   const handleAddRow = useCallback(() => {
     const selectedRowsArray = Array.from(selectedRows);
     const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
-    const selectedRowsSet = selectedRows.size > 0 ? selectedRows : undefined;
-    addRow(selectedRowId, selectedRowsSet);
-    markAsChanged();
-  }, [addRow, selectedRows, markAsChanged]);
+    addRow(calculateEndTime, selectedRowId);
+  }, [addRow, calculateEndTime, selectedRows]);
 
   const handleAddHeader = useCallback(() => {
     const selectedRowsArray = Array.from(selectedRows);
     const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
-    const selectedRowsSet = selectedRows.size > 0 ? selectedRows : undefined;
-    addHeader(selectedRowId, selectedRowsSet);
-    markAsChanged();
-  }, [addHeader, selectedRows, markAsChanged]);
+    addHeader(selectedRowId);
+  }, [addHeader, selectedRows]);
 
   return {
     handleRundownStartTimeChange,

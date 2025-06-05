@@ -71,8 +71,8 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
           {items.map((item, index) => {
-            // Only show showcaller arrow for non-header items with current status
-            const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
+            // Only non-header items can be current segments
+            const isCurrentSegment = item.type !== 'header' && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
             
             return (
@@ -80,14 +80,15 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 key={item.id}
                 className={`
                   ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
+                  ${isCurrentSegment ? 'bg-red-50 border-l-4 border-red-500' : ''}
                   ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
                   print:break-inside-avoid
                 `}
                 style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
               >
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                  {isShowcallerCurrent && (
-                    <span className="text-green-600 mr-1">▶</span>
+                  {isCurrentSegment && (
+                    <span className="text-red-600 mr-1">▶</span>
                   )}
                   {isFloated && (
                     <span className="text-yellow-400 mr-1">🛟</span>

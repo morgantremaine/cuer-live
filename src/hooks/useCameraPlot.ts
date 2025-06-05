@@ -11,7 +11,9 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
     plots,
     setPlots,
     isInitialized,
-    reloadPlots
+    reloadPlots,
+    savedBlueprint,
+    saveBlueprint
   } = useCameraPlotData(rundownId, rundownTitle, readOnly);
 
   // Auto-save functionality
@@ -20,7 +22,9 @@ export const useCameraPlot = (rundownId: string, rundownTitle: string, readOnly 
     isInitialized,
     rundownId,
     rundownTitle,
-    readOnly
+    readOnly,
+    savedBlueprint,
+    saveBlueprint
   );
 
   // Scene operations

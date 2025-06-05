@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
+import { format } from 'date-fns';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -19,10 +20,11 @@ export const useSharedRundownState = () => {
     lastUpdated?: string;
   } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Update current time every second (for display purposes only)
+  // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -117,13 +119,32 @@ export const useSharedRundownState = () => {
     };
   }, [rundownId, loading]);
 
-  // Find the showcaller segment (the one marked as 'current' by the main rundown)
-  const currentSegmentId = rundownData?.items.find(item => item.status === 'current')?.id || null;
+  // Calculate current segment based on time
+  useEffect(() => {
+    if (!rundownData) return;
+
+    const now = currentTime;
+    const todayDateStr = format(now, 'yyyy-MM-dd');
+    
+    for (const item of rundownData.items) {
+      // Skip headers when determining current segment
+      if (item.type === 'header') continue;
+      
+      const startDateTime = new Date(`${todayDateStr}T${item.startTime}`);
+      const endDateTime = new Date(`${todayDateStr}T${item.endTime}`);
+      
+      if (now >= startDateTime && now <= endDateTime) {
+        setCurrentSegmentId(item.id);
+        return;
+      }
+    }
+    setCurrentSegmentId(null);
+  }, [currentTime, rundownData]);
 
   return {
     rundownData,
     currentTime,
-    currentSegmentId, // This will be null unless set by showcaller in main rundown
+    currentSegmentId,
     loading,
     error
   };

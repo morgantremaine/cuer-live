@@ -1,10 +1,9 @@
-
 import { useCallback } from 'react';
 import { useRundownHandlers } from '@/hooks/useRundownHandlers';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
@@ -58,12 +57,8 @@ export const useRundownGridHandlers = ({
     handleDeleteColumnWithCleanup
   } = useRundownHandlers({
     updateItem,
-    addRow: (selectedRowId?: string | null, selectedRows?: Set<string>) => {
-      addRow(selectedRowId, selectedRows);
-    },
-    addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => {
-      addHeader(selectedRowId, selectedRows);
-    },
+    addRow,
+    addHeader,
     deleteRow,
     toggleFloatRow,
     deleteMultipleRows,
@@ -77,16 +72,15 @@ export const useRundownGridHandlers = ({
     markAsChanged
   });
 
-  // Create wrapper functions that match expected signatures
-  const handleAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => {
-    addRow(selectedRowId, selectedRows);
+  const handleAddRow = useCallback((selectedRowId?: string | null) => {
+    addRow(calculateEndTime, selectedRowId, selectedRows);
     markAsChanged();
-  }, [addRow, markAsChanged]);
+  }, [addRow, calculateEndTime, selectedRows, markAsChanged]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
+  const handleAddHeader = useCallback((selectedRowId?: string | null) => {
     addHeader(selectedRowId, selectedRows);
     markAsChanged();
-  }, [addHeader, markAsChanged]);
+  }, [addHeader, selectedRows, markAsChanged]);
 
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));

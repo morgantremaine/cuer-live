@@ -17,7 +17,7 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Initialize storage
   const storage = useRundownStorage();
   
-  // Initialize state integration
+  // Initialize state integration with all required parameters
   const stateIntegration = useRundownStateIntegration(
     basicState.markAsChanged,
     basicState.rundownTitle,
@@ -42,7 +42,7 @@ export const useRundownDataManagement = (rundownId: string) => {
     }
   });
 
-  // Initialize with default items for new rundowns ONLY when storage is loaded and no items exist
+  // Initialize with default items for new rundowns - fixed logic
   useEffect(() => {
     // Only run for new rundowns (no rundownId)
     if (rundownId) return;
@@ -50,12 +50,13 @@ export const useRundownDataManagement = (rundownId: string) => {
     // Wait for storage to finish loading
     if (storage.loading) return;
     
-    // Only initialize if we haven't set any items yet
-    if (stateIntegration.items.length === 0) {
-      console.log('Initializing new rundown with default items');
-      stateIntegration.setItems(defaultRundownItems);
-    }
-  }, [rundownId, storage.loading, stateIntegration.items.length, stateIntegration.setItems]);
+    // Check if items are already initialized (prevent multiple initializations)
+    const currentItems = stateIntegration.items;
+    if (currentItems.length > 0) return;
+    
+    console.log('Initializing new rundown with default items');
+    stateIntegration.setItems(defaultRundownItems);
+  }, [rundownId, storage.loading]); // Remove items.length dependency
 
   return {
     // Basic state
@@ -64,7 +65,7 @@ export const useRundownDataManagement = (rundownId: string) => {
     // Storage operations
     ...storage,
     
-    // State management
+    // State management - ensure all functions are exposed
     ...stateIntegration,
     
     // Undo/Redo operations
