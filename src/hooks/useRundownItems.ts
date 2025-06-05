@@ -1,9 +1,11 @@
 
 import { useState, useCallback, useMemo } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { RundownItem } from '@/types/rundown';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 import { useRundownCalculations } from './useRundownCalculations';
+import { updateRundownItem } from './useRundownItems/itemUpdater';
+import { createNewRow, createNewHeader, calculateTimeUpdates } from './useRundownItems/rowCreator';
+import { calculateHeaderSegmentName } from './useRundownItems/headerUtils';
 
 export const useRundownItems = (markAsChanged?: () => void) => {
   const [items, setItems] = useState<RundownItem[]>(defaultRundownItems);
@@ -15,23 +17,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
     setItems(prevItems => {
       const newItems = prevItems.map(item => {
         if (item.id === id) {
-          // Handle nested custom field updates
-          if (field.startsWith('customFields.')) {
-            const customFieldKey = field.replace('customFields.', '');
-            
-            const updatedItem = {
-              ...item,
-              customFields: {
-                ...item.customFields,
-                [customFieldKey]: value
-              }
-            };
-            return updatedItem;
-          }
-          
-          // Handle regular field updates
-          const updatedItem = { ...item, [field]: value };
-          return updatedItem;
+          return updateRundownItem(item, field, value);
         }
         return item;
       });
@@ -45,25 +31,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const addRow = useCallback((calculateEndTime: (item: RundownItem, prevEndTime?: string) => string, insertAfterIndex?: number) => {
-    const newItem: RundownItem = {
-      id: uuidv4(),
-      type: 'regular',
-      rowNumber: '',
-      name: '',
-      segmentName: '',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      duration: '00:00',
-      startTime: '',
-      endTime: '',
-      elapsedTime: '',
-      notes: '',
-      color: '#ffffff',
-      isFloating: false,
-      customFields: {}
-    };
+    const newItem = createNewRow();
 
     setItems(prevItems => {
       const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
@@ -77,16 +45,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       
       newItems.splice(targetIndex, 0, newItem);
       
-      // Recalculate subsequent times
-      for (let i = targetIndex + 1; i < newItems.length; i++) {
-        if (!isHeaderItem(newItems[i])) {
-          const prevEndTime = newItems[i - 1]?.endTime || '00:00:00';
-          newItems[i].startTime = prevEndTime;
-          newItems[i].endTime = calculateEndTime(newItems[i], prevEndTime);
-        }
-      }
-      
-      return newItems;
+      return calculateTimeUpdates(newItems, targetIndex + 1, calculateEndTime);
     });
     
     if (markAsChanged) {
@@ -97,37 +56,8 @@ export const useRundownItems = (markAsChanged?: () => void) => {
   const addHeader = useCallback((insertAfterIndex?: number) => {
     setItems(prevItems => {
       const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
-      
-      // Calculate the correct segment name based on existing headers
-      let headerCount = 0;
-      for (let i = 0; i < targetIndex; i++) {
-        if (isHeaderItem(prevItems[i])) {
-          headerCount++;
-        }
-      }
-      
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const segmentName = letters[headerCount] || 'A';
-      
-      const newHeader: RundownItem = {
-        id: uuidv4(),
-        type: 'header',
-        rowNumber: '',
-        name: 'New Header',
-        segmentName: segmentName,
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        duration: '00:00:00',
-        startTime: '',
-        endTime: '',
-        elapsedTime: '',
-        notes: '',
-        color: '#3B82F6',
-        isFloating: false,
-        customFields: {}
-      };
+      const segmentName = calculateHeaderSegmentName(prevItems, targetIndex);
+      const newHeader = createNewHeader(segmentName);
 
       const newItems = [...prevItems];
       newItems.splice(targetIndex, 0, newHeader);
@@ -158,7 +88,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       const targetIndex = insertAfterIndex !== undefined ? insertAfterIndex + 1 : prevItems.length;
       const itemsWithIds = newItems.map(item => ({
         ...item,
-        id: uuidv4(),
+        id: item.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
         customFields: item.customFields || {}
       }));
       
@@ -167,13 +97,7 @@ export const useRundownItems = (markAsChanged?: () => void) => {
       
       // Recalculate times if calculateEndTime is provided
       if (calculateEndTime) {
-        for (let i = targetIndex; i < newItemsArray.length; i++) {
-          if (!isHeaderItem(newItemsArray[i])) {
-            const prevEndTime = i > 0 ? newItemsArray[i - 1]?.endTime || '00:00:00' : '00:00:00';
-            newItemsArray[i].startTime = prevEndTime;
-            newItemsArray[i].endTime = calculateEndTime(newItemsArray[i], prevEndTime);
-          }
-        }
+        return calculateTimeUpdates(newItemsArray, targetIndex, calculateEndTime);
       }
       
       return newItemsArray;
