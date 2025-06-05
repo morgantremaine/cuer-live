@@ -4,6 +4,7 @@ import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownBasicState } from './useRundownBasicState';
+import { useRundownDataLoader } from './useRundownDataLoader';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
@@ -25,6 +26,21 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setRundownTitleDirectly,
     basicState.setTimezoneDirectly
   );
+
+  // Use the data loader to handle loading rundowns from storage
+  useRundownDataLoader({
+    rundownId,
+    savedRundowns: storage.savedRundowns,
+    loading: storage.loading,
+    setRundownTitle: basicState.setRundownTitleDirectly,
+    setTimezone: basicState.setTimezoneDirectly,
+    setRundownStartTime: basicState.setRundownStartTimeDirectly,
+    handleLoadLayout: stateIntegration.handleLoadLayout,
+    setItems: stateIntegration.setItems, // Pass the setItems function
+    onRundownLoaded: (rundown) => {
+      console.log('Rundown loaded successfully:', rundown.title);
+    }
+  });
 
   // Initialize with default items if this is a new rundown
   useEffect(() => {

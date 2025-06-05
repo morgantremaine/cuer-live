@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -108,7 +107,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Fixed and simplified getRowNumber function
+  // Simplified and reliable getRowNumber function - force recalculation
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
@@ -153,7 +152,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     }
     
     return `${currentSegmentLetter}${itemCountInSegment}`;
-  }, [items]);
+  }, [items]); // This dependency ensures the function updates when items change
 
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prevItems => {
