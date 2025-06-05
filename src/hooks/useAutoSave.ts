@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
@@ -21,6 +21,7 @@ export const useAutoSave = (
   const isExecutingSaveRef = useRef(false);
   const lastSaveAttemptRef = useRef<number>(0);
   const instanceIdRef = useRef(++instanceCounter);
+  const isUnmountedRef = useRef(false);
 
   console.log(`🔧 useAutoSave instance #${instanceIdRef.current} created`);
 
@@ -34,8 +35,18 @@ export const useAutoSave = (
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
+  // Memoize dependencies to prevent constant re-renders
+  const stableUserId = useMemo(() => user?.id, [user?.id]);
+  const stableItems = useMemo(() => items, [items]);
+  const stableTitle = useMemo(() => rundownTitle, [rundownTitle]);
+  const stableColumns = useMemo(() => columns, [columns]);
+  const stableTimezone = useMemo(() => timezone, [timezone]);
+  const stableStartTime = useMemo(() => startTime, [startTime]);
+
   // Stable save function that captures current state when called
   const executeSave = useCallback(async () => {
+    if (isUnmountedRef.current) return;
+    
     const now = Date.now();
     
     // Prevent duplicate saves within 1 second
@@ -64,32 +75,38 @@ export const useAutoSave = (
       const currentUndoHistory = getUndoHistory ? getUndoHistory() : undefined;
       
       const success = await performSave(
-        items, 
-        rundownTitle, 
-        columns, 
-        timezone, 
-        startTime, 
+        stableItems, 
+        stableTitle, 
+        stableColumns, 
+        stableTimezone, 
+        stableStartTime, 
         currentUndoHistory
       );
       
-      if (success) {
+      if (success && !isUnmountedRef.current) {
         console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save successful`);
-        markAsSaved(items, rundownTitle, columns, timezone, startTime);
-      } else {
+        markAsSaved(stableItems, stableTitle, stableColumns, stableTimezone, stableStartTime);
+      } else if (!isUnmountedRef.current) {
         console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save failed`);
         setHasUnsavedChanges(true);
       }
     } catch (error) {
       console.error(`🔧 Auto-save instance #${instanceIdRef.current}: Save error:`, error);
-      setHasUnsavedChanges(true);
+      if (!isUnmountedRef.current) {
+        setHasUnsavedChanges(true);
+      }
     } finally {
-      setIsLoading(false);
-      isExecutingSaveRef.current = false;
+      if (!isUnmountedRef.current) {
+        setIsLoading(false);
+        isExecutingSaveRef.current = false;
+      }
     }
-  }, [user?.id, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, isSaving, items, rundownTitle, columns, timezone, startTime, getUndoHistory]);
+  }, [stableUserId, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, isSaving, stableItems, stableTitle, stableColumns, stableTimezone, stableStartTime, getUndoHistory, user]);
 
   // Main auto-save effect - triggers when changes are detected
   useEffect(() => {
+    if (isUnmountedRef.current) return;
+
     console.log(`🔧 Auto-save instance #${instanceIdRef.current} effect:`, {
       hasUnsavedChanges,
       isInitialized,
@@ -112,9 +129,11 @@ export const useAutoSave = (
     // Set new timeout
     console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Scheduling save in 3 seconds`);
     debounceTimeoutRef.current = setTimeout(() => {
-      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Timeout fired, executing save`);
-      debounceTimeoutRef.current = null;
-      executeSave();
+      if (!isUnmountedRef.current) {
+        console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Timeout fired, executing save`);
+        debounceTimeoutRef.current = null;
+        executeSave();
+      }
     }, 3000);
 
     // Cleanup function
@@ -125,12 +144,13 @@ export const useAutoSave = (
         debounceTimeoutRef.current = null;
       }
     };
-  }, [hasUnsavedChanges, isInitialized, user?.id, executeSave]);
+  }, [hasUnsavedChanges, isInitialized, stableUserId, executeSave, user]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Component unmounted`);
+      isUnmountedRef.current = true;
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }

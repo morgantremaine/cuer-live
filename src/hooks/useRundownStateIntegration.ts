@@ -43,13 +43,20 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save integration - now uses a function to get undo history
+  // Stable memoized values to prevent infinite re-renders
+  const stableItems = useMemo(() => items, [items]);
+  const stableColumns = useMemo(() => columns, [columns]);
+  const stableTitle = useMemo(() => rundownTitle, [rundownTitle]);
+  const stableTimezone = useMemo(() => timezone, [timezone]);
+  const stableStartTime = useMemo(() => rundownStartTime, [rundownStartTime]);
+
+  // Auto-save integration - now uses stable values
   const { hasUnsavedChanges, isSaving, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
-    items,
-    rundownTitle,
-    columns,
-    timezone,
-    rundownStartTime,
+    stableItems,
+    stableTitle,
+    stableColumns,
+    stableTimezone,
+    stableStartTime,
     getUndoHistory
   );
 
@@ -64,7 +71,7 @@ export const useRundownStateIntegration = (
   }, [originalAddHeader]);
 
   return {
-    items,
+    items: stableItems,
     setItems,
     updateItem,
     addRow,
@@ -76,7 +83,7 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    columns,
+    columns: stableColumns,
     visibleColumns,
     handleAddColumn,
     handleReorderColumns,
