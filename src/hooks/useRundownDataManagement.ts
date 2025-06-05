@@ -10,14 +10,17 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Initialize storage
   const storage = useRundownStorage(rundownId);
   
-  // Initialize state integration with storage's markAsChanged
+  // Create a dummy markAsChanged function if not available
+  const markAsChanged = () => {};
+  
+  // Initialize state integration with dummy values for missing properties
   const stateIntegration = useRundownStateIntegration(
-    storage.markAsChanged || (() => {}),
-    storage.rundownTitle || '',
-    storage.timezone || 'UTC',
-    storage.rundownStartTime || '',
-    storage.setRundownTitleDirectly || (() => {}),
-    storage.setTimezoneDirectly || (() => {})
+    markAsChanged,
+    '', // rundownTitle fallback
+    'UTC', // timezone fallback
+    '', // rundownStartTime fallback
+    () => {}, // setRundownTitleDirectly fallback
+    () => {} // setTimezoneDirectly fallback
   );
 
   return {

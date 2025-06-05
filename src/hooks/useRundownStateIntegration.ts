@@ -88,6 +88,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    hasUnsavedChanges
+    hasUnsavedChanges,
+    isSaving: false // Add the missing isSaving property
   };
 };

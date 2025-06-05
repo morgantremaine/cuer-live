@@ -108,18 +108,20 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  const getRowNumber = useCallback((itemId: string) => {
-    const item = items.find(item => item.id === itemId);
-    if (!item) return 0;
+  // Create wrapper function that matches expected signature (index: number) => string
+  const getRowNumber = useCallback((index: number) => {
+    if (index < 0 || index >= items.length) return '';
+    
+    const item = items[index];
+    if (!item || item.type === 'header') return '';
     
     let rowNumber = 1;
-    for (const currentItem of items) {
-      if (currentItem.id === itemId) break;
-      if (currentItem.type === 'regular') {
+    for (let i = 0; i < index; i++) {
+      if (items[i].type === 'regular') {
         rowNumber++;
       }
     }
-    return rowNumber;
+    return rowNumber.toString();
   }, [items]);
 
   const toggleFloatRow = useCallback((id: string) => {
@@ -157,12 +159,15 @@ export const useRundownItems = (markAsChanged: () => void) => {
     }
   }, [items]);
 
-  const calculateHeaderDuration = useCallback((headerId: string) => {
-    const headerIndex = items.findIndex(item => item.id === headerId);
-    if (headerIndex === -1) return '';
+  // Create wrapper function that matches expected signature (index: number) => string
+  const calculateHeaderDuration = useCallback((index: number) => {
+    if (index < 0 || index >= items.length) return '';
+    
+    const headerItem = items[index];
+    if (!headerItem || headerItem.type !== 'header') return '';
     
     let totalSeconds = 0;
-    for (let i = headerIndex + 1; i < items.length; i++) {
+    for (let i = index + 1; i < items.length; i++) {
       const item = items[i];
       if (item.type === 'header') break;
       if (item.type === 'regular' && item.duration) {
