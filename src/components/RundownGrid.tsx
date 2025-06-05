@@ -31,8 +31,8 @@ const RundownGrid = () => {
     handleDeleteSelectedRows,
     handlePasteRows,
     clearSelection,
-    handleAddRow,
-    handleAddHeader,
+    onAddRow,
+    onAddHeader,
     toggleFloatRow,
     deleteRow,
     getRowNumber,
@@ -53,8 +53,8 @@ const RundownGrid = () => {
     colorPickerSelect(id, color);
   };
 
-  console.log('RundownGrid: handleAddRow exists?', !!handleAddRow);
-  console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
+  console.log('RundownGrid: onAddRow exists?', !!onAddRow);
+  console.log('RundownGrid: onAddHeader exists?', !!onAddHeader);
 
   return (
     <RundownTable
@@ -90,8 +90,8 @@ const RundownGrid = () => {
       onDeleteSelectedRows={handleDeleteSelectedRows}
       onPasteRows={handlePasteRows}
       onClearSelection={clearSelection}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
+      onAddRow={onAddRow}
+      onAddHeader={onAddHeader}
     />
   );
 };

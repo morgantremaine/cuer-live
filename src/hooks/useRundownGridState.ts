@@ -44,9 +44,9 @@ export const useRundownGridState = () => {
     ...interactions,
     // UI state
     ...uiState,
-    // Override with correct handler signatures
-    handleAddRow: interactions.handleAddRow, // For IndexContent (expects calculateEndTime param)
-    handleAddHeader: interactions.handleAddHeader, // For IndexContent
+    // Complex handlers for IndexContent (expects calculateEndTime param)
+    handleAddRow: interactions.handleAddRow,
+    handleAddHeader: interactions.handleAddHeader,
     // Simple handlers for RundownGrid (expects no params)
     onAddRow: simpleAddRow,
     onAddHeader: simpleAddHeader,
