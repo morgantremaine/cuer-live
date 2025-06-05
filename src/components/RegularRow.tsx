@@ -7,7 +7,6 @@ import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { useTheme } from '@/hooks/useTheme';
 
 interface RegularRowProps {
   item: RundownItem;
@@ -61,11 +60,6 @@ const RegularRow = (props: RegularRowProps) => {
     isDragging
   } = props;
 
-  const { isDark } = useTheme();
-
-  // Debug theme detection
-  console.log('RegularRow theme debug:', { isDark, itemId: item.id });
-
   const { rowClass } = useRowStyling({
     isDragging,
     isDraggingMultiple,
@@ -98,28 +92,20 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  // Determine background color and text color for inline styles
+  // Only apply inline styles for custom colors (not floated, as that's handled by CSS)
   const isFloated = item.isFloating || item.isFloated;
   const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
   
-  let inlineBackgroundColor: string;
-  let inlineTextColor: string;
+  let customStyles: React.CSSProperties = {};
+  let textColor: string | undefined;
   
-  if (isFloated) {
-    // Floated items: red background, white text
-    inlineBackgroundColor = '#dc2626'; // red-600
-    inlineTextColor = '#ffffff';
-  } else if (hasCustomColor) {
-    // Custom color items: use inline styles
-    inlineBackgroundColor = item.color;
-    inlineTextColor = getContrastTextColor(item.color);
-  } else {
-    // Default rows: theme-based colors with correct values
-    inlineBackgroundColor = isDark ? '#394150' : '#ffffff';
-    inlineTextColor = isDark ? '#ffffff' : '#1f2937';
+  if (hasCustomColor && !isFloated) {
+    customStyles = {
+      backgroundColor: `${item.color} !important`,
+      color: `${getContrastTextColor(item.color)} !important`
+    };
+    textColor = getContrastTextColor(item.color);
   }
-
-  console.log('RegularRow colors:', { inlineBackgroundColor, inlineTextColor, isDark, isFloated, hasCustomColor });
 
   return (
     <RundownContextMenu
@@ -141,10 +127,7 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
-        style={{ 
-          backgroundColor: `${inlineBackgroundColor} !important`,
-          color: `${inlineTextColor} !important`
-        }}
+        style={customStyles}
         draggable
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
@@ -157,7 +140,7 @@ const RegularRow = (props: RegularRowProps) => {
           rowNumber={props.rowNumber}
           columns={props.columns}
           cellRefs={props.cellRefs}
-          textColor={inlineTextColor}
+          textColor={textColor}
           isCurrentlyPlaying={props.isCurrentlyPlaying}
           isDraggingMultiple={isDraggingMultiple}
           isSelected={isSelected}

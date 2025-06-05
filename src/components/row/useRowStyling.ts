@@ -27,14 +27,17 @@ export const useRowStyling = ({
       rowClass = 'opacity-50';
     }
   } else if (isHeader) {
-    // Headers: only border and font styling, NO background colors
-    rowClass = 'border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:opacity-90';
+    // Headers: proper theme colors with Tailwind classes
+    rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white border-l-4 border-gray-400 dark:border-gray-600 font-semibold hover:opacity-90';
   } else if (isFloating || isFloated) {
-    // Floating/floated items: only border, NO background colors
-    rowClass = 'border-l-4 border-red-600';
+    // Floating/floated items: red background with white text
+    rowClass = 'bg-red-600 text-white border-l-4 border-red-600';
+  } else if (color && color !== '#ffffff' && color !== '#FFFFFF' && color !== '') {
+    // Custom color items: use default classes, will be overridden by inline styles
+    rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:opacity-90';
   } else {
-    // Default rows: only hover effect, NO background colors
-    rowClass = 'hover:opacity-90';
+    // Default rows: proper theme colors with Tailwind classes
+    rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:opacity-90';
   }
 
   // Add selection ring if selected

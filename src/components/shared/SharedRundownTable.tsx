@@ -3,7 +3,6 @@ import React from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { useRundownCalculations } from '@/hooks/useRundownCalculations';
-import { useTheme } from '@/hooks/useTheme';
 import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface SharedRundownTableProps {
@@ -13,95 +12,64 @@ interface SharedRundownTableProps {
 }
 
 const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
-  const { isDark } = useTheme();
-  
-  // Debug theme detection
-  console.log('SharedRundownTable theme debug:', { isDark });
-  
   // Use centralized calculation hook
   const { calculateHeaderDuration } = useRundownCalculations(items);
 
-  // Define colors based on theme - correct values
-  const headerBackgroundColor = isDark ? '#212936' : '#e5e7eb';
-  const regularRowBackgroundColor = isDark ? '#394150' : '#ffffff';
-  const headerTextColor = isDark ? '#ffffff' : '#1f2937';
-  const regularTextColor = isDark ? '#ffffff' : '#1f2937';
-  const tableBackgroundColor = isDark ? '#111827' : '#ffffff';
-  const borderColor = isDark ? '#374151' : '#e5e7eb';
-
-  console.log('SharedRundownTable colors:', { 
-    headerBackgroundColor, 
-    regularRowBackgroundColor, 
-    headerTextColor, 
-    regularTextColor, 
-    isDark 
-  });
-
   return (
-    <div className="overflow-hidden border rounded-lg print:border-gray-400" style={{ borderColor, backgroundColor: tableBackgroundColor }}>
+    <div className="overflow-hidden border rounded-lg print:border-gray-400 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
       <table className="w-full">
         <thead>
-          <tr style={{ backgroundColor: headerBackgroundColor }}>
-            <th 
-              className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400"
-              style={{ color: isDark ? '#9ca3af' : '#6b7280', borderColor }}
-            >
+          <tr className="bg-gray-200 dark:bg-gray-700">
+            <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300">
               #
             </th>
             {visibleColumns.map((column) => (
               <th
                 key={column.id}
-                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400"
-                style={{ color: isDark ? '#9ca3af' : '#6b7280', borderColor }}
+                className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
               >
                 {column.name}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody style={{ borderColor }} className="print:divide-gray-400">
+        <tbody className="print:divide-gray-400 divide-y divide-gray-200 dark:divide-gray-700">
           {items.map((item, index) => {
             // Only non-header items can be current segments
             const isCurrentSegment = !isHeaderItem(item) && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
             const hasCustomColor = item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '';
             
-            // Determine row background color
-            let rowBackgroundColor: string;
-            let rowTextColor: string;
+            // Determine row classes and custom styles
+            let rowClass = '';
+            let customStyles: React.CSSProperties = {};
             
             if (isFloated) {
-              rowBackgroundColor = '#dc2626'; // red-600
-              rowTextColor = '#ffffff';
+              rowClass = 'bg-red-600 text-white';
             } else if (hasCustomColor) {
-              rowBackgroundColor = item.color;
-              rowTextColor = getContrastTextColor(item.color);
+              // Use inline styles for custom colors
+              customStyles = {
+                backgroundColor: `${item.color} !important`,
+                color: `${getContrastTextColor(item.color)} !important`
+              };
+              rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
             } else if (isHeaderItem(item)) {
-              rowBackgroundColor = headerBackgroundColor;
-              rowTextColor = headerTextColor;
+              rowClass = 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold';
             } else {
-              rowBackgroundColor = regularRowBackgroundColor;
-              rowTextColor = regularTextColor;
+              rowClass = 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white';
             }
             
             return (
               <tr
                 key={item.id}
                 className={`
-                  ${isHeaderItem(item) ? 'font-semibold' : ''}
+                  ${rowClass}
                   ${isCurrentSegment ? 'border-l-4 border-red-500' : ''}
                   print:break-inside-avoid
                 `}
-                style={{ 
-                  backgroundColor: `${rowBackgroundColor} !important`,
-                  color: `${rowTextColor} !important`,
-                  borderBottom: `1px solid ${borderColor}`
-                }}
+                style={customStyles}
               >
-                <td 
-                  className="px-3 py-2 whitespace-nowrap text-sm border-r print:border-gray-400"
-                  style={{ color: `${rowTextColor} !important`, borderColor }}
-                >
+                <td className="px-3 py-2 whitespace-nowrap text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700">
                   {isCurrentSegment && (
                     <span className="text-red-600 mr-1">▶</span>
                   )}
@@ -119,8 +87,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       return (
                         <td 
                           key={column.id} 
-                          className="px-3 py-2 text-sm border-r print:border-gray-400"
-                          style={{ color: `${rowTextColor} !important`, borderColor }}
+                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700"
                         >
                           <div className="break-words whitespace-pre-wrap">{value}</div>
                         </td>
@@ -129,8 +96,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       return (
                         <td 
                           key={column.id} 
-                          className="px-3 py-2 text-sm border-r print:border-gray-400"
-                          style={{ color: isDark ? '#9ca3af' : '#6b7280', borderColor }}
+                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
                         >
                           <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
                         </td>
@@ -139,8 +105,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                       return (
                         <td 
                           key={column.id} 
-                          className="px-3 py-2 text-sm border-r print:border-gray-400"
-                          style={{ color: `${rowTextColor} !important`, borderColor }}
+                          className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700"
                         >
                           <div className="break-words whitespace-pre-wrap">{getCellValue(item, column)}</div>
                         </td>
@@ -153,8 +118,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   return (
                     <td
                       key={column.id}
-                      className="px-3 py-2 text-sm border-r print:border-gray-400"
-                      style={{ color: `${rowTextColor} !important`, borderColor }}
+                      className="px-3 py-2 text-sm border-r print:border-gray-400 border-gray-200 dark:border-gray-700"
                     >
                       <div className="break-words whitespace-pre-wrap">{value}</div>
                     </td>
