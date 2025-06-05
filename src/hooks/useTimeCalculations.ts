@@ -20,14 +20,22 @@ export const useTimeCalculations = (
   };
 
   const calculateEndTime = (startTime: string, duration: string) => {
-    const startSeconds = timeToSeconds(startTime);
-    const durationSeconds = timeToSeconds(duration);
+    // Ensure both inputs are valid strings
+    const safeStartTime = startTime || '00:00:00';
+    const safeDuration = duration || '00:00:00';
+    
+    const startSeconds = timeToSeconds(safeStartTime);
+    const durationSeconds = timeToSeconds(safeDuration);
     return secondsToTime(startSeconds + durationSeconds);
   };
 
   const calculateElapsedTime = (startTime: string, rundownStartTime: string) => {
-    const startSeconds = timeToSeconds(startTime);
-    const rundownStartSeconds = timeToSeconds(rundownStartTime);
+    // Ensure both inputs are valid strings
+    const safeStartTime = startTime || '00:00:00';
+    const safeRundownStartTime = rundownStartTime || '00:00:00';
+    
+    const startSeconds = timeToSeconds(safeStartTime);
+    const rundownStartSeconds = timeToSeconds(safeRundownStartTime);
     const elapsedSeconds = startSeconds - rundownStartSeconds;
     return secondsToTime(Math.max(0, elapsedSeconds));
   };
@@ -54,65 +62,71 @@ export const useTimeCalculations = (
   useEffect(() => {
     if (!items.length || !rundownStartTime || isProcessingRef.current) return;
 
-    // Create a more efficient signature
-    const currentSignature = `${items.length}-${rundownStartTime}-${items.map(item => `${item.id}:${item.duration}`).join(',')}`;
+    // Create a more efficient signature - only include essential data
+    const currentSignature = `${items.length}-${rundownStartTime}-${items.map(item => `${item.id}:${item.duration || '00:00:00'}`).join(',')}`;
 
     // Skip if we've already processed this exact state
     if (lastProcessedRef.current === currentSignature) return;
 
     isProcessingRef.current = true;
-    let currentTime = rundownStartTime;
+    let currentTime = rundownStartTime || '00:00:00';
     const updates: Array<{ id: string; field: string; value: string }> = [];
 
-    items.forEach((item, index) => {
-      const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
+    try {
+      items.forEach((item, index) => {
+        const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
 
-      if (isHeaderItem(item)) {
-        const segmentName = calculateSegmentName(index);
-        
-        if (item.segmentName !== segmentName) {
-          updates.push({ id: item.id, field: 'segmentName', value: segmentName });
-        }
-        
-        if (item.startTime !== currentTime || item.endTime !== currentTime) {
-          updates.push({ id: item.id, field: 'startTime', value: currentTime });
-          updates.push({ id: item.id, field: 'endTime', value: currentTime });
-        }
-        
-        if (item.elapsedTime !== expectedElapsedTime) {
-          updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
-        }
-      } else {
-        const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:01:00');
-        
-        if (item.startTime !== currentTime) {
-          updates.push({ id: item.id, field: 'startTime', value: currentTime });
-        }
-        
-        if (item.endTime !== expectedEndTime) {
-          updates.push({ id: item.id, field: 'endTime', value: expectedEndTime });
-        }
+        if (isHeaderItem(item)) {
+          const segmentName = calculateSegmentName(index);
+          
+          if (item.segmentName !== segmentName) {
+            updates.push({ id: item.id, field: 'segmentName', value: segmentName });
+          }
+          
+          if (item.startTime !== currentTime || item.endTime !== currentTime) {
+            updates.push({ id: item.id, field: 'startTime', value: currentTime });
+            updates.push({ id: item.id, field: 'endTime', value: currentTime });
+          }
+          
+          if (item.elapsedTime !== expectedElapsedTime) {
+            updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
+          }
+        } else {
+          const itemDuration = item.duration || '00:00:00';
+          const expectedEndTime = calculateEndTime(currentTime, itemDuration);
+          
+          if (item.startTime !== currentTime) {
+            updates.push({ id: item.id, field: 'startTime', value: currentTime });
+          }
+          
+          if (item.endTime !== expectedEndTime) {
+            updates.push({ id: item.id, field: 'endTime', value: expectedEndTime });
+          }
 
-        if (item.elapsedTime !== expectedElapsedTime) {
-          updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
+          if (item.elapsedTime !== expectedElapsedTime) {
+            updates.push({ id: item.id, field: 'elapsedTime', value: expectedElapsedTime });
+          }
+          
+          if (!item.isFloating && !item.isFloated) {
+            currentTime = expectedEndTime;
+          }
         }
-        
-        if (!item.isFloating && !item.isFloated) {
-          currentTime = expectedEndTime;
-        }
-      }
-    });
-
-    // Batch updates for better performance
-    if (updates.length > 0) {
-      updates.forEach(update => {
-        updateItem(update.id, update.field, update.value);
       });
-    }
 
-    lastProcessedRef.current = currentSignature;
-    isProcessingRef.current = false;
-  }, [items.length, rundownStartTime, items.map(item => `${item.id}-${item.duration}`).join(',')]);
+      // Batch updates for better performance
+      if (updates.length > 0) {
+        updates.forEach(update => {
+          updateItem(update.id, update.field, update.value);
+        });
+      }
+
+      lastProcessedRef.current = currentSignature;
+    } catch (error) {
+      console.error('Error in time calculations:', error);
+    } finally {
+      isProcessingRef.current = false;
+    }
+  }, [items.length, rundownStartTime, items.map(item => `${item.id}-${item.duration || '00:00:00'}`).join(','), calculateSegmentName, calculateElapsedTime, calculateEndTime, updateItem]);
 
   return {
     calculateEndTime,

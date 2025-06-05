@@ -3,18 +3,20 @@ import { useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
-  const timeToSeconds = useCallback((timeStr: string) => {
-    if (!timeStr) return 0;
+  const timeToSeconds = useCallback((timeStr: string | undefined | null) => {
+    // Handle null, undefined, or empty string values
+    if (!timeStr || typeof timeStr !== 'string') return 0;
+    
     // Handle both MM:SS and HH:MM:SS formats
     const parts = timeStr.split(':').map(Number);
     if (parts.length === 2) {
       // MM:SS format (minutes:seconds)
       const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
+      return (isNaN(minutes) ? 0 : minutes) * 60 + (isNaN(seconds) ? 0 : seconds);
     } else if (parts.length === 3) {
       // HH:MM:SS format
       const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
+      return (isNaN(hours) ? 0 : hours) * 3600 + (isNaN(minutes) ? 0 : minutes) * 60 + (isNaN(seconds) ? 0 : seconds);
     }
     return 0;
   }, []);
@@ -65,7 +67,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
       if (item.isFloating || item.isFloated || isHeaderItem(item)) {
         return acc;
       }
-      return acc + timeToSeconds(item.duration || '00:00:00');
+      return acc + timeToSeconds(item.duration);
     }, 0);
   
     const hours = Math.floor(totalSeconds / 3600);
@@ -92,7 +94,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     while (i < items.length && !isHeaderItem(items[i])) {
       // Only count non-floated items
       if (!items[i].isFloating && !items[i].isFloated) {
-        totalSeconds += timeToSeconds(items[i].duration || '00:00:00');
+        totalSeconds += timeToSeconds(items[i].duration);
       }
       i++;
     }
