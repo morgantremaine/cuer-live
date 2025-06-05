@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem, SegmentItem, HeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 
-export type { RundownItem };
+export { RundownItem, SegmentItem, HeaderItem };
 
 export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
@@ -17,23 +17,17 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [markAsChanged]);
 
   const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, insertAfterIndex?: number) => {
-    const newItem: RundownItem = {
+    const newItem: SegmentItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular',
-      rowNumber: '',
-      name: '',
-      startTime: '00:00:00',
+      type: 'segment',
+      title: '',
       duration: '00:01:00',
+      startTime: '00:00:00',
       endTime: '00:01:00',
-      elapsedTime: '00:00:00',
-      talent: '',
       script: '',
-      gfx: '',
-      video: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      status: 'upcoming'
+      status: 'upcoming' as const,
+      isFloated: false,
+      color: ''
     };
 
     setItems(prev => {
@@ -51,23 +45,13 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
-    const newItem: RundownItem = {
+    const newItem: HeaderItem = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'header',
-      rowNumber: '',
-      name: 'New Header',
-      startTime: '00:00:00',
-      duration: '00:00:00',
-      endTime: '00:00:00',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      status: 'upcoming'
+      title: 'New Header',
+      status: 'upcoming' as const,
+      isFloated: false,
+      color: ''
     };
 
     setItems(prev => {
@@ -102,7 +86,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prev => 
       prev.map(item => 
-        item.id === id ? { ...item, isFloating: !item.isFloating } : item
+        item.id === id ? { ...item, isFloated: !item.isFloated } : item
       )
     );
     markAsChanged();
@@ -116,7 +100,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     let totalMinutes = 0;
     
     items.forEach(item => {
-      if (item.type === 'regular' && item.duration) {
+      if (item.type === 'segment' && item.duration) {
         const [hours, minutes, seconds] = item.duration.split(':').map(Number);
         totalMinutes += hours * 60 + minutes + seconds / 60;
       }
@@ -136,7 +120,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
       const item = items[i];
       if (item.type === 'header') break;
       
-      if (item.type === 'regular' && item.duration) {
+      if (item.type === 'segment' && item.duration) {
         const [hours, minutes, seconds] = item.duration.split(':').map(Number);
         totalMinutes += hours * 60 + minutes + seconds / 60;
       }

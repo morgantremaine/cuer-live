@@ -1,31 +1,25 @@
-
 import React from 'react';
-import { Clock, Calendar, MoreVertical, Play, Share2, Copy, Archive, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import RundownCard from './RundownCard';
-import { useToast } from '@/hooks/use-toast';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
-import { RundownItem } from '@/hooks/useRundownItems';
 
 interface DashboardRundownGridProps {
-  title?: string;
+  title: string;
   rundowns: SavedRundown[];
-  loading?: boolean;
+  loading: boolean;
   onCreateNew?: () => void;
-  onOpen?: (rundownId: string) => void;
-  onDelete?: (rundownId: string, title: string, e: React.MouseEvent) => void;
+  onOpen: (rundownId: string) => void;
+  onDelete: (rundownId: string, title: string, e: React.MouseEvent) => void;
   onArchive?: (rundownId: string, title: string, e: React.MouseEvent) => void;
-  onUnarchive?: (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => void;
-  onDuplicate?: (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => void;
+  onUnarchive?: (rundownId: string, title: string, items: any[], e: React.MouseEvent) => void;
+  onDuplicate: (rundownId: string, title: string, items: any[], e: React.MouseEvent) => void;
   isArchived?: boolean;
-  showEmptyState?: boolean;
+  showEmptyState: boolean;
 }
 
-const DashboardRundownGrid = ({ 
+const DashboardRundownGrid = ({
   title,
-  rundowns, 
-  loading = false,
+  rundowns,
+  loading,
   onCreateNew,
   onOpen,
   onDelete,
@@ -33,126 +27,67 @@ const DashboardRundownGrid = ({
   onUnarchive,
   onDuplicate,
   isArchived = false,
-  showEmptyState = true
+  showEmptyState
 }: DashboardRundownGridProps) => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { updateRundown } = useRundownStorage();
-
-  // Filter rundowns based on archived status
-  const filteredRundowns = rundowns.filter(rundown => 
-    isArchived ? rundown.archived === true : rundown.archived !== true
-  );
-
-  const handleOpenRundown = (id: string) => {
-    if (onOpen) {
-      onOpen(id);
-    } else {
-      navigate(`/rundown/${id}`);
-    }
-  };
-
-  const handleDeleteRundown = (id: string, title: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) {
-      onDelete(id, title, e);
-    }
-  };
-
-  const handleArchiveRundown = async (id: string, title: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onArchive) {
-      onArchive(id, title, e);
-    } else {
-      const rundown = rundowns.find(r => r.id === id);
-      if (rundown) {
-        try {
-          await updateRundown(
-            id,
-            title,
-            rundown.items,
-            false, // silent
-            true, // archived
-            rundown.columns,
-            rundown.timezone,
-            rundown.startTime || rundown.start_time
-          );
-          
-          toast({
-            title: 'Rundown archived',
-            description: `"${title}" has been moved to archives.`,
-          });
-        } catch (error) {
-          console.error('Error archiving rundown:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to archive rundown.',
-            variant: 'destructive',
-          });
-        }
-      }
-    }
-  };
-
-  const handleUnarchiveRundown = async (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onUnarchive) {
-      onUnarchive(id, title, items, e);
-    }
-  };
-
-  const handleDuplicateRundown = async (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDuplicate) {
-      onDuplicate(id, title, items, e);
-    }
-  };
-
-  if (filteredRundowns.length === 0 && showEmptyState) {
+  if (loading) {
     return (
       <div className="mb-8">
-        {title && (
-          <h2 className="text-xl font-semibold text-white mb-4">{title}</h2>
-        )}
-        <div className="text-center py-12">
-          <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            {isArchived ? 'No archived rundowns' : 'No rundowns yet'}
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            {isArchived 
-              ? 'Archived rundowns will appear here.' 
-              : 'Create your first rundown to get started with broadcast planning.'
-            }
-          </p>
+        <h2 className="text-xl font-semibold text-white mb-4">{title}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-gray-800 rounded-lg p-6 animate-pulse">
+              <div className="h-6 bg-gray-700 rounded mb-4"></div>
+              <div className="h-4 bg-gray-700 rounded mb-2"></div>
+              <div className="h-4 bg-gray-700 rounded"></div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
-  if (filteredRundowns.length === 0) {
+  if (rundowns.length === 0 && !showEmptyState) {
     return null;
   }
 
   return (
     <div className="mb-8">
-      {title && (
-        <h2 className="text-xl font-semibold text-white mb-4">{title}</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">{title}</h2>
+      
+      {rundowns.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">No rundowns yet</h3>
+          <p className="text-gray-400 mb-6">Get started by creating your first rundown</p>
+          {onCreateNew && (
+            <button
+              onClick={onCreateNew}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Create New Rundown
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rundowns.map((rundown) => (
+            <RundownCard
+              key={rundown.id}
+              rundown={rundown}
+              onOpen={onOpen}
+              onDelete={onDelete}
+              onArchive={onArchive}
+              onUnarchive={onUnarchive}
+              onDuplicate={onDuplicate}
+              isArchived={isArchived}
+            />
+          ))}
+        </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRundowns.map((rundown) => (
-          <RundownCard
-            key={rundown.id}
-            rundown={rundown}
-            onOpen={handleOpenRundown}
-            onDelete={handleDeleteRundown}
-            onArchive={isArchived ? undefined : handleArchiveRundown}
-            onUnarchive={isArchived ? handleUnarchiveRundown : undefined}
-            onDuplicate={handleDuplicateRundown}
-            isArchived={isArchived}
-          />
-        ))}
-      </div>
     </div>
   );
 };

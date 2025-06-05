@@ -4,26 +4,18 @@ import { useParams } from 'react-router-dom';
 import { useRundownItems } from '@/hooks/useRundownItems';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
-import { useChangeTracking } from '@/hooks/useChangeTracking';
-import { useAutoSave } from '@/hooks/useAutoSave';
 
-export const useRundownDataManagement = (rundownTitle: string, timezone: string, rundownStartTime: string, setRundownTitle: (title: string) => void, setTimezone: (timezone: string) => void, setRundownStartTime: (startTime: string) => void) => {
+export const useRundownDataManagement = (rundownTitle: string, timezone: string) => {
   const params = useParams<{ id: string }>();
   const rawId = params.id;
   const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
   
   const { savedRundowns, loading } = useRundownStorage();
   const initializationRef = useRef<{ [key: string]: boolean }>({});
-  const preventDuplicateInit = useRef(false);
 
-  // Change tracking with proper integration
-  const { hasUnsavedChanges, markAsSaved, markAsChanged, isInitialized, setIsLoading } = useChangeTracking(
-    [], // Will be updated with actual items below
-    rundownTitle,
-    [], // Will be updated with actual columns below
-    timezone,
-    rundownStartTime
-  );
+  const markAsChanged = useCallback(() => {
+    console.log('Changes marked - triggering auto-save');
+  }, []);
 
   const {
     items,
@@ -38,7 +30,7 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  } = useRundownItems();
 
   const {
     columns,
@@ -47,34 +39,18 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
     handleReorderColumns,
     handleDeleteColumn,
     handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleRenameColumn,
-    handleUpdateColumnWidth
+    handleLoadLayout
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save functionality with debounce to prevent duplicate saves
-  const { isSaving } = useAutoSave({
-    rundownId,
-    rundownTitle,
-    items,
-    columns,
-    timezone,
-    rundownStartTime,
-    hasUnsavedChanges,
-    markAsSaved,
-    setIsLoading
-  });
-
   // Initialize once per rundownId to prevent loops
-  const initializeRundown = useCallback(() => {
+  useEffect(() => {
     const initKey = rundownId || 'new';
     
-    if (initializationRef.current[initKey] || loading || preventDuplicateInit.current) {
+    if (initializationRef.current[initKey] || loading) {
       return;
     }
 
     console.log('Initializing rundown data management for:', initKey);
-    preventDuplicateInit.current = true;
     initializationRef.current[initKey] = true;
 
     // For existing rundowns, load the data
@@ -82,17 +58,6 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
       const existingRundown = savedRundowns.find(r => r.id === rundownId);
       if (existingRundown) {
         console.log('Loading existing rundown data:', rundownId);
-        
-        // Set rundown metadata
-        setRundownTitle(existingRundown.title);
-        if (existingRundown.timezone) {
-          setTimezone(existingRundown.timezone);
-        }
-        if (existingRundown.startTime || existingRundown.start_time) {
-          setRundownStartTime(existingRundown.startTime || existingRundown.start_time || '09:00:00');
-        }
-        
-        // Load items and columns
         if (existingRundown.items) {
           setItems(existingRundown.items);
         }
@@ -100,28 +65,8 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
           handleLoadLayout(existingRundown.columns);
         }
       }
-    } else if (!rundownId && items.length === 0) {
-      // Initialize new rundown with default data only if no items exist
-      console.log('Initializing new rundown with defaults');
-      setRundownTitle('Live Broadcast Rundown');
-      setTimezone('America/New_York');
-      setRundownStartTime('09:00:00');
-      
-      // Load default items
-      import('@/data/defaultRundownItems').then(({ defaultRundownItems }) => {
-        setItems(defaultRundownItems);
-      });
     }
-
-    // Reset prevention flag after a delay
-    setTimeout(() => {
-      preventDuplicateInit.current = false;
-    }, 1000);
-  }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout, setRundownTitle, setTimezone, setRundownStartTime, items.length]);
-
-  useEffect(() => {
-    initializeRundown();
-  }, [initializeRundown]);
+  }, [rundownId, savedRundowns.length, loading, setItems, handleLoadLayout]);
 
   // Clear initialization when rundown ID changes
   useEffect(() => {
@@ -151,15 +96,10 @@ export const useRundownDataManagement = (rundownTitle: string, timezone: string,
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
-    handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth,
     savedRundowns,
     loading,
     markAsChanged,
-    hasUnsavedChanges,
-    isSaving,
-    markAsSaved
   };
 };

@@ -1,92 +1,124 @@
 
-import { useState, useCallback } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { useState } from 'react';
+import { RundownItem } from './useRundownItems';
 
 export const useDragAndDrop = (
-  items: RundownItem[],
-  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
+  items: RundownItem[], 
+  setItems: (items: RundownItem[]) => void,
   selectedRows: Set<string>
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
-  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+  const renumberItems = (items: RundownItem[]) => {
+    let headerIndex = 0;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    return items.map(item => {
+      if (item.type === 'header') {
+        const newHeaderLetter = letters[headerIndex] || 'A';
+        headerIndex++;
+        return {
+          ...item,
+          rowNumber: newHeaderLetter,
+          segmentName: newHeaderLetter
+        };
+      } else {
+        return item;
+      }
+    });
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
     const item = items[index];
-    const isSelected = selectedRows.has(item.id);
+    const isMultipleSelection = selectedRows.size > 1 && selectedRows.has(item.id);
     
     setDraggedItemIndex(index);
-    setIsDraggingMultiple(isSelected && selectedRows.size > 1);
-    
+    setIsDraggingMultiple(isMultipleSelection);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
-  }, [items, selectedRows]);
+    
+    // Store drag data
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      draggedIndex: index,
+      isMultiple: isMultipleSelection,
+      selectedIds: Array.from(selectedRows)
+    }));
+  };
 
-  const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
+  const handleDragOver = (e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
     if (targetIndex !== undefined) {
       setDropTargetIndex(targetIndex);
     }
-  }, []);
+  };
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear drop target if we're leaving the table area
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setDropTargetIndex(null);
     }
-  }, []);
+  };
 
-  const handleDrop = useCallback((e: React.DragEvent, targetIndex: number) => {
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     
-    if (draggedItemIndex === null) return;
-
-    const sourceIndex = draggedItemIndex;
-    
-    if (sourceIndex === targetIndex) return;
-
-    setItems(prevItems => {
-      const newItems = [...prevItems];
-      
-      if (isDraggingMultiple) {
-        // Get all selected items and their indices
-        const selectedItems = newItems.filter(item => selectedRows.has(item.id));
-        const selectedIndices = selectedItems.map(item => 
-          newItems.findIndex(i => i.id === item.id)
-        ).sort((a, b) => a - b);
-        
-        // Remove selected items (in reverse order to maintain indices)
-        selectedIndices.reverse().forEach(index => {
-          newItems.splice(index, 1);
-        });
-        
-        // Calculate new insertion point
-        let insertIndex = targetIndex;
-        selectedIndices.forEach(originalIndex => {
-          if (originalIndex < targetIndex) {
-            insertIndex--;
-          }
-        });
-        
-        // Insert all selected items at the new position
-        selectedItems.forEach((item, i) => {
-          newItems.splice(insertIndex + i, 0, item);
-        });
-      } else {
-        // Single item drag
-        const [draggedItem] = newItems.splice(sourceIndex, 1);
-        const insertIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
-        newItems.splice(insertIndex, 0, draggedItem);
-      }
-      
-      return newItems;
-    });
-
-    setDraggedItemIndex(null);
     setDropTargetIndex(null);
+    
+    if (draggedItemIndex === null) {
+      setDraggedItemIndex(null);
+      setIsDraggingMultiple(false);
+      return;
+    }
+
+    const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const { isMultiple, selectedIds } = dragData;
+
+    let newItems: RundownItem[];
+    let hasHeaderMoved = false;
+
+    if (isMultiple && selectedIds.length > 1) {
+      // Handle multiple item drag
+      const selectedItems = items.filter(item => selectedIds.includes(item.id));
+      const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));
+      
+      // Check if any selected items are headers
+      hasHeaderMoved = selectedItems.some(item => item.type === 'header');
+      
+      // Insert selected items at the drop position
+      newItems = [...nonSelectedItems];
+      newItems.splice(dropIndex, 0, ...selectedItems);
+    } else {
+      // Handle single item drag (existing logic)
+      if (draggedItemIndex === dropIndex) {
+        setDraggedItemIndex(null);
+        setIsDraggingMultiple(false);
+        return;
+      }
+
+      const draggedItem = items[draggedItemIndex];
+      hasHeaderMoved = draggedItem.type === 'header';
+
+      newItems = [...items];
+      newItems.splice(draggedItemIndex, 1);
+      newItems.splice(dropIndex, 0, draggedItem);
+    }
+    
+    // If any headers were moved, renumber all headers
+    if (hasHeaderMoved) {
+      newItems = renumberItems(newItems);
+    }
+    
+    setItems(newItems);
+    setDraggedItemIndex(null);
     setIsDraggingMultiple(false);
-  }, [draggedItemIndex, isDraggingMultiple, selectedRows, setItems]);
+  };
 
   return {
     draggedItemIndex,

@@ -1,105 +1,70 @@
 
 import { useMemo } from 'react';
-import { useRundownCore } from './useRundownCore';
-import { useRundownUI } from './useRundownUI';
-import { useRundownOperations } from './useRundownOperations';
+import { useRundownStateCoordination } from './useRundownStateCoordination';
+import { useRundownClipboard } from './useRundownClipboard';
+import { useRundownClipboardOperations } from './useRundownClipboardOperations';
+import { useRundownRowOperations } from './useRundownRowOperations';
 
 export const useRundownGridState = () => {
-  // Get core state and data
-  const coreState = useRundownCore();
+  // Get coordinated state from all subsystems
+  const { coreState, interactions, uiState } = useRundownStateCoordination();
   
-  // Get UI interactions
-  const uiState = useRundownUI(
-    coreState.items,
-    coreState.setItems,
-    coreState.columns,
-    coreState.handleUpdateColumnWidth
-  );
+  // Clipboard management
+  const { clipboardItems, copyItems, hasClipboardData } = useRundownClipboard();
   
-  // Get operations
-  const operations = useRundownOperations(
-    coreState.items,
-    coreState.setItems,
-    coreState.updateItem,
-    coreState.addRow,
-    coreState.addHeader,
-    coreState.deleteMultipleRows,
-    coreState.addMultipleRows,
-    coreState.toggleFloatRow,
-    coreState.rundownStartTime,
-    uiState.selectedRows,
-    uiState.clearSelection,
-    uiState.clipboardItems,
-    uiState.copyItems,
-    uiState.hasClipboardData,
-    coreState.markAsChanged,
-    coreState.handleUndo,
-    coreState.canUndo,
-    coreState.lastAction
-  );
+  // Clipboard operations that integrate with rundown state
+  const { handleCopySelectedRows, handlePasteRows } = useRundownClipboardOperations({
+    items: coreState.items,
+    setItems: coreState.setItems,
+    selectedRows: interactions.selectedRows,
+    clearSelection: interactions.clearSelection,
+    addMultipleRows: coreState.addMultipleRows,
+    calculateEndTime: coreState.calculateEndTime,
+    markAsChanged: coreState.markAsChanged,
+    clipboardItems,
+    copyItems,
+    hasClipboardData
+  });
 
-  // Row selection handler
-  const handleRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    uiState.toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, coreState.items);
-  };
+  // Row operations - now passing calculateEndTime and using correct returned property names
+  const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
+    selectedRows: interactions.selectedRows,
+    deleteMultipleRows: coreState.deleteMultipleRows,
+    clearSelection: interactions.clearSelection,
+    addRow: coreState.addRow,
+    addHeader: coreState.addHeader,
+    calculateEndTime: coreState.calculateEndTime
+  });
 
-  // Update item handler
-  const handleUpdateItem = (id: string, field: string, value: string) => {
-    coreState.updateItem(id, field, value);
-  };
-
-  // Cell navigation handlers (simplified)
-  const handleCellClick = () => {
-    // Simple implementation
-  };
-
-  const handleKeyDown = () => {
-    // Simple implementation
-  };
-
+  // Memoize the complete state object
   return useMemo(() => ({
     // Core state
     ...coreState,
-    
+    // Interaction handlers
+    ...interactions,
     // UI state
     ...uiState,
-    
-    // Operations
-    ...operations,
-    
-    // Combined handlers
-    handleRowSelection,
-    handleUpdateItem,
-    handleCellClick,
-    handleKeyDown,
-    
-    // Direct operation handlers (no parameter conversion needed)
-    onUpdateItem: handleUpdateItem,
-    onRowSelect: handleRowSelection,
-    onAddRow: operations.handleAddRow,
-    onAddHeader: operations.handleAddHeader,
-    onDeleteSelectedRows: operations.handleDeleteSelectedRows,
-    onCopySelectedRows: operations.handleCopySelectedRows,
-    onPasteRows: operations.handlePasteRows,
-    onToggleColorPicker: uiState.handleToggleColorPicker,
-    onColorSelect: operations.handleColorSelect,
-    onToggleFloat: operations.handleToggleFloat,
-    onDragStart: uiState.handleDragStart,
-    onDragOver: uiState.handleDragOver,
-    onDragLeave: uiState.handleDragLeave,
-    onDrop: uiState.handleDrop,
-    onClearSelection: uiState.clearSelection,
-    
-    // Property mappings
-    selectColor: operations.handleColorSelect,
-    handleUndo: operations.handleUndo,
-    canUndo: operations.canUndo,
-    lastAction: operations.lastAction
+    // Override with wrapped functions - use correct handler names
+    handleAddRow,
+    handleAddHeader,
+    // Clipboard functionality
+    clipboardItems,
+    copyItems,
+    hasClipboardData,
+    handleCopySelectedRows,
+    handlePasteRows,
+    handleDeleteSelectedRows
   }), [
     coreState,
+    interactions,
     uiState,
-    operations,
-    handleRowSelection,
-    handleUpdateItem
+    handleAddRow,
+    handleAddHeader,
+    clipboardItems,
+    copyItems,
+    hasClipboardData,
+    handleCopySelectedRows,
+    handlePasteRows,
+    handleDeleteSelectedRows
   ]);
 };
