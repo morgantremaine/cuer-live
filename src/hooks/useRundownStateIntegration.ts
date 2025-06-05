@@ -1,3 +1,4 @@
+
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
@@ -43,7 +44,7 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  // Auto-save integration - use actual primitive values for dependencies
+  // Auto-save integration - simplified with stable dependencies
   const autoSave = useAutoSave(
     stableItems,
     rundownTitle,

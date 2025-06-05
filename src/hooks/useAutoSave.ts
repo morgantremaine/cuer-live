@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
@@ -20,37 +19,33 @@ export const useAutoSave = (
 ) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isExecutingSaveRef = useRef(false);
-  const lastSaveAttemptRef = useRef<number>(0);
   const instanceIdRef = useRef<number>();
   const isUnmountedRef = useRef(false);
-  const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
-  const userRef = useRef(user);
   
-  // Update refs immediately when values change
-  hasUnsavedChangesRef.current = hasUnsavedChanges;
-  userRef.current = user;
-  
-  // Store latest values in refs to avoid dependency issues
-  const latestValuesRef = useRef({
+  // Store all current values in refs to avoid dependency issues
+  const currentValuesRef = useRef({
     items,
     rundownTitle,
+    hasUnsavedChanges,
+    markAsSaved,
     columns,
     timezone,
     startTime,
     getUndoHistory,
-    markAsSaved
+    user
   });
 
-  // Update refs whenever values change
-  latestValuesRef.current = {
+  // Update refs on every render to keep them current
+  currentValuesRef.current = {
     items,
     rundownTitle,
+    hasUnsavedChanges,
+    markAsSaved,
     columns,
     timezone,
     startTime,
     getUndoHistory,
-    markAsSaved
+    user
   };
 
   // Initialize instance ID only once
@@ -62,90 +57,67 @@ export const useAutoSave = (
 
   const { isSaving, performSave } = useAutoSaveOperations();
 
-  // Stable save function that uses refs to get current values
+  // Completely stable save function that uses refs
   const executeSave = useCallback(async () => {
     if (isUnmountedRef.current) {
       console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Skipping save - component unmounted`);
       return;
     }
     
-    const now = Date.now();
+    const current = currentValuesRef.current;
     
-    // Prevent duplicate saves within 1 second
-    if (now - lastSaveAttemptRef.current < 1000) {
-      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save throttled`);
-      return;
-    }
-    
-    if (!userRef.current || isSaving || isExecutingSaveRef.current) {
+    if (!current.user || isSaving) {
       console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save blocked`, {
-        hasUser: !!userRef.current,
-        isSaving,
-        isExecuting: isExecutingSaveRef.current
+        hasUser: !!current.user,
+        isSaving
       });
       return;
     }
 
-    lastSaveAttemptRef.current = now;
-    isExecutingSaveRef.current = true;
-
     console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Starting save operation`);
 
     try {
-      const {
-        items: currentItems,
-        rundownTitle: currentTitle,
-        columns: currentColumns,
-        timezone: currentTimezone,
-        startTime: currentStartTime,
-        getUndoHistory: currentGetUndoHistory,
-        markAsSaved: currentMarkAsSaved
-      } = latestValuesRef.current;
-
-      const currentUndoHistory = currentGetUndoHistory ? currentGetUndoHistory() : undefined;
+      const currentUndoHistory = current.getUndoHistory ? current.getUndoHistory() : undefined;
       
       const success = await performSave(
-        currentItems, 
-        currentTitle, 
-        currentColumns, 
-        currentTimezone, 
-        currentStartTime, 
+        current.items, 
+        current.rundownTitle, 
+        current.columns, 
+        current.timezone, 
+        current.startTime, 
         currentUndoHistory
       );
       
       if (success && !isUnmountedRef.current) {
         console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save successful`);
-        currentMarkAsSaved(currentItems, currentTitle, currentColumns, currentTimezone, currentStartTime);
+        current.markAsSaved(current.items, current.rundownTitle, current.columns, current.timezone, current.startTime);
       } else if (!isUnmountedRef.current) {
         console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Save failed`);
       }
     } catch (error) {
       console.error(`🔧 Auto-save instance #${instanceIdRef.current}: Save error:`, error);
-    } finally {
-      if (!isUnmountedRef.current) {
-        isExecutingSaveRef.current = false;
-      }
     }
-  }, [performSave, isSaving]);
+  }, [performSave, isSaving]); // Only depend on stable values from useAutoSaveOperations
 
-  // Main auto-save effect - ONLY depends on stable values
+  // Main auto-save effect - ONLY depends on primitive values
   useEffect(() => {
     if (isUnmountedRef.current) return;
 
     console.log(`🔧 Auto-save instance #${instanceIdRef.current} effect:`, {
-      hasUnsavedChanges: hasUnsavedChangesRef.current,
-      hasUser: !!userRef.current,
+      hasUnsavedChanges,
+      hasUser: !!user,
       currentTimeout: !!debounceTimeoutRef.current
     });
 
-    if (!hasUnsavedChangesRef.current || !userRef.current) {
+    // Only proceed if we have unsaved changes and a user
+    if (!hasUnsavedChanges || !user) {
       console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Early return - conditions not met`);
       return;
     }
 
     // Clear any existing timeout
     if (debounceTimeoutRef.current) {
-      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Effect cleanup - clearing timeout`);
+      console.log(`🔧 Auto-save instance #${instanceIdRef.current}: Clearing existing timeout`);
       clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = null;
     }
@@ -168,7 +140,7 @@ export const useAutoSave = (
         debounceTimeoutRef.current = null;
       }
     };
-  }, [hasUnsavedChanges, user, executeSave]); // Only depend on the actual primitive values that matter
+  }, [hasUnsavedChanges, user?.id]); // Only depend on primitive values that actually matter
 
   // Cleanup on unmount
   useEffect(() => {
@@ -184,6 +156,6 @@ export const useAutoSave = (
   }, []);
 
   return {
-    isSaving: isSaving || isExecutingSaveRef.current
+    isSaving
   };
 };
