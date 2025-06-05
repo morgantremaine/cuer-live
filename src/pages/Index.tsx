@@ -25,22 +25,25 @@ const Index = () => {
       return;
     }
 
-    // If we're on "/rundown" without an ID, and we have saved rundowns, redirect to the first one
-    if (!params.id && window.location.pathname === '/rundown' && !loading && savedRundowns.length > 0) {
-      console.log('Index page: On /rundown without ID, redirecting to first rundown');
-      navigate(`/rundown/${savedRundowns[0].id}`);
+    // If we're on "/rundown" without an ID, allow new rundown creation
+    // Don't redirect - this is the intended behavior for creating new rundowns
+    if (!params.id && window.location.pathname === '/rundown') {
+      console.log('Index page: On /rundown without ID, allowing new rundown creation');
       return;
     }
+  }, [params.id, navigate]);
 
-    // If we're on "/rundown" without an ID and no saved rundowns, redirect to dashboard
-    if (!params.id && window.location.pathname === '/rundown' && !loading && savedRundowns.length === 0) {
-      console.log('Index page: On /rundown with no saved rundowns, redirecting to dashboard');
-      navigate('/dashboard');
-      return;
-    }
-  }, [params.id, navigate, savedRundowns, loading]);
+  // If we're on "/rundown" without an ID, render the content for new rundown creation
+  if (!params.id && window.location.pathname === '/rundown') {
+    console.log('Index page: Rendering new rundown creation interface');
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <RundownIndexContent />
+      </div>
+    );
+  }
 
-  // Only render RundownIndexContent if we have a valid rundown ID
+  // Only show loading state if we have a rundown ID but are still loading
   if (!params.id) {
     console.log('Index page: No rundown ID, showing loading state');
     return (
