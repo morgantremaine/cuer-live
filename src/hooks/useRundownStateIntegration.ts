@@ -40,22 +40,12 @@ export const useRundownStateIntegration = (
 
     // Handle custom fields vs standard fields
     if (field.startsWith('custom_')) {
-      // For custom columns, store the value in customFields using the column ID
-      const currentCustomFields = item.customFields || {};
-      const updatedCustomFields = {
-        ...currentCustomFields,
-        [field]: value
-      };
-      originalUpdateItem(id, 'customFields', updatedCustomFields);
+      // For custom columns, we need to update the customFields object
+      // Use the nested field syntax that originalUpdateItem already supports
+      originalUpdateItem(id, `customFields.${field}`, value);
     } else if (field.startsWith('customFields.')) {
-      // Handle nested custom field updates
-      const customFieldKey = field.replace('customFields.', '');
-      const currentCustomFields = item.customFields || {};
-      const updatedCustomFields = {
-        ...currentCustomFields,
-        [customFieldKey]: value
-      };
-      originalUpdateItem(id, 'customFields', updatedCustomFields);
+      // Handle nested custom field updates - pass through as-is
+      originalUpdateItem(id, field, value);
     } else {
       // Handle standard fields normally
       originalUpdateItem(id, field, value);
