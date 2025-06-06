@@ -2,46 +2,67 @@
 import { supabase } from '@/lib/supabase'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
-import { createUpdatePayload } from './dataMapper'
 
 export const loadRundownsFromDatabase = async (userId: string) => {
+  console.log('Loading rundowns from database for user:', userId)
+  
+  // Load user's own rundowns AND team rundowns
   const { data, error } = await supabase
     .from('rundowns')
-    .select('*')
-    .eq('user_id', userId)
+    .select(`
+      *,
+      profiles!rundowns_user_id_fkey (
+        email,
+        full_name
+      )
+    `)
+    .eq('archived', false)
     .order('updated_at', { ascending: false })
 
-  return { data, error }
+  if (error) {
+    console.error('Database error loading rundowns:', error)
+    return { data: null, error }
+  }
+
+  console.log('Loaded rundowns from database:', data?.length || 0)
+  return { data, error: null }
 }
 
 export const saveRundownToDatabase = async (
-  userId: string,
-  title: string,
-  items: RundownItem[],
-  columns?: Column[],
-  timezone?: string,
-  startTime?: string,
+  userId: string, 
+  title: string, 
+  items: RundownItem[], 
+  columns?: Column[], 
+  timezone?: string, 
+  startTime?: string, 
   icon?: string
 ) => {
-  console.log('Saving new rundown to database:', { title, itemsCount: items.length, columnsCount: columns?.length || 0, timezone, startTime, userId })
+  console.log('Saving rundown to database:', title)
+  
+  const rundownData = {
+    user_id: userId,
+    title,
+    items,
+    columns,
+    timezone,
+    start_time: startTime,
+    icon,
+    updated_at: new Date().toISOString()
+  }
 
   const { data, error } = await supabase
     .from('rundowns')
-    .insert({
-      user_id: userId,
-      title,
-      items,
-      columns: columns || null,
-      timezone: timezone || null,
-      start_time: startTime || null,
-      icon: icon || null,
-      archived: false,
-      undo_history: []
-    })
+    .insert(rundownData)
     .select()
     .single()
 
-  return { data, error }
+  if (error) {
+    console.error('Database error saving rundown:', error)
+    return { data: null, error }
+  }
+
+  console.log('Rundown saved successfully:', data.id)
+  return { data, error: null }
 }
 
 export const updateRundownInDatabase = async (
@@ -49,44 +70,57 @@ export const updateRundownInDatabase = async (
   userId: string,
   title: string,
   items: RundownItem[],
-  archived = false,
+  archived: boolean = false,
   columns?: Column[],
   timezone?: string,
   startTime?: string,
   icon?: string,
   undoHistory?: any[]
 ) => {
-  console.log('Updating rundown in database:', {
-    id,
+  console.log('Updating rundown in database:', id)
+  
+  const updateData = {
     title,
-    itemsCount: items.length,
-    columnsCount: columns?.length || 0,
-    timezone,
-    startTime,
-    userId,
+    items,
     archived,
-    undoHistoryCount: undoHistory?.length || 0
-  })
+    columns,
+    timezone,
+    start_time: startTime,
+    icon,
+    undo_history: undoHistory,
+    updated_at: new Date().toISOString()
+  }
 
-  const updateData = createUpdatePayload(title, items, columns, timezone, startTime, icon, archived, undoHistory)
-  console.log('Update payload (cleaned):', updateData)
-
-  const { error, data } = await supabase
+  const { data, error } = await supabase
     .from('rundowns')
     .update(updateData)
     .eq('id', id)
-    .eq('user_id', userId)
     .select()
+    .single()
 
-  return { error, data }
+  if (error) {
+    console.error('Database error updating rundown:', error)
+    return { data: null, error }
+  }
+
+  console.log('Rundown updated successfully:', data.id)
+  return { data, error: null }
 }
 
 export const deleteRundownFromDatabase = async (id: string, userId: string) => {
+  console.log('Deleting rundown from database:', id)
+  
   const { error } = await supabase
     .from('rundowns')
     .delete()
     .eq('id', id)
-    .eq('user_id', userId)
+    .eq('user_id', userId) // Only allow deleting own rundowns
 
-  return { error }
+  if (error) {
+    console.error('Database error deleting rundown:', error)
+    return { error }
+  }
+
+  console.log('Rundown deleted successfully:', id)
+  return { error: null }
 }

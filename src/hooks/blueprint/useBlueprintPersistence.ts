@@ -19,10 +19,16 @@ export const useBlueprintPersistence = (
     if (!user || !rundownId) return null;
     
     try {
+      // Load blueprint from current user OR team members
       const { data, error } = await supabase
         .from('blueprints')
-        .select('*')
-        .eq('user_id', user.id)
+        .select(`
+          *,
+          profiles!blueprints_user_id_fkey (
+            email,
+            full_name
+          )
+        `)
         .eq('rundown_id', rundownId)
         .maybeSingle();
 
@@ -67,7 +73,7 @@ export const useBlueprintPersistence = (
           .from('blueprints')
           .update(blueprintData)
           .eq('id', savedBlueprint.id)
-          .eq('user_id', user.id)
+          .eq('user_id', user.id) // Only allow updating own blueprints
           .select()
           .single();
 

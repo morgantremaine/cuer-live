@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import AccountManagement from "./pages/AccountManagement";
 import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
+import JoinTeam from "./pages/JoinTeam";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SharedRundown from "./pages/SharedRundown";
@@ -42,8 +42,13 @@ const AppRoutes = () => {
       {/* Public routes */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+      <Route path="/join-team/:token" element={<JoinTeam />} />
       {/* Make teleprompter public - no authentication required */}
       <Route path="/teleprompter/:id" element={<Teleprompter />} />
+      
+      {/* Auth callback routes */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
       
       {/* Protected routes */}
       <Route 

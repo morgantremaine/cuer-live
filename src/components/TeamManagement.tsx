@@ -1,0 +1,277 @@
+
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { useTeam } from '@/hooks/useTeam';
+import { useToast } from '@/hooks/use-toast';
+import { Trash2, UserPlus, Crown, User } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
+const TeamManagement = () => {
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
+  const [teamName, setTeamName] = useState('');
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
+  
+  const {
+    team,
+    teamMembers,
+    pendingInvitations,
+    userRole,
+    loading,
+    createTeam,
+    inviteTeamMember,
+    removeTeamMember
+  } = useTeam();
+  
+  const { toast } = useToast();
+
+  const handleCreateTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teamName.trim()) return;
+
+    setIsCreatingTeam(true);
+    const { error } = await createTeam(teamName.trim());
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Team created successfully!',
+      });
+      setTeamName('');
+    }
+    setIsCreatingTeam(false);
+  };
+
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+
+    setIsInviting(true);
+    const { error } = await inviteTeamMember(inviteEmail.trim());
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Invitation sent successfully!',
+      });
+      setInviteEmail('');
+    }
+    setIsInviting(false);
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    const { error } = await removeTeamMember(memberId);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Team member removed successfully!',
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!team) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Create Your Team</CardTitle>
+          <CardDescription>
+            Start collaborating by creating a team. You'll be able to invite team members and share rundowns.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreateTeam} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="team-name">Team Name</Label>
+              <Input
+                id="team-name"
+                type="text"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                placeholder="Enter team name"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={isCreatingTeam}>
+              {isCreatingTeam ? 'Creating...' : 'Create Team'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {team.name}
+            <Badge variant={userRole === 'admin' ? 'default' : 'secondary'}>
+              {userRole === 'admin' ? 'Admin' : 'Member'}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Manage your team members and collaborators
+          </CardDescription>
+        </CardHeader>
+        
+        {userRole === 'admin' && (
+          <CardContent>
+            <form onSubmit={handleInviteMember} className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="Enter email address to invite"
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={isInviting}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                {isInviting ? 'Inviting...' : 'Invite'}
+              </Button>
+            </form>
+          </CardContent>
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+          <CardDescription>
+            {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {teamMembers.map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    {member.role === 'admin' ? (
+                      <Crown className="h-4 w-4 text-yellow-600" />
+                    ) : (
+                      <User className="h-4 w-4 text-gray-600" />
+                    )}
+                    <div>
+                      <div className="font-medium">
+                        {member.profiles?.full_name || member.profiles?.email}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {member.profiles?.email}
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
+                    {member.role}
+                  </Badge>
+                </div>
+                
+                {userRole === 'admin' && member.role !== 'admin' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove {member.profiles?.full_name || member.profiles?.email} from the team? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
+                          Remove
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {userRole === 'admin' && pendingInvitations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending Invitations</CardTitle>
+            <CardDescription>
+              {pendingInvitations.length} pending invitation{pendingInvitations.length !== 1 ? 's' : ''}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingInvitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
+                >
+                  <div>
+                    <div className="font-medium">{invitation.email}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Invited on {new Date(invitation.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Badge variant="outline">Pending</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default TeamManagement;
