@@ -29,8 +29,8 @@ serve(async (req) => {
 
     const resend = new Resend(resendApiKey)
 
-    // Use the correct site URL - prioritize custom domain over Supabase URL
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://cuerlive.lovable.app'
+    // Use the custom domain - prioritize SITE_URL env var, fallback to custom domain
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://cuer.live'
     const inviteUrl = `${siteUrl}/join-team/${token}`
 
     // Send email using Resend - using cuer.live domain
