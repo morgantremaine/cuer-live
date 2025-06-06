@@ -52,13 +52,24 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Create a TRULY stable callback for remote updates
-  const stableOnRemoteUpdate = useCallback(() => {
+  // Create a TRULY stable callback for remote updates using ref
+  const onRemoteUpdateRef = useRef(() => {
     console.log('📡 Remote update detected, refreshing rundowns...');
     loadRundowns();
-  }, [loadRundowns]);
+  });
 
-  // Set up realtime collaboration - this should be the ONLY realtime hook
+  // Update the ref when loadRundowns changes, but don't recreate the callback
+  onRemoteUpdateRef.current = () => {
+    console.log('📡 Remote update detected, refreshing rundowns...');
+    loadRundowns();
+  };
+
+  // Use a stable callback that never changes
+  const stableOnRemoteUpdate = useCallback(() => {
+    onRemoteUpdateRef.current();
+  }, []); // No dependencies!
+
+  // Set up realtime collaboration with truly stable callback
   const { isConnected } = useStableRealtimeCollaboration({
     rundownId,
     onRemoteUpdate: stableOnRemoteUpdate,
@@ -106,7 +117,6 @@ export const useRundownGridCore = () => {
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Use data loader with stable callbacks
   const stableDataLoaderCallbacks = useMemo(() => ({
     setRundownTitle: stableCallbacksRef.current.setRundownTitleDirectly!,
     setTimezone: stableCallbacksRef.current.setTimezoneDirectly!,
@@ -114,7 +124,6 @@ export const useRundownGridCore = () => {
     handleLoadLayout: stableCallbacksRef.current.handleLoadLayout!,
     setItems: stableCallbacksRef.current.setItems!,
     onRundownLoaded: (rundown: any) => {
-      // Load undo history when rundown is loaded
       if (rundown.undo_history) {
         loadUndoHistory(rundown.undo_history);
       }
@@ -128,7 +137,6 @@ export const useRundownGridCore = () => {
     ...stableDataLoaderCallbacks
   });
 
-  // Playback controls
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -139,7 +147,6 @@ export const useRundownGridCore = () => {
     backward 
   } = usePlaybackControls(items, updateItem);
 
-  // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
   // Enhanced functions that trigger editing detection and save state
@@ -148,7 +155,6 @@ export const useRundownGridCore = () => {
     updateItem(id, field, value);
   }, [updateItem, markAsEditing]);
 
-  // Wrapped functions that save state before making changes
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     markAsEditing();
@@ -253,7 +259,6 @@ export const useRundownGridCore = () => {
     }
   }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged, markAsEditing]);
 
-  // Keyboard shortcut for undo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
