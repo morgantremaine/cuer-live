@@ -1,7 +1,7 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { clearInvalidTokens } from '@/utils/invitationUtils'
 
 interface AuthContextType {
   user: User | null
@@ -26,6 +26,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
+      
+      // Clean up any invalid invitation tokens when auth state changes
+      clearInvalidTokens()
     })
 
     // Listen for auth changes
@@ -34,6 +37,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       setLoading(false)
+      
+      // Clean up any invalid invitation tokens when auth state changes
+      clearInvalidTokens()
     })
 
     return () => subscription.unsubscribe()
@@ -82,8 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('Server-side logout error:', error)
-        // Even if server-side logout fails, clear the local session
       }
+      
+      // Clear any pending invitation tokens on logout
+      localStorage.removeItem('pendingInvitationToken')
       
       // Force clear the user state locally
       setUser(null)
@@ -93,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Logout error:', error)
       // Always clear local state even if logout fails
       setUser(null)
+      localStorage.removeItem('pendingInvitationToken')
       console.log('User state cleared due to error')
     }
   }

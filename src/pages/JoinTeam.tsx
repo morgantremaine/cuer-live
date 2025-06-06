@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ const JoinTeam = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
+  const [profileError, setProfileError] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
@@ -52,7 +54,7 @@ const JoinTeam = () => {
           .eq('token', token)
           .eq('accepted', false)
           .gt('expires_at', new Date().toISOString())
-          .single();
+          .maybeSingle();
 
         if (invitationError || !invitationData) {
           console.error('Error loading invitation:', invitationError);
@@ -61,6 +63,8 @@ const JoinTeam = () => {
             description: 'This invitation link is invalid or has expired.',
             variant: 'destructive',
           });
+          // Clear any stale token
+          localStorage.removeItem('pendingInvitationToken');
           navigate('/login');
           return;
         }
@@ -68,20 +72,28 @@ const JoinTeam = () => {
         setInvitation(invitationData);
         setEmail(invitationData.email);
 
-        // Separately get the inviter's profile
+        // Try to get the inviter's profile, but don't fail if it's not accessible
         if (invitationData.invited_by) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', invitationData.invited_by)
-            .single();
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', invitationData.invited_by)
+              .maybeSingle();
 
-          if (!profileError && profileData) {
-            setInviterProfile(profileData);
+            if (!profileError && profileData) {
+              setInviterProfile(profileData);
+            } else {
+              console.log('Could not load inviter profile, will use fallback display');
+              setProfileError(true);
+            }
+          } catch (error) {
+            console.log('Profile loading failed, using fallback:', error);
+            setProfileError(true);
           }
         }
         
-        // Check if user already exists with this email - improved method
+        // Check if user already exists with this email
         await checkUserExists(invitationData.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
@@ -90,6 +102,7 @@ const JoinTeam = () => {
           description: 'Failed to load invitation details.',
           variant: 'destructive',
         });
+        localStorage.removeItem('pendingInvitationToken');
         navigate('/login');
       } finally {
         setLoading(false);
@@ -110,7 +123,6 @@ const JoinTeam = () => {
       
       if (error) {
         console.error('Error checking user existence:', error);
-        // Default to signup on error
         setUserExists(false);
         setActiveTab('signup');
         return;
@@ -125,7 +137,6 @@ const JoinTeam = () => {
       }
     } catch (error) {
       console.error('Error in checkUserExists:', error);
-      // Default to signup if we can't determine
       setUserExists(false);
       setActiveTab('signup');
     }
@@ -142,23 +153,33 @@ const JoinTeam = () => {
     if (!token) return;
 
     setIsProcessing(true);
-    const { error } = await acceptInvitation(token);
     
-    if (error) {
+    try {
+      const { error } = await acceptInvitation(token);
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error,
+          variant: 'destructive',
+        });
+        setIsProcessing(false);
+      } else {
+        localStorage.removeItem('pendingInvitationToken');
+        toast({
+          title: 'Success',
+          description: 'Welcome to the team!',
+        });
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
       toast({
         title: 'Error',
-        description: error,
+        description: 'Failed to join team. Please try again.',
         variant: 'destructive',
       });
       setIsProcessing(false);
-    } else {
-      // Clear the stored token
-      localStorage.removeItem('pendingInvitationToken');
-      toast({
-        title: 'Success',
-        description: 'Welcome to the team!',
-      });
-      navigate('/dashboard');
     }
   };
 
@@ -265,6 +286,9 @@ const JoinTeam = () => {
   }
 
   const getInviterDisplayName = () => {
+    if (profileError) {
+      return 'A team member';
+    }
     if (inviterProfile?.full_name) {
       return inviterProfile.full_name;
     }
