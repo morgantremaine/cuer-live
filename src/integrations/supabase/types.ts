@@ -264,6 +264,10 @@ export type Database = {
         Args: { profile_user_id: string }
         Returns: boolean
       }
+      cleanup_accepted_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_user_role_in_team: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string

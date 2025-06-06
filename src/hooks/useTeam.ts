@@ -42,6 +42,21 @@ export const useTeam = () => {
   const [userRole, setUserRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
+  // Cleanup accepted invitations using the new database function
+  const cleanupAcceptedInvitations = async () => {
+    try {
+      console.log('Running cleanup for accepted invitations...');
+      const { error } = await supabase.rpc('cleanup_accepted_invitations');
+      if (error) {
+        console.error('Error running cleanup:', error);
+      } else {
+        console.log('Cleanup completed successfully');
+      }
+    } catch (error) {
+      console.error('Error in cleanup function:', error);
+    }
+  };
+
   const loadTeamData = async () => {
     if (!user) {
       console.log('No user found, skipping team data load');
@@ -72,6 +87,8 @@ export const useTeam = () => {
           if (!acceptResult.error) {
             console.log('Invitation accepted successfully, reloading team data');
             localStorage.removeItem('pendingInvitationToken');
+            // Run cleanup to ensure invitation is marked as accepted
+            await cleanupAcceptedInvitations();
             // Recursively call loadTeamData to load the correct team
             await loadTeamData();
             return;
@@ -257,6 +274,9 @@ export const useTeam = () => {
     try {
       console.log('Loading pending invitations for team:', teamId);
       
+      // Run cleanup first to ensure we have accurate data
+      await cleanupAcceptedInvitations();
+      
       const { data, error } = await supabase
         .from('team_invitations')
         .select('*')
@@ -394,11 +414,16 @@ export const useTeam = () => {
         .maybeSingle();
 
       if (existingMember) {
-        // Mark invitation as accepted and reload data
-        await supabase
-          .from('team_invitations')
-          .update({ accepted: true })
-          .eq('id', invitation.id);
+        // User is already a member, just mark invitation as accepted
+        console.log('User already a member, marking invitation as accepted');
+        try {
+          await supabase
+            .from('team_invitations')
+            .update({ accepted: true })
+            .eq('id', invitation.id);
+        } catch (updateError) {
+          console.log('Could not update invitation status, but user is already a member');
+        }
         
         await loadTeamData();
         return { error: null };
@@ -418,16 +443,22 @@ export const useTeam = () => {
         return { error: 'Failed to join team' };
       }
 
-      // Mark invitation as accepted
-      const { error: updateError } = await supabase
-        .from('team_invitations')
-        .update({ accepted: true })
-        .eq('id', invitation.id);
+      // Try to mark invitation as accepted, but don't fail if this doesn't work
+      try {
+        const { error: updateError } = await supabase
+          .from('team_invitations')
+          .update({ accepted: true })
+          .eq('id', invitation.id);
 
-      if (updateError) {
-        console.error('Error updating invitation status:', updateError);
-        // Don't return error here as the user was successfully added to team
+        if (updateError) {
+          console.log('Could not update invitation status directly, will be cleaned up later:', updateError);
+        }
+      } catch (updateError) {
+        console.log('Could not update invitation status, will rely on cleanup function');
       }
+
+      // Run cleanup to ensure invitation is marked as accepted
+      await cleanupAcceptedInvitations();
 
       console.log('Invitation accepted successfully');
       return { error: null };
