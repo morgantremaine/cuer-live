@@ -8,28 +8,24 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedDataRef = useRef<string>('');
   const isLoadingRef = useRef(false);
-  const initializationCompleteRef = useRef(false);
 
-  // Initialize tracking when we have meaningful data
+  // Initialize tracking when we have data (don't wait for specific title)
   useEffect(() => {
-    if (initializationCompleteRef.current || isLoadingRef.current) return;
+    if (isInitialized || isLoadingRef.current) return;
 
-    // Check for meaningful data that indicates the rundown is loaded
-    const hasMeaningfulData = items.length > 0 && rundownTitle && rundownTitle !== 'Live Broadcast Rundown';
-    
-    if (hasMeaningfulData) {
+    // Initialize when we have any meaningful data
+    if (items.length > 0 || (rundownTitle && rundownTitle.trim() !== '')) {
       const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
       lastSavedDataRef.current = signature;
-      initializationCompleteRef.current = true;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
-      console.log('Change tracking initialized');
+      console.log('Change tracking initialized with', items.length, 'items');
     }
-  }, [items.length, rundownTitle]);
+  }, [items.length, rundownTitle, isInitialized]);
 
   // Track changes after initialization
   useEffect(() => {
-    if (!isInitialized || isLoadingRef.current || !initializationCompleteRef.current) {
+    if (!isInitialized || isLoadingRef.current) {
       return;
     }
 
@@ -50,9 +46,9 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   };
 
   const markAsChanged = () => {
-    if (!isLoadingRef.current && initializationCompleteRef.current) {
+    if (!isLoadingRef.current && isInitialized) {
       setHasUnsavedChanges(true);
-      console.log('Marked as changed');
+      console.log('Manually marked as changed');
     }
   };
 
@@ -66,7 +62,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     setHasUnsavedChanges,
     markAsSaved,
     markAsChanged,
-    isInitialized: initializationCompleteRef.current,
+    isInitialized,
     setIsLoading
   };
 };

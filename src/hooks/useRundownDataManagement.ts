@@ -4,15 +4,11 @@ import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownDataLoader } from './useRundownDataLoader';
-import { useRundownPolling } from './useRundownPolling';
 import { useAutoSave } from './useAutoSave';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
-  // Single initialization flag to prevent multiple instances
   const isInitializedRef = useRef(false);
-  const loadingRef = useRef(false);
   
   // Get basic state management
   const basicState = useRundownBasicState();
@@ -33,48 +29,48 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
-  // Use the data loader only once
-  useRundownDataLoader({
-    rundownId,
-    savedRundowns: storage.savedRundowns,
-    loading: storage.loading || loadingRef.current,
-    setRundownTitle: basicState.setRundownTitleDirectly,
-    setTimezone: basicState.setTimezoneDirectly,
-    setRundownStartTime: basicState.setRundownStartTimeDirectly,
-    handleLoadLayout: stateIntegration.handleLoadLayout,
-    setItems: stateIntegration.setItems,
-    onRundownLoaded: (rundown) => {
-      console.log('Rundown loaded successfully:', rundown.title);
-      loadingRef.current = false;
-      basicState.setIsLoading(false);
-    }
-  });
-
-  // Initialize new rundowns only once
+  // Simple data loading effect
   useEffect(() => {
-    if (isInitializedRef.current || rundownId || storage.loading || loadingRef.current) {
+    if (isInitializedRef.current || storage.loading) {
       return;
     }
-    
-    if (stateIntegration.items.length === 0 && storage.savedRundowns.length >= 0) {
-      console.log('Initializing new rundown with default items');
-      loadingRef.current = true;
+
+    if (rundownId && storage.savedRundowns.length > 0) {
+      // Load existing rundown
+      const rundown = storage.savedRundowns.find(r => r.id === rundownId);
+      if (rundown) {
+        console.log('Loading existing rundown:', rundown.title);
+        basicState.setIsLoading(true);
+        
+        basicState.setRundownTitleDirectly(rundown.title);
+        if (rundown.timezone) basicState.setTimezoneDirectly(rundown.timezone);
+        if (rundown.start_time) basicState.setRundownStartTimeDirectly(rundown.start_time);
+        if (rundown.columns) stateIntegration.handleLoadLayout(rundown.columns);
+        if (rundown.items) stateIntegration.setItems(rundown.items);
+        
+        setTimeout(() => {
+          basicState.setIsLoading(false);
+          isInitializedRef.current = true;
+        }, 100);
+      }
+    } else if (!rundownId && storage.savedRundowns.length >= 0 && stateIntegration.items.length === 0) {
+      // Initialize new rundown
+      console.log('Initializing new rundown');
       basicState.setIsLoading(true);
       
       stateIntegration.setItems(defaultRundownItems);
       
       setTimeout(() => {
-        loadingRef.current = false;
         basicState.setIsLoading(false);
         isInitializedRef.current = true;
       }, 100);
     }
-  }, [rundownId, storage.loading, stateIntegration.items.length, storage.savedRundowns.length]);
+  }, [rundownId, storage.loading, storage.savedRundowns.length, stateIntegration.items.length]);
 
   // Auto-save functionality
   const { isSaving, lastSavedTimestamp } = useAutoSave(
     rundownId,
-    basicState.hasUnsavedChanges && basicState.isInitialized,
+    basicState.hasUnsavedChanges,
     stateIntegration.items,
     basicState.rundownTitle,
     stateIntegration.columns,
@@ -84,44 +80,6 @@ export const useRundownDataManagement = (rundownId: string) => {
     undoSystem.undoHistory
   );
 
-  // Polling for existing rundowns only
-  const polling = useRundownPolling({
-    rundownId: rundownId || undefined,
-    hasUnsavedChanges: basicState.hasUnsavedChanges,
-    isAutoSaving: isSaving,
-    lastSavedTimestamp,
-    onUpdateReceived: (data) => {
-      if (loadingRef.current) return;
-      
-      console.log('Applying remote update:', data.title);
-      loadingRef.current = true;
-      basicState.setIsLoading(true);
-      
-      basicState.setRundownTitleDirectly(data.title);
-      stateIntegration.setItems(data.items);
-      
-      if (data.columns) {
-        stateIntegration.handleLoadLayout(data.columns);
-      }
-      if (data.timezone) {
-        basicState.setTimezoneDirectly(data.timezone);
-      }
-      if (data.startTime) {
-        basicState.setRundownStartTimeDirectly(data.startTime);
-      }
-      
-      basicState.markAsSaved(data.items, data.title, data.columns, data.timezone, data.startTime);
-      
-      setTimeout(() => {
-        loadingRef.current = false;
-        basicState.setIsLoading(false);
-      }, 100);
-    },
-    onConflictDetected: () => {
-      console.log('Collaboration conflict detected');
-    }
-  });
-
   return {
     ...basicState,
     ...storage,
@@ -129,7 +87,6 @@ export const useRundownDataManagement = (rundownId: string) => {
     ...undoSystem,
     isSaving,
     lastSavedTimestamp,
-    ...polling,
-    isInitialized: basicState.isInitialized
+    isInitialized: isInitializedRef.current
   };
 };

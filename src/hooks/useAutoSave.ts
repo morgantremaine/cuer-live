@@ -19,7 +19,6 @@ export const useAutoSave = (
   const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string | null>(null);
   const { updateRundown, saveRundown } = useRundownStorage();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSaveDataRef = useRef<string>('');
   const isSavingRef = useRef(false);
 
   useEffect(() => {
@@ -39,12 +38,7 @@ export const useAutoSave = (
       return;
     }
 
-    // Check if data actually changed
-    const currentDataSignature = JSON.stringify({ items, rundownTitle, columns, timezone, startTime });
-    if (lastSaveDataRef.current === currentDataSignature) {
-      console.log('Auto-save skipped: No actual changes');
-      return;
-    }
+    console.log('Auto-save scheduled for:', rundownTitle, 'with', items.length, 'items');
 
     // Debounce saves
     saveTimeoutRef.current = setTimeout(async () => {
@@ -78,7 +72,6 @@ export const useAutoSave = (
         const now = new Date().toISOString();
         setLastSavedTimestamp(now);
         markAsSaved(items, rundownTitle, columns, timezone, startTime);
-        lastSaveDataRef.current = currentDataSignature;
         
         console.log('Auto-save completed successfully');
       } catch (error) {
@@ -87,7 +80,7 @@ export const useAutoSave = (
         isSavingRef.current = false;
         setIsSaving(false);
       }
-    }, 3000); // Increased debounce time
+    }, 2000);
 
     return () => {
       if (saveTimeoutRef.current) {
