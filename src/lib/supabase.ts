@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js'
 
 // Temporarily hardcoded values - these should come from environment variables
@@ -97,3 +96,22 @@ export type Database = {
     }
   }
 }
+
+// Enable realtime for rundowns table
+// This should be run once to ensure realtime updates work
+export const enableRealtimeForRundowns = async () => {
+  try {
+    // This enables realtime replication for the rundowns table
+    const { error } = await supabase.rpc('enable_realtime_for_table', {
+      table_name: 'rundowns'
+    });
+    
+    if (error) {
+      console.error('Error enabling realtime for rundowns:', error);
+    } else {
+      console.log('✅ Realtime enabled for rundowns table');
+    }
+  } catch (error) {
+    console.error('Error enabling realtime:', error);
+  }
+};

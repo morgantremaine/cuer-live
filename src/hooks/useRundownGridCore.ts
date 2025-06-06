@@ -6,9 +6,9 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
-import { useRundownRealtime } from './useRundownRealtime';
-import { useEditingDetection } from './useEditingDetection';
-import { useCallback, useEffect, useRef, useMemo } from 'react';
+import { useStableRundownRealtime } from './useStableRundownRealtime';
+import { useSimpleEditingDetection } from './useSimpleEditingDetection';
+import { useCallback, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
@@ -30,28 +30,22 @@ export const useRundownGridCore = () => {
     markAsChanged
   } = useRundownBasicState();
 
-  // Get storage functionality
+  // Storage functionality
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
 
-  // Detect when user is actively editing - only set up once
-  const { isEditing } = useEditingDetection();
+  // Simple editing detection
+  const { isEditing, markAsEditing } = useSimpleEditingDetection();
 
-  // Get current rundown data for realtime comparison - memoize to prevent infinite loops
-  const currentRundown = useMemo(() => {
-    return savedRundowns.find(r => r.id === rundownId);
-  }, [savedRundowns, rundownId]);
-
-  // Stable callback for remote updates
-  const onRemoteUpdate = useCallback(() => {
-    console.log('📡 Remote rundown update detected in GridCore, refreshing data...');
-    loadRundowns();
-  }, [loadRundowns]);
-
-  console.log('🔴 Setting up realtime in useRundownGridCore with:', {
+  // Set up realtime collaboration (only when we have a rundown ID)
+  const { isConnected } = useStableRundownRealtime({
     rundownId,
-    hasCurrentRundown: !!currentRundown,
-    isEditing,
-    isSaving: false
+    enabled: !!rundownId
+  });
+
+  console.log('🔴 GridCore realtime status:', {
+    rundownId,
+    isConnected,
+    isEditing
   });
 
   // Rundown data integration
@@ -88,15 +82,6 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Set up realtime only when we have the required data
-  useRundownRealtime({
-    currentRundownId: rundownId,
-    currentUpdatedAt: currentRundown?.updated_at,
-    onRemoteUpdate,
-    isUserEditing: isEditing,
-    isSaving
-  });
-
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
@@ -132,9 +117,16 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
+  // Enhanced functions that trigger editing detection and save state
+  const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    markAsEditing();
+    updateItem(id, field, value);
+  }, [updateItem, markAsEditing]);
+
   // Wrapped functions that save state before making changes
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
+    markAsEditing();
     
     let insertAfterIndex: number | undefined = undefined;
     if (selectedRows && selectedRows.size > 0) {
@@ -157,10 +149,11 @@ export const useRundownGridCore = () => {
     } else {
       addRow(calculateEndTimeFn);
     }
-  }, [addRow, saveState, items, columns, rundownTitle]);
+  }, [addRow, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const wrappedAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Header');
+    markAsEditing();
     
     let insertAfterIndex: number | undefined = undefined;
     if (selectedRows && selectedRows.size > 0) {
@@ -183,50 +176,57 @@ export const useRundownGridCore = () => {
     } else {
       addHeader();
     }
-  }, [addHeader, saveState, items, columns, rundownTitle]);
+  }, [addHeader, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const wrappedDeleteRow = useCallback((id: string) => {
     saveState(items, columns, rundownTitle, 'Delete Row');
+    markAsEditing();
     deleteRow(id);
-  }, [deleteRow, saveState, items, columns, rundownTitle]);
+  }, [deleteRow, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
     saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
+    markAsEditing();
     deleteMultipleRows(ids);
-  }, [deleteMultipleRows, saveState, items, columns, rundownTitle]);
+  }, [deleteMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const wrappedToggleFloatRow = useCallback((id: string) => {
     saveState(items, columns, rundownTitle, 'Toggle Float');
+    markAsEditing();
     toggleFloatRow(id);
-  }, [toggleFloatRow, saveState, items, columns, rundownTitle]);
+  }, [toggleFloatRow, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const wrappedSetItems = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
     const newItems = typeof updater === 'function' ? updater(items) : updater;
     if (JSON.stringify(newItems) !== JSON.stringify(items)) {
       saveState(items, columns, rundownTitle, 'Move Rows');
+      markAsEditing();
     }
     setItems(updater);
-  }, [setItems, saveState, items, columns, rundownTitle]);
+  }, [setItems, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const wrappedAddMultipleRows = useCallback((newItems: RundownItem[], calculateEndTimeFn: any) => {
     saveState(items, columns, rundownTitle, 'Paste Rows');
+    markAsEditing();
     addMultipleRows(newItems);
-  }, [addMultipleRows, saveState, items, columns, rundownTitle]);
+  }, [addMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const wrappedSetRundownTitle = useCallback((title: string) => {
     if (title !== rundownTitle) {
       saveState(items, columns, rundownTitle, 'Change Title');
+      markAsEditing();
     }
     setRundownTitle(title);
-  }, [setRundownTitle, saveState, items, columns, rundownTitle]);
+  }, [setRundownTitle, saveState, items, columns, rundownTitle, markAsEditing]);
 
   const handleUndo = useCallback(() => {
     const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);
     if (action) {
       markAsChanged();
+      markAsEditing();
       console.log(`Undid: ${action}`);
     }
-  }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged]);
+  }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged, markAsEditing]);
 
   // Keyboard shortcut for undo
   useEffect(() => {
@@ -260,7 +260,7 @@ export const useRundownGridCore = () => {
     // Items and data - use wrapped versions for undo support
     items,
     setItems: wrappedSetItems,
-    updateItem,
+    updateItem: enhancedUpdateItem,
     addRow: wrappedAddRow,
     addHeader: wrappedAddHeader,
     deleteRow: wrappedDeleteRow,
@@ -299,6 +299,10 @@ export const useRundownGridCore = () => {
     // Undo functionality
     handleUndo,
     canUndo,
-    lastAction
+    lastAction,
+
+    // Realtime status
+    isConnected,
+    isEditing
   };
 };
