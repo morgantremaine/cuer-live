@@ -15,6 +15,8 @@ export interface SavedRundown {
   created_at: string
   updated_at: string
   undo_history?: any[]
+  team_id?: string
+  visibility?: string
   profiles?: {
     email: string
     full_name: string | null
