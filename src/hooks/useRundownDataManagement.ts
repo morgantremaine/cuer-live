@@ -5,6 +5,8 @@ import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownDataLoader } from './useRundownDataLoader';
+import { useRundownRealtime } from './useRundownRealtime';
+import { useEditingDetection } from './useEditingDetection';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
@@ -27,6 +29,9 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
+  // Detect when user is actively editing
+  const { isEditing } = useEditingDetection();
+
   // Use the data loader to handle loading rundowns from storage
   useRundownDataLoader({
     rundownId,
@@ -40,6 +45,20 @@ export const useRundownDataManagement = (rundownId: string) => {
     onRundownLoaded: (rundown) => {
       console.log('Rundown loaded successfully:', rundown.title);
     }
+  });
+
+  // Get current rundown data for realtime comparison
+  const currentRundown = storage.savedRundowns.find(r => r.id === rundownId);
+
+  // Initialize realtime updates
+  useRundownRealtime({
+    currentRundownId: rundownId,
+    currentUpdatedAt: currentRundown?.updated_at,
+    onRemoteUpdate: () => {
+      // Refresh the rundown data when remote updates are detected
+      storage.loadRundowns();
+    },
+    isUserEditing: isEditing
   });
 
   // Initialize with default items for new rundowns - fixed logic with better guards
