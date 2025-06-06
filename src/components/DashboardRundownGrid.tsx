@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical } from 'lucide-react'
@@ -96,7 +97,7 @@ const DashboardRundownGrid = ({
             }
           </p>
           {!isArchived && onCreateNew && (
-            <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700 text-white border-0">
               <Plus className="h-4 w-4 mr-2" />
               Create New Rundown
             </Button>
@@ -138,12 +139,12 @@ const DashboardRundownGrid = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-gray-400 hover:text-white hover:bg-gray-700"
+                      className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                  <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
                     {/* Duplicate - available for all rundowns */}
                     {onDuplicate && (
                       <DropdownMenuItem 
@@ -207,7 +208,7 @@ const DashboardRundownGrid = ({
                             </AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={(e) => onDelete(rundown.id, rundown.title, e)}
-                              className="bg-red-600 hover:bg-red-700"
+                              className="bg-red-600 hover:bg-red-700 text-white border-0"
                             >
                               Delete
                             </AlertDialogAction>
@@ -227,18 +228,18 @@ const DashboardRundownGrid = ({
                 
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => onOpen(rundown.id)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
                   >
                     Open
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => navigate(`/blueprint/${rundown.id}`)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
                   >
                     Blueprint
                   </Button>
