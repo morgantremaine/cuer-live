@@ -10,10 +10,14 @@ import { useAutoSave } from './useAutoSave';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
-  // Refs to prevent multiple operations
-  const isInitializedRef = useRef(false);
-  const loadingOperationRef = useRef(false);
-  const initializationCompleteRef = useRef(false);
+  // Track initialization to prevent multiple instances
+  const isInstanceInitializedRef = useRef(false);
+  const processingLoadRef = useRef(false);
+  
+  // Only proceed if this is the first instance
+  if (!isInstanceInitializedRef.current) {
+    isInstanceInitializedRef.current = true;
+  }
   
   // Get basic state management
   const basicState = useRundownBasicState();
@@ -24,7 +28,7 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Initialize storage
   const storage = useRundownStorage();
   
-  // Initialize state integration with all required parameters
+  // Initialize state integration
   const stateIntegration = useRundownStateIntegration(
     basicState.markAsChanged,
     basicState.rundownTitle,
@@ -34,7 +38,7 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
-  // Use the data loader to handle loading rundowns from storage
+  // Use the data loader
   useRundownDataLoader({
     rundownId,
     savedRundowns: storage.savedRundowns,
@@ -46,50 +50,38 @@ export const useRundownDataManagement = (rundownId: string) => {
     setItems: stateIntegration.setItems,
     onRundownLoaded: (rundown) => {
       console.log('Rundown loaded successfully:', rundown.title);
-      isInitializedRef.current = true;
-      initializationCompleteRef.current = true;
-      
-      // Clear loading state and allow change tracking
+      // Clear loading state
       setTimeout(() => {
         basicState.setIsLoading(false);
-        loadingOperationRef.current = false;
+        processingLoadRef.current = false;
       }, 100);
     }
   });
 
-  // Initialize with default items for new rundowns - ONLY after storage loads
+  // Initialize new rundowns with default items
   useEffect(() => {
-    // Only run for new rundowns (no rundownId)
-    if (rundownId) return;
+    // Only for new rundowns (no rundownId)
+    if (rundownId || storage.loading || processingLoadRef.current) return;
     
-    // Wait for storage to finish loading
-    if (storage.loading) return;
-    
-    // Prevent multiple initializations
-    if (isInitializedRef.current || initializationCompleteRef.current) return;
-    
-    // Only initialize if we have no items and storage is done loading
-    if (stateIntegration.items.length === 0 && !loadingOperationRef.current) {
+    // Only if we have no items and no rundowns are loading
+    if (stateIntegration.items.length === 0 && storage.savedRundowns.length >= 0) {
       console.log('Initializing new rundown with default items');
-      loadingOperationRef.current = true;
+      processingLoadRef.current = true;
       basicState.setIsLoading(true);
       
       stateIntegration.setItems(defaultRundownItems);
-      isInitializedRef.current = true;
-      initializationCompleteRef.current = true;
       
-      // Clear loading state after initialization
       setTimeout(() => {
         basicState.setIsLoading(false);
-        loadingOperationRef.current = false;
+        processingLoadRef.current = false;
       }, 200);
     }
-  }, [rundownId, storage.loading, storage.savedRundowns.length]); // Better dependencies
+  }, [rundownId, storage.loading, stateIntegration.items.length]);
 
-  // Auto-save functionality - ONLY after initialization is complete
+  // Auto-save functionality
   const { isSaving, lastSavedTimestamp } = useAutoSave(
     rundownId,
-    basicState.hasUnsavedChanges && initializationCompleteRef.current, // Only save after init
+    basicState.hasUnsavedChanges && basicState.isInitialized,
     stateIntegration.items,
     basicState.rundownTitle,
     stateIntegration.columns,
@@ -99,20 +91,19 @@ export const useRundownDataManagement = (rundownId: string) => {
     undoSystem.undoHistory
   );
 
-  // Polling for real-time collaboration - ONLY for existing rundowns
+  // Polling for existing rundowns only
   const polling = useRundownPolling({
-    rundownId: rundownId || undefined, // Only poll if we have an ID
+    rundownId: rundownId || undefined,
     hasUnsavedChanges: basicState.hasUnsavedChanges,
     isAutoSaving: isSaving,
     lastSavedTimestamp,
     onUpdateReceived: (data) => {
-      if (loadingOperationRef.current || !initializationCompleteRef.current) return;
+      if (processingLoadRef.current) return;
       
       console.log('Applying remote update:', data.title);
-      loadingOperationRef.current = true;
+      processingLoadRef.current = true;
       basicState.setIsLoading(true);
       
-      // Update all relevant state
       basicState.setRundownTitleDirectly(data.title);
       stateIntegration.setItems(data.items);
       
@@ -126,41 +117,26 @@ export const useRundownDataManagement = (rundownId: string) => {
         basicState.setRundownStartTimeDirectly(data.startTime);
       }
       
-      // Mark as saved with the remote timestamp
       basicState.markAsSaved(data.items, data.title, data.columns, data.timezone, data.startTime);
       
       setTimeout(() => {
         basicState.setIsLoading(false);
-        loadingOperationRef.current = false;
+        processingLoadRef.current = false;
       }, 100);
     },
     onConflictDetected: () => {
       console.log('Collaboration conflict detected');
-      // The polling hook will handle showing the conflict indicator
     }
   });
 
   return {
-    // Basic state
     ...basicState,
-    
-    // Storage operations
     ...storage,
-    
-    // State management - ensure all functions are exposed and arrays are validated
     ...stateIntegration,
-    
-    // Undo/Redo operations
     ...undoSystem,
-    
-    // Auto-save state
     isSaving,
     lastSavedTimestamp,
-    
-    // Polling state
     ...polling,
-    
-    // Initialization state for debugging
-    isInitialized: initializationCompleteRef.current
+    isInitialized: basicState.isInitialized
   };
 };

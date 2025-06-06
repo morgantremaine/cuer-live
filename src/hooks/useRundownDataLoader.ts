@@ -31,16 +31,16 @@ export const useRundownDataLoader = ({
   const params = useParams<{ id: string }>();
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
-  const isLoadingRef = useRef(false);
+  const processingRef = useRef(false);
 
   useEffect(() => {
-    // Only proceed if we have rundowns loaded and a specific rundown ID
-    if (loading || savedRundowns.length === 0 || isLoadingRef.current) return;
+    // Prevent multiple simultaneous loads
+    if (loading || savedRundowns.length === 0 || processingRef.current) return;
     
     const currentRundownId = rundownId || paramId;
     if (!currentRundownId) return;
 
-    // Prevent loading the same rundown multiple times
+    // Skip if already loaded this rundown
     if (loadedRef.current === currentRundownId) return;
 
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
@@ -51,11 +51,11 @@ export const useRundownDataLoader = ({
 
     console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
     
-    // Mark as loading to prevent loops
-    isLoadingRef.current = true;
+    // Mark as processing
+    processingRef.current = true;
     loadedRef.current = currentRundownId;
     
-    // Load the rundown data immediately without setTimeout to prevent race conditions
+    // Load all data synchronously
     setRundownTitle(rundown.title);
     
     if (rundown.timezone) {
@@ -70,41 +70,29 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // CRITICAL: Load the items back into the state
     if (rundown.items && Array.isArray(rundown.items)) {
       console.log('Setting rundown items:', rundown.items.length);
       setItems(rundown.items);
     }
 
-    // Call the callback with the loaded rundown
+    // Call the callback
     if (onRundownLoaded) {
       onRundownLoaded(rundown);
     }
 
-    // Reset loading flag after a short delay
+    // Reset processing flag
     setTimeout(() => {
-      isLoadingRef.current = false;
-    }, 50);
-  }, [
-    rundownId, 
-    paramId, 
-    savedRundowns, // Watch the actual array, not just length
-    loading, 
-    setRundownTitle, 
-    setTimezone, 
-    setRundownStartTime, 
-    handleLoadLayout,
-    setItems,
-    onRundownLoaded
-  ]);
+      processingRef.current = false;
+    }, 100);
+  }, [rundownId, paramId, savedRundowns.length, loading]);
 
-  // Reset loaded reference when rundown ID changes
+  // Reset when rundown ID changes
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
       console.log('Rundown ID changed, resetting loader');
       loadedRef.current = null;
-      isLoadingRef.current = false;
+      processingRef.current = false;
     }
   }, [rundownId, paramId]);
 };
