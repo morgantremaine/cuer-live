@@ -9,18 +9,21 @@ interface UseRundownRealtimeProps {
   currentUpdatedAt?: string;
   onRemoteUpdate: () => void;
   isUserEditing: boolean;
+  isSaving?: boolean; // Add this to prevent conflicts during saves
 }
 
 export const useRundownRealtime = ({
   currentRundownId,
   currentUpdatedAt,
   onRemoteUpdate,
-  isUserEditing
+  isUserEditing,
+  isSaving = false
 }: UseRundownRealtimeProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastProcessedUpdateRef = useRef<string>('');
 
   const handleRealtimeUpdate = useCallback((payload: any) => {
     console.log('Realtime update received:', payload);
@@ -37,10 +40,22 @@ export const useRundownRealtime = ({
       return;
     }
 
+    // Don't process updates while we're saving to prevent conflicts
+    if (isSaving) {
+      console.log('Ignoring update - currently saving');
+      return;
+    }
+
     // Check if this is actually a newer update
     const remoteUpdatedAt = payload.new.updated_at;
     if (currentUpdatedAt && remoteUpdatedAt <= currentUpdatedAt) {
       console.log('Ignoring update - not newer than current');
+      return;
+    }
+
+    // Prevent processing the same update multiple times
+    if (lastProcessedUpdateRef.current === remoteUpdatedAt) {
+      console.log('Ignoring update - already processed');
       return;
     }
 
@@ -50,13 +65,15 @@ export const useRundownRealtime = ({
       return;
     }
 
-    // Debounce multiple rapid updates
+    // Clear any existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
+    // Debounce multiple rapid updates
     debounceTimeoutRef.current = setTimeout(() => {
       console.log('Applying remote rundown update');
+      lastProcessedUpdateRef.current = remoteUpdatedAt;
       onRemoteUpdate();
       
       // Show a subtle notification
@@ -66,7 +83,7 @@ export const useRundownRealtime = ({
         duration: 3000,
       });
     }, 500); // 500ms debounce
-  }, [currentRundownId, currentUpdatedAt, user?.id, isUserEditing, onRemoteUpdate, toast]);
+  }, [currentRundownId, currentUpdatedAt, user?.id, isUserEditing, isSaving, onRemoteUpdate, toast]);
 
   useEffect(() => {
     if (!user || !currentRundownId) {

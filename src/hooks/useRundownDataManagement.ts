@@ -50,16 +50,21 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Get current rundown data for realtime comparison
   const currentRundown = storage.savedRundowns.find(r => r.id === rundownId);
 
-  // Initialize realtime updates - this is the key addition
+  // Initialize realtime updates with proper coordination
   useRundownRealtime({
     currentRundownId: rundownId,
     currentUpdatedAt: currentRundown?.updated_at,
     onRemoteUpdate: () => {
       console.log('Remote rundown update detected, refreshing data...');
-      // Refresh the rundown data when remote updates are detected
-      storage.loadRundowns();
+      // Only refresh if we're not currently saving to prevent conflicts
+      if (!stateIntegration.isSaving) {
+        storage.loadRundowns();
+      } else {
+        console.log('Skipping realtime refresh - currently saving');
+      }
     },
-    isUserEditing: isEditing
+    isUserEditing: isEditing,
+    isSaving: stateIntegration.isSaving // Pass the saving state
   });
 
   // Initialize with default items for new rundowns - fixed logic with better guards
