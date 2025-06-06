@@ -27,11 +27,19 @@ export const useAutoSave = (
   // Auto-save with debouncing
   useEffect(() => {
     // Don't save if no changes, already saving, or no meaningful data
-    if (!hasUnsavedChanges || isSavingRef.current) return;
+    if (!hasUnsavedChanges || isSavingRef.current) {
+      return;
+    }
     
     // Validate we have saveable data
-    if (!rundownTitle || rundownTitle.trim() === '') return;
-    if (!Array.isArray(items)) return;
+    if (!rundownTitle || rundownTitle.trim() === '') {
+      console.log('Auto-save skipped: No title');
+      return;
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      console.log('Auto-save skipped: No items');
+      return;
+    }
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -44,6 +52,7 @@ export const useAutoSave = (
       
       // Don't save if data hasn't actually changed since last save
       if (lastSaveDataRef.current === currentDataSignature) {
+        console.log('Auto-save skipped: No actual changes');
         return;
       }
 
@@ -52,6 +61,11 @@ export const useAutoSave = (
       
       isSavingRef.current = true;
       setIsSaving(true);
+      console.log('Auto-saving rundown:', { 
+        id: rundownId, 
+        title: rundownTitle, 
+        itemsCount: items.length 
+      });
       
       try {
         if (rundownId) {
@@ -84,7 +98,7 @@ export const useAutoSave = (
         markAsSaved(items, rundownTitle, columns, timezone, startTime);
         lastSaveDataRef.current = currentDataSignature;
         
-        console.log('Auto-save completed at:', now);
+        console.log('Auto-save completed successfully at:', now);
       } catch (error) {
         console.error('Auto-save failed:', error);
         // Don't show toast for auto-save failures to avoid spam

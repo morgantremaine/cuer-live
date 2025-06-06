@@ -13,9 +13,9 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const hasInitializedOnceRef = useRef(false);
   const lastChangeCheckRef = useRef<string>('');
 
-  // Initialize tracking after first meaningful load with delay
+  // Initialize tracking after meaningful data loads
   useEffect(() => {
-    // Skip if already initialized with meaningful data
+    // Skip if already initialized properly
     if (hasInitializedOnceRef.current && initialLoadRef.current) {
       return;
     }
@@ -29,7 +29,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const hasMeaningfulData = items.length > 0 || rundownTitle !== 'Live Broadcast Rundown';
     
     if (!initialLoadRef.current && hasMeaningfulData) {
-      // Add a delay to prevent initialization during rapid state changes
+      // Add delay to prevent initialization during rapid state changes
       initializationTimeoutRef.current = setTimeout(() => {
         const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
         lastSavedDataRef.current = signature;
@@ -38,8 +38,11 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
         hasInitializedOnceRef.current = true;
         setIsInitialized(true);
         setHasUnsavedChanges(false);
-        console.log('Change tracking initialized');
-      }, 300); // Increased delay to prevent race conditions
+        console.log('Change tracking initialized with data:', { 
+          itemsCount: items.length, 
+          title: rundownTitle 
+        });
+      }, 100); // Reduced delay for faster initialization
     }
 
     return () => {
@@ -47,7 +50,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
         clearTimeout(initializationTimeoutRef.current);
       }
     };
-  }, [items.length > 0, rundownTitle, columns?.length]); // Better dependency tracking
+  }, [items.length > 0, rundownTitle]);
 
   // Track changes after initialization - but only if not loading
   useEffect(() => {
@@ -61,7 +64,11 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
       lastChangeCheckRef.current = currentSignature;
       
       if (hasChanges !== hasUnsavedChanges) {
-        console.log('Change detected:', hasChanges ? 'UNSAVED' : 'SAVED');
+        console.log('Change detected:', hasChanges ? 'UNSAVED' : 'SAVED', {
+          isLoading: isLoadingRef.current,
+          isInitialized,
+          itemsCount: items.length
+        });
         setHasUnsavedChanges(hasChanges);
       }
     }
@@ -72,21 +79,24 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     lastSavedDataRef.current = signature;
     lastChangeCheckRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Marked as saved');
+    console.log('Marked as saved:', { title: savedTitle, itemsCount: savedItems.length });
   };
 
   const markAsChanged = () => {
     if (!isLoadingRef.current && isInitialized) {
-      console.log('Marked as changed');
+      console.log('Marked as changed (user action)');
       setHasUnsavedChanges(true);
+    } else {
+      console.log('Change ignored - loading state:', { 
+        isLoading: isLoadingRef.current, 
+        isInitialized 
+      });
     }
   };
 
   const setIsLoading = (loading: boolean) => {
     isLoadingRef.current = loading;
-    if (loading) {
-      console.log('Setting loading mode - changes will be ignored');
-    }
+    console.log(loading ? 'Setting loading mode - changes will be ignored' : 'Loading complete - changes will be tracked');
   };
 
   return {

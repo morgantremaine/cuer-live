@@ -32,7 +32,6 @@ export const useRundownDataLoader = ({
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
-  const hasLoadedOnceRef = useRef(false);
 
   useEffect(() => {
     // Only proceed if we have rundowns loaded and a specific rundown ID
@@ -52,48 +51,44 @@ export const useRundownDataLoader = ({
 
     console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
     
-    // Mark as loading and loaded to prevent loops
+    // Mark as loading to prevent loops
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
-    hasLoadedOnceRef.current = true;
     
-    // Set the rundown data with a small delay to prevent race conditions
+    // Load the rundown data immediately without setTimeout to prevent race conditions
+    setRundownTitle(rundown.title);
+    
+    if (rundown.timezone) {
+      setTimezone(rundown.timezone);
+    }
+    
+    if (rundown.start_time) {
+      setRundownStartTime(rundown.start_time);
+    }
+    
+    if (rundown.columns) {
+      handleLoadLayout(rundown.columns);
+    }
+
+    // CRITICAL: Load the items back into the state
+    if (rundown.items && Array.isArray(rundown.items)) {
+      console.log('Setting rundown items:', rundown.items.length);
+      setItems(rundown.items);
+    }
+
+    // Call the callback with the loaded rundown
+    if (onRundownLoaded) {
+      onRundownLoaded(rundown);
+    }
+
+    // Reset loading flag after a short delay
     setTimeout(() => {
-      // Set the rundown data
-      setRundownTitle(rundown.title);
-      
-      if (rundown.timezone) {
-        setTimezone(rundown.timezone);
-      }
-      
-      if (rundown.start_time) {
-        setRundownStartTime(rundown.start_time);
-      }
-      
-      if (rundown.columns) {
-        handleLoadLayout(rundown.columns);
-      }
-
-      // CRITICAL: Load the items back into the state
-      if (rundown.items && Array.isArray(rundown.items)) {
-        console.log('Setting rundown items:', rundown.items.length);
-        setItems(rundown.items);
-      }
-
-      // Call the callback with the loaded rundown
-      if (onRundownLoaded) {
-        onRundownLoaded(rundown);
-      }
-
-      // Reset loading flag after a delay
-      setTimeout(() => {
-        isLoadingRef.current = false;
-      }, 200);
+      isLoadingRef.current = false;
     }, 50);
   }, [
     rundownId, 
     paramId, 
-    savedRundowns.length,
+    savedRundowns, // Watch the actual array, not just length
     loading, 
     setRundownTitle, 
     setTimezone, 
@@ -110,7 +105,6 @@ export const useRundownDataLoader = ({
       console.log('Rundown ID changed, resetting loader');
       loadedRef.current = null;
       isLoadingRef.current = false;
-      hasLoadedOnceRef.current = false;
     }
   }, [rundownId, paramId]);
 };

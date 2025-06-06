@@ -13,6 +13,7 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Refs to prevent multiple operations
   const isInitializedRef = useRef(false);
   const loadingOperationRef = useRef(false);
+  const initializationCompleteRef = useRef(false);
   
   // Get basic state management
   const basicState = useRundownBasicState();
@@ -33,10 +34,62 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
-  // Auto-save functionality
+  // Use the data loader to handle loading rundowns from storage
+  useRundownDataLoader({
+    rundownId,
+    savedRundowns: storage.savedRundowns,
+    loading: storage.loading,
+    setRundownTitle: basicState.setRundownTitleDirectly,
+    setTimezone: basicState.setTimezoneDirectly,
+    setRundownStartTime: basicState.setRundownStartTimeDirectly,
+    handleLoadLayout: stateIntegration.handleLoadLayout,
+    setItems: stateIntegration.setItems,
+    onRundownLoaded: (rundown) => {
+      console.log('Rundown loaded successfully:', rundown.title);
+      isInitializedRef.current = true;
+      initializationCompleteRef.current = true;
+      
+      // Clear loading state and allow change tracking
+      setTimeout(() => {
+        basicState.setIsLoading(false);
+        loadingOperationRef.current = false;
+      }, 100);
+    }
+  });
+
+  // Initialize with default items for new rundowns - ONLY after storage loads
+  useEffect(() => {
+    // Only run for new rundowns (no rundownId)
+    if (rundownId) return;
+    
+    // Wait for storage to finish loading
+    if (storage.loading) return;
+    
+    // Prevent multiple initializations
+    if (isInitializedRef.current || initializationCompleteRef.current) return;
+    
+    // Only initialize if we have no items and storage is done loading
+    if (stateIntegration.items.length === 0 && !loadingOperationRef.current) {
+      console.log('Initializing new rundown with default items');
+      loadingOperationRef.current = true;
+      basicState.setIsLoading(true);
+      
+      stateIntegration.setItems(defaultRundownItems);
+      isInitializedRef.current = true;
+      initializationCompleteRef.current = true;
+      
+      // Clear loading state after initialization
+      setTimeout(() => {
+        basicState.setIsLoading(false);
+        loadingOperationRef.current = false;
+      }, 200);
+    }
+  }, [rundownId, storage.loading, storage.savedRundowns.length]); // Better dependencies
+
+  // Auto-save functionality - ONLY after initialization is complete
   const { isSaving, lastSavedTimestamp } = useAutoSave(
     rundownId,
-    basicState.hasUnsavedChanges,
+    basicState.hasUnsavedChanges && initializationCompleteRef.current, // Only save after init
     stateIntegration.items,
     basicState.rundownTitle,
     stateIntegration.columns,
@@ -46,17 +99,18 @@ export const useRundownDataManagement = (rundownId: string) => {
     undoSystem.undoHistory
   );
 
-  // Polling for real-time collaboration
+  // Polling for real-time collaboration - ONLY for existing rundowns
   const polling = useRundownPolling({
-    rundownId,
+    rundownId: rundownId || undefined, // Only poll if we have an ID
     hasUnsavedChanges: basicState.hasUnsavedChanges,
     isAutoSaving: isSaving,
     lastSavedTimestamp,
     onUpdateReceived: (data) => {
-      if (loadingOperationRef.current) return;
+      if (loadingOperationRef.current || !initializationCompleteRef.current) return;
       
       console.log('Applying remote update:', data.title);
       loadingOperationRef.current = true;
+      basicState.setIsLoading(true);
       
       // Update all relevant state
       basicState.setRundownTitleDirectly(data.title);
@@ -76,6 +130,7 @@ export const useRundownDataManagement = (rundownId: string) => {
       basicState.markAsSaved(data.items, data.title, data.columns, data.timezone, data.startTime);
       
       setTimeout(() => {
+        basicState.setIsLoading(false);
         loadingOperationRef.current = false;
       }, 100);
     },
@@ -84,46 +139,6 @@ export const useRundownDataManagement = (rundownId: string) => {
       // The polling hook will handle showing the conflict indicator
     }
   });
-
-  // Use the data loader to handle loading rundowns from storage
-  useRundownDataLoader({
-    rundownId,
-    savedRundowns: storage.savedRundowns,
-    loading: storage.loading,
-    setRundownTitle: basicState.setRundownTitleDirectly,
-    setTimezone: basicState.setTimezoneDirectly,
-    setRundownStartTime: basicState.setRundownStartTimeDirectly,
-    handleLoadLayout: stateIntegration.handleLoadLayout,
-    setItems: stateIntegration.setItems,
-    onRundownLoaded: (rundown) => {
-      console.log('Rundown loaded successfully:', rundown.title);
-      isInitializedRef.current = true;
-    }
-  });
-
-  // Initialize with default items for new rundowns - FIXED with proper guards
-  useEffect(() => {
-    // Only run for new rundowns (no rundownId)
-    if (rundownId) return;
-    
-    // Wait for storage to finish loading
-    if (storage.loading) return;
-    
-    // Prevent multiple initializations
-    if (isInitializedRef.current) return;
-    
-    // Only initialize if we have no items and storage is done loading
-    if (stateIntegration.items.length === 0 && !loadingOperationRef.current) {
-      console.log('Initializing new rundown with default items');
-      loadingOperationRef.current = true;
-      stateIntegration.setItems(defaultRundownItems);
-      isInitializedRef.current = true;
-      
-      setTimeout(() => {
-        loadingOperationRef.current = false;
-      }, 100);
-    }
-  }, [rundownId, storage.loading]); // Removed items.length dependency to prevent loop
 
   return {
     // Basic state
@@ -143,6 +158,9 @@ export const useRundownDataManagement = (rundownId: string) => {
     lastSavedTimestamp,
     
     // Polling state
-    ...polling
+    ...polling,
+    
+    // Initialization state for debugging
+    isInitialized: initializationCompleteRef.current
   };
 };
