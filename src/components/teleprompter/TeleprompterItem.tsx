@@ -72,11 +72,11 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
         textColor = 'white'; // White text on colored backgrounds for better contrast
       }
 
-      // Add the styled bracket content
+      // Add the styled bracket content with more compact padding
       parts.push(
         <span
           key={`bracket-${match.index}`}
-          className="py-2 px-4 inline-block rounded mx-1"
+          className="py-1 px-2 inline-block rounded mx-1"
           style={{ 
             backgroundColor,
             color: textColor,
@@ -125,17 +125,7 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
         [{getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}]
       </div>
 
-      {/* Talent */}
-      {item.talent && (
-        <div 
-          className="text-left mb-8 bg-white text-black py-2 px-4 inline-block rounded"
-          style={{ fontSize: `${fontSize}px` }}
-        >
-          {formatText(item.talent)}
-        </div>
-      )}
-
-      {/* Script with bracket parsing */}
+      {/* Script with bracket parsing - talent display removed */}
       <div 
         className="leading-relaxed text-left whitespace-pre-wrap"
         style={{ 
