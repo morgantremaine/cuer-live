@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useTeam } from './useTeam';
 import { useToast } from './use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
 export const useInvitationHandler = () => {
@@ -11,8 +11,16 @@ export const useInvitationHandler = () => {
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
+    // Don't run the invitation handler if we're on the JoinTeam page
+    // The JoinTeam page should handle its own invitation flow
+    if (location.pathname.startsWith('/join-team/')) {
+      console.log('On JoinTeam page, skipping invitation handler');
+      return;
+    }
+
     const handlePendingInvitation = async () => {
       // Wait for user state to be determined (either logged in or null)
       if (user === undefined) {
@@ -96,5 +104,5 @@ export const useInvitationHandler = () => {
     // Small delay to ensure auth state is fully established
     const timer = setTimeout(handlePendingInvitation, 1000);
     return () => clearTimeout(timer);
-  }, [user, acceptInvitation, toast, navigate]);
+  }, [user, acceptInvitation, toast, navigate, location.pathname]);
 };

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -32,8 +33,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null)
       setLoading(false)
       
-      // Clean up any invalid invitation tokens when auth state changes
-      setTimeout(() => clearInvalidTokens(), 100);
+      // Only clean up invalid tokens when there's actually a user session
+      // This prevents clearing tokens during initial auth state determination
+      if (session?.user) {
+        setTimeout(() => clearInvalidTokens(), 100);
+      }
     })
 
     // THEN get initial session
@@ -45,8 +49,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null)
       setLoading(false)
       
-      // Clean up any invalid invitation tokens
-      setTimeout(() => clearInvalidTokens(), 100);
+      // Only clean up invalid tokens if there's a user
+      if (session?.user) {
+        setTimeout(() => clearInvalidTokens(), 100);
+      }
     })
 
     return () => {
