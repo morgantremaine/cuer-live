@@ -1,5 +1,6 @@
 
 import { useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
@@ -7,7 +8,10 @@ import { useRundownBasicState } from './useRundownBasicState';
 import { useAutoSave } from './useAutoSave';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
-export const useRundownDataManagement = (rundownId: string) => {
+export const useRundownDataManagement = (providedRundownId?: string) => {
+  const { rundownId: urlRundownId } = useParams<{ rundownId: string }>();
+  const rundownId = providedRundownId || urlRundownId;
+  
   const isInitializedRef = useRef(false);
   const loadedRundownIdRef = useRef<string | null>(null);
   const hasLoadedRundownsRef = useRef(false);
@@ -31,10 +35,10 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
-  // Data loading effect - completely rewritten to fix the loop
+  // Data loading effect - fixed to handle empty rundownId properly
   useEffect(() => {
-    // Only proceed if we have rundowns loaded and haven't initialized yet
-    if (storage.loading || !storage.savedRundowns || storage.savedRundowns.length === 0) {
+    // Only proceed if we have rundowns loaded
+    if (storage.loading || !storage.savedRundowns) {
       return;
     }
 
@@ -44,15 +48,15 @@ export const useRundownDataManagement = (rundownId: string) => {
       console.log('Rundowns loaded, count:', storage.savedRundowns.length);
     }
 
-    // Don't re-initialize if we're already done
+    // Don't re-initialize if we're already done with this specific rundown
     if (isInitializedRef.current && loadedRundownIdRef.current === rundownId) {
       return;
     }
 
-    console.log('Attempting to load rundown:', rundownId);
+    console.log('Attempting to load rundown:', rundownId || 'NEW');
     basicState.setIsLoading(true);
 
-    if (rundownId) {
+    if (rundownId && rundownId.trim() !== '') {
       // Try to load existing rundown
       const rundown = storage.savedRundowns.find(r => r.id === rundownId);
       if (rundown) {
@@ -75,7 +79,7 @@ export const useRundownDataManagement = (rundownId: string) => {
       } else {
         console.log('Rundown not found, initializing with defaults');
         stateIntegration.setItems(defaultRundownItems);
-        loadedRundownIdRef.current = null;
+        loadedRundownIdRef.current = rundownId; // Still mark as loaded to prevent reloading
       }
     } else {
       // No rundown ID - initialize new rundown only if no items exist
@@ -90,18 +94,17 @@ export const useRundownDataManagement = (rundownId: string) => {
     setTimeout(() => {
       basicState.setIsLoading(false);
       isInitializedRef.current = true;
-      console.log('Data management initialization complete');
+      console.log('Data management initialization complete for:', rundownId || 'NEW');
     }, 100);
 
-  }, [rundownId, storage.savedRundowns.length, hasLoadedRundownsRef.current]);
+  }, [rundownId, storage.savedRundowns?.length, storage.loading]);
 
   // Reset when rundown ID changes
   useEffect(() => {
     if (loadedRundownIdRef.current !== rundownId) {
-      console.log('Rundown ID changed, resetting initialization');
+      console.log('Rundown ID changed from', loadedRundownIdRef.current, 'to', rundownId);
       isInitializedRef.current = false;
       loadedRundownIdRef.current = null;
-      hasLoadedRundownsRef.current = false;
     }
   }, [rundownId]);
 
@@ -132,6 +135,7 @@ export const useRundownDataManagement = (rundownId: string) => {
     lastSavedTimestamp,
     isInitialized: isInitializedRef.current,
     hasRemoteUpdates: false, // Add missing property
-    clearRemoteUpdatesIndicator // Add missing function
+    clearRemoteUpdatesIndicator, // Add missing function
+    rundownId // Ensure rundownId is available in return
   };
 };

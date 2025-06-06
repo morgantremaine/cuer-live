@@ -9,8 +9,10 @@ import { useRundownGridUI } from './useRundownGridUI';
 export const useRundownGridState = () => {
   const { rundownId } = useParams<{ rundownId: string }>();
   
-  // Get all data management functionality including polling
-  const dataManagement = useRundownDataManagement(rundownId || '');
+  console.log('useRundownGridState - rundownId from params:', rundownId);
+  
+  // Get all data management functionality including polling - pass the rundownId explicitly
+  const dataManagement = useRundownDataManagement(rundownId);
   
   // Get core grid functionality
   const gridCore = useRundownGridCore();
@@ -84,7 +86,7 @@ export const useRundownGridState = () => {
     // UI state
     ...gridUI,
     
-    // Ensure rundownId is available
-    rundownId
+    // Ensure rundownId is available - use the one from data management which handles URL params
+    rundownId: dataManagement.rundownId || rundownId
   };
 };
