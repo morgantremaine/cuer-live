@@ -18,15 +18,17 @@ export const useStableRealtimeCollaboration = ({
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Use refs to store stable values
+  // Use refs to store stable values and prevent re-renders
   const subscriptionRef = useRef<any>(null);
   const isConnectedRef = useRef(false);
   const currentRundownIdRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const onRemoteUpdateRef = useRef(onRemoteUpdate);
   
-  // Update refs when values change
+  // Update refs when values change, but don't trigger effects
   currentRundownIdRef.current = rundownId;
   userIdRef.current = user?.id || null;
+  onRemoteUpdateRef.current = onRemoteUpdate;
 
   const cleanup = useCallback(() => {
     if (subscriptionRef.current) {
@@ -60,8 +62,8 @@ export const useStableRealtimeCollaboration = ({
 
     console.log('✅ Processing remote update from teammate');
     
-    // Apply the update
-    onRemoteUpdate();
+    // Apply the update using the current ref
+    onRemoteUpdateRef.current();
     
     // Show notification
     toast({
@@ -69,9 +71,9 @@ export const useStableRealtimeCollaboration = ({
       description: 'Your teammate made changes to this rundown',
       duration: 3000,
     });
-  }, [onRemoteUpdate, toast]);
+  }, [toast]);
 
-  // Single effect that handles all subscription logic
+  // Single stable effect that only runs when essential values change
   useEffect(() => {
     // Skip if we don't have required data
     if (!enabled || !user?.id || !rundownId) {
@@ -79,8 +81,9 @@ export const useStableRealtimeCollaboration = ({
       return;
     }
 
-    // Skip if we already have the same subscription
+    // Skip if we already have a subscription for the same rundown
     if (subscriptionRef.current && currentRundownIdRef.current === rundownId) {
+      console.log('📋 Already subscribed to this rundown, skipping');
       return;
     }
 
@@ -118,7 +121,7 @@ export const useStableRealtimeCollaboration = ({
 
     subscriptionRef.current = channel;
 
-    // Cleanup on unmount or dependency change
+    // Cleanup on unmount
     return cleanup;
   }, [user?.id, rundownId, enabled, handleRealtimeUpdate, cleanup]);
 

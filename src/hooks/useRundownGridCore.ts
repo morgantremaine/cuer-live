@@ -52,16 +52,16 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Stable callback for remote updates
-  const onRemoteUpdate = useCallback(() => {
+  // Create a TRULY stable callback for remote updates
+  const stableOnRemoteUpdate = useCallback(() => {
     console.log('📡 Remote update detected, refreshing rundowns...');
     loadRundowns();
   }, [loadRundowns]);
 
-  // Set up realtime collaboration with stable callback
+  // Set up realtime collaboration - this should be the ONLY realtime hook
   const { isConnected } = useStableRealtimeCollaboration({
     rundownId,
-    onRemoteUpdate,
+    onRemoteUpdate: stableOnRemoteUpdate,
     enabled: !!rundownId
   });
 
