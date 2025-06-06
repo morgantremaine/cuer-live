@@ -59,7 +59,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     }
     // If it's actually a Column object, get width and ensure it's a string
     const width = props.getColumnWidth(column.id || column);
-    return typeof width === 'number' ? `${width}px` : width.toString();
+    return typeof width === 'number' ? `${width}px` : String(width || '150px');
   };
 
   // Create adapter for getRowStatus to match expected return type
@@ -70,16 +70,16 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     return status as 'upcoming' | 'current' | 'completed';
   };
 
-  // Convert showColorPicker to string | null
+  // Convert showColorPicker to string | null - fix the type error
   const showColorPickerString = props.showColorPicker ? 'active' : null;
 
   // Ensure cellRefs has the correct type
   const cellRefsAdapter = props.cellRefs as React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
 
-  // Convert timeRemaining to number if it's a string
+  // Convert timeRemaining to number if it's a string - fix the toString error
   const timeRemainingNumber = typeof props.timeRemaining === 'string' 
     ? parseFloat(props.timeRemaining) || 0 
-    : props.timeRemaining;
+    : (typeof props.timeRemaining === 'number' ? props.timeRemaining : 0);
 
   return (
     <RundownMainContent

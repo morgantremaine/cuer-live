@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -168,11 +167,11 @@ const RundownIndexContent = () => {
     handleLoadLayout(newColumns);
   };
 
-  // Convert hasClipboardData to boolean
+  // Convert hasClipboardData to boolean - fix the type error
   const hasClipboardDataBoolean = typeof hasClipboardData === 'function' ? hasClipboardData() : Boolean(hasClipboardData);
 
   // Convert timeRemaining to string
-  const timeRemainingString = typeof timeRemaining === 'number' ? timeRemaining.toString() : (timeRemaining || '0');
+  const timeRemainingString = typeof timeRemaining === 'number' ? timeRemaining.toString() : String(timeRemaining || '0');
 
   // Prepare rundown data for Cuer AI
   const rundownData = {
