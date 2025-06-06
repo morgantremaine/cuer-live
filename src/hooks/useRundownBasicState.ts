@@ -8,6 +8,8 @@ export const useRundownBasicState = () => {
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [timezone, setTimezone] = useState('America/New_York');
   const [rundownStartTime, setRundownStartTime] = useState('19:00');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showColumnManager, setShowColumnManager] = useState(false);
   
   // Use change tracking with current state
   const changeTracking = useChangeTracking(
@@ -58,6 +60,11 @@ export const useRundownBasicState = () => {
     rundownTitle,
     timezone,
     rundownStartTime,
+    currentTime,
+    showColumnManager,
+    
+    // State setters
+    setShowColumnManager,
     
     // Direct setters (for loading)
     setRundownTitleDirectly,
