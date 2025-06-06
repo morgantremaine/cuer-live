@@ -70,4 +70,8 @@ export interface RundownContainerProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  // Realtime collaboration status
+  isConnected: boolean;
+  hasPendingChanges: boolean;
+  isEditing: boolean;
 }
