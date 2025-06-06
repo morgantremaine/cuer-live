@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
+import CreateNewButton from '@/components/CreateNewButton';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -81,12 +82,14 @@ const Dashboard = () => {
       />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-12">
+          {/* Create New Button */}
+          <CreateNewButton onClick={handleCreateNew} />
+          
           {/* Active Rundowns Section */}
           <DashboardRundownGrid 
             title="Active Rundowns"
             rundowns={activeRundowns}
             loading={loading}
-            onCreateNew={handleCreateNew}
             onOpen={handleOpenRundown}
             onDelete={handleDeleteRundown}
             onArchive={handleArchiveRundown}
