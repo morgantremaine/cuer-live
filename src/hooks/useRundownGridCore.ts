@@ -57,37 +57,19 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
+  // Pending updates for manual refresh
+  const { hasPendingUpdates, markPendingUpdates, clearPendingUpdates } = usePendingUpdates();
+
   // Create a TRULY stable callback for remote updates using ref
   const onRemoteUpdateRef = useRef(() => {
-    console.log('📡 Remote update detected, refreshing rundowns...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      stableCallbacksRef.current.loadRundowns();
-    }
-  });
-
-  // Create a stable callback for reloading current rundown with forced refresh
-  const onReloadCurrentRundownRef = useRef(() => {
-    console.log('🔄 Forcing reload of current rundown data after remote update...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      // Force a fresh load from the database
-      stableCallbacksRef.current.loadRundowns();
-    }
+    console.log('📡 Remote update detected, marking pending updates...');
+    markPendingUpdates();
   });
 
   // Update the refs when functions change, but don't recreate the callbacks
   onRemoteUpdateRef.current = () => {
-    console.log('📡 Remote update detected, refreshing rundowns...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      stableCallbacksRef.current.loadRundowns();
-    }
-  };
-
-  onReloadCurrentRundownRef.current = () => {
-    console.log('🔄 Forcing reload of current rundown data after remote update...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      // Force a fresh load from the database
-      stableCallbacksRef.current.loadRundowns();
-    }
+    console.log('📡 Remote update detected, marking pending updates...');
+    markPendingUpdates();
   };
 
   // Use stable callbacks that never change
@@ -95,15 +77,19 @@ export const useRundownGridCore = () => {
     onRemoteUpdateRef.current();
   }, []); // No dependencies!
 
-  const stableOnReloadCurrentRundown = useCallback(() => {
-    onReloadCurrentRundownRef.current();
-  }, []); // No dependencies!
+  // Manual refresh handler
+  const handleManualRefresh = useCallback(() => {
+    console.log('🔄 Manual refresh triggered');
+    clearPendingUpdates();
+    if (stableCallbacksRef.current.loadRundowns) {
+      stableCallbacksRef.current.loadRundowns();
+    }
+  }, [clearPendingUpdates]);
 
   // Set up realtime collaboration with truly stable callbacks
-  const { isConnected } = useStableRealtimeCollaboration({
+  const { isConnected } = useSimpleRealtimeCollaboration({
     rundownId,
     onRemoteUpdate: stableOnRemoteUpdate,
-    onReloadCurrentRundown: stableOnReloadCurrentRundown,
     enabled: !!rundownId
   });
 
@@ -361,6 +347,10 @@ export const useRundownGridCore = () => {
     handleUndo,
     canUndo,
     lastAction,
+
+    // Manual refresh functionality
+    hasPendingUpdates,
+    handleManualRefresh,
 
     // Realtime status
     isConnected,

@@ -1,21 +1,39 @@
+
 import { useState, useEffect } from 'react';
 import { SearchMatch } from '@/types/search';
 
 export const useSearch = (
   items: any[], 
-  visibleColumns: any[], 
-  onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void
+  visibleColumns: any[]
 ) => {
   const [searchText, setSearchText] = useState('');
   const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
+  const [currentHighlight, setCurrentHighlight] = useState<{
+    itemId: string;
+    field: string;
+    startIndex: number;
+    endIndex: number;
+  } | null>(null);
+
+  const highlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
+    if (itemId && field) {
+      setCurrentHighlight({ itemId, field, startIndex, endIndex });
+    } else {
+      setCurrentHighlight(null);
+    }
+  };
+
+  const replaceText = (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
+    // This would be implemented by the parent component
+    console.log('Replace text functionality would be handled by parent');
+  };
 
   const performSearch = (text: string) => {
     if (!text.trim()) {
       setMatches([]);
       setCurrentMatchIndex(-1);
-      // Clear any existing highlights
-      onHighlightMatch('', '', 0, 0);
+      setCurrentHighlight(null);
       return;
     }
 
@@ -48,23 +66,20 @@ export const useSearch = (
 
     setMatches(foundMatches);
     
-    // Only update current match index if we have matches and no current match is set
     if (foundMatches.length > 0) {
-      // If we don't have a current match or the current index is invalid, set to first match
       if (currentMatchIndex === -1 || currentMatchIndex >= foundMatches.length) {
         setCurrentMatchIndex(0);
         const firstMatch = foundMatches[0];
-        onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
+        highlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
       } else {
-        // Keep the current match if it's still valid
         const currentMatch = foundMatches[currentMatchIndex];
         if (currentMatch) {
-          onHighlightMatch(currentMatch.itemId, currentMatch.field, currentMatch.index, currentMatch.index + currentMatch.length);
+          highlightMatch(currentMatch.itemId, currentMatch.field, currentMatch.index, currentMatch.index + currentMatch.length);
         }
       }
     } else {
       setCurrentMatchIndex(-1);
-      onHighlightMatch('', '', 0, 0);
+      setCurrentHighlight(null);
     }
   };
 
@@ -72,7 +87,7 @@ export const useSearch = (
     setCurrentMatchIndex(newIndex);
     if (newIndex >= 0 && newIndex < matches.length) {
       const match = matches[newIndex];
-      onHighlightMatch(match.itemId, match.field, match.index, match.index + match.length);
+      highlightMatch(match.itemId, match.field, match.index, match.index + match.length);
     }
   };
 
@@ -86,6 +101,9 @@ export const useSearch = (
     matches,
     currentMatchIndex,
     setCurrentMatchIndex: updateCurrentMatch,
-    performSearch
+    performSearch,
+    highlightMatch,
+    replaceText,
+    currentHighlight
   };
 };
