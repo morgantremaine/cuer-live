@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
@@ -37,7 +38,7 @@ export const useRundownStateIntegration = (
     handleLoadLayout,
     handleUpdateColumnWidth,
     updateMarkAsChanged
-  } = useColumnsManager();
+  } = useColumnsManager(); // Call without arguments initially
 
   // Auto-save functionality - now that columns is available
   const { hasUnsavedChanges, isSaving, setRundownId, markAsChanged } = useAutoSave(
