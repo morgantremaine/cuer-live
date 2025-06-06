@@ -4,7 +4,8 @@ import { useEffect, useRef } from 'react';
 export const useTeleprompterScroll = (
   isScrolling: boolean,
   scrollSpeed: number,
-  containerRef: React.RefObject<HTMLDivElement>
+  containerRef: React.RefObject<HTMLDivElement>,
+  isReverse?: boolean
 ) => {
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -20,7 +21,12 @@ export const useTeleprompterScroll = (
 
       // Convert scroll speed to pixels per second (speed * 60 pixels per second)
       const pixelsPerSecond = scrollSpeed * 60;
-      const scrollIncrement = (pixelsPerSecond * deltaTime) / 1000;
+      let scrollIncrement = (pixelsPerSecond * deltaTime) / 1000;
+
+      // Reverse direction if isReverse is true
+      if (isReverse) {
+        scrollIncrement = -scrollIncrement;
+      }
 
       containerRef.current.scrollTop += scrollIncrement;
 
@@ -45,5 +51,5 @@ export const useTeleprompterScroll = (
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isScrolling, scrollSpeed, containerRef]);
+  }, [isScrolling, scrollSpeed, containerRef, isReverse]);
 };

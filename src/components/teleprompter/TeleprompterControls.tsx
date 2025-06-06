@@ -5,7 +5,7 @@ import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type } from 'lucide-reac
 interface TeleprompterControlsProps {
   isScrolling: boolean;
   fontSize: number;
-  scrollSpeed: number;
+  scrollSpeed: number; // This now represents the actual speed (can be negative)
   isUppercase: boolean;
   onToggleScrolling: () => void;
   onResetScroll: () => void;
@@ -27,6 +27,16 @@ const TeleprompterControls = ({
   onAdjustFontSize,
   onAdjustScrollSpeed
 }: TeleprompterControlsProps) => {
+  const formatSpeed = (speed: number) => {
+    if (speed === 0) return '0x';
+    return `${speed > 0 ? '' : ''}${speed}x`;
+  };
+
+  const getPlayButtonText = () => {
+    if (scrollSpeed === 0) return 'Play';
+    return isScrolling ? 'Pause' : 'Resume';
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-10 bg-black bg-opacity-90 border-b border-gray-700 p-4">
       <div className="flex justify-between items-center">
@@ -37,7 +47,7 @@ const TeleprompterControls = ({
             className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm"
           >
             {isScrolling ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            <span>{isScrolling ? 'Pause' : 'Play'}</span>
+            <span>{getPlayButtonText()}</span>
           </button>
           
           <button
@@ -96,7 +106,9 @@ const TeleprompterControls = ({
             >
               <Minus className="h-4 w-4" />
             </button>
-            <span className="text-sm w-8 text-center">{scrollSpeed}x</span>
+            <span className={`text-sm w-12 text-center ${scrollSpeed < 0 ? 'text-orange-400' : scrollSpeed === 0 ? 'text-gray-400' : 'text-white'}`}>
+              {formatSpeed(scrollSpeed)}
+            </span>
             <button
               onClick={() => onAdjustScrollSpeed(0.5)}
               className="p-2 bg-gray-800 hover:bg-gray-700 rounded"
@@ -106,8 +118,19 @@ const TeleprompterControls = ({
           </div>
         </div>
 
-        {/* Right side - empty for balance */}
-        <div className="w-32"></div>
+        {/* Right side - Current Status */}
+        <div className="w-32 text-right text-sm">
+          <div className={`font-semibold ${
+            scrollSpeed < 0 ? 'text-orange-400' : 
+            scrollSpeed === 0 ? 'text-gray-400' : 
+            'text-green-400'
+          }`}>
+            {scrollSpeed < 0 ? 'REVERSE' : scrollSpeed === 0 ? 'STOPPED' : 'FORWARD'}
+          </div>
+          <div className="text-xs text-gray-400">
+            {isScrolling ? 'Playing' : 'Paused'}
+          </div>
+        </div>
       </div>
     </div>
   );

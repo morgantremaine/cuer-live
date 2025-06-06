@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -33,11 +32,13 @@ const Teleprompter = () => {
     adjustFontSize,
     adjustScrollSpeed,
     toggleFullscreen,
-    toggleUppercase
+    toggleUppercase,
+    getCurrentSpeed,
+    isReverse
   } = useTeleprompterControls();
 
-  // Use the scroll hook
-  useTeleprompterScroll(isScrolling, scrollSpeed, containerRef);
+  // Use the scroll hook with reverse support
+  useTeleprompterScroll(isScrolling, scrollSpeed, containerRef, isReverse());
 
   // Load rundown data with public access (same as SharedRundown)
   const loadRundownData = async () => {
@@ -184,7 +185,7 @@ const Teleprompter = () => {
         <TeleprompterControls
           isScrolling={isScrolling}
           fontSize={fontSize}
-          scrollSpeed={scrollSpeed}
+          scrollSpeed={getCurrentSpeed()}
           isUppercase={isUppercase}
           onToggleScrolling={toggleScrolling}
           onResetScroll={resetScroll}
@@ -204,6 +205,13 @@ const Teleprompter = () => {
         isUppercase={isUppercase}
         getRowNumber={getRowNumber}
       />
+
+      {/* Keyboard Instructions - Only show when not fullscreen */}
+      {!isFullscreen && (
+        <div className="fixed bottom-4 left-4 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
+          <div>Arrow Keys: Adjust Speed | Space: Play/Pause | Esc: Exit Fullscreen</div>
+        </div>
+      )}
     </div>
   );
 };
