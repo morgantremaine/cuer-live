@@ -10,6 +10,8 @@ import { useEditingDetection } from './useEditingDetection';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
+  console.log('🔄 useRundownDataManagement called with rundownId:', rundownId);
+  
   // Get basic state management
   const basicState = useRundownBasicState();
   
@@ -50,22 +52,29 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Get current rundown data for realtime comparison
   const currentRundown = storage.savedRundowns.find(r => r.id === rundownId);
 
-  // Initialize realtime updates - ensure this is called for every rundown
+  // ALWAYS initialize realtime updates - this is the key fix
+  console.log('🔴 Setting up realtime with:', {
+    rundownId,
+    hasCurrentRundown: !!currentRundown,
+    isEditing,
+    isSaving: stateIntegration.isSaving
+  });
+
   useRundownRealtime({
-    currentRundownId: rundownId,
+    currentRundownId: rundownId, // Always pass the rundownId, even for new rundowns
     currentUpdatedAt: currentRundown?.updated_at,
     onRemoteUpdate: () => {
-      console.log('Remote rundown update detected, refreshing data...');
+      console.log('📡 Remote rundown update detected, refreshing data...');
       // Always refresh when remote update is detected, but be smarter about conflicts
       if (!stateIntegration.isSaving) {
-        console.log('Applying remote update - reloading rundowns');
+        console.log('✅ Applying remote update - reloading rundowns');
         storage.loadRundowns();
       } else {
-        console.log('Delaying remote update - currently saving');
+        console.log('⏳ Delaying remote update - currently saving');
         // Set a timeout to check again after saving is done
         setTimeout(() => {
           if (!stateIntegration.isSaving) {
-            console.log('Applying delayed remote update');
+            console.log('✅ Applying delayed remote update');
             storage.loadRundowns();
           }
         }, 1000);

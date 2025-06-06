@@ -67,5 +67,7 @@ export const useEditingDetection = () => {
     };
   }, []);
 
+  console.log('📝 Editing detection state:', { isEditing });
+
   return { isEditing, markAsEditing };
 };
