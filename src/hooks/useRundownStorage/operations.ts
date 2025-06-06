@@ -6,11 +6,16 @@ import { Column } from '@/hooks/useColumnsManager'
 export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
-  // Load user's own rundowns with simplified query (no team joins for now)
+  // Load user's own rundowns and team rundowns
   const { data, error } = await supabase
     .from('rundowns')
-    .select('*')
-    .eq('user_id', userId)
+    .select(`
+      *,
+      teams (
+        id,
+        name
+      )
+    `)
     .eq('archived', false)
     .order('updated_at', { ascending: false })
 
@@ -94,7 +99,6 @@ export const updateRundownInDatabase = async (
     .from('rundowns')
     .update(updateData)
     .eq('id', id)
-    .eq('user_id', userId)
     .select()
     .single()
 
@@ -114,7 +118,6 @@ export const deleteRundownFromDatabase = async (id: string, userId: string) => {
     .from('rundowns')
     .delete()
     .eq('id', id)
-    .eq('user_id', userId)
 
   if (error) {
     console.error('Database error deleting rundown:', error)

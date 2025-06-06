@@ -21,6 +21,9 @@ export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
     undo_history: rundown.undo_history || [],
     team_id: rundown.team_id,
     visibility: rundown.visibility,
-    teams: null // Set to null since we're not joining teams data currently
+    teams: rundown.teams ? {
+      id: rundown.teams.id,
+      name: rundown.teams.name
+    } : null
   }))
 }
