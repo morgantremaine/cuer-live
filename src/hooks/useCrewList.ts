@@ -1,21 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CrewMember } from '@/types/crew';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 
 export const useCrewList = (rundownId: string, rundownTitle: string) => {
-  const [crewMembers, setCrewMembers] = useState<CrewMember[]>(() => {
-    // Initialize with 5 empty rows
-    return Array.from({ length: 5 }, (_, index) => ({
-      id: `crew-${index + 1}`,
-      role: '',
-      name: '',
-      phone: '',
-      email: ''
-    }));
-  });
-
+  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const initializationRef = useRef(false);
 
   // Get blueprint persistence functions
   const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
@@ -26,40 +18,70 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
     setSavedBlueprint
   );
 
+  // Create default crew members
+  const createDefaultCrewMembers = (): CrewMember[] => {
+    return Array.from({ length: 5 }, (_, index) => ({
+      id: `crew-${index + 1}`,
+      role: '',
+      name: '',
+      phone: '',
+      email: ''
+    }));
+  };
+
   // Initialize crew data and load from blueprint if exists
   useEffect(() => {
-    if (!isInitialized && rundownId) {
-      const initializeCrewData = async () => {
-        try {
-          const blueprintData = await loadBlueprint();
-          if (blueprintData?.crew_data && Array.isArray(blueprintData.crew_data)) {
-            setCrewMembers(blueprintData.crew_data);
-          }
-        } catch (error) {
-          // Silently handle error, keep default data
+    if (!rundownId || isInitialized || initializationRef.current) return;
+    
+    initializationRef.current = true;
+    
+    const initializeCrewData = async () => {
+      try {
+        // Start with default crew members
+        const defaultMembers = createDefaultCrewMembers();
+        setCrewMembers(defaultMembers);
+        
+        // Try to load from blueprint
+        const blueprintData = await loadBlueprint();
+        if (blueprintData?.crew_data && Array.isArray(blueprintData.crew_data) && blueprintData.crew_data.length > 0) {
+          setCrewMembers(blueprintData.crew_data);
         }
+      } catch (error) {
+        console.log('Failed to load crew data, using defaults');
+        // Keep default data on error
+      } finally {
         setIsInitialized(true);
-      };
-      initializeCrewData();
-    }
-  }, [isInitialized, rundownId, loadBlueprint]);
+        initializationRef.current = false;
+      }
+    };
+    
+    initializeCrewData();
+  }, [rundownId, isInitialized, loadBlueprint]);
 
-  // Auto-save crew data changes
+  // Debounced auto-save crew data changes
   const saveCrewData = async (updatedMembers: CrewMember[]) => {
     if (!isInitialized) return;
     
-    try {
-      await saveBlueprint(
-        savedBlueprint?.lists || [],
-        true, // silent save
-        savedBlueprint?.show_date,
-        savedBlueprint?.notes,
-        updatedMembers,
-        savedBlueprint?.camera_plots
-      );
-    } catch (error) {
-      // Silently handle save errors
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+    
+    // Set new timeout for debounced save
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await saveBlueprint(
+          savedBlueprint?.lists || [],
+          true, // silent save
+          savedBlueprint?.show_date,
+          savedBlueprint?.notes,
+          updatedMembers,
+          savedBlueprint?.camera_plots
+        );
+      } catch (error) {
+        console.error('Failed to save crew data:', error);
+      }
+    }, 1000);
   };
 
   const addRow = () => {
@@ -88,8 +110,7 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
       member.id === id ? { ...member, [field]: value } : member
     );
     setCrewMembers(updatedMembers);
-    // Debounce the save to avoid too many calls during typing
-    setTimeout(() => saveCrewData(updatedMembers), 1000);
+    saveCrewData(updatedMembers);
   };
 
   const reorderMembers = (draggedIndex: number, targetIndex: number) => {
@@ -99,6 +120,15 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
     setCrewMembers(newMembers);
     saveCrewData(newMembers);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     crewMembers,

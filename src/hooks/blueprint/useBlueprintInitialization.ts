@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn } from '@/utils/blueprintUtils';
@@ -20,26 +20,46 @@ export const useBlueprintInitialization = (
   saveBlueprint: (lists: BlueprintList[], silent?: boolean) => void,
   generateListId: (sourceColumn: string) => string
 ) => {
+  const initializationLockRef = useRef(false);
+  
   useEffect(() => {
     // Reset if rundown changed
     if (rundownId !== stateRef.current.currentRundownId && stateRef.current.currentRundownId !== '') {
+      console.log('Rundown changed, resetting blueprint state');
       setLists([]);
       setInitialized(false);
       stateRef.current.currentRundownId = '';
       stateRef.current.isInitializing = false;
+      initializationLockRef.current = false;
     }
     
-    // Initialize if needed
-    if (user && rundownId && rundownTitle && items.length > 0 && !initialized && !loading && !stateRef.current.isInitializing) {
+    // Initialize if needed - with better guards against race conditions
+    if (
+      user && 
+      rundownId && 
+      rundownTitle && 
+      items.length > 0 && 
+      !initialized && 
+      !loading && 
+      !stateRef.current.isInitializing &&
+      !initializationLockRef.current
+    ) {
+      console.log('Starting blueprint initialization for rundown:', rundownId);
+      
+      // Set all locks to prevent concurrent initialization
       stateRef.current.isInitializing = true;
+      initializationLockRef.current = true;
       stateRef.current.currentRundownId = rundownId;
       setLoading(true);
 
       const initializeBlueprint = async () => {
         try {
+          console.log('Loading blueprint data...');
           const blueprintData = await loadBlueprint();
           
-          if (blueprintData && blueprintData.lists && blueprintData.lists.length > 0) {
+          if (blueprintData && blueprintData.lists && Array.isArray(blueprintData.lists) && blueprintData.lists.length > 0) {
+            console.log('Found existing blueprint with', blueprintData.lists.length, 'lists');
+            
             const refreshedLists = blueprintData.lists.map((list: BlueprintList) => ({
               ...list,
               items: generateListFromColumn(items, list.sourceColumn),
@@ -52,6 +72,8 @@ export const useBlueprintInitialization = (
               setShowDate(blueprintData.show_date);
             }
           } else {
+            console.log('No existing blueprint found, creating default');
+            
             const defaultLists = [
               {
                 id: generateListId('headers'),
@@ -61,20 +83,69 @@ export const useBlueprintInitialization = (
                 checkedItems: {}
               }
             ];
+            
             setLists(defaultLists);
-            await saveBlueprint(defaultLists, true);
+            
+            // Save default blueprint
+            try {
+              await saveBlueprint(defaultLists, true);
+              console.log('Default blueprint saved');
+            } catch (saveError) {
+              console.error('Failed to save default blueprint:', saveError);
+            }
           }
           
           setInitialized(true);
+          console.log('Blueprint initialization completed');
         } catch (error) {
-          // Initialization failed silently
+          console.error('Blueprint initialization failed:', error);
+          
+          // Create minimal fallback state
+          const fallbackLists = [
+            {
+              id: generateListId('headers'),
+              name: 'Rundown Overview',
+              sourceColumn: 'headers',
+              items: generateListFromColumn(items, 'headers'),
+              checkedItems: {}
+            }
+          ];
+          setLists(fallbackLists);
+          setInitialized(true);
         } finally {
           setLoading(false);
           stateRef.current.isInitializing = false;
+          initializationLockRef.current = false;
         }
       };
 
       initializeBlueprint();
     }
-  }, [user, rundownId, rundownTitle, items.length, initialized, loading, loadBlueprint, saveBlueprint, generateListId, setLists, setInitialized, setLoading, setShowDate, stateRef]);
+  }, [
+    user, 
+    rundownId, 
+    rundownTitle, 
+    items.length, 
+    initialized, 
+    loading, 
+    loadBlueprint, 
+    saveBlueprint, 
+    generateListId, 
+    setLists, 
+    setInitialized, 
+    setLoading, 
+    setShowDate, 
+    stateRef
+  ]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (stateRef.current.isInitializing) {
+        console.log('Cleaning up blueprint initialization on unmount');
+        stateRef.current.isInitializing = false;
+        initializationLockRef.current = false;
+      }
+    };
+  }, [stateRef]);
 };

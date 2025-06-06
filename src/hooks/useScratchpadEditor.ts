@@ -14,6 +14,8 @@ export const useScratchpadEditor = (
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const initializationRef = useRef(false);
 
   // Get blueprint persistence functions
   const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
@@ -26,23 +28,37 @@ export const useScratchpadEditor = (
 
   // Load existing notes from blueprint
   useEffect(() => {
-    if (rundownId && !savedBlueprint) {
-      const loadNotes = async () => {
-        try {
-          const blueprintData = await loadBlueprint();
-          if (blueprintData?.notes) {
-            setNotes(blueprintData.notes);
-          }
-        } catch (error) {
-          // Silently handle error
+    if (!rundownId || isInitialized || initializationRef.current) return;
+    
+    initializationRef.current = true;
+    
+    const loadNotes = async () => {
+      try {
+        const blueprintData = await loadBlueprint();
+        if (blueprintData?.notes && typeof blueprintData.notes === 'string') {
+          setNotes(blueprintData.notes);
+        } else if (initialNotes) {
+          setNotes(initialNotes);
         }
-      };
-      loadNotes();
-    }
-  }, [rundownId, loadBlueprint, savedBlueprint]);
+      } catch (error) {
+        console.log('Failed to load notes, using initial notes');
+        if (initialNotes) {
+          setNotes(initialNotes);
+        }
+      } finally {
+        setIsInitialized(true);
+        initializationRef.current = false;
+      }
+    };
+    
+    loadNotes();
+  }, [rundownId, initialNotes, loadBlueprint, isInitialized]);
 
-  // Auto-save notes
+  // Debounced auto-save notes
   const saveNotes = useCallback(async (notesToSave: string) => {
+    if (!isInitialized) return;
+    
+    // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -51,8 +67,6 @@ export const useScratchpadEditor = (
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        console.log('Saving scratchpad notes');
-        // Use correct parameter order for saveBlueprint
         await saveBlueprint(
           savedBlueprint?.lists || [], // updatedLists
           true, // silent save
@@ -63,13 +77,16 @@ export const useScratchpadEditor = (
         );
         setSaveStatus('saved');
         onNotesChange?.(notesToSave);
-        console.log('Scratchpad notes saved successfully');
       } catch (error) {
         console.error('Error saving scratchpad notes:', error);
         setSaveStatus('error');
+        // Retry once after a delay
+        setTimeout(() => {
+          saveNotes(notesToSave);
+        }, 2000);
       }
     }, 1000);
-  }, [saveBlueprint, savedBlueprint, onNotesChange]);
+  }, [saveBlueprint, savedBlueprint, onNotesChange, isInitialized]);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);
@@ -160,6 +177,15 @@ export const useScratchpadEditor = (
       }, 0);
     }
   }, [saveNotes]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     notes,
