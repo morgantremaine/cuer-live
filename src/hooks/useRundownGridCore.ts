@@ -58,21 +58,37 @@ export const useRundownGridCore = () => {
     loadRundowns();
   });
 
-  // Update the ref when loadRundowns changes, but don't recreate the callback
+  // Create a stable callback for reloading current rundown
+  const onReloadCurrentRundownRef = useRef(() => {
+    console.log('🔄 Reloading current rundown after remote update...');
+    loadRundowns();
+  });
+
+  // Update the refs when functions change, but don't recreate the callbacks
   onRemoteUpdateRef.current = () => {
     console.log('📡 Remote update detected, refreshing rundowns...');
     loadRundowns();
   };
 
-  // Use a stable callback that never changes
+  onReloadCurrentRundownRef.current = () => {
+    console.log('🔄 Reloading current rundown after remote update...');
+    loadRundowns();
+  };
+
+  // Use stable callbacks that never change
   const stableOnRemoteUpdate = useCallback(() => {
     onRemoteUpdateRef.current();
   }, []); // No dependencies!
 
-  // Set up realtime collaboration with truly stable callback
+  const stableOnReloadCurrentRundown = useCallback(() => {
+    onReloadCurrentRundownRef.current();
+  }, []); // No dependencies!
+
+  // Set up realtime collaboration with truly stable callbacks
   const { isConnected } = useStableRealtimeCollaboration({
     rundownId,
     onRemoteUpdate: stableOnRemoteUpdate,
+    onReloadCurrentRundown: stableOnReloadCurrentRundown,
     enabled: !!rundownId
   });
 

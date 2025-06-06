@@ -6,12 +6,14 @@ import { useToast } from '@/hooks/use-toast';
 interface UseStableRealtimeCollaborationProps {
   rundownId: string | null;
   onRemoteUpdate: () => void;
+  onReloadCurrentRundown?: () => void;
   enabled?: boolean;
 }
 
 export const useStableRealtimeCollaboration = ({
   rundownId,
   onRemoteUpdate,
+  onReloadCurrentRundown,
   enabled = true
 }: UseStableRealtimeCollaborationProps) => {
   const { user } = useAuth();
@@ -23,6 +25,7 @@ export const useStableRealtimeCollaboration = ({
   const currentRundownIdRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
   const onRemoteUpdateRef = useRef(onRemoteUpdate);
+  const onReloadCurrentRundownRef = useRef(onReloadCurrentRundown);
   const enabledRef = useRef(enabled);
   const lastSetupRundownId = useRef<string | null>(null);
   
@@ -30,6 +33,7 @@ export const useStableRealtimeCollaboration = ({
   currentRundownIdRef.current = rundownId;
   userIdRef.current = user?.id || null;
   onRemoteUpdateRef.current = onRemoteUpdate;
+  onReloadCurrentRundownRef.current = onReloadCurrentRundown;
   enabledRef.current = enabled;
 
   // Create stable cleanup function that never changes
@@ -67,8 +71,16 @@ export const useStableRealtimeCollaboration = ({
 
     console.log('✅ Processing remote update from teammate');
     
-    // Apply the update using the current ref
+    // First refresh the rundowns list
     onRemoteUpdateRef.current();
+    
+    // Then reload the current rundown data to show the actual changes
+    if (onReloadCurrentRundownRef.current) {
+      setTimeout(() => {
+        console.log('🔄 Reloading current rundown data after remote update');
+        onReloadCurrentRundownRef.current?.();
+      }, 100);
+    }
     
     // Show notification
     toast({
