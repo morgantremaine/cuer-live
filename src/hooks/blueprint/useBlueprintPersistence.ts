@@ -21,11 +21,14 @@ export const useBlueprintPersistence = (
     try {
       console.log('Loading blueprint for rundown:', rundownId, 'user:', user.id);
       
-      // Load blueprint without trying to join profiles table
+      // Get the most recent blueprint for this rundown and user
       const { data, error } = await supabase
         .from('blueprints')
         .select('*')
         .eq('rundown_id', rundownId)
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -84,41 +87,26 @@ export const useBlueprintPersistence = (
 
       console.log('Blueprint data to save:', blueprintData);
 
-      let result;
-      
-      if (savedBlueprint?.id) {
-        console.log('Updating existing blueprint:', savedBlueprint.id);
-        const { data, error } = await supabase
-          .from('blueprints')
-          .update(blueprintData)
-          .eq('id', savedBlueprint.id)
-          .eq('user_id', user.id) // Only allow updating own blueprints
-          .select()
-          .single();
+      // Use upsert to ensure only one blueprint per rundown/user combination
+      const { data, error } = await supabase
+        .from('blueprints')
+        .upsert(
+          blueprintData,
+          { 
+            onConflict: 'user_id,rundown_id',
+            ignoreDuplicates: false 
+          }
+        )
+        .select()
+        .single();
 
-        if (error) {
-          console.error('Update blueprint error:', error);
-          throw error;
-        }
-        console.log('Blueprint updated successfully:', data);
-        result = data;
-      } else {
-        console.log('Creating new blueprint');
-        const { data, error } = await supabase
-          .from('blueprints')
-          .insert(blueprintData)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Insert blueprint error:', error);
-          throw error;
-        }
-        console.log('Blueprint created successfully:', data);
-        result = data;
+      if (error) {
+        console.error('Upsert blueprint error:', error);
+        throw error;
       }
       
-      setSavedBlueprint(result);
+      console.log('Blueprint upserted successfully:', data);
+      setSavedBlueprint(data);
 
       if (!silent) {
         toast({
