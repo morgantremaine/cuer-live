@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
@@ -10,6 +10,10 @@ import { useAutoSave } from './useAutoSave';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
+  // Refs to prevent multiple operations
+  const isInitializedRef = useRef(false);
+  const loadingOperationRef = useRef(false);
+  
   // Get basic state management
   const basicState = useRundownBasicState();
   
@@ -49,7 +53,10 @@ export const useRundownDataManagement = (rundownId: string) => {
     isAutoSaving: isSaving,
     lastSavedTimestamp,
     onUpdateReceived: (data) => {
+      if (loadingOperationRef.current) return;
+      
       console.log('Applying remote update:', data.title);
+      loadingOperationRef.current = true;
       
       // Update all relevant state
       basicState.setRundownTitleDirectly(data.title);
@@ -67,6 +74,10 @@ export const useRundownDataManagement = (rundownId: string) => {
       
       // Mark as saved with the remote timestamp
       basicState.markAsSaved(data.items, data.title, data.columns, data.timezone, data.startTime);
+      
+      setTimeout(() => {
+        loadingOperationRef.current = false;
+      }, 100);
     },
     onConflictDetected: () => {
       console.log('Collaboration conflict detected');
@@ -86,10 +97,11 @@ export const useRundownDataManagement = (rundownId: string) => {
     setItems: stateIntegration.setItems,
     onRundownLoaded: (rundown) => {
       console.log('Rundown loaded successfully:', rundown.title);
+      isInitializedRef.current = true;
     }
   });
 
-  // Initialize with default items for new rundowns - fixed logic with better guards
+  // Initialize with default items for new rundowns - FIXED with proper guards
   useEffect(() => {
     // Only run for new rundowns (no rundownId)
     if (rundownId) return;
@@ -97,19 +109,21 @@ export const useRundownDataManagement = (rundownId: string) => {
     // Wait for storage to finish loading
     if (storage.loading) return;
     
-    // Check if items are already initialized (prevent multiple initializations)
-    const currentItems = stateIntegration.items;
-    if (!Array.isArray(currentItems)) {
-      console.warn('Items is not an array, resetting to default items');
+    // Prevent multiple initializations
+    if (isInitializedRef.current) return;
+    
+    // Only initialize if we have no items and storage is done loading
+    if (stateIntegration.items.length === 0 && !loadingOperationRef.current) {
+      console.log('Initializing new rundown with default items');
+      loadingOperationRef.current = true;
       stateIntegration.setItems(defaultRundownItems);
-      return;
+      isInitializedRef.current = true;
+      
+      setTimeout(() => {
+        loadingOperationRef.current = false;
+      }, 100);
     }
-    
-    if (currentItems.length > 0) return;
-    
-    console.log('Initializing new rundown with default items');
-    stateIntegration.setItems(defaultRundownItems);
-  }, [rundownId, storage.loading, stateIntegration.items.length]);
+  }, [rundownId, storage.loading]); // Removed items.length dependency to prevent loop
 
   return {
     // Basic state

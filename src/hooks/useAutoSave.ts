@@ -22,10 +22,16 @@ export const useAutoSave = (
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
+  const isSavingRef = useRef(false);
 
   // Auto-save with debouncing
   useEffect(() => {
-    if (!hasUnsavedChanges || isSaving) return;
+    // Don't save if no changes, already saving, or no meaningful data
+    if (!hasUnsavedChanges || isSavingRef.current) return;
+    
+    // Validate we have saveable data
+    if (!rundownTitle || rundownTitle.trim() === '') return;
+    if (!Array.isArray(items)) return;
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -36,11 +42,15 @@ export const useAutoSave = (
     saveTimeoutRef.current = setTimeout(async () => {
       const currentDataSignature = JSON.stringify({ items, rundownTitle, columns, timezone, startTime });
       
-      // Don't save if data hasn't actually changed
+      // Don't save if data hasn't actually changed since last save
       if (lastSaveDataRef.current === currentDataSignature) {
         return;
       }
 
+      // Prevent concurrent saves
+      if (isSavingRef.current) return;
+      
+      isSavingRef.current = true;
       setIsSaving(true);
       
       try {
@@ -60,7 +70,12 @@ export const useAutoSave = (
           );
         } else {
           console.log('Auto-saving new rundown');
-          await saveRundown(rundownTitle, items, columns, timezone, startTime);
+          const result = await saveRundown(rundownTitle, items, columns, timezone, startTime);
+          
+          // For new rundowns, we might need to handle the result differently
+          if (result?.id) {
+            console.log('New rundown created with ID:', result.id);
+          }
         }
 
         // Update timestamp and mark as saved
@@ -74,6 +89,7 @@ export const useAutoSave = (
         console.error('Auto-save failed:', error);
         // Don't show toast for auto-save failures to avoid spam
       } finally {
+        isSavingRef.current = false;
         setIsSaving(false);
       }
     }, 2000); // 2 second debounce
@@ -83,13 +99,19 @@ export const useAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [hasUnsavedChanges, items, rundownTitle, columns, timezone, startTime, rundownId, isSaving]);
+  }, [hasUnsavedChanges, items, rundownTitle, columns, timezone, startTime, rundownId]);
 
   // Initialize timestamp when rundown is loaded
   useEffect(() => {
     if (rundownId && !lastSavedTimestamp) {
       setLastSavedTimestamp(new Date().toISOString());
     }
+  }, [rundownId]);
+
+  // Reset saving state when rundown changes
+  useEffect(() => {
+    isSavingRef.current = false;
+    lastSaveDataRef.current = '';
   }, [rundownId]);
 
   return {
