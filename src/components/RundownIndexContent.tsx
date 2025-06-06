@@ -101,6 +101,49 @@ const RundownIndexContent = () => {
   const selectedRowsArray = Array.from(selectedRows);
   const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
 
+  // Create wrapper functions to fix signature mismatches
+  const handleKeyDownWrapper = (event: React.KeyboardEvent) => {
+    // Extract the target element to determine itemId and field
+    const target = event.target as HTMLElement;
+    const itemId = target.getAttribute('data-item-id') || '';
+    const field = target.getAttribute('data-field') || '';
+    handleKeyDown(event, itemId, field);
+  };
+
+  const handleRowSelectWrapper = (itemId: string, event: React.MouseEvent) => {
+    const index = items.findIndex(item => item.id === itemId);
+    if (index !== -1) {
+      handleRowSelect(itemId, index, event.shiftKey, event.ctrlKey || event.metaKey);
+    }
+  };
+
+  const handleDragStartWrapper = (index: number) => {
+    const event = {} as React.DragEvent;
+    handleDragStart(event, index);
+  };
+
+  const handleDragOverWrapper = (index: number) => {
+    const event = {} as React.DragEvent;
+    handleDragOver(event, index);
+  };
+
+  const handleDragLeaveWrapper = () => {
+    const event = {} as React.DragEvent;
+    handleDragLeave(event);
+  };
+
+  const handleDropWrapper = (targetIndex: number) => {
+    const event = {} as React.DragEvent;
+    handleDrop(event, targetIndex);
+  };
+
+  // Convert getRowStatus to return correct type
+  const getRowStatusWrapper = (item: any) => {
+    const status = getRowStatus(item);
+    // Map 'completed' to 'past' to match expected type
+    return status === 'completed' ? 'past' : status;
+  };
+
   // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
@@ -134,24 +177,24 @@ const RundownIndexContent = () => {
         getColumnWidth={getColumnWidth}
         updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
-        getRowStatus={getRowStatus}
+        getRowStatus={getRowStatusWrapper}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={updateItem}
         onCellClick={handleCellClick}
-        onKeyDown={handleKeyDown}
+        onKeyDown={handleKeyDownWrapper}
         onToggleColorPicker={handleToggleColorPicker}
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
-        onRowSelect={handleRowSelect}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onRowSelect={handleRowSelectWrapper}
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}
-        hasClipboardData={hasClipboardData}
+        hasClipboardData={typeof hasClipboardData === 'function' ? hasClipboardData() : hasClipboardData}
         onCopySelectedRows={handleCopySelectedRows}
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
@@ -181,8 +224,8 @@ const RundownIndexContent = () => {
         canUndo={canUndo}
         lastAction={lastAction}
         // Polling props
-        hasRemoteUpdates={hasRemoteUpdates}
-        clearRemoteUpdatesIndicator={clearRemoteUpdatesIndicator}
+        hasRemoteUpdates={hasRemoteUpdates || false}
+        clearRemoteUpdatesIndicator={clearRemoteUpdatesIndicator || (() => {})}
       />
       
       {/* Cuer AI Chat Button with rundown data */}

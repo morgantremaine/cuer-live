@@ -53,6 +53,9 @@ const RundownGrid = () => {
     colorPickerSelect(id, color);
   };
 
+  // Fix hasClipboardData to be a boolean
+  const hasClipboardDataBoolean = typeof hasClipboardData === 'function' ? hasClipboardData() : hasClipboardData;
+
   console.log('RundownGrid: handleAddRow exists?', !!handleAddRow);
   console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
 
@@ -68,7 +71,7 @@ const RundownGrid = () => {
       isDraggingMultiple={isDraggingMultiple}
       dropTargetIndex={dropTargetIndex}
       currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData}
+      hasClipboardData={hasClipboardDataBoolean}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}
       getRowNumber={getRowNumber}

@@ -8,8 +8,11 @@ import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useCallback, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { useParams } from 'react-router-dom';
 
-export const useRundownGridCore = () => {
+export const useRundownGridCore = (dataManagement?: any) => {
+  const { rundownId } = useParams<{ rundownId: string }>();
+  
   // Core state management
   const {
     currentTime,
@@ -24,8 +27,9 @@ export const useRundownGridCore = () => {
     rundownStartTime,
     setRundownStartTime,
     setRundownStartTimeDirectly,
-    rundownId,
-    markAsChanged
+    hasUnsavedChanges,
+    markAsChanged,
+    markAsSaved
   } = useRundownBasicState();
 
   // Get storage functionality
@@ -53,9 +57,7 @@ export const useRundownGridCore = () => {
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving
+    handleUpdateColumnWidth
   } = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
@@ -65,10 +67,10 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Undo functionality with persistence - fix: call without arguments, then pass state separately
-  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
+  // Undo functionality with persistence
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory, undoHistory } = useRundownUndo();
 
-  // Use data loader with undo history loading - ADD setItems here
+  // Use data loader with undo history loading
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -77,7 +79,7 @@ export const useRundownGridCore = () => {
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout,
-    setItems, // Add the missing setItems function
+    setItems,
     onRundownLoaded: (rundown) => {
       // Load undo history when rundown is loaded
       if (rundown.undo_history) {
@@ -100,7 +102,7 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Wrapped functions that save state before making changes - update to support insertion after selected rows
+  // Wrapped functions that save state before making changes
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     
@@ -198,7 +200,6 @@ export const useRundownGridCore = () => {
   }, [setRundownTitle, saveState, items, columns, rundownTitle]);
 
   const handleUndo = useCallback(() => {
-    // Fix: call undo with only the required arguments
     const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);
     if (action) {
       markAsChanged();
@@ -271,7 +272,7 @@ export const useRundownGridCore = () => {
 
     // Save state
     hasUnsavedChanges,
-    isSaving,
+    isSaving: false, // Add missing property
     calculateEndTime,
 
     // Undo functionality

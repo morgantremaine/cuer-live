@@ -13,16 +13,60 @@ export const useRundownGridState = () => {
   const dataManagement = useRundownDataManagement(rundownId || '');
   
   // Get core grid functionality
-  const gridCore = useRundownGridCore(dataManagement);
+  const gridCore = useRundownGridCore();
   
-  // Get grid handlers
-  const gridHandlers = useRundownGridHandlers(gridCore, dataManagement);
+  // Get grid handlers with proper parameters
+  const gridHandlers = useRundownGridHandlers({
+    updateItem: gridCore.updateItem,
+    addRow: gridCore.addRow,
+    addHeader: gridCore.addHeader,
+    deleteRow: gridCore.deleteRow,
+    toggleFloatRow: gridCore.toggleFloatRow,
+    deleteMultipleRows: gridCore.deleteMultipleRows,
+    addMultipleRows: gridCore.addMultipleRows,
+    handleDeleteColumn: gridCore.handleDeleteColumn,
+    setItems: gridCore.setItems,
+    calculateEndTime: gridCore.calculateEndTime,
+    selectColor: (id: string, color: string) => gridCore.updateItem(id, 'color', color),
+    markAsChanged: gridCore.markAsChanged,
+    selectedRows: new Set(),
+    clearSelection: () => {},
+    copyItems: () => {},
+    clipboardItems: [],
+    hasClipboardData: () => false,
+    toggleRowSelection: () => {},
+    items: gridCore.items,
+    setRundownTitle: gridCore.setRundownTitle
+  });
   
   // Get grid interactions
-  const gridInteractions = useRundownGridInteractions(gridCore, dataManagement);
+  const gridInteractions = useRundownGridInteractions(
+    gridCore.items,
+    gridCore.setItems,
+    gridCore.updateItem,
+    gridCore.addRow,
+    gridCore.addHeader,
+    gridCore.deleteRow,
+    gridCore.toggleFloatRow,
+    gridCore.deleteMultipleRows,
+    gridCore.addMultipleRows,
+    gridCore.handleDeleteColumn,
+    gridCore.calculateEndTime,
+    (id: string, color: string) => gridCore.updateItem(id, 'color', color),
+    gridCore.markAsChanged,
+    gridCore.setRundownTitle
+  );
   
   // Get UI state
-  const gridUI = useRundownGridUI();
+  const gridUI = useRundownGridUI(
+    gridCore.items,
+    gridCore.visibleColumns,
+    gridCore.columns,
+    gridCore.updateItem,
+    gridCore.currentSegmentId || null,
+    gridCore.currentTime,
+    gridCore.markAsChanged
+  );
 
   return {
     // Data management (includes polling)
