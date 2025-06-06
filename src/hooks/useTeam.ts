@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -235,9 +236,12 @@ export const useTeam = () => {
         `)
         .eq('team_id', team.id);
 
-      // Extract emails from the profiles
+      // Extract emails from the profiles - fix TypeScript error
       const memberEmails = existingMember
-        ?.map(m => Array.isArray(m.profiles) ? m.profiles[0]?.email : m.profiles?.email)
+        ?.map(m => {
+          const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+          return profile?.email;
+        })
         .filter(Boolean);
       
       console.log('Existing member emails:', memberEmails);
