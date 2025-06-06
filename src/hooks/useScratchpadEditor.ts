@@ -67,13 +67,14 @@ export const useScratchpadEditor = (
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        // Only save notes, don't overwrite other blueprint data
         await saveBlueprint(
-          savedBlueprint?.lists || [], // updatedLists
+          [], // empty lists - don't overwrite
           true, // silent save
-          savedBlueprint?.show_date || null, // showDateOverride
-          notesToSave, // notes
-          savedBlueprint?.crew_data, // crewData
-          savedBlueprint?.camera_plots // cameraPlots
+          undefined, // don't change show_date
+          notesToSave, // only update notes
+          undefined, // don't change crew_data
+          undefined // don't change camera_plots
         );
         setSaveStatus('saved');
         onNotesChange?.(notesToSave);
@@ -86,7 +87,7 @@ export const useScratchpadEditor = (
         }, 2000);
       }
     }, 1000);
-  }, [saveBlueprint, savedBlueprint, onNotesChange, isInitialized]);
+  }, [saveBlueprint, onNotesChange, isInitialized]);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);

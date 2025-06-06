@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { CrewMember } from '@/types/crew';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
@@ -70,13 +71,14 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
     // Set new timeout for debounced save
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        // Only save crew data, don't overwrite other blueprint data
         await saveBlueprint(
-          savedBlueprint?.lists || [],
+          [], // empty lists - don't overwrite
           true, // silent save
-          savedBlueprint?.show_date,
-          savedBlueprint?.notes,
-          updatedMembers,
-          savedBlueprint?.camera_plots
+          undefined, // don't change show_date
+          undefined, // don't change notes
+          updatedMembers, // only update crew data
+          undefined // don't change camera_plots
         );
       } catch (error) {
         console.error('Failed to save crew data:', error);

@@ -16,6 +16,7 @@ export const useBlueprintPersistence = (
   const { toast } = useToast();
   const saveInProgressRef = useRef(false);
   const saveQueueRef = useRef<any>(null);
+  const latestBlueprintRef = useRef<any>(null);
 
   const loadBlueprint = useCallback(async () => {
     if (!user || !rundownId) {
@@ -44,6 +45,7 @@ export const useBlueprintPersistence = (
       if (data) {
         console.log('Loaded blueprint data:', data.id);
         setSavedBlueprint(data);
+        latestBlueprintRef.current = data;
       }
       return data;
     } catch (error) {
@@ -65,52 +67,67 @@ export const useBlueprintPersistence = (
       return;
     }
 
-    // If a save is already in progress, queue this save
+    // Create the save data object with current state merged with updates
+    const currentBlueprint = latestBlueprintRef.current || savedBlueprint;
+    const saveData = {
+      updatedLists: updatedLists.length > 0 ? updatedLists : (currentBlueprint?.lists || []),
+      silent,
+      showDateOverride: showDateOverride !== undefined ? showDateOverride : (currentBlueprint?.show_date || showDate),
+      notes: notes !== undefined ? notes : (currentBlueprint?.notes || ''),
+      crewData: crewData !== undefined ? crewData : (currentBlueprint?.crew_data || []),
+      cameraPlots: cameraPlots !== undefined ? cameraPlots : (currentBlueprint?.camera_plots || [])
+    };
+
+    // If a save is already in progress, queue this save with merged data
     if (saveInProgressRef.current) {
-      console.log('Save in progress, queuing new save');
-      saveQueueRef.current = {
-        updatedLists,
-        silent,
-        showDateOverride,
-        notes,
-        crewData,
-        cameraPlots
-      };
+      console.log('Save in progress, merging with queued save');
+      if (saveQueueRef.current) {
+        // Merge with existing queued save
+        saveQueueRef.current = {
+          updatedLists: updatedLists.length > 0 ? updatedLists : saveQueueRef.current.updatedLists,
+          silent: saveQueueRef.current.silent && silent,
+          showDateOverride: showDateOverride !== undefined ? showDateOverride : saveQueueRef.current.showDateOverride,
+          notes: notes !== undefined ? notes : saveQueueRef.current.notes,
+          crewData: crewData !== undefined ? crewData : saveQueueRef.current.crewData,
+          cameraPlots: cameraPlots !== undefined ? cameraPlots : saveQueueRef.current.cameraPlots
+        };
+      } else {
+        saveQueueRef.current = saveData;
+      }
       return;
     }
 
     saveInProgressRef.current = true;
 
-    const executeSave = async (saveData: any) => {
+    const executeSave = async (data: any) => {
       try {
         console.log('Executing blueprint save:', {
           rundownId,
           userId: user.id,
-          listsCount: saveData.updatedLists.length,
-          notesLength: saveData.notes?.length || 0,
-          crewDataCount: saveData.crewData?.length || 0,
-          cameraPlotCount: saveData.cameraPlots?.length || 0,
-          silent: saveData.silent
+          listsCount: data.updatedLists.length,
+          notesLength: data.notes?.length || 0,
+          crewDataCount: data.crewData?.length || 0,
+          cameraPlotCount: data.cameraPlots?.length || 0,
+          silent: data.silent
         });
 
-        // Handle show_date - convert empty string to null
-        const dateToSave = saveData.showDateOverride || showDate;
-        const validShowDate = dateToSave && dateToSave.trim() !== '' ? dateToSave : null;
+        // Prepare the blueprint data
+        const validShowDate = data.showDateOverride && data.showDateOverride.trim() !== '' ? data.showDateOverride : null;
 
         const blueprintData = {
           user_id: user.id,
           rundown_id: rundownId,
           rundown_title: rundownTitle,
-          lists: saveData.updatedLists,
+          lists: data.updatedLists,
           show_date: validShowDate,
-          notes: saveData.notes || savedBlueprint?.notes || '',
-          crew_data: saveData.crewData || savedBlueprint?.crew_data || [],
-          camera_plots: saveData.cameraPlots || savedBlueprint?.camera_plots || [],
+          notes: data.notes || '',
+          crew_data: data.crewData || [],
+          camera_plots: data.cameraPlots || [],
           updated_at: new Date().toISOString()
         };
 
         // Use upsert to ensure only one blueprint per rundown/user combination
-        const { data, error } = await supabase
+        const { data: result, error } = await supabase
           .from('blueprints')
           .upsert(
             blueprintData,
@@ -127,10 +144,11 @@ export const useBlueprintPersistence = (
           throw error;
         }
         
-        console.log('Blueprint saved successfully:', data.id);
-        setSavedBlueprint(data);
+        console.log('Blueprint saved successfully:', result.id);
+        setSavedBlueprint(result);
+        latestBlueprintRef.current = result;
 
-        if (!saveData.silent) {
+        if (!data.silent) {
           toast({
             title: 'Success',
             description: 'Blueprint saved successfully!',
@@ -138,7 +156,7 @@ export const useBlueprintPersistence = (
         }
       } catch (error) {
         console.error('Blueprint save error:', error);
-        if (!saveData.silent) {
+        if (!data.silent) {
           toast({
             title: 'Error',
             description: 'Failed to save blueprint',
@@ -151,14 +169,7 @@ export const useBlueprintPersistence = (
 
     try {
       // Execute the current save
-      await executeSave({
-        updatedLists,
-        silent,
-        showDateOverride,
-        notes,
-        crewData,
-        cameraPlots
-      });
+      await executeSave(saveData);
 
       // If there's a queued save, execute it
       if (saveQueueRef.current) {
