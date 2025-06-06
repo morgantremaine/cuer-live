@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -8,7 +7,7 @@ import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useRundownRealtime } from './useRundownRealtime';
 import { useEditingDetection } from './useEditingDetection';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
@@ -46,15 +45,22 @@ export const useRundownGridCore = () => {
   // Detect when user is actively editing - only if initialized
   const { isEditing } = useEditingDetection();
 
-  // Get current rundown data for realtime comparison
-  const currentRundown = savedRundowns.find(r => r.id === rundownId);
+  // Get current rundown data for realtime comparison - memoize to prevent infinite loops
+  const currentRundown = useMemo(() => {
+    return savedRundowns.find(r => r.id === rundownId);
+  }, [savedRundowns, rundownId]);
 
-  // Initialize realtime updates only once
+  // Stable callback for remote updates
+  const onRemoteUpdate = useCallback(() => {
+    console.log('📡 Remote rundown update detected in GridCore, refreshing data...');
+    loadRundowns();
+  }, [loadRundowns]);
+
   console.log('🔴 Setting up realtime in useRundownGridCore with:', {
     rundownId,
     hasCurrentRundown: !!currentRundown,
     isEditing,
-    isSaving: false, // We'll get this from state integration
+    isSaving: false,
     initialized: initializationRef.current
   });
 
@@ -92,25 +98,11 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Only set up realtime if we have the core data
+  // Only set up realtime if we have the core data and it's initialized
   useRundownRealtime({
-    currentRundownId: rundownId,
+    currentRundownId: initializationRef.current ? rundownId : undefined,
     currentUpdatedAt: currentRundown?.updated_at,
-    onRemoteUpdate: () => {
-      console.log('📡 Remote rundown update detected in GridCore, refreshing data...');
-      if (!isSaving) {
-        console.log('✅ Applying remote update - reloading rundowns');
-        loadRundowns();
-      } else {
-        console.log('⏳ Delaying remote update - currently saving');
-        setTimeout(() => {
-          if (!isSaving) {
-            console.log('✅ Applying delayed remote update');
-            loadRundowns();
-          }
-        }, 1000);
-      }
-    },
+    onRemoteUpdate,
     isUserEditing: isEditing,
     isSaving
   });

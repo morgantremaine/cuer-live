@@ -30,22 +30,31 @@ export const useRundownRealtime = ({
     currentRundownId,
     hasUser: !!user,
     userEmail: user?.email,
+    userId: user?.id,
     isUserEditing,
     isSaving
   });
 
   const handleRealtimeUpdate = useCallback((payload: any) => {
-    console.log('📡 Realtime update received:', payload);
+    console.log('📡 Realtime update received:', {
+      rundownId: payload.new.id,
+      updatedBy: payload.new.user_id,
+      currentUser: user?.id,
+      isCurrentRundown: payload.new.id === currentRundownId
+    });
     
     // Only process updates for the current rundown
     if (!currentRundownId || payload.new.id !== currentRundownId) {
-      console.log('⏭️ Ignoring update - not for current rundown or no rundown ID');
+      console.log('⏭️ Ignoring update - not for current rundown');
       return;
     }
 
-    // Don't process our own updates
+    // CRITICAL: Don't process our own updates - use strict comparison
     if (payload.new.user_id === user?.id) {
-      console.log('⏭️ Ignoring update - from current user');
+      console.log('⏭️ Ignoring update - from current user:', {
+        payloadUserId: payload.new.user_id,
+        currentUserId: user?.id
+      });
       return;
     }
 
@@ -73,11 +82,11 @@ export const useRundownRealtime = ({
 
     // Debounce multiple rapid updates
     debounceTimeoutRef.current = setTimeout(() => {
-      console.log('✅ Applying remote rundown update');
+      console.log('✅ Applying remote rundown update from teammate');
       lastProcessedUpdateRef.current = remoteUpdatedAt;
       onRemoteUpdate();
       
-      // Show a subtle notification
+      // Show a subtle notification - this should only show to users who didn't make the change
       toast({
         title: 'Rundown Updated',
         description: 'Your teammate made changes to this rundown',
@@ -86,16 +95,23 @@ export const useRundownRealtime = ({
     }, delay);
   }, [currentRundownId, currentUpdatedAt, user?.id, isUserEditing, onRemoteUpdate, toast]);
 
+  // Stable effect that only depends on user ID
   useEffect(() => {
     console.log('🔴 useRundownRealtime effect triggered', {
       hasUser: !!user,
+      userId: user?.id,
       currentRundownId,
       userEmail: user?.email,
       isSetupRef: isSetupRef.current
     });
 
-    if (!user) {
-      console.log('❌ Not setting up realtime - no user');
+    if (!user?.id) {
+      console.log('❌ Not setting up realtime - no user ID');
+      return;
+    }
+
+    if (!currentRundownId) {
+      console.log('❌ Not setting up realtime - no rundown ID');
       return;
     }
 
@@ -109,7 +125,7 @@ export const useRundownRealtime = ({
     isSetupRef.current = true;
 
     // Create a unique channel name to avoid conflicts
-    const channelName = `rundown-updates-${currentRundownId || 'all'}-${Date.now()}`;
+    const channelName = `rundown-updates-${currentRundownId}-${Date.now()}`;
     
     // Create a channel for rundown updates
     const channel = supabase
@@ -146,7 +162,7 @@ export const useRundownRealtime = ({
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [user?.id]); // CRITICAL: Only depend on user ID to prevent constant restarts
+  }, [user?.id, currentRundownId]); // ONLY depend on user ID and rundown ID
 
   // Cleanup on unmount
   useEffect(() => {
