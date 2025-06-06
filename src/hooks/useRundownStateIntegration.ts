@@ -1,19 +1,16 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateIntegration = (
-  markAsChanged: () => void,
   rundownTitle: string,
   timezone: string,
-  rundownStartTime: string,
-  setRundownTitleDirectly: (title: string) => void,
-  setTimezoneDirectly: (timezone: string) => void
+  rundownStartTime: string
 ) => {
-  // Items management with change tracking
+  // Items management
   const {
     items,
     setItems,
@@ -27,11 +24,32 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  } = useRundownItems();
+
+  // Columns management
+  const {
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth
+  } = useColumnsManager();
+
+  // Auto-save functionality
+  const { hasUnsavedChanges, isSaving, setRundownId, markAsChanged } = useAutoSave(
+    Array.isArray(items) ? items : [],
+    rundownTitle,
+    Array.isArray(columns) ? columns : [],
+    timezone,
+    rundownStartTime
+  );
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
-    // Ensure items is an array before finding
     if (!Array.isArray(items)) {
       console.error('Items is not an array in updateItem:', items);
       return;
@@ -56,40 +74,23 @@ export const useRundownStateIntegration = (
       // Handle standard fields
       originalUpdateItem(id, { [field]: value });
     }
-  }, [originalUpdateItem, items]);
 
-  // Columns management
-  const {
-    columns,
-    visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+    // Mark as changed for auto-save
+    markAsChanged();
+  }, [originalUpdateItem, items, markAsChanged]);
 
-  // Auto-save functionality with proper change tracking
-  const { hasUnsavedChanges, isSaving, setRundownId } = useAutoSave(
-    Array.isArray(items) ? items : [],
-    rundownTitle,
-    Array.isArray(columns) ? columns : [],
-    timezone,
-    rundownStartTime
-  );
-
-  // Simple wrapper functions that just call the original and rely on auto-save's change detection
+  // Wrapper functions that trigger auto-save
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
     console.log('➕ Adding row');
     originalAddRow(calculateEndTime, insertAfterIndex);
-  }, [originalAddRow]);
+    markAsChanged();
+  }, [originalAddRow, markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
     console.log('📋 Adding header');
     originalAddHeader(insertAfterIndex);
-  }, [originalAddHeader]);
+    markAsChanged();
+  }, [originalAddHeader, markAsChanged]);
 
   return {
     items: Array.isArray(items) ? items : [],
@@ -116,6 +117,6 @@ export const useRundownStateIntegration = (
     hasUnsavedChanges,
     isSaving,
     setRundownId,
-    markAsChanged: markAsChanged // Use the original markAsChanged, not the auto-save one
+    markAsChanged
   };
 };

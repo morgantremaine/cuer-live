@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+
+import { useCallback, useRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
@@ -17,69 +18,10 @@ interface TrackedChange {
   lastModifiedAt: number;
 }
 
-export const useChangeTracking = (
-  items?: RundownItem[], 
-  rundownTitle?: string, 
-  columns?: Column[], 
-  timezone?: string, 
-  startTime?: string
-) => {
+export const useChangeTracking = () => {
   const changeHistoryRef = useRef<Map<string, TrackedChange>>(new Map());
   const lastKnownStateRef = useRef<Map<string, RundownItem>>(new Map());
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const lastSavedDataRef = useRef<string>('');
-  const isDetectingChanges = useRef(false);
-
-  // Initialize tracking when data is first loaded
-  useEffect(() => {
-    if (items && !isInitialized) {
-      console.log('🎯 Initializing change tracking with', items.length, 'items');
-      updateLastKnownState(items);
-      setIsInitialized(true);
-      
-      // Set initial saved state
-      const initialDataSignature = JSON.stringify({
-        items,
-        title: rundownTitle,
-        columns,
-        timezone,
-        startTime
-      });
-      lastSavedDataRef.current = initialDataSignature;
-      console.log('📋 Initial data signature set');
-    }
-  }, [items, isInitialized, rundownTitle, columns, timezone, startTime]);
-
-  // Simplified change detection with debouncing
-  useEffect(() => {
-    if (!isInitialized || isLoading || isDetectingChanges.current) {
-      return;
-    }
-
-    isDetectingChanges.current = true;
-
-    const currentDataSignature = JSON.stringify({
-      items,
-      title: rundownTitle,
-      columns,
-      timezone,
-      startTime
-    });
-
-    if (lastSavedDataRef.current && lastSavedDataRef.current !== currentDataSignature) {
-      if (!hasUnsavedChanges) {
-        console.log('🚨 Changes detected! Setting hasUnsavedChanges to true');
-        setHasUnsavedChanges(true);
-      }
-    } else if (lastSavedDataRef.current === currentDataSignature && hasUnsavedChanges) {
-      console.log('✅ Data matches saved state, clearing unsaved changes flag');
-      setHasUnsavedChanges(false);
-    }
-
-    isDetectingChanges.current = false;
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, hasUnsavedChanges]);
 
   const trackChange = useCallback((
     itemId: string, 
@@ -167,32 +109,10 @@ export const useChangeTracking = (
     items.forEach(item => {
       lastKnownStateRef.current.set(item.id, { ...item });
     });
-  }, []);
-
-  const markAsSaved = useCallback((
-    items: RundownItem[], 
-    title: string, 
-    columns?: Column[], 
-    timezone?: string, 
-    startTime?: string
-  ) => {
-    const dataSignature = JSON.stringify({
-      items,
-      title,
-      columns,
-      timezone,
-      startTime
-    });
-    console.log('💾 Marking as saved, updating signature');
-    lastSavedDataRef.current = dataSignature;
-    setHasUnsavedChanges(false);
-    updateLastKnownState(items);
-  }, [updateLastKnownState]);
-
-  const markAsChanged = useCallback(() => {
-    console.log('🔄 Manually marking as changed');
-    setHasUnsavedChanges(true);
-  }, []);
+    if (!isInitialized) {
+      setIsInitialized(true);
+    }
+  }, [isInitialized]);
 
   return {
     trackChange,
@@ -200,11 +120,6 @@ export const useChangeTracking = (
     getChangeHistory,
     clearChangeHistory,
     updateLastKnownState,
-    hasUnsavedChanges,
-    setHasUnsavedChanges,
-    markAsSaved,
-    markAsChanged,
-    isInitialized,
-    setIsLoading
+    isInitialized
   };
 };
