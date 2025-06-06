@@ -6,12 +6,12 @@ import { Column } from '@/hooks/useColumnsManager'
 export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
-  // Load user's own rundowns AND team rundowns
+  // Load user's own rundowns AND team rundowns with profile data
   const { data, error } = await supabase
     .from('rundowns')
     .select(`
       *,
-      profiles!rundowns_user_id_fkey (
+      profiles!inner (
         email,
         full_name
       )
