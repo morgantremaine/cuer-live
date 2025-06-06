@@ -6,7 +6,7 @@ import { Column } from '@/hooks/useColumnsManager'
 export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
-  // Load user's own rundowns and team rundowns
+  // Load user's own rundowns and team rundowns they have access to
   const { data, error } = await supabase
     .from('rundowns')
     .select(`
