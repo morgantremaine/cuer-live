@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -182,9 +181,27 @@ export const useRundownGridCore = () => {
     }, 1000);
   }, [updateItem, markAsEditing, addOptimisticUpdate, confirmOptimisticUpdate]);
 
-  // Auto-save effect - this was missing!
+  // Auto-save effect with detailed debugging
   useEffect(() => {
-    if (!rundownId || !hasUnsavedChanges || isSaving) {
+    console.log('🔍 Auto-save check:', {
+      rundownId: !!rundownId,
+      hasUnsavedChanges,
+      isSaving,
+      itemsLength: items?.length || 0
+    });
+
+    if (!rundownId) {
+      console.log('❌ No rundownId for auto-save');
+      return;
+    }
+
+    if (!hasUnsavedChanges) {
+      console.log('❌ No unsaved changes for auto-save');
+      return;
+    }
+
+    if (isSaving) {
+      console.log('❌ Already saving, skipping auto-save');
       return;
     }
 
@@ -192,6 +209,7 @@ export const useRundownGridCore = () => {
     
     const autoSaveTimer = setTimeout(async () => {
       try {
+        console.log('🚀 Starting auto-save operation');
         await updateRundown(
           rundownId,
           rundownTitle,
@@ -202,13 +220,16 @@ export const useRundownGridCore = () => {
           timezone,
           rundownStartTime
         );
-        console.log('✅ Auto-save completed');
+        console.log('✅ Auto-save completed successfully');
       } catch (error) {
         console.error('❌ Auto-save failed:', error);
       }
     }, 2000); // 2 second delay
 
-    return () => clearTimeout(autoSaveTimer);
+    return () => {
+      console.log('🧹 Cleaning up auto-save timer');
+      clearTimeout(autoSaveTimer);
+    };
   }, [rundownId, hasUnsavedChanges, isSaving, items, rundownTitle, columns, timezone, rundownStartTime, updateRundown]);
 
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
