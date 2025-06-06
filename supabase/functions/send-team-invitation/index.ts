@@ -29,10 +29,11 @@ serve(async (req) => {
 
     const resend = new Resend(resendApiKey)
 
-    // Create the invitation URL
-    const inviteUrl = `${Deno.env.get('SITE_URL') || 'https://khdiwrkgahsbjszlwnob.supabase.co'}/join-team/${token}`
+    // Use the correct site URL - prioritize custom domain over Supabase URL
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://cuerlive.lovable.app'
+    const inviteUrl = `${siteUrl}/join-team/${token}`
 
-    // Send email using Resend - try cuer.live domain, fallback to resend.dev if not verified
+    // Send email using Resend - using cuer.live domain
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
