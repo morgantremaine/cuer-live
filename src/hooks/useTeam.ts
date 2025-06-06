@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/lib/supabase';
@@ -107,7 +106,18 @@ export const useTeam = () => {
         if (membersError) {
           console.error('Error loading team members:', membersError);
         } else {
-          setTeamMembers(membersData || []);
+          // Map the data to match our interface
+          const mappedMembers: TeamMember[] = (membersData || []).map(member => ({
+            id: member.id,
+            user_id: member.user_id,
+            team_id: member.team_id,
+            role: member.role as 'admin' | 'member',
+            joined_at: member.joined_at,
+            profiles: Array.isArray(member.profiles) && member.profiles.length > 0 
+              ? member.profiles[0] 
+              : member.profiles || undefined
+          }));
+          setTeamMembers(mappedMembers);
         }
 
         // Load pending invitations if user is admin
