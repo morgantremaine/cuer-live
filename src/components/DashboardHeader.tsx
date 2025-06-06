@@ -1,51 +1,78 @@
 
 import { Button } from '@/components/ui/button'
-import { LogOut } from 'lucide-react'
+import { ArrowLeft, User, LogOut } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router-dom'
 
 interface DashboardHeaderProps {
   userEmail?: string
   onSignOut: () => void
+  showBackButton?: boolean
+  onBack?: () => void
 }
 
-const DashboardHeader = ({ userEmail, onSignOut }: DashboardHeaderProps) => {
+const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack }: DashboardHeaderProps) => {
   const navigate = useNavigate()
 
-  const handleEmailClick = () => {
-    navigate('/account')
-  }
-
   return (
-    <div className="bg-gray-800 shadow-sm border-b border-gray-700">
+    <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <img 
-              src="/lovable-uploads/d3829867-67da-4acb-a6d3-66561a4e60e7.png" 
-              alt="Cuer Logo" 
-              className="h-8 w-auto mr-3"
-            />
-          </div>
           <div className="flex items-center space-x-4">
-            <button
-              onClick={handleEmailClick}
-              className="text-sm text-gray-300 hover:text-white transition-colors cursor-pointer underline-offset-4 hover:underline"
-            >
-              Welcome, {userEmail}
-            </button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSignOut}
-              className="text-gray-300 hover:bg-gray-700 hover:text-white"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+            {showBackButton && onBack && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="text-gray-300 hover:text-white hover:bg-gray-700"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            )}
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/da2200e5-3194-4f43-8ec0-9266a479bbf0.png" 
+                alt="Cuer Logo" 
+                className="h-6 w-auto mr-3"
+              />
+              <h1 className="text-xl font-bold text-white">Cuer</h1>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-gray-300 hover:text-white">
+                  <User className="h-4 w-4 mr-2" />
+                  {userEmail}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                <DropdownMenuItem 
+                  onClick={() => navigate('/account')}
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                >
+                  Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={onSignOut}
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
-    </div>
+    </header>
   )
 }
 

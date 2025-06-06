@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,6 +24,10 @@ const AccountManagement = () => {
   const handleSignOut = async () => {
     await signOut()
     navigate('/login')
+  }
+
+  const handleBackToDashboard = () => {
+    navigate('/dashboard')
   }
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -101,7 +104,12 @@ const AccountManagement = () => {
 
   return (
     <div className="dark min-h-screen bg-gray-900">
-      <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
+      <DashboardHeader 
+        userEmail={user?.email} 
+        onSignOut={handleSignOut}
+        showBackButton={true}
+        onBack={handleBackToDashboard}
+      />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

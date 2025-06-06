@@ -117,22 +117,18 @@ const DashboardRundownGrid = ({
                     {rundown.title}
                   </CardTitle>
                   <CardDescription className="text-gray-400 flex items-center gap-2 mt-1">
-                    {!isOwnRundown(rundown) && (
-                      <div className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        <span className="text-xs">by {getOwnerInfo(rundown)}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span className="text-xs">by {getOwnerInfo(rundown)}</span>
+                    </div>
                     <span className="text-xs">
                       Updated {formatDate(rundown.updated_at)}
                     </span>
                   </CardDescription>
                 </div>
-                {!isOwnRundown(rundown) && (
-                  <Badge variant="secondary" className="ml-2">
-                    Team
-                  </Badge>
-                )}
+                <Badge variant="secondary" className="ml-2">
+                  Team
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
@@ -169,66 +165,63 @@ const DashboardRundownGrid = ({
                     </Button>
                   )}
 
-                  {/* Archive/Unarchive and Delete only for own rundowns */}
-                  {isOwnRundown(rundown) && (
-                    <>
-                      {isArchived ? (
-                        onUnarchive && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
-                            className="text-gray-400 hover:text-green-400 hover:bg-gray-700"
+                  {/* Archive/Unarchive for all rundowns */}
+                  {isArchived ? (
+                    onUnarchive && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
+                        className="text-gray-400 hover:text-green-400 hover:bg-gray-700"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    )
+                  ) : (
+                    onArchive && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => onArchive(rundown.id, rundown.title, e)}
+                        className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700"
+                      >
+                        <Archive className="h-4 w-4" />
+                      </Button>
+                    )
+                  )}
+                  
+                  {/* Delete for all rundowns */}
+                  {onDelete && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-red-400 hover:bg-gray-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-gray-800 border-gray-700">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
+                          <AlertDialogDescription className="text-gray-400">
+                            Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={(e) => onDelete(rundown.id, rundown.title, e)}
+                            className="bg-red-600 hover:bg-red-700"
                           >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
-                        )
-                      ) : (
-                        onArchive && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => onArchive(rundown.id, rundown.title, e)}
-                            className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700"
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                        )
-                      )}
-                      
-                      {onDelete && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-400 hover:text-red-400 hover:bg-gray-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-gray-800 border-gray-700">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
-                              <AlertDialogDescription className="text-gray-400">
-                                Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={(e) => onDelete(rundown.id, rundown.title, e)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>

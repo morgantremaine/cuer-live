@@ -232,8 +232,28 @@ export const useTeam = () => {
         return { error: error.message };
       }
 
-      // TODO: Send email invitation using edge function
-      console.log('Invitation created with token:', token);
+      // Send email invitation using edge function
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
+          body: {
+            email,
+            inviterName: user.user_metadata?.full_name || user.email,
+            teamName: team.name,
+            token
+          }
+        });
+
+        if (emailError) {
+          console.error('Error sending invitation email:', emailError);
+          // Don't return error here since the invitation was created successfully
+          console.log('Invitation created but email failed to send');
+        } else {
+          console.log('Invitation email sent successfully');
+        }
+      } catch (emailError) {
+        console.error('Error calling email function:', emailError);
+        // Don't return error here since the invitation was created successfully
+      }
       
       // Reload team data to show the new invitation
       await loadTeamData();

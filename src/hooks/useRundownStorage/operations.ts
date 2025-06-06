@@ -41,6 +41,20 @@ export const saveRundownToDatabase = async (
 ) => {
   console.log('Saving rundown to database:', title)
   
+  // Get user's default team if no teamId provided
+  let finalTeamId = teamId;
+  if (!finalTeamId) {
+    const { data: userTeams } = await supabase
+      .from('team_members')
+      .select('team_id')
+      .eq('user_id', userId)
+      .limit(1);
+    
+    if (userTeams && userTeams.length > 0) {
+      finalTeamId = userTeams[0].team_id;
+    }
+  }
+  
   const rundownData = {
     user_id: userId,
     title,
@@ -49,7 +63,7 @@ export const saveRundownToDatabase = async (
     timezone,
     start_time: startTime,
     icon,
-    team_id: teamId || null,
+    team_id: finalTeamId,
     updated_at: new Date().toISOString()
   }
 
@@ -83,6 +97,20 @@ export const updateRundownInDatabase = async (
 ) => {
   console.log('Updating rundown in database:', id)
   
+  // Get user's default team if no teamId provided
+  let finalTeamId = teamId;
+  if (!finalTeamId) {
+    const { data: userTeams } = await supabase
+      .from('team_members')
+      .select('team_id')
+      .eq('user_id', userId)
+      .limit(1);
+    
+    if (userTeams && userTeams.length > 0) {
+      finalTeamId = userTeams[0].team_id;
+    }
+  }
+  
   const updateData = {
     title,
     items,
@@ -92,7 +120,7 @@ export const updateRundownInDatabase = async (
     start_time: startTime,
     icon,
     undo_history: undoHistory,
-    team_id: teamId,
+    team_id: finalTeamId,
     updated_at: new Date().toISOString()
   }
 
