@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -58,7 +59,7 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Rundown data integration
+  // Rundown data integration - this handles auto-save internally
   const {
     items,
     setItems,
@@ -181,56 +182,16 @@ export const useRundownGridCore = () => {
     }, 1000);
   }, [updateItem, markAsEditing, addOptimisticUpdate, confirmOptimisticUpdate]);
 
-  // Auto-save effect with detailed debugging
+  // Auto-save is now handled by useRundownStateIntegration -> useAutoSave
+  // Log the auto-save state for debugging
   useEffect(() => {
-    console.log('🔍 Auto-save check:', {
+    console.log('🔍 Auto-save state check:', {
       rundownId: !!rundownId,
       hasUnsavedChanges,
       isSaving,
       itemsLength: items?.length || 0
     });
-
-    if (!rundownId) {
-      console.log('❌ No rundownId for auto-save');
-      return;
-    }
-
-    if (!hasUnsavedChanges) {
-      console.log('❌ No unsaved changes for auto-save');
-      return;
-    }
-
-    if (isSaving) {
-      console.log('❌ Already saving, skipping auto-save');
-      return;
-    }
-
-    console.log('💾 Auto-saving rundown changes...');
-    
-    const autoSaveTimer = setTimeout(async () => {
-      try {
-        console.log('🚀 Starting auto-save operation');
-        await updateRundown(
-          rundownId,
-          rundownTitle,
-          items,
-          true, // silent save
-          false, // not archived
-          columns,
-          timezone,
-          rundownStartTime
-        );
-        console.log('✅ Auto-save completed successfully');
-      } catch (error) {
-        console.error('❌ Auto-save failed:', error);
-      }
-    }, 2000); // 2 second delay
-
-    return () => {
-      console.log('🧹 Cleaning up auto-save timer');
-      clearTimeout(autoSaveTimer);
-    };
-  }, [rundownId, hasUnsavedChanges, isSaving, items, rundownTitle, columns, timezone, rundownStartTime, updateRundown]);
+  }, [rundownId, hasUnsavedChanges, isSaving, items?.length]);
 
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
