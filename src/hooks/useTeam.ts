@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/lib/supabase';
@@ -88,7 +87,7 @@ export const useTeam = () => {
         });
         setUserRole(membership.role as 'admin' | 'member');
 
-        // Load all team members for this team
+        // Load all team members for this team with the corrected relationship
         const { data: membersData, error: membersError } = await supabase
           .from('team_members')
           .select(`
@@ -97,7 +96,7 @@ export const useTeam = () => {
             team_id,
             role,
             joined_at,
-            profiles (
+            profiles!team_members_user_id_fkey (
               email,
               full_name
             )
@@ -106,6 +105,18 @@ export const useTeam = () => {
 
         if (membersError) {
           console.error('Error loading team members:', membersError);
+          // Fallback: try without the relationship if it still fails
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('team_members')
+            .select('id, user_id, team_id, role, joined_at')
+            .eq('team_id', teamData.id);
+          
+          if (fallbackError) {
+            console.error('Fallback query also failed:', fallbackError);
+          } else {
+            console.log('Using fallback data without profiles');
+            setTeamMembers(fallbackData || []);
+          }
         } else {
           const mappedMembers: TeamMember[] = (membersData || []).map(member => {
             let profileData: { email: string; full_name: string | null } | undefined;
@@ -137,6 +148,7 @@ export const useTeam = () => {
           });
           
           setTeamMembers(mappedMembers);
+          console.log('Team members loaded successfully:', mappedMembers.length);
         }
 
         // Load pending invitations if user is admin
