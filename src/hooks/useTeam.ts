@@ -87,68 +87,47 @@ export const useTeam = () => {
         });
         setUserRole(membership.role as 'admin' | 'member');
 
-        // Load all team members for this team with the corrected relationship
+        // Load team members using separate queries to avoid schema cache issues
         const { data: membersData, error: membersError } = await supabase
           .from('team_members')
-          .select(`
-            id,
-            user_id,
-            team_id,
-            role,
-            joined_at,
-            profiles!team_members_user_id_fkey (
-              email,
-              full_name
-            )
-          `)
+          .select('id, user_id, team_id, role, joined_at')
           .eq('team_id', teamData.id);
 
         if (membersError) {
           console.error('Error loading team members:', membersError);
-          // Fallback: try without the relationship if it still fails
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('team_members')
-            .select('id, user_id, team_id, role, joined_at')
-            .eq('team_id', teamData.id);
-          
-          if (fallbackError) {
-            console.error('Fallback query also failed:', fallbackError);
-          } else {
-            console.log('Using fallback data without profiles');
-            setTeamMembers(fallbackData || []);
-          }
+          setTeamMembers([]);
         } else {
-          const mappedMembers: TeamMember[] = (membersData || []).map(member => {
-            let profileData: { email: string; full_name: string | null } | undefined;
-            
-            if (member.profiles) {
-              if (Array.isArray(member.profiles)) {
-                const firstProfile = member.profiles[0] as { email: string; full_name: string | null } | undefined;
-                profileData = firstProfile ? {
-                  email: firstProfile.email,
-                  full_name: firstProfile.full_name
-                } : undefined;
-              } else {
-                const profileObj = member.profiles as { email: string; full_name: string | null };
-                profileData = {
-                  email: profileObj.email,
-                  full_name: profileObj.full_name
-                };
-              }
-            }
+          // Load profiles for all team members in a separate query
+          const userIds = membersData.map(member => member.user_id);
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, email, full_name')
+            .in('id', userIds);
 
-            return {
-              id: member.id,
-              user_id: member.user_id,
-              team_id: member.team_id,
-              role: member.role as 'admin' | 'member',
-              joined_at: member.joined_at,
-              profiles: profileData
-            };
-          });
-          
-          setTeamMembers(mappedMembers);
-          console.log('Team members loaded successfully:', mappedMembers.length);
+          if (profilesError) {
+            console.error('Error loading profiles:', profilesError);
+            // Use team members without profile data
+            setTeamMembers(membersData.map(member => ({
+              ...member,
+              role: member.role as 'admin' | 'member'
+            })));
+          } else {
+            // Combine team members with profile data
+            const membersWithProfiles = membersData.map(member => {
+              const profile = profilesData.find(p => p.id === member.user_id);
+              return {
+                ...member,
+                role: member.role as 'admin' | 'member',
+                profiles: profile ? {
+                  email: profile.email,
+                  full_name: profile.full_name
+                } : undefined
+              };
+            });
+            
+            setTeamMembers(membersWithProfiles);
+            console.log('Team members with profiles loaded successfully:', membersWithProfiles.length);
+          }
         }
 
         // Load pending invitations if user is admin
