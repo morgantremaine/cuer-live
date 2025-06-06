@@ -32,6 +32,7 @@ const JoinTeam = () => {
   // Store invitation token in localStorage when page loads
   useEffect(() => {
     if (token) {
+      console.log('Storing invitation token in localStorage:', token);
       localStorage.setItem('pendingInvitationToken', token);
     }
   }, [token]);
@@ -39,12 +40,15 @@ const JoinTeam = () => {
   useEffect(() => {
     const loadInvitation = async () => {
       if (!token) {
+        console.log('No token provided, redirecting to login');
         navigate('/login');
         return;
       }
 
       try {
-        // First, get the invitation with team data
+        console.log('Loading invitation data for token:', token);
+        
+        // Get the invitation with team data
         const { data: invitationData, error: invitationError } = await supabase
           .from('team_invitations')
           .select(`
@@ -56,14 +60,27 @@ const JoinTeam = () => {
           .gt('expires_at', new Date().toISOString())
           .maybeSingle();
 
-        if (invitationError || !invitationData) {
+        console.log('Invitation data loaded:', { invitationData, invitationError });
+
+        if (invitationError) {
           console.error('Error loading invitation:', invitationError);
+          toast({
+            title: 'Error Loading Invitation',
+            description: 'There was an error loading the invitation details.',
+            variant: 'destructive',
+          });
+          localStorage.removeItem('pendingInvitationToken');
+          navigate('/login');
+          return;
+        }
+
+        if (!invitationData) {
+          console.log('Invalid or expired invitation token');
           toast({
             title: 'Invalid Invitation',
             description: 'This invitation link is invalid or has expired.',
             variant: 'destructive',
           });
-          // Clear any stale token
           localStorage.removeItem('pendingInvitationToken');
           navigate('/login');
           return;
@@ -72,7 +89,7 @@ const JoinTeam = () => {
         setInvitation(invitationData);
         setEmail(invitationData.email);
 
-        // Try to get the inviter's profile, but don't fail if it's not accessible
+        // Try to get the inviter's profile
         if (invitationData.invited_by) {
           try {
             const { data: profileData, error: profileError } = await supabase
@@ -114,7 +131,8 @@ const JoinTeam = () => {
 
   const checkUserExists = async (emailToCheck: string) => {
     try {
-      // Check if a profile exists for this email to determine if user exists
+      console.log('Checking if user exists for email:', emailToCheck);
+      
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('id')
@@ -129,9 +147,11 @@ const JoinTeam = () => {
       }
       
       if (profileData) {
+        console.log('User exists, defaulting to sign in tab');
         setUserExists(true);
         setActiveTab('signin');
       } else {
+        console.log('User does not exist, defaulting to sign up tab');
         setUserExists(false);
         setActiveTab('signup');
       }
@@ -145,6 +165,7 @@ const JoinTeam = () => {
   useEffect(() => {
     // If user is already logged in and we have an invitation, accept it
     if (user && invitation && !isProcessing) {
+      console.log('User is logged in, accepting invitation automatically');
       handleAcceptInvitation();
     }
   }, [user, invitation]);
@@ -155,9 +176,11 @@ const JoinTeam = () => {
     setIsProcessing(true);
     
     try {
+      console.log('Accepting invitation with token:', token);
       const { error } = await acceptInvitation(token);
       
       if (error) {
+        console.error('Failed to accept invitation:', error);
         toast({
           title: 'Error',
           description: error,
@@ -165,6 +188,7 @@ const JoinTeam = () => {
         });
         setIsProcessing(false);
       } else {
+        console.log('Invitation accepted successfully');
         localStorage.removeItem('pendingInvitationToken');
         toast({
           title: 'Success',
@@ -196,9 +220,12 @@ const JoinTeam = () => {
     }
 
     setIsProcessing(true);
+    console.log('Creating account for:', email);
+    
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
+      console.error('Sign up error:', error);
       toast({
         title: 'Error',
         description: error.message,
@@ -206,6 +233,7 @@ const JoinTeam = () => {
       });
       setIsProcessing(false);
     } else {
+      console.log('Account created successfully');
       toast({
         title: 'Account Created',
         description: 'Please check your email to verify your account, then return to this page to join the team.',
@@ -217,9 +245,12 @@ const JoinTeam = () => {
     e.preventDefault();
     
     setIsProcessing(true);
+    console.log('Signing in user:', email);
+    
     const { error } = await signIn(email, password);
     
     if (error) {
+      console.error('Sign in error:', error);
       toast({
         title: 'Error',
         description: error.message,

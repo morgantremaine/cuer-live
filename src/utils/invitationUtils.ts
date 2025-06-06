@@ -3,8 +3,8 @@ import { supabase } from '@/lib/supabase';
 
 export const validateInvitationToken = async (token: string): Promise<boolean> => {
   try {
-    // Use a service role or public access to validate tokens
-    // This should work without authentication
+    console.log('Validating invitation token:', token);
+    
     const { data, error } = await supabase
       .from('team_invitations')
       .select('id, expires_at, accepted')
@@ -12,6 +12,8 @@ export const validateInvitationToken = async (token: string): Promise<boolean> =
       .eq('accepted', false)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
+
+    console.log('Invitation validation result:', { data, error });
 
     if (error) {
       console.error('Error validating invitation token:', error);
@@ -35,11 +37,17 @@ export const clearInvalidTokens = () => {
   // Clear any stale invitation tokens from localStorage
   const pendingToken = localStorage.getItem('pendingInvitationToken');
   if (pendingToken) {
+    console.log('Checking if pending token is still valid:', pendingToken);
     validateInvitationToken(pendingToken).then((isValid) => {
       if (!isValid) {
         console.log('Clearing invalid invitation token from localStorage');
         localStorage.removeItem('pendingInvitationToken');
+      } else {
+        console.log('Pending token is still valid, keeping it');
       }
+    }).catch((error) => {
+      console.error('Error checking token validity, clearing it:', error);
+      localStorage.removeItem('pendingInvitationToken');
     });
   }
 };
