@@ -10,14 +10,9 @@ import { useAutoSave } from './useAutoSave';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
-  // Track initialization to prevent multiple instances
-  const isInstanceInitializedRef = useRef(false);
-  const processingLoadRef = useRef(false);
-  
-  // Only proceed if this is the first instance
-  if (!isInstanceInitializedRef.current) {
-    isInstanceInitializedRef.current = true;
-  }
+  // Single initialization flag to prevent multiple instances
+  const isInitializedRef = useRef(false);
+  const loadingRef = useRef(false);
   
   // Get basic state management
   const basicState = useRundownBasicState();
@@ -38,11 +33,11 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
-  // Use the data loader
+  // Use the data loader only once
   useRundownDataLoader({
     rundownId,
     savedRundowns: storage.savedRundowns,
-    loading: storage.loading,
+    loading: storage.loading || loadingRef.current,
     setRundownTitle: basicState.setRundownTitleDirectly,
     setTimezone: basicState.setTimezoneDirectly,
     setRundownStartTime: basicState.setRundownStartTimeDirectly,
@@ -50,33 +45,31 @@ export const useRundownDataManagement = (rundownId: string) => {
     setItems: stateIntegration.setItems,
     onRundownLoaded: (rundown) => {
       console.log('Rundown loaded successfully:', rundown.title);
-      // Clear loading state
-      setTimeout(() => {
-        basicState.setIsLoading(false);
-        processingLoadRef.current = false;
-      }, 100);
+      loadingRef.current = false;
+      basicState.setIsLoading(false);
     }
   });
 
-  // Initialize new rundowns with default items
+  // Initialize new rundowns only once
   useEffect(() => {
-    // Only for new rundowns (no rundownId)
-    if (rundownId || storage.loading || processingLoadRef.current) return;
+    if (isInitializedRef.current || rundownId || storage.loading || loadingRef.current) {
+      return;
+    }
     
-    // Only if we have no items and no rundowns are loading
     if (stateIntegration.items.length === 0 && storage.savedRundowns.length >= 0) {
       console.log('Initializing new rundown with default items');
-      processingLoadRef.current = true;
+      loadingRef.current = true;
       basicState.setIsLoading(true);
       
       stateIntegration.setItems(defaultRundownItems);
       
       setTimeout(() => {
+        loadingRef.current = false;
         basicState.setIsLoading(false);
-        processingLoadRef.current = false;
-      }, 200);
+        isInitializedRef.current = true;
+      }, 100);
     }
-  }, [rundownId, storage.loading, stateIntegration.items.length]);
+  }, [rundownId, storage.loading, stateIntegration.items.length, storage.savedRundowns.length]);
 
   // Auto-save functionality
   const { isSaving, lastSavedTimestamp } = useAutoSave(
@@ -98,10 +91,10 @@ export const useRundownDataManagement = (rundownId: string) => {
     isAutoSaving: isSaving,
     lastSavedTimestamp,
     onUpdateReceived: (data) => {
-      if (processingLoadRef.current) return;
+      if (loadingRef.current) return;
       
       console.log('Applying remote update:', data.title);
-      processingLoadRef.current = true;
+      loadingRef.current = true;
       basicState.setIsLoading(true);
       
       basicState.setRundownTitleDirectly(data.title);
@@ -120,8 +113,8 @@ export const useRundownDataManagement = (rundownId: string) => {
       basicState.markAsSaved(data.items, data.title, data.columns, data.timezone, data.startTime);
       
       setTimeout(() => {
+        loadingRef.current = false;
         basicState.setIsLoading(false);
-        processingLoadRef.current = false;
       }, 100);
     },
     onConflictDetected: () => {

@@ -31,11 +31,13 @@ export const useRundownDataLoader = ({
   const params = useParams<{ id: string }>();
   const paramId = params.id;
   const loadedRef = useRef<string | null>(null);
-  const processingRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
-    // Prevent multiple simultaneous loads
-    if (loading || savedRundowns.length === 0 || processingRef.current) return;
+    // Prevent loading if already in progress or conditions not met
+    if (loading || isLoadingRef.current || savedRundowns.length === 0) {
+      return;
+    }
     
     const currentRundownId = rundownId || paramId;
     if (!currentRundownId) return;
@@ -51,40 +53,44 @@ export const useRundownDataLoader = ({
 
     console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
     
-    // Mark as processing
-    processingRef.current = true;
+    // Mark as loading
+    isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
     
-    // Load all data synchronously
-    setRundownTitle(rundown.title);
-    
-    if (rundown.timezone) {
-      setTimezone(rundown.timezone);
-    }
-    
-    if (rundown.start_time) {
-      setRundownStartTime(rundown.start_time);
-    }
-    
-    if (rundown.columns) {
-      handleLoadLayout(rundown.columns);
-    }
+    // Load all data in sequence
+    try {
+      setRundownTitle(rundown.title);
+      
+      if (rundown.timezone) {
+        setTimezone(rundown.timezone);
+      }
+      
+      if (rundown.start_time) {
+        setRundownStartTime(rundown.start_time);
+      }
+      
+      if (rundown.columns) {
+        handleLoadLayout(rundown.columns);
+      }
 
-    if (rundown.items && Array.isArray(rundown.items)) {
-      console.log('Setting rundown items:', rundown.items.length);
-      setItems(rundown.items);
-    }
+      if (rundown.items && Array.isArray(rundown.items)) {
+        console.log('Setting rundown items:', rundown.items.length);
+        setItems(rundown.items);
+      }
 
-    // Call the callback
-    if (onRundownLoaded) {
-      onRundownLoaded(rundown);
+      // Call the callback
+      if (onRundownLoaded) {
+        onRundownLoaded(rundown);
+      }
+    } catch (error) {
+      console.error('Error loading rundown:', error);
+    } finally {
+      // Reset loading flag after a short delay
+      setTimeout(() => {
+        isLoadingRef.current = false;
+      }, 100);
     }
-
-    // Reset processing flag
-    setTimeout(() => {
-      processingRef.current = false;
-    }, 100);
-  }, [rundownId, paramId, savedRundowns.length, loading]);
+  }, [rundownId, paramId, savedRundowns, loading]);
 
   // Reset when rundown ID changes
   useEffect(() => {
@@ -92,7 +98,7 @@ export const useRundownDataLoader = ({
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
       console.log('Rundown ID changed, resetting loader');
       loadedRef.current = null;
-      processingRef.current = false;
+      isLoadingRef.current = false;
     }
   }, [rundownId, paramId]);
 };

@@ -35,7 +35,7 @@ export const useAutoSave = (
     
     // Validate data before saving
     if (!rundownTitle || rundownTitle.trim() === '' || !Array.isArray(items) || items.length === 0) {
-      console.log('Auto-save skipped: Invalid data');
+      console.log('Auto-save skipped: Invalid data', { title: rundownTitle, itemsLength: items?.length });
       return;
     }
 
@@ -87,7 +87,7 @@ export const useAutoSave = (
         isSavingRef.current = false;
         setIsSaving(false);
       }
-    }, 2000);
+    }, 3000); // Increased debounce time
 
     return () => {
       if (saveTimeoutRef.current) {

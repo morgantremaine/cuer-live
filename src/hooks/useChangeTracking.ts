@@ -10,23 +10,24 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const isLoadingRef = useRef(false);
   const initializationCompleteRef = useRef(false);
 
-  // Simple initialization - just wait for meaningful data
+  // Initialize tracking when we have meaningful data
   useEffect(() => {
-    if (initializationCompleteRef.current) return;
+    if (initializationCompleteRef.current || isLoadingRef.current) return;
 
-    const hasMeaningfulData = items.length > 0 && rundownTitle !== 'Live Broadcast Rundown';
+    // Check for meaningful data that indicates the rundown is loaded
+    const hasMeaningfulData = items.length > 0 && rundownTitle && rundownTitle !== 'Live Broadcast Rundown';
     
-    if (hasMeaningfulData && !isLoadingRef.current) {
+    if (hasMeaningfulData) {
       const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
       lastSavedDataRef.current = signature;
       initializationCompleteRef.current = true;
       setIsInitialized(true);
       setHasUnsavedChanges(false);
-      console.log('Change tracking initialized successfully');
+      console.log('Change tracking initialized');
     }
-  }, [items.length, rundownTitle, columns, timezone, startTime]);
+  }, [items.length, rundownTitle]);
 
-  // Track changes only after initialization
+  // Track changes after initialization
   useEffect(() => {
     if (!isInitialized || isLoadingRef.current || !initializationCompleteRef.current) {
       return;
@@ -36,8 +37,8 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
     if (hasChanges !== hasUnsavedChanges) {
-      console.log('Change detected:', hasChanges ? 'UNSAVED' : 'SAVED');
       setHasUnsavedChanges(hasChanges);
+      console.log('Change detected:', hasChanges ? 'UNSAVED' : 'SAVED');
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, hasUnsavedChanges]);
 
@@ -51,6 +52,7 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const markAsChanged = () => {
     if (!isLoadingRef.current && initializationCompleteRef.current) {
       setHasUnsavedChanges(true);
+      console.log('Marked as changed');
     }
   };
 
