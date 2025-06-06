@@ -72,7 +72,11 @@ const RundownIndexContent = () => {
     setTimezone,
     handleUndo,
     canUndo,
-    lastAction
+    lastAction,
+    // Extract the new realtime collaboration properties
+    isConnected,
+    hasPendingChanges,
+    isEditing
   } = gridState;
 
   const {
@@ -177,6 +181,10 @@ const RundownIndexContent = () => {
         onUndo={handleUndo}
         canUndo={canUndo}
         lastAction={lastAction}
+        // Pass through the realtime collaboration properties
+        isConnected={isConnected}
+        hasPendingChanges={hasPendingChanges}
+        isEditing={isEditing}
       />
       
       {/* Cuer AI Chat Button with rundown data */}
