@@ -66,7 +66,7 @@ export const useUnifiedRundownState = () => {
     onAddHeader: handleAddHeader,
     onDeleteRow: gridState.deleteRow,
     onToggleFloat: gridState.toggleFloatRow,
-    onRowSelect: handleRowSelect,
+    onRowSelect: handleRowSelect, // This now matches the correct signature
     onClearSelection: gridState.clearSelection,
     onCopySelectedRows: gridState.handleCopySelectedRows,
     onPasteRows: gridState.handlePasteRows,

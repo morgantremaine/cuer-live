@@ -63,8 +63,8 @@ export interface RundownStateHandlers {
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
   
-  // Selection handlers
-  onRowSelect: (itemId: string, event: React.MouseEvent) => void;
+  // Selection handlers - Fixed signature to match implementation
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onClearSelection: () => void;
   
   // Clipboard handlers
