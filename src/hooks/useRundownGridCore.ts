@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -11,8 +12,6 @@ import { useCallback, useEffect, useRef, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
-  const initializationRef = useRef(false);
-  
   // Core state management
   const {
     currentTime,
@@ -34,15 +33,7 @@ export const useRundownGridCore = () => {
   // Get storage functionality
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
 
-  // Only initialize realtime and editing detection once per component mount
-  useEffect(() => {
-    if (!initializationRef.current && rundownId) {
-      console.log('🎯 Initializing realtime and editing detection for rundown:', rundownId);
-      initializationRef.current = true;
-    }
-  }, [rundownId]);
-
-  // Detect when user is actively editing - only if initialized
+  // Detect when user is actively editing - only set up once
   const { isEditing } = useEditingDetection();
 
   // Get current rundown data for realtime comparison - memoize to prevent infinite loops
@@ -60,8 +51,7 @@ export const useRundownGridCore = () => {
     rundownId,
     hasCurrentRundown: !!currentRundown,
     isEditing,
-    isSaving: false,
-    initialized: initializationRef.current
+    isSaving: false
   });
 
   // Rundown data integration
@@ -98,9 +88,9 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Only set up realtime if we have the core data and it's initialized
+  // Set up realtime only when we have the required data
   useRundownRealtime({
-    currentRundownId: initializationRef.current ? rundownId : undefined,
+    currentRundownId: rundownId,
     currentUpdatedAt: currentRundown?.updated_at,
     onRemoteUpdate,
     isUserEditing: isEditing,

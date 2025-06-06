@@ -5,7 +5,7 @@ export const useEditingDetection = () => {
   const [isEditing, setIsEditing] = useState(false);
   const editingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastActivityRef = useRef<number>(0);
-  const isSetupRef = useRef(false);
+  const isInitializedRef = useRef(false);
 
   const markAsEditing = () => {
     const now = Date.now();
@@ -31,15 +31,15 @@ export const useEditingDetection = () => {
     }, 3000);
   };
 
-  // Listen for various editing events
+  // Listen for various editing events - only set up once
   useEffect(() => {
     // Prevent duplicate setup
-    if (isSetupRef.current) {
+    if (isInitializedRef.current) {
       return;
     }
     
     console.log('🎯 Setting up editing detection listeners');
-    isSetupRef.current = true;
+    isInitializedRef.current = true;
     
     const handleUserActivity = (event: Event) => {
       // Only consider actual user input events, not programmatic changes
@@ -64,7 +64,7 @@ export const useEditingDetection = () => {
 
     return () => {
       console.log('🧹 Cleaning up editing detection listeners');
-      isSetupRef.current = false;
+      isInitializedRef.current = false;
       document.removeEventListener('input', handleUserActivity);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handleUserActivity);
@@ -73,7 +73,7 @@ export const useEditingDetection = () => {
         clearTimeout(editingTimeoutRef.current);
       }
     };
-  }, []);
+  }, []); // Empty dependency array - only run once
 
   console.log('📝 Editing detection state:', { isEditing });
 

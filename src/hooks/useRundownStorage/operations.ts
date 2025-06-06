@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
@@ -6,7 +7,6 @@ export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
   // Load user's own rundowns and team rundowns they have access to
-  // Remove the archived filter to get both active and archived rundowns
   const { data, error } = await supabase
     .from('rundowns')
     .select(`
@@ -37,7 +37,7 @@ export const saveRundownToDatabase = async (
   icon?: string,
   teamId?: string
 ) => {
-  console.log('Saving rundown to database:', title)
+  console.log('Saving rundown to database for user:', userId)
   
   // Get user's default team if no teamId provided
   let finalTeamId = teamId;
@@ -54,7 +54,7 @@ export const saveRundownToDatabase = async (
   }
   
   const rundownData = {
-    user_id: userId,
+    user_id: userId, // CRITICAL: Use the correct authenticated user ID
     title,
     items,
     columns,
@@ -64,6 +64,8 @@ export const saveRundownToDatabase = async (
     team_id: finalTeamId,
     updated_at: new Date().toISOString()
   }
+
+  console.log('Saving rundown with user_id:', userId, 'data:', rundownData);
 
   const { data, error } = await supabase
     .from('rundowns')
@@ -76,7 +78,7 @@ export const saveRundownToDatabase = async (
     return { data: null, error }
   }
 
-  console.log('Rundown saved successfully:', data.id)
+  console.log('Rundown saved successfully:', data.id, 'with user_id:', data.user_id)
   return { data, error: null }
 }
 
@@ -93,7 +95,7 @@ export const updateRundownInDatabase = async (
   undoHistory?: any[],
   teamId?: string
 ) => {
-  console.log('Updating rundown in database:', id)
+  console.log('Updating rundown in database:', id, 'for user:', userId)
   
   // First, check if the rundown exists and if the user has access to it
   const { data: existingRundown, error: checkError } = await supabase
@@ -162,10 +164,11 @@ export const updateRundownInDatabase = async (
     icon,
     undo_history: undoHistory,
     team_id: finalTeamId,
+    user_id: userId, // CRITICAL: Ensure the user_id is set to the current authenticated user
     updated_at: new Date().toISOString()
   }
 
-  console.log('Update data:', updateData);
+  console.log('Update data with user_id:', userId, 'updateData:', updateData);
 
   // Now perform the update
   const { data, error } = await supabase
@@ -186,7 +189,7 @@ export const updateRundownInDatabase = async (
     return { data: null, error: updateError };
   }
 
-  console.log('Rundown updated successfully:', data.id)
+  console.log('Rundown updated successfully:', data.id, 'with user_id:', data.user_id)
   return { data, error: null }
 }
 

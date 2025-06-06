@@ -24,7 +24,7 @@ export const useRundownRealtime = ({
   const channelRef = useRef<any>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
   const lastProcessedUpdateRef = useRef<string>('');
-  const isSetupRef = useRef(false);
+  const isSubscribedRef = useRef(false);
 
   console.log('🔴 useRundownRealtime hook called with:', {
     currentRundownId,
@@ -38,9 +38,10 @@ export const useRundownRealtime = ({
   const handleRealtimeUpdate = useCallback((payload: any) => {
     console.log('📡 Realtime update received:', {
       rundownId: payload.new.id,
-      updatedBy: payload.new.user_id,
-      currentUser: user?.id,
-      isCurrentRundown: payload.new.id === currentRundownId
+      updatedByUserId: payload.new.user_id,
+      currentUserId: user?.id,
+      isCurrentRundown: payload.new.id === currentRundownId,
+      payloadData: payload.new
     });
     
     // Only process updates for the current rundown
@@ -49,11 +50,12 @@ export const useRundownRealtime = ({
       return;
     }
 
-    // CRITICAL: Don't process our own updates - use strict comparison
+    // CRITICAL: Don't process our own updates - use strict comparison with user ID
     if (payload.new.user_id === user?.id) {
       console.log('⏭️ Ignoring update - from current user:', {
         payloadUserId: payload.new.user_id,
-        currentUserId: user?.id
+        currentUserId: user?.id,
+        areEqual: payload.new.user_id === user?.id
       });
       return;
     }
@@ -95,36 +97,32 @@ export const useRundownRealtime = ({
     }, delay);
   }, [currentRundownId, currentUpdatedAt, user?.id, isUserEditing, onRemoteUpdate, toast]);
 
-  // Stable effect that only depends on user ID
+  // Set up realtime subscription
   useEffect(() => {
     console.log('🔴 useRundownRealtime effect triggered', {
       hasUser: !!user,
       userId: user?.id,
       currentRundownId,
       userEmail: user?.email,
-      isSetupRef: isSetupRef.current
+      isSubscribed: isSubscribedRef.current
     });
 
-    if (!user?.id) {
-      console.log('❌ Not setting up realtime - no user ID');
+    // Don't set up if we don't have the required data
+    if (!user?.id || !currentRundownId) {
+      console.log('❌ Not setting up realtime - missing user ID or rundown ID');
       return;
     }
 
-    if (!currentRundownId) {
-      console.log('❌ Not setting up realtime - no rundown ID');
-      return;
-    }
-
-    // Prevent duplicate setups
-    if (isSetupRef.current) {
+    // Prevent duplicate subscriptions
+    if (isSubscribedRef.current) {
       console.log('⏭️ Realtime already set up, skipping');
       return;
     }
 
     console.log('✅ Setting up realtime subscription for rundowns');
-    isSetupRef.current = true;
+    isSubscribedRef.current = true;
 
-    // Create a unique channel name to avoid conflicts
+    // Create a unique channel name
     const channelName = `rundown-updates-${currentRundownId}-${Date.now()}`;
     
     // Create a channel for rundown updates
@@ -136,7 +134,6 @@ export const useRundownRealtime = ({
           event: 'UPDATE',
           schema: 'public',
           table: 'rundowns'
-          // No filter - listen to all rundown updates, we'll filter in the handler
         },
         handleRealtimeUpdate
       )
@@ -146,6 +143,7 @@ export const useRundownRealtime = ({
           console.log('✅ Successfully subscribed to realtime updates');
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Failed to subscribe to realtime updates');
+          isSubscribedRef.current = false;
         }
       });
 
@@ -153,7 +151,7 @@ export const useRundownRealtime = ({
 
     return () => {
       console.log('🧹 Cleaning up realtime subscription');
-      isSetupRef.current = false;
+      isSubscribedRef.current = false;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -162,7 +160,7 @@ export const useRundownRealtime = ({
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [user?.id, currentRundownId]); // ONLY depend on user ID and rundown ID
+  }, [user?.id, currentRundownId, handleRealtimeUpdate]);
 
   // Cleanup on unmount
   useEffect(() => {
