@@ -92,6 +92,10 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onUndo={props.onUndo}
       canUndo={props.canUndo}
       lastAction={props.lastAction}
+      // Pass through realtime status
+      isConnected={props.isConnected}
+      hasPendingChanges={props.hasPendingChanges}
+      isEditing={props.isEditing}
     />
   );
 };

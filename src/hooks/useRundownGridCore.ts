@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -6,10 +5,10 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
-import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
 import { useEditingState } from './useEditingState';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { useEnhancedRealtimeCollaboration } from './useEnhancedRealtimeCollaboration';
 
 export const useRundownGridCore = () => {
   // Create stable refs to prevent infinite loops
@@ -56,55 +55,17 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Create a TRULY stable callback for remote updates using ref
-  const onRemoteUpdateRef = useRef(() => {
-    console.log('📡 Remote update detected, refreshing rundowns...');
+  // Create a stable force reload function
+  const onForceReloadRef = useRef(() => {
+    console.log('🔄 Force reloading rundown data...');
     if (stableCallbacksRef.current.loadRundowns) {
       stableCallbacksRef.current.loadRundowns();
     }
   });
 
-  // Create a stable callback for reloading current rundown with forced refresh
-  const onReloadCurrentRundownRef = useRef(() => {
-    console.log('🔄 Forcing reload of current rundown data after remote update...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      // Force a fresh load from the database
-      stableCallbacksRef.current.loadRundowns();
-    }
-  });
-
-  // Update the refs when functions change, but don't recreate the callbacks
-  onRemoteUpdateRef.current = () => {
-    console.log('📡 Remote update detected, refreshing rundowns...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      stableCallbacksRef.current.loadRundowns();
-    }
-  };
-
-  onReloadCurrentRundownRef.current = () => {
-    console.log('🔄 Forcing reload of current rundown data after remote update...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      // Force a fresh load from the database
-      stableCallbacksRef.current.loadRundowns();
-    }
-  };
-
-  // Use stable callbacks that never change
-  const stableOnRemoteUpdate = useCallback(() => {
-    onRemoteUpdateRef.current();
-  }, []); // No dependencies!
-
-  const stableOnReloadCurrentRundown = useCallback(() => {
-    onReloadCurrentRundownRef.current();
-  }, []); // No dependencies!
-
-  // Set up realtime collaboration with truly stable callbacks
-  const { isConnected } = useStableRealtimeCollaboration({
-    rundownId,
-    onRemoteUpdate: stableOnRemoteUpdate,
-    onReloadCurrentRundown: stableOnReloadCurrentRundown,
-    enabled: !!rundownId
-  });
+  const stableOnForceReload = useCallback(() => {
+    onForceReloadRef.current();
+  }, []);
 
   // Rundown data integration
   const {
@@ -144,6 +105,29 @@ export const useRundownGridCore = () => {
   stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
   stableCallbacksRef.current.setItems = setItems;
 
+  // Use enhanced realtime collaboration instead of the old one
+  const { 
+    isConnected, 
+    trackPendingChange, 
+    clearPendingChanges, 
+    hasPendingChanges: hasRealtimePendingChanges 
+  } = useEnhancedRealtimeCollaboration({
+    rundownId,
+    items,
+    setItems,
+    columns,
+    handleLoadLayout,
+    rundownTitle,
+    setRundownTitleDirectly,
+    timezone,
+    setTimezoneDirectly,
+    rundownStartTime,
+    setRundownStartTimeDirectly,
+    isEditing,
+    onForceReload: stableOnForceReload,
+    enabled: !!rundownId
+  });
+
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
@@ -179,11 +163,12 @@ export const useRundownGridCore = () => {
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Enhanced functions that trigger editing detection and save state
+  // Enhanced functions that track pending changes for realtime
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     markAsEditing();
+    trackPendingChange(id);
     updateItem(id, field, value);
-  }, [updateItem, markAsEditing]);
+  }, [updateItem, markAsEditing, trackPendingChange]);
 
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
@@ -289,6 +274,15 @@ export const useRundownGridCore = () => {
     }
   }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged, markAsEditing]);
 
+  // Clear pending changes after successful save
+  const wrappedMarkAsChanged = useCallback(() => {
+    markAsChanged();
+    // Clear realtime pending changes after a successful save
+    setTimeout(() => {
+      clearPendingChanges();
+    }, 1000);
+  }, [markAsChanged, clearPendingChanges]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
@@ -315,7 +309,7 @@ export const useRundownGridCore = () => {
     rundownStartTime,
     setRundownStartTime,
     rundownId,
-    markAsChanged,
+    markAsChanged: wrappedMarkAsChanged,
 
     // Items and data - use wrapped versions for undo support
     items,
@@ -361,8 +355,9 @@ export const useRundownGridCore = () => {
     canUndo,
     lastAction,
 
-    // Realtime status
+    // Enhanced realtime status
     isConnected,
-    isEditing
+    isEditing,
+    hasPendingChanges: hasRealtimePendingChanges
   };
 };
