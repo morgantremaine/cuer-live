@@ -59,8 +59,8 @@ export const useRundownDataLoader = ({
       setTimezone(rundown.timezone);
     }
     
-    if (rundown.startTime || rundown.start_time) {
-      setRundownStartTime(rundown.startTime || rundown.start_time || '09:00:00');
+    if (rundown.start_time) {
+      setRundownStartTime(rundown.start_time);
     }
     
     if (rundown.columns) {
