@@ -23,8 +23,6 @@ import {
 const TeamManagement = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
-  const [teamName, setTeamName] = useState('');
-  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
   
   const {
     team,
@@ -32,35 +30,11 @@ const TeamManagement = () => {
     pendingInvitations,
     userRole,
     loading,
-    createTeam,
     inviteTeamMember,
     removeTeamMember
   } = useTeam();
   
   const { toast } = useToast();
-
-  const handleCreateTeam = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!teamName.trim()) return;
-
-    setIsCreatingTeam(true);
-    const { error } = await createTeam(teamName.trim());
-    
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Team created successfully!',
-      });
-      setTeamName('');
-    }
-    setIsCreatingTeam(false);
-  };
 
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,7 +85,7 @@ const TeamManagement = () => {
     );
   }
 
-  // No team - show team creation
+  // Show team management interface - user should have a team now
   if (!team) {
     return (
       <div className="space-y-6">
@@ -119,35 +93,17 @@ const TeamManagement = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Create Your Team
+              Team Setup
             </CardTitle>
             <CardDescription>
-              Create a team to collaborate on rundowns with your colleagues.
+              Setting up your team... Please refresh the page if this persists.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateTeam} className="space-y-4">
-              <div>
-                <Label htmlFor="team-name">Team Name</Label>
-                <Input
-                  id="team-name"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="Enter team name"
-                  required
-                />
-              </div>
-              <Button type="submit" disabled={isCreatingTeam}>
-                {isCreatingTeam ? 'Creating...' : 'Create Team'}
-              </Button>
-            </form>
-          </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Has team - show team management
   return (
     <div className="space-y-6">
       {/* Team Info */}
@@ -158,7 +114,7 @@ const TeamManagement = () => {
             {team.name}
           </CardTitle>
           <CardDescription>
-            Manage your team members and collaborate on rundowns.
+            Manage your team members and collaborate on rundowns. You have {userRole} access.
           </CardDescription>
         </CardHeader>
       </Card>

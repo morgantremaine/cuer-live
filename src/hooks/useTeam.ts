@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/lib/supabase';
@@ -51,7 +52,7 @@ export const useTeam = () => {
     try {
       console.log('Loading team data for user:', user.id);
 
-      // First, get the user's team memberships
+      // Load team memberships using the new simplified RLS
       const { data: membershipData, error: membershipError } = await supabase
         .from('team_members')
         .select(`
@@ -75,7 +76,7 @@ export const useTeam = () => {
       console.log('Team memberships loaded:', membershipData);
 
       if (membershipData && membershipData.length > 0) {
-        // For now, just use the first team
+        // Use the first team (users should have been given a default team)
         const membership = membershipData[0];
         const teamData = membership.teams as any;
         
@@ -87,7 +88,7 @@ export const useTeam = () => {
         });
         setUserRole(membership.role as 'admin' | 'member');
 
-        // Load team members with profile data
+        // Load all team members for this team
         const { data: membersData, error: membersError } = await supabase
           .from('team_members')
           .select(`
@@ -106,21 +107,17 @@ export const useTeam = () => {
         if (membersError) {
           console.error('Error loading team members:', membersError);
         } else {
-          // Map the data to match our interface with proper type handling
           const mappedMembers: TeamMember[] = (membersData || []).map(member => {
-            // Handle profiles data - ensure it's properly typed
             let profileData: { email: string; full_name: string | null } | undefined;
             
             if (member.profiles) {
               if (Array.isArray(member.profiles)) {
-                // If it's an array, take the first element with proper typing
                 const firstProfile = member.profiles[0] as { email: string; full_name: string | null } | undefined;
                 profileData = firstProfile ? {
                   email: firstProfile.email,
                   full_name: firstProfile.full_name
                 } : undefined;
               } else {
-                // If it's already an object, use it directly with proper typing
                 const profileObj = member.profiles as { email: string; full_name: string | null };
                 profileData = {
                   email: profileObj.email,
@@ -158,11 +155,15 @@ export const useTeam = () => {
           }
         }
       } else {
-        // No team membership found
-        setTeam(null);
-        setTeamMembers([]);
-        setPendingInvitations([]);
-        setUserRole(null);
+        // User should have been given a default team by the migration
+        // If not, create one now
+        console.log('No team found for user, creating default team...');
+        const { error: createError } = await createTeam('My Team');
+        if (!createError) {
+          // Reload team data after creation
+          setTimeout(() => loadTeamData(), 500);
+          return;
+        }
       }
 
       setLoading(false);
