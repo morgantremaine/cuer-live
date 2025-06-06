@@ -80,6 +80,11 @@ export const useRundownDataManagement = (rundownId: string) => {
     undoSystem.undoHistory
   );
 
+  // Add missing properties for compatibility
+  const clearRemoteUpdatesIndicator = () => {
+    // No-op for now, can be implemented later if needed
+  };
+
   return {
     ...basicState,
     ...storage,
@@ -87,6 +92,8 @@ export const useRundownDataManagement = (rundownId: string) => {
     ...undoSystem,
     isSaving,
     lastSavedTimestamp,
-    isInitialized: isInitializedRef.current
+    isInitialized: isInitializedRef.current,
+    hasRemoteUpdates: false, // Add missing property
+    clearRemoteUpdatesIndicator // Add missing function
   };
 };
