@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -83,7 +82,9 @@ export const useRundownGridCore = () => {
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving
+    isSaving,
+    setRundownId,
+    markAsChanged: autoSaveMarkAsChanged
   } = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
@@ -92,6 +93,14 @@ export const useRundownGridCore = () => {
     setRundownTitleDirectly, 
     setTimezoneDirectly
   );
+
+  // Connect the rundown ID to the auto-save system
+  useEffect(() => {
+    if (rundownId) {
+      console.log('🔗 Connecting rundown ID to auto-save system:', rundownId);
+      setRundownId(rundownId);
+    }
+  }, [rundownId, setRundownId]);
 
   // Update stable refs
   stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
@@ -170,19 +179,23 @@ export const useRundownGridCore = () => {
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     markAsEditing();
     
+    console.log('🔧 Enhanced update item:', { id, field, value });
+    
     // Add optimistic update for immediate UI feedback
     const updateId = addOptimisticUpdate(id, field, value, 'current-user');
     
     // Perform the actual update
     updateItem(id, field, value);
     
+    // Mark as changed for auto-save
+    autoSaveMarkAsChanged();
+    
     // The optimistic update will be confirmed when the change is persisted
     setTimeout(() => {
       confirmOptimisticUpdate(updateId);
     }, 1000);
-  }, [updateItem, markAsEditing, addOptimisticUpdate, confirmOptimisticUpdate]);
+  }, [updateItem, markAsEditing, addOptimisticUpdate, confirmOptimisticUpdate, autoSaveMarkAsChanged]);
 
-  // Auto-save is now handled by useRundownStateIntegration -> useAutoSave
   // Log the auto-save state for debugging
   useEffect(() => {
     console.log('🔍 Auto-save state check:', {
@@ -251,42 +264,48 @@ export const useRundownGridCore = () => {
     saveState(items, columns, rundownTitle, 'Delete Row');
     markAsEditing();
     deleteRow(id);
-  }, [deleteRow, saveState, items, columns, rundownTitle, markAsEditing]);
+    autoSaveMarkAsChanged();
+  }, [deleteRow, saveState, items, columns, rundownTitle, markAsEditing, autoSaveMarkAsChanged]);
 
   const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
     saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
     markAsEditing();
     deleteMultipleRows(ids);
-  }, [deleteMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
+    autoSaveMarkAsChanged();
+  }, [deleteMultipleRows, saveState, items, columns, rundownTitle, markAsEditing, autoSaveMarkAsChanged]);
 
   const wrappedToggleFloatRow = useCallback((id: string) => {
     saveState(items, columns, rundownTitle, 'Toggle Float');
     markAsEditing();
     toggleFloatRow(id);
-  }, [toggleFloatRow, saveState, items, columns, rundownTitle, markAsEditing]);
+    autoSaveMarkAsChanged();
+  }, [toggleFloatRow, saveState, items, columns, rundownTitle, markAsEditing, autoSaveMarkAsChanged]);
 
   const wrappedSetItems = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
     const newItems = typeof updater === 'function' ? updater(items) : updater;
     if (JSON.stringify(newItems) !== JSON.stringify(items)) {
       saveState(items, columns, rundownTitle, 'Move Rows');
       markAsEditing();
+      autoSaveMarkAsChanged();
     }
     setItems(updater);
-  }, [setItems, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [setItems, saveState, items, columns, rundownTitle, markAsEditing, autoSaveMarkAsChanged]);
 
   const wrappedAddMultipleRows = useCallback((newItems: RundownItem[], calculateEndTimeFn: any) => {
     saveState(items, columns, rundownTitle, 'Paste Rows');
     markAsEditing();
     addMultipleRows(newItems);
-  }, [addMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
+    autoSaveMarkAsChanged();
+  }, [addMultipleRows, saveState, items, columns, rundownTitle, markAsEditing, autoSaveMarkAsChanged]);
 
   const wrappedSetRundownTitle = useCallback((title: string) => {
     if (title !== rundownTitle) {
       saveState(items, columns, rundownTitle, 'Change Title');
       markAsEditing();
+      autoSaveMarkAsChanged();
     }
     setRundownTitle(title);
-  }, [setRundownTitle, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [setRundownTitle, saveState, items, columns, rundownTitle, markAsEditing, autoSaveMarkAsChanged]);
 
   const handleUndo = useCallback(() => {
     const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);

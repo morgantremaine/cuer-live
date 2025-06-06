@@ -35,14 +35,29 @@ export const useChangeTracking = (
   // Initialize tracking when data is first loaded
   useEffect(() => {
     if (items && !isInitialized) {
+      console.log('🎯 Initializing change tracking with', items.length, 'items');
       updateLastKnownState(items);
       setIsInitialized(true);
+      
+      // Set initial saved state
+      const initialDataSignature = JSON.stringify({
+        items,
+        title: rundownTitle,
+        columns,
+        timezone,
+        startTime
+      });
+      lastSavedDataRef.current = initialDataSignature;
+      console.log('📋 Initial data signature set');
     }
-  }, [items, isInitialized]);
+  }, [items, isInitialized, rundownTitle, columns, timezone, startTime]);
 
   // Detect changes in data
   useEffect(() => {
-    if (!isInitialized || isLoading) return;
+    if (!isInitialized || isLoading) {
+      console.log('⏸️ Skipping change detection - not initialized or loading');
+      return;
+    }
 
     const currentDataSignature = JSON.stringify({
       items,
@@ -52,10 +67,21 @@ export const useChangeTracking = (
       startTime
     });
 
+    console.log('🔍 Change detection check:', {
+      hasLastSavedData: !!lastSavedDataRef.current,
+      signaturesMatch: lastSavedDataRef.current === currentDataSignature,
+      itemsLength: items?.length || 0,
+      currentHasChanges: hasUnsavedChanges
+    });
+
     if (lastSavedDataRef.current && lastSavedDataRef.current !== currentDataSignature) {
+      console.log('🚨 Changes detected! Setting hasUnsavedChanges to true');
       setHasUnsavedChanges(true);
+    } else if (lastSavedDataRef.current === currentDataSignature && hasUnsavedChanges) {
+      console.log('✅ Data matches saved state, clearing unsaved changes flag');
+      setHasUnsavedChanges(false);
     }
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading]);
+  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, hasUnsavedChanges]);
 
   const trackChange = useCallback((
     itemId: string, 
@@ -64,6 +90,7 @@ export const useChangeTracking = (
     newValue: string, 
     userId?: string
   ) => {
+    console.log('📝 Tracking change:', { itemId, field, oldValue, newValue });
     const timestamp = Date.now();
     const change: ChangeMetadata = {
       field,
@@ -138,6 +165,7 @@ export const useChangeTracking = (
   }, []);
 
   const updateLastKnownState = useCallback((items: RundownItem[]) => {
+    console.log('📌 Updating last known state with', items.length, 'items');
     items.forEach(item => {
       lastKnownStateRef.current.set(item.id, { ...item });
     });
@@ -157,12 +185,14 @@ export const useChangeTracking = (
       timezone,
       startTime
     });
+    console.log('💾 Marking as saved, updating signature');
     lastSavedDataRef.current = dataSignature;
     setHasUnsavedChanges(false);
     updateLastKnownState(items);
   }, [updateLastKnownState]);
 
   const markAsChanged = useCallback(() => {
+    console.log('🔄 Manually marking as changed');
     setHasUnsavedChanges(true);
   }, []);
 

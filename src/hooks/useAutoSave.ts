@@ -1,98 +1,104 @@
 
-
-import { useEffect, useRef, useCallback } from 'react';
-import { useAuth } from './useAuth';
-import { RundownItem } from './useRundownItems';
-import { Column } from './useColumnsManager';
-import { useAutoSaveOperations } from './useAutoSaveOperations';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useRundownStorage } from './useRundownStorage';
 import { useChangeTracking } from './useChangeTracking';
+import { RundownItem } from '@/types/rundown';
+import { Column } from './useColumnsManager';
 
-export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
-  const { user } = useAuth();
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSaveDataRef = useRef<string>('');
+export const useAutoSave = (
+  items: RundownItem[],
+  rundownTitle: string,
+  columns: Column[],
+  timezone: string,
+  rundownStartTime: string
+) => {
+  const { updateRundown } = useRundownStorage();
+  const [isSaving, setIsSaving] = useState(false);
+  const rundownIdRef = useRef<string | null>(null);
 
-  const { isSaving, performSave } = useAutoSaveOperations();
-  const { 
-    hasUnsavedChanges, 
-    setHasUnsavedChanges, 
-    markAsSaved, 
+  // Use change tracking to detect unsaved changes
+  const {
+    hasUnsavedChanges,
+    markAsSaved,
     markAsChanged,
-    isInitialized,
     setIsLoading
-  } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
+  } = useChangeTracking(items, rundownTitle, columns, timezone, rundownStartTime);
 
-  // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
-    if (!user || isSaving) {
+  // Debug logging for change tracking
+  useEffect(() => {
+    console.log('📊 AutoSave change tracking debug:', {
+      hasUnsavedChanges,
+      itemsLength: items?.length || 0,
+      rundownTitle,
+      columnsLength: columns?.length || 0,
+      timezone,
+      rundownStartTime
+    });
+  }, [hasUnsavedChanges, items?.length, rundownTitle, columns?.length, timezone, rundownStartTime]);
+
+  const performAutoSave = useCallback(async (rundownId: string) => {
+    if (!rundownId || isSaving || !hasUnsavedChanges) {
+      console.log('⏭️ Skipping auto-save:', { rundownId: !!rundownId, isSaving, hasUnsavedChanges });
       return;
     }
 
-    // Mark as loading to prevent change detection during save
+    console.log('💾 Starting auto-save...');
+    setIsSaving(true);
     setIsLoading(true);
 
     try {
-      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
-      
-      if (success) {
-        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
-      } else {
-        setHasUnsavedChanges(true);
-      }
+      await updateRundown(
+        rundownId,
+        rundownTitle,
+        items,
+        true, // silent
+        false, // not archived
+        columns,
+        timezone,
+        rundownStartTime
+      );
+
+      markAsSaved(items, rundownTitle, columns, timezone, rundownStartTime);
+      console.log('✅ Auto-save completed successfully');
     } catch (error) {
-      console.error('Auto-save error:', error);
-      setHasUnsavedChanges(true);
+      console.error('❌ Auto-save failed:', error);
     } finally {
+      setIsSaving(false);
       setIsLoading(false);
     }
-  }, [user, isSaving, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
+  }, [updateRundown, rundownTitle, items, columns, timezone, rundownStartTime, hasUnsavedChanges, isSaving, markAsSaved, setIsLoading]);
 
-  // Main effect that schedules saves
-  useEffect(() => {
-    if (!hasUnsavedChanges || !isInitialized || !user) {
-      return;
-    }
-
-    // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
-    
-    // Only schedule if data actually changed
-    if (lastSaveDataRef.current === currentDataSignature) {
-      return;
-    }
-
-    lastSaveDataRef.current = currentDataSignature;
-
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Schedule new save
-    debounceTimeoutRef.current = setTimeout(() => {
-      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
-      debounceTimeoutRef.current = null;
-    }, 2000);
-
-  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
+  // Store rundown ID in ref for stable access
+  const setRundownId = useCallback((id: string | null) => {
+    rundownIdRef.current = id;
+    console.log('🔗 Auto-save rundown ID set to:', id);
   }, []);
 
-  const markAsChangedCallback = () => {
-    markAsChanged();
-  };
+  // Auto-save effect
+  useEffect(() => {
+    const rundownId = rundownIdRef.current;
+    
+    if (!rundownId || !hasUnsavedChanges || isSaving) {
+      return;
+    }
+
+    console.log('⏰ Scheduling auto-save in 2 seconds...');
+    const timer = setTimeout(() => {
+      performAutoSave(rundownId);
+    }, 2000);
+
+    return () => {
+      console.log('🧹 Clearing auto-save timer');
+      clearTimeout(timer);
+    };
+  }, [hasUnsavedChanges, isSaving, performAutoSave]);
 
   return {
     hasUnsavedChanges,
     isSaving,
-    markAsChanged: markAsChangedCallback
+    setRundownId,
+    markAsChanged,
+    markAsSaved: (items: RundownItem[], title: string, columns?: Column[], timezone?: string, startTime?: string) => 
+      markAsSaved(items, title, columns, timezone, startTime)
   };
 };
-

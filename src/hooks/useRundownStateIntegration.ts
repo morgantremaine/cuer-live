@@ -40,6 +40,8 @@ export const useRundownStateIntegration = (
     const item = items.find(i => i.id === id);
     if (!item) return;
 
+    console.log('🔧 Updating item:', { id, field, value });
+
     // Handle custom fields vs standard fields
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
@@ -69,8 +71,8 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save functionality
-  const { hasUnsavedChanges, isSaving } = useAutoSave(
+  // Auto-save functionality with proper change tracking
+  const { hasUnsavedChanges, isSaving, setRundownId, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
     Array.isArray(columns) ? columns : [],
@@ -80,13 +82,19 @@ export const useRundownStateIntegration = (
 
   // Wrapped addRow that supports insertion at specific index
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+    console.log('➕ Adding row, will trigger change detection');
     originalAddRow(calculateEndTime, insertAfterIndex);
-  }, [originalAddRow]);
+    // Mark as changed to ensure auto-save detects this
+    autoSaveMarkAsChanged();
+  }, [originalAddRow, autoSaveMarkAsChanged]);
 
   // Wrapped addHeader that supports insertion at specific index  
   const addHeader = useCallback((insertAfterIndex?: number) => {
+    console.log('📋 Adding header, will trigger change detection');
     originalAddHeader(insertAfterIndex);
-  }, [originalAddHeader]);
+    // Mark as changed to ensure auto-save detects this
+    autoSaveMarkAsChanged();
+  }, [originalAddHeader, autoSaveMarkAsChanged]);
 
   return {
     items: Array.isArray(items) ? items : [],
@@ -111,6 +119,8 @@ export const useRundownStateIntegration = (
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving
+    isSaving,
+    setRundownId,
+    markAsChanged: autoSaveMarkAsChanged
   };
 };
