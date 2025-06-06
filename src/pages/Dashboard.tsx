@@ -28,7 +28,7 @@ const Dashboard = () => {
 
   // Memoize filtered rundowns to prevent unnecessary recalculations
   const { activeRundowns, archivedRundowns } = useMemo(() => {
-    const active = savedRundowns.filter(rundown => rundown.archived !== true)
+    const active = savedRundowns.filter(rundown => !rundown.archived)
     const archived = savedRundowns.filter(rundown => rundown.archived === true)
     return { activeRundowns: active, archivedRundowns: archived }
   }, [savedRundowns])
@@ -149,7 +149,8 @@ const Dashboard = () => {
           currentUserId={user?.id}
         />
 
-        {archivedRundowns.length > 0 && (
+        {/* Always show archived section if user has any rundowns or if there are archived rundowns */}
+        {(savedRundowns.length > 0 || archivedRundowns.length > 0) && (
           <DashboardRundownGrid
             title="Archived Rundowns"
             rundowns={archivedRundowns}
@@ -159,7 +160,7 @@ const Dashboard = () => {
             onUnarchive={handleUnarchiveClick}
             onDuplicate={handleDuplicateClick}
             isArchived={true}
-            showEmptyState={false}
+            showEmptyState={true}
             // Pass user context to determine permissions
             currentUserId={user?.id}
           />
