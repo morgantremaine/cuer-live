@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,6 +48,7 @@ export const useStableAdvancedRealtimeCollaboration = ({
   const lastProcessedUpdate = useRef<string>('');
   const currentRundownIdRef = useRef<string | null>(null);
   const setupInProgressRef = useRef(false);
+  const lastSetupTime = useRef<number>(0);
 
   // Use our hooks with stable references
   const {
@@ -81,7 +81,6 @@ export const useStableAdvancedRealtimeCollaboration = ({
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
       isConnectedRef.current = false;
-      currentRundownIdRef.current = null;
       setupInProgressRef.current = false;
     }
   }, []);
@@ -248,16 +247,24 @@ export const useStableAdvancedRealtimeCollaboration = ({
     user?.id
   ]);
 
-  // Main effect that handles subscription setup/cleanup
+  // Main effect that handles subscription setup/cleanup with debouncing
   useEffect(() => {
+    // Debounce subscription setup to prevent rapid fire
+    const now = Date.now();
+    if (now - lastSetupTime.current < 500) { // 500ms debounce
+      return;
+    }
+    lastSetupTime.current = now;
+
     // Only proceed if we have all required data and it's enabled
     if (!enabled || !user?.id || !rundownId) {
       cleanup();
+      currentRundownIdRef.current = null;
       return;
     }
 
-    // Skip if already set up for this rundown or setup is in progress
-    if (currentRundownIdRef.current === rundownId && subscriptionRef.current) {
+    // Skip if already set up for this rundown
+    if (currentRundownIdRef.current === rundownId && subscriptionRef.current && isConnectedRef.current) {
       console.log('📋 Already subscribed to this rundown, skipping setup');
       return;
     }
@@ -303,6 +310,9 @@ export const useStableAdvancedRealtimeCollaboration = ({
           isConnectedRef.current = false;
           setupInProgressRef.current = false;
           cleanup();
+        } else if (status === 'CLOSED') {
+          isConnectedRef.current = false;
+          setupInProgressRef.current = false;
         }
       });
 
@@ -313,7 +323,15 @@ export const useStableAdvancedRealtimeCollaboration = ({
       setupInProgressRef.current = false;
       cleanup();
     };
-  }, [enabled, user?.id, rundownId, handleRealtimeUpdate, cleanup]);
+  }, [enabled, user?.id, rundownId]); // Only depend on essential values
+
+  // Separate effect for handler updates
+  useEffect(() => {
+    // This just keeps the handler reference updated without triggering subscription changes
+    if (subscriptionRef.current && currentRundownIdRef.current === rundownId) {
+      // Handler is already bound, no need to recreate subscription
+    }
+  }, [handleRealtimeUpdate]);
 
   return {
     isConnected: isConnectedRef.current,

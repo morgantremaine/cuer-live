@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -180,6 +181,35 @@ export const useRundownGridCore = () => {
       confirmOptimisticUpdate(updateId);
     }, 1000);
   }, [updateItem, markAsEditing, addOptimisticUpdate, confirmOptimisticUpdate]);
+
+  // Auto-save effect - this was missing!
+  useEffect(() => {
+    if (!rundownId || !hasUnsavedChanges || isSaving) {
+      return;
+    }
+
+    console.log('💾 Auto-saving rundown changes...');
+    
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        await updateRundown(
+          rundownId,
+          rundownTitle,
+          items,
+          true, // silent save
+          false, // not archived
+          columns,
+          timezone,
+          rundownStartTime
+        );
+        console.log('✅ Auto-save completed');
+      } catch (error) {
+        console.error('❌ Auto-save failed:', error);
+      }
+    }, 2000); // 2 second delay
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [rundownId, hasUnsavedChanges, isSaving, items, rundownTitle, columns, timezone, rundownStartTime, updateRundown]);
 
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
