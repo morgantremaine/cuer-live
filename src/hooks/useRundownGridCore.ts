@@ -6,9 +6,9 @@ import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useEditingState } from './useEditingState';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { useEnhancedRealtimeCollaboration } from './useEnhancedRealtimeCollaboration';
+import { useAdvancedRealtimeCollaboration } from './useAdvancedRealtimeCollaboration';
 
 export const useRundownGridCore = () => {
   // Create stable refs to prevent infinite loops
@@ -21,6 +21,9 @@ export const useRundownGridCore = () => {
     setItems?: (items: RundownItem[]) => void;
     loadRundowns?: () => void;
   }>({});
+
+  // Conflict state
+  const [detectedConflicts, setDetectedConflicts] = useState<any[]>([]);
 
   // Core state management
   const {
@@ -54,18 +57,6 @@ export const useRundownGridCore = () => {
 
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
-
-  // Create a stable force reload function
-  const onForceReloadRef = useRef(() => {
-    console.log('🔄 Force reloading rundown data...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      stableCallbacksRef.current.loadRundowns();
-    }
-  });
-
-  const stableOnForceReload = useCallback(() => {
-    onForceReloadRef.current();
-  }, []);
 
   // Rundown data integration
   const {
@@ -105,13 +96,17 @@ export const useRundownGridCore = () => {
   stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
   stableCallbacksRef.current.setItems = setItems;
 
-  // Use enhanced realtime collaboration instead of the old one
+  // Use advanced realtime collaboration
   const { 
     isConnected, 
-    trackPendingChange, 
-    clearPendingChanges, 
-    hasPendingChanges: hasRealtimePendingChanges 
-  } = useEnhancedRealtimeCollaboration({
+    hasPendingChanges,
+    optimisticItems,
+    addOptimisticUpdate,
+    confirmOptimisticUpdate,
+    getChangeHistory,
+    detectedConflicts: realtimeConflicts,
+    setDetectedConflicts: setRealtimeConflicts
+  } = useAdvancedRealtimeCollaboration({
     rundownId,
     items,
     setItems,
@@ -124,9 +119,15 @@ export const useRundownGridCore = () => {
     rundownStartTime,
     setRundownStartTimeDirectly,
     isEditing,
-    onForceReload: stableOnForceReload,
+    onConflictDetected: setDetectedConflicts,
     enabled: !!rundownId
   });
+
+  // Merge conflicts from both sources
+  const allConflicts = useMemo(() => [
+    ...detectedConflicts,
+    ...realtimeConflicts
+  ], [detectedConflicts, realtimeConflicts]);
 
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
@@ -163,13 +164,23 @@ export const useRundownGridCore = () => {
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Enhanced functions that track pending changes for realtime
+  // Enhanced update function with optimistic updates
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     markAsEditing();
-    trackPendingChange(id);
+    
+    // Add optimistic update for immediate UI feedback
+    const updateId = addOptimisticUpdate(id, field, value, 'current-user');
+    
+    // Perform the actual update
     updateItem(id, field, value);
-  }, [updateItem, markAsEditing, trackPendingChange]);
+    
+    // The optimistic update will be confirmed when the change is persisted
+    setTimeout(() => {
+      confirmOptimisticUpdate(updateId);
+    }, 1000);
+  }, [updateItem, markAsEditing, addOptimisticUpdate, confirmOptimisticUpdate]);
 
+  // ... keep existing code (wrapped functions for undo support)
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     markAsEditing();
@@ -311,8 +322,8 @@ export const useRundownGridCore = () => {
     rundownId,
     markAsChanged: wrappedMarkAsChanged,
 
-    // Items and data - use wrapped versions for undo support
-    items,
+    // Items and data - use optimistic items for immediate feedback
+    items: optimisticItems,
     setItems: wrappedSetItems,
     updateItem: enhancedUpdateItem,
     addRow: wrappedAddRow,
@@ -355,9 +366,14 @@ export const useRundownGridCore = () => {
     canUndo,
     lastAction,
 
-    // Enhanced realtime status
+    // Advanced realtime status
     isConnected,
     isEditing,
-    hasPendingChanges: hasRealtimePendingChanges
+    hasPendingChanges,
+    
+    // New Phase 2 features
+    getChangeHistory,
+    allConflicts,
+    setDetectedConflicts
   };
 };

@@ -1,89 +1,117 @@
 
-import { useState, useEffect, useRef } from 'react';
-import { RundownItem } from './useRundownItems';
-import { Column } from './useColumnsManager';
+import { useCallback, useRef } from 'react';
+import { RundownItem } from '@/types/rundown';
 
-export const useChangeTracking = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const lastSavedDataRef = useRef<string>('');
-  const initialLoadRef = useRef(false);
-  const isLoadingRef = useRef(false);
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasInitializedOnceRef = useRef(false);
-  const lastInitializationKeyRef = useRef<string>('');
+interface ChangeMetadata {
+  field: string;
+  oldValue: string;
+  newValue: string;
+  timestamp: number;
+  userId?: string;
+}
 
-  // Initialize tracking after first meaningful load with delay
-  useEffect(() => {
-    // Create a key to track initialization
-    const initKey = `${rundownTitle}-${items.length}-${columns?.length || 0}`;
-    
-    // Skip if already initialized with this exact data
-    if (lastInitializationKeyRef.current === initKey && hasInitializedOnceRef.current) {
-      return;
-    }
+interface TrackedChange {
+  itemId: string;
+  changes: ChangeMetadata[];
+  lastModifiedBy?: string;
+  lastModifiedAt: number;
+}
 
-    // Clear any pending initialization
-    if (initializationTimeoutRef.current) {
-      clearTimeout(initializationTimeoutRef.current);
-    }
+export const useChangeTracking = () => {
+  const changeHistoryRef = useRef<Map<string, TrackedChange>>(new Map());
+  const lastKnownStateRef = useRef<Map<string, RundownItem>>(new Map());
 
-    // Only initialize once we have meaningful data and haven't initialized yet
-    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
-      // Add a small delay to prevent initialization during rapid state changes
-      initializationTimeoutRef.current = setTimeout(() => {
-        const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
-        lastSavedDataRef.current = signature;
-        lastInitializationKeyRef.current = initKey;
-        initialLoadRef.current = true;
-        hasInitializedOnceRef.current = true;
-        setIsInitialized(true);
-        setHasUnsavedChanges(false);
-        console.log('Change tracking initialized');
-      }, 200);
-    }
-
-    return () => {
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
+  const trackChange = useCallback((
+    itemId: string, 
+    field: string, 
+    oldValue: string, 
+    newValue: string, 
+    userId?: string
+  ) => {
+    const timestamp = Date.now();
+    const change: ChangeMetadata = {
+      field,
+      oldValue,
+      newValue,
+      timestamp,
+      userId
     };
-  }, [items.length, rundownTitle, columns?.length, timezone, startTime]); // Use length-based dependencies
 
-  // Track changes after initialization - but only if not loading
-  useEffect(() => {
-    if (!isInitialized || isLoadingRef.current) return;
+    changeHistoryRef.current.set(itemId, {
+      itemId,
+      changes: [change], // Keep only the latest change for simplicity
+      lastModifiedBy: userId,
+      lastModifiedAt: timestamp
+    });
+  }, []);
 
-    const currentSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
-    const hasChanges = lastSavedDataRef.current !== currentSignature;
-    
-    if (hasChanges !== hasUnsavedChanges) {
-      setHasUnsavedChanges(hasChanges);
+  const detectChanges = useCallback((items: RundownItem[], currentUserId?: string) => {
+    const detectedChanges: TrackedChange[] = [];
+
+    items.forEach(item => {
+      const lastKnownItem = lastKnownStateRef.current.get(item.id);
+      
+      if (lastKnownItem) {
+        const changes: ChangeMetadata[] = [];
+        
+        // Check each field for changes
+        Object.keys(item).forEach(field => {
+          if (field === 'id') return; // Skip ID field
+          
+          const oldValue = String(lastKnownItem[field as keyof RundownItem] || '');
+          const newValue = String(item[field as keyof RundownItem] || '');
+          
+          if (oldValue !== newValue) {
+            changes.push({
+              field,
+              oldValue,
+              newValue,
+              timestamp: Date.now(),
+              userId: currentUserId
+            });
+          }
+        });
+
+        if (changes.length > 0) {
+          detectedChanges.push({
+            itemId: item.id,
+            changes,
+            lastModifiedBy: currentUserId,
+            lastModifiedAt: Date.now()
+          });
+        }
+      }
+
+      // Update last known state
+      lastKnownStateRef.current.set(item.id, { ...item });
+    });
+
+    return detectedChanges;
+  }, []);
+
+  const getChangeHistory = useCallback((itemId: string): TrackedChange | undefined => {
+    return changeHistoryRef.current.get(itemId);
+  }, []);
+
+  const clearChangeHistory = useCallback((itemId?: string) => {
+    if (itemId) {
+      changeHistoryRef.current.delete(itemId);
+    } else {
+      changeHistoryRef.current.clear();
     }
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, hasUnsavedChanges]);
+  }, []);
 
-  const markAsSaved = (savedItems: RundownItem[], savedTitle: string, savedColumns?: Column[], savedTimezone?: string, savedStartTime?: string) => {
-    const signature = JSON.stringify({ items: savedItems, title: savedTitle, columns: savedColumns, timezone: savedTimezone, startTime: savedStartTime });
-    lastSavedDataRef.current = signature;
-    setHasUnsavedChanges(false);
-  };
-
-  const markAsChanged = () => {
-    if (!isLoadingRef.current) {
-      setHasUnsavedChanges(true);
-    }
-  };
-
-  const setIsLoading = (loading: boolean) => {
-    isLoadingRef.current = loading;
-  };
+  const updateLastKnownState = useCallback((items: RundownItem[]) => {
+    items.forEach(item => {
+      lastKnownStateRef.current.set(item.id, { ...item });
+    });
+  }, []);
 
   return {
-    hasUnsavedChanges,
-    setHasUnsavedChanges,
-    markAsSaved,
-    markAsChanged,
-    isInitialized,
-    setIsLoading
+    trackChange,
+    detectChanges,
+    getChangeHistory,
+    clearChangeHistory,
+    updateLastKnownState
   };
 };
