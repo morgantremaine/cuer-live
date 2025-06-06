@@ -113,16 +113,18 @@ export const useTeam = () => {
             
             if (member.profiles) {
               if (Array.isArray(member.profiles)) {
-                // If it's an array, take the first element
-                profileData = member.profiles.length > 0 ? {
-                  email: member.profiles[0].email,
-                  full_name: member.profiles[0].full_name
+                // If it's an array, take the first element with proper typing
+                const firstProfile = member.profiles[0] as { email: string; full_name: string | null } | undefined;
+                profileData = firstProfile ? {
+                  email: firstProfile.email,
+                  full_name: firstProfile.full_name
                 } : undefined;
               } else {
-                // If it's already an object, use it directly
+                // If it's already an object, use it directly with proper typing
+                const profileObj = member.profiles as { email: string; full_name: string | null };
                 profileData = {
-                  email: member.profiles.email,
-                  full_name: member.profiles.full_name
+                  email: profileObj.email,
+                  full_name: profileObj.full_name
                 };
               }
             }
