@@ -1,10 +1,10 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SavedRundown } from '@/hooks/useRundownStorage/types'
 import { RundownItem } from '@/hooks/useRundownItems'
-import { useAuth } from '@/hooks/useAuth'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,7 @@ interface DashboardRundownGridProps {
   onDuplicate?: (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   isArchived?: boolean
   showEmptyState?: boolean
+  currentUserId?: string
 }
 
 const DashboardRundownGrid = ({ 
@@ -42,24 +43,24 @@ const DashboardRundownGrid = ({
   onUnarchive,
   onDuplicate,
   isArchived = false,
-  showEmptyState = true
+  showEmptyState = true,
+  currentUserId
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
-  const { user } = useAuth()
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString()
   }
 
   const isOwnRundown = (rundown: SavedRundown) => {
-    return rundown.user_id === user?.id
+    return rundown.user_id === currentUserId
   }
 
   const getOwnerInfo = (rundown: SavedRundown) => {
     if (isOwnRundown(rundown)) {
       return 'You'
     }
-    return 'member'
+    return 'team member'
   }
 
   if (loading) {
@@ -161,33 +162,37 @@ const DashboardRundownGrid = ({
                     </Button>
                   )}
 
-                  {/* Archive/Unarchive for all rundowns */}
-                  {isArchived ? (
-                    onUnarchive && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
-                        className="text-gray-400 hover:text-green-400 hover:bg-gray-700"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                    )
-                  ) : (
-                    onArchive && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => onArchive(rundown.id, rundown.title, e)}
-                        className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700"
-                      >
-                        <Archive className="h-4 w-4" />
-                      </Button>
-                    )
+                  {/* Archive/Unarchive only for owned rundowns */}
+                  {isOwnRundown(rundown) && (
+                    <>
+                      {isArchived ? (
+                        onUnarchive && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
+                            className="text-gray-400 hover:text-green-400 hover:bg-gray-700"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )
+                      ) : (
+                        onArchive && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => onArchive(rundown.id, rundown.title, e)}
+                            className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700"
+                          >
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                        )
+                      )}
+                    </>
                   )}
                   
-                  {/* Delete for all rundowns */}
-                  {onDelete && (
+                  {/* Delete only for owned rundowns */}
+                  {isOwnRundown(rundown) && onDelete && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button

@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
@@ -32,6 +33,11 @@ const Dashboard = () => {
     return { activeRundowns: active, archivedRundowns: archived }
   }, [savedRundowns])
 
+  // Check if user owns a rundown
+  const isOwnRundown = useCallback((rundown: SavedRundown) => {
+    return rundown.user_id === user?.id
+  }, [user?.id])
+
   // Load rundowns only once when user is available
   useEffect(() => {
     if (user && !loading && savedRundowns.length === 0) {
@@ -59,18 +65,30 @@ const Dashboard = () => {
 
   const handleDeleteClick = useCallback((rundownId: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setDeleteDialog({ open: true, rundownId, title })
-  }, [])
+    const rundown = savedRundowns.find(r => r.id === rundownId)
+    // Only allow delete if user owns the rundown
+    if (rundown && isOwnRundown(rundown)) {
+      setDeleteDialog({ open: true, rundownId, title })
+    }
+  }, [savedRundowns, isOwnRundown])
 
   const handleArchiveClick = useCallback((rundownId: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setArchiveDialog({ open: true, rundownId, title })
-  }, [])
+    const rundown = savedRundowns.find(r => r.id === rundownId)
+    // Only allow archive if user owns the rundown
+    if (rundown && isOwnRundown(rundown)) {
+      setArchiveDialog({ open: true, rundownId, title })
+    }
+  }, [savedRundowns, isOwnRundown])
 
   const handleUnarchiveClick = useCallback(async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation()
-    await updateRundown(rundownId, title, items, false, false)
-  }, [updateRundown])
+    const rundown = savedRundowns.find(r => r.id === rundownId)
+    // Only allow unarchive if user owns the rundown
+    if (rundown && isOwnRundown(rundown)) {
+      await updateRundown(rundownId, title, items, false, false)
+    }
+  }, [updateRundown, savedRundowns, isOwnRundown])
 
   const handleDuplicateClick = useCallback(async (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => {
     e.stopPropagation()
@@ -127,6 +145,8 @@ const Dashboard = () => {
           onArchive={handleArchiveClick}
           onDuplicate={handleDuplicateClick}
           showEmptyState={true}
+          // Pass user context to determine permissions
+          currentUserId={user?.id}
         />
 
         {archivedRundowns.length > 0 && (
@@ -140,6 +160,8 @@ const Dashboard = () => {
             onDuplicate={handleDuplicateClick}
             isArchived={true}
             showEmptyState={false}
+            // Pass user context to determine permissions
+            currentUserId={user?.id}
           />
         )}
       </div>
