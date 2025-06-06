@@ -1,5 +1,4 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export interface Column {
   id: string;
@@ -11,7 +10,14 @@ export interface Column {
   isVisible?: boolean;
 }
 
-export const useColumnsManager = (markAsChanged?: () => void) => {
+export const useColumnsManager = (initialMarkAsChanged?: () => void) => {
+  const markAsChangedRef = useRef<(() => void) | undefined>(initialMarkAsChanged);
+  
+  // Update the ref when markAsChanged changes
+  useEffect(() => {
+    markAsChangedRef.current = initialMarkAsChanged;
+  }, [initialMarkAsChanged]);
+
   const [columns, setColumns] = useState<Column[]>([
     { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
@@ -27,6 +33,12 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   // Ensure columns is always an array before filtering
   const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
+
+  const callMarkAsChanged = useCallback(() => {
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
+    }
+  }, []);
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -47,19 +59,14 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return newColumns;
     });
     
-    // Mark as changed when adding a column
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    callMarkAsChanged();
+  }, [callMarkAsChanged]);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
     if (!Array.isArray(newColumns)) return;
     setColumns(newColumns);
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    callMarkAsChanged();
+  }, [callMarkAsChanged]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -67,10 +74,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       const filtered = prev.filter(col => col.id !== columnId);
       return filtered;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    callMarkAsChanged();
+  }, [callMarkAsChanged]);
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
     setColumns(prev => {
@@ -83,10 +88,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    callMarkAsChanged();
+  }, [callMarkAsChanged]);
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -100,10 +103,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    callMarkAsChanged();
+  }, [callMarkAsChanged]);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumns(prev => {
@@ -116,10 +117,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
-    if (markAsChanged) {
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+    callMarkAsChanged();
+  }, [callMarkAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     // Validate that layoutColumns is an array
@@ -197,12 +196,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return prevColumns; // Don't update if columns are the same
       }
       
-      if (markAsChanged) {
-        markAsChanged();
-      }
+      callMarkAsChanged();
       return mergedColumns;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
+
+  // Function to update the markAsChanged reference
+  const updateMarkAsChanged = useCallback((newMarkAsChanged: () => void) => {
+    markAsChangedRef.current = newMarkAsChanged;
+  }, []);
 
   return {
     columns: Array.isArray(columns) ? columns : [],
@@ -213,6 +215,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth
+    handleUpdateColumnWidth,
+    updateMarkAsChanged
   };
 };

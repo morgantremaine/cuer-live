@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
@@ -36,7 +35,8 @@ export const useRundownStateIntegration = (
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth
+    handleUpdateColumnWidth,
+    updateMarkAsChanged
   } = useColumnsManager();
 
   // Auto-save functionality - now that columns is available
@@ -47,6 +47,9 @@ export const useRundownStateIntegration = (
     timezone,
     rundownStartTime
   );
+
+  // Update the markAsChanged function in the columns manager
+  updateMarkAsChanged(markAsChanged);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
