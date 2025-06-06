@@ -260,6 +260,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_read_inviter_profile: {
+        Args: { profile_user_id: string }
+        Returns: boolean
+      }
       get_user_role_in_team: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string

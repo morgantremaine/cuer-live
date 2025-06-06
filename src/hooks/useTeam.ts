@@ -93,52 +93,77 @@ export const useTeam = () => {
           console.error('Error loading team members:', membersError);
           setTeamMembers([]);
         } else {
-          // Load profiles for all team members in a separate query
+          // Load profiles for all team members - but handle missing profiles gracefully
           const userIds = membersData.map(member => member.user_id);
-          const { data: profilesData, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, email, full_name')
-            .in('id', userIds);
+          
+          try {
+            const { data: profilesData, error: profilesError } = await supabase
+              .from('profiles')
+              .select('id, email, full_name')
+              .in('id', userIds);
 
-          if (profilesError) {
-            console.error('Error loading profiles:', profilesError);
-            // Use team members without profile data
+            if (profilesError) {
+              console.error('Error loading profiles:', profilesError);
+              // Use team members without profile data
+              setTeamMembers(membersData.map(member => ({
+                ...member,
+                role: member.role as 'admin' | 'member'
+              })));
+            } else {
+              // Combine team members with profile data, handling missing profiles
+              const membersWithProfiles = membersData
+                .map(member => {
+                  const profile = profilesData.find(p => p.id === member.user_id);
+                  return {
+                    ...member,
+                    role: member.role as 'admin' | 'member',
+                    profiles: profile ? {
+                      email: profile.email,
+                      full_name: profile.full_name
+                    } : undefined
+                  };
+                })
+                .filter(member => {
+                  // Filter out members without profiles (deleted users)
+                  if (!member.profiles) {
+                    console.warn(`Team member ${member.user_id} has no profile, possibly deleted user`);
+                    return false;
+                  }
+                  return true;
+                });
+              
+              setTeamMembers(membersWithProfiles);
+              console.log('Team members with profiles loaded successfully:', membersWithProfiles.length);
+            }
+          } catch (profileError) {
+            console.error('Profile loading failed:', profileError);
+            // Fallback: use members without profiles
             setTeamMembers(membersData.map(member => ({
               ...member,
               role: member.role as 'admin' | 'member'
             })));
-          } else {
-            // Combine team members with profile data
-            const membersWithProfiles = membersData.map(member => {
-              const profile = profilesData.find(p => p.id === member.user_id);
-              return {
-                ...member,
-                role: member.role as 'admin' | 'member',
-                profiles: profile ? {
-                  email: profile.email,
-                  full_name: profile.full_name
-                } : undefined
-              };
-            });
-            
-            setTeamMembers(membersWithProfiles);
-            console.log('Team members with profiles loaded successfully:', membersWithProfiles.length);
           }
         }
 
         // Load pending invitations if user is admin
         if (membership.role === 'admin') {
-          const { data: invitationsData, error: invitationsError } = await supabase
-            .from('team_invitations')
-            .select('*')
-            .eq('team_id', membership.team_id)
-            .eq('accepted', false)
-            .gt('expires_at', new Date().toISOString());
+          try {
+            const { data: invitationsData, error: invitationsError } = await supabase
+              .from('team_invitations')
+              .select('*')
+              .eq('team_id', membership.team_id)
+              .eq('accepted', false)
+              .gt('expires_at', new Date().toISOString());
 
-          if (invitationsError) {
-            console.error('Error loading invitations:', invitationsError);
-          } else {
-            setPendingInvitations(invitationsData || []);
+            if (invitationsError) {
+              console.error('Error loading invitations:', invitationsError);
+              setPendingInvitations([]);
+            } else {
+              setPendingInvitations(invitationsData || []);
+            }
+          } catch (invitationError) {
+            console.error('Invitation loading failed:', invitationError);
+            setPendingInvitations([]);
           }
         }
       } else {
