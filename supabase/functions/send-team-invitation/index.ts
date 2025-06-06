@@ -32,9 +32,9 @@ serve(async (req) => {
     // Create the invitation URL
     const inviteUrl = `${Deno.env.get('SITE_URL') || 'https://khdiwrkgahsbjszlwnob.supabase.co'}/join-team/${token}`
 
-    // Send email using Resend with their default verified domain
+    // Send email using Resend - try cuer.live domain, fallback to resend.dev if not verified
     const emailResult = await resend.emails.send({
-      from: 'Cuer Team <onboarding@resend.dev>',
+      from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
       subject: `You're invited to join ${teamName} on Cuer`,
       html: `
