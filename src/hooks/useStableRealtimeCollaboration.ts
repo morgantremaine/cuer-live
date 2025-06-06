@@ -4,25 +4,29 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-interface UseRealtimeCollaborationProps {
+interface UseStableRealtimeCollaborationProps {
   rundownId: string | null;
   onRemoteUpdate: () => void;
   enabled?: boolean;
 }
 
-export const useRealtimeCollaboration = ({
+export const useStableRealtimeCollaboration = ({
   rundownId,
   onRemoteUpdate,
   enabled = true
-}: UseRealtimeCollaborationProps) => {
+}: UseStableRealtimeCollaborationProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Use refs to store stable values
   const subscriptionRef = useRef<any>(null);
   const isConnectedRef = useRef(false);
-  const channelIdRef = useRef<string | null>(null);
-
-  // Create a stable channel ID
-  const channelId = rundownId ? `rundown-collaboration-${rundownId}` : null;
+  const currentRundownIdRef = useRef<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
+  
+  // Update refs when values change
+  currentRundownIdRef.current = rundownId;
+  userIdRef.current = user?.id || null;
 
   const cleanup = useCallback(() => {
     if (subscriptionRef.current) {
@@ -30,7 +34,6 @@ export const useRealtimeCollaboration = ({
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
       isConnectedRef.current = false;
-      channelIdRef.current = null;
     }
   }, []);
 
@@ -39,18 +42,18 @@ export const useRealtimeCollaboration = ({
       event: payload.eventType,
       rundownId: payload.new?.id,
       updatedByUserId: payload.new?.user_id,
-      currentUserId: user?.id,
+      currentUserId: userIdRef.current,
       timestamp: payload.commit_timestamp
     });
 
     // Only process updates for the current rundown
-    if (!rundownId || payload.new?.id !== rundownId) {
+    if (!currentRundownIdRef.current || payload.new?.id !== currentRundownIdRef.current) {
       console.log('⏭️ Ignoring - wrong rundown');
       return;
     }
 
-    // CRITICAL: Don't process our own updates
-    if (payload.new?.user_id === user?.id) {
+    // Don't process our own updates
+    if (payload.new?.user_id === userIdRef.current) {
       console.log('⏭️ Ignoring - our own update');
       return;
     }
@@ -66,24 +69,28 @@ export const useRealtimeCollaboration = ({
       description: 'Your teammate made changes to this rundown',
       duration: 3000,
     });
-  }, [rundownId, user?.id, onRemoteUpdate, toast]);
+  }, [onRemoteUpdate, toast]);
 
   // Single effect that handles all subscription logic
   useEffect(() => {
     // Skip if we don't have required data
-    if (!enabled || !user?.id || !channelId) {
-      return cleanup;
+    if (!enabled || !user?.id || !rundownId) {
+      cleanup();
+      return;
     }
 
     // Skip if we already have the same subscription
-    if (subscriptionRef.current && channelIdRef.current === channelId) {
-      return cleanup;
+    if (subscriptionRef.current && currentRundownIdRef.current === rundownId) {
+      return;
     }
 
     // Cleanup any existing subscription
     cleanup();
 
     console.log('✅ Setting up realtime subscription for rundown:', rundownId);
+    
+    // Create unique channel ID
+    const channelId = `rundown-collaboration-${rundownId}`;
     
     // Create new subscription
     const channel = supabase
@@ -110,15 +117,10 @@ export const useRealtimeCollaboration = ({
       });
 
     subscriptionRef.current = channel;
-    channelIdRef.current = channelId;
 
+    // Cleanup on unmount or dependency change
     return cleanup;
-  }, [user?.id, channelId, enabled, handleRealtimeUpdate, cleanup, rundownId]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+  }, [user?.id, rundownId, enabled, handleRealtimeUpdate, cleanup]);
 
   return {
     isConnected: isConnectedRef.current

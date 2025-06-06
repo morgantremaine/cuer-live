@@ -6,8 +6,8 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
-import { useStableRundownRealtime } from './useStableRundownRealtime';
-import { useSimpleEditingDetection } from './useSimpleEditingDetection';
+import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { useEditingState } from './useEditingState';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -49,16 +49,21 @@ export const useRundownGridCore = () => {
   // Storage functionality
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
 
-  // Simple editing detection
-  const { isEditing, markAsEditing } = useSimpleEditingDetection();
+  // Editing detection
+  const { isEditing, markAsEditing } = useEditingState();
 
-  // Set up realtime collaboration with stable props
-  const stableRealtimeProps = useMemo(() => ({
+  // Stable callback for remote updates
+  const onRemoteUpdate = useCallback(() => {
+    console.log('📡 Remote update detected, refreshing rundowns...');
+    loadRundowns();
+  }, [loadRundowns]);
+
+  // Set up realtime collaboration with stable callback
+  const { isConnected } = useStableRealtimeCollaboration({
     rundownId,
+    onRemoteUpdate,
     enabled: !!rundownId
-  }), [rundownId]);
-
-  const { isConnected } = useStableRundownRealtime(stableRealtimeProps);
+  });
 
   // Rundown data integration
   const {

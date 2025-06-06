@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 
-export const useSimpleEditingDetection = () => {
+export const useEditingState = () => {
   const [isEditing, setIsEditing] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
