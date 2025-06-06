@@ -124,16 +124,46 @@ export const updateRundownInDatabase = async (
     updated_at: new Date().toISOString()
   }
 
+  console.log('Update data:', updateData);
+  console.log('Updating rundown with ID:', id, 'for user:', userId);
+
+  // First, let's check if the rundown exists and if the user has access to it
+  const { data: existingRundown, error: checkError } = await supabase
+    .from('rundowns')
+    .select('id, user_id, team_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (checkError) {
+    console.error('Error checking rundown existence:', checkError);
+    return { data: null, error: checkError };
+  }
+
+  if (!existingRundown) {
+    console.error('Rundown not found or user does not have access:', id);
+    const notFoundError = new Error('Rundown not found or access denied');
+    return { data: null, error: notFoundError };
+  }
+
+  console.log('Found existing rundown:', existingRundown);
+
+  // Now perform the update
   const { data, error } = await supabase
     .from('rundowns')
     .update(updateData)
     .eq('id', id)
     .select()
-    .single()
+    .maybeSingle(); // Use maybeSingle instead of single to avoid the error
 
   if (error) {
     console.error('Database error updating rundown:', error)
     return { data: null, error }
+  }
+
+  if (!data) {
+    console.error('No data returned from update - RLS may be blocking the operation');
+    const rlsError = new Error('Update blocked by Row Level Security policies');
+    return { data: null, error: rlsError };
   }
 
   console.log('Rundown updated successfully:', data.id)
