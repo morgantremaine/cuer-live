@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
@@ -19,10 +20,19 @@ const JoinTeam = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState('signup');
+  const [userExists, setUserExists] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
+
+  // Store invitation token in localStorage when page loads
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('pendingInvitationToken', token);
+    }
+  }, [token]);
 
   useEffect(() => {
     const loadInvitation = async () => {
@@ -56,6 +66,9 @@ const JoinTeam = () => {
 
         setInvitation(data);
         setEmail(data.email);
+        
+        // Check if user already exists with this email
+        await checkUserExists(data.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
         navigate('/login');
@@ -67,9 +80,33 @@ const JoinTeam = () => {
     loadInvitation();
   }, [token, navigate, toast]);
 
+  const checkUserExists = async (emailToCheck: string) => {
+    try {
+      // Try to sign in with a dummy password to check if user exists
+      const { error } = await supabase.auth.signInWithPassword({
+        email: emailToCheck,
+        password: 'dummy-password-check'
+      });
+      
+      // If error is invalid_credentials, user exists but password is wrong
+      // If error is invalid_login_credentials, user might not exist
+      if (error?.message?.includes('Invalid login credentials')) {
+        setUserExists(false);
+        setActiveTab('signup');
+      } else {
+        setUserExists(true);
+        setActiveTab('signin');
+      }
+    } catch (error) {
+      // Default to signup if we can't determine
+      setUserExists(false);
+      setActiveTab('signup');
+    }
+  };
+
   useEffect(() => {
     // If user is already logged in and we have an invitation, accept it
-    if (user && invitation && !isCreatingAccount) {
+    if (user && invitation && !isProcessing) {
       handleAcceptInvitation();
     }
   }, [user, invitation]);
@@ -77,6 +114,7 @@ const JoinTeam = () => {
   const handleAcceptInvitation = async () => {
     if (!token) return;
 
+    setIsProcessing(true);
     const { error } = await acceptInvitation(token);
     
     if (error) {
@@ -85,7 +123,10 @@ const JoinTeam = () => {
         description: error,
         variant: 'destructive',
       });
+      setIsProcessing(false);
     } else {
+      // Clear the stored token
+      localStorage.removeItem('pendingInvitationToken');
       toast({
         title: 'Success',
         description: 'Welcome to the team!',
@@ -106,7 +147,7 @@ const JoinTeam = () => {
       return;
     }
 
-    setIsCreatingAccount(true);
+    setIsProcessing(true);
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
@@ -115,14 +156,30 @@ const JoinTeam = () => {
         description: error.message,
         variant: 'destructive',
       });
-      setIsCreatingAccount(false);
+      setIsProcessing(false);
     } else {
-      // Account created, but user needs to verify email first
       toast({
         title: 'Account Created',
         description: 'Please check your email to verify your account, then return to this page to join the team.',
       });
     }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    setIsProcessing(true);
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsProcessing(false);
+    }
+    // If successful, the useEffect will handle accepting the invitation
   };
 
   if (loading) {
@@ -167,8 +224,12 @@ const JoinTeam = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={handleAcceptInvitation} className="w-full">
-              Accept Invitation
+            <Button 
+              onClick={handleAcceptInvitation} 
+              className="w-full" 
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'Joining Team...' : 'Accept Invitation'}
             </Button>
           </CardContent>
         </Card>
@@ -190,62 +251,101 @@ const JoinTeam = () => {
             </div>
             <CardTitle className="text-white">Join Team: {invitation.teams.name}</CardTitle>
             <CardDescription className="text-gray-400">
-              {invitation.profiles?.full_name || invitation.profiles?.email} has invited you to join their team. Create your account to get started.
+              {invitation.profiles?.full_name || invitation.profiles?.email} has invited you to join their team.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreateAccount} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  disabled
-                  className="bg-gray-600 border-gray-500 text-gray-400"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                  placeholder="Enter your full name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                  placeholder="Create a password"
-                />
-              </div>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isCreatingAccount}>
-                {isCreatingAccount ? 'Creating Account...' : 'Create Account & Join Team'}
-              </Button>
-            </form>
-            
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-400">
-                Already have an account?{' '}
-                <button
-                  onClick={() => navigate('/login')}
-                  className="text-blue-400 hover:text-blue-300 underline"
-                >
-                  Sign in instead
-                </button>
-              </p>
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-gray-700">
+                <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
+                  Create Account
+                </TabsTrigger>
+                <TabsTrigger value="signin" className="text-gray-300 data-[state=active]:text-white">
+                  Sign In
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signup" className="space-y-4 mt-4">
+                <form onSubmit={handleCreateAccount} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-300">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      disabled
+                      className="bg-gray-600 border-gray-500 text-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-gray-300">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      placeholder="Create a password"
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? 'Creating Account...' : 'Create Account & Join Team'}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signin" className="space-y-4 mt-4">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email" className="text-gray-300">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      value={email}
+                      disabled
+                      className="bg-gray-600 border-gray-500 text-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password" className="text-gray-300">Password</Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      placeholder="Enter your password"
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? 'Signing In...' : 'Sign In & Join Team'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
