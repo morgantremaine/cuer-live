@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -60,7 +59,7 @@ const DashboardRundownGrid = ({
     if (isOwnRundown(rundown)) {
       return 'You'
     }
-    return 'Team member'
+    return 'member'
   }
 
   if (loading) {
@@ -126,9 +125,6 @@ const DashboardRundownGrid = ({
                     </span>
                   </CardDescription>
                 </div>
-                <Badge variant="secondary" className="ml-2">
-                  Team
-                </Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
