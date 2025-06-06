@@ -54,13 +54,14 @@ export const useCameraPlotAutoSave = (
           console.log('Auto-saving camera plots:', plots.length, 'plots with', plots.reduce((acc, plot) => acc + plot.elements.length, 0), 'total elements');
           
           try {
+            // Use correct parameter order for saveBlueprint
             await saveBlueprint(
-              savedBlueprint?.lists || [],
+              savedBlueprint?.lists || [], // updatedLists
               true, // silent save
-              savedBlueprint?.show_date || null, // Ensure null instead of empty string
-              savedBlueprint?.notes,
-              savedBlueprint?.crew_data,
-              plots // Pass the camera plots
+              savedBlueprint?.show_date || null, // showDateOverride
+              savedBlueprint?.notes, // notes
+              savedBlueprint?.crew_data, // crewData
+              plots // cameraPlots
             );
             console.log('Camera plots auto-save completed successfully');
           } catch (error) {

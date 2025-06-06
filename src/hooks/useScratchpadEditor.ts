@@ -51,17 +51,21 @@ export const useScratchpadEditor = (
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        console.log('Saving scratchpad notes');
+        // Use correct parameter order for saveBlueprint
         await saveBlueprint(
-          savedBlueprint?.lists || [],
+          savedBlueprint?.lists || [], // updatedLists
           true, // silent save
-          savedBlueprint?.show_date || null, // Ensure null instead of empty string
-          notesToSave,
-          savedBlueprint?.crew_data,
-          savedBlueprint?.camera_plots
+          savedBlueprint?.show_date || null, // showDateOverride
+          notesToSave, // notes
+          savedBlueprint?.crew_data, // crewData
+          savedBlueprint?.camera_plots // cameraPlots
         );
         setSaveStatus('saved');
         onNotesChange?.(notesToSave);
+        console.log('Scratchpad notes saved successfully');
       } catch (error) {
+        console.error('Error saving scratchpad notes:', error);
         setSaveStatus('error');
       }
     }, 1000);
