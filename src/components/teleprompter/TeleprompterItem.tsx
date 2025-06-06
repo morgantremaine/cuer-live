@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -124,7 +125,7 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
         [{getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}]
       </div>
 
-      {/* Script with bracket parsing - talent display removed */}
+      {/* Script with bracket parsing only - no talent content */}
       <div 
         className="leading-relaxed text-left whitespace-pre-wrap"
         style={{ 

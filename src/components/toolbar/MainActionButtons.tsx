@@ -66,6 +66,21 @@ const MainActionButtons = ({
     navigate(`/blueprint/${rundownId}`);
   };
 
+  const handleOpenTeleprompter = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot open teleprompter",
+        description: "Save this rundown first before opening teleprompter.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Open teleprompter in a new window
+    const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
+    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const buttonSize = isMobile ? 'sm' : 'default';
   const buttonClass = isMobile ? 'flex items-center space-x-1' : 'flex items-center space-x-2';
 
@@ -98,7 +113,7 @@ const MainActionButtons = ({
         <Share2 className="h-4 w-4" />
         <span>{isMobile ? 'Share' : 'Share Rundown'}</span>
       </Button>
-      <Button onClick={onOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
+      <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
         <Monitor className="h-4 w-4" />
         <span>Teleprompter</span>
       </Button>
