@@ -144,8 +144,8 @@ const RundownIndexContent = () => {
     return status === 'completed' ? 'past' : status;
   };
 
-  // Create adapter for getColumnWidth
-  const getColumnWidthAdapter = (columnId: string) => {
+  // Create adapter for getColumnWidth that takes string and returns number
+  const getColumnWidthAdapter = (columnId: string): number => {
     // Find the column by ID and call the original function
     const column = columns.find(col => col.id === columnId);
     if (column) {
@@ -167,6 +167,12 @@ const RundownIndexContent = () => {
     newColumns.splice(endIndex, 0, removed);
     handleLoadLayout(newColumns);
   };
+
+  // Convert hasClipboardData to boolean
+  const hasClipboardDataBoolean = typeof hasClipboardData === 'function' ? hasClipboardData() : Boolean(hasClipboardData);
+
+  // Convert timeRemaining to string
+  const timeRemainingString = typeof timeRemaining === 'number' ? timeRemaining.toString() : (timeRemaining || '0');
 
   // Prepare rundown data for Cuer AI
   const rundownData = {
@@ -198,7 +204,7 @@ const RundownIndexContent = () => {
         isDraggingMultiple={isDraggingMultiple}
         dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
-        getColumnWidth={getColumnWidth}
+        getColumnWidth={getColumnWidthAdapter}
         updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusWrapper}
@@ -218,14 +224,14 @@ const RundownIndexContent = () => {
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}
-        hasClipboardData={Boolean(hasClipboardData)}
+        hasClipboardData={hasClipboardDataBoolean}
         onCopySelectedRows={handleCopySelectedRows}
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
-        timeRemaining={timeRemaining || 0}
+        timeRemaining={timeRemainingString}
         onPlay={play}
         onPause={pause}
         onForward={forward}

@@ -44,19 +44,22 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     props.handleAddColumn(name, 'text'); // Default type
   };
 
-  const handleReorderColumns = (startIndex: number, endIndex: number) => {
-    // For now, we'll use a simple implementation
+  const handleReorderColumns = (columns: any[]) => {
+    // For now, we'll use a simple implementation that calls the original with indices
+    const startIndex = 0;
+    const endIndex = columns.length - 1;
     props.handleReorderColumns(startIndex, endIndex);
   };
 
-  // Create adapter for getColumnWidth that expects Column but receives string
+  // Create adapter for getColumnWidth that returns string
   const getColumnWidthAdapter = (column: any) => {
     if (typeof column === 'string') {
-      // If it's a string (columnId), find the column and return default width
+      // If it's a string (columnId), return default width as string
       return '150px';
     }
-    // If it's actually a Column object, use the original function
-    return props.getColumnWidth(column);
+    // If it's actually a Column object, get width and ensure it's a string
+    const width = props.getColumnWidth(column.id || column);
+    return typeof width === 'number' ? `${width}px` : width.toString();
   };
 
   // Create adapter for getRowStatus to match expected return type
@@ -67,14 +70,25 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     return status as 'upcoming' | 'current' | 'completed';
   };
 
+  // Convert showColorPicker to string | null
+  const showColorPickerString = props.showColorPicker ? 'active' : null;
+
+  // Ensure cellRefs has the correct type
+  const cellRefsAdapter = props.cellRefs as React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+
+  // Convert timeRemaining to number if it's a string
+  const timeRemainingNumber = typeof props.timeRemaining === 'string' 
+    ? parseFloat(props.timeRemaining) || 0 
+    : props.timeRemaining;
+
   return (
     <RundownMainContent
       currentTime={props.currentTime}
       items={props.items}
       visibleColumns={props.visibleColumns}
       columns={props.columns}
-      showColorPicker={Boolean(props.showColorPicker)}
-      cellRefs={props.cellRefs as React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>}
+      showColorPicker={showColorPickerString}
+      cellRefs={cellRefsAdapter}
       selectedRows={props.selectedRows}
       draggedItemIndex={props.draggedItemIndex}
       isDraggingMultiple={props.isDraggingMultiple}
@@ -110,7 +124,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       handleRenameColumn={props.handleRenameColumn}
       handleToggleColumnVisibility={props.handleToggleColumnVisibility}
       handleLoadLayout={props.handleLoadLayout}
-      timeRemaining={props.timeRemaining || 0}
+      timeRemaining={timeRemainingNumber}
       isPlaying={props.isPlaying}
       currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
       totalDuration={props.items.find(item => item.id === props.currentSegmentId)?.duration || '00:00'}
