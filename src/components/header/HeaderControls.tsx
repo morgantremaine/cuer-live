@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import SearchBar from '../SearchBar';
+import RefreshButton from '../RefreshButton';
 import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderControlsProps {
@@ -18,6 +19,8 @@ interface HeaderControlsProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  hasPendingUpdates?: boolean;
+  onManualRefresh?: () => void;
 }
 
 const HeaderControls = ({
@@ -30,7 +33,9 @@ const HeaderControls = ({
   onReplaceText,
   onUndo,
   canUndo,
-  lastAction
+  lastAction,
+  hasPendingUpdates = false,
+  onManualRefresh
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
@@ -66,7 +71,12 @@ const HeaderControls = ({
           onReplaceText={onReplaceText}
         />
       </div>
-      {/* Undo button intentionally removed from header - functionality remains in toolbar */}
+      {onManualRefresh && (
+        <RefreshButton
+          onRefresh={onManualRefresh}
+          hasPendingUpdates={hasPendingUpdates}
+        />
+      )}
       {user ? (
         <div className="flex items-center space-x-2 relative">
           <span className="text-sm">{user.email}</span>
