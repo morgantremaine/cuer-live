@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -66,8 +66,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    // Profile creation is now handled automatically by the database trigger
-    // No need to manually create profile here
+    // Create profile manually (restored from original working system)
+    if (data.user && !error) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          email,
+          full_name: fullName,
+        })
+      
+      if (profileError) {
+        console.error('Error creating profile:', profileError)
+        // Don't return the profile error to avoid breaking the signup flow
+      }
+    }
+
     return { error }
   }
 
