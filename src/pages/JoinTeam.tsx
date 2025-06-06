@@ -16,6 +16,7 @@ const JoinTeam = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const [invitation, setInvitation] = useState<any>(null);
+  const [inviterProfile, setInviterProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,19 +43,20 @@ const JoinTeam = () => {
       }
 
       try {
-        const { data, error } = await supabase
+        // First, get the invitation with team data
+        const { data: invitationData, error: invitationError } = await supabase
           .from('team_invitations')
           .select(`
             *,
-            teams (name),
-            profiles!team_invitations_invited_by_fkey (full_name, email)
+            teams (name)
           `)
           .eq('token', token)
           .eq('accepted', false)
           .gt('expires_at', new Date().toISOString())
           .single();
 
-        if (error || !data) {
+        if (invitationError || !invitationData) {
+          console.error('Error loading invitation:', invitationError);
           toast({
             title: 'Invalid Invitation',
             description: 'This invitation link is invalid or has expired.',
@@ -64,13 +66,31 @@ const JoinTeam = () => {
           return;
         }
 
-        setInvitation(data);
-        setEmail(data.email);
+        setInvitation(invitationData);
+        setEmail(invitationData.email);
+
+        // Separately get the inviter's profile
+        if (invitationData.invited_by) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', invitationData.invited_by)
+            .single();
+
+          if (!profileError && profileData) {
+            setInviterProfile(profileData);
+          }
+        }
         
         // Check if user already exists with this email
-        await checkUserExists(data.email);
+        await checkUserExists(invitationData.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load invitation details.',
+          variant: 'destructive',
+        });
         navigate('/login');
       } finally {
         setLoading(false);
@@ -220,7 +240,7 @@ const JoinTeam = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-white">Join Team</CardTitle>
             <CardDescription className="text-gray-400">
-              You're about to join {invitation.teams.name}
+              You're about to join {invitation.teams?.name || 'this team'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -237,6 +257,16 @@ const JoinTeam = () => {
     );
   }
 
+  const getInviterDisplayName = () => {
+    if (inviterProfile?.full_name) {
+      return inviterProfile.full_name;
+    }
+    if (inviterProfile?.email) {
+      return inviterProfile.email;
+    }
+    return 'A team member';
+  };
+
   return (
     <div className="dark min-h-screen flex flex-col bg-gray-900">
       <div className="flex-1 flex items-center justify-center p-4">
@@ -249,9 +279,9 @@ const JoinTeam = () => {
                 className="h-12 w-auto"
               />
             </div>
-            <CardTitle className="text-white">Join Team: {invitation.teams.name}</CardTitle>
+            <CardTitle className="text-white">Join Team: {invitation.teams?.name || 'Team'}</CardTitle>
             <CardDescription className="text-gray-400">
-              {invitation.profiles?.full_name || invitation.profiles?.email} has invited you to join their team.
+              {getInviterDisplayName()} has invited you to join their team.
             </CardDescription>
           </CardHeader>
           <CardContent>
