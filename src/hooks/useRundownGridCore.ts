@@ -20,6 +20,7 @@ export const useRundownGridCore = () => {
     setRundownStartTimeDirectly?: (time: string) => void;
     handleLoadLayout?: (layout: any) => void;
     setItems?: (items: RundownItem[]) => void;
+    loadRundowns?: () => void;
   }>({});
 
   // Core state management
@@ -49,30 +50,43 @@ export const useRundownGridCore = () => {
   // Storage functionality
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
 
+  // Update the loadRundowns ref
+  stableCallbacksRef.current.loadRundowns = loadRundowns;
+
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
   // Create a TRULY stable callback for remote updates using ref
   const onRemoteUpdateRef = useRef(() => {
     console.log('📡 Remote update detected, refreshing rundowns...');
-    loadRundowns();
+    if (stableCallbacksRef.current.loadRundowns) {
+      stableCallbacksRef.current.loadRundowns();
+    }
   });
 
-  // Create a stable callback for reloading current rundown
+  // Create a stable callback for reloading current rundown with forced refresh
   const onReloadCurrentRundownRef = useRef(() => {
-    console.log('🔄 Reloading current rundown after remote update...');
-    loadRundowns();
+    console.log('🔄 Forcing reload of current rundown data after remote update...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      // Force a fresh load from the database
+      stableCallbacksRef.current.loadRundowns();
+    }
   });
 
   // Update the refs when functions change, but don't recreate the callbacks
   onRemoteUpdateRef.current = () => {
     console.log('📡 Remote update detected, refreshing rundowns...');
-    loadRundowns();
+    if (stableCallbacksRef.current.loadRundowns) {
+      stableCallbacksRef.current.loadRundowns();
+    }
   };
 
   onReloadCurrentRundownRef.current = () => {
-    console.log('🔄 Reloading current rundown after remote update...');
-    loadRundowns();
+    console.log('🔄 Forcing reload of current rundown data after remote update...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      // Force a fresh load from the database
+      stableCallbacksRef.current.loadRundowns();
+    }
   };
 
   // Use stable callbacks that never change
