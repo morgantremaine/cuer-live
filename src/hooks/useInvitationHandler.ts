@@ -24,11 +24,12 @@ export const useInvitationHandler = () => {
         const { error } = await acceptInvitation(pendingToken);
         
         if (error) {
-          toast({
-            title: 'Error',
-            description: `Failed to accept team invitation: ${error}`,
-            variant: 'destructive',
-          });
+          console.log('Invalid invitation:', error);
+          // Clear the invalid token from localStorage
+          localStorage.removeItem('pendingInvitationToken');
+          
+          // Don't show error toast for invalid invitations - they might just be expired
+          console.warn('Cleared invalid invitation token');
         } else {
           localStorage.removeItem('pendingInvitationToken');
           toast({
@@ -39,6 +40,7 @@ export const useInvitationHandler = () => {
         }
       } catch (error) {
         console.error('Error processing pending invitation:', error);
+        // Clear the token on any error to prevent repeated attempts
         localStorage.removeItem('pendingInvitationToken');
       }
     };
