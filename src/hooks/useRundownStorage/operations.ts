@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
@@ -7,7 +6,7 @@ export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
   // Load user's own rundowns and team rundowns they have access to
-  // The RLS policies will automatically filter to show only accessible rundowns
+  // Remove the archived filter to get both active and archived rundowns
   const { data, error } = await supabase
     .from('rundowns')
     .select(`
@@ -17,7 +16,6 @@ export const loadRundownsFromDatabase = async (userId: string) => {
         name
       )
     `)
-    .eq('archived', false)
     .order('updated_at', { ascending: false })
 
   if (error) {

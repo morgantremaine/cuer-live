@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRundownStorage } from '@/hooks/useRundownStorage'
@@ -149,8 +148,8 @@ const Dashboard = () => {
           currentUserId={user?.id}
         />
 
-        {/* Always show archived section if user has any rundowns or if there are archived rundowns */}
-        {(savedRundowns.length > 0 || archivedRundowns.length > 0) && (
+        {/* Add more spacing between sections */}
+        <div className="mt-12">
           <DashboardRundownGrid
             title="Archived Rundowns"
             rundowns={archivedRundowns}
@@ -164,7 +163,7 @@ const Dashboard = () => {
             // Pass user context to determine permissions
             currentUserId={user?.id}
           />
-        )}
+        </div>
       </div>
 
       <Footer />
