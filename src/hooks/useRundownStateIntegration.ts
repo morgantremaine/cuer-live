@@ -26,7 +26,16 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems();
 
-  // Columns management
+  // Auto-save functionality
+  const { hasUnsavedChanges, isSaving, setRundownId, markAsChanged } = useAutoSave(
+    Array.isArray(items) ? items : [],
+    rundownTitle,
+    Array.isArray(columns) ? columns : [],
+    timezone,
+    rundownStartTime
+  );
+
+  // Columns management - pass markAsChanged function
   const {
     columns,
     visibleColumns,
@@ -37,16 +46,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  } = useColumnsManager();
-
-  // Auto-save functionality
-  const { hasUnsavedChanges, isSaving, setRundownId, markAsChanged } = useAutoSave(
-    Array.isArray(items) ? items : [],
-    rundownTitle,
-    Array.isArray(columns) ? columns : [],
-    timezone,
-    rundownStartTime
-  );
+  } = useColumnsManager(markAsChanged);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
