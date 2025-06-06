@@ -44,11 +44,27 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     props.handleAddColumn(name, 'text'); // Default type
   };
 
-  const handleReorderColumns = (columns: any) => {
-    // This needs to be handled differently - for now, pass through
-    if (Array.isArray(columns)) {
-      props.handleLoadLayout(columns);
+  const handleReorderColumns = (startIndex: number, endIndex: number) => {
+    // For now, we'll use a simple implementation
+    props.handleReorderColumns(startIndex, endIndex);
+  };
+
+  // Create adapter for getColumnWidth that expects Column but receives string
+  const getColumnWidthAdapter = (column: any) => {
+    if (typeof column === 'string') {
+      // If it's a string (columnId), find the column and return default width
+      return '150px';
     }
+    // If it's actually a Column object, use the original function
+    return props.getColumnWidth(column);
+  };
+
+  // Create adapter for getRowStatus to match expected return type
+  const getRowStatusAdapter = (item: any, currentTime: Date) => {
+    const status = props.getRowStatus(item);
+    // Map 'past' to 'completed' to match expected type
+    if (status === 'past') return 'completed';
+    return status as 'upcoming' | 'current' | 'completed';
   };
 
   return (
@@ -57,18 +73,18 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       items={props.items}
       visibleColumns={props.visibleColumns}
       columns={props.columns}
-      showColorPicker={props.showColorPicker}
-      cellRefs={props.cellRefs}
+      showColorPicker={Boolean(props.showColorPicker)}
+      cellRefs={props.cellRefs as React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>}
       selectedRows={props.selectedRows}
       draggedItemIndex={props.draggedItemIndex}
       isDraggingMultiple={props.isDraggingMultiple}
       dropTargetIndex={props.dropTargetIndex}
       currentSegmentId={props.currentSegmentId}
       hasClipboardData={props.hasClipboardData}
-      getColumnWidth={props.getColumnWidth}
+      getColumnWidth={getColumnWidthAdapter}
       updateColumnWidth={props.updateColumnWidth}
       getRowNumber={props.getRowNumber}
-      getRowStatus={props.getRowStatus}
+      getRowStatus={getRowStatusAdapter}
       calculateHeaderDuration={props.calculateHeaderDuration}
       onUpdateItem={props.onUpdateItem}
       onCellClick={handleCellClick}
@@ -94,7 +110,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       handleRenameColumn={props.handleRenameColumn}
       handleToggleColumnVisibility={props.handleToggleColumnVisibility}
       handleLoadLayout={props.handleLoadLayout}
-      timeRemaining={props.timeRemaining}
+      timeRemaining={props.timeRemaining || 0}
       isPlaying={props.isPlaying}
       currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
       totalDuration={props.items.find(item => item.id === props.currentSegmentId)?.duration || '00:00'}

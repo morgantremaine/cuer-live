@@ -144,6 +144,30 @@ const RundownIndexContent = () => {
     return status === 'completed' ? 'past' : status;
   };
 
+  // Create adapter for getColumnWidth
+  const getColumnWidthAdapter = (columnId: string) => {
+    // Find the column by ID and call the original function
+    const column = columns.find(col => col.id === columnId);
+    if (column) {
+      const width = getColumnWidth(column);
+      // Convert string width to number if needed
+      if (typeof width === 'string') {
+        return parseInt(width.replace('px', '')) || 150;
+      }
+      return width;
+    }
+    return 150; // Default width
+  };
+
+  // Create adapter for handleReorderColumns
+  const handleReorderColumnsWrapper = (startIndex: number, endIndex: number) => {
+    // This is a simplified implementation - you may need to adjust based on your actual requirements
+    const newColumns = [...columns];
+    const [removed] = newColumns.splice(startIndex, 1);
+    newColumns.splice(endIndex, 0, removed);
+    handleLoadLayout(newColumns);
+  };
+
   // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
@@ -194,20 +218,20 @@ const RundownIndexContent = () => {
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}
-        hasClipboardData={typeof hasClipboardData === 'function' ? hasClipboardData() : hasClipboardData}
+        hasClipboardData={Boolean(hasClipboardData)}
         onCopySelectedRows={handleCopySelectedRows}
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
-        timeRemaining={timeRemaining}
+        timeRemaining={timeRemaining || 0}
         onPlay={play}
         onPause={pause}
         onForward={forward}
         onBackward={backward}
         handleAddColumn={handleAddColumn}
-        handleReorderColumns={handleReorderColumns}
+        handleReorderColumns={handleReorderColumnsWrapper}
         handleDeleteColumnWithCleanup={handleDeleteColumn}
         handleRenameColumn={handleRenameColumn}
         handleToggleColumnVisibility={handleToggleColumnVisibility}
@@ -218,7 +242,7 @@ const RundownIndexContent = () => {
         onTitleChange={setRundownTitle}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={handleRundownStartTimeChange}
-        rundownId={rundownId}
+        rundownId={rundownId || ''}
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={handleUndo}
         canUndo={canUndo}

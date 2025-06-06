@@ -71,7 +71,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       selectedRowId={props.selectedRowId}
       isPlaying={props.isPlaying}
       currentSegmentId={props.currentSegmentId}
-      timeRemaining={props.timeRemaining}
+      timeRemaining={props.timeRemaining || 0}
       onPlay={props.onPlay}
       onPause={props.onPause}
       onForward={props.onForward}
