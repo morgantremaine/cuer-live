@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 
 export const useTeleprompterControls = () => {
@@ -10,8 +9,9 @@ export const useTeleprompterControls = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Define speed steps: negative for reverse, 0 for stop, positive for forward
-  const speedSteps = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2];
-  const [currentSpeedIndex, setCurrentSpeedIndex] = useState(6); // Start at 1x (index 6)
+  // Extended range from -5x to 5x in 0.5x steps
+  const speedSteps = [-5, -4.5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+  const [currentSpeedIndex, setCurrentSpeedIndex] = useState(12); // Start at 1x (index 12)
 
   // Handle keyboard controls
   useEffect(() => {
@@ -89,7 +89,7 @@ export const useTeleprompterControls = () => {
     
     if (currentSpeed === 0) {
       // If at 0x speed, set to 1x and start scrolling
-      setCurrentSpeedIndex(6); // 1x speed
+      setCurrentSpeedIndex(12); // 1x speed
       setScrollSpeed(1);
       setIsScrolling(true);
     } else {
@@ -100,7 +100,7 @@ export const useTeleprompterControls = () => {
 
   const resetScroll = () => {
     setIsScrolling(false);
-    setCurrentSpeedIndex(6); // Reset to 1x speed
+    setCurrentSpeedIndex(12); // Reset to 1x speed
     setScrollSpeed(1);
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
