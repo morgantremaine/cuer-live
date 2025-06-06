@@ -73,7 +73,7 @@ const RundownIndexContent = () => {
     handleUndo,
     canUndo,
     lastAction,
-    // New polling props
+    // Polling props
     hasRemoteUpdates,
     clearRemoteUpdatesIndicator
   } = gridState;
@@ -180,7 +180,7 @@ const RundownIndexContent = () => {
         onUndo={handleUndo}
         canUndo={canUndo}
         lastAction={lastAction}
-        // New polling props
+        // Polling props
         hasRemoteUpdates={hasRemoteUpdates}
         clearRemoteUpdatesIndicator={clearRemoteUpdatesIndicator}
       />

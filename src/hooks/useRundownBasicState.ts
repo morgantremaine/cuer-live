@@ -1,89 +1,66 @@
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { RundownItem } from '@/types/rundown';
+import { Column } from './useColumnsManager';
 
 export const useRundownBasicState = () => {
-  const params = useParams<{ id: string }>();
-  const rawId = params.id;
-  
-  // Fix the ID parsing logic - only treat as valid ID if it's not "new" and is a proper UUID format
-  const rundownId = (!rawId || rawId === 'new' || rawId === ':id' || rawId.trim() === '') ? undefined : rawId;
-  
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
-  const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
-  const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
-  
-  // Single initialization flag per app session
-  const initRef = useRef<{ [key: string]: boolean }>({});
-  const currentRundownRef = useRef<string | undefined>(undefined);
+  const [rundownTitle, setRundownTitle] = useState('Untitled Rundown');
+  const [rundownStartTime, setRundownStartTime] = useState('09:00');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Timer effect for current time
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
+  const markAsChanged = useCallback(() => {
+    setHasUnsavedChanges(true);
   }, []);
 
-  // Initialize only once per rundown change - use a more robust check
-  useEffect(() => {
-    const currentKey = rundownId || 'new';
-    
-    // Only initialize if this is truly a new rundown
-    if (currentRundownRef.current !== rundownId && !initRef.current[currentKey]) {
-      currentRundownRef.current = rundownId;
-      initRef.current[currentKey] = true;
-    }
-  }, [rundownId]);
+  const markAsSaved = useCallback((
+    items: RundownItem[], 
+    title: string, 
+    columns?: Column[], 
+    timezone?: string, 
+    startTime?: string
+  ) => {
+    setHasUnsavedChanges(false);
+  }, []);
 
-  // Change tracking for timezone and other fields
-  const markAsChanged = () => {
-    // Removed console.log to reduce noise
-  };
+  const setRundownTitleDirectly = useCallback((title: string) => {
+    setRundownTitle(title);
+  }, []);
 
-  // Direct setters without change tracking (for initial load)
-  const setTimezoneDirectly = (newTimezone: string) => {
+  const setTimezoneDirectly = useCallback((newTimezone: string) => {
     setTimezone(newTimezone);
-  };
+  }, []);
 
-  const setRundownTitleDirectly = (newTitle: string) => {
-    setRundownTitle(newTitle);
-  };
-
-  const setRundownStartTimeDirectly = (newStartTime: string) => {
-    setRundownStartTime(newStartTime);
-  };
-
-  // Change-tracking setters (for user interactions)
-  const setTimezoneWithChange = (newTimezone: string) => {
-    setTimezone(newTimezone);
-    markAsChanged();
-  };
-
-  const setRundownTitleWithChange = (newTitle: string) => {
-    setRundownTitle(newTitle);
-    markAsChanged();
-  };
-
-  const setRundownStartTimeWithChange = (newStartTime: string) => {
-    setRundownStartTime(newStartTime);
-    markAsChanged();
-  };
+  const setRundownStartTimeDirectly = useCallback((time: string) => {
+    setRundownStartTime(time);
+  }, []);
 
   return {
     currentTime,
     timezone,
-    setTimezone: setTimezoneWithChange,
+    setTimezone: useCallback((newTimezone: string) => {
+      setTimezone(newTimezone);
+      markAsChanged();
+    }, [markAsChanged]),
     setTimezoneDirectly,
     showColumnManager,
     setShowColumnManager,
     rundownTitle,
-    setRundownTitle: setRundownTitleWithChange,
+    setRundownTitle: useCallback((title: string) => {
+      setRundownTitle(title);
+      markAsChanged();
+    }, [markAsChanged]),
     setRundownTitleDirectly,
     rundownStartTime,
-    setRundownStartTime: setRundownStartTimeWithChange,
+    setRundownStartTime: useCallback((time: string) => {
+      setRundownStartTime(time);
+      markAsChanged();
+    }, [markAsChanged]),
     setRundownStartTimeDirectly,
-    rundownId,
-    markAsChanged
+    hasUnsavedChanges,
+    markAsChanged,
+    markAsSaved
   };
 };

@@ -1,70 +1,46 @@
 
-import { useMemo } from 'react';
-import { useRundownStateCoordination } from './useRundownStateCoordination';
-import { useRundownClipboard } from './useRundownClipboard';
-import { useRundownClipboardOperations } from './useRundownClipboardOperations';
-import { useRundownRowOperations } from './useRundownRowOperations';
+import { useParams } from 'react-router-dom';
+import { useRundownDataManagement } from './useRundownDataManagement';
+import { useRundownGridCore } from './useRundownGridCore';
+import { useRundownGridHandlers } from './useRundownGridHandlers';
+import { useRundownGridInteractions } from './useRundownGridInteractions';
+import { useRundownGridUI } from './useRundownGridUI';
 
 export const useRundownGridState = () => {
-  // Get coordinated state from all subsystems
-  const { coreState, interactions, uiState } = useRundownStateCoordination();
+  const { rundownId } = useParams<{ rundownId: string }>();
   
-  // Clipboard management
-  const { clipboardItems, copyItems, hasClipboardData } = useRundownClipboard();
+  // Get all data management functionality including polling
+  const dataManagement = useRundownDataManagement(rundownId || '');
   
-  // Clipboard operations that integrate with rundown state
-  const { handleCopySelectedRows, handlePasteRows } = useRundownClipboardOperations({
-    items: coreState.items,
-    setItems: coreState.setItems,
-    selectedRows: interactions.selectedRows,
-    clearSelection: interactions.clearSelection,
-    addMultipleRows: coreState.addMultipleRows,
-    calculateEndTime: coreState.calculateEndTime,
-    markAsChanged: coreState.markAsChanged,
-    clipboardItems,
-    copyItems,
-    hasClipboardData
-  });
+  // Get core grid functionality
+  const gridCore = useRundownGridCore(dataManagement);
+  
+  // Get grid handlers
+  const gridHandlers = useRundownGridHandlers(gridCore, dataManagement);
+  
+  // Get grid interactions
+  const gridInteractions = useRundownGridInteractions(gridCore, dataManagement);
+  
+  // Get UI state
+  const gridUI = useRundownGridUI();
 
-  // Row operations - now passing calculateEndTime and using correct returned property names
-  const { handleDeleteSelectedRows, handleAddRow, handleAddHeader } = useRundownRowOperations({
-    selectedRows: interactions.selectedRows,
-    deleteMultipleRows: coreState.deleteMultipleRows,
-    clearSelection: interactions.clearSelection,
-    addRow: coreState.addRow,
-    addHeader: coreState.addHeader,
-    calculateEndTime: coreState.calculateEndTime
-  });
-
-  // Memoize the complete state object
-  return useMemo(() => ({
-    // Core state
-    ...coreState,
-    // Interaction handlers
-    ...interactions,
+  return {
+    // Data management (includes polling)
+    ...dataManagement,
+    
+    // Core grid functionality
+    ...gridCore,
+    
+    // Grid handlers
+    ...gridHandlers,
+    
+    // Grid interactions
+    ...gridInteractions,
+    
     // UI state
-    ...uiState,
-    // Override with wrapped functions - use correct handler names
-    handleAddRow,
-    handleAddHeader,
-    // Clipboard functionality
-    clipboardItems,
-    copyItems,
-    hasClipboardData,
-    handleCopySelectedRows,
-    handlePasteRows,
-    handleDeleteSelectedRows
-  }), [
-    coreState,
-    interactions,
-    uiState,
-    handleAddRow,
-    handleAddHeader,
-    clipboardItems,
-    copyItems,
-    hasClipboardData,
-    handleCopySelectedRows,
-    handlePasteRows,
-    handleDeleteSelectedRows
-  ]);
+    ...gridUI,
+    
+    // Ensure rundownId is available
+    rundownId
+  };
 };

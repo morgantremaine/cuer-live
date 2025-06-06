@@ -2,7 +2,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
-import { useAutoSave } from './useAutoSave';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateIntegration = (
@@ -69,15 +68,6 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save functionality
-  const { hasUnsavedChanges, isSaving } = useAutoSave(
-    Array.isArray(items) ? items : [],
-    rundownTitle,
-    Array.isArray(columns) ? columns : [],
-    timezone,
-    rundownStartTime
-  );
-
   // Wrapped addRow that supports insertion at specific index
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
     originalAddRow(calculateEndTime, insertAfterIndex);
@@ -109,8 +99,6 @@ export const useRundownStateIntegration = (
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving
+    handleUpdateColumnWidth
   };
 };

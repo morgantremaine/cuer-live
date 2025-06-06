@@ -91,7 +91,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       currentHighlight={currentHighlight}
       onUndo={props.onUndo}
       canUndo={props.canUndo}
-      lastAction={props.lastAction}
+      lastAction={props.lastAction || ''}
     />
   );
 };
