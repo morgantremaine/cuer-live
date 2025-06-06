@@ -103,6 +103,7 @@ export const useRundownGridCore = () => {
     optimisticItems,
     addOptimisticUpdate,
     confirmOptimisticUpdate,
+    clearAllOptimisticUpdates,
     getChangeHistory,
     detectedConflicts: realtimeConflicts,
     setDetectedConflicts: setRealtimeConflicts
@@ -180,7 +181,6 @@ export const useRundownGridCore = () => {
     }, 1000);
   }, [updateItem, markAsEditing, addOptimisticUpdate, confirmOptimisticUpdate]);
 
-  // ... keep existing code (wrapped functions for undo support)
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     markAsEditing();
@@ -290,9 +290,9 @@ export const useRundownGridCore = () => {
     markAsChanged();
     // Clear realtime pending changes after a successful save
     setTimeout(() => {
-      clearPendingChanges();
+      clearAllOptimisticUpdates();
     }, 1000);
-  }, [markAsChanged, clearPendingChanges]);
+  }, [markAsChanged, clearAllOptimisticUpdates]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
