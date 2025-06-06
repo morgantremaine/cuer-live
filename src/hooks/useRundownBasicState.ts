@@ -5,7 +5,9 @@ import { useParams } from 'react-router-dom';
 export const useRundownBasicState = () => {
   const params = useParams<{ id: string }>();
   const rawId = params.id;
-  const rundownId = rawId === ':id' || !rawId || rawId.trim() === '' ? undefined : rawId;
+  
+  // Fix the ID parsing logic - only treat as valid ID if it's not "new" and is a proper UUID format
+  const rundownId = (!rawId || rawId === 'new' || rawId === ':id' || rawId.trim() === '') ? undefined : rawId;
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timezone, setTimezone] = useState('America/New_York');
