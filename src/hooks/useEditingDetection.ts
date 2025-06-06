@@ -12,7 +12,7 @@ export const useEditingDetection = () => {
     
     if (!isEditing) {
       setIsEditing(true);
-      console.log('User started editing');
+      console.log('🖊️ User started editing');
     }
     
     // Clear any existing timeout
@@ -25,13 +25,15 @@ export const useEditingDetection = () => {
       // Only stop editing if no activity happened since we set this timeout
       if (Date.now() - lastActivityRef.current >= 2800) {
         setIsEditing(false);
-        console.log('User stopped editing');
+        console.log('✋ User stopped editing');
       }
     }, 3000);
   };
 
   // Listen for various editing events
   useEffect(() => {
+    console.log('🎯 Setting up editing detection listeners');
+    
     const handleUserActivity = (event: Event) => {
       // Only consider actual user input events, not programmatic changes
       if (event.target instanceof HTMLInputElement || 
@@ -54,6 +56,7 @@ export const useEditingDetection = () => {
     document.addEventListener('paste', handleUserActivity);
 
     return () => {
+      console.log('🧹 Cleaning up editing detection listeners');
       document.removeEventListener('input', handleUserActivity);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handleUserActivity);

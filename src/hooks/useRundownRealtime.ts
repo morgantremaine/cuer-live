@@ -9,7 +9,7 @@ interface UseRundownRealtimeProps {
   currentUpdatedAt?: string;
   onRemoteUpdate: () => void;
   isUserEditing: boolean;
-  isSaving?: boolean; // Add this to prevent conflicts during saves
+  isSaving?: boolean;
 }
 
 export const useRundownRealtime = ({
@@ -30,19 +30,13 @@ export const useRundownRealtime = ({
     
     // Only process updates for the current rundown
     if (!currentRundownId || payload.new.id !== currentRundownId) {
-      console.log('Ignoring update - not for current rundown');
+      console.log('Ignoring update - not for current rundown or no rundown ID');
       return;
     }
 
     // Don't process our own updates
     if (payload.new.user_id === user?.id) {
       console.log('Ignoring update - from current user');
-      return;
-    }
-
-    // Don't process updates while we're saving to prevent conflicts
-    if (isSaving) {
-      console.log('Ignoring update - currently saving');
       return;
     }
 
@@ -59,16 +53,14 @@ export const useRundownRealtime = ({
       return;
     }
 
-    // Don't interrupt user while they're actively editing
-    if (isUserEditing) {
-      console.log('Delaying update - user is editing');
-      return;
-    }
-
     // Clear any existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
+
+    // If user is editing, delay the update but still apply it
+    const delay = isUserEditing ? 2000 : 500;
+    console.log(`Scheduling remote update in ${delay}ms (user editing: ${isUserEditing})`);
 
     // Debounce multiple rapid updates
     debounceTimeoutRef.current = setTimeout(() => {
@@ -82,37 +74,58 @@ export const useRundownRealtime = ({
         description: 'Your teammate made changes to this rundown',
         duration: 3000,
       });
-    }, 500); // 500ms debounce
-  }, [currentRundownId, currentUpdatedAt, user?.id, isUserEditing, isSaving, onRemoteUpdate, toast]);
+    }, delay);
+  }, [currentRundownId, currentUpdatedAt, user?.id, isUserEditing, onRemoteUpdate, toast]);
 
   useEffect(() => {
-    if (!user || !currentRundownId) {
-      console.log('Not setting up realtime - no user or rundown ID');
+    // Always log what we're trying to do
+    console.log('useRundownRealtime effect triggered', {
+      hasUser: !!user,
+      currentRundownId,
+      userEmail: user?.email
+    });
+
+    if (!user) {
+      console.log('Not setting up realtime - no user');
+      return;
+    }
+
+    if (!currentRundownId) {
+      console.log('Not setting up realtime - no rundown ID');
       return;
     }
 
     console.log('Setting up realtime subscription for rundown:', currentRundownId);
 
+    // Create a unique channel name to avoid conflicts
+    const channelName = `rundown-updates-${currentRundownId}-${Date.now()}`;
+    
     // Create a channel for rundown updates
     const channel = supabase
-      .channel(`rundown-updates-${currentRundownId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'rundowns'
+          table: 'rundowns',
+          filter: `id=eq.${currentRundownId}`
         },
         handleRealtimeUpdate
       )
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+        console.log('Realtime subscription status:', status, 'for channel:', channelName);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to realtime updates for rundown:', currentRundownId);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Failed to subscribe to realtime updates');
+        }
       });
 
     channelRef.current = channel;
 
     return () => {
-      console.log('Cleaning up realtime subscription');
+      console.log('Cleaning up realtime subscription for:', currentRundownId);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
