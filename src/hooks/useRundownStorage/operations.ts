@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
@@ -6,16 +5,10 @@ import { Column } from '@/hooks/useColumnsManager'
 export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
-  // Load user's own rundowns AND team rundowns with profile data
+  // Load user's own rundowns AND team rundowns
   const { data, error } = await supabase
     .from('rundowns')
-    .select(`
-      *,
-      profiles!inner (
-        email,
-        full_name
-      )
-    `)
+    .select('*')
     .eq('archived', false)
     .order('updated_at', { ascending: false })
 

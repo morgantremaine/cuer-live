@@ -60,7 +60,7 @@ const DashboardRundownGrid = ({
     if (isOwnRundown(rundown)) {
       return 'You'
     }
-    return rundown.profiles?.full_name || rundown.profiles?.email || 'Team member'
+    return 'Team member'
   }
 
   if (loading) {

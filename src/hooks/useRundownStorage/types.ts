@@ -17,10 +17,6 @@ export interface SavedRundown {
   undo_history?: any[]
   team_id?: string
   visibility?: string
-  profiles?: {
-    email: string
-    full_name: string | null
-  }
 }
 
 export interface RundownStorage {
