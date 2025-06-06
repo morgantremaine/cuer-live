@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     currentMatchIndex,
     setCurrentMatchIndex,
     performSearch
-  } = useSearch(items, visibleColumns, onHighlightMatch);
+  } = useSearch(items, visibleColumns);
 
   const { navigateMatch } = useSearchNavigation();
 
