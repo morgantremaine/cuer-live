@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -111,165 +111,28 @@ const TeamManagement = () => {
     );
   }
 
-  if (!team) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Create Your Team</CardTitle>
-          <CardDescription>
-            Start collaborating by creating a team. You'll be able to invite team members and share rundowns.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCreateTeam} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="team-name">Team Name</Label>
-              <Input
-                id="team-name"
-                type="text"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                placeholder="Enter team name"
-                required
-              />
-            </div>
-            <Button type="submit" disabled={isCreatingTeam}>
-              {isCreatingTeam ? 'Creating...' : 'Create Team'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Show disabled state message
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-yellow-200 dark:border-yellow-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {team.name}
-            <Badge variant={userRole === 'admin' ? 'default' : 'secondary'}>
-              {userRole === 'admin' ? 'Admin' : 'Member'}
-            </Badge>
+          <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+            <AlertTriangle className="h-5 w-5" />
+            Team Functionality Temporarily Disabled
           </CardTitle>
           <CardDescription>
-            Manage your team members and collaborators
-          </CardDescription>
-        </CardHeader>
-        
-        {userRole === 'admin' && (
-          <CardContent>
-            <form onSubmit={handleInviteMember} className="flex gap-2">
-              <div className="flex-1">
-                <Input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="Enter email address to invite"
-                  required
-                />
-              </div>
-              <Button type="submit" disabled={isInviting}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                {isInviting ? 'Inviting...' : 'Invite'}
-              </Button>
-            </form>
-          </CardContent>
-        )}
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Members</CardTitle>
-          <CardDescription>
-            {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}
+            Team features are currently disabled while we resolve some technical issues. 
+            Your individual rundowns are still fully functional. We'll have team collaboration 
+            back up and running soon!
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {teamMembers.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    {member.role === 'admin' ? (
-                      <Crown className="h-4 w-4 text-yellow-600" />
-                    ) : (
-                      <User className="h-4 w-4 text-gray-600" />
-                    )}
-                    <div>
-                      <div className="font-medium">
-                        {member.profiles?.full_name || member.profiles?.email}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {member.profiles?.email}
-                      </div>
-                    </div>
-                  </div>
-                  <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
-                    {member.role}
-                  </Badge>
-                </div>
-                
-                {userRole === 'admin' && member.role !== 'admin' && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to remove {member.profiles?.full_name || member.profiles?.email} from the team? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
-                          Remove
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            In the meantime, you can continue to create, edit, and manage your personal rundowns 
+            without any restrictions. All your data is safe and secure.
+          </p>
         </CardContent>
       </Card>
-
-      {userRole === 'admin' && pendingInvitations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Invitations</CardTitle>
-            <CardDescription>
-              {pendingInvitations.length} pending invitation{pendingInvitations.length !== 1 ? 's' : ''}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {pendingInvitations.map((invitation) => (
-                <div
-                  key={invitation.id}
-                  className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium">{invitation.email}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Invited on {new Date(invitation.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <Badge variant="outline">Pending</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
