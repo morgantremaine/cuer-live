@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -271,6 +272,7 @@ export const useTeam = () => {
 
       // Generate invitation token
       const token = crypto.randomUUID();
+      console.log('Generated invitation token:', token);
 
       // Create invitation
       const { error: invitationError } = await supabase
@@ -288,13 +290,15 @@ export const useTeam = () => {
         return { error: 'Failed to create invitation' };
       }
 
+      console.log('Invitation created successfully, sending email with token:', token);
+
       // Send invitation email via edge function
       const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
         body: {
           email,
           teamName: team.name,
           inviterName: user.user_metadata?.full_name || user.email,
-          invitationToken: token
+          token: token // Fix: pass token instead of invitationToken
         }
       });
 
@@ -302,6 +306,8 @@ export const useTeam = () => {
         console.error('Error sending invitation email:', emailError);
         return { error: 'Invitation created but email could not be sent' };
       }
+
+      console.log('Invitation email sent successfully');
 
       // Reload pending invitations
       await loadPendingInvitations(team.id);
