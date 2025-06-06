@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trash2, Archive, Users, Plus, RotateCcw, Copy } from 'lucide-react'
+import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SavedRundown } from '@/hooks/useRundownStorage/types'
 import { RundownItem } from '@/hooks/useRundownItems'
@@ -16,6 +15,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface DashboardRundownGridProps {
   title?: string
@@ -126,16 +131,106 @@ const DashboardRundownGrid = ({
                     </span>
                   </CardDescription>
                 </div>
+                
+                {/* Three-dot menu for actions */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-400 hover:text-white hover:bg-gray-700"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                    {/* Duplicate - available for all rundowns */}
+                    {onDuplicate && (
+                      <DropdownMenuItem 
+                        onClick={(e) => onDuplicate(rundown.id, rundown.title, rundown.items, e)}
+                        className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Duplicate
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {/* Archive/Unarchive - only for owned rundowns */}
+                    {isOwnRundown(rundown) && (
+                      <>
+                        {isArchived ? (
+                          onUnarchive && (
+                            <DropdownMenuItem 
+                              onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
+                              className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Unarchive
+                            </DropdownMenuItem>
+                          )
+                        ) : (
+                          onArchive && (
+                            <DropdownMenuItem 
+                              onClick={(e) => onArchive(rundown.id, rundown.title, e)}
+                              className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                            >
+                              <Archive className="h-4 w-4 mr-2" />
+                              Archive
+                            </DropdownMenuItem>
+                          )
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Delete - only for owned rundowns */}
+                    {isOwnRundown(rundown) && onDelete && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem 
+                            onSelect={(e) => e.preventDefault()}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/50 cursor-pointer"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-gray-800 border-gray-700">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
+                            <AlertDialogDescription className="text-gray-400">
+                              Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={(e) => onDelete(rundown.id, rundown.title, e)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-400">
+                  {rundown.items?.length || 0} items
+                </div>
+                
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onOpen(rundown.id)}
-                    className="border-gray-600 hover:bg-gray-700"
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
                   >
                     Open
                   </Button>
@@ -143,87 +238,10 @@ const DashboardRundownGrid = ({
                     variant="outline"
                     size="sm"
                     onClick={() => navigate(`/blueprint/${rundown.id}`)}
-                    className="border-gray-600 hover:bg-gray-700"
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
                   >
                     Blueprint
                   </Button>
-                </div>
-                
-                <div className="flex gap-1">
-                  {/* Duplicate button for all rundowns */}
-                  {onDuplicate && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => onDuplicate(rundown.id, rundown.title, rundown.items, e)}
-                      className="text-gray-400 hover:text-blue-400 hover:bg-gray-700"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  )}
-
-                  {/* Archive/Unarchive only for owned rundowns */}
-                  {isOwnRundown(rundown) && (
-                    <>
-                      {isArchived ? (
-                        onUnarchive && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
-                            className="text-gray-400 hover:text-green-400 hover:bg-gray-700"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
-                        )
-                      ) : (
-                        onArchive && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => onArchive(rundown.id, rundown.title, e)}
-                            className="text-gray-400 hover:text-yellow-400 hover:bg-gray-700"
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                        )
-                      )}
-                    </>
-                  )}
-                  
-                  {/* Delete only for owned rundowns */}
-                  {isOwnRundown(rundown) && onDelete && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-red-400 hover:bg-gray-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-gray-800 border-gray-700">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
-                          <AlertDialogDescription className="text-gray-400">
-                            Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
-                            Cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={(e) => onDelete(rundown.id, rundown.title, e)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
                 </div>
               </div>
             </CardContent>

@@ -48,7 +48,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
           <div className="flex items-center space-x-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-gray-300 hover:text-white">
+                <Button variant="ghost" className="text-gray-300 hover:text-gray-100">
                   <User className="h-4 w-4 mr-2" />
                   {userEmail}
                 </Button>
