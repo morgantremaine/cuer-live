@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -160,33 +159,52 @@ export const useTeam = () => {
     try {
       console.log('Loading team members for team:', teamId);
       
-      const { data, error } = await supabase
+      // First get team members
+      const { data: teamMembersData, error: teamMembersError } = await supabase
         .from('team_members')
-        .select(`
-          id,
-          user_id,
-          team_id,
-          role,
-          joined_at,
-          profiles!inner (
-            full_name,
-            email
-          )
-        `)
+        .select('id, user_id, team_id, role, joined_at')
         .eq('team_id', teamId);
 
-      console.log('Team members query result:', { data, error });
+      console.log('Team members query result:', { teamMembersData, teamMembersError });
 
-      if (error) {
-        console.error('Error loading team members:', error);
+      if (teamMembersError) {
+        console.error('Error loading team members:', teamMembersError);
         return;
       }
 
-      // Transform the data to match our interface
-      const transformedData = data?.map(member => ({
-        ...member,
-        profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
-      })) || [];
+      if (!teamMembersData || teamMembersData.length === 0) {
+        console.log('No team members found');
+        setTeamMembers([]);
+        return;
+      }
+
+      // Get user IDs to fetch profiles
+      const userIds = teamMembersData.map(member => member.user_id);
+
+      // Fetch profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      console.log('Profiles query result:', { profilesData, profilesError });
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        return;
+      }
+
+      // Combine team members with their profiles
+      const transformedData = teamMembersData.map(member => {
+        const profile = profilesData?.find(p => p.id === member.user_id);
+        return {
+          ...member,
+          profiles: profile ? {
+            full_name: profile.full_name,
+            email: profile.email
+          } : null
+        };
+      });
 
       console.log('Transformed team members data:', transformedData);
       setTeamMembers(transformedData);
@@ -227,41 +245,28 @@ export const useTeam = () => {
     try {
       console.log('Inviting team member:', email);
       
-      // Check if user already exists in team
+      // Check if user already exists in team by checking profiles
       const { data: existingMember } = await supabase
         .from('team_members')
-        .select(`
-          id, 
-          profiles!inner (email)
-        `)
+        .select('id, user_id')
         .eq('team_id', team.id);
 
-      // Extract emails from the profiles - fix TypeScript error
-      const memberEmails = existingMember
-        ?.map(m => {
-          const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
-          return profile?.email;
-        })
-        .filter(Boolean);
-      
-      console.log('Existing member emails:', memberEmails);
-      
-      if (memberEmails?.includes(email)) {
-        return { error: 'User is already a member of this team' };
-      }
+      if (existingMember && existingMember.length > 0) {
+        // Get user IDs and check their profiles
+        const userIds = existingMember.map(m => m.user_id);
+        
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', userIds);
 
-      // Check for existing pending invitation
-      const { data: existingInvitation } = await supabase
-        .from('team_invitations')
-        .select('id')
-        .eq('team_id', team.id)
-        .eq('email', email)
-        .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-
-      if (existingInvitation) {
-        return { error: 'An invitation is already pending for this email' };
+        const memberEmails = profilesData?.map(p => p.email).filter(Boolean);
+        
+        console.log('Existing member emails:', memberEmails);
+        
+        if (memberEmails?.includes(email)) {
+          return { error: 'User is already a member of this team' };
+        }
       }
 
       // Generate invitation token
