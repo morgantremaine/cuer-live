@@ -4,11 +4,10 @@ import { useAuth } from './useAuth';
 import { useTeam } from './useTeam';
 import { useToast } from './use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
 
 export const useInvitationHandler = () => {
   const { user } = useAuth();
-  const { acceptInvitation } = useTeam();
+  const { loadTeamData } = useTeam();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,54 +40,14 @@ export const useInvitationHandler = () => {
 
       console.log('Processing pending invitation for user:', user.email);
 
+      // Let useTeam handle the invitation acceptance via loadTeamData
+      // This ensures proper team loading and prevents duplicate team creation
       try {
-        // First validate that the invitation exists and is valid
-        const { data: invitationData, error: invitationError } = await supabase
-          .from('team_invitations')
-          .select('id, email, team_id, expires_at, accepted')
-          .eq('token', pendingToken)
-          .eq('accepted', false)
-          .gt('expires_at', new Date().toISOString())
-          .maybeSingle();
-
-        console.log('Invitation validation result:', { invitationData, invitationError });
-
-        if (invitationError) {
-          console.error('Error validating invitation:', invitationError);
-          localStorage.removeItem('pendingInvitationToken');
-          return;
-        }
-
-        if (!invitationData) {
-          console.log('Invalid or expired invitation token, clearing from storage');
-          localStorage.removeItem('pendingInvitationToken');
-          return;
-        }
-
-        // Validate that the invitation email matches the current user
-        if (invitationData.email !== user.email) {
-          console.log('Invitation email does not match current user, clearing token');
-          localStorage.removeItem('pendingInvitationToken');
-          return;
-        }
-
-        console.log('Valid invitation found, accepting...');
-        const { error } = await acceptInvitation(pendingToken);
+        await loadTeamData();
         
-        if (error) {
-          console.log('Failed to accept invitation:', error);
-          localStorage.removeItem('pendingInvitationToken');
-          
-          // Only show error toast for unexpected errors, not expired invitations
-          if (!error.includes('expired') && !error.includes('invalid')) {
-            toast({
-              title: 'Error',
-              description: 'Failed to join team. Please try again.',
-              variant: 'destructive',
-            });
-          }
-        } else {
-          localStorage.removeItem('pendingInvitationToken');
+        // Check if token was cleared (meaning invitation was processed)
+        const stillPending = localStorage.getItem('pendingInvitationToken');
+        if (!stillPending) {
           toast({
             title: 'Success',
             description: 'Successfully joined the team!',
@@ -104,5 +63,5 @@ export const useInvitationHandler = () => {
     // Small delay to ensure auth state is fully established
     const timer = setTimeout(handlePendingInvitation, 1000);
     return () => clearTimeout(timer);
-  }, [user, acceptInvitation, toast, navigate, location.pathname]);
+  }, [user, loadTeamData, toast, navigate, location.pathname]);
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -53,6 +52,39 @@ export const useTeam = () => {
     try {
       console.log('Loading team data for user:', user.id);
       
+      // Check for pending invitation token first
+      const pendingToken = localStorage.getItem('pendingInvitationToken');
+      if (pendingToken) {
+        console.log('Found pending invitation token, checking if valid:', pendingToken);
+        
+        // Validate the invitation exists and is valid
+        const { data: invitationData, error: invitationError } = await supabase
+          .from('team_invitations')
+          .select('id, email, team_id, expires_at, accepted')
+          .eq('token', pendingToken)
+          .eq('accepted', false)
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
+
+        if (!invitationError && invitationData && invitationData.email === user.email) {
+          console.log('Valid pending invitation found, processing acceptance...');
+          const acceptResult = await acceptInvitation(pendingToken);
+          if (!acceptResult.error) {
+            console.log('Invitation accepted successfully, reloading team data');
+            localStorage.removeItem('pendingInvitationToken');
+            // Recursively call loadTeamData to load the correct team
+            await loadTeamData();
+            return;
+          } else {
+            console.log('Failed to accept invitation:', acceptResult.error);
+            localStorage.removeItem('pendingInvitationToken');
+          }
+        } else {
+          console.log('Invalid or expired invitation token, clearing from storage');
+          localStorage.removeItem('pendingInvitationToken');
+        }
+      }
+      
       // Get user's team memberships
       const { data: membershipData, error: membershipError } = await supabase
         .from('team_members')
@@ -81,8 +113,15 @@ export const useTeam = () => {
 
       if (!membershipData || membershipData.length === 0) {
         console.log('No team memberships found for user');
-        // User has no team yet, create one
-        await createDefaultTeam();
+        // Only create default team if there's no pending invitation
+        const pendingToken = localStorage.getItem('pendingInvitationToken');
+        if (!pendingToken) {
+          console.log('No pending invitation, creating default team');
+          await createDefaultTeam();
+        } else {
+          console.log('Pending invitation exists, not creating default team');
+          setLoading(false);
+        }
         return;
       }
 
@@ -387,11 +426,10 @@ export const useTeam = () => {
 
       if (updateError) {
         console.error('Error updating invitation status:', updateError);
+        // Don't return error here as the user was successfully added to team
       }
 
-      // Reload team data
-      await loadTeamData();
-
+      console.log('Invitation accepted successfully');
       return { error: null };
     } catch (error) {
       console.error('Error accepting invitation:', error);
