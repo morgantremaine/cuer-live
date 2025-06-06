@@ -32,7 +32,8 @@ export interface RundownContainerProps {
   onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onRowSelect: (itemId: string, event: React.MouseEvent) => void;
+  // Fixed to match the unified state signature
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (index: number) => void;
   onDragOver: (index: number) => void;
   onDragLeave: () => void;
