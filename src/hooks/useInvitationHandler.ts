@@ -14,10 +14,22 @@ export const useInvitationHandler = () => {
 
   useEffect(() => {
     const handlePendingInvitation = async () => {
-      if (!user) return;
+      // Wait for user state to be determined (either logged in or null)
+      if (user === undefined) {
+        console.log('User state not yet determined, waiting...');
+        return;
+      }
+
+      if (!user) {
+        console.log('No user logged in, skipping invitation processing');
+        return;
+      }
 
       const pendingToken = localStorage.getItem('pendingInvitationToken');
-      if (!pendingToken) return;
+      if (!pendingToken) {
+        console.log('No pending invitation token found');
+        return;
+      }
 
       console.log('Processing pending invitation for user:', user.email);
 
@@ -31,7 +43,15 @@ export const useInvitationHandler = () => {
           .gt('expires_at', new Date().toISOString())
           .maybeSingle();
 
-        if (invitationError || !invitationData) {
+        console.log('Invitation validation result:', { invitationData, invitationError });
+
+        if (invitationError) {
+          console.error('Error validating invitation:', invitationError);
+          localStorage.removeItem('pendingInvitationToken');
+          return;
+        }
+
+        if (!invitationData) {
           console.log('Invalid or expired invitation token, clearing from storage');
           localStorage.removeItem('pendingInvitationToken');
           return;
@@ -44,6 +64,7 @@ export const useInvitationHandler = () => {
           return;
         }
 
+        console.log('Valid invitation found, accepting...');
         const { error } = await acceptInvitation(pendingToken);
         
         if (error) {

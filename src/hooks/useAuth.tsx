@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -23,38 +22,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-      
-      // Clean up any invalid invitation tokens when auth state changes
-      clearInvalidTokens()
-    })
-
-    // Listen for auth changes
+    console.log('Initializing auth state...');
+    
+    // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session?.user?.email || 'no user');
       setUser(session?.user ?? null)
       setLoading(false)
       
       // Clean up any invalid invitation tokens when auth state changes
-      clearInvalidTokens()
+      setTimeout(() => clearInvalidTokens(), 100);
     })
 
-    return () => subscription.unsubscribe()
+    // THEN get initial session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting initial session:', error);
+      }
+      console.log('Initial session:', session?.user?.email || 'no user');
+      setUser(session?.user ?? null)
+      setLoading(false)
+      
+      // Clean up any invalid invitation tokens
+      setTimeout(() => clearInvalidTokens(), 100);
+    })
+
+    return () => {
+      console.log('Cleaning up auth subscription');
+      subscription.unsubscribe();
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    console.log('Attempting to sign in:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+    if (error) {
+      console.error('Sign in error:', error);
+    }
     return { error }
   }
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    console.log('Attempting to sign up:', email);
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
@@ -68,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Create profile manually (restored from original working system)
     if (data.user && !error) {
+      console.log('Creating profile for new user:', data.user.id);
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -82,6 +97,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
+    if (error) {
+      console.error('Sign up error:', error);
+    }
     return { error }
   }
 
