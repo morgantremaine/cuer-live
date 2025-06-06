@@ -72,7 +72,10 @@ const RundownIndexContent = () => {
     setTimezone,
     handleUndo,
     canUndo,
-    lastAction
+    lastAction,
+    // New polling props
+    hasRemoteUpdates,
+    clearRemoteUpdatesIndicator
   } = gridState;
 
   const {
@@ -177,6 +180,9 @@ const RundownIndexContent = () => {
         onUndo={handleUndo}
         canUndo={canUndo}
         lastAction={lastAction}
+        // New polling props
+        hasRemoteUpdates={hasRemoteUpdates}
+        clearRemoteUpdatesIndicator={clearRemoteUpdatesIndicator}
       />
       
       {/* Cuer AI Chat Button with rundown data */}

@@ -1,7 +1,6 @@
-
-import React from 'react';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from './rundown';
 import { Column } from '@/hooks/useColumnsManager';
+import React from 'react';
 
 export interface RundownContainerProps {
   currentTime: Date;
@@ -13,30 +12,30 @@ export interface RundownContainerProps {
   items: RundownItem[];
   visibleColumns: Column[];
   columns: Column[];
-  showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  showColorPicker: boolean;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLElement | null }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
-  getColumnWidth: (column: Column) => string;
+  getColumnWidth: (columnId: string) => number;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
-  getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
-  calculateHeaderDuration: (index: number) => string;
-  onUpdateItem: (id: string, field: string, value: string) => void;
-  onCellClick: (itemId: string, field: string) => void;
-  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onToggleColorPicker: (itemId: string) => void;
+  getRowStatus: (item: RundownItem) => 'past' | 'current' | 'upcoming';
+  calculateHeaderDuration: (headerIndex: number) => string;
+  onUpdateItem: (id: string, field: string, value: any) => void;
+  onCellClick: (itemId: string, columnId: string, event: React.MouseEvent) => void;
+  onKeyDown: (event: React.KeyboardEvent) => void;
+  onToggleColorPicker: (itemId?: string) => void;
   onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
-  onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, index: number) => void;
+  onRowSelect: (itemId: string, event: React.MouseEvent) => void;
+  onDragStart: (index: number) => void;
+  onDragOver: (index: number) => void;
+  onDragLeave: () => void;
+  onDrop: (targetIndex: number) => void;
   onAddRow: () => void;
   onAddHeader: () => void;
   selectedCount: number;
@@ -47,27 +46,29 @@ export interface RundownContainerProps {
   onClearSelection: () => void;
   selectedRowId: string | null;
   isPlaying: boolean;
-  timeRemaining: number;
-  onPlay: (selectedSegmentId?: string) => void;
+  timeRemaining: string;
+  onPlay: () => void;
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
-  handleAddColumn: (name: string) => void;
-  handleReorderColumns: (columns: Column[]) => void;
-  handleDeleteColumnWithCleanup: (columnId: string) => void;
-  handleRenameColumn: (columnId: string, newName: string) => void;
-  handleToggleColumnVisibility: (columnId: string) => void;
-  handleLoadLayout: (layoutColumns: Column[]) => void;
+  handleAddColumn: (name: string, type: string) => void;
+  handleReorderColumns: (startIndex: number, endIndex: number) => void;
+  handleDeleteColumnWithCleanup: (id: string) => void;
+  handleRenameColumn: (id: string, newName: string) => void;
+  handleToggleColumnVisibility: (id: string) => void;
+  handleLoadLayout: (columns: Column[]) => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
-  onRundownStartTimeChange: (startTime: string) => void;
-  rundownId?: string;
+  onRundownStartTimeChange: (time: string) => void;
+  rundownId: string | undefined;
   onOpenTeleprompter: () => void;
-  // Undo functionality
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  // New polling props
+  hasRemoteUpdates?: boolean;
+  clearRemoteUpdatesIndicator?: () => void;
 }

@@ -5,6 +5,8 @@ import { useRundownUndo } from './useRundownUndo';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownDataLoader } from './useRundownDataLoader';
+import { useRundownPolling } from './useRundownPolling';
+import { useAutoSave } from './useAutoSave';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
@@ -26,6 +28,51 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setRundownTitleDirectly,
     basicState.setTimezoneDirectly
   );
+
+  // Auto-save functionality
+  const { isSaving, lastSavedTimestamp } = useAutoSave(
+    rundownId,
+    basicState.hasUnsavedChanges,
+    stateIntegration.items,
+    basicState.rundownTitle,
+    stateIntegration.columns,
+    basicState.timezone,
+    basicState.rundownStartTime,
+    basicState.markAsSaved,
+    undoSystem.undoHistory
+  );
+
+  // Polling for real-time collaboration
+  const polling = useRundownPolling({
+    rundownId,
+    hasUnsavedChanges: basicState.hasUnsavedChanges,
+    isAutoSaving: isSaving,
+    lastSavedTimestamp,
+    onUpdateReceived: (data) => {
+      console.log('Applying remote update:', data.title);
+      
+      // Update all relevant state
+      basicState.setRundownTitleDirectly(data.title);
+      stateIntegration.setItems(data.items);
+      
+      if (data.columns) {
+        stateIntegration.handleLoadLayout(data.columns);
+      }
+      if (data.timezone) {
+        basicState.setTimezoneDirectly(data.timezone);
+      }
+      if (data.startTime) {
+        basicState.setRundownStartTimeDirectly(data.startTime);
+      }
+      
+      // Mark as saved with the remote timestamp
+      basicState.markAsSaved(data.items, data.title, data.columns, data.timezone, data.startTime);
+    },
+    onConflictDetected: () => {
+      console.log('Collaboration conflict detected');
+      // The polling hook will handle showing the conflict indicator
+    }
+  });
 
   // Use the data loader to handle loading rundowns from storage
   useRundownDataLoader({
@@ -75,6 +122,13 @@ export const useRundownDataManagement = (rundownId: string) => {
     ...stateIntegration,
     
     // Undo/Redo operations
-    ...undoSystem
+    ...undoSystem,
+    
+    // Auto-save state
+    isSaving,
+    lastSavedTimestamp,
+    
+    // Polling state
+    ...polling
   };
 };
