@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -54,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const { error, data } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -65,19 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    if (data.user && !error && !data.user.email_confirmed_at) {
-      // Create profile for unconfirmed users too
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: data.user.id,
-        email,
-        full_name: fullName,
-      })
-      
-      if (profileError) {
-        console.error('Error creating profile:', profileError)
-      }
-    }
-
+    // Profile creation is now handled automatically by the database trigger
+    // No need to manually create profile here
     return { error }
   }
 
