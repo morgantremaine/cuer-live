@@ -21,6 +21,9 @@ export interface SavedRundown {
     id: string
     name: string
   } | null
+  profiles?: {
+    full_name: string | null
+  } | null
 }
 
 export interface RundownStorage {

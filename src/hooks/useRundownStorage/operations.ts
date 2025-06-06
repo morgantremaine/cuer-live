@@ -14,6 +14,9 @@ export const loadRundownsFromDatabase = async (userId: string) => {
       teams (
         id,
         name
+      ),
+      profiles (
+        full_name
       )
     `)
     .order('updated_at', { ascending: false })
