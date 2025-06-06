@@ -6,16 +6,10 @@ import { Column } from '@/hooks/useColumnsManager'
 export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
-  // Load user's own rundowns AND team rundowns they have access to
+  // For now, load only user's own rundowns due to simplified RLS policies
   const { data, error } = await supabase
     .from('rundowns')
-    .select(`
-      *,
-      teams:team_id (
-        id,
-        name
-      )
-    `)
+    .select('*')
     .eq('archived', false)
     .order('updated_at', { ascending: false })
 

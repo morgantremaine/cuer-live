@@ -1,45 +1,26 @@
 
-import { RundownItem } from '@/hooks/useRundownItems'
-import { Column } from '@/hooks/useColumnsManager'
 import { SavedRundown } from './types'
 
-export const mapRundownFromDatabase = (rundown: any): SavedRundown => ({
-  ...rundown,
-  startTime: rundown.start_time // Map start_time to startTime for consistency
-})
-
 export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
-  return (data || []).map(mapRundownFromDatabase)
-}
-
-export const createUpdatePayload = (
-  title: string,
-  items: RundownItem[],
-  columns?: Column[],
-  timezone?: string,
-  startTime?: string,
-  icon?: string,
-  archived = false,
-  undoHistory?: any[]
-) => {
-  const updateData = {
-    title: title,
-    items: items,
-    columns: columns || null,
-    timezone: timezone || null,
-    start_time: startTime || null, // Use start_time to match database column
-    icon: icon !== undefined ? (icon || null) : undefined, // Only include icon in update if explicitly provided
-    undo_history: undoHistory !== undefined ? undoHistory : undefined, // Only include undo_history if explicitly provided
-    updated_at: new Date().toISOString(),
-    archived: archived
+  if (!data || !Array.isArray(data)) {
+    return []
   }
 
-  // Remove undefined values to avoid overwriting with undefined
-  Object.keys(updateData).forEach(key => {
-    if (updateData[key] === undefined) {
-      delete updateData[key]
-    }
-  })
-
-  return updateData
+  return data.map(rundown => ({
+    id: rundown.id,
+    user_id: rundown.user_id,
+    title: rundown.title,
+    items: rundown.items || [],
+    columns: rundown.columns,
+    timezone: rundown.timezone,
+    start_time: rundown.start_time,
+    icon: rundown.icon,
+    archived: rundown.archived || false,
+    created_at: rundown.created_at,
+    updated_at: rundown.updated_at,
+    undo_history: rundown.undo_history || [],
+    team_id: rundown.team_id,
+    visibility: rundown.visibility,
+    teams: null // Set to null since we're not joining teams data currently
+  }))
 }
