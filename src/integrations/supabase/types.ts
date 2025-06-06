@@ -268,6 +268,14 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string[]
       }
+      get_user_team_memberships: {
+        Args: { user_uuid: string }
+        Returns: {
+          team_id: string
+          role: string
+          joined_at: string
+        }[]
+      }
       get_user_teams: {
         Args: { user_uuid: string }
         Returns: string[]
@@ -289,6 +297,14 @@ export type Database = {
         Returns: boolean
       }
       is_team_member_simple: {
+        Args: { user_uuid: string; team_uuid: string }
+        Returns: boolean
+      }
+      is_user_team_admin: {
+        Args: { user_uuid: string; team_uuid: string }
+        Returns: boolean
+      }
+      is_user_team_member: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
       }

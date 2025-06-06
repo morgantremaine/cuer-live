@@ -51,20 +51,9 @@ export const useTeam = () => {
     try {
       console.log('Loading team data for user:', user.id);
 
-      // Load team memberships using the new simplified RLS
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('team_members')
-        .select(`
-          team_id,
-          role,
-          teams (
-            id,
-            name,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('user_id', user.id);
+      // Use the new security definer function to get user team memberships
+      const { data: userTeamMemberships, error: membershipError } = await supabase
+        .rpc('get_user_team_memberships', { user_uuid: user.id });
 
       if (membershipError) {
         console.error('Error loading team memberships:', membershipError);
@@ -72,26 +61,33 @@ export const useTeam = () => {
         return;
       }
 
-      console.log('Team memberships loaded:', membershipData);
+      console.log('Team memberships loaded:', userTeamMemberships);
 
-      if (membershipData && membershipData.length > 0) {
+      if (userTeamMemberships && userTeamMemberships.length > 0) {
         // Use the first team (users should have been given a default team)
-        const membership = membershipData[0];
-        const teamData = membership.teams as any;
+        const membership = userTeamMemberships[0];
         
-        setTeam({
-          id: teamData.id,
-          name: teamData.name,
-          created_at: teamData.created_at,
-          updated_at: teamData.updated_at
-        });
+        // Load the team details separately
+        const { data: teamData, error: teamError } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', membership.team_id)
+          .single();
+
+        if (teamError) {
+          console.error('Error loading team details:', teamError);
+          setLoading(false);
+          return;
+        }
+        
+        setTeam(teamData);
         setUserRole(membership.role as 'admin' | 'member');
 
-        // Load team members using separate queries to avoid schema cache issues
+        // Load all team members for this team
         const { data: membersData, error: membersError } = await supabase
           .from('team_members')
           .select('id, user_id, team_id, role, joined_at')
-          .eq('team_id', teamData.id);
+          .eq('team_id', membership.team_id);
 
         if (membersError) {
           console.error('Error loading team members:', membersError);
@@ -135,7 +131,7 @@ export const useTeam = () => {
           const { data: invitationsData, error: invitationsError } = await supabase
             .from('team_invitations')
             .select('*')
-            .eq('team_id', teamData.id)
+            .eq('team_id', membership.team_id)
             .eq('accepted', false)
             .gt('expires_at', new Date().toISOString());
 
