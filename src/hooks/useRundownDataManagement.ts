@@ -9,6 +9,7 @@ import { defaultRundownItems } from '@/data/defaultRundownItems';
 
 export const useRundownDataManagement = (rundownId: string) => {
   const isInitializedRef = useRef(false);
+  const loadedRundownIdRef = useRef<string | null>(null);
   
   // Get basic state management
   const basicState = useRundownBasicState();
@@ -29,18 +30,30 @@ export const useRundownDataManagement = (rundownId: string) => {
     basicState.setTimezoneDirectly
   );
 
-  // Simple data loading effect
+  // Data loading effect - simplified and fixed
   useEffect(() => {
+    // Prevent loading if already initialized or storage is still loading
     if (isInitializedRef.current || storage.loading) {
       return;
     }
 
-    if (rundownId && storage.savedRundowns.length > 0) {
+    // Prevent loading if we already loaded this rundown
+    if (loadedRundownIdRef.current === rundownId) {
+      return;
+    }
+
+    const savedRundowns = storage.savedRundowns;
+    if (savedRundowns.length === 0) {
+      return; // Wait for rundowns to load
+    }
+
+    basicState.setIsLoading(true);
+
+    if (rundownId) {
       // Load existing rundown
-      const rundown = storage.savedRundowns.find(r => r.id === rundownId);
+      const rundown = savedRundowns.find(r => r.id === rundownId);
       if (rundown) {
         console.log('Loading existing rundown:', rundown.title);
-        basicState.setIsLoading(true);
         
         basicState.setRundownTitleDirectly(rundown.title);
         if (rundown.timezone) basicState.setTimezoneDirectly(rundown.timezone);
@@ -48,24 +61,35 @@ export const useRundownDataManagement = (rundownId: string) => {
         if (rundown.columns) stateIntegration.handleLoadLayout(rundown.columns);
         if (rundown.items) stateIntegration.setItems(rundown.items);
         
-        setTimeout(() => {
-          basicState.setIsLoading(false);
-          isInitializedRef.current = true;
-        }, 100);
+        loadedRundownIdRef.current = rundownId;
+      } else {
+        console.log('Rundown not found, initializing new rundown');
+        stateIntegration.setItems(defaultRundownItems);
+        loadedRundownIdRef.current = null;
       }
-    } else if (!rundownId && storage.savedRundowns.length >= 0 && stateIntegration.items.length === 0) {
-      // Initialize new rundown
-      console.log('Initializing new rundown');
-      basicState.setIsLoading(true);
-      
-      stateIntegration.setItems(defaultRundownItems);
-      
-      setTimeout(() => {
-        basicState.setIsLoading(false);
-        isInitializedRef.current = true;
-      }, 100);
+    } else {
+      // Initialize new rundown only if no items exist
+      if (stateIntegration.items.length === 0) {
+        console.log('Initializing new rundown');
+        stateIntegration.setItems(defaultRundownItems);
+      }
+      loadedRundownIdRef.current = null;
     }
-  }, [rundownId, storage.loading, storage.savedRundowns.length, stateIntegration.items.length]);
+
+    setTimeout(() => {
+      basicState.setIsLoading(false);
+      isInitializedRef.current = true;
+    }, 100);
+
+  }, [rundownId, storage.loading, storage.savedRundowns.length]);
+
+  // Reset when rundown ID changes
+  useEffect(() => {
+    if (loadedRundownIdRef.current !== rundownId) {
+      isInitializedRef.current = false;
+      loadedRundownIdRef.current = null;
+    }
+  }, [rundownId]);
 
   // Auto-save functionality
   const { isSaving, lastSavedTimestamp } = useAutoSave(
