@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownMainContent from './RundownMainContent';
 import { RundownContainerProps } from '@/types/rundownContainer';
@@ -14,12 +13,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   };
 
   const handleRowSelect = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    const mockEvent = {
-      shiftKey: isShiftClick,
-      ctrlKey: isCtrlClick,
-      metaKey: isCtrlClick
-    } as React.MouseEvent;
-    props.onRowSelect(itemId, mockEvent);
+    // Now properly call with all 4 arguments
+    props.onRowSelect(itemId, index, isShiftClick, isCtrlClick);
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
