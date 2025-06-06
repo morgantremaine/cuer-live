@@ -6,9 +6,8 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
-import { useSimpleRealtimeCollaboration } from './useSimpleRealtimeCollaboration';
+import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
 import { useEditingState } from './useEditingState';
-import { usePendingUpdates } from './usePendingUpdates';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -57,19 +56,37 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Pending updates for manual refresh
-  const { hasPendingUpdates, markPendingUpdates, clearPendingUpdates } = usePendingUpdates();
-
   // Create a TRULY stable callback for remote updates using ref
   const onRemoteUpdateRef = useRef(() => {
-    console.log('📡 Remote update detected, marking pending updates...');
-    markPendingUpdates();
+    console.log('📡 Remote update detected, refreshing rundowns...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      stableCallbacksRef.current.loadRundowns();
+    }
+  });
+
+  // Create a stable callback for reloading current rundown with forced refresh
+  const onReloadCurrentRundownRef = useRef(() => {
+    console.log('🔄 Forcing reload of current rundown data after remote update...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      // Force a fresh load from the database
+      stableCallbacksRef.current.loadRundowns();
+    }
   });
 
   // Update the refs when functions change, but don't recreate the callbacks
   onRemoteUpdateRef.current = () => {
-    console.log('📡 Remote update detected, marking pending updates...');
-    markPendingUpdates();
+    console.log('📡 Remote update detected, refreshing rundowns...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      stableCallbacksRef.current.loadRundowns();
+    }
+  };
+
+  onReloadCurrentRundownRef.current = () => {
+    console.log('🔄 Forcing reload of current rundown data after remote update...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      // Force a fresh load from the database
+      stableCallbacksRef.current.loadRundowns();
+    }
   };
 
   // Use stable callbacks that never change
@@ -77,19 +94,15 @@ export const useRundownGridCore = () => {
     onRemoteUpdateRef.current();
   }, []); // No dependencies!
 
-  // Manual refresh handler
-  const handleManualRefresh = useCallback(() => {
-    console.log('🔄 Manual refresh triggered');
-    clearPendingUpdates();
-    if (stableCallbacksRef.current.loadRundowns) {
-      stableCallbacksRef.current.loadRundowns();
-    }
-  }, [clearPendingUpdates]);
+  const stableOnReloadCurrentRundown = useCallback(() => {
+    onReloadCurrentRundownRef.current();
+  }, []); // No dependencies!
 
   // Set up realtime collaboration with truly stable callbacks
-  const { isConnected } = useSimpleRealtimeCollaboration({
+  const { isConnected } = useStableRealtimeCollaboration({
     rundownId,
     onRemoteUpdate: stableOnRemoteUpdate,
+    onReloadCurrentRundown: stableOnReloadCurrentRundown,
     enabled: !!rundownId
   });
 
@@ -347,10 +360,6 @@ export const useRundownGridCore = () => {
     handleUndo,
     canUndo,
     lastAction,
-
-    // Manual refresh functionality
-    hasPendingUpdates,
-    handleManualRefresh,
 
     // Realtime status
     isConnected,

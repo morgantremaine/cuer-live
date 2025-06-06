@@ -25,8 +25,6 @@ interface RundownHeaderProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  hasPendingUpdates?: boolean;
-  onManualRefresh?: () => void;
 }
 
 const RundownHeader = ({ 
@@ -47,9 +45,7 @@ const RundownHeader = ({
   currentHighlight,
   onUndo,
   canUndo,
-  lastAction,
-  hasPendingUpdates = false,
-  onManualRefresh
+  lastAction
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -89,8 +85,6 @@ const RundownHeader = ({
           onUndo={onUndo}
           canUndo={canUndo}
           lastAction={lastAction}
-          hasPendingUpdates={hasPendingUpdates}
-          onManualRefresh={onManualRefresh}
         />
       </div>
 
@@ -117,8 +111,6 @@ const RundownHeader = ({
             onUndo={onUndo}
             canUndo={canUndo}
             lastAction={lastAction}
-            hasPendingUpdates={hasPendingUpdates}
-            onManualRefresh={onManualRefresh}
           />
         </div>
 

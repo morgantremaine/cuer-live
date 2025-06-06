@@ -13,7 +13,7 @@ interface UseRundownDataLoaderProps {
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
   handleLoadLayout: (columns: Column[]) => void;
-  setItems: (items: RundownItem[]) => void;
+  setItems: (items: RundownItem[]) => void; // Add this critical function
   onRundownLoaded?: (rundown: SavedRundown) => void;
 }
 
@@ -25,7 +25,7 @@ export const useRundownDataLoader = ({
   setTimezone,
   setRundownStartTime,
   handleLoadLayout,
-  setItems,
+  setItems, // Now we can set the items
   onRundownLoaded
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
@@ -40,29 +40,19 @@ export const useRundownDataLoader = ({
     const currentRundownId = rundownId || paramId;
     if (!currentRundownId) return;
 
+    // Prevent loading the same rundown multiple times
+    if (loadedRef.current === currentRundownId) return;
+
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
-    // Always load if the rundown ID changed or if we haven't loaded this rundown yet
-    const shouldLoad = loadedRef.current !== currentRundownId;
-
-    if (!shouldLoad) {
-      // Always update items even if we've loaded this rundown before
-      // This ensures we get the latest data from remote updates
-      if (rundown.items && Array.isArray(rundown.items)) {
-        console.log('🔄 Updating items for current rundown:', rundown.items.length);
-        setItems(rundown.items);
-      }
-      return;
-    }
-
-    console.log('🔄 Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
+    console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
     
     // Mark as loading and loaded to prevent loops
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
     
-    // Set the rundown data
+    // Set the rundown data - THIS WAS MISSING!
     setRundownTitle(rundown.title);
     
     if (rundown.timezone) {
@@ -77,9 +67,9 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // Load the items into the state
+    // CRITICAL: Load the items back into the state
     if (rundown.items && Array.isArray(rundown.items)) {
-      console.log('🔄 Setting rundown items:', rundown.items.length);
+      console.log('Setting rundown items:', rundown.items.length);
       setItems(rundown.items);
     }
 
@@ -95,13 +85,13 @@ export const useRundownDataLoader = ({
   }, [
     rundownId, 
     paramId, 
-    savedRundowns,
+    savedRundowns.length,
     loading, 
     setRundownTitle, 
     setTimezone, 
     setRundownStartTime, 
     handleLoadLayout,
-    setItems,
+    setItems, // Include setItems in dependencies
     onRundownLoaded
   ]);
 
@@ -109,7 +99,6 @@ export const useRundownDataLoader = ({
   useEffect(() => {
     const currentRundownId = rundownId || paramId;
     if (loadedRef.current && loadedRef.current !== currentRundownId) {
-      console.log('🔄 Rundown ID changed, resetting loader state');
       loadedRef.current = null;
       isLoadingRef.current = false;
     }

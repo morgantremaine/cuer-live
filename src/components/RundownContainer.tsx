@@ -8,7 +8,7 @@ import { RundownContainerProps } from '@/types/rundownContainer';
 const RundownContainer = (props: RundownContainerProps) => {
   return (
     <RundownLayoutWrapper>
-      <RundownHeaderPropsAdapter />
+      <RundownHeaderPropsAdapter props={props} />
       <RundownMainPropsAdapter props={props} />
     </RundownLayoutWrapper>
   );
