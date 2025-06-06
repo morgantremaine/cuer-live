@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +30,8 @@ const TeamManagement = () => {
     userRole,
     loading,
     inviteTeamMember,
-    removeTeamMember
+    removeTeamMember,
+    revokeInvitation
   } = useTeam();
   
   const { toast } = useToast();
@@ -72,6 +72,23 @@ const TeamManagement = () => {
       toast({
         title: 'Success',
         description: 'Team member removed successfully!',
+      });
+    }
+  };
+
+  const handleRevokeInvitation = async (invitationId: string) => {
+    const { error } = await revokeInvitation(invitationId);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Invitation revoked successfully!',
       });
     }
   };
@@ -169,7 +186,30 @@ const TeamManagement = () => {
                       Invited {new Date(invitation.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant="outline">Pending</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">Pending</Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to revoke the invitation for {invitation.email}?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleRevokeInvitation(invitation.id)}>
+                            Revoke
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))}
             </div>

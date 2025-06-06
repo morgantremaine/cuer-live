@@ -346,6 +346,32 @@ export const useTeam = () => {
     }
   }, [user, loadTeamData]);
 
+  const revokeInvitation = useCallback(async (invitationId: string) => {
+    if (!user || !team) return { error: 'User not authenticated or no team' };
+
+    try {
+      console.log('Revoking invitation:', invitationId);
+
+      const { error } = await supabase
+        .from('team_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) {
+        console.error('Error revoking invitation:', error);
+        return { error: error.message };
+      }
+
+      // Reload team data to update the pending invitations list
+      await loadTeamData();
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Error in revokeInvitation:', error);
+      return { error: 'Failed to revoke invitation' };
+    }
+  }, [user, team, loadTeamData]);
+
   useEffect(() => {
     loadTeamData();
   }, [loadTeamData]);
@@ -360,6 +386,7 @@ export const useTeam = () => {
     inviteTeamMember,
     removeTeamMember,
     acceptInvitation,
+    revokeInvitation,
     refreshTeamData: loadTeamData
   };
 };
