@@ -1,4 +1,3 @@
-
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
 
@@ -20,9 +19,6 @@ export interface SavedRundown {
   teams?: {
     id: string
     name: string
-  } | null
-  profiles?: {
-    full_name: string | null
   } | null
 }
 

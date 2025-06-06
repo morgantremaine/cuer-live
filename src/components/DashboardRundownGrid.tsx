@@ -66,11 +66,6 @@ const DashboardRundownGrid = ({
       return 'You'
     }
     
-    // Use the full name from the profile if available
-    if (rundown.profiles?.full_name) {
-      return rundown.profiles.full_name
-    }
-    
     // Fallback to "team member" if no profile or name is available
     return 'team member'
   }
