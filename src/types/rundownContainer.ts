@@ -1,3 +1,4 @@
+
 import { RundownItem } from './rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import React from 'react';
@@ -63,11 +64,11 @@ export interface RundownContainerProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (time: string) => void;
-  rundownId: string | undefined;
+  rundownId: string;
   onOpenTeleprompter: () => void;
   onUndo: () => void;
   canUndo: boolean;
-  lastAction: string | null;
+  lastAction: string;
   // New polling props
   hasRemoteUpdates?: boolean;
   clearRemoteUpdatesIndicator?: () => void;

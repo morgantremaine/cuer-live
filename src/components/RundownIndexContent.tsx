@@ -1,260 +1,96 @@
+
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
-import { useRundownGridState } from '@/hooks/useRundownGridState';
-import { useIndexHandlers } from '@/hooks/useIndexHandlers';
+import { useUnifiedRundownState } from '@/hooks/useUnifiedRundownState';
 
 const RundownIndexContent = () => {
-  const gridState = useRundownGridState();
-  
-  const {
-    currentTime,
-    timezone,
-    showColumnManager,
-    setShowColumnManager,
-    rundownTitle,
-    setRundownTitle,
-    rundownStartTime,
-    rundownId,
-    items,
-    visibleColumns,
-    columns,
-    showColorPicker,
-    cellRefs,
-    selectedRows,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
-    currentSegmentId,
-    getColumnWidth,
-    updateColumnWidth,
-    getRowNumber,
-    getRowStatus,
-    calculateHeaderDuration,
-    updateItem,
-    handleCellClick,
-    handleKeyDown,
-    handleToggleColorPicker,
-    selectColor,
-    deleteRow,
-    toggleFloatRow,
-    toggleRowSelection,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    addRow,
-    addHeader,
-    hasClipboardData,
-    clearSelection,
-    isPlaying,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    hasUnsavedChanges,
-    isSaving,
-    calculateTotalRuntime,
-    calculateEndTime,
-    markAsChanged,
-    handleCopySelectedRows,
-    handlePasteRows,
-    handleDeleteSelectedRows,
-    setRundownStartTime,
-    setTimezone,
-    handleUndo,
-    canUndo,
-    lastAction,
-    // Polling props
-    hasRemoteUpdates,
-    clearRemoteUpdatesIndicator
-  } = gridState;
+  const { state, handlers } = useUnifiedRundownState();
 
-  const {
-    handleRundownStartTimeChange,
-    handleTimezoneChange,
-    handleOpenTeleprompter,
-    handleRowSelect,
-    handleAddRow,
-    handleAddHeader
-  } = useIndexHandlers({
-    items,
-    selectedRows,
-    rundownId,
-    addRow,
-    addHeader,
-    calculateEndTime,
-    toggleRowSelection,
-    setRundownStartTime,
-    setTimezone,
-    markAsChanged
-  });
-
-  const selectedRowsArray = Array.from(selectedRows);
+  const selectedRowsArray = Array.from(state.selectedRows);
   const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
-
-  // Create wrapper functions to fix signature mismatches
-  const handleKeyDownWrapper = (event: React.KeyboardEvent) => {
-    // Extract the target element to determine itemId and field
-    const target = event.target as HTMLElement;
-    const itemId = target.getAttribute('data-item-id') || '';
-    const field = target.getAttribute('data-field') || '';
-    handleKeyDown(event, itemId, field);
-  };
-
-  const handleRowSelectWrapper = (itemId: string, event: React.MouseEvent) => {
-    const index = items.findIndex(item => item.id === itemId);
-    if (index !== -1) {
-      handleRowSelect(itemId, index, event.shiftKey, event.ctrlKey || event.metaKey);
-    }
-  };
-
-  const handleDragStartWrapper = (index: number) => {
-    const event = {} as React.DragEvent;
-    handleDragStart(event, index);
-  };
-
-  const handleDragOverWrapper = (index: number) => {
-    const event = {} as React.DragEvent;
-    handleDragOver(event, index);
-  };
-
-  const handleDragLeaveWrapper = () => {
-    const event = {} as React.DragEvent;
-    handleDragLeave(event);
-  };
-
-  const handleDropWrapper = (targetIndex: number) => {
-    const event = {} as React.DragEvent;
-    handleDrop(event, targetIndex);
-  };
-
-  // Convert getRowStatus to return correct type
-  const getRowStatusWrapper = (item: any) => {
-    const status = getRowStatus(item);
-    // Map 'completed' to 'past' to match expected type
-    return status === 'completed' ? 'past' : status;
-  };
-
-  // Create adapter for getColumnWidth that takes string and returns number
-  const getColumnWidthAdapter = (columnId: string): number => {
-    // Find the column by ID and call the original function
-    const column = columns.find(col => col.id === columnId);
-    if (column) {
-      const width = getColumnWidth(column);
-      // Convert string width to number if needed
-      if (typeof width === 'string') {
-        return parseInt(width.replace('px', '')) || 150;
-      }
-      return width;
-    }
-    return 150; // Default width
-  };
-
-  // Create adapter for handleReorderColumns
-  const handleReorderColumnsWrapper = (startIndex: number, endIndex: number) => {
-    // This is a simplified implementation - you may need to adjust based on your actual requirements
-    const newColumns = [...columns];
-    const [removed] = newColumns.splice(startIndex, 1);
-    newColumns.splice(endIndex, 0, removed);
-    handleLoadLayout(newColumns);
-  };
-
-  // Convert hasClipboardData to boolean - fix the type error
-  const hasClipboardDataBoolean = typeof hasClipboardData === 'function' ? hasClipboardData() : Boolean(hasClipboardData);
-
-  // Convert timeRemaining to string
-  const timeRemainingString = typeof timeRemaining === 'number' ? timeRemaining.toString() : String(timeRemaining || '0');
 
   // Prepare rundown data for Cuer AI
   const rundownData = {
-    id: rundownId,
-    title: rundownTitle,
-    startTime: rundownStartTime,
-    timezone: timezone,
-    items: items,
-    columns: columns,
-    totalRuntime: calculateTotalRuntime()
+    id: state.rundownId,
+    title: state.rundownTitle,
+    startTime: state.rundownStartTime,
+    timezone: state.timezone,
+    items: state.items,
+    columns: state.columns,
+    totalRuntime: handlers.calculateTotalRuntime()
   };
 
   return (
     <>
       <RundownContainer
-        currentTime={currentTime}
-        timezone={timezone}
-        onTimezoneChange={handleTimezoneChange}
-        totalRuntime={calculateTotalRuntime()}
-        showColumnManager={showColumnManager}
-        setShowColumnManager={setShowColumnManager}
-        items={items}
-        visibleColumns={visibleColumns}
-        columns={columns}
-        showColorPicker={showColorPicker}
-        cellRefs={cellRefs}
-        selectedRows={selectedRows}
-        draggedItemIndex={draggedItemIndex}
-        isDraggingMultiple={isDraggingMultiple}
-        dropTargetIndex={dropTargetIndex}
-        currentSegmentId={currentSegmentId}
-        getColumnWidth={getColumnWidthAdapter}
-        updateColumnWidth={updateColumnWidth}
-        getRowNumber={getRowNumber}
-        getRowStatus={getRowStatusWrapper}
-        calculateHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={updateItem}
-        onCellClick={handleCellClick}
-        onKeyDown={handleKeyDownWrapper}
-        onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={(id, color) => selectColor(id, color)}
-        onDeleteRow={deleteRow}
-        onToggleFloat={toggleFloatRow}
-        onRowSelect={handleRowSelectWrapper}
-        onDragStart={handleDragStartWrapper}
-        onDragOver={handleDragOverWrapper}
-        onDragLeave={handleDragLeaveWrapper}
-        onDrop={handleDropWrapper}
-        onAddRow={handleAddRow}
-        onAddHeader={handleAddHeader}
-        selectedCount={selectedRows.size}
-        hasClipboardData={hasClipboardDataBoolean}
-        onCopySelectedRows={handleCopySelectedRows}
-        onPasteRows={handlePasteRows}
-        onDeleteSelectedRows={handleDeleteSelectedRows}
-        onClearSelection={clearSelection}
+        currentTime={state.currentTime}
+        timezone={state.timezone}
+        onTimezoneChange={handlers.onTimezoneChange}
+        totalRuntime={handlers.calculateTotalRuntime()}
+        showColumnManager={state.showColumnManager}
+        setShowColumnManager={handlers.setShowColumnManager}
+        items={state.items}
+        visibleColumns={state.visibleColumns}
+        columns={state.columns}
+        showColorPicker={state.showColorPicker}
+        cellRefs={state.cellRefs}
+        selectedRows={state.selectedRows}
+        draggedItemIndex={state.draggedItemIndex}
+        isDraggingMultiple={state.isDraggingMultiple}
+        dropTargetIndex={state.dropTargetIndex}
+        currentSegmentId={state.currentSegmentId}
+        getColumnWidth={handlers.getColumnWidth}
+        updateColumnWidth={handlers.updateColumnWidth}
+        getRowNumber={handlers.getRowNumber}
+        getRowStatus={handlers.getRowStatus}
+        calculateHeaderDuration={handlers.calculateHeaderDuration}
+        onUpdateItem={handlers.onUpdateItem}
+        onCellClick={handlers.onCellClick}
+        onKeyDown={handlers.onKeyDown}
+        onToggleColorPicker={handlers.onToggleColorPicker}
+        onColorSelect={handlers.onColorSelect}
+        onDeleteRow={handlers.onDeleteRow}
+        onToggleFloat={handlers.onToggleFloat}
+        onRowSelect={handlers.onRowSelect}
+        onDragStart={handlers.onDragStart}
+        onDragOver={handlers.onDragOver}
+        onDragLeave={handlers.onDragLeave}
+        onDrop={handlers.onDrop}
+        onAddRow={handlers.onAddRow}
+        onAddHeader={handlers.onAddHeader}
+        selectedCount={state.selectedRows.size}
+        hasClipboardData={state.hasClipboardData}
+        onCopySelectedRows={handlers.onCopySelectedRows}
+        onPasteRows={handlers.onPasteRows}
+        onDeleteSelectedRows={handlers.onDeleteSelectedRows}
+        onClearSelection={handlers.onClearSelection}
         selectedRowId={selectedRowId}
-        isPlaying={isPlaying}
-        timeRemaining={timeRemainingString}
-        onPlay={play}
-        onPause={pause}
-        onForward={forward}
-        onBackward={backward}
-        handleAddColumn={handleAddColumn}
-        handleReorderColumns={handleReorderColumnsWrapper}
-        handleDeleteColumnWithCleanup={handleDeleteColumn}
-        handleRenameColumn={handleRenameColumn}
-        handleToggleColumnVisibility={handleToggleColumnVisibility}
-        handleLoadLayout={handleLoadLayout}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
-        rundownTitle={rundownTitle}
-        onTitleChange={setRundownTitle}
-        rundownStartTime={rundownStartTime}
-        onRundownStartTimeChange={handleRundownStartTimeChange}
-        rundownId={rundownId || ''}
-        onOpenTeleprompter={handleOpenTeleprompter}
-        onUndo={handleUndo}
-        canUndo={canUndo}
-        lastAction={lastAction}
-        // Polling props
-        hasRemoteUpdates={hasRemoteUpdates || false}
-        clearRemoteUpdatesIndicator={clearRemoteUpdatesIndicator || (() => {})}
+        isPlaying={state.isPlaying}
+        timeRemaining={state.timeRemaining.toString()}
+        onPlay={handlers.onPlay}
+        onPause={handlers.onPause}
+        onForward={handlers.onForward}
+        onBackward={handlers.onBackward}
+        handleAddColumn={handlers.handleAddColumn}
+        handleReorderColumns={handlers.handleReorderColumns}
+        handleDeleteColumnWithCleanup={handlers.handleDeleteColumn}
+        handleRenameColumn={handlers.handleRenameColumn}
+        handleToggleColumnVisibility={handlers.handleToggleColumnVisibility}
+        handleLoadLayout={handlers.handleLoadLayout}
+        hasUnsavedChanges={state.hasUnsavedChanges}
+        isSaving={state.isSaving}
+        rundownTitle={state.rundownTitle}
+        onTitleChange={handlers.onTitleChange}
+        rundownStartTime={state.rundownStartTime}
+        onRundownStartTimeChange={handlers.onRundownStartTimeChange}
+        rundownId={state.rundownId}
+        onOpenTeleprompter={handlers.onOpenTeleprompter}
+        onUndo={handlers.onUndo}
+        canUndo={state.canUndo}
+        lastAction={state.lastAction}
+        hasRemoteUpdates={state.hasRemoteUpdates}
+        clearRemoteUpdatesIndicator={handlers.clearRemoteUpdatesIndicator}
       />
       
       {/* Cuer AI Chat Button with rundown data */}
