@@ -27,7 +27,7 @@ export const useUnifiedRundownState = () => {
     markAsChanged: gridState.markAsChanged
   });
 
-  // Create unified state object with proper type conversions
+  // Create unified state object with proper type conversions and defaults
   const state: UnifiedRundownState = useMemo(() => ({
     currentTime: gridState.currentTime,
     timezone: gridState.timezone,
@@ -51,11 +51,11 @@ export const useUnifiedRundownState = () => {
     isSaving: gridState.isSaving,
     canUndo: gridState.canUndo,
     lastAction: gridState.lastAction || '',
-    hasRemoteUpdates: gridState.hasRemoteUpdates || false,
+    hasRemoteUpdates: gridState.hasRemoteUpdates || false, // Add default value
     cellRefs: gridState.cellRefs
   }), [gridState]);
 
-  // Create unified handlers object with proper function signatures
+  // Create unified handlers object with proper function signatures and defaults
   const handlers: RundownStateHandlers = useMemo(() => ({
     onTimezoneChange: handleTimezoneChange,
     onTitleChange: gridState.setRundownTitle,
@@ -113,7 +113,7 @@ export const useUnifiedRundownState = () => {
     onBackward: gridState.backward,
     onOpenTeleprompter: handleOpenTeleprompter,
     onUndo: gridState.handleUndo,
-    clearRemoteUpdatesIndicator: gridState.clearRemoteUpdatesIndicator || (() => {}),
+    clearRemoteUpdatesIndicator: gridState.clearRemoteUpdatesIndicator || (() => {}), // Add default function
     getColumnWidth: useCallback((columnId: string): number => {
       const column = gridState.columns.find(col => col.id === columnId);
       if (column) {
