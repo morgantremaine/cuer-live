@@ -48,12 +48,16 @@ export const useBlueprintPersistence = (
     if (!user || !rundownId) return;
 
     try {
+      // Handle show_date - convert empty string to null
+      const dateToSave = showDateOverride || showDate;
+      const validShowDate = dateToSave && dateToSave.trim() !== '' ? dateToSave : null;
+
       const blueprintData = {
         user_id: user.id,
         rundown_id: rundownId,
         rundown_title: rundownTitle,
         lists: updatedLists,
-        show_date: showDateOverride || showDate,
+        show_date: validShowDate,
         notes: notes || savedBlueprint?.notes || '',
         crew_data: crewData || savedBlueprint?.crew_data || [],
         camera_plots: cameraPlots || savedBlueprint?.camera_plots || [],
@@ -93,6 +97,7 @@ export const useBlueprintPersistence = (
         });
       }
     } catch (error) {
+      console.error('Blueprint save error:', error);
       if (!silent) {
         toast({
           title: 'Error',

@@ -57,7 +57,7 @@ export const useCameraPlotAutoSave = (
             await saveBlueprint(
               savedBlueprint?.lists || [],
               true, // silent save
-              savedBlueprint?.show_date,
+              savedBlueprint?.show_date || null, // Ensure null instead of empty string
               savedBlueprint?.notes,
               savedBlueprint?.crew_data,
               plots // Pass the camera plots

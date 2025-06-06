@@ -54,7 +54,7 @@ export const useScratchpadEditor = (
         await saveBlueprint(
           savedBlueprint?.lists || [],
           true, // silent save
-          savedBlueprint?.show_date,
+          savedBlueprint?.show_date || null, // Ensure null instead of empty string
           notesToSave,
           savedBlueprint?.crew_data,
           savedBlueprint?.camera_plots
