@@ -260,8 +260,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role_in_team: {
+        Args: { user_uuid: string; team_uuid: string }
+        Returns: string
+      }
+      get_user_team_ids: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
       is_team_admin: {
         Args: { user_id: string; team_id: string }
+        Returns: boolean
+      }
+      is_team_member: {
+        Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
       }
     }

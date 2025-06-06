@@ -17,6 +17,10 @@ export interface SavedRundown {
   undo_history?: any[]
   team_id?: string
   visibility?: string
+  teams?: {
+    id: string
+    name: string
+  } | null
 }
 
 export interface RundownStorage {
@@ -26,7 +30,8 @@ export interface RundownStorage {
     columns?: Column[], 
     timezone?: string, 
     startTime?: string, 
-    icon?: string
+    icon?: string,
+    teamId?: string
   ) => Promise<string>
   loadRundowns: () => Promise<void>
   updateRundown: (
@@ -38,7 +43,9 @@ export interface RundownStorage {
     columns?: Column[], 
     timezone?: string, 
     startTime?: string, 
-    icon?: string
+    icon?: string,
+    undoHistory?: any[],
+    teamId?: string
   ) => Promise<void>
   deleteRundown: (id: string) => Promise<void>
   savedRundowns: SavedRundown[]

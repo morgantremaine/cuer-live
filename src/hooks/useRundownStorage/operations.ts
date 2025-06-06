@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
@@ -5,10 +6,16 @@ import { Column } from '@/hooks/useColumnsManager'
 export const loadRundownsFromDatabase = async (userId: string) => {
   console.log('Loading rundowns from database for user:', userId)
   
-  // Load user's own rundowns AND team rundowns
+  // Load user's own rundowns AND team rundowns they have access to
   const { data, error } = await supabase
     .from('rundowns')
-    .select('*')
+    .select(`
+      *,
+      teams:team_id (
+        id,
+        name
+      )
+    `)
     .eq('archived', false)
     .order('updated_at', { ascending: false })
 
@@ -28,7 +35,8 @@ export const saveRundownToDatabase = async (
   columns?: Column[], 
   timezone?: string, 
   startTime?: string, 
-  icon?: string
+  icon?: string,
+  teamId?: string
 ) => {
   console.log('Saving rundown to database:', title)
   
@@ -40,6 +48,7 @@ export const saveRundownToDatabase = async (
     timezone,
     start_time: startTime,
     icon,
+    team_id: teamId || null,
     updated_at: new Date().toISOString()
   }
 
@@ -68,7 +77,8 @@ export const updateRundownInDatabase = async (
   timezone?: string,
   startTime?: string,
   icon?: string,
-  undoHistory?: any[]
+  undoHistory?: any[],
+  teamId?: string
 ) => {
   console.log('Updating rundown in database:', id)
   
@@ -81,6 +91,7 @@ export const updateRundownInDatabase = async (
     start_time: startTime,
     icon,
     undo_history: undoHistory,
+    team_id: teamId,
     updated_at: new Date().toISOString()
   }
 

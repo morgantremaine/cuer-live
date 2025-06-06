@@ -41,13 +41,30 @@ export const useRundownStorage = () => {
     setLoading(false)
   }
 
-  const saveRundown = async (title: string, items: RundownItem[], columns?: Column[], timezone?: string, startTime?: string, icon?: string) => {
+  const saveRundown = async (
+    title: string, 
+    items: RundownItem[], 
+    columns?: Column[], 
+    timezone?: string, 
+    startTime?: string, 
+    icon?: string,
+    teamId?: string
+  ) => {
     if (!user) {
       console.error('Cannot save: no user')
       return
     }
 
-    const { data, error } = await saveRundownToDatabase(user.id, title, items, columns, timezone, startTime, icon)
+    const { data, error } = await saveRundownToDatabase(
+      user.id, 
+      title, 
+      items, 
+      columns, 
+      timezone, 
+      startTime, 
+      icon,
+      teamId
+    )
 
     if (error) {
       console.error('Database error saving rundown:', error)
@@ -67,13 +84,37 @@ export const useRundownStorage = () => {
     }
   }
 
-  const updateRundown = async (id: string, title: string, items: RundownItem[], silent = false, archived = false, columns?: Column[], timezone?: string, startTime?: string, icon?: string, undoHistory?: any[]) => {
+  const updateRundown = async (
+    id: string, 
+    title: string, 
+    items: RundownItem[], 
+    silent = false, 
+    archived = false, 
+    columns?: Column[], 
+    timezone?: string, 
+    startTime?: string, 
+    icon?: string, 
+    undoHistory?: any[],
+    teamId?: string
+  ) => {
     if (!user) {
       console.error('Cannot update: no user')
       return
     }
 
-    const { error, data } = await updateRundownInDatabase(id, user.id, title, items, archived, columns, timezone, startTime, icon, undoHistory)
+    const { error, data } = await updateRundownInDatabase(
+      id, 
+      user.id, 
+      title, 
+      items, 
+      archived, 
+      columns, 
+      timezone, 
+      startTime, 
+      icon, 
+      undoHistory,
+      teamId
+    )
 
     if (error) {
       console.error('Database error updating rundown:', {
