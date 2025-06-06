@@ -106,17 +106,37 @@ export const useTeam = () => {
         if (membersError) {
           console.error('Error loading team members:', membersError);
         } else {
-          // Map the data to match our interface
-          const mappedMembers: TeamMember[] = (membersData || []).map(member => ({
-            id: member.id,
-            user_id: member.user_id,
-            team_id: member.team_id,
-            role: member.role as 'admin' | 'member',
-            joined_at: member.joined_at,
-            profiles: Array.isArray(member.profiles) && member.profiles.length > 0 
-              ? member.profiles[0] 
-              : member.profiles || undefined
-          }));
+          // Map the data to match our interface with proper type handling
+          const mappedMembers: TeamMember[] = (membersData || []).map(member => {
+            // Handle profiles data - ensure it's properly typed
+            let profileData: { email: string; full_name: string | null } | undefined;
+            
+            if (member.profiles) {
+              if (Array.isArray(member.profiles)) {
+                // If it's an array, take the first element
+                profileData = member.profiles.length > 0 ? {
+                  email: member.profiles[0].email,
+                  full_name: member.profiles[0].full_name
+                } : undefined;
+              } else {
+                // If it's already an object, use it directly
+                profileData = {
+                  email: member.profiles.email,
+                  full_name: member.profiles.full_name
+                };
+              }
+            }
+
+            return {
+              id: member.id,
+              user_id: member.user_id,
+              team_id: member.team_id,
+              role: member.role as 'admin' | 'member',
+              joined_at: member.joined_at,
+              profiles: profileData
+            };
+          });
+          
           setTeamMembers(mappedMembers);
         }
 
