@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -168,7 +167,7 @@ export const useTeam = () => {
           team_id,
           role,
           joined_at,
-          profiles (
+          profiles!inner (
             full_name,
             email
           )
@@ -182,7 +181,14 @@ export const useTeam = () => {
         return;
       }
 
-      setTeamMembers(data || []);
+      // Transform the data to match our interface
+      const transformedData = data?.map(member => ({
+        ...member,
+        profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+      })) || [];
+
+      console.log('Transformed team members data:', transformedData);
+      setTeamMembers(transformedData);
     } catch (error) {
       console.error('Error in loadTeamMembers:', error);
     }
@@ -223,10 +229,19 @@ export const useTeam = () => {
       // Check if user already exists in team
       const { data: existingMember } = await supabase
         .from('team_members')
-        .select('id, profiles(email)')
+        .select(`
+          id, 
+          profiles!inner (email)
+        `)
         .eq('team_id', team.id);
 
-      const memberEmails = existingMember?.map(m => m.profiles?.email).filter(Boolean);
+      // Extract emails from the profiles
+      const memberEmails = existingMember
+        ?.map(m => Array.isArray(m.profiles) ? m.profiles[0]?.email : m.profiles?.email)
+        .filter(Boolean);
+      
+      console.log('Existing member emails:', memberEmails);
+      
       if (memberEmails?.includes(email)) {
         return { error: 'User is already a member of this team' };
       }
