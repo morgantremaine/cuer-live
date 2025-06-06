@@ -50,11 +50,12 @@ export const useRundownDataManagement = (rundownId: string) => {
   // Get current rundown data for realtime comparison
   const currentRundown = storage.savedRundowns.find(r => r.id === rundownId);
 
-  // Initialize realtime updates
+  // Initialize realtime updates - this is the key addition
   useRundownRealtime({
     currentRundownId: rundownId,
     currentUpdatedAt: currentRundown?.updated_at,
     onRemoteUpdate: () => {
+      console.log('Remote rundown update detected, refreshing data...');
       // Refresh the rundown data when remote updates are detected
       storage.loadRundowns();
     },
