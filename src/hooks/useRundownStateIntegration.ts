@@ -72,7 +72,7 @@ export const useRundownStateIntegration = (
   } = useColumnsManager(markAsChanged);
 
   // Auto-save functionality with proper change tracking
-  const { hasUnsavedChanges, isSaving, setRundownId, markAsChanged: autoSaveMarkAsChanged } = useAutoSave(
+  const { hasUnsavedChanges, isSaving, setRundownId } = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
     Array.isArray(columns) ? columns : [],
@@ -80,21 +80,16 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  // Wrapped addRow that supports insertion at specific index
+  // Simple wrapper functions that just call the original and rely on auto-save's change detection
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
-    console.log('➕ Adding row, will trigger change detection');
+    console.log('➕ Adding row');
     originalAddRow(calculateEndTime, insertAfterIndex);
-    // Mark as changed to ensure auto-save detects this
-    autoSaveMarkAsChanged();
-  }, [originalAddRow, autoSaveMarkAsChanged]);
+  }, [originalAddRow]);
 
-  // Wrapped addHeader that supports insertion at specific index  
   const addHeader = useCallback((insertAfterIndex?: number) => {
-    console.log('📋 Adding header, will trigger change detection');
+    console.log('📋 Adding header');
     originalAddHeader(insertAfterIndex);
-    // Mark as changed to ensure auto-save detects this
-    autoSaveMarkAsChanged();
-  }, [originalAddHeader, autoSaveMarkAsChanged]);
+  }, [originalAddHeader]);
 
   return {
     items: Array.isArray(items) ? items : [],
@@ -121,6 +116,6 @@ export const useRundownStateIntegration = (
     hasUnsavedChanges,
     isSaving,
     setRundownId,
-    markAsChanged: autoSaveMarkAsChanged
+    markAsChanged: markAsChanged // Use the original markAsChanged, not the auto-save one
   };
 };

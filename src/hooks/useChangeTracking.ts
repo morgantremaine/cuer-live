@@ -1,4 +1,3 @@
-
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
@@ -31,6 +30,7 @@ export const useChangeTracking = (
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const lastSavedDataRef = useRef<string>('');
+  const isDetectingChanges = useRef(false);
 
   // Initialize tracking when data is first loaded
   useEffect(() => {
@@ -52,12 +52,13 @@ export const useChangeTracking = (
     }
   }, [items, isInitialized, rundownTitle, columns, timezone, startTime]);
 
-  // Detect changes in data
+  // Simplified change detection with debouncing
   useEffect(() => {
-    if (!isInitialized || isLoading) {
-      console.log('⏸️ Skipping change detection - not initialized or loading');
+    if (!isInitialized || isLoading || isDetectingChanges.current) {
       return;
     }
+
+    isDetectingChanges.current = true;
 
     const currentDataSignature = JSON.stringify({
       items,
@@ -67,20 +68,17 @@ export const useChangeTracking = (
       startTime
     });
 
-    console.log('🔍 Change detection check:', {
-      hasLastSavedData: !!lastSavedDataRef.current,
-      signaturesMatch: lastSavedDataRef.current === currentDataSignature,
-      itemsLength: items?.length || 0,
-      currentHasChanges: hasUnsavedChanges
-    });
-
     if (lastSavedDataRef.current && lastSavedDataRef.current !== currentDataSignature) {
-      console.log('🚨 Changes detected! Setting hasUnsavedChanges to true');
-      setHasUnsavedChanges(true);
+      if (!hasUnsavedChanges) {
+        console.log('🚨 Changes detected! Setting hasUnsavedChanges to true');
+        setHasUnsavedChanges(true);
+      }
     } else if (lastSavedDataRef.current === currentDataSignature && hasUnsavedChanges) {
       console.log('✅ Data matches saved state, clearing unsaved changes flag');
       setHasUnsavedChanges(false);
     }
+
+    isDetectingChanges.current = false;
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, hasUnsavedChanges]);
 
   const trackChange = useCallback((

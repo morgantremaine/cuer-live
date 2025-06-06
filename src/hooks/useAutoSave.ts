@@ -15,6 +15,7 @@ export const useAutoSave = (
   const { updateRundown } = useRundownStorage();
   const [isSaving, setIsSaving] = useState(false);
   const rundownIdRef = useRef<string | null>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use change tracking to detect unsaved changes
   const {
@@ -23,18 +24,6 @@ export const useAutoSave = (
     markAsChanged,
     setIsLoading
   } = useChangeTracking(items, rundownTitle, columns, timezone, rundownStartTime);
-
-  // Debug logging for change tracking
-  useEffect(() => {
-    console.log('📊 AutoSave change tracking debug:', {
-      hasUnsavedChanges,
-      itemsLength: items?.length || 0,
-      rundownTitle,
-      columnsLength: columns?.length || 0,
-      timezone,
-      rundownStartTime
-    });
-  }, [hasUnsavedChanges, items?.length, rundownTitle, columns?.length, timezone, rundownStartTime]);
 
   const performAutoSave = useCallback(async (rundownId: string) => {
     if (!rundownId || isSaving || !hasUnsavedChanges) {
@@ -74,22 +63,32 @@ export const useAutoSave = (
     console.log('🔗 Auto-save rundown ID set to:', id);
   }, []);
 
-  // Auto-save effect
+  // Simplified auto-save effect with debouncing
   useEffect(() => {
+    // Clear any existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
     const rundownId = rundownIdRef.current;
     
     if (!rundownId || !hasUnsavedChanges || isSaving) {
       return;
     }
 
-    console.log('⏰ Scheduling auto-save in 2 seconds...');
-    const timer = setTimeout(() => {
+    console.log('⏰ Scheduling auto-save in 3 seconds...');
+    autoSaveTimerRef.current = setTimeout(() => {
       performAutoSave(rundownId);
-    }, 2000);
+      autoSaveTimerRef.current = null;
+    }, 3000); // Increased to 3 seconds for better debouncing
 
     return () => {
-      console.log('🧹 Clearing auto-save timer');
-      clearTimeout(timer);
+      if (autoSaveTimerRef.current) {
+        console.log('🧹 Clearing auto-save timer');
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
     };
   }, [hasUnsavedChanges, isSaving, performAutoSave]);
 
