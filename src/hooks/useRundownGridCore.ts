@@ -8,10 +8,20 @@ import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useStableRundownRealtime } from './useStableRundownRealtime';
 import { useSimpleEditingDetection } from './useSimpleEditingDetection';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
+  // Create stable refs to prevent infinite loops
+  const stableCallbacksRef = useRef<{
+    markAsChanged?: () => void;
+    setRundownTitleDirectly?: (title: string) => void;
+    setTimezoneDirectly?: (timezone: string) => void;
+    setRundownStartTimeDirectly?: (time: string) => void;
+    handleLoadLayout?: (layout: any) => void;
+    setItems?: (items: RundownItem[]) => void;
+  }>({});
+
   // Core state management
   const {
     currentTime,
@@ -30,23 +40,25 @@ export const useRundownGridCore = () => {
     markAsChanged
   } = useRundownBasicState();
 
+  // Update stable refs when callbacks change
+  stableCallbacksRef.current.markAsChanged = markAsChanged;
+  stableCallbacksRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
+  stableCallbacksRef.current.setTimezoneDirectly = setTimezoneDirectly;
+  stableCallbacksRef.current.setRundownStartTimeDirectly = setRundownStartTimeDirectly;
+
   // Storage functionality
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
 
   // Simple editing detection
   const { isEditing, markAsEditing } = useSimpleEditingDetection();
 
-  // Set up realtime collaboration (only when we have a rundown ID)
-  const { isConnected } = useStableRundownRealtime({
+  // Set up realtime collaboration with stable props
+  const stableRealtimeProps = useMemo(() => ({
     rundownId,
     enabled: !!rundownId
-  });
+  }), [rundownId]);
 
-  console.log('🔴 GridCore realtime status:', {
-    rundownId,
-    isConnected,
-    isEditing
-  });
+  const { isConnected } = useStableRundownRealtime(stableRealtimeProps);
 
   // Rundown data integration
   const {
@@ -82,25 +94,33 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
+  // Update stable refs
+  stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
+  stableCallbacksRef.current.setItems = setItems;
+
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Use data loader with undo history loading
-  useRundownDataLoader({
-    rundownId,
-    savedRundowns,
-    loading,
-    setRundownTitle: setRundownTitleDirectly,
-    setTimezone: setTimezoneDirectly,
-    setRundownStartTime: setRundownStartTimeDirectly,
-    handleLoadLayout,
-    setItems,
-    onRundownLoaded: (rundown) => {
+  // Use data loader with stable callbacks
+  const stableDataLoaderCallbacks = useMemo(() => ({
+    setRundownTitle: stableCallbacksRef.current.setRundownTitleDirectly!,
+    setTimezone: stableCallbacksRef.current.setTimezoneDirectly!,
+    setRundownStartTime: stableCallbacksRef.current.setRundownStartTimeDirectly!,
+    handleLoadLayout: stableCallbacksRef.current.handleLoadLayout!,
+    setItems: stableCallbacksRef.current.setItems!,
+    onRundownLoaded: (rundown: any) => {
       // Load undo history when rundown is loaded
       if (rundown.undo_history) {
         loadUndoHistory(rundown.undo_history);
       }
     }
+  }), [loadUndoHistory]);
+
+  useRundownDataLoader({
+    rundownId,
+    savedRundowns,
+    loading,
+    ...stableDataLoaderCallbacks
   });
 
   // Playback controls

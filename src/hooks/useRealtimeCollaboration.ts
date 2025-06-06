@@ -18,22 +18,20 @@ export const useRealtimeCollaboration = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const subscriptionRef = useRef<any>(null);
-  const isSetupRef = useRef(false);
+  const isConnectedRef = useRef(false);
+  const channelIdRef = useRef<string | null>(null);
 
-  console.log('🟢 useRealtimeCollaboration called:', {
-    rundownId,
-    userId: user?.id,
-    enabled,
-    hasExistingSubscription: !!subscriptionRef.current
-  });
+  // Create a stable channel ID
+  const channelId = rundownId ? `rundown-collaboration-${rundownId}` : null;
 
   const cleanup = useCallback(() => {
     if (subscriptionRef.current) {
       console.log('🧹 Cleaning up realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
+      isConnectedRef.current = false;
+      channelIdRef.current = null;
     }
-    isSetupRef.current = false;
   }, []);
 
   const handleRealtimeUpdate = useCallback((payload: any) => {
@@ -72,23 +70,24 @@ export const useRealtimeCollaboration = ({
 
   // Single effect that handles all subscription logic
   useEffect(() => {
-    // Don't set up if already done or missing requirements
-    if (isSetupRef.current || !enabled || !user?.id || !rundownId) {
-      console.log('⏭️ Skipping realtime setup:', {
-        alreadySetup: isSetupRef.current,
-        enabled,
-        hasUser: !!user?.id,
-        hasRundownId: !!rundownId
-      });
-      return;
+    // Skip if we don't have required data
+    if (!enabled || !user?.id || !channelId) {
+      return cleanup;
     }
 
-    console.log('✅ Setting up realtime subscription for rundown:', rundownId);
-    isSetupRef.current = true;
+    // Skip if we already have the same subscription
+    if (subscriptionRef.current && channelIdRef.current === channelId) {
+      return cleanup;
+    }
 
-    // Create subscription
+    // Cleanup any existing subscription
+    cleanup();
+
+    console.log('✅ Setting up realtime subscription for rundown:', rundownId);
+    
+    // Create new subscription
     const channel = supabase
-      .channel(`rundown-collaboration-${rundownId}`)
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
@@ -103,6 +102,7 @@ export const useRealtimeCollaboration = ({
         console.log('📡 Subscription status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to realtime updates');
+          isConnectedRef.current = true;
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Failed to subscribe to realtime updates');
           cleanup();
@@ -110,10 +110,10 @@ export const useRealtimeCollaboration = ({
       });
 
     subscriptionRef.current = channel;
+    channelIdRef.current = channelId;
 
-    // Cleanup function
     return cleanup;
-  }, [user?.id, rundownId, enabled, handleRealtimeUpdate, cleanup]);
+  }, [user?.id, channelId, enabled, handleRealtimeUpdate, cleanup, rundownId]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -121,6 +121,6 @@ export const useRealtimeCollaboration = ({
   }, [cleanup]);
 
   return {
-    isConnected: !!subscriptionRef.current
+    isConnected: isConnectedRef.current
   };
 };

@@ -1,5 +1,5 @@
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { useRealtimeCollaboration } from './useRealtimeCollaboration';
 import { useRundownStorage } from './useRundownStorage';
 
@@ -13,6 +13,12 @@ export const useStableRundownRealtime = ({
   enabled = true 
 }: UseStableRundownRealtimeProps) => {
   const { loadRundowns } = useRundownStorage();
+  const stablePropsRef = useRef({ rundownId, enabled });
+  
+  // Only update ref if props actually changed
+  if (stablePropsRef.current.rundownId !== rundownId || stablePropsRef.current.enabled !== enabled) {
+    stablePropsRef.current = { rundownId, enabled };
+  }
 
   // Stable callback for remote updates
   const onRemoteUpdate = useCallback(() => {
@@ -22,9 +28,9 @@ export const useStableRundownRealtime = ({
 
   // Use realtime collaboration with stable props
   const { isConnected } = useRealtimeCollaboration({
-    rundownId,
+    rundownId: stablePropsRef.current.rundownId,
     onRemoteUpdate,
-    enabled
+    enabled: stablePropsRef.current.enabled
   });
 
   return useMemo(() => ({
