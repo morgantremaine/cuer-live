@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -72,11 +71,11 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
         textColor = 'white'; // White text on colored backgrounds for better contrast
       }
 
-      // Add the styled bracket content with more compact padding
+      // Add the styled bracket content with minimal top/bottom padding to match horizontal
       parts.push(
         <span
           key={`bracket-${match.index}`}
-          className="py-1 px-2 inline-block rounded mx-1"
+          className="py-0.5 px-2 inline-block rounded mx-1"
           style={{ 
             backgroundColor,
             color: textColor,
