@@ -24,6 +24,7 @@ export const useRundownRealtime = ({
   const channelRef = useRef<any>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
   const lastProcessedUpdateRef = useRef<string>('');
+  const isSetupRef = useRef(false);
 
   console.log('🔴 useRundownRealtime hook called with:', {
     currentRundownId,
@@ -89,7 +90,8 @@ export const useRundownRealtime = ({
     console.log('🔴 useRundownRealtime effect triggered', {
       hasUser: !!user,
       currentRundownId,
-      userEmail: user?.email
+      userEmail: user?.email,
+      isSetupRef: isSetupRef.current
     });
 
     if (!user) {
@@ -97,9 +99,14 @@ export const useRundownRealtime = ({
       return;
     }
 
-    // CRITICAL FIX: Always set up realtime even for new rundowns or missing rundownId
-    // This ensures we're listening for updates on any rundown
+    // Prevent duplicate setups
+    if (isSetupRef.current) {
+      console.log('⏭️ Realtime already set up, skipping');
+      return;
+    }
+
     console.log('✅ Setting up realtime subscription for rundowns');
+    isSetupRef.current = true;
 
     // Create a unique channel name to avoid conflicts
     const channelName = `rundown-updates-${currentRundownId || 'all'}-${Date.now()}`;
@@ -130,6 +137,7 @@ export const useRundownRealtime = ({
 
     return () => {
       console.log('🧹 Cleaning up realtime subscription');
+      isSetupRef.current = false;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -138,7 +146,7 @@ export const useRundownRealtime = ({
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [user?.id, handleRealtimeUpdate]); // Removed currentRundownId from dependencies to ensure setup always happens
+  }, [user?.id]); // CRITICAL: Only depend on user ID to prevent constant restarts
 
   // Cleanup on unmount
   useEffect(() => {

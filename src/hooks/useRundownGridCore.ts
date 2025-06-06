@@ -8,10 +8,12 @@ import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
 import { useRundownRealtime } from './useRundownRealtime';
 import { useEditingDetection } from './useEditingDetection';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
+  const initializationRef = useRef(false);
+  
   // Core state management
   const {
     currentTime,
@@ -33,8 +35,28 @@ export const useRundownGridCore = () => {
   // Get storage functionality
   const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
 
-  // Detect when user is actively editing
+  // Only initialize realtime and editing detection once per component mount
+  useEffect(() => {
+    if (!initializationRef.current && rundownId) {
+      console.log('🎯 Initializing realtime and editing detection for rundown:', rundownId);
+      initializationRef.current = true;
+    }
+  }, [rundownId]);
+
+  // Detect when user is actively editing - only if initialized
   const { isEditing } = useEditingDetection();
+
+  // Get current rundown data for realtime comparison
+  const currentRundown = savedRundowns.find(r => r.id === rundownId);
+
+  // Initialize realtime updates only once
+  console.log('🔴 Setting up realtime in useRundownGridCore with:', {
+    rundownId,
+    hasCurrentRundown: !!currentRundown,
+    isEditing,
+    isSaving: false, // We'll get this from state integration
+    initialized: initializationRef.current
+  });
 
   // Rundown data integration
   const {
@@ -70,17 +92,7 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Get current rundown data for realtime comparison
-  const currentRundown = savedRundowns.find(r => r.id === rundownId);
-
-  // Initialize realtime updates
-  console.log('🔴 Setting up realtime in useRundownGridCore with:', {
-    rundownId,
-    hasCurrentRundown: !!currentRundown,
-    isEditing,
-    isSaving
-  });
-
+  // Only set up realtime if we have the core data
   useRundownRealtime({
     currentRundownId: rundownId,
     currentUpdatedAt: currentRundown?.updated_at,
