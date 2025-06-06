@@ -19,16 +19,10 @@ export const useBlueprintPersistence = (
     if (!user || !rundownId) return null;
     
     try {
-      // Load blueprint from current user OR team members
+      // Load blueprint without trying to join profiles table
       const { data, error } = await supabase
         .from('blueprints')
-        .select(`
-          *,
-          profiles!blueprints_user_id_fkey (
-            email,
-            full_name
-          )
-        `)
+        .select('*')
         .eq('rundown_id', rundownId)
         .maybeSingle();
 
