@@ -1,8 +1,9 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { OpenAIMessage } from './types.ts'
 import { getSystemPrompt } from './systemPrompt.ts'
 import { callOpenAI } from './openaiClient.ts'
-import { cleanMessage } from './cleanMessage.ts'
+import { cleanMessage } from './modificationParser.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
