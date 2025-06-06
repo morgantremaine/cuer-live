@@ -6,6 +6,8 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
+import { useRundownRealtime } from './useRundownRealtime';
+import { useEditingDetection } from './useEditingDetection';
 import { useCallback, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -29,7 +31,10 @@ export const useRundownGridCore = () => {
   } = useRundownBasicState();
 
   // Get storage functionality
-  const { savedRundowns, loading, updateRundown } = useRundownStorage();
+  const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
+
+  // Detect when user is actively editing
+  const { isEditing } = useEditingDetection();
 
   // Rundown data integration
   const {
@@ -65,10 +70,43 @@ export const useRundownGridCore = () => {
     setTimezoneDirectly
   );
 
-  // Undo functionality with persistence - fix: call without arguments, then pass state separately
+  // Get current rundown data for realtime comparison
+  const currentRundown = savedRundowns.find(r => r.id === rundownId);
+
+  // Initialize realtime updates
+  console.log('🔴 Setting up realtime in useRundownGridCore with:', {
+    rundownId,
+    hasCurrentRundown: !!currentRundown,
+    isEditing,
+    isSaving
+  });
+
+  useRundownRealtime({
+    currentRundownId: rundownId,
+    currentUpdatedAt: currentRundown?.updated_at,
+    onRemoteUpdate: () => {
+      console.log('📡 Remote rundown update detected in GridCore, refreshing data...');
+      if (!isSaving) {
+        console.log('✅ Applying remote update - reloading rundowns');
+        loadRundowns();
+      } else {
+        console.log('⏳ Delaying remote update - currently saving');
+        setTimeout(() => {
+          if (!isSaving) {
+            console.log('✅ Applying delayed remote update');
+            loadRundowns();
+          }
+        }, 1000);
+      }
+    },
+    isUserEditing: isEditing,
+    isSaving
+  });
+
+  // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Use data loader with undo history loading - ADD setItems here
+  // Use data loader with undo history loading
   useRundownDataLoader({
     rundownId,
     savedRundowns,
@@ -77,7 +115,7 @@ export const useRundownGridCore = () => {
     setTimezone: setTimezoneDirectly,
     setRundownStartTime: setRundownStartTimeDirectly,
     handleLoadLayout,
-    setItems, // Add the missing setItems function
+    setItems,
     onRundownLoaded: (rundown) => {
       // Load undo history when rundown is loaded
       if (rundown.undo_history) {
@@ -100,14 +138,12 @@ export const useRundownGridCore = () => {
   // Time calculations
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
-  // Wrapped functions that save state before making changes - update to support insertion after selected rows
+  // Wrapped functions that save state before making changes
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Row');
     
-    // Find the index of the last selected row if multiple rows are selected
     let insertAfterIndex: number | undefined = undefined;
     if (selectedRows && selectedRows.size > 0) {
-      // Find the highest index among selected rows
       const selectedIndices = Array.from(selectedRows).map(id => 
         items.findIndex(item => item.id === id)
       ).filter(index => index !== -1);
@@ -116,14 +152,12 @@ export const useRundownGridCore = () => {
         insertAfterIndex = Math.max(...selectedIndices);
       }
     } else if (selectedRowId) {
-      // Single row selection fallback
       const selectedIndex = items.findIndex(item => item.id === selectedRowId);
       if (selectedIndex !== -1) {
         insertAfterIndex = selectedIndex;
       }
     }
     
-    // Call addRow with the insertion index
     if (insertAfterIndex !== undefined) {
       addRow(calculateEndTimeFn, insertAfterIndex);
     } else {
@@ -134,10 +168,8 @@ export const useRundownGridCore = () => {
   const wrappedAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     saveState(items, columns, rundownTitle, 'Add Header');
     
-    // Find the index of the last selected row if multiple rows are selected
     let insertAfterIndex: number | undefined = undefined;
     if (selectedRows && selectedRows.size > 0) {
-      // Find the highest index among selected rows
       const selectedIndices = Array.from(selectedRows).map(id => 
         items.findIndex(item => item.id === id)
       ).filter(index => index !== -1);
@@ -146,14 +178,12 @@ export const useRundownGridCore = () => {
         insertAfterIndex = Math.max(...selectedIndices);
       }
     } else if (selectedRowId) {
-      // Single row selection fallback
       const selectedIndex = items.findIndex(item => item.id === selectedRowId);
       if (selectedIndex !== -1) {
         insertAfterIndex = selectedIndex;
       }
     }
     
-    // Call addHeader with the insertion index
     if (insertAfterIndex !== undefined) {
       addHeader(insertAfterIndex);
     } else {
@@ -178,7 +208,6 @@ export const useRundownGridCore = () => {
 
   const wrappedSetItems = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
     const newItems = typeof updater === 'function' ? updater(items) : updater;
-    // Only save state if items actually changed
     if (JSON.stringify(newItems) !== JSON.stringify(items)) {
       saveState(items, columns, rundownTitle, 'Move Rows');
     }
@@ -198,7 +227,6 @@ export const useRundownGridCore = () => {
   }, [setRundownTitle, saveState, items, columns, rundownTitle]);
 
   const handleUndo = useCallback(() => {
-    // Fix: call undo with only the required arguments
     const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);
     if (action) {
       markAsChanged();
