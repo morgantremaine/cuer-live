@@ -8,7 +8,7 @@ import { useRundownUndo } from './useRundownUndo';
 import { useEditingState } from './useEditingState';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { useAdvancedRealtimeCollaboration } from './useAdvancedRealtimeCollaboration';
+import { useStableAdvancedRealtimeCollaboration } from './useStableAdvancedRealtimeCollaboration';
 
 export const useRundownGridCore = () => {
   // Create stable refs to prevent infinite loops
@@ -96,7 +96,7 @@ export const useRundownGridCore = () => {
   stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
   stableCallbacksRef.current.setItems = setItems;
 
-  // Use advanced realtime collaboration
+  // Use stable advanced realtime collaboration
   const { 
     isConnected, 
     hasPendingChanges,
@@ -107,7 +107,7 @@ export const useRundownGridCore = () => {
     getChangeHistory,
     detectedConflicts: realtimeConflicts,
     setDetectedConflicts: setRealtimeConflicts
-  } = useAdvancedRealtimeCollaboration({
+  } = useStableAdvancedRealtimeCollaboration({
     rundownId,
     items,
     setItems,
