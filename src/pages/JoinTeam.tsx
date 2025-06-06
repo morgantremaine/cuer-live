@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,7 +81,7 @@ const JoinTeam = () => {
           }
         }
         
-        // Check if user already exists with this email
+        // Check if user already exists with this email - improved method
         await checkUserExists(invitationData.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
@@ -102,22 +101,30 @@ const JoinTeam = () => {
 
   const checkUserExists = async (emailToCheck: string) => {
     try {
-      // Try to sign in with a dummy password to check if user exists
-      const { error } = await supabase.auth.signInWithPassword({
-        email: emailToCheck,
-        password: 'dummy-password-check'
-      });
+      // Check if a profile exists for this email to determine if user exists
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', emailToCheck)
+        .maybeSingle();
       
-      // If error is invalid_credentials, user exists but password is wrong
-      // If error is invalid_login_credentials, user might not exist
-      if (error?.message?.includes('Invalid login credentials')) {
+      if (error) {
+        console.error('Error checking user existence:', error);
+        // Default to signup on error
         setUserExists(false);
         setActiveTab('signup');
-      } else {
+        return;
+      }
+      
+      if (profileData) {
         setUserExists(true);
         setActiveTab('signin');
+      } else {
+        setUserExists(false);
+        setActiveTab('signup');
       }
     } catch (error) {
+      console.error('Error in checkUserExists:', error);
       // Default to signup if we can't determine
       setUserExists(false);
       setActiveTab('signup');
