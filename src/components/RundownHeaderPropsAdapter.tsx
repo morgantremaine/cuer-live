@@ -53,11 +53,6 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     setCurrentHighlight(null);
   };
 
-  // Convert timeRemaining to number if it's a string
-  const timeRemainingNumber = typeof props.timeRemaining === 'string' 
-    ? parseFloat(props.timeRemaining) || 0 
-    : props.timeRemaining;
-
   return (
     <RundownHeaderSection
       currentTime={props.currentTime}
@@ -76,7 +71,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       selectedRowId={props.selectedRowId}
       isPlaying={props.isPlaying}
       currentSegmentId={props.currentSegmentId}
-      timeRemaining={timeRemainingNumber}
+      timeRemaining={props.timeRemaining}
       onPlay={props.onPlay}
       onPause={props.onPause}
       onForward={props.onForward}
@@ -96,7 +91,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       currentHighlight={currentHighlight}
       onUndo={props.onUndo}
       canUndo={props.canUndo}
-      lastAction={props.lastAction || ''}
+      lastAction={props.lastAction}
     />
   );
 };

@@ -7,34 +7,58 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSavedDataRef = useRef<string>('');
+  const initialLoadRef = useRef(false);
   const isLoadingRef = useRef(false);
+  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedOnceRef = useRef(false);
+  const lastInitializationKeyRef = useRef<string>('');
 
-  // Initialize tracking when we have data (don't wait for specific title)
+  // Initialize tracking after first meaningful load with delay
   useEffect(() => {
-    if (isInitialized || isLoadingRef.current) return;
-
-    // Initialize when we have any meaningful data
-    if (items.length > 0 || (rundownTitle && rundownTitle.trim() !== '')) {
-      const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
-      lastSavedDataRef.current = signature;
-      setIsInitialized(true);
-      setHasUnsavedChanges(false);
-      console.log('Change tracking initialized with', items.length, 'items');
-    }
-  }, [items.length, rundownTitle, isInitialized]);
-
-  // Track changes after initialization
-  useEffect(() => {
-    if (!isInitialized || isLoadingRef.current) {
+    // Create a key to track initialization
+    const initKey = `${rundownTitle}-${items.length}-${columns?.length || 0}`;
+    
+    // Skip if already initialized with this exact data
+    if (lastInitializationKeyRef.current === initKey && hasInitializedOnceRef.current) {
       return;
     }
+
+    // Clear any pending initialization
+    if (initializationTimeoutRef.current) {
+      clearTimeout(initializationTimeoutRef.current);
+    }
+
+    // Only initialize once we have meaningful data and haven't initialized yet
+    if (!initialLoadRef.current && (items.length > 0 || rundownTitle !== 'Live Broadcast Rundown')) {
+      // Add a small delay to prevent initialization during rapid state changes
+      initializationTimeoutRef.current = setTimeout(() => {
+        const signature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
+        lastSavedDataRef.current = signature;
+        lastInitializationKeyRef.current = initKey;
+        initialLoadRef.current = true;
+        hasInitializedOnceRef.current = true;
+        setIsInitialized(true);
+        setHasUnsavedChanges(false);
+        console.log('Change tracking initialized');
+      }, 200);
+    }
+
+    return () => {
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+    };
+  }, [items.length, rundownTitle, columns?.length, timezone, startTime]); // Use length-based dependencies
+
+  // Track changes after initialization - but only if not loading
+  useEffect(() => {
+    if (!isInitialized || isLoadingRef.current) return;
 
     const currentSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
     const hasChanges = lastSavedDataRef.current !== currentSignature;
     
     if (hasChanges !== hasUnsavedChanges) {
       setHasUnsavedChanges(hasChanges);
-      console.log('Change detected:', hasChanges ? 'UNSAVED' : 'SAVED');
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, hasUnsavedChanges]);
 
@@ -42,19 +66,16 @@ export const useChangeTracking = (items: RundownItem[], rundownTitle: string, co
     const signature = JSON.stringify({ items: savedItems, title: savedTitle, columns: savedColumns, timezone: savedTimezone, startTime: savedStartTime });
     lastSavedDataRef.current = signature;
     setHasUnsavedChanges(false);
-    console.log('Marked as saved');
   };
 
   const markAsChanged = () => {
-    if (!isLoadingRef.current && isInitialized) {
+    if (!isLoadingRef.current) {
       setHasUnsavedChanges(true);
-      console.log('Manually marked as changed');
     }
   };
 
   const setIsLoading = (loading: boolean) => {
     isLoadingRef.current = loading;
-    console.log(loading ? 'Setting loading mode' : 'Loading complete');
   };
 
   return {

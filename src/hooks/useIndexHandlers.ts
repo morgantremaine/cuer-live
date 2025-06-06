@@ -45,7 +45,6 @@ export const useIndexHandlers = ({
     navigate(`/teleprompter/${rundownId}`);
   }, [navigate, rundownId]);
 
-  // Fixed to match the expected signature: (itemId, index, isShiftClick, isCtrlClick)
   const handleRowSelect = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
   }, [toggleRowSelection, items]);
