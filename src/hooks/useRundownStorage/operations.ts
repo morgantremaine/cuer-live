@@ -20,6 +20,12 @@ export const updateRundownInSupabase = async (
 ) => {
   console.log('💾 Updating rundown in Supabase:', { rundownId, fieldsUpdated: Object.keys(data), data });
   
+  // Validate rundown ID - prevent updating with invalid IDs
+  if (!rundownId || rundownId === 'new' || rundownId === 'undefined') {
+    console.error('❌ Invalid rundown ID for update:', rundownId);
+    throw new Error('Cannot update rundown: Invalid rundown ID');
+  }
+  
   const updateData: any = {
     user_id: userId,
     updated_at: new Date().toISOString()
@@ -97,6 +103,12 @@ export class RundownOperations {
       throw new Error('User not authenticated');
     }
 
+    // Validate rundown ID - don't attempt to update invalid IDs
+    if (!rundownId || rundownId === 'new' || rundownId === 'undefined') {
+      console.error('❌ Cannot update rundown with invalid ID:', rundownId);
+      throw new Error('Cannot update rundown: Invalid rundown ID');
+    }
+
     try {
       // Special handling for showcaller_state updates with debouncing
       if (data.showcaller_state !== undefined && Object.keys(data).length === 1) {
@@ -155,6 +167,12 @@ export class RundownOperations {
   }
 
   private async updateShowcallerStateDebounced(rundownId: string, showcallerState: any) {
+    // Validate rundown ID for showcaller updates too
+    if (!rundownId || rundownId === 'new' || rundownId === 'undefined') {
+      console.error('❌ Cannot update showcaller state with invalid rundown ID:', rundownId);
+      return;
+    }
+
     console.log('📡 Debounced showcaller state update for:', rundownId, showcallerState);
     
     // Clear any existing debounce timer for this rundown

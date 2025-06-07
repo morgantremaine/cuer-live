@@ -41,6 +41,7 @@ export const useAutoSave = (
 
   // Auto-save function with proper new rundown handling
   const performAutoSave = useCallback(async () => {
+    // Skip if conditions are not met
     if (isProcessingRealtimeUpdate || isNavigatingRef.current || isSaving) {
       console.log('⏭️ Skipping auto-save - processing realtime update, navigating, or already saving');
       return;
@@ -63,7 +64,7 @@ export const useAutoSave = (
       return;
     }
 
-    // For new rundowns, check if there's meaningful content before saving
+    // For new rundowns (rundownId is undefined), check if there's meaningful content
     if (!rundownId) {
       // Skip saving if it's just the default state with minimal content
       if (rundownTitle === 'Live Broadcast Rundown' && (!items || items.length <= 3)) {
@@ -78,7 +79,7 @@ export const useAutoSave = (
     }
 
     console.log('💾 Auto-saving rundown...', {
-      rundownId,
+      rundownId: rundownId || 'undefined (new)',
       title: rundownTitle,
       itemsCount: items?.length || 0,
       timezone,
@@ -152,7 +153,7 @@ export const useAutoSave = (
 
     console.log('🔄 Changes detected, scheduling auto-save...', {
       hasUnsavedChanges,
-      rundownId,
+      rundownId: rundownId || 'undefined (new)',
       title: rundownTitle,
       itemsLength: items?.length || 0
     });

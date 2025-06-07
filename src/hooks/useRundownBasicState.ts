@@ -11,8 +11,8 @@ export const useRundownBasicState = () => {
   const [rundownStartTime, setRundownStartTime] = useState('09:00');
   const [hasChanges, setHasChanges] = useState(false);
   
-  // Get rundown ID from URL params, ensuring it's properly tracked
-  const rundownId = params.id || undefined;
+  // Get rundown ID from URL params, ensuring "new" is converted to undefined
+  const rundownId = params.id && params.id !== 'new' ? params.id : undefined;
 
   // Direct setters for realtime updates that bypass change tracking
   const setRundownTitleDirectly = useCallback((title: string) => {
@@ -55,7 +55,7 @@ export const useRundownBasicState = () => {
 
   // Debug logging for rundown ID changes
   useEffect(() => {
-    console.log('🆔 Rundown ID changed:', rundownId);
+    console.log('🆔 Rundown ID changed:', rundownId || 'undefined (new rundown)');
   }, [rundownId]);
 
   return {
@@ -71,7 +71,7 @@ export const useRundownBasicState = () => {
     rundownStartTime,
     setRundownStartTime: setRundownStartTimeWithChange,
     setRundownStartTimeDirectly,
-    rundownId, // This now properly reflects the URL param
+    rundownId, // This now properly converts "new" to undefined
     markAsChanged,
     hasChanges
   };
