@@ -13,7 +13,10 @@ export const useRundownGridCore = () => {
   // Router hooks
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const rundownId = params.id || null;
+  const rawId = params.id || null;
+
+  // Improved ID validation - ensure we don't treat "new" as a valid UUID
+  const rundownId = (!rawId || rawId === 'new' || rawId === ':id' || rawId.trim() === '') ? null : rawId;
 
   // Basic state
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
@@ -75,7 +78,7 @@ export const useRundownGridCore = () => {
     });
   }, [stateIntegration.setOnRundownCreated, stateIntegration.setRundownId, navigate]);
 
-  // Set rundown ID when we have one
+  // Set rundown ID when we have a valid one
   useEffect(() => {
     if (rundownId) {
       stateIntegration.setRundownId(rundownId);

@@ -43,6 +43,11 @@ export const useStableAutoSave = (
     onRundownCreatedRef.current = callback;
   }, []);
 
+  // Helper function to check if rundownId is valid
+  const isValidRundownId = useCallback((id: string | null): id is string => {
+    return id !== null && id !== 'new' && id !== ':id' && id.trim() !== '';
+  }, []);
+
   // Stable save function
   const performSave = useCallback(async () => {
     if (isSavingRef.current || !isDirtyRef.current) {
@@ -53,8 +58,8 @@ export const useStableAutoSave = (
       return;
     }
 
-    // If no rundownId and we have items, create a new rundown
-    if (!rundownId && items && items.length > 0 && !hasTriedSaveRef.current) {
+    // If no valid rundownId and we have items, create a new rundown
+    if (!isValidRundownId(rundownId) && items && items.length > 0 && !hasTriedSaveRef.current) {
       console.log('💾 Creating new rundown for unsaved content...');
       setState('saving');
       isSavingRef.current = true;
@@ -103,9 +108,9 @@ export const useStableAutoSave = (
       return;
     }
 
-    // Skip if no rundown ID and no content to save
-    if (!rundownId) {
-      console.log('💾 Skipping save: no rundownId and no content to create new rundown');
+    // Skip if no valid rundown ID and no content to save
+    if (!isValidRundownId(rundownId)) {
+      console.log('💾 Skipping save: no valid rundownId and no content to create new rundown');
       return;
     }
 
@@ -157,7 +162,7 @@ export const useStableAutoSave = (
     } finally {
       isSavingRef.current = false;
     }
-  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, saveRundown, createDataSignature]);
+  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, saveRundown, createDataSignature, isValidRundownId]);
 
   // Mark as dirty (trigger save)
   const markAsDirty = useCallback(() => {
