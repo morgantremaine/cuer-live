@@ -41,6 +41,7 @@ const RundownContainer = (props: RundownContainerProps) => {
         isDraggingMultiple={props.isDraggingMultiple}
         dropTargetIndex={props.dropTargetIndex}
         currentSegmentId={props.currentSegmentId}
+        hasClipboardData={props.hasClipboardData}
         getColumnWidth={props.getColumnWidth}
         updateColumnWidth={props.updateColumnWidth}
         getRowNumber={props.getRowNumber}
@@ -58,8 +59,18 @@ const RundownContainer = (props: RundownContainerProps) => {
         onDragOver={props.onDragOver}
         onDragLeave={props.onDragLeave}
         onDrop={props.onDrop}
+        onCopySelectedRows={props.onCopySelectedRows}
+        onDeleteSelectedRows={props.onDeleteSelectedRows}
+        onPasteRows={props.onPasteRows}
+        onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
+        
+        // Required props for PlaybackControls within RundownMainContent
+        timeRemaining={props.timeRemaining}
+        isPlaying={props.isPlaying}
+        currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
+        totalDuration={props.totalRuntime}
         
         // Column management
         handleAddColumn={props.handleAddColumn}
