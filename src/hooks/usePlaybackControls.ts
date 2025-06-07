@@ -1,26 +1,81 @@
-import { useState, useRef, useEffect } from 'react';
+
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
+
+interface ShowcallerState {
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
+  lastPlayStartTime?: number;
+}
 
 export const usePlaybackControls = (
   items: RundownItem[],
-  updateItem: (id: string, field: string, value: string) => void
+  updateItem: (id: string, field: string, value: string) => void,
+  onShowcallerStateChange?: (state: ShowcallerState) => void,
+  externalShowcallerState?: ShowcallerState | null
 ) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncTimeRef = useRef<number>(0);
+
+  // Sync with external state when it changes (from real-time updates)
+  useEffect(() => {
+    if (externalShowcallerState && 
+        (externalShowcallerState.currentSegmentId !== currentSegmentId ||
+         externalShowcallerState.isPlaying !== isPlaying)) {
+      
+      console.log('📡 Syncing showcaller state from remote:', externalShowcallerState);
+      
+      setCurrentSegmentId(externalShowcallerState.currentSegmentId);
+      setIsPlaying(externalShowcallerState.isPlaying);
+      
+      // Calculate adjusted time remaining based on when the external play started
+      if (externalShowcallerState.isPlaying && externalShowcallerState.lastPlayStartTime) {
+        const timeSinceStart = Math.floor((Date.now() - externalShowcallerState.lastPlayStartTime) / 1000);
+        const adjustedTimeRemaining = Math.max(0, externalShowcallerState.timeRemaining - timeSinceStart);
+        setTimeRemaining(adjustedTimeRemaining);
+      } else {
+        setTimeRemaining(externalShowcallerState.timeRemaining);
+      }
+    }
+  }, [externalShowcallerState, currentSegmentId, isPlaying]);
+
+  // Broadcast state changes to other clients
+  const broadcastState = useCallback((newState: Partial<ShowcallerState>) => {
+    const fullState: ShowcallerState = {
+      isPlaying: newState.isPlaying ?? isPlaying,
+      currentSegmentId: newState.currentSegmentId ?? currentSegmentId,
+      timeRemaining: newState.timeRemaining ?? timeRemaining,
+      lastPlayStartTime: newState.isPlaying ? Date.now() : undefined
+    };
+    
+    // Only broadcast if this is our own change (prevent infinite loops)
+    const now = Date.now();
+    if (now - lastSyncTimeRef.current > 500) { // Debounce broadcasts
+      onShowcallerStateChange?.(fullState);
+      lastSyncTimeRef.current = now;
+    }
+  }, [isPlaying, currentSegmentId, timeRemaining, onShowcallerStateChange]);
 
   // Set default current segment to first non-header item (A1) on mount
   useEffect(() => {
-    if (!currentSegmentId && items.length > 0) {
+    if (!currentSegmentId && items.length > 0 && !externalShowcallerState) {
       const firstSegment = items.find(item => !isHeaderItem(item));
       if (firstSegment) {
         setCurrentSegmentId(firstSegment.id);
         const duration = timeToSeconds(firstSegment.duration);
         setTimeRemaining(duration);
+        broadcastState({
+          currentSegmentId: firstSegment.id,
+          timeRemaining: duration,
+          isPlaying: false
+        });
       }
     }
-  }, [items, currentSegmentId]);
+  }, [items, currentSegmentId, externalShowcallerState, broadcastState]);
 
   const timeToSeconds = (timeStr: string) => {
     if (!timeStr) return 0;
@@ -54,6 +109,10 @@ export const usePlaybackControls = (
       setCurrentSegmentId(segmentId);
       const duration = timeToSeconds(segment.duration);
       setTimeRemaining(duration);
+      broadcastState({
+        currentSegmentId: segmentId,
+        timeRemaining: duration
+      });
     }
   };
 
@@ -96,6 +155,11 @@ export const usePlaybackControls = (
               // No more segments, stop playback
               setIsPlaying(false);
               setCurrentSegmentId(null);
+              broadcastState({
+                isPlaying: false,
+                currentSegmentId: null,
+                timeRemaining: 0
+              });
               return 0;
             }
           }
@@ -129,11 +193,13 @@ export const usePlaybackControls = (
       setCurrentSegment(selectedSegmentId);
     }
     setIsPlaying(true);
+    broadcastState({ isPlaying: true });
     startTimer();
   };
 
   const pause = () => {
     setIsPlaying(false);
+    broadcastState({ isPlaying: false });
     stopTimer();
   };
 
@@ -172,14 +238,14 @@ export const usePlaybackControls = (
   }, []);
 
   useEffect(() => {
-    if (isPlaying && currentSegmentId) {
+    if (isPlaying && currentSegmentId && !externalShowcallerState?.isPlaying) {
       startTimer();
     } else {
       stopTimer();
     }
     
     return () => stopTimer();
-  }, [isPlaying, currentSegmentId]);
+  }, [isPlaying, currentSegmentId, externalShowcallerState?.isPlaying]);
 
   return {
     isPlaying,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -17,6 +16,7 @@ export const useSharedRundownState = () => {
     startTime: string;
     timezone?: string;
     lastUpdated?: string;
+    showcallerState?: any;
   } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,7 @@ export const useSharedRundownState = () => {
       // Try to access rundown without RLS enforcement
       const { data, error: queryError } = await supabase
         .from('rundowns')
-        .select('id, title, items, columns, start_time, timezone, created_at, updated_at')
+        .select('id, title, items, columns, start_time, timezone, showcaller_state, created_at, updated_at')
         .eq('id', rundownId)
         .single();
 
@@ -65,7 +65,8 @@ export const useSharedRundownState = () => {
           columns: data.columns || [],
           startTime: data.start_time || '09:00:00',
           timezone: data.timezone || 'UTC',
-          lastUpdated: data.updated_at
+          lastUpdated: data.updated_at,
+          showcallerState: data.showcaller_state || null
         };
         
         // Only update if data has actually changed
@@ -106,16 +107,18 @@ export const useSharedRundownState = () => {
     };
   }, [rundownId, loading]);
 
-  // Find the showcaller segment - look for the item with status 'current'
-  const currentSegmentId = rundownData?.items.find(item => 
-    item.type !== 'header' && item.status === 'current'
-  )?.id || null;
+  // Find the showcaller segment - prioritize showcaller state, fallback to status
+  const currentSegmentId = rundownData?.showcallerState?.currentSegmentId || 
+    rundownData?.items.find(item => 
+      item.type !== 'header' && item.status === 'current'
+    )?.id || null;
 
   return {
     rundownData,
     currentTime,
     currentSegmentId,
     loading,
-    error
+    error,
+    showcallerState: rundownData?.showcallerState
   };
 };

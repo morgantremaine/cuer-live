@@ -13,6 +13,7 @@ import { SavedRundown } from './useRundownStorage/types';
 
 export const useRundownGridCore = () => {
   const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
+  const [externalShowcallerState, setExternalShowcallerState] = useState<any>(null);
   
   // Create stable refs to prevent infinite loops
   const stableCallbacksRef = useRef<{
@@ -102,9 +103,29 @@ export const useRundownGridCore = () => {
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Handle external rundown updates from realtime
+  // Showcaller state change handler
+  const handleShowcallerStateChange = useCallback((showcallerState: any) => {
+    if (!isProcessingRealtimeUpdate && rundownId) {
+      console.log('📡 Broadcasting showcaller state change:', showcallerState);
+      // Save showcaller state to database for real-time sync
+      updateRundown(rundownId, {
+        showcaller_state: showcallerState
+      }).catch(error => {
+        console.error('Failed to update showcaller state:', error);
+      });
+    }
+  }, [rundownId, isProcessingRealtimeUpdate, updateRundown]);
+
+  // Handle external rundown updates from realtime (updated to include showcaller state)
   const handleRundownUpdated = useCallback((updatedRundown: SavedRundown) => {
     console.log('🔄 Applying realtime rundown update');
+    
+    // Update showcaller state if changed
+    if (updatedRundown.showcaller_state && 
+        JSON.stringify(updatedRundown.showcaller_state) !== JSON.stringify(externalShowcallerState)) {
+      console.log('🔄 Updating showcaller state from realtime');
+      setExternalShowcallerState(updatedRundown.showcaller_state);
+    }
     
     // Update title if changed
     if (updatedRundown.title !== rundownTitle) {
@@ -139,7 +160,7 @@ export const useRundownGridCore = () => {
     
     // Refresh the rundowns list to ensure dashboard is updated
     stableCallbacksRef.current.loadRundowns?.();
-  }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory]);
+  }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory, externalShowcallerState]);
 
   // Set up realtime collaboration with updateSavedSignature and setApplyingRemoteUpdate
   const { isConnected } = useRealtimeRundown({
@@ -172,6 +193,7 @@ export const useRundownGridCore = () => {
     ...stableDataLoaderCallbacks
   });
 
+  // Enhanced playback controls with real-time sync
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -180,7 +202,12 @@ export const useRundownGridCore = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(items, updateItem);
+  } = usePlaybackControls(
+    items, 
+    updateItem, 
+    handleShowcallerStateChange, 
+    externalShowcallerState
+  );
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
@@ -360,8 +387,8 @@ export const useRundownGridCore = () => {
 
     // Playback
     isPlaying,
-    currentSegmentId,
-    timeRemaining,
+    currentSegmentId: externalShowcallerState?.currentSegmentId ?? currentSegmentId,
+    timeRemaining: externalShowcallerState?.timeRemaining ?? timeRemaining,
     play,
     pause,
     forward,
