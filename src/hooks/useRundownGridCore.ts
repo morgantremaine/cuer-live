@@ -7,9 +7,13 @@ import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownUndo } from './useRundownUndo';
 import { useTimeCalculations } from './useTimeCalculations';
 import { usePlaybackControls } from './usePlaybackControls';
+import { useRealtimeRundownSync } from './useRealtimeRundownSync';
+import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
+  const { user } = useAuth();
+  
   // Router hooks
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -34,6 +38,18 @@ export const useRundownGridCore = () => {
     timezone,
     rundownStartTime
   );
+
+  // Real-time sync with proper state setters
+  const { updateLastUpdateTime } = useRealtimeRundownSync({
+    rundownId,
+    currentUserId: user?.id || null,
+    setItems: stateIntegration.setItems,
+    setRundownTitle,
+    setTimezone,
+    setRundownStartTime,
+    handleLoadLayout: stateIntegration.handleLoadLayout,
+    markAsChanged: stateIntegration.markAsChanged
+  });
 
   // Time calculations
   const timeCalculations = useTimeCalculations(
@@ -117,7 +133,7 @@ export const useRundownGridCore = () => {
     forward: playbackControls.forward,
     backward: playbackControls.backward,
 
-    // Collaboration (placeholders for now)
+    // Collaboration
     isConnected: true,
     hasPendingChanges: false,
     isEditing: false,
