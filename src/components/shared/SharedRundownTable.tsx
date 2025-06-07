@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -70,7 +71,6 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
           {items.map((item, index) => {
-            // Check if this is the currently playing segment (showcaller)
             const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
             
@@ -176,7 +176,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-2 bg-yellow-500 mx-2 rounded-sm flex-1"></div>
+                        <div className="h-1 bg-yellow-500 mx-2 rounded-sm flex-1"></div>
                       </div>
                     </td>
                   </tr>

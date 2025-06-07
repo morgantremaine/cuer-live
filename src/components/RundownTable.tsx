@@ -161,7 +161,7 @@ const RundownTable = ({
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-2 bg-yellow-500 mx-2 rounded-sm flex-1"></div>
+                        <div className="h-1 bg-yellow-500 mx-2 rounded-sm flex-1"></div>
                       </div>
                     </td>
                   </tr>
