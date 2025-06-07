@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
@@ -104,7 +103,7 @@ const DashboardRundownGrid = ({
       segmentCount: headers.length,
       itemCount: contentItems.length,
       totalDuration: calculateTotalDuration(items),
-      firstItems: contentItems.slice(0, 3).map(item => item.title || item.description || 'Untitled').filter(Boolean)
+      firstItems: contentItems.slice(0, 3).map(item => item.name || item.script || 'Untitled').filter(Boolean)
     }
   }
 
