@@ -154,8 +154,8 @@ export const useRundownGridCore = () => {
       }
     }
     
-    // Update title if changed - prevent overwriting with same title
-    if (updatedRundown.title && updatedRundown.title !== rundownTitle) {
+    // Update title if changed - prevent overwriting with same title ONLY if user is not editing
+    if (updatedRundown.title && updatedRundown.title !== rundownTitle && !isEditing) {
       console.log('🔄 Updating title from realtime:', updatedRundown.title);
       stableCallbacksRef.current.setRundownTitleDirectly?.(updatedRundown.title);
     }
@@ -191,7 +191,7 @@ export const useRundownGridCore = () => {
     
     // Refresh the rundowns list to ensure dashboard is updated
     stableCallbacksRef.current.loadRundowns?.();
-  }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory, externalShowcallerState]);
+  }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory, externalShowcallerState, isEditing]);
 
   // Set up realtime collaboration with updateSavedSignature, setApplyingRemoteUpdate AND setIgnoreShowcallerChanges
   const { isConnected } = useRealtimeRundown({
@@ -202,7 +202,8 @@ export const useRundownGridCore = () => {
     setIsProcessingUpdate: setIsProcessingRealtimeUpdate,
     updateSavedSignature,
     setApplyingRemoteUpdate,
-    setIgnoreShowcallerChanges
+    setIgnoreShowcallerChanges,
+    isEditing
   });
 
   const stableDataLoaderCallbacks = useMemo(() => ({

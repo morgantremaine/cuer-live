@@ -14,6 +14,7 @@ interface UseRealtimeRundownProps {
   updateSavedSignature?: (items: any[], title: string, columns?: any[], timezone?: string, startTime?: string) => void;
   setApplyingRemoteUpdate?: (applying: boolean) => void;
   setIgnoreShowcallerChanges?: (ignore: boolean) => void;
+  isEditing?: boolean;
 }
 
 export const useRealtimeRundown = ({
@@ -24,7 +25,8 @@ export const useRealtimeRundown = ({
   setIsProcessingUpdate,
   updateSavedSignature,
   setApplyingRemoteUpdate,
-  setIgnoreShowcallerChanges
+  setIgnoreShowcallerChanges,
+  isEditing = false
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -92,7 +94,25 @@ export const useRealtimeRundown = ({
     const isShowcallerOnlyUpdate = payload.new?.showcaller_state && 
       payload.old?.title === payload.new?.title &&
       JSON.stringify(payload.old?.items) === JSON.stringify(payload.new?.items) &&
-      JSON.stringify(payload.old?.columns) === JSON.stringify(payload.new?.columns);
+      JSON.stringify(payload.old?.columns) === JSON.stringify(payload.new?.columns) &&
+      payload.old?.timezone === payload.new?.timezone &&
+      payload.old?.start_time === payload.new?.start_time;
+
+    console.log('🔍 Update analysis:', {
+      isShowcallerOnly: isShowcallerOnlyUpdate,
+      titleChanged: payload.old?.title !== payload.new?.title,
+      itemsChanged: JSON.stringify(payload.old?.items) !== JSON.stringify(payload.new?.items),
+      columnsChanged: JSON.stringify(payload.old?.columns) !== JSON.stringify(payload.new?.columns),
+      isEditing,
+      hasUnsavedChanges
+    });
+
+    // Skip title updates if user is currently editing the title
+    const titleChanged = payload.old?.title !== payload.new?.title;
+    if (titleChanged && isEditing) {
+      console.log('⏭️ Skipping title update - user is currently editing');
+      return;
+    }
 
     // CRITICAL: Set all processing flags FIRST with enhanced coordination
     stableSetIsProcessingUpdateRef.current(true);
@@ -238,7 +258,7 @@ export const useRealtimeRundown = ({
         stableSetIsProcessingUpdateRef.current(false);
       }, 300); // Reduced delay for better responsiveness
     }
-  }, [rundownId, user?.id, hasUnsavedChanges, toast]);
+  }, [rundownId, user?.id, hasUnsavedChanges, isEditing, toast]);
 
   useEffect(() => {
     // Clear any existing subscription

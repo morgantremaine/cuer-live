@@ -21,33 +21,50 @@ export const usePlaybackControls = (
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncTimeRef = useRef<number>(0);
   const lastPlayStartTimeRef = useRef<number | undefined>(undefined);
+  const isProcessingExternalUpdateRef = useRef(false);
 
   // Sync with external state when it changes (from real-time updates)
   useEffect(() => {
-    if (externalShowcallerState && 
-        (externalShowcallerState.currentSegmentId !== currentSegmentId ||
-         externalShowcallerState.isPlaying !== isPlaying)) {
-      
-      console.log('📡 Syncing showcaller state from remote:', externalShowcallerState);
-      
-      setCurrentSegmentId(externalShowcallerState.currentSegmentId);
-      setIsPlaying(externalShowcallerState.isPlaying);
-      
-      // Calculate adjusted time remaining based on when the external play started
-      if (externalShowcallerState.isPlaying && externalShowcallerState.lastPlayStartTime) {
-        const timeSinceStart = Math.floor((Date.now() - externalShowcallerState.lastPlayStartTime) / 1000);
-        const adjustedTimeRemaining = Math.max(0, externalShowcallerState.timeRemaining - timeSinceStart);
-        setTimeRemaining(adjustedTimeRemaining);
-        lastPlayStartTimeRef.current = externalShowcallerState.lastPlayStartTime;
-      } else {
-        setTimeRemaining(externalShowcallerState.timeRemaining);
-        lastPlayStartTimeRef.current = undefined;
+    if (externalShowcallerState && !isProcessingExternalUpdateRef.current) {
+      const hasStateChanged = (
+        externalShowcallerState.currentSegmentId !== currentSegmentId ||
+        externalShowcallerState.isPlaying !== isPlaying ||
+        Math.abs(externalShowcallerState.timeRemaining - timeRemaining) > 2
+      );
+
+      if (hasStateChanged) {
+        console.log('📡 Syncing showcaller state from remote:', externalShowcallerState);
+        
+        isProcessingExternalUpdateRef.current = true;
+        
+        setCurrentSegmentId(externalShowcallerState.currentSegmentId);
+        setIsPlaying(externalShowcallerState.isPlaying);
+        
+        // Calculate adjusted time remaining based on when the external play started
+        if (externalShowcallerState.isPlaying && externalShowcallerState.lastPlayStartTime) {
+          const timeSinceStart = Math.floor((Date.now() - externalShowcallerState.lastPlayStartTime) / 1000);
+          const adjustedTimeRemaining = Math.max(0, externalShowcallerState.timeRemaining - timeSinceStart);
+          setTimeRemaining(adjustedTimeRemaining);
+          lastPlayStartTimeRef.current = externalShowcallerState.lastPlayStartTime;
+        } else {
+          setTimeRemaining(externalShowcallerState.timeRemaining);
+          lastPlayStartTimeRef.current = undefined;
+        }
+
+        // Allow state changes again after a brief delay
+        setTimeout(() => {
+          isProcessingExternalUpdateRef.current = false;
+        }, 100);
       }
     }
-  }, [externalShowcallerState, currentSegmentId, isPlaying]);
+  }, [externalShowcallerState, currentSegmentId, isPlaying, timeRemaining]);
 
   // Broadcast state changes to other clients
   const broadcastState = useCallback((newState: Partial<ShowcallerState>) => {
+    if (isProcessingExternalUpdateRef.current) {
+      return; // Don't broadcast during external updates
+    }
+
     const fullState: ShowcallerState = {
       isPlaying: newState.isPlaying ?? isPlaying,
       currentSegmentId: newState.currentSegmentId ?? currentSegmentId,
@@ -58,6 +75,7 @@ export const usePlaybackControls = (
     // Only broadcast if this is our own change (prevent infinite loops)
     const now = Date.now();
     if (now - lastSyncTimeRef.current > 500) { // Debounce broadcasts
+      console.log('📡 Preparing showcaller state change:', fullState);
       onShowcallerStateChange?.(fullState);
       lastSyncTimeRef.current = now;
     }
@@ -105,6 +123,8 @@ export const usePlaybackControls = (
   };
 
   const setCurrentSegment = (segmentId: string) => {
+    if (isProcessingExternalUpdateRef.current) return;
+
     clearCurrentStatus();
     const segment = items.find(item => item.id === segmentId);
     if (segment && !isHeaderItem(segment)) {
@@ -139,7 +159,7 @@ export const usePlaybackControls = (
     return null;
   };
 
-  const startTimer = () => {
+  const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
@@ -147,9 +167,12 @@ export const usePlaybackControls = (
     // Store when playback started for external sync
     lastPlayStartTimeRef.current = Date.now();
 
+    console.log('🎬 Starting timer for segment:', currentSegmentId, 'with time:', timeRemaining);
+
     timerRef.current = setInterval(() => {
       setTimeRemaining(prev => {
         const newTime = prev - 1;
+        console.log('⏱️ Timer tick:', newTime);
         
         if (newTime <= 0) {
           // Time's up, mark current as completed and move to next segment
@@ -176,7 +199,7 @@ export const usePlaybackControls = (
         }
         
         // Broadcast updated time occasionally
-        if (newTime % 5 === 0) { // Every 5 seconds
+        if (newTime % 10 === 0) { // Every 10 seconds
           broadcastState({
             timeRemaining: newTime,
             isPlaying: true
@@ -186,17 +209,22 @@ export const usePlaybackControls = (
         return newTime;
       });
     }, 1000);
-  };
+  }, [currentSegmentId, timeRemaining, updateItem, broadcastState]);
 
-  const stopTimer = () => {
+  const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
     lastPlayStartTimeRef.current = undefined;
-  };
+    console.log('⏹️ Timer stopped');
+  }, []);
 
-  const play = (selectedSegmentId?: string) => {
+  const play = useCallback((selectedSegmentId?: string) => {
+    if (isProcessingExternalUpdateRef.current) return;
+
+    console.log('▶️ Play called with segment:', selectedSegmentId);
+
     if (selectedSegmentId) {
       // Mark all segments before the selected one as upcoming
       const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
@@ -211,20 +239,29 @@ export const usePlaybackControls = (
       });
       setCurrentSegment(selectedSegmentId);
     }
+    
     setIsPlaying(true);
     lastPlayStartTimeRef.current = Date.now();
-    broadcastState({ isPlaying: true, lastPlayStartTime: lastPlayStartTimeRef.current });
+    broadcastState({ 
+      isPlaying: true, 
+      lastPlayStartTime: lastPlayStartTimeRef.current 
+    });
     startTimer();
-  };
+  }, [items, setCurrentSegment, broadcastState, startTimer]);
 
-  const pause = () => {
+  const pause = useCallback(() => {
+    if (isProcessingExternalUpdateRef.current) return;
+
+    console.log('⏸️ Pause called');
     setIsPlaying(false);
     lastPlayStartTimeRef.current = undefined;
     broadcastState({ isPlaying: false });
     stopTimer();
-  };
+  }, [broadcastState, stopTimer]);
 
-  const forward = () => {
+  const forward = useCallback(() => {
+    if (isProcessingExternalUpdateRef.current) return;
+
     if (currentSegmentId) {
       const nextSegment = getNextSegment(currentSegmentId);
       if (nextSegment) {
@@ -236,9 +273,11 @@ export const usePlaybackControls = (
         }
       }
     }
-  };
+  }, [currentSegmentId, isPlaying, updateItem, setCurrentSegment, startTimer]);
 
-  const backward = () => {
+  const backward = useCallback(() => {
+    if (isProcessingExternalUpdateRef.current) return;
+
     if (currentSegmentId) {
       const prevSegment = getPreviousSegment(currentSegmentId);
       if (prevSegment) {
@@ -250,7 +289,18 @@ export const usePlaybackControls = (
         }
       }
     }
-  };
+  }, [currentSegmentId, isPlaying, updateItem, setCurrentSegment, startTimer]);
+
+  // Auto-start timer when playing state changes to true
+  useEffect(() => {
+    if (isPlaying && currentSegmentId && !timerRef.current && !isProcessingExternalUpdateRef.current) {
+      console.log('🚀 Auto-starting timer due to isPlaying change');
+      startTimer();
+    } else if (!isPlaying && timerRef.current) {
+      console.log('🛑 Auto-stopping timer due to isPlaying change');
+      stopTimer();
+    }
+  }, [isPlaying, currentSegmentId, startTimer, stopTimer]);
 
   useEffect(() => {
     return () => {
@@ -259,16 +309,6 @@ export const usePlaybackControls = (
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (isPlaying && currentSegmentId && !externalShowcallerState?.isPlaying) {
-      startTimer();
-    } else if (!isPlaying || externalShowcallerState?.isPlaying === false) {
-      stopTimer();
-    }
-    
-    return () => stopTimer();
-  }, [isPlaying, currentSegmentId, externalShowcallerState?.isPlaying]);
 
   return {
     isPlaying,
