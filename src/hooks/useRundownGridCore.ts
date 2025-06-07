@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -61,7 +60,7 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Rundown data integration with passing setApplyingRemoteUpdate
+  // Rundown data integration with passing setApplyingRemoteUpdate AND setIgnoreShowcallerChanges
   const {
     items,
     setItems,
@@ -87,7 +86,8 @@ export const useRundownGridCore = () => {
     hasUnsavedChanges,
     isSaving,
     setApplyingRemoteUpdate,
-    updateSavedSignature
+    updateSavedSignature,
+    setIgnoreShowcallerChanges
   } = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
@@ -119,6 +119,9 @@ export const useRundownGridCore = () => {
       clearTimeout(showcallerUpdateTimerRef.current);
     }
 
+    // Temporarily ignore showcaller changes to prevent unsaved changes detection
+    setIgnoreShowcallerChanges?.(true);
+
     // Debounce the showcaller state updates
     showcallerUpdateTimerRef.current = setTimeout(() => {
       console.log('📡 Broadcasting showcaller state change:', showcallerState);
@@ -126,9 +129,14 @@ export const useRundownGridCore = () => {
         showcaller_state: showcallerState
       }).catch(error => {
         console.error('Failed to update showcaller state:', error);
+      }).finally(() => {
+        // Re-enable change detection after showcaller update
+        setTimeout(() => {
+          setIgnoreShowcallerChanges?.(false);
+        }, 500);
       });
     }, 200); // Reduced debounce for better responsiveness
-  }, [rundownId, isProcessingRealtimeUpdate, updateRundown]);
+  }, [rundownId, isProcessingRealtimeUpdate, updateRundown, setIgnoreShowcallerChanges]);
 
   // Handle external rundown updates from realtime with better showcaller handling
   const handleRundownUpdated = useCallback((updatedRundown: SavedRundown) => {
@@ -146,8 +154,8 @@ export const useRundownGridCore = () => {
       }
     }
     
-    // Update title if changed
-    if (updatedRundown.title !== rundownTitle) {
+    // Update title if changed - prevent overwriting with same title
+    if (updatedRundown.title && updatedRundown.title !== rundownTitle) {
       console.log('🔄 Updating title from realtime:', updatedRundown.title);
       stableCallbacksRef.current.setRundownTitleDirectly?.(updatedRundown.title);
     }
@@ -185,7 +193,7 @@ export const useRundownGridCore = () => {
     stableCallbacksRef.current.loadRundowns?.();
   }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory, externalShowcallerState]);
 
-  // Set up realtime collaboration with updateSavedSignature and setApplyingRemoteUpdate
+  // Set up realtime collaboration with updateSavedSignature, setApplyingRemoteUpdate AND setIgnoreShowcallerChanges
   const { isConnected } = useRealtimeRundown({
     rundownId,
     onRundownUpdated: handleRundownUpdated,
@@ -193,7 +201,8 @@ export const useRundownGridCore = () => {
     isProcessingUpdate: isProcessingRealtimeUpdate,
     setIsProcessingUpdate: setIsProcessingRealtimeUpdate,
     updateSavedSignature,
-    setApplyingRemoteUpdate
+    setApplyingRemoteUpdate,
+    setIgnoreShowcallerChanges
   });
 
   const stableDataLoaderCallbacks = useMemo(() => ({

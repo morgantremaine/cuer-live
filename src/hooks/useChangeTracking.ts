@@ -21,8 +21,9 @@ export const useChangeTracking = (
   const realtimeCooldownRef = useRef<NodeJS.Timeout | null>(null);
   const isInRealtimeCooldown = useRef(false);
   const lastProcessingFlagClearTime = useRef<number>(0);
+  const ignoreShowcallerChangesRef = useRef(false);
 
-  // Create a stable signature for the current data
+  // Create a stable signature for the current data (excluding showcaller state for change detection)
   const createDataSignature = useCallback(() => {
     return JSON.stringify({
       items: items || [],
@@ -30,6 +31,7 @@ export const useChangeTracking = (
       columns: columns || [],
       timezone: timezone || '',
       startTime: startTime || ''
+      // Deliberately exclude showcaller state from change detection
     });
   }, [items, rundownTitle, columns, timezone, startTime]);
 
@@ -63,7 +65,8 @@ export const useChangeTracking = (
         isLoading || 
         isProcessingRealtimeUpdate || 
         isApplyingRemoteUpdateRef.current ||
-        isInRealtimeCooldown.current) {
+        isInRealtimeCooldown.current ||
+        ignoreShowcallerChangesRef.current) {
       return;
     }
 
@@ -104,7 +107,8 @@ export const useChangeTracking = (
         !isLoading && 
         !isProcessingRealtimeUpdate && 
         !isApplyingRemoteUpdateRef.current &&
-        !isInRealtimeCooldown.current) {
+        !isInRealtimeCooldown.current &&
+        !ignoreShowcallerChangesRef.current) {
       setHasUnsavedChanges(true);
     }
   }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
@@ -157,6 +161,11 @@ export const useChangeTracking = (
     }
   }, []);
 
+  // NEW: Method to ignore showcaller-only changes
+  const setIgnoreShowcallerChanges = useCallback((ignore: boolean) => {
+    ignoreShowcallerChangesRef.current = ignore;
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -174,6 +183,7 @@ export const useChangeTracking = (
     isInitialized,
     setIsLoading,
     updateSavedSignature,
-    setApplyingRemoteUpdate
+    setApplyingRemoteUpdate,
+    setIgnoreShowcallerChanges
   };
 };

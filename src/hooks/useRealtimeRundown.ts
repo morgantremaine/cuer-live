@@ -13,6 +13,7 @@ interface UseRealtimeRundownProps {
   setIsProcessingUpdate: (processing: boolean) => void;
   updateSavedSignature?: (items: any[], title: string, columns?: any[], timezone?: string, startTime?: string) => void;
   setApplyingRemoteUpdate?: (applying: boolean) => void;
+  setIgnoreShowcallerChanges?: (ignore: boolean) => void;
 }
 
 export const useRealtimeRundown = ({
@@ -22,7 +23,8 @@ export const useRealtimeRundown = ({
   isProcessingUpdate,
   setIsProcessingUpdate,
   updateSavedSignature,
-  setApplyingRemoteUpdate
+  setApplyingRemoteUpdate,
+  setIgnoreShowcallerChanges
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -38,12 +40,14 @@ export const useRealtimeRundown = ({
   const stableSetIsProcessingUpdateRef = useRef(setIsProcessingUpdate);
   const stableUpdateSavedSignatureRef = useRef(updateSavedSignature);
   const stableSetApplyingRemoteUpdateRef = useRef(setApplyingRemoteUpdate);
+  const stableSetIgnoreShowcallerChangesRef = useRef(setIgnoreShowcallerChanges);
   
   // Update refs when functions change
   stableOnRundownUpdatedRef.current = onRundownUpdated;
   stableSetIsProcessingUpdateRef.current = setIsProcessingUpdate;
   stableUpdateSavedSignatureRef.current = updateSavedSignature;
   stableSetApplyingRemoteUpdateRef.current = setApplyingRemoteUpdate;
+  stableSetIgnoreShowcallerChangesRef.current = setIgnoreShowcallerChanges;
 
   // Enhanced tracking of our own updates
   const trackOwnUpdate = useCallback((timestamp: string) => {
@@ -84,15 +88,26 @@ export const useRealtimeRundown = ({
     }
     lastUpdateTimestampRef.current = updateTimestamp;
 
+    // Check if this is a showcaller-only update
+    const isShowcallerOnlyUpdate = payload.new?.showcaller_state && 
+      payload.old?.title === payload.new?.title &&
+      JSON.stringify(payload.old?.items) === JSON.stringify(payload.new?.items) &&
+      JSON.stringify(payload.old?.columns) === JSON.stringify(payload.new?.columns);
+
     // CRITICAL: Set all processing flags FIRST with enhanced coordination
     stableSetIsProcessingUpdateRef.current(true);
     if (stableSetApplyingRemoteUpdateRef.current) {
       stableSetApplyingRemoteUpdateRef.current(true);
     }
 
+    // For showcaller-only updates, ignore unsaved changes detection
+    if (isShowcallerOnlyUpdate && stableSetIgnoreShowcallerChangesRef.current) {
+      stableSetIgnoreShowcallerChangesRef.current(true);
+    }
+
     try {
-      // Enhanced conflict resolution with better UX
-      if (hasUnsavedChanges) {
+      // Enhanced conflict resolution - only for non-showcaller updates
+      if (hasUnsavedChanges && !isShowcallerOnlyUpdate) {
         const result = await new Promise<boolean>((resolve) => {
           const shouldAcceptRemoteChanges = window.confirm(
             `🔄 Another team member just updated this rundown.\n\n` +
@@ -157,8 +172,8 @@ export const useRealtimeRundown = ({
 
       console.log('🔄 Transformed rundown data:', updatedRundown);
 
-      // CRITICAL: Enhanced signature synchronization
-      if (stableUpdateSavedSignatureRef.current) {
+      // CRITICAL: Enhanced signature synchronization - exclude showcaller state
+      if (stableUpdateSavedSignatureRef.current && !isShowcallerOnlyUpdate) {
         // Use setTimeout to ensure this happens before any change detection
         setTimeout(() => {
           stableUpdateSavedSignatureRef.current?.(
@@ -175,7 +190,7 @@ export const useRealtimeRundown = ({
       stableOnRundownUpdatedRef.current(updatedRundown);
 
       // CRITICAL: Post-application signature sync with delay for state settling
-      if (stableUpdateSavedSignatureRef.current) {
+      if (stableUpdateSavedSignatureRef.current && !isShowcallerOnlyUpdate) {
         setTimeout(() => {
           stableUpdateSavedSignatureRef.current?.(
             updatedRundown.items, 
@@ -217,8 +232,11 @@ export const useRealtimeRundown = ({
         if (stableSetApplyingRemoteUpdateRef.current) {
           stableSetApplyingRemoteUpdateRef.current(false);
         }
+        if (stableSetIgnoreShowcallerChangesRef.current) {
+          stableSetIgnoreShowcallerChangesRef.current(false);
+        }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 500); // Reduced delay for better responsiveness
+      }, 300); // Reduced delay for better responsiveness
     }
   }, [rundownId, user?.id, hasUnsavedChanges, toast]);
 

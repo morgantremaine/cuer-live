@@ -1,160 +1,131 @@
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useAuth } from './useAuth';
+import { useRundownStorage } from './useRundownStorage';
+import { useRundownBasicState } from './useRundownBasicState';
+import { useChangeTracking } from './useChangeTracking';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
-import { useAutoSaveOperations } from './useAutoSaveOperations';
-import { useChangeTracking } from './useChangeTracking';
 
 export const useAutoSave = (
-  items: RundownItem[], 
-  rundownTitle: string, 
-  columns?: Column[], 
-  timezone?: string, 
-  startTime?: string,
+  items: RundownItem[],
+  rundownTitle: string,
+  columns: Column[],
+  timezone: string,
+  rundownStartTime: string,
   isProcessingRealtimeUpdate?: boolean
 ) => {
-  const { user } = useAuth();
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { rundownId } = useRundownBasicState();
+  const { updateRundown } = useRundownStorage();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
-  const saveInProgressRef = useRef(false);
-  const lastSaveTimestampRef = useRef<number>(0);
+  const [isSaving, setIsSaving] = React.useState(false);
 
-  const { isSaving, performSave } = useAutoSaveOperations();
-  const { 
-    hasUnsavedChanges, 
-    setHasUnsavedChanges, 
-    markAsSaved, 
-    markAsChanged,
-    isInitialized,
-    setIsLoading,
+  const {
+    hasUnsavedChanges,
+    markAsSaved,
+    updateSavedSignature,
     setApplyingRemoteUpdate,
-    updateSavedSignature
-  } = useChangeTracking(items, rundownTitle, columns, timezone, startTime, isProcessingRealtimeUpdate);
+    setIgnoreShowcallerChanges
+  } = useChangeTracking(
+    items,
+    rundownTitle,
+    columns,
+    timezone,
+    rundownStartTime,
+    isProcessingRealtimeUpdate
+  );
 
-  // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (
-    itemsToSave: RundownItem[], 
-    titleToSave: string, 
-    columnsToSave?: Column[], 
-    timezoneToSave?: string, 
-    startTimeToSave?: string
-  ) => {
-    // CRITICAL: Enhanced blocking conditions
-    if (!user || 
-        isSaving || 
-        isProcessingRealtimeUpdate || 
-        saveInProgressRef.current) {
+  // Auto-save function with enhanced data validation
+  const performAutoSave = useCallback(async () => {
+    if (!rundownId || isProcessingRealtimeUpdate) {
       return;
     }
 
-    // Prevent rapid-fire saves with minimum interval
-    const now = Date.now();
-    if (now - lastSaveTimestampRef.current < 1000) {
+    // Create current data signature for comparison
+    const currentData = {
+      title: rundownTitle,
+      items: items || [],
+      columns: columns || [],
+      timezone,
+      start_time: rundownStartTime
+    };
+
+    const currentSignature = JSON.stringify(currentData);
+
+    // Skip if data hasn't changed since last save
+    if (currentSignature === lastSaveDataRef.current) {
       return;
     }
 
-    // Mark as loading to prevent change detection during save
-    setIsLoading(true);
-    saveInProgressRef.current = true;
-    lastSaveTimestampRef.current = now;
+    console.log('💾 Auto-saving rundown...', {
+      rundownId,
+      title: rundownTitle,
+      itemsCount: items?.length || 0,
+      timezone,
+      startTime: rundownStartTime
+    });
+
+    setIsSaving(true);
 
     try {
-      const success = await performSave(
-        itemsToSave, 
-        titleToSave, 
-        columnsToSave, 
-        timezoneToSave, 
-        startTimeToSave
-      );
-      
-      if (success) {
-        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
-      } else {
-        setHasUnsavedChanges(true);
-      }
+      // Only save actual content changes, not showcaller state
+      await updateRundown(rundownId, {
+        title: rundownTitle,
+        items: items || [],
+        columns: columns || [],
+        timezone,
+        start_time: rundownStartTime
+      });
+
+      // Update our tracking
+      lastSaveDataRef.current = currentSignature;
+      markAsSaved(items, rundownTitle, columns, timezone, rundownStartTime);
+
+      console.log('✅ Auto-save completed successfully');
     } catch (error) {
-      console.error('Auto-save error:', error);
-      setHasUnsavedChanges(true);
+      console.error('❌ Auto-save failed:', error);
     } finally {
-      setIsLoading(false);
-      saveInProgressRef.current = false;
+      setIsSaving(false);
     }
-  }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
+  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, markAsSaved, isProcessingRealtimeUpdate]);
 
-  // Main effect that schedules saves with enhanced protection
+  // Auto-save effect with debouncing
   useEffect(() => {
-    // CRITICAL: Multiple blocking conditions
-    if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-        debounceTimeoutRef.current = null;
+    if (!hasUnsavedChanges || isProcessingRealtimeUpdate) {
+      return;
+    }
+
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set a new timeout for auto-save
+    saveTimeoutRef.current = setTimeout(() => {
+      performAutoSave();
+    }, 2000); // 2 second delay
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-      return;
-    }
-
-    // Don't auto-save if not ready
-    if (!hasUnsavedChanges || !isInitialized || !user) {
-      return;
-    }
-
-    // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
-    
-    // Only schedule if data actually changed
-    if (lastSaveDataRef.current === currentDataSignature) {
-      return;
-    }
-
-    lastSaveDataRef.current = currentDataSignature;
-
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Schedule new save with additional checks
-    debounceTimeoutRef.current = setTimeout(() => {
-      // Final comprehensive check when timeout fires
-      if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
-        debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
-      }
-      debounceTimeoutRef.current = null;
-    }, 3000); // 3 seconds for better stability
-
-  }, [
-    hasUnsavedChanges, 
-    isInitialized, 
-    user, 
-    items, 
-    rundownTitle, 
-    columns, 
-    timezone, 
-    startTime, 
-    debouncedSave, 
-    isProcessingRealtimeUpdate
-  ]);
+    };
+  }, [hasUnsavedChanges, performAutoSave, isProcessingRealtimeUpdate]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
   }, []);
 
-  const markAsChangedCallback = () => {
-    if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
-      markAsChanged();
-    }
-  };
-
   return {
-    hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
-    isSaving: isSaving || saveInProgressRef.current,
-    markAsChanged: markAsChangedCallback,
+    hasUnsavedChanges,
+    isSaving,
     setApplyingRemoteUpdate,
-    updateSavedSignature
+    updateSavedSignature,
+    setIgnoreShowcallerChanges
   };
 };
