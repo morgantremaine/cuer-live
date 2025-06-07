@@ -63,14 +63,18 @@ export const useAutoSave = (
       return;
     }
 
-    // For new rundowns, only save once the user has made meaningful changes
-    if (!rundownId && !hasAttemptedSaveRef.current) {
-      // Check if this is just the initial state - skip if it's just the default title
-      if (rundownTitle === 'Live Broadcast Rundown' && items.length <= 3) {
-        console.log('⏭️ Skipping auto-save - initial default state');
+    // For new rundowns, check if there's meaningful content before saving
+    if (!rundownId) {
+      // Skip saving if it's just the default state with minimal content
+      if (rundownTitle === 'Live Broadcast Rundown' && (!items || items.length <= 3)) {
+        console.log('⏭️ Skipping auto-save - insufficient content for new rundown');
         return;
       }
-      hasAttemptedSaveRef.current = true;
+      
+      // Mark that we've attempted to save to prevent duplicate attempts
+      if (!hasAttemptedSaveRef.current) {
+        hasAttemptedSaveRef.current = true;
+      }
     }
 
     console.log('💾 Auto-saving rundown...', {
@@ -98,23 +102,23 @@ export const useAutoSave = (
       } else {
         // Save new rundown and navigate to it
         const newRundown = {
-          id: '',
-          user_id: '',
+          id: '', // Let the database generate this
+          user_id: '', // Will be set by saveRundown
           title: rundownTitle || 'Untitled Rundown',
           items: items || [],
           columns: columns || [],
-          timezone,
-          start_time: rundownStartTime,
+          timezone: timezone || 'UTC',
+          start_time: rundownStartTime || '09:00',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          archived: false
+          archived: false,
+          undo_history: []
         };
         
-        console.log('💾 Creating new rundown...');
+        console.log('💾 Creating new rundown with data:', newRundown);
         const newRundownId = await saveRundown(newRundown);
         console.log('✅ New rundown created successfully:', newRundownId);
         
-        // CRITICAL: Navigate to the new rundown to update the URL and rundownId
         if (newRundownId) {
           isNavigatingRef.current = true;
           console.log('🚀 Navigating to new rundown:', newRundownId);
@@ -123,7 +127,7 @@ export const useAutoSave = (
           // Reset navigation flag after a brief delay
           setTimeout(() => {
             isNavigatingRef.current = false;
-            hasAttemptedSaveRef.current = false; // Reset for next time
+            hasAttemptedSaveRef.current = false;
           }, 1000);
         }
       }
@@ -134,6 +138,7 @@ export const useAutoSave = (
 
     } catch (error) {
       console.error('❌ Auto-save failed:', error);
+      hasAttemptedSaveRef.current = false; // Reset on failure to allow retry
     } finally {
       setIsSaving(false);
     }
@@ -148,7 +153,8 @@ export const useAutoSave = (
     console.log('🔄 Changes detected, scheduling auto-save...', {
       hasUnsavedChanges,
       rundownId,
-      title: rundownTitle
+      title: rundownTitle,
+      itemsLength: items?.length || 0
     });
 
     // Clear any existing timeout
