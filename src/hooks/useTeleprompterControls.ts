@@ -34,10 +34,10 @@ export const useTeleprompterControls = () => {
           break;
         
         case 'ArrowLeft':
-        case 'ArrowDown':
-          // Increase speed (move right in speed array)
+        case 'ArrowUp':
+          // Decrease speed (move left in speed array)
           setCurrentSpeedIndex(prevIndex => {
-            const newIndex = Math.min(speedSteps.length - 1, prevIndex + 1);
+            const newIndex = Math.max(0, prevIndex - 1);
             const newSpeed = speedSteps[newIndex];
             setScrollSpeed(Math.abs(newSpeed)); // Store absolute value for scroll hook
             
@@ -53,10 +53,10 @@ export const useTeleprompterControls = () => {
           break;
         
         case 'ArrowRight':
-        case 'ArrowUp':
-          // Decrease speed (move left in speed array)
+        case 'ArrowDown':
+          // Increase speed (move right in speed array)
           setCurrentSpeedIndex(prevIndex => {
-            const newIndex = Math.max(0, prevIndex - 1);
+            const newIndex = Math.min(speedSteps.length - 1, prevIndex + 1);
             const newSpeed = speedSteps[newIndex];
             setScrollSpeed(Math.abs(newSpeed)); // Store absolute value for scroll hook
             
@@ -138,10 +138,6 @@ export const useTeleprompterControls = () => {
   const toggleUppercase = () => {
     setIsUppercase(!isUppercase);
   };
-
-  // Get current speed value and direction
-  const getCurrentSpeed = () => speedSteps[currentSpeedIndex];
-  const isReverse = () => getCurrentSpeed() < 0;
 
   return {
     fontSize,
