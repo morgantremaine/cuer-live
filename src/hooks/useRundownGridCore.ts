@@ -107,6 +107,7 @@ export const useRundownGridCore = () => {
 
   // Enhanced showcaller state change handler with proper debouncing
   const handleShowcallerStateChange = useCallback((showcallerState: any) => {
+    // CRITICAL FIX: Don't try to update showcaller state if we don't have a rundownId
     if (isProcessingRealtimeUpdate || !rundownId) {
       console.log('⏭️ Skipping showcaller update - processing realtime or no rundownId');
       return;
@@ -206,8 +207,6 @@ export const useRundownGridCore = () => {
     isEditing
   });
 
-  // ... keep existing code (stableDataLoaderCallbacks, useRundownDataLoader, playback controls)
-
   const stableDataLoaderCallbacks = useMemo(() => ({
     setRundownTitle: stableCallbacksRef.current.setRundownTitleDirectly!,
     setTimezone: stableCallbacksRef.current.setTimezoneDirectly!,
@@ -258,8 +257,6 @@ export const useRundownGridCore = () => {
       updateItem(id, field, value);
     }
   }, [updateItem, markAsEditing, isProcessingRealtimeUpdate]);
-
-  // ... keep existing code (all the wrapped functions for adding rows, headers, etc.)
 
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     if (isProcessingRealtimeUpdate) return;
