@@ -13,6 +13,7 @@ interface PlaybackControlsProps {
   onForward: () => void;
   onBackward: () => void;
   size?: 'sm' | 'default';
+  className?: string;
 }
 
 const PlaybackControls = ({
@@ -24,7 +25,8 @@ const PlaybackControls = ({
   onPause,
   onForward,
   onBackward,
-  size = 'sm'
+  size = 'sm',
+  className = ''
 }: PlaybackControlsProps) => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -41,13 +43,16 @@ const PlaybackControls = ({
         onPlay(selectedRowId);
       } else if (currentSegmentId) {
         onPlay();
+      } else {
+        // If no segment is selected, start with the first segment
+        onPlay();
       }
     }
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      {currentSegmentId && (
+    <div className={`flex items-center space-x-2 ${className}`}>
+      {(currentSegmentId || timeRemaining > 0) && (
         <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border">
           {formatTime(timeRemaining)}
         </div>
@@ -67,7 +72,6 @@ const PlaybackControls = ({
         onClick={handlePlayPause}
         variant="outline"
         size={size}
-        disabled={!currentSegmentId && !selectedRowId}
         title={isPlaying ? "Pause" : "Play"}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}

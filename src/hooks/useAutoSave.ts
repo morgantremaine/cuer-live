@@ -22,6 +22,7 @@ export const useAutoSave = (
   const lastSaveDataRef = useRef<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
   const isNavigatingRef = useRef(false);
+  const hasAttemptedSaveRef = useRef(false);
 
   const {
     hasUnsavedChanges,
@@ -40,8 +41,8 @@ export const useAutoSave = (
 
   // Auto-save function with proper new rundown handling
   const performAutoSave = useCallback(async () => {
-    if (isProcessingRealtimeUpdate || isNavigatingRef.current) {
-      console.log('⏭️ Skipping auto-save - processing realtime update or navigating');
+    if (isProcessingRealtimeUpdate || isNavigatingRef.current || isSaving) {
+      console.log('⏭️ Skipping auto-save - processing realtime update, navigating, or already saving');
       return;
     }
 
@@ -60,6 +61,16 @@ export const useAutoSave = (
     if (currentSignature === lastSaveDataRef.current) {
       console.log('⏭️ Skipping auto-save - no changes detected');
       return;
+    }
+
+    // For new rundowns, only save once the user has made meaningful changes
+    if (!rundownId && !hasAttemptedSaveRef.current) {
+      // Check if this is just the initial state - skip if it's just the default title
+      if (rundownTitle === 'Live Broadcast Rundown' && items.length <= 3) {
+        console.log('⏭️ Skipping auto-save - initial default state');
+        return;
+      }
+      hasAttemptedSaveRef.current = true;
     }
 
     console.log('💾 Auto-saving rundown...', {
@@ -112,6 +123,7 @@ export const useAutoSave = (
           // Reset navigation flag after a brief delay
           setTimeout(() => {
             isNavigatingRef.current = false;
+            hasAttemptedSaveRef.current = false; // Reset for next time
           }, 1000);
         }
       }
@@ -125,11 +137,11 @@ export const useAutoSave = (
     } finally {
       setIsSaving(false);
     }
-  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, saveRundown, markAsSaved, isProcessingRealtimeUpdate, navigate]);
+  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, saveRundown, markAsSaved, isProcessingRealtimeUpdate, navigate, isSaving]);
 
   // Auto-save effect with debouncing
   useEffect(() => {
-    if (!hasUnsavedChanges || isProcessingRealtimeUpdate || isNavigatingRef.current) {
+    if (!hasUnsavedChanges || isProcessingRealtimeUpdate || isNavigatingRef.current || isSaving) {
       return;
     }
 
@@ -154,7 +166,7 @@ export const useAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [hasUnsavedChanges, performAutoSave, isProcessingRealtimeUpdate]);
+  }, [hasUnsavedChanges, performAutoSave, isProcessingRealtimeUpdate, isSaving]);
 
   // Cleanup on unmount
   useEffect(() => {
