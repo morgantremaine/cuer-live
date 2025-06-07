@@ -48,7 +48,11 @@ const PlaybackControls = ({
   return (
     <div className="flex items-center space-x-2">
       {currentSegmentId && (
-        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border">
+        <div className={`${
+          isPlaying 
+            ? 'bg-green-600 dark:bg-green-500 text-white animate-pulse' 
+            : 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800'
+        } px-3 py-1 rounded-full font-mono text-xs border shadow-sm transition-all duration-300`}>
           {formatTime(timeRemaining)}
         </div>
       )}
@@ -59,16 +63,20 @@ const PlaybackControls = ({
         size={size}
         disabled={!currentSegmentId}
         title="Previous segment"
+        className="transition-all hover:scale-105"
       >
         <SkipBack className="h-4 w-4" />
       </Button>
       
       <Button
         onClick={handlePlayPause}
-        variant="outline"
+        variant={isPlaying ? "default" : "outline"}
         size={size}
         disabled={!currentSegmentId && !selectedRowId}
         title={isPlaying ? "Pause" : "Play"}
+        className={`transition-all hover:scale-105 ${
+          isPlaying ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''
+        }`}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
@@ -79,6 +87,7 @@ const PlaybackControls = ({
         size={size}
         disabled={!currentSegmentId}
         title="Next segment"
+        className="transition-all hover:scale-105"
       >
         <SkipForward className="h-4 w-4" />
       </Button>

@@ -50,6 +50,7 @@ const RegularRow = (props: RegularRowProps) => {
     selectedRowsCount = 1,
     selectedRows,
     isSelected = false,
+    isCurrentlyPlaying = false,
     isDraggingMultiple = false,
     showColorPicker,
     hasClipboardData = false,
@@ -66,7 +67,8 @@ const RegularRow = (props: RegularRowProps) => {
     isSelected,
     isFloating: item.isFloating,
     isFloated: item.isFloated,
-    color: item.color
+    color: item.color,
+    isCurrentlyPlaying
   });
 
   const {
@@ -113,7 +115,9 @@ const RegularRow = (props: RegularRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none ${
+          isCurrentlyPlaying ? 'animate-pulse' : ''
+        }`}
         style={{ 
           backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
           color: textColor || undefined
@@ -131,7 +135,7 @@ const RegularRow = (props: RegularRowProps) => {
           columns={props.columns}
           cellRefs={props.cellRefs}
           textColor={textColor}
-          isCurrentlyPlaying={props.isCurrentlyPlaying}
+          isCurrentlyPlaying={isCurrentlyPlaying}
           isDraggingMultiple={isDraggingMultiple}
           isSelected={isSelected}
           onUpdateItem={props.onUpdateItem}

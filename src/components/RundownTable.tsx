@@ -99,12 +99,20 @@ const RundownTable = ({
             
             return (
               <React.Fragment key={item.id}>
-                {/* Extra spacing above current row */}
+                {/* Visual indicator above current playing row */}
                 {isCurrentlyPlaying && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 mx-2 rounded-sm flex-1"></div>
+                      <div className="h-3 flex items-center relative">
+                        {/* Top border with animated pulse */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-green-500 to-blue-500 animate-pulse"></div>
+                        {/* Corner indicators */}
+                        <div className="absolute top-0 left-2">
+                          <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-green-500"></div>
+                        </div>
+                        <div className="absolute top-0 right-2">
+                          <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-green-500"></div>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -156,12 +164,20 @@ const RundownTable = ({
                   getColumnWidth={getColumnWidth}
                 />
 
-                {/* Extra spacing below current row */}
+                {/* Visual indicator below current playing row */}
                 {isCurrentlyPlaying && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-1 bg-yellow-500 mx-2 rounded-sm flex-1"></div>
+                      <div className="h-3 flex items-center relative">
+                        {/* Bottom border with animated pulse */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-yellow-500 to-blue-500 animate-pulse"></div>
+                        {/* Corner indicators */}
+                        <div className="absolute bottom-0 left-2">
+                          <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-yellow-500"></div>
+                        </div>
+                        <div className="absolute bottom-0 right-2">
+                          <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-yellow-500"></div>
+                        </div>
                       </div>
                     </td>
                   </tr>
