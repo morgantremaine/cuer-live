@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -74,6 +73,7 @@ const Help = () => {
                     <li>Click any cell to edit content</li>
                     <li>Press Tab to move to next cell</li>
                     <li>Use Enter to save and move down</li>
+                    <li>Right-click rows to color them or float/unfloat items</li>
                   </ul>
                 </div>
               </div>
