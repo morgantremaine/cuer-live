@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, RefreshCw, FileText, Clock, Calendar } from 'lucide-react';
+import { RefreshCw, FileText, Clock, Calendar } from 'lucide-react';
 import AddListDialog from './AddListDialog';
 
 interface BlueprintHeaderProps {
@@ -62,14 +62,6 @@ const BlueprintHeader = ({
         
         <div className="flex gap-2 justify-between">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/dashboard')}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Dashboard
-            </Button>
             <Button
               variant="outline"
               onClick={() => navigate(`/rundown/${rundown.id}`)}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -65,6 +66,10 @@ const Blueprint = () => {
     }
   }
 
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -76,7 +81,12 @@ const Blueprint = () => {
   if (!rundown) {
     return (
       <div className="min-h-screen bg-gray-900">
-        <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
+        <DashboardHeader 
+          userEmail={user?.email} 
+          onSignOut={handleSignOut} 
+          showBackButton={true}
+          onBack={handleBack}
+        />
         <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
@@ -91,7 +101,12 @@ const Blueprint = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <DashboardHeader userEmail={user?.email} onSignOut={handleSignOut} />
+      <DashboardHeader 
+        userEmail={user?.email} 
+        onSignOut={handleSignOut} 
+        showBackButton={true}
+        onBack={handleBack}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
           rundown={rundown}
