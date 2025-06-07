@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -106,7 +107,12 @@ export const useRundownGridCore = () => {
 
   // Enhanced showcaller state change handler with proper debouncing
   const handleShowcallerStateChange = useCallback((showcallerState: any) => {
-    if (isProcessingRealtimeUpdate || !rundownId) return;
+    if (isProcessingRealtimeUpdate || !rundownId) {
+      console.log('⏭️ Skipping showcaller update - processing realtime or no rundownId');
+      return;
+    }
+
+    console.log('📡 Preparing showcaller state change:', showcallerState);
 
     // Clear any existing timer
     if (showcallerUpdateTimerRef.current) {
@@ -121,37 +127,46 @@ export const useRundownGridCore = () => {
       }).catch(error => {
         console.error('Failed to update showcaller state:', error);
       });
-    }, 300); // 300ms debounce for showcaller updates
+    }, 200); // Reduced debounce for better responsiveness
   }, [rundownId, isProcessingRealtimeUpdate, updateRundown]);
 
   // Handle external rundown updates from realtime with better showcaller handling
   const handleRundownUpdated = useCallback((updatedRundown: SavedRundown) => {
     console.log('🔄 Applying realtime rundown update');
+    console.log('🔄 Updated rundown data:', updatedRundown);
     
     // Update showcaller state if changed and not processing our own update
-    if (updatedRundown.showcaller_state && 
-        JSON.stringify(updatedRundown.showcaller_state) !== JSON.stringify(externalShowcallerState)) {
-      console.log('🔄 Updating showcaller state from realtime');
-      setExternalShowcallerState(updatedRundown.showcaller_state);
+    if (updatedRundown.showcaller_state) {
+      const currentShowcallerStateStr = JSON.stringify(externalShowcallerState);
+      const newShowcallerStateStr = JSON.stringify(updatedRundown.showcaller_state);
+      
+      if (newShowcallerStateStr !== currentShowcallerStateStr) {
+        console.log('🔄 Updating showcaller state from realtime:', updatedRundown.showcaller_state);
+        setExternalShowcallerState(updatedRundown.showcaller_state);
+      }
     }
     
     // Update title if changed
     if (updatedRundown.title !== rundownTitle) {
+      console.log('🔄 Updating title from realtime:', updatedRundown.title);
       stableCallbacksRef.current.setRundownTitleDirectly?.(updatedRundown.title);
     }
     
     // Update timezone if changed
     if (updatedRundown.timezone && updatedRundown.timezone !== timezone) {
+      console.log('🔄 Updating timezone from realtime:', updatedRundown.timezone);
       stableCallbacksRef.current.setTimezoneDirectly?.(updatedRundown.timezone);
     }
     
     // Update start time if changed
     if (updatedRundown.start_time && updatedRundown.start_time !== rundownStartTime) {
+      console.log('🔄 Updating start time from realtime:', updatedRundown.start_time);
       stableCallbacksRef.current.setRundownStartTimeDirectly?.(updatedRundown.start_time);
     }
     
     // Update columns if changed
     if (updatedRundown.columns && JSON.stringify(updatedRundown.columns) !== JSON.stringify(columns)) {
+      console.log('🔄 Updating columns from realtime');
       stableCallbacksRef.current.handleLoadLayout?.(updatedRundown.columns);
     }
     
@@ -193,6 +208,7 @@ export const useRundownGridCore = () => {
       }
       // Load showcaller state if present
       if (rundown.showcaller_state) {
+        console.log('🔄 Loading showcaller state from saved rundown:', rundown.showcaller_state);
         setExternalShowcallerState(rundown.showcaller_state);
       }
     }

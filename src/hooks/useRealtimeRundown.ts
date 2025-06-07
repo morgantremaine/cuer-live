@@ -57,6 +57,8 @@ export const useRealtimeRundown = ({
   }, []);
 
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    console.log('🔄 Received realtime update payload:', payload);
+    
     // Enhanced checks to skip our own updates
     const updateTimestamp = payload.new?.updated_at;
     
@@ -65,29 +67,22 @@ export const useRealtimeRundown = ({
         updateTimestamp === lastOwnUpdateRef.current ||
         ownUpdateTrackingRef.current.has(updateTimestamp)
     )) {
+      console.log('⏭️ Skipping own update:', updateTimestamp);
       return;
     }
     
-    // Skip if the user_id matches (if available)
-    if (payload.new?.user_id === user?.id) {
-      return;
-    }
-
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
+      console.log('⏭️ Update not for current rundown');
       return;
     }
 
     // Prevent processing duplicate updates
     if (updateTimestamp && updateTimestamp === lastUpdateTimestampRef.current) {
+      console.log('⏭️ Skipping duplicate update');
       return;
     }
     lastUpdateTimestampRef.current = updateTimestamp;
-
-    // Additional safety check - if we're currently processing an update, skip
-    if (isProcessingUpdate) {
-      return;
-    }
 
     // CRITICAL: Set all processing flags FIRST with enhanced coordination
     stableSetIsProcessingUpdateRef.current(true);
@@ -137,6 +132,8 @@ export const useRealtimeRundown = ({
         throw error;
       }
 
+      console.log('🔄 Fetched updated rundown data:', data);
+
       // Transform the data to match our expected format
       const updatedRundown: SavedRundown = {
         id: data.id,
@@ -154,8 +151,11 @@ export const useRealtimeRundown = ({
         created_at: data.created_at,
         updated_at: data.updated_at,
         archived: data.archived,
-        undo_history: data.undo_history
+        undo_history: data.undo_history,
+        showcaller_state: data.showcaller_state
       };
+
+      console.log('🔄 Transformed rundown data:', updatedRundown);
 
       // CRITICAL: Enhanced signature synchronization
       if (stableUpdateSavedSignatureRef.current) {
@@ -218,9 +218,9 @@ export const useRealtimeRundown = ({
           stableSetApplyingRemoteUpdateRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 1000); // Extended delay for better stability
+      }, 500); // Reduced delay for better responsiveness
     }
-  }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);
+  }, [rundownId, user?.id, hasUnsavedChanges, toast]);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -235,10 +235,12 @@ export const useRealtimeRundown = ({
       reconnectTimeoutRef.current = null;
     }
 
-    // Only set up subscription if we have the required data and not processing
-    if (!rundownId || !user || isProcessingUpdate) {
+    // Only set up subscription if we have the required data
+    if (!rundownId || !user) {
       return;
     }
+
+    console.log('🔗 Setting up realtime subscription for rundown:', rundownId);
 
     const channel = supabase
       .channel(`rundown-${rundownId}`)
@@ -250,11 +252,16 @@ export const useRealtimeRundown = ({
           table: 'rundowns',
           filter: `id=eq.${rundownId}`
         },
-        handleRealtimeUpdate
+        (payload) => {
+          console.log('🔄 Realtime update received:', payload);
+          handleRealtimeUpdate(payload);
+        }
       )
       .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
         if (status === 'SUBSCRIBED') {
           retryCountRef.current = 0;
+          console.log('✅ Successfully subscribed to realtime updates');
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Failed to subscribe to realtime updates');
         }
@@ -264,6 +271,7 @@ export const useRealtimeRundown = ({
 
     return () => {
       if (subscriptionRef.current) {
+        console.log('🔌 Cleaning up realtime subscription');
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
@@ -272,7 +280,7 @@ export const useRealtimeRundown = ({
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [rundownId, user, isProcessingUpdate, handleRealtimeUpdate]);
+  }, [rundownId, user, handleRealtimeUpdate]);
 
   return {
     isConnected: !!subscriptionRef.current,

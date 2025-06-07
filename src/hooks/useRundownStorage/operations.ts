@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { SavedRundown } from './types';
 import { transformSupabaseRundown } from './dataMapper';
@@ -19,21 +18,44 @@ export const updateRundownInSupabase = async (
   },
   userId: string
 ) => {
-  console.log('💾 Updating rundown in Supabase:', { rundownId, fieldsUpdated: Object.keys(data) });
+  console.log('💾 Updating rundown in Supabase:', { rundownId, fieldsUpdated: Object.keys(data), data });
   
   const updateData: any = {
     user_id: userId,
     updated_at: new Date().toISOString()
   };
 
-  // Only include non-undefined fields
-  if (data.title !== undefined) updateData.title = data.title;
-  if (data.items !== undefined) updateData.items = data.items;
-  if (data.columns !== undefined) updateData.columns = data.columns;
-  if (data.timezone !== undefined) updateData.timezone = data.timezone;
-  if (data.start_time !== undefined) updateData.start_time = data.start_time;
-  if (data.undo_history !== undefined) updateData.undo_history = data.undo_history;
-  if (data.showcaller_state !== undefined) updateData.showcaller_state = data.showcaller_state;
+  // Only include non-undefined fields - be very explicit about what we're updating
+  if (data.title !== undefined) {
+    updateData.title = data.title;
+    console.log('📝 Updating title to:', data.title);
+  }
+  if (data.items !== undefined) {
+    updateData.items = data.items;
+    console.log('📋 Updating items count:', data.items.length);
+  }
+  if (data.columns !== undefined) {
+    updateData.columns = data.columns;
+    console.log('🗂️ Updating columns');
+  }
+  if (data.timezone !== undefined) {
+    updateData.timezone = data.timezone;
+    console.log('🌍 Updating timezone to:', data.timezone);
+  }
+  if (data.start_time !== undefined) {
+    updateData.start_time = data.start_time;
+    console.log('⏰ Updating start_time to:', data.start_time);
+  }
+  if (data.undo_history !== undefined) {
+    updateData.undo_history = data.undo_history;
+    console.log('↩️ Updating undo_history');
+  }
+  if (data.showcaller_state !== undefined) {
+    updateData.showcaller_state = data.showcaller_state;
+    console.log('📡 Updating showcaller_state to:', data.showcaller_state);
+  }
+
+  console.log('🚀 Final update data being sent:', updateData);
 
   const { data: updatedRundown, error } = await supabase
     .from('rundowns')
@@ -53,7 +75,7 @@ export const updateRundownInSupabase = async (
     throw error;
   }
 
-  console.log('✅ Rundown updated successfully');
+  console.log('✅ Rundown updated successfully, returned data:', updatedRundown);
   return transformSupabaseRundown(updatedRundown);
 };
 
@@ -83,16 +105,33 @@ export class RundownOperations {
 
       const rundownData: any = {};
       
-      // Only include fields that are provided
-      if (data.title !== undefined) rundownData.title = data.title;
-      if (data.items !== undefined) rundownData.items = data.items;
-      if (data.archived !== undefined) rundownData.archived = data.archived;
-      if (data.showcaller_state !== undefined) rundownData.showcaller_state = data.showcaller_state;
-      if (data.updateUndoHistory !== undefined) rundownData.undo_history = data.updateUndoHistory ? [] : undefined;
+      // Only include fields that are provided - be very explicit
+      if (data.title !== undefined) {
+        rundownData.title = data.title;
+        console.log('🏷️ Setting title for update:', data.title);
+      }
+      if (data.items !== undefined) {
+        rundownData.items = data.items;
+        console.log('📋 Setting items for update, count:', data.items.length);
+      }
+      if (data.archived !== undefined) {
+        rundownData.archived = data.archived;
+        console.log('📦 Setting archived for update:', data.archived);
+      }
+      if (data.showcaller_state !== undefined) {
+        rundownData.showcaller_state = data.showcaller_state;
+        console.log('📡 Setting showcaller_state for update:', data.showcaller_state);
+      }
+      if (data.updateUndoHistory !== undefined) {
+        rundownData.undo_history = data.updateUndoHistory ? [] : undefined;
+        console.log('↩️ Setting undo_history for update');
+      }
+
+      console.log('🎯 Final rundownData being passed to updateRundownInSupabase:', rundownData);
 
       await updateRundownInSupabase(rundownId, rundownData, this.user.id);
 
-      // Update local state
+      // Update local state with the same explicit approach
       this.setSavedRundowns(prevRundowns =>
         prevRundowns.map(rundown =>
           rundown.id === rundownId
@@ -116,6 +155,8 @@ export class RundownOperations {
   }
 
   private async updateShowcallerStateDebounced(rundownId: string, showcallerState: any) {
+    console.log('📡 Debounced showcaller state update for:', rundownId, showcallerState);
+    
     // Clear any existing debounce timer for this rundown
     const existingTimer = debounceMap.get(rundownId);
     if (existingTimer) {
@@ -125,6 +166,7 @@ export class RundownOperations {
     // Set a new debounce timer
     const timer = setTimeout(async () => {
       try {
+        console.log('⏰ Executing debounced showcaller state update');
         await updateRundownInSupabase(rundownId, { showcaller_state: showcallerState }, this.user.id);
         
         // Update local state immediately for responsive UI
@@ -141,11 +183,12 @@ export class RundownOperations {
         );
         
         debounceMap.delete(rundownId);
+        console.log('✅ Showcaller state updated successfully');
       } catch (error) {
         console.error('❌ Error updating showcaller state:', error);
         debounceMap.delete(rundownId);
       }
-    }, 500); // 500ms debounce
+    }, 300); // Reduced debounce time for better responsiveness
 
     debounceMap.set(rundownId, timer);
   }
