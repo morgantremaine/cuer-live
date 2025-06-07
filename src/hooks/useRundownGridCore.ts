@@ -56,7 +56,7 @@ export const useRundownGridCore = () => {
   const { calculateEndTime } = useRundownCalculations();
 
   // Columns management
-  const { } = useColumnsManager(markAsChanged);
+  const { } = useColumnsManager();
 
   // Time calculations
   const { getRowStatus } = useTimeCalculations(
