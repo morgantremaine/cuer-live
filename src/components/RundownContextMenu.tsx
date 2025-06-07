@@ -8,7 +8,6 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Copy, Trash2, Palette, Pin, PinOff, Clipboard, Plus, Hash, X } from 'lucide-react';
-import ColorPicker from './ColorPicker';
 
 interface RundownContextMenuProps {
   children: ReactNode;
@@ -59,6 +58,18 @@ const RundownContextMenu = ({
     
     return true; // Allow the ContextMenu to open
   };
+
+  const colorOptions = [
+    { name: 'Default', value: '' },
+    { name: 'Red', value: '#fca5a5' },
+    { name: 'Orange', value: '#fdba74' },
+    { name: 'Yellow', value: '#fde047' },
+    { name: 'Green', value: '#86efac' },
+    { name: 'Blue', value: '#93c5fd' },
+    { name: 'Purple', value: '#c4b5fd' },
+    { name: 'Pink', value: '#f9a8d4' },
+    { name: 'Gray', value: '#d1d5db' }
+  ];
 
   return (
     <ContextMenu>
@@ -112,10 +123,21 @@ const RundownContextMenu = ({
         
         {showColorPicker && itemId && onColorSelect && (
           <div className="p-2">
-            <ColorPicker
-              onColorSelect={(color) => onColorSelect(itemId, color)}
-              onClose={() => {}}
-            />
+            <div className="grid grid-cols-3 gap-2">
+              {colorOptions.map((color) => (
+                <button
+                  key={color.name}
+                  onClick={() => onColorSelect(itemId, color.value)}
+                  className="flex flex-col items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-xs text-gray-900 dark:text-gray-100"
+                >
+                  <div 
+                    className="w-6 h-6 rounded border border-gray-300 dark:border-gray-500 mb-1"
+                    style={{ backgroundColor: color.value || '#ffffff' }}
+                  />
+                  {color.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         
