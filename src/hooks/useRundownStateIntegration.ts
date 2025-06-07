@@ -71,7 +71,7 @@ export const useRundownStateIntegration = (
   } = useColumnsManager(markAsChanged);
 
   // Auto-save functionality with realtime awareness
-  const { hasUnsavedChanges, isSaving } = useAutoSave(
+  const { hasUnsavedChanges, isSaving, setApplyingRemoteUpdate } = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
     Array.isArray(columns) ? columns : [],
@@ -113,6 +113,7 @@ export const useRundownStateIntegration = (
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving
+    isSaving,
+    setApplyingRemoteUpdate
   };
 };
