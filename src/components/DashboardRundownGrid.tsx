@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
@@ -103,7 +104,12 @@ const DashboardRundownGrid = ({
       segmentCount: headers.length,
       itemCount: contentItems.length,
       totalDuration: calculateTotalDuration(items),
-      firstItems: contentItems.slice(0, 3).map(item => item.name || item.script || 'Untitled').filter(Boolean)
+      firstItems: contentItems.slice(0, 3).map(item => {
+        if (item.name && item.name.trim()) return item.name.trim()
+        if (item.script && item.script.trim()) return item.script.trim().substring(0, 50) + (item.script.trim().length > 50 ? '...' : '')
+        if (item.description && item.description.trim()) return item.description.trim()
+        return 'Untitled Item'
+      })
     }
   }
 
@@ -164,6 +170,117 @@ const DashboardRundownGrid = ({
           const preview = getRundownPreview(rundown.items || [])
           const activity = getActivityStatus(rundown)
           
+          // Compact card for archived rundowns
+          if (isArchived) {
+            return (
+              <Card 
+                key={rundown.id} 
+                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden"
+              >
+                {/* Activity Status Indicator */}
+                <div className={`absolute top-0 left-0 w-full h-1 ${activity.color} opacity-50`} />
+                
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle 
+                        className="text-white text-base truncate cursor-pointer hover:text-blue-300 transition-colors"
+                        onClick={() => onOpen(rundown.id)}
+                      >
+                        {rundown.title}
+                      </CardTitle>
+                      <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
+                        <span>{getOwnerInfo(rundown)}</span>
+                        <span>•</span>
+                        <span>{formatDate(rundown.updated_at)}</span>
+                      </CardDescription>
+                    </div>
+                    
+                    {/* Three-dot menu */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
+                        {onUnarchive && (
+                          <DropdownMenuItem 
+                            onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
+                            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Unarchive
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {onDelete && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem 
+                                onSelect={(e) => e.preventDefault()}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-900/50 cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-gray-800 border-gray-700">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
+                                <AlertDialogDescription className="text-gray-400">
+                                  Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={(e) => onDelete(rundown.id, rundown.title, e)}
+                                  className="bg-red-600 hover:bg-red-700 text-white border-0"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0 space-y-3">
+                  {/* Compact Stats */}
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>{preview.segmentCount} segments</span>
+                    <span>{preview.itemCount} items</span>
+                    <span>{preview.totalDuration}</span>
+                  </div>
+
+                  {/* Simple Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => onOpen(rundown.id)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 text-xs"
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      Open
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          }
+
+          // Full card for active rundowns
           return (
             <Card 
               key={rundown.id} 
@@ -220,26 +337,14 @@ const DashboardRundownGrid = ({
                         </DropdownMenuItem>
                       )}
                       
-                      {isArchived ? (
-                        onUnarchive && (
-                          <DropdownMenuItem 
-                            onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
-                            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                          >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Unarchive
-                          </DropdownMenuItem>
-                        )
-                      ) : (
-                        onArchive && (
-                          <DropdownMenuItem 
-                            onClick={(e) => onArchive(rundown.id, rundown.title, e)}
-                            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                          >
-                            <Archive className="h-4 w-4 mr-2" />
-                            Archive
-                          </DropdownMenuItem>
-                        )
+                      {onArchive && (
+                        <DropdownMenuItem 
+                          onClick={(e) => onArchive(rundown.id, rundown.title, e)}
+                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                        >
+                          <Archive className="h-4 w-4 mr-2" />
+                          Archive
+                        </DropdownMenuItem>
                       )}
                       
                       {onDelete && (
@@ -336,7 +441,7 @@ const DashboardRundownGrid = ({
                     variant="outline"
                     size="sm"
                     onClick={() => navigate(`/blueprint/${rundown.id}`)}
-                    className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all hover:scale-105"
+                    className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-500 transition-all hover:scale-105"
                   >
                     <FileText className="h-3 w-3 mr-1" />
                     Blueprint
