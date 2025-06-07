@@ -1,6 +1,6 @@
 
 import React from 'react';
-import RundownHeader from './RundownHeader';
+import RundownHeaderPropsAdapter from './RundownHeaderPropsAdapter';
 import RundownMainContent from './RundownMainContent';
 import RundownFooter from './RundownFooter';
 import { RundownContainerProps } from '@/types/rundownContainer';
@@ -8,23 +8,7 @@ import { RundownContainerProps } from '@/types/rundownContainer';
 const RundownContainer = (props: RundownContainerProps) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <RundownHeader 
-        title={props.rundownTitle}
-        onTitleChange={props.onTitleChange}
-        timezone={props.timezone}
-        onTimezoneChange={props.onTimezoneChange}
-        totalRuntime={props.totalRuntime}
-        hasUnsavedChanges={props.hasUnsavedChanges}
-        isSaving={props.isSaving}
-        rundownStartTime={props.rundownStartTime}
-        onRundownStartTimeChange={props.onRundownStartTimeChange}
-        currentTime={props.currentTime}
-        onUndo={props.onUndo}
-        canUndo={props.canUndo}
-        lastAction={props.lastAction}
-        isConnected={props.isConnected}
-        isProcessingRealtimeUpdate={props.isProcessingRealtimeUpdate}
-      />
+      <RundownHeaderPropsAdapter props={props} />
       
       <RundownMainContent 
         // Grid props
@@ -66,7 +50,7 @@ const RundownContainer = (props: RundownContainerProps) => {
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
         
-        // Required props for PlaybackControls within RundownMainContent
+        // Playback controls - pass through from props
         timeRemaining={props.timeRemaining}
         isPlaying={props.isPlaying}
         currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
