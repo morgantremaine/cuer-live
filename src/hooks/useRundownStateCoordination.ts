@@ -57,7 +57,7 @@ export const useRundownStateCoordination = () => {
     coreState.markAsChanged
   );
 
-  // Override the UI state's selectColor with our stable version
+  // Override the UI state's selectColor with our stable version and include updateTrigger
   const stableUIState = useMemo(() => ({
     ...uiState,
     selectColor: handleColorSelection,
@@ -65,9 +65,15 @@ export const useRundownStateCoordination = () => {
     updateColumnWidth
   }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth]);
 
-  return {
+  // Memoize the complete state with updateTrigger as a dependency to force re-calculation
+  return useMemo(() => ({
     coreState,
     interactions,
     uiState: stableUIState
-  };
+  }), [
+    coreState,
+    interactions,
+    stableUIState,
+    coreState.updateTrigger // Include updateTrigger to force re-calculation on remote updates
+  ]);
 };

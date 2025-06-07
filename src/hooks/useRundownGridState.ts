@@ -36,7 +36,7 @@ export const useRundownGridState = () => {
     calculateEndTime: coreState.calculateEndTime
   });
 
-  // Memoize the complete state object
+  // Memoize the complete state object with updateTrigger as a dependency
   return useMemo(() => ({
     // Core state
     ...coreState,
@@ -65,6 +65,7 @@ export const useRundownGridState = () => {
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
-    handleDeleteSelectedRows
+    handleDeleteSelectedRows,
+    coreState.updateTrigger // Include updateTrigger to force complete state recalculation
   ]);
 };

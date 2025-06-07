@@ -2,7 +2,6 @@
 import React, { useRef } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
-import { useRundownGridUI } from '@/hooks/useRundownGridUI';
 import { useColorPicker } from '@/hooks/useColorPicker';
 import { useCellNavigation } from '@/hooks/useCellNavigation';
 
@@ -54,12 +53,17 @@ const RundownGrid = () => {
     colorPickerSelect(id, color);
   };
 
+  // Log the updateTrigger to confirm it's changing on remote updates
   console.log('RundownGrid: handleAddRow exists?', !!handleAddRow);
   console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
-  console.log('RundownGrid: updateTrigger value:', updateTrigger);
+  console.log('RundownGrid: updateTrigger value:', updateTrigger, '- This should change on remote updates');
+
+  // Force a re-render key based on updateTrigger to ensure the table updates
+  const renderKey = `rundown-table-${updateTrigger}`;
 
   return (
     <RundownTable
+      key={renderKey} // Force re-render when updateTrigger changes
       items={items}
       visibleColumns={visibleColumns}
       currentTime={currentTime}
