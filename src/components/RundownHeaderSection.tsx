@@ -41,10 +41,6 @@ interface RundownHeaderSectionProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  // Realtime collaboration status
-  isConnected: boolean;
-  hasPendingChanges: boolean;
-  isEditing: boolean;
 }
 
 const RundownHeaderSection = ({
@@ -84,10 +80,7 @@ const RundownHeaderSection = ({
   currentHighlight,
   onUndo,
   canUndo,
-  lastAction,
-  isConnected,
-  hasPendingChanges,
-  isEditing
+  lastAction
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -110,9 +103,6 @@ const RundownHeaderSection = ({
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
-        isConnected={isConnected}
-        hasPendingChanges={hasPendingChanges}
-        isEditing={isEditing}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}

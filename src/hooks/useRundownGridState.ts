@@ -36,7 +36,7 @@ export const useRundownGridState = () => {
     calculateEndTime: coreState.calculateEndTime
   });
 
-  // Memoize the complete state object with multiple triggers as dependencies
+  // Memoize the complete state object
   return useMemo(() => ({
     // Core state
     ...coreState,
@@ -65,10 +65,6 @@ export const useRundownGridState = () => {
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
-    handleDeleteSelectedRows,
-    coreState.updateTrigger, // Primary update trigger from realtime sync
-    coreState.forceRenderTrigger, // Secondary force render trigger
-    coreState.items?.length, // Trigger on items array length change
-    JSON.stringify(coreState.items) // Trigger on any items content change
+    handleDeleteSelectedRows
   ]);
 };

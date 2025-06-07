@@ -41,20 +41,14 @@ const PlaybackControls = ({
         onPlay(selectedRowId);
       } else if (currentSegmentId) {
         onPlay();
-      } else {
-        // Start from beginning
-        onPlay();
       }
     }
   };
 
-  const canPlay = currentSegmentId || selectedRowId;
-  const showTimer = currentSegmentId && timeRemaining > 0;
-
   return (
     <div className="flex items-center space-x-2">
-      {showTimer && (
-        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-3 py-1 rounded-md font-mono text-sm border min-w-[60px] text-center">
+      {currentSegmentId && (
+        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border">
           {formatTime(timeRemaining)}
         </div>
       )}
@@ -73,9 +67,8 @@ const PlaybackControls = ({
         onClick={handlePlayPause}
         variant="outline"
         size={size}
-        disabled={!canPlay}
+        disabled={!currentSegmentId && !selectedRowId}
         title={isPlaying ? "Pause" : "Play"}
-        className={isPlaying ? "bg-green-100 dark:bg-green-900" : ""}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>

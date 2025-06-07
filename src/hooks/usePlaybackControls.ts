@@ -1,153 +1,185 @@
+import { useState, useRef, useEffect } from 'react';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { RundownItem } from '@/types/rundown';
-
-export const usePlaybackControls = (items: RundownItem[]) => {
+export const usePlaybackControls = (
+  items: RundownItem[],
+  updateItem: (id: string, field: string, value: string) => void
+) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Parse duration string to seconds
-  const parseDuration = (duration: string): number => {
-    if (!duration) return 0;
-    const parts = duration.split(':');
+  // Set default current segment to first non-header item (A1) on mount
+  useEffect(() => {
+    if (!currentSegmentId && items.length > 0) {
+      const firstSegment = items.find(item => !isHeaderItem(item));
+      if (firstSegment) {
+        setCurrentSegmentId(firstSegment.id);
+        const duration = timeToSeconds(firstSegment.duration);
+        setTimeRemaining(duration);
+      }
+    }
+  }, [items, currentSegmentId]);
+
+  const timeToSeconds = (timeStr: string) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    
     if (parts.length === 2) {
-      const [minutes, seconds] = parts.map(Number);
-      return (minutes * 60) + seconds;
+      // MM:SS format (minutes:seconds)
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
     } else if (parts.length === 3) {
-      const [hours, minutes, seconds] = parts.map(Number);
-      return (hours * 3600) + (minutes * 60) + seconds;
+      // HH:MM:SS format
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
     }
     return 0;
   };
 
-  // Find current item by ID
-  const getCurrentItem = () => {
-    return items.find(item => item.id === currentSegmentId);
+  const clearCurrentStatus = () => {
+    items.forEach(item => {
+      if (item.status === 'current') {
+        updateItem(item.id, 'status', 'completed');
+      }
+    });
   };
 
-  // Get current item index
-  const getCurrentIndex = () => {
-    return items.findIndex(item => item.id === currentSegmentId);
+  const setCurrentSegment = (segmentId: string) => {
+    clearCurrentStatus();
+    const segment = items.find(item => item.id === segmentId);
+    if (segment && !isHeaderItem(segment)) {
+      updateItem(segmentId, 'status', 'current');
+      setCurrentSegmentId(segmentId);
+      const duration = timeToSeconds(segment.duration);
+      setTimeRemaining(duration);
+    }
   };
 
-  // Start countdown timer
-  const startTimer = useCallback((duration: number) => {
-    setTimeRemaining(duration);
-    
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+  const getNextSegment = (currentId: string) => {
+    const currentIndex = items.findIndex(item => item.id === currentId);
+    for (let i = currentIndex + 1; i < items.length; i++) {
+      if (!isHeaderItem(items[i])) {
+        return items[i];
+      }
+    }
+    return null;
+  };
+
+  const getPreviousSegment = (currentId: string) => {
+    const currentIndex = items.findIndex(item => item.id === currentId);
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (!isHeaderItem(items[i])) {
+        return items[i];
+      }
+    }
+    return null;
+  };
+
+  const startTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
     }
 
-    intervalRef.current = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
-          // Auto-advance to next segment when time runs out
-          const currentIndex = getCurrentIndex();
-          const nextItem = items[currentIndex + 1];
-          
-          if (nextItem && nextItem.type === 'regular') {
-            setCurrentSegmentId(nextItem.id);
-            const nextDuration = parseDuration(nextItem.duration);
-            return nextDuration;
-          } else {
-            // No more items, stop playing
-            setIsPlaying(false);
-            setCurrentSegmentId(null);
-            return 0;
+          // Time's up, mark current as completed and move to next segment
+          if (currentSegmentId) {
+            updateItem(currentSegmentId, 'status', 'completed');
+            const nextSegment = getNextSegment(currentSegmentId);
+            if (nextSegment) {
+              setCurrentSegment(nextSegment.id);
+              return timeToSeconds(nextSegment.duration);
+            } else {
+              // No more segments, stop playback
+              setIsPlaying(false);
+              setCurrentSegmentId(null);
+              return 0;
+            }
           }
+          return 0;
         }
         return prev - 1;
       });
     }, 1000);
-  }, [items]);
+  };
 
-  // Stop timer
-  const stopTimer = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-  }, []);
+  };
 
-  const play = useCallback((selectedSegmentId?: string) => {
-    let targetId = selectedSegmentId || currentSegmentId;
-    
-    // If no target specified, start with first regular item
-    if (!targetId) {
-      const firstRegularItem = items.find(item => item.type === 'regular');
-      targetId = firstRegularItem?.id || null;
+  const play = (selectedSegmentId?: string) => {
+    if (selectedSegmentId) {
+      // Mark all segments before the selected one as upcoming
+      const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
+      items.forEach((item, index) => {
+        if (!isHeaderItem(item)) {
+          if (index < selectedIndex) {
+            updateItem(item.id, 'status', 'upcoming');
+          } else if (index > selectedIndex) {
+            updateItem(item.id, 'status', 'upcoming');
+          }
+        }
+      });
+      setCurrentSegment(selectedSegmentId);
     }
+    setIsPlaying(true);
+    startTimer();
+  };
 
-    if (targetId) {
-      const item = items.find(i => i.id === targetId);
-      if (item && item.type === 'regular') {
-        setCurrentSegmentId(targetId);
-        setIsPlaying(true);
-        const duration = parseDuration(item.duration);
-        startTimer(duration);
-        console.log('Playing segment:', item.name, 'Duration:', duration, 'seconds');
-      }
-    }
-  }, [currentSegmentId, items, startTimer]);
-
-  const pause = useCallback(() => {
-    console.log('Pausing playback');
+  const pause = () => {
     setIsPlaying(false);
     stopTimer();
-  }, [stopTimer]);
+  };
 
-  const forward = useCallback(() => {
-    const currentIndex = getCurrentIndex();
-    const nextItem = items[currentIndex + 1];
-    
-    if (nextItem && nextItem.type === 'regular') {
-      setCurrentSegmentId(nextItem.id);
-      if (isPlaying) {
-        const duration = parseDuration(nextItem.duration);
-        startTimer(duration);
-      } else {
-        setTimeRemaining(parseDuration(nextItem.duration));
+  const forward = () => {
+    if (currentSegmentId) {
+      const nextSegment = getNextSegment(currentSegmentId);
+      if (nextSegment) {
+        updateItem(currentSegmentId, 'status', 'completed');
+        setCurrentSegment(nextSegment.id);
+        if (isPlaying) {
+          startTimer();
+        }
       }
-      console.log('Moving to next segment:', nextItem.name);
     }
-  }, [items, isPlaying, startTimer]);
+  };
 
-  const backward = useCallback(() => {
-    const currentIndex = getCurrentIndex();
-    const prevItem = items[currentIndex - 1];
-    
-    if (prevItem && prevItem.type === 'regular') {
-      setCurrentSegmentId(prevItem.id);
-      if (isPlaying) {
-        const duration = parseDuration(prevItem.duration);
-        startTimer(duration);
-      } else {
-        setTimeRemaining(parseDuration(prevItem.duration));
+  const backward = () => {
+    if (currentSegmentId) {
+      const prevSegment = getPreviousSegment(currentSegmentId);
+      if (prevSegment) {
+        updateItem(currentSegmentId, 'status', 'upcoming');
+        setCurrentSegment(prevSegment.id);
+        if (isPlaying) {
+          startTimer();
+        }
       }
-      console.log('Moving to previous segment:', prevItem.name);
     }
-  }, [items, isPlaying, startTimer]);
+  };
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
   }, []);
 
-  // Update time remaining when current segment changes (but not playing)
   useEffect(() => {
-    if (!isPlaying && currentSegmentId) {
-      const item = getCurrentItem();
-      if (item) {
-        setTimeRemaining(parseDuration(item.duration));
-      }
+    if (isPlaying && currentSegmentId) {
+      startTimer();
+    } else {
+      stopTimer();
     }
-  }, [currentSegmentId, isPlaying]);
+    
+    return () => stopTimer();
+  }, [isPlaying, currentSegmentId]);
 
   return {
     isPlaying,

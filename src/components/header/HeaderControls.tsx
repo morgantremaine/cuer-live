@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,6 @@ import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import SearchBar from '../SearchBar';
 import { useAuth } from '@/hooks/useAuth';
-import RealtimeStatus from '../RealtimeStatus';
 
 interface HeaderControlsProps {
   currentTime: Date;
@@ -18,10 +18,6 @@ interface HeaderControlsProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  // Add realtime status props
-  isConnected?: boolean;
-  hasPendingChanges?: boolean;
-  isEditing?: boolean;
 }
 
 const HeaderControls = ({
@@ -34,10 +30,7 @@ const HeaderControls = ({
   onReplaceText,
   onUndo,
   canUndo,
-  lastAction,
-  isConnected = false,
-  hasPendingChanges = false,
-  isEditing = false
+  lastAction
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
@@ -73,12 +66,6 @@ const HeaderControls = ({
           onReplaceText={onReplaceText}
         />
       </div>
-      {/* Add realtime status indicator */}
-      <RealtimeStatus 
-        isConnected={isConnected}
-        hasPendingChanges={hasPendingChanges}
-        isEditing={isEditing}
-      />
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">

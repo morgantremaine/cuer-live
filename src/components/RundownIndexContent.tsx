@@ -11,8 +11,8 @@ const RundownIndexContent = () => {
   const {
     currentTime,
     timezone,
-    showColumnManager = false,
-    setShowColumnManager = () => {},
+    showColumnManager,
+    setShowColumnManager,
     rundownTitle,
     setRundownTitle,
     rundownStartTime,
@@ -70,13 +70,9 @@ const RundownIndexContent = () => {
     handleDeleteSelectedRows,
     setRundownStartTime,
     setTimezone,
-    handleUndo = () => {},
-    canUndo = false,
-    lastAction = null,
-    // Extract the new realtime collaboration properties with defaults
-    isConnected = true,
-    hasPendingChanges = false,
-    isEditing = false
+    handleUndo,
+    canUndo,
+    lastAction
   } = gridState;
 
   const {
@@ -181,10 +177,6 @@ const RundownIndexContent = () => {
         onUndo={handleUndo}
         canUndo={canUndo}
         lastAction={lastAction}
-        // Pass through the realtime collaboration properties
-        isConnected={isConnected}
-        hasPendingChanges={hasPendingChanges}
-        isEditing={isEditing}
       />
       
       {/* Cuer AI Chat Button with rundown data */}

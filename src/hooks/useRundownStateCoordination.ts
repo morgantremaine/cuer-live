@@ -28,13 +28,13 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Get interaction handlers - fix the function signatures to match expected parameters
+  // Get interaction handlers
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
     coreState.updateItem,
-    coreState.addRow, // This now has the correct signature (calculateEndTime, selectedRowId?) => void
-    coreState.addHeader, // This now has the correct signature (selectedRowId?: string) => void
+    coreState.addRow,
+    coreState.addHeader,
     coreState.deleteRow,
     coreState.toggleFloatRow,
     coreState.deleteMultipleRows,
@@ -57,7 +57,7 @@ export const useRundownStateCoordination = () => {
     coreState.markAsChanged
   );
 
-  // Override the UI state's selectColor with our stable version and include updateTrigger
+  // Override the UI state's selectColor with our stable version
   const stableUIState = useMemo(() => ({
     ...uiState,
     selectColor: handleColorSelection,
@@ -65,15 +65,9 @@ export const useRundownStateCoordination = () => {
     updateColumnWidth
   }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth]);
 
-  // Memoize the complete state with updateTrigger as a dependency to force re-calculation
-  return useMemo(() => ({
+  return {
     coreState,
     interactions,
     uiState: stableUIState
-  }), [
-    coreState,
-    interactions,
-    stableUIState,
-    coreState.updateTrigger // Include updateTrigger to force re-calculation on remote updates
-  ]);
+  };
 };

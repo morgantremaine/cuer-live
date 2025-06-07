@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
+
+import { useState, useCallback } from 'react';
 
 export interface Column {
   id: string;
@@ -10,9 +11,7 @@ export interface Column {
   isVisible?: boolean;
 }
 
-export const useColumnsManager = () => {
-  const markAsChangedRef = useRef<(() => void) | undefined>(undefined);
-
+export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>([
     { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
@@ -28,17 +27,6 @@ export const useColumnsManager = () => {
 
   // Ensure columns is always an array before filtering
   const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
-
-  const callMarkAsChanged = useCallback(() => {
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
-    }
-  }, []);
-
-  // Function to set the markAsChanged callback from outside
-  const setMarkAsChangedCallback = useCallback((callback: () => void) => {
-    markAsChangedRef.current = callback;
-  }, []);
 
   const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
@@ -59,14 +47,19 @@ export const useColumnsManager = () => {
       return newColumns;
     });
     
-    callMarkAsChanged();
-  }, [callMarkAsChanged]);
+    // Mark as changed when adding a column
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
     if (!Array.isArray(newColumns)) return;
     setColumns(newColumns);
-    callMarkAsChanged();
-  }, [callMarkAsChanged]);
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -74,8 +67,10 @@ export const useColumnsManager = () => {
       const filtered = prev.filter(col => col.id !== columnId);
       return filtered;
     });
-    callMarkAsChanged();
-  }, [callMarkAsChanged]);
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
 
   const handleRenameColumn = useCallback((columnId: string, newName: string) => {
     setColumns(prev => {
@@ -88,8 +83,10 @@ export const useColumnsManager = () => {
       });
       return updated;
     });
-    callMarkAsChanged();
-  }, [callMarkAsChanged]);
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
 
   const handleToggleColumnVisibility = useCallback((columnId: string) => {
     setColumns(prev => {
@@ -103,8 +100,10 @@ export const useColumnsManager = () => {
       });
       return updated;
     });
-    callMarkAsChanged();
-  }, [callMarkAsChanged]);
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumns(prev => {
@@ -117,8 +116,10 @@ export const useColumnsManager = () => {
       });
       return updated;
     });
-    callMarkAsChanged();
-  }, [callMarkAsChanged]);
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     // Validate that layoutColumns is an array
@@ -196,10 +197,12 @@ export const useColumnsManager = () => {
         return prevColumns; // Don't update if columns are the same
       }
       
-      callMarkAsChanged();
+      if (markAsChanged) {
+        markAsChanged();
+      }
       return mergedColumns;
     });
-  }, [callMarkAsChanged]);
+  }, [markAsChanged]);
 
   return {
     columns: Array.isArray(columns) ? columns : [],
@@ -210,7 +213,6 @@ export const useColumnsManager = () => {
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth,
-    setMarkAsChangedCallback
+    handleUpdateColumnWidth
   };
 };

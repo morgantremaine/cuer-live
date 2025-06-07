@@ -1,30 +1,112 @@
 
 import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownItems } from './useRundownItems';
-import { useColumnsManager } from './useColumnsManager';
-import { useTimeCalculations } from './useTimeCalculations';
+import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
+import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
-import { useAutoSave } from './useAutoSave';
-import { useCallback } from 'react';
+import { useRundownStorage } from './useRundownStorage';
+import { useRundownUndo } from './useRundownUndo';
+import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { useEditingState } from './useEditingState';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
-  // Basic state management
+  // Create stable refs to prevent infinite loops
+  const stableCallbacksRef = useRef<{
+    markAsChanged?: () => void;
+    setRundownTitleDirectly?: (title: string) => void;
+    setTimezoneDirectly?: (timezone: string) => void;
+    setRundownStartTimeDirectly?: (time: string) => void;
+    handleLoadLayout?: (layout: any) => void;
+    setItems?: (items: RundownItem[]) => void;
+    loadRundowns?: () => void;
+  }>({});
+
+  // Core state management
   const {
-    rundownId,
-    rundownTitle,
-    setRundownTitle,
+    currentTime,
     timezone,
     setTimezone,
-    rundownStartTime,
-    setRundownStartTime,
-    currentTime,
+    setTimezoneDirectly,
     showColumnManager,
     setShowColumnManager,
+    rundownTitle,
+    setRundownTitle,
+    setRundownTitleDirectly,
+    rundownStartTime,
+    setRundownStartTime,
+    setRundownStartTimeDirectly,
+    rundownId,
     markAsChanged
   } = useRundownBasicState();
 
-  // Items management - direct usage without complex integration
+  // Update stable refs when callbacks change
+  stableCallbacksRef.current.markAsChanged = markAsChanged;
+  stableCallbacksRef.current.setRundownTitleDirectly = setRundownTitleDirectly;
+  stableCallbacksRef.current.setTimezoneDirectly = setTimezoneDirectly;
+  stableCallbacksRef.current.setRundownStartTimeDirectly = setRundownStartTimeDirectly;
+
+  // Storage functionality
+  const { savedRundowns, loading, updateRundown, loadRundowns } = useRundownStorage();
+
+  // Update the loadRundowns ref
+  stableCallbacksRef.current.loadRundowns = loadRundowns;
+
+  // Editing detection
+  const { isEditing, markAsEditing } = useEditingState();
+
+  // Create a TRULY stable callback for remote updates using ref
+  const onRemoteUpdateRef = useRef(() => {
+    console.log('📡 Remote update detected, refreshing rundowns...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      stableCallbacksRef.current.loadRundowns();
+    }
+  });
+
+  // Create a stable callback for reloading current rundown with forced refresh
+  const onReloadCurrentRundownRef = useRef(() => {
+    console.log('🔄 Forcing reload of current rundown data after remote update...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      // Force a fresh load from the database
+      stableCallbacksRef.current.loadRundowns();
+    }
+  });
+
+  // Update the refs when functions change, but don't recreate the callbacks
+  onRemoteUpdateRef.current = () => {
+    console.log('📡 Remote update detected, refreshing rundowns...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      stableCallbacksRef.current.loadRundowns();
+    }
+  };
+
+  onReloadCurrentRundownRef.current = () => {
+    console.log('🔄 Forcing reload of current rundown data after remote update...');
+    if (stableCallbacksRef.current.loadRundowns) {
+      // Force a fresh load from the database
+      stableCallbacksRef.current.loadRundowns();
+    }
+  };
+
+  // Use stable callbacks that never change
+  const stableOnRemoteUpdate = useCallback(() => {
+    onRemoteUpdateRef.current();
+  }, []); // No dependencies!
+
+  const stableOnReloadCurrentRundown = useCallback(() => {
+    onReloadCurrentRundownRef.current();
+  }, []); // No dependencies!
+
+  // Set up realtime collaboration with truly stable callbacks
+  const { isConnected } = useStableRealtimeCollaboration({
+    rundownId,
+    onRemoteUpdate: stableOnRemoteUpdate,
+    onReloadCurrentRundown: stableOnReloadCurrentRundown,
+    enabled: !!rundownId
+  });
+
+  // Rundown data integration
   const {
     items,
     setItems,
@@ -38,11 +120,6 @@ export const useRundownGridCore = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    setMarkAsChangedCallback
-  } = useRundownItems();
-
-  // Columns management
-  const {
     columns,
     visibleColumns,
     handleAddColumn,
@@ -52,153 +129,211 @@ export const useRundownGridCore = () => {
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    setMarkAsChangedCallback: setColumnsMarkAsChangedCallback
-  } = useColumnsManager();
-
-  // Auto-save functionality
-  const { 
-    hasUnsavedChanges, 
-    isSaving, 
-    setRundownId,
-    setOnRundownCreated 
-  } = useAutoSave(
-    items,
-    rundownTitle,
-    columns,
-    timezone,
-    rundownStartTime
+    hasUnsavedChanges,
+    isSaving
+  } = useRundownStateIntegration(
+    markAsChanged, 
+    rundownTitle, 
+    timezone, 
+    rundownStartTime,
+    setRundownTitleDirectly, 
+    setTimezoneDirectly
   );
 
-  // Connect markAsChanged callbacks
-  setMarkAsChangedCallback(markAsChanged);
-  setColumnsMarkAsChangedCallback(markAsChanged);
+  // Update stable refs
+  stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
+  stableCallbacksRef.current.setItems = setItems;
 
-  // Create calculateEndTime function
-  const calculateEndTime = useCallback((startTime: string, duration: string) => {
-    if (!startTime || !duration) return '';
+  // Undo functionality with persistence
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
+
+  const stableDataLoaderCallbacks = useMemo(() => ({
+    setRundownTitle: stableCallbacksRef.current.setRundownTitleDirectly!,
+    setTimezone: stableCallbacksRef.current.setTimezoneDirectly!,
+    setRundownStartTime: stableCallbacksRef.current.setRundownStartTimeDirectly!,
+    handleLoadLayout: stableCallbacksRef.current.handleLoadLayout!,
+    setItems: stableCallbacksRef.current.setItems!,
+    onRundownLoaded: (rundown: any) => {
+      if (rundown.undo_history) {
+        loadUndoHistory(rundown.undo_history);
+      }
+    }
+  }), [loadUndoHistory]);
+
+  useRundownDataLoader({
+    rundownId,
+    savedRundowns,
+    loading,
+    ...stableDataLoaderCallbacks
+  });
+
+  const { 
+    isPlaying, 
+    currentSegmentId, 
+    timeRemaining, 
+    play, 
+    pause, 
+    forward, 
+    backward 
+  } = usePlaybackControls(items, updateItem);
+
+  const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
+
+  // Enhanced functions that trigger editing detection and save state
+  const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    markAsEditing();
+    updateItem(id, field, value);
+  }, [updateItem, markAsEditing]);
+
+  const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
+    saveState(items, columns, rundownTitle, 'Add Row');
+    markAsEditing();
     
-    // Parse start time
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const startTotalMinutes = startHours * 60 + startMinutes;
-    
-    // Parse duration
-    const durationParts = duration.split(':');
-    let durationMinutes = 0;
-    
-    if (durationParts.length === 2) {
-      // MM:SS format
-      const [minutes, seconds] = durationParts.map(Number);
-      durationMinutes = minutes + (seconds / 60);
-    } else if (durationParts.length === 3) {
-      // HH:MM:SS format
-      const [hours, minutes, seconds] = durationParts.map(Number);
-      durationMinutes = hours * 60 + minutes + (seconds / 60);
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRows && selectedRows.size > 0) {
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
     }
     
-    // Calculate end time
-    const endTotalMinutes = startTotalMinutes + durationMinutes;
-    const endHours = Math.floor(endTotalMinutes / 60);
-    const endMinutes = Math.floor(endTotalMinutes % 60);
+    if (insertAfterIndex !== undefined) {
+      addRow(calculateEndTimeFn, insertAfterIndex);
+    } else {
+      addRow(calculateEndTimeFn);
+    }
+  }, [addRow, saveState, items, columns, rundownTitle, markAsEditing]);
+
+  const wrappedAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
+    saveState(items, columns, rundownTitle, 'Add Header');
+    markAsEditing();
     
-    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-  }, []);
+    let insertAfterIndex: number | undefined = undefined;
+    if (selectedRows && selectedRows.size > 0) {
+      const selectedIndices = Array.from(selectedRows).map(id => 
+        items.findIndex(item => item.id === id)
+      ).filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        insertAfterIndex = Math.max(...selectedIndices);
+      }
+    } else if (selectedRowId) {
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
+    
+    if (insertAfterIndex !== undefined) {
+      addHeader(insertAfterIndex);
+    } else {
+      addHeader();
+    }
+  }, [addHeader, saveState, items, columns, rundownTitle, markAsEditing]);
 
-  // Time calculations
-  const { getRowStatus } = useTimeCalculations(
-    items,
-    rundownStartTime,
-    timezone
-  );
+  const wrappedDeleteRow = useCallback((id: string) => {
+    saveState(items, columns, rundownTitle, 'Delete Row');
+    markAsEditing();
+    deleteRow(id);
+  }, [deleteRow, saveState, items, columns, rundownTitle, markAsEditing]);
 
-  // Playback controls
-  const {
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward
-  } = usePlaybackControls(items);
+  const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
+    saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
+    markAsEditing();
+    deleteMultipleRows(ids);
+  }, [deleteMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
 
-  // Data loading
-  useRundownDataLoader(
-    rundownId,
-    setItems,
-    setRundownTitle,
-    setTimezone,
-    setRundownStartTime,
-    handleLoadLayout
-  );
+  const wrappedToggleFloatRow = useCallback((id: string) => {
+    saveState(items, columns, rundownTitle, 'Toggle Float');
+    markAsEditing();
+    toggleFloatRow(id);
+  }, [toggleFloatRow, saveState, items, columns, rundownTitle, markAsEditing]);
 
-  // Simple title change handler
-  const handleTitleChange = useCallback((title: string) => {
+  const wrappedSetItems = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
+    const newItems = typeof updater === 'function' ? updater(items) : updater;
+    if (JSON.stringify(newItems) !== JSON.stringify(items)) {
+      saveState(items, columns, rundownTitle, 'Move Rows');
+      markAsEditing();
+    }
+    setItems(updater);
+  }, [setItems, saveState, items, columns, rundownTitle, markAsEditing]);
+
+  const wrappedAddMultipleRows = useCallback((newItems: RundownItem[], calculateEndTimeFn: any) => {
+    saveState(items, columns, rundownTitle, 'Paste Rows');
+    markAsEditing();
+    addMultipleRows(newItems);
+  }, [addMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
+
+  const wrappedSetRundownTitle = useCallback((title: string) => {
+    if (title !== rundownTitle) {
+      saveState(items, columns, rundownTitle, 'Change Title');
+      markAsEditing();
+    }
     setRundownTitle(title);
-    markAsChanged();
-  }, [setRundownTitle, markAsChanged]);
+  }, [setRundownTitle, saveState, items, columns, rundownTitle, markAsEditing]);
 
-  // Enhanced wrapper functions - fix signatures to match what components expect
-  const enhancedAddRow = useCallback((selectedRowId?: string) => {
-    addRow(selectedRowId);
-    markAsChanged();
-  }, [addRow, markAsChanged]);
+  const handleUndo = useCallback(() => {
+    const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);
+    if (action) {
+      markAsChanged();
+      markAsEditing();
+      console.log(`Undid: ${action}`);
+    }
+  }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged, markAsEditing]);
 
-  const enhancedAddHeader = useCallback((selectedRowId?: string) => {
-    addHeader(selectedRowId);
-    markAsChanged();
-  }, [addHeader, markAsChanged]);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) {
+          handleUndo();
+        }
+      }
+    };
 
-  const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    updateItem(id, field, value);
-    markAsChanged();
-  }, [updateItem, markAsChanged]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, canUndo]);
 
   return {
-    // Core state
-    rundownId,
-    rundownTitle,
-    setRundownTitle: handleTitleChange,
+    // Basic state
+    currentTime,
     timezone,
     setTimezone,
-    rundownStartTime,
-    setRundownStartTime,
-    hasUnsavedChanges,
-    isSaving,
-    markAsChanged,
-    currentTime,
     showColumnManager,
     setShowColumnManager,
-    
-    // Items
+    rundownTitle,
+    setRundownTitle: wrappedSetRundownTitle,
+    rundownStartTime,
+    setRundownStartTime,
+    rundownId,
+    markAsChanged,
+
+    // Items and data - use wrapped versions for undo support
     items,
-    setItems,
+    setItems: wrappedSetItems,
     updateItem: enhancedUpdateItem,
-    addRow: enhancedAddRow,
-    addHeader: enhancedAddHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
+    addRow: wrappedAddRow,
+    addHeader: wrappedAddHeader,
+    deleteRow: wrappedDeleteRow,
+    deleteMultipleRows: wrappedDeleteMultipleRows,
+    addMultipleRows: wrappedAddMultipleRows,
     getRowNumber,
-    toggleFloatRow,
+    toggleFloatRow: wrappedToggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    calculateEndTime,
-    
-    // Columns
-    columns,
     visibleColumns,
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
-    
-    // Time
-    getRowStatus,
-    
-    // Playback controls
+    columns,
+
+    // Playback
     isPlaying,
     currentSegmentId,
     timeRemaining,
@@ -206,29 +341,28 @@ export const useRundownGridCore = () => {
     pause,
     forward,
     backward,
-    selectedRowId: null,
-    
-    // Simplified handlers for compatibility
-    handleUpdateItem: enhancedUpdateItem,
-    handleAddRow: enhancedAddRow,
-    handleAddHeader: enhancedAddHeader,
-    handleDeleteRow: deleteRow,
-    handleToggleFloat: toggleFloatRow,
-    handleColorSelect: (id: string, color: string) => {
-      enhancedUpdateItem(id, 'color', color);
-    },
-    handleDeleteSelectedRows: () => {}, // Placeholder
-    handlePasteRows: () => {}, // Placeholder
-    handleDeleteColumnWithCleanup: handleDeleteColumn,
-    
-    // Simplified state properties
-    updateTrigger: 0,
-    forceRenderTrigger: 0,
-    handleUndo: () => {},
-    canUndo: false,
-    lastAction: null as string | null,
-    isConnected: true,
-    hasPendingChanges: false,
-    isEditing: false
+
+    // Column management
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
+
+    // Save state
+    hasUnsavedChanges,
+    isSaving,
+    calculateEndTime,
+
+    // Undo functionality
+    handleUndo,
+    canUndo,
+    lastAction,
+
+    // Realtime status
+    isConnected,
+    isEditing
   };
 };

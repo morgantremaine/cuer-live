@@ -1,57 +1,24 @@
-import { useState, useCallback, useRef } from 'react';
+
+import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 
 export type { RundownItem } from '@/types/rundown';
 
-export const useRundownItems = () => {
+export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
-  const [itemsUpdateTrigger, setItemsUpdateTrigger] = useState(0);
-  const [forceUpdateId, setForceUpdateId] = useState(0);
-  const markAsChangedRef = useRef<(() => void) | undefined>(undefined);
-
-  const callMarkAsChanged = useCallback(() => {
-    if (markAsChangedRef.current) {
-      markAsChangedRef.current();
-    }
-  }, []);
-
-  // Function to set the markAsChanged callback from outside
-  const setMarkAsChangedCallback = useCallback((callback: () => void) => {
-    markAsChangedRef.current = callback;
-  }, []);
-
-  // Enhanced setItems that ensures new references and triggers updates
-  const enhancedSetItems = useCallback((newItems: RundownItem[] | ((prevItems: RundownItem[]) => RundownItem[])) => {
-    setItems(prevItems => {
-      const updatedItems = typeof newItems === 'function' ? newItems(prevItems) : newItems;
-      
-      // Force multiple update triggers to ensure React re-renders
-      setItemsUpdateTrigger(prev => prev + 1);
-      setForceUpdateId(prev => prev + 1);
-      
-      // Always create completely new array and objects
-      const freshItems = updatedItems.map(item => ({ ...item }));
-      
-      console.log('🔄 Items updated, new count:', freshItems.length, 'trigger:', itemsUpdateTrigger + 1);
-      
-      return freshItems;
-    });
-  }, [itemsUpdateTrigger]);
 
   const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
-    enhancedSetItems(prevItems => {
+    setItems(prevItems => {
       const newItems = prevItems.map(item => 
-        item.id === id ? { ...item, ...updates } : { ...item }
+        item.id === id ? { ...item, ...updates } : item
       );
-      callMarkAsChanged();
+      markAsChanged();
       return newItems;
     });
-  }, [enhancedSetItems, callMarkAsChanged]);
+  }, [markAsChanged]);
 
-  // ... keep existing code (addRow, addHeader, deleteRow, deleteMultipleRows, addMultipleRows functions)
-
-  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => {
+  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
     const newItem: RundownItem = {
       id: uuidv4(),
       type: 'regular',
@@ -70,26 +37,21 @@ export const useRundownItems = () => {
       isFloating: false
     };
 
-    enhancedSetItems(prevItems => {
+    setItems(prevItems => {
       let newItems;
-      if (selectedRowId) {
-        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
-        if (selectedIndex !== -1) {
-          newItems = [...prevItems];
-          newItems.splice(selectedIndex + 1, 0, newItem);
-        } else {
-          newItems = [...prevItems, newItem];
-        }
+      if (insertAfterIndex !== undefined) {
+        newItems = [...prevItems];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
       } else {
         newItems = [...prevItems, newItem];
       }
       
-      callMarkAsChanged();
+      markAsChanged();
       return newItems;
     });
-  }, [enhancedSetItems, callMarkAsChanged]);
+  }, [markAsChanged]);
 
-  const addHeader = useCallback((selectedRowId?: string) => {
+  const addHeader = useCallback((insertAfterIndex?: number) => {
     const newItem: RundownItem = {
       id: uuidv4(),
       type: 'header',
@@ -108,50 +70,45 @@ export const useRundownItems = () => {
       isFloating: false
     };
 
-    enhancedSetItems(prevItems => {
+    setItems(prevItems => {
       let newItems;
-      if (selectedRowId) {
-        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
-        if (selectedIndex !== -1) {
-          newItems = [...prevItems];
-          newItems.splice(selectedIndex + 1, 0, newItem);
-        } else {
-          newItems = [...prevItems, newItem];
-        }
+      if (insertAfterIndex !== undefined) {
+        newItems = [...prevItems];
+        newItems.splice(insertAfterIndex + 1, 0, newItem);
       } else {
         newItems = [...prevItems, newItem];
       }
       
-      callMarkAsChanged();
+      markAsChanged();
       return newItems;
     });
-  }, [enhancedSetItems, callMarkAsChanged]);
+  }, [markAsChanged]);
 
   const deleteRow = useCallback((id: string) => {
-    enhancedSetItems(prevItems => {
+    setItems(prevItems => {
       const newItems = prevItems.filter(item => item.id !== id);
-      callMarkAsChanged();
+      markAsChanged();
       return newItems;
     });
-  }, [enhancedSetItems, callMarkAsChanged]);
+  }, [markAsChanged]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
-    enhancedSetItems(prevItems => {
+    setItems(prevItems => {
       const newItems = prevItems.filter(item => !ids.includes(item.id));
-      callMarkAsChanged();
+      markAsChanged();
       return newItems;
     });
-  }, [enhancedSetItems, callMarkAsChanged]);
+  }, [markAsChanged]);
 
   const addMultipleRows = useCallback((newItems: RundownItem[]) => {
-    enhancedSetItems(prevItems => {
+    setItems(prevItems => {
       const allItems = [...prevItems, ...newItems];
-      callMarkAsChanged();
+      markAsChanged();
       return allItems;
     });
-  }, [enhancedSetItems, callMarkAsChanged]);
+  }, [markAsChanged]);
 
-  // Force re-calculation with multiple dependencies
+  // Change back to useCallback but force re-calculation by making it depend on items
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
@@ -196,17 +153,17 @@ export const useRundownItems = () => {
     }
     
     return `${currentSegmentLetter}${itemCountInSegment}`;
-  }, [items, itemsUpdateTrigger, forceUpdateId]);
+  }, [items]);
 
   const toggleFloatRow = useCallback((id: string) => {
-    enhancedSetItems(prevItems => {
+    setItems(prevItems => {
       const newItems = prevItems.map(item => 
-        item.id === id ? { ...item, isFloating: !item.isFloating } : { ...item }
+        item.id === id ? { ...item, isFloating: !item.isFloating } : item
       );
-      callMarkAsChanged();
+      markAsChanged();
       return newItems;
     });
-  }, [enhancedSetItems, callMarkAsChanged]);
+  }, [markAsChanged]);
 
   const calculateTotalRuntime = useCallback(() => {
     let totalSeconds = 0;
@@ -231,7 +188,7 @@ export const useRundownItems = () => {
     } else {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-  }, [items, itemsUpdateTrigger, forceUpdateId]);
+  }, [items]);
 
   const calculateHeaderDuration = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
@@ -266,11 +223,11 @@ export const useRundownItems = () => {
     } else {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-  }, [items, itemsUpdateTrigger, forceUpdateId]);
+  }, [items]);
 
   return {
     items,
-    setItems: enhancedSetItems,
+    setItems,
     updateItem,
     addRow,
     addHeader,
@@ -280,9 +237,6 @@ export const useRundownItems = () => {
     getRowNumber,
     toggleFloatRow,
     calculateTotalRuntime,
-    calculateHeaderDuration,
-    setMarkAsChangedCallback,
-    itemsUpdateTrigger,
-    forceUpdateId
+    calculateHeaderDuration
   };
 };

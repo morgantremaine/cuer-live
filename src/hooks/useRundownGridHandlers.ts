@@ -1,11 +1,10 @@
-
 import { useCallback } from 'react';
 import { useRundownHandlers } from '@/hooks/useRundownHandlers';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => void; // Fix signature
-  addHeader: (selectedRowId?: string) => void; // Keep this signature
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
   deleteMultipleRows: (ids: string[]) => void;
@@ -58,14 +57,8 @@ export const useRundownGridHandlers = ({
     handleDeleteColumnWithCleanup
   } = useRundownHandlers({
     updateItem,
-    addRow: (calculateEndTimeFn: (startTime: string, duration: string) => string) => {
-      // This is a simplified wrapper - the actual addRow function in core doesn't need calculateEndTime parameter
-      console.log('Using simplified addRow wrapper');
-    },
-    addHeader: () => {
-      // This is a simplified wrapper
-      console.log('Using simplified addHeader wrapper');
-    },
+    addRow,
+    addHeader,
     deleteRow,
     toggleFloatRow,
     deleteMultipleRows,
@@ -79,19 +72,15 @@ export const useRundownGridHandlers = ({
     markAsChanged
   });
 
-  const handleAddRow = useCallback((calculateEndTimeFn?: (startTime: string, duration: string) => string, selectedRowId?: string | null) => {
-    if (calculateEndTimeFn) {
-      addRow(calculateEndTimeFn, selectedRowId || undefined);
-    } else {
-      addRow(calculateEndTime, selectedRowId || undefined);
-    }
+  const handleAddRow = useCallback((selectedRowId?: string | null) => {
+    addRow(calculateEndTime, selectedRowId, selectedRows);
     markAsChanged();
-  }, [addRow, calculateEndTime, markAsChanged]);
+  }, [addRow, calculateEndTime, selectedRows, markAsChanged]);
 
   const handleAddHeader = useCallback((selectedRowId?: string | null) => {
-    addHeader(selectedRowId || undefined);
+    addHeader(selectedRowId, selectedRows);
     markAsChanged();
-  }, [addHeader, markAsChanged]);
+  }, [addHeader, selectedRows, markAsChanged]);
 
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));

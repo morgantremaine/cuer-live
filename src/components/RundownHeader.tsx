@@ -25,10 +25,6 @@ interface RundownHeaderProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  // Add realtime status props
-  isConnected?: boolean;
-  hasPendingChanges?: boolean;
-  isEditing?: boolean;
 }
 
 const RundownHeader = ({ 
@@ -49,10 +45,7 @@ const RundownHeader = ({
   currentHighlight,
   onUndo,
   canUndo,
-  lastAction,
-  isConnected = false,
-  hasPendingChanges = false,
-  isEditing = false
+  lastAction
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -92,9 +85,6 @@ const RundownHeader = ({
           onUndo={onUndo}
           canUndo={canUndo}
           lastAction={lastAction}
-          isConnected={isConnected}
-          hasPendingChanges={hasPendingChanges}
-          isEditing={isEditing}
         />
       </div>
 
@@ -121,9 +111,6 @@ const RundownHeader = ({
             onUndo={onUndo}
             canUndo={canUndo}
             lastAction={lastAction}
-            isConnected={isConnected}
-            hasPendingChanges={hasPendingChanges}
-            isEditing={isEditing}
           />
         </div>
 
