@@ -43,7 +43,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
               <img 
                 src="/lovable-uploads/da2200e5-3194-4f43-8ec0-9266a479bbf0.png" 
                 alt="Cuer Logo" 
-                className="h-6 w-auto"
+                className="h-8 w-auto"
               />
             </div>
           </div>
