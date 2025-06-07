@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical } from 'lucide-react'
@@ -134,7 +135,7 @@ const DashboardRundownGrid = ({
                   </CardDescription>
                 </div>
                 
-                {/* Three-dot menu for actions */}
+                {/* Three-dot menu for actions - now all team members have full permissions */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -157,35 +158,31 @@ const DashboardRundownGrid = ({
                       </DropdownMenuItem>
                     )}
                     
-                    {/* Archive/Unarchive - only for owned rundowns */}
-                    {isOwnRundown(rundown) && (
-                      <>
-                        {isArchived ? (
-                          onUnarchive && (
-                            <DropdownMenuItem 
-                              onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
-                              className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                            >
-                              <RotateCcw className="h-4 w-4 mr-2" />
-                              Unarchive
-                            </DropdownMenuItem>
-                          )
-                        ) : (
-                          onArchive && (
-                            <DropdownMenuItem 
-                              onClick={(e) => onArchive(rundown.id, rundown.title, e)}
-                              className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                            >
-                              <Archive className="h-4 w-4 mr-2" />
-                              Archive
-                            </DropdownMenuItem>
-                          )
-                        )}
-                      </>
+                    {/* Archive/Unarchive - now available for all team members */}
+                    {isArchived ? (
+                      onUnarchive && (
+                        <DropdownMenuItem 
+                          onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
+                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                        >
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Unarchive
+                        </DropdownMenuItem>
+                      )
+                    ) : (
+                      onArchive && (
+                        <DropdownMenuItem 
+                          onClick={(e) => onArchive(rundown.id, rundown.title, e)}
+                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                        >
+                          <Archive className="h-4 w-4 mr-2" />
+                          Archive
+                        </DropdownMenuItem>
+                      )
                     )}
                     
-                    {/* Delete - only for owned rundowns */}
-                    {isOwnRundown(rundown) && onDelete && (
+                    {/* Delete - now available for all team members */}
+                    {onDelete && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem 

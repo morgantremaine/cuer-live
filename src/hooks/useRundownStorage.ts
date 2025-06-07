@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +11,7 @@ export const useRundownStorage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load rundowns from Supabase (team rundowns only)
+  // Load rundowns from Supabase (team rundowns only, including archived ones)
   const loadRundowns = useCallback(async () => {
     if (!user) {
       setSavedRundowns([]);
@@ -45,7 +44,7 @@ export const useRundownStorage = () => {
         return;
       }
       
-      // Query rundowns from user's teams
+      // Query rundowns from user's teams - include both archived and active
       const { data, error } = await supabase
         .from('rundowns')
         .select(`
@@ -56,7 +55,6 @@ export const useRundownStorage = () => {
           )
         `)
         .in('team_id', teamIds)
-        .eq('archived', false)
         .order('updated_at', { ascending: false });
 
       if (error) {
