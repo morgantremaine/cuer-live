@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerState } from './useShowcallerState';
 import { useShowcallerPersistence } from './useShowcallerPersistence';
@@ -25,7 +25,7 @@ export const usePlaybackControls = (
     items,
     updateItem,
     onShowcallerStateChange: (state) => {
-      // Save state changes to database
+      // Save state changes to database (with debouncing)
       saveShowcallerState(state);
     }
   });
@@ -43,17 +43,20 @@ export const usePlaybackControls = (
     enabled: !!rundownId
   });
 
-  // Load initial showcaller state when rundown changes
-  useEffect(() => {
+  // Load initial showcaller state when rundown changes - memoized to prevent loops
+  const loadInitialState = useCallback(async () => {
     if (rundownId) {
-      loadShowcallerState().then(state => {
-        if (state) {
-          console.log('📺 Loading initial showcaller state:', state);
-          applyShowcallerState(state);
-        }
-      });
+      const state = await loadShowcallerState();
+      if (state) {
+        console.log('📺 Loading initial showcaller state:', state);
+        applyShowcallerState(state);
+      }
     }
-  }, [rundownId, loadShowcallerState, applyShowcallerState]);
+  }, [rundownId]); // Only depend on rundownId
+
+  useEffect(() => {
+    loadInitialState();
+  }, [loadInitialState]);
 
   return {
     isPlaying,

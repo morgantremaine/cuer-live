@@ -69,8 +69,8 @@ export const useShowcallerState = ({
     return null;
   }, [items]);
 
-  // Update showcaller state and notify parent
-  const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>) => {
+  // Update showcaller state and notify parent - with sync control
+  const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
     const updatedState = {
       ...showcallerState,
       ...newState,
@@ -79,8 +79,8 @@ export const useShowcallerState = ({
     
     setShowcallerState(updatedState);
     
-    // Notify parent component of state change for persistence
-    if (stateChangeCallbackRef.current) {
+    // Only notify parent (which triggers sync) for significant changes
+    if (shouldSync && stateChangeCallbackRef.current) {
       stateChangeCallbackRef.current(updatedState);
     }
   }, [showcallerState]);
@@ -106,11 +106,11 @@ export const useShowcallerState = ({
         currentSegmentId: segmentId,
         timeRemaining: duration,
         playbackStartTime: Date.now()
-      });
+      }, true); // Sync this significant change
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState]);
 
-  // Timer logic
+  // Timer logic - only sync on segment changes, not every tick
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -119,7 +119,7 @@ export const useShowcallerState = ({
     timerRef.current = setInterval(() => {
       setShowcallerState(prevState => {
         if (prevState.timeRemaining <= 1) {
-          // Time's up, advance to next segment
+          // Time's up, advance to next segment - this needs sync
           if (prevState.currentSegmentId) {
             updateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
@@ -136,13 +136,14 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
+              // Sync significant change (segment advancement)
               if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
               
               return newState;
             } else {
-              // No more segments, stop playback
+              // No more segments, stop playback - sync this change
               const newState = {
                 ...prevState,
                 isPlaying: false,
@@ -162,13 +163,16 @@ export const useShowcallerState = ({
           return prevState;
         }
         
+        // Regular timer tick - don't sync every second
         const newState = {
           ...prevState,
           timeRemaining: prevState.timeRemaining - 1,
           lastUpdate: new Date().toISOString()
         };
         
-        if (stateChangeCallbackRef.current) {
+        // Only sync every 10 seconds for timer updates to reduce database load
+        const shouldSyncTimerUpdate = prevState.timeRemaining % 10 === 0;
+        if (shouldSyncTimerUpdate && stateChangeCallbackRef.current) {
           stateChangeCallbackRef.current(newState);
         }
         
@@ -184,7 +188,7 @@ export const useShowcallerState = ({
     }
   }, []);
 
-  // Control functions
+  // Control functions - these are significant changes that should sync
   const play = useCallback((selectedSegmentId?: string) => {
     if (selectedSegmentId) {
       // Mark segments before selected as upcoming
@@ -201,12 +205,12 @@ export const useShowcallerState = ({
       setCurrentSegment(selectedSegmentId);
     }
     
-    updateShowcallerState({ isPlaying: true });
+    updateShowcallerState({ isPlaying: true }, true); // Sync play action
     startTimer();
   }, [items, updateItem, setCurrentSegment, updateShowcallerState, startTimer]);
 
   const pause = useCallback(() => {
-    updateShowcallerState({ isPlaying: false });
+    updateShowcallerState({ isPlaying: false }, true); // Sync pause action
     stopTimer();
   }, [updateShowcallerState, stopTimer]);
 
@@ -264,7 +268,7 @@ export const useShowcallerState = ({
     }
   }, [showcallerState.lastUpdate, clearCurrentStatus, items, updateItem, startTimer, stopTimer]);
 
-  // Initialize current segment on mount if none exists
+  // Initialize current segment on mount if none exists - only once
   useEffect(() => {
     if (!showcallerState.currentSegmentId && items.length > 0) {
       const firstSegment = items.find(item => item.type === 'regular');
@@ -273,10 +277,10 @@ export const useShowcallerState = ({
         updateShowcallerState({
           currentSegmentId: firstSegment.id,
           timeRemaining: duration
-        });
+        }, false); // Don't sync initial setup
       }
     }
-  }, [items, showcallerState.currentSegmentId, timeToSeconds, updateShowcallerState]);
+  }, [items.length]); // Only depend on items.length, not the whole items array
 
   // Cleanup timer on unmount
   useEffect(() => {
