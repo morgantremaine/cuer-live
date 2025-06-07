@@ -37,6 +37,11 @@ export const useAutoSave = (
     startTimeToSave?: string
   ) => {
     if (!user || isSaving || isProcessingRealtimeUpdate) {
+      console.log('💾 Skipping auto-save:', { 
+        noUser: !user, 
+        isSaving, 
+        isProcessingRealtimeUpdate 
+      });
       return;
     }
 
@@ -68,8 +73,18 @@ export const useAutoSave = (
 
   // Main effect that schedules saves
   useEffect(() => {
-    // Don't auto-save while processing realtime updates
-    if (!hasUnsavedChanges || !isInitialized || !user || isProcessingRealtimeUpdate) {
+    // Clear any pending saves if we're processing a realtime update
+    if (isProcessingRealtimeUpdate) {
+      console.log('🛑 Clearing auto-save timeout due to realtime update processing');
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    // Don't auto-save while processing realtime updates or if not ready
+    if (!hasUnsavedChanges || !isInitialized || !user) {
       return;
     }
 
@@ -88,12 +103,18 @@ export const useAutoSave = (
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Schedule new save with longer delay during realtime updates
-    const delay = isProcessingRealtimeUpdate ? 5000 : 2000;
+    // Schedule new save
+    console.log('⏰ Scheduling auto-save in 2 seconds...');
     debounceTimeoutRef.current = setTimeout(() => {
-      debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
+      // Double-check we're not processing realtime updates when the timeout fires
+      if (!isProcessingRealtimeUpdate) {
+        console.log('🚀 Executing scheduled auto-save');
+        debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
+      } else {
+        console.log('🛑 Skipping scheduled auto-save - realtime update in progress');
+      }
       debounceTimeoutRef.current = null;
-    }, delay);
+    }, 2000);
 
   }, [
     hasUnsavedChanges, 
@@ -119,7 +140,10 @@ export const useAutoSave = (
 
   const markAsChangedCallback = () => {
     if (!isProcessingRealtimeUpdate) {
+      console.log('✏️ Marking as changed (not during realtime update)');
       markAsChanged();
+    } else {
+      console.log('🚫 Skipping mark as changed - realtime update in progress');
     }
   };
 
