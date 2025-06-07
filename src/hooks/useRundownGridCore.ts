@@ -138,8 +138,8 @@ export const useRundownGridCore = () => {
   }, [setRundownTitle, markAsChanged]);
 
   // Enhanced wrapper functions - fix signatures to match what components expect
-  const enhancedAddRow = useCallback((calculateEndTimeFn: (startTime: string, duration: string) => string, selectedRowId?: string) => {
-    addRow(calculateEndTimeFn, selectedRowId);
+  const enhancedAddRow = useCallback((selectedRowId?: string) => {
+    addRow(selectedRowId);
     markAsChanged();
   }, [addRow, markAsChanged]);
 
