@@ -51,7 +51,6 @@ export const useCameraPlotAutoSave = (
       saveTimeoutRef.current = setTimeout(async () => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
-          console.log('Auto-saving camera plots:', plots.length, 'plots with', plots.reduce((acc, plot) => acc + plot.elements.length, 0), 'total elements');
           
           try {
             // Use correct parameter order for saveBlueprint
@@ -63,7 +62,6 @@ export const useCameraPlotAutoSave = (
               savedBlueprint?.crew_data, // crewData
               plots // cameraPlots
             );
-            console.log('Camera plots auto-save completed successfully');
           } catch (error) {
             console.error('Error auto-saving camera plots:', error);
           } finally {

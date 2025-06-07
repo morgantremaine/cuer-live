@@ -26,7 +26,6 @@ export const useBlueprintPersistence = (
         .single();
 
       if (!rundownData?.team_id) {
-        console.log('No team_id found for rundown, falling back to personal blueprint');
         // Fallback to personal blueprint
         const { data, error } = await supabase
           .from('blueprints')
@@ -65,7 +64,6 @@ export const useBlueprintPersistence = (
           .maybeSingle();
 
         if (personalData) {
-          console.log('Converting personal blueprint to team blueprint for collaboration');
           // Convert personal blueprint to team blueprint
           const teamBlueprint = {
             rundown_id: personalData.rundown_id,
@@ -168,17 +166,6 @@ export const useBlueprintPersistence = (
         blueprintData.component_order = ['crew-list', 'camera-plot', 'scratchpad'];
       }
 
-      console.log('Saving team blueprint data:', {
-        rundown_id: blueprintData.rundown_id,
-        team_id: blueprintData.team_id,
-        user_id: blueprintData.user_id,
-        lists_count: blueprintData.lists.length,
-        crew_data_count: blueprintData.crew_data.length,
-        component_order: blueprintData.component_order,
-        has_notes: !!blueprintData.notes,
-        has_show_date: !!blueprintData.show_date
-      });
-
       // Check if blueprint already exists
       const { data: existingBlueprint } = await supabase
         .from('blueprints')
@@ -212,7 +199,6 @@ export const useBlueprintPersistence = (
       }
 
       setSavedBlueprint(data);
-      console.log('Team blueprint saved successfully');
     } catch (error) {
       console.error('Error saving team blueprint:', error);
       // Silent error handling - don't throw to prevent disrupting the UI

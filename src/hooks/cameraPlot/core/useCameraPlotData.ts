@@ -53,10 +53,8 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
         try {
           const blueprintData = await loadBlueprint();
           if (blueprintData?.camera_plots && Array.isArray(blueprintData.camera_plots)) {
-            console.log('Loading camera plots from blueprint:', blueprintData.camera_plots);
             setPlots(blueprintData.camera_plots);
           } else {
-            console.log('No camera plots found in blueprint, starting with empty array');
             setPlots([]);
           }
         } catch (error) {

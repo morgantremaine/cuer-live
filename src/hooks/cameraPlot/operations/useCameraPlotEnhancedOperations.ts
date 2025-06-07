@@ -27,9 +27,6 @@ export const useCameraPlotEnhancedOperations = ({
   updatePlot,
   setSelectedTool
 }: UseCameraPlotEnhancedOperationsProps) => {
-  // Remove the noisy log that was running constantly
-  // console.log('useCameraPlotEnhancedOperations - activeScene:', activeScene?.id);
-
   const { addElement: createNewElement } = useCameraPlotElementCreation(
     activeScene,
     updatePlot,
@@ -37,10 +34,7 @@ export const useCameraPlotEnhancedOperations = ({
   );
 
   const addElement = (type: string, x: number, y: number) => {
-    console.log('Enhanced addElement called with:', { type, x, y, activeSceneId: activeScene?.id });
-    
     if (!activeScene) {
-      console.log('No active scene for element creation');
       return;
     }
 
