@@ -70,7 +70,7 @@ const Dashboard = () => {
     });
   };
 
-  // Filter rundowns
+  // Filter rundowns - now show ALL team rundowns regardless of who created them
   const activeRundowns = savedRundowns.filter(rundown => !rundown.archived);
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
 
@@ -98,7 +98,7 @@ const Dashboard = () => {
             currentUserId={user?.id}
           />
 
-          {/* Archived Rundowns Section */}
+          {/* Archived Rundowns Section - now shows ALL archived rundowns from teams */}
           {archivedRundowns.length > 0 && (
             <DashboardRundownGrid 
               title="Archived Rundowns"
