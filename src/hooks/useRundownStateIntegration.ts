@@ -3,17 +3,13 @@ import { useCallback, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
-import { useAuth } from './useAuth';
-import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateIntegration = (
   rundownTitle: string,
   timezone: string,
   rundownStartTime: string
 ) => {
-  const { user } = useAuth();
-
-  // Items management - now with no parameters
+  // Items management
   const {
     items,
     setItems,
@@ -30,7 +26,7 @@ export const useRundownStateIntegration = (
     setMarkAsChangedCallback: setItemsMarkAsChangedCallback
   } = useRundownItems();
 
-  // Columns management - no parameters needed
+  // Columns management
   const {
     columns,
     visibleColumns,
@@ -44,7 +40,7 @@ export const useRundownStateIntegration = (
     setMarkAsChangedCallback: setColumnsMarkAsChangedCallback
   } = useColumnsManager();
 
-  // Auto-save functionality - now that columns is available
+  // Auto-save functionality
   const { 
     hasUnsavedChanges, 
     isSaving, 
@@ -75,8 +71,6 @@ export const useRundownStateIntegration = (
     const item = items.find(i => i.id === id);
     if (!item) return;
 
-    console.log('🔧 Updating item:', { id, field, value });
-
     // Handle custom fields vs standard fields
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
@@ -91,18 +85,14 @@ export const useRundownStateIntegration = (
       // Handle standard fields
       originalUpdateItem(id, { [field]: value });
     }
-
-    // Mark as changed is now handled by the original function
   }, [originalUpdateItem, items]);
 
-  // Wrapper functions that trigger auto-save - updated to use selectedRowId instead of insertAfterIndex
+  // Wrapper functions that trigger auto-save
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
-    console.log('➕ Adding row');
     originalAddRow(calculateEndTime, selectedRowId);
   }, [originalAddRow]);
 
   const addHeader = useCallback((selectedRowId?: string) => {
-    console.log('📋 Adding header');
     originalAddHeader(selectedRowId);
   }, [originalAddHeader]);
 

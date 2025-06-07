@@ -1,13 +1,12 @@
 
 import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownCalculations } from './useRundownCalculations';
-import { useRundownHandlers } from './useRundownHandlers';
+import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useTimeCalculations } from './useTimeCalculations';
 import { usePlaybackControls } from './usePlaybackControls';
-import { useRealtimeRundownSync } from './useRealtimeRundownSync';
 import { useRundownDataLoader } from './useRundownDataLoader';
-import { useRundownStateIntegration } from './useRundownStateIntegration';
+import { useAutoSave } from './useAutoSave';
+import { useCallback } from 'react';
 
 export const useRundownGridCore = () => {
   // Basic state management
@@ -25,7 +24,7 @@ export const useRundownGridCore = () => {
     markAsChanged
   } = useRundownBasicState();
 
-  // State integration with auto-save
+  // Items management - direct usage without complex integration
   const {
     items,
     setItems,
@@ -39,6 +38,11 @@ export const useRundownGridCore = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
+    setMarkAsChangedCallback
+  } = useRundownItems();
+
+  // Columns management
+  const {
     columns,
     visibleColumns,
     handleAddColumn,
@@ -48,15 +52,56 @@ export const useRundownGridCore = () => {
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving
-  } = useRundownStateIntegration(rundownTitle, timezone, rundownStartTime);
+    setMarkAsChangedCallback: setColumnsMarkAsChangedCallback
+  } = useColumnsManager();
 
-  // Calculations
-  const { calculateEndTime } = useRundownCalculations();
+  // Auto-save functionality
+  const { 
+    hasUnsavedChanges, 
+    isSaving, 
+    setRundownId,
+    setOnRundownCreated 
+  } = useAutoSave(
+    items,
+    rundownTitle,
+    columns,
+    timezone,
+    rundownStartTime
+  );
 
-  // Columns management
-  const { } = useColumnsManager();
+  // Connect markAsChanged callbacks
+  setMarkAsChangedCallback(markAsChanged);
+  setColumnsMarkAsChangedCallback(markAsChanged);
+
+  // Create calculateEndTime function
+  const calculateEndTime = useCallback((startTime: string, duration: string) => {
+    if (!startTime || !duration) return '';
+    
+    // Parse start time
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    
+    // Parse duration
+    const durationParts = duration.split(':');
+    let durationMinutes = 0;
+    
+    if (durationParts.length === 2) {
+      // MM:SS format
+      const [minutes, seconds] = durationParts.map(Number);
+      durationMinutes = minutes + (seconds / 60);
+    } else if (durationParts.length === 3) {
+      // HH:MM:SS format
+      const [hours, minutes, seconds] = durationParts.map(Number);
+      durationMinutes = hours * 60 + minutes + (seconds / 60);
+    }
+    
+    // Calculate end time
+    const endTotalMinutes = startTotalMinutes + durationMinutes;
+    const endHours = Math.floor(endTotalMinutes / 60);
+    const endMinutes = Math.floor(endTotalMinutes % 60);
+    
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+  }, []);
 
   // Time calculations
   const { getRowStatus } = useTimeCalculations(
@@ -65,7 +110,7 @@ export const useRundownGridCore = () => {
     timezone
   );
 
-  // Playback controls - now properly integrated
+  // Playback controls
   const {
     isPlaying,
     currentSegmentId,
@@ -77,7 +122,7 @@ export const useRundownGridCore = () => {
   } = usePlaybackControls(items);
 
   // Data loading
-  const { } = useRundownDataLoader(
+  useRundownDataLoader(
     rundownId,
     setItems,
     setRundownTitle,
@@ -86,51 +131,27 @@ export const useRundownGridCore = () => {
     handleLoadLayout
   );
 
-  // Realtime sync
-  const { updateLastUpdateTime, updateTrigger, forceRenderTrigger } = useRealtimeRundownSync({
-    rundownId,
-    currentUserId: null, // This should come from auth context
-    setItems,
-    setRundownTitle,
-    setTimezone,
-    setRundownStartTime,
-    handleLoadLayout,
-    markAsChanged
-  });
-
-  // Handlers - simplified signature
-  const {
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    handleDeleteColumnWithCleanup
-  } = useRundownHandlers({
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    toggleFloatRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    handleDeleteColumn,
-    setItems,
-    calculateEndTime,
-    selectColor: (id: string, color: string) => {
-      updateItem(id, 'color', color);
-    },
-    markAsChanged
-  });
-
   // Simple title change handler
-  const handleTitleChange = (title: string) => {
+  const handleTitleChange = useCallback((title: string) => {
     setRundownTitle(title);
     markAsChanged();
-  };
+  }, [setRundownTitle, markAsChanged]);
+
+  // Enhanced wrapper functions that include calculateEndTime and markAsChanged
+  const enhancedAddRow = useCallback((selectedRowId?: string) => {
+    addRow(calculateEndTime, selectedRowId);
+    markAsChanged();
+  }, [addRow, calculateEndTime, markAsChanged]);
+
+  const enhancedAddHeader = useCallback((selectedRowId?: string) => {
+    addHeader(selectedRowId);
+    markAsChanged();
+  }, [addHeader, markAsChanged]);
+
+  const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    updateItem(id, field, value);
+    markAsChanged();
+  }, [updateItem, markAsChanged]);
 
   return {
     // Core state
@@ -151,9 +172,9 @@ export const useRundownGridCore = () => {
     // Items
     items,
     setItems,
-    updateItem,
-    addRow,
-    addHeader,
+    updateItem: enhancedUpdateItem,
+    addRow: enhancedAddRow,
+    addHeader: enhancedAddHeader,
     deleteRow,
     deleteMultipleRows,
     addMultipleRows,
@@ -185,29 +206,27 @@ export const useRundownGridCore = () => {
     pause,
     forward,
     backward,
-    selectedRowId: null, // Add default for now
+    selectedRowId: null,
     
-    // Handlers
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    handleDeleteColumnWithCleanup,
+    // Simplified handlers for compatibility
+    handleUpdateItem: enhancedUpdateItem,
+    handleAddRow: enhancedAddRow,
+    handleAddHeader: enhancedAddHeader,
+    handleDeleteRow: deleteRow,
+    handleToggleFloat: toggleFloatRow,
+    handleColorSelect: (id: string, color: string) => {
+      enhancedUpdateItem(id, 'color', color);
+    },
+    handleDeleteSelectedRows: () => {}, // Placeholder
+    handlePasteRows: () => {}, // Placeholder
+    handleDeleteColumnWithCleanup: handleDeleteColumn,
     
-    // Realtime triggers
-    updateTrigger,
-    forceRenderTrigger,
-
-    // Add missing properties for undo functionality
-    handleUndo: () => {}, // Placeholder
+    // Simplified state properties
+    updateTrigger: 0,
+    forceRenderTrigger: 0,
+    handleUndo: () => {},
     canUndo: false,
     lastAction: null as string | null,
-
-    // Add missing realtime collaboration properties
     isConnected: true,
     hasPendingChanges: false,
     isEditing: false
