@@ -45,19 +45,12 @@ export const useAutoSave = (
         isSaving || 
         isProcessingRealtimeUpdate || 
         saveInProgressRef.current) {
-      console.log('💾 Blocking auto-save:', { 
-        noUser: !user, 
-        isSaving, 
-        isProcessingRealtimeUpdate,
-        saveInProgress: saveInProgressRef.current
-      });
       return;
     }
 
     // Prevent rapid-fire saves with minimum interval
     const now = Date.now();
     if (now - lastSaveTimestampRef.current < 1000) {
-      console.log('💾 Blocking auto-save - too soon since last save');
       return;
     }
 
@@ -67,7 +60,6 @@ export const useAutoSave = (
     lastSaveTimestampRef.current = now;
 
     try {
-      console.log('💾 Performing auto-save...');
       const success = await performSave(
         itemsToSave, 
         titleToSave, 
@@ -94,7 +86,6 @@ export const useAutoSave = (
   useEffect(() => {
     // CRITICAL: Multiple blocking conditions
     if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
-      console.log('🛑 Blocking auto-save scheduling - realtime update or save in progress');
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
         debounceTimeoutRef.current = null;
@@ -123,17 +114,13 @@ export const useAutoSave = (
     }
 
     // Schedule new save with additional checks
-    console.log('⏰ Scheduling auto-save in 3 seconds...');
     debounceTimeoutRef.current = setTimeout(() => {
       // Final comprehensive check when timeout fires
       if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
-        console.log('🚀 Executing scheduled auto-save');
         debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
-      } else {
-        console.log('🛑 Aborting scheduled auto-save - blocking conditions detected');
       }
       debounceTimeoutRef.current = null;
-    }, 3000); // Increased to 3 seconds for better stability
+    }, 3000); // 3 seconds for better stability
 
   }, [
     hasUnsavedChanges, 
@@ -159,10 +146,7 @@ export const useAutoSave = (
 
   const markAsChangedCallback = () => {
     if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
-      console.log('✏️ Marking as changed (not during realtime update or save)');
       markAsChanged();
-    } else {
-      console.log('🚫 Blocking mark as changed - realtime update or save in progress');
     }
   };
 
