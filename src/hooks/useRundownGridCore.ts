@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -103,11 +104,11 @@ export const useRundownGridCore = () => {
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Showcaller state change handler
+  // Showcaller state change handler - fixed to only update showcaller_state
   const handleShowcallerStateChange = useCallback((showcallerState: any) => {
     if (!isProcessingRealtimeUpdate && rundownId) {
       console.log('📡 Broadcasting showcaller state change:', showcallerState);
-      // Save showcaller state to database for real-time sync
+      // Only update showcaller_state, not the entire rundown
       updateRundown(rundownId, {
         showcaller_state: showcallerState
       }).catch(error => {

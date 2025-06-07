@@ -61,18 +61,26 @@ export class RundownOperations {
     private setSavedRundowns: React.Dispatch<React.SetStateAction<SavedRundown[]>>
   ) {}
 
-  async updateRundown(rundownId: string, title: string, items: any[], updateUndoHistory = true, archived = false) {
+  async updateRundown(rundownId: string, data: {
+    title?: string;
+    items?: any[];
+    updateUndoHistory?: boolean;
+    archived?: boolean;
+    showcaller_state?: any;
+  }) {
     if (!this.user) {
       throw new Error('User not authenticated');
     }
 
     try {
-      const rundownData: any = {
-        title,
-        items,
-        archived,
-        undo_history: updateUndoHistory ? [] : undefined
-      };
+      const rundownData: any = {};
+      
+      // Only include fields that are provided
+      if (data.title !== undefined) rundownData.title = data.title;
+      if (data.items !== undefined) rundownData.items = data.items;
+      if (data.archived !== undefined) rundownData.archived = data.archived;
+      if (data.showcaller_state !== undefined) rundownData.showcaller_state = data.showcaller_state;
+      if (data.updateUndoHistory !== undefined) rundownData.undo_history = data.updateUndoHistory ? [] : undefined;
 
       await updateRundownInSupabase(rundownId, rundownData, this.user.id);
 
@@ -80,7 +88,14 @@ export class RundownOperations {
       this.setSavedRundowns(prevRundowns =>
         prevRundowns.map(rundown =>
           rundown.id === rundownId
-            ? { ...rundown, title, items, archived, updated_at: new Date().toISOString() }
+            ? { 
+                ...rundown, 
+                ...(data.title !== undefined && { title: data.title }),
+                ...(data.items !== undefined && { items: data.items }),
+                ...(data.archived !== undefined && { archived: data.archived }),
+                ...(data.showcaller_state !== undefined && { showcaller_state: data.showcaller_state }),
+                updated_at: new Date().toISOString() 
+              }
             : rundown
         )
       );
@@ -121,7 +136,7 @@ export class RundownOperations {
   }
 
   async archiveRundown(rundownId: string) {
-    return this.updateRundown(rundownId, '', [], false, true);
+    return this.updateRundown(rundownId, { archived: true });
   }
 
   async duplicateRundown(rundownId: string, title: string, items: any[]) {
