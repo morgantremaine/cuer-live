@@ -4,6 +4,7 @@ import HeaderLogo from './header/HeaderLogo';
 import HeaderTitle from './header/HeaderTitle';
 import HeaderControls from './header/HeaderControls';
 import HeaderBottomSection from './header/HeaderBottomSection';
+import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import { SearchHighlight } from '@/types/search';
 
 interface RundownHeaderProps {
@@ -25,6 +26,8 @@ interface RundownHeaderProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  isConnected?: boolean;
+  isProcessingRealtimeUpdate?: boolean;
 }
 
 const RundownHeader = ({ 
@@ -45,7 +48,9 @@ const RundownHeader = ({
   currentHighlight,
   onUndo,
   canUndo,
-  lastAction
+  lastAction,
+  isConnected,
+  isProcessingRealtimeUpdate
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -70,8 +75,15 @@ const RundownHeader = ({
             hasUnsavedChanges={hasUnsavedChanges}
             isSaving={isSaving}
           />
-          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1 flex items-center gap-2">
             <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
+            {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
+              <RealtimeStatusIndicator
+                isConnected={isConnected || false}
+                isProcessingUpdate={isProcessingRealtimeUpdate || false}
+                className="ml-2"
+              />
+            )}
           </div>
         </div>
         <HeaderControls
@@ -100,18 +112,29 @@ const RundownHeader = ({
               isSaving={isSaving}
             />
           </div>
-          <HeaderControls
-            currentTime={currentTime}
-            timezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-            items={items}
-            visibleColumns={visibleColumns}
-            onHighlightMatch={onHighlightMatch}
-            onReplaceText={onReplaceText}
-            onUndo={onUndo}
-            canUndo={canUndo}
-            lastAction={lastAction}
-          />
+          <div className="flex items-center space-x-4">
+            <div className="text-right text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+              <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
+              {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
+                <RealtimeStatusIndicator
+                  isConnected={isConnected || false}
+                  isProcessingUpdate={isProcessingRealtimeUpdate || false}
+                />
+              )}
+            </div>
+            <HeaderControls
+              currentTime={currentTime}
+              timezone={timezone}
+              onTimezoneChange={onTimezoneChange}
+              items={items}
+              visibleColumns={visibleColumns}
+              onHighlightMatch={onHighlightMatch}
+              onReplaceText={onReplaceText}
+              onUndo={onUndo}
+              canUndo={canUndo}
+              lastAction={lastAction}
+            />
+          </div>
         </div>
 
         <HeaderBottomSection
