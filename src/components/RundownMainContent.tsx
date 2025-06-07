@@ -3,7 +3,6 @@ import React from 'react';
 import RundownContent from './RundownContent';
 import RundownToolbar from './RundownToolbar';
 import ColumnManager from './ColumnManager';
-import PlaybackControls from './toolbar/PlaybackControls';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -107,39 +106,6 @@ const RundownMainContent = (props: RundownMainContentProps) => {
         rundownId={props.rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
       />
-
-      {/* Showcaller Playback Controls - Always Visible Section */}
-      <div className="bg-white dark:bg-gray-900 border-b p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold">
-              {props.rundownTitle || 'Live Broadcast Rundown'}
-            </h2>
-            {props.currentSegmentName && (
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Now: {props.currentSegmentName}
-              </span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total: {props.totalDuration}
-            </div>
-            <PlaybackControls
-              selectedRowId={selectedRowId}
-              isPlaying={props.isPlaying}
-              currentSegmentId={props.currentSegmentId}
-              timeRemaining={props.timeRemaining}
-              onPlay={props.onPlay}
-              onPause={props.onPause}
-              onForward={props.onForward}
-              onBackward={props.onBackward}
-              size="lg"
-            />
-          </div>
-        </div>
-      </div>
 
       {/* Main Content Area */}
       <RundownContent

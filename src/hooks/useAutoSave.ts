@@ -66,8 +66,14 @@ export const useAutoSave = (
 
     // For new rundowns (rundownId is undefined), check if there's meaningful content
     if (!rundownId) {
-      // Skip saving if it's just the default state with minimal content
-      if (rundownTitle === 'Live Broadcast Rundown' && (!items || items.length <= 3)) {
+      // Skip saving if it's truly empty content - but allow saving when user has added real content
+      const hasRealContent = items && items.length > 0 && (
+        rundownTitle !== 'Live Broadcast Rundown' || 
+        items.some(item => item.title?.trim() || item.script?.trim() || item.notes?.trim()) ||
+        items.length > 4  // More than the basic default items
+      );
+      
+      if (!hasRealContent) {
         console.log('⏭️ Skipping auto-save - insufficient content for new rundown');
         return;
       }
