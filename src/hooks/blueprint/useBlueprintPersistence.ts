@@ -44,6 +44,7 @@ export const useBlueprintPersistence = (
 
       return data;
     } catch (error) {
+      console.error('Error loading blueprint:', error);
       return null;
     }
   }, [rundownId]);
@@ -63,17 +64,37 @@ export const useBlueprintPersistence = (
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Prepare the blueprint data with proper validation
       const blueprintData = {
         rundown_id: rundownId,
-        rundown_title: rundownTitle,
+        rundown_title: rundownTitle || 'Untitled Rundown',
         user_id: user.id,
-        lists,
-        show_date: showDateOverride || showDate,
-        notes: notesOverride !== undefined ? notesOverride : savedBlueprint?.notes,
-        crew_data: crewDataOverride !== undefined ? crewDataOverride : savedBlueprint?.crew_data,
-        camera_plots: cameraPlots !== undefined ? cameraPlots : savedBlueprint?.camera_plots,
+        lists: Array.isArray(lists) ? lists : [],
+        show_date: showDateOverride || showDate || null,
+        notes: notesOverride !== undefined ? notesOverride : (savedBlueprint?.notes || null),
+        crew_data: crewDataOverride !== undefined ? crewDataOverride : (savedBlueprint?.crew_data || []),
+        camera_plots: cameraPlots !== undefined ? cameraPlots : (savedBlueprint?.camera_plots || []),
         updated_at: new Date().toISOString()
       };
+
+      // Ensure crew_data is always an array
+      if (!Array.isArray(blueprintData.crew_data)) {
+        blueprintData.crew_data = [];
+      }
+
+      // Ensure camera_plots is always an array
+      if (!Array.isArray(blueprintData.camera_plots)) {
+        blueprintData.camera_plots = [];
+      }
+
+      console.log('Saving blueprint data:', {
+        rundown_id: blueprintData.rundown_id,
+        user_id: blueprintData.user_id,
+        lists_count: blueprintData.lists.length,
+        crew_data_count: blueprintData.crew_data.length,
+        has_notes: !!blueprintData.notes,
+        has_show_date: !!blueprintData.show_date
+      });
 
       const { data, error } = await supabase
         .from('blueprints')
@@ -83,11 +104,16 @@ export const useBlueprintPersistence = (
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error saving blueprint:', error);
+        throw error;
+      }
 
       setSavedBlueprint(data);
+      console.log('Blueprint saved successfully');
     } catch (error) {
-      // Silent error handling
+      console.error('Error saving blueprint:', error);
+      // Silent error handling - don't throw to prevent disrupting the UI
     }
   }, [rundownId, rundownTitle, showDate, savedBlueprint, setSavedBlueprint]);
 

@@ -47,6 +47,7 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
         if (blueprintData?.crew_data && Array.isArray(blueprintData.crew_data) && blueprintData.crew_data.length > 0) {
           setCrewMembers(blueprintData.crew_data);
         }
+        setSavedBlueprint(blueprintData);
       } catch (error) {
         console.log('Failed to load crew data, using defaults');
         // Keep default data on error
@@ -61,7 +62,7 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
 
   // Debounced auto-save crew data changes
   const saveCrewData = async (updatedMembers: CrewMember[]) => {
-    if (!isInitialized) return;
+    if (!isInitialized || !rundownId) return;
     
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -71,14 +72,16 @@ export const useCrewList = (rundownId: string, rundownTitle: string) => {
     // Set new timeout for debounced save
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        console.log('Saving crew data:', updatedMembers.length, 'members');
+        
         // Only save crew data, don't overwrite other blueprint data
         await saveBlueprint(
-          [], // empty lists - don't overwrite
+          savedBlueprint?.lists || [], // preserve existing lists
           true, // silent save
-          undefined, // don't change show_date
-          undefined, // don't change notes
+          savedBlueprint?.show_date, // preserve existing show_date
+          savedBlueprint?.notes, // preserve existing notes
           updatedMembers, // only update crew data
-          undefined // don't change camera_plots
+          savedBlueprint?.camera_plots // preserve existing camera_plots
         );
       } catch (error) {
         console.error('Failed to save crew data:', error);
