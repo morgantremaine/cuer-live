@@ -108,7 +108,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                     <div className="flex items-center">
                       {isShowcallerCurrent && (
                         <span 
-                          className="text-green-600 mr-2 text-lg font-bold print:hidden"
+                          className="text-blue-500 mr-2 text-lg font-bold print:hidden"
                           style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
                         >
                           ▶
