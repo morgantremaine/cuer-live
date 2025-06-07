@@ -71,9 +71,11 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
           {items.map((item, index) => {
-            // Only show showcaller arrow for non-header items with current status
+            // Check if this is the currently playing segment (showcaller)
             const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
+            
+            console.log(`Item ${item.id}: isShowcallerCurrent=${isShowcallerCurrent}, currentSegmentId=${currentSegmentId}`);
             
             return (
               <tr
@@ -81,23 +83,26 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 className={`
                   ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                   ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                  ${isShowcallerCurrent ? 'bg-green-50 border-l-4 border-green-500' : ''}
                   print:break-inside-avoid
                 `}
-                style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
+                style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
               >
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                  {isShowcallerCurrent && (
-                    <span 
-                      className="text-green-600 mr-1 text-lg scale-125 inline-block print:hidden"
-                      style={{ textShadow: '0 0 1px black' }}
-                    >
-                      ▶
-                    </span>
-                  )}
-                  {isFloated && (
-                    <span className="text-yellow-400 mr-1">🛟</span>
-                  )}
-                  {getRowNumber(index, items)}
+                  <div className="flex items-center">
+                    {isShowcallerCurrent && (
+                      <span 
+                        className="text-green-600 mr-2 text-lg font-bold print:hidden"
+                        style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
+                      >
+                        ▶
+                      </span>
+                    )}
+                    {isFloated && (
+                      <span className="text-yellow-400 mr-1">🛟</span>
+                    )}
+                    <span>{getRowNumber(index, items)}</span>
+                  </div>
                 </td>
                 
                 {visibleColumns.map((column) => {

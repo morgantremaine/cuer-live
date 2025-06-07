@@ -100,7 +100,7 @@ export const useSharedRundownState = () => {
     loadRundownData();
   }, [rundownId]);
 
-  // Set up polling for updates (check every 5 seconds)
+  // Set up polling for updates (check every 2 seconds for more responsive showcaller updates)
   useEffect(() => {
     if (!rundownId || loading) return;
 
@@ -109,7 +109,7 @@ export const useSharedRundownState = () => {
     const pollInterval = setInterval(() => {
       console.log('Polling for rundown updates...');
       loadRundownData();
-    }, 5000); // Poll every 5 seconds
+    }, 2000); // Poll every 2 seconds for more responsive showcaller
 
     return () => {
       console.log('Cleaning up polling interval');
@@ -117,13 +117,17 @@ export const useSharedRundownState = () => {
     };
   }, [rundownId, loading]);
 
-  // Find the showcaller segment (the one marked as 'current' by the main rundown)
-  const currentSegmentId = rundownData?.items.find(item => item.status === 'current')?.id || null;
+  // Find the showcaller segment - look for the item with status 'current'
+  const currentSegmentId = rundownData?.items.find(item => 
+    item.type !== 'header' && item.status === 'current'
+  )?.id || null;
+
+  console.log('Current segment ID for showcaller:', currentSegmentId);
 
   return {
     rundownData,
     currentTime,
-    currentSegmentId, // This will be null unless set by showcaller in main rundown
+    currentSegmentId,
     loading,
     error
   };
