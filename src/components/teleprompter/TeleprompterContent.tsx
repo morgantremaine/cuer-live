@@ -22,7 +22,7 @@ const TeleprompterContent = ({
   getRowNumber
 }: TeleprompterContentProps) => {
   return (
-    <div className="relative">
+    <div className={`relative ${isFullscreen ? 'cursor-none' : ''}`}>
       {/* Speaking Indicator Arrow - Fixed Position */}
       <div 
         className="fixed left-4 z-20 pointer-events-none"
