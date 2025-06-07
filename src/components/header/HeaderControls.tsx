@@ -2,6 +2,13 @@
 import React, { useState } from 'react';
 import { User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import SearchBar from '../SearchBar';
@@ -34,6 +41,7 @@ const HeaderControls = ({
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -69,15 +77,29 @@ const HeaderControls = ({
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
-          <span className="text-sm">{user.email}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSignOut}
-            className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="text-gray-900 dark:text-white hover:text-gray-100 hover:bg-transparent">
+                <User className="h-4 w-4 mr-2" />
+                {user.email}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
+              <DropdownMenuItem 
+                onClick={() => navigate('/account')}
+                className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                Account Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ) : (
         <Button

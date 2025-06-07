@@ -62,20 +62,12 @@ const BlueprintHeader = ({
         
         <div className="flex gap-2 justify-between">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/rundown/${rundown.id}`)}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Rundown
-            </Button>
-          </div>
-          <div className="flex gap-2">
             <AddListDialog
               availableColumns={availableColumns}
               onAddList={onAddList}
             />
+          </div>
+          <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={onRefreshAll}
@@ -83,6 +75,14 @@ const BlueprintHeader = ({
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh All
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/rundown/${rundown.id}`)}
+              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Rundown
             </Button>
           </div>
         </div>
