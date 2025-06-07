@@ -48,7 +48,7 @@ const Help = () => {
                   <li>Create a new rundown from the dashboard</li>
                   <li>Add items and headers to your rundown using the "+" buttons</li>
                   <li>Edit content by clicking on any cell</li>
-                  <li>Right click to change row color and float/unfloat rows</li>
+                  <li>Right click to change row color and float/unfloat rows
                   <li>Save your work automatically as you type</li>
                 </ul>
               </div>
@@ -173,7 +173,7 @@ const Help = () => {
                   <ul className="space-y-1 text-gray-700 text-sm">
                     <li><kbd className="bg-gray-100 px-2 py-1 rounded">Tab</kbd> - Next cell</li>
                     <li><kbd className="bg-gray-100 px-2 py-1 rounded">Shift + Tab</kbd> - Previous cell</li>
-                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Enter</kbd> - Save and move down</li>
+                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Enter</kbd> - Move to cell below</li>
                     <li><kbd className="bg-gray-100 px-2 py-1 rounded">Escape</kbd> - Cancel edit</li>
                   </ul>
                 </div>
