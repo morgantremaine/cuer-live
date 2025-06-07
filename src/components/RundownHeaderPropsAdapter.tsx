@@ -14,25 +14,20 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     timezone,
     onTimezoneChange,
     totalRuntime,
-    isPlaying,
-    timeRemaining,
-    onPlay,
-    onPause,
-    onForward,
-    onBackward,
     rundownTitle,
     onTitleChange,
     rundownStartTime,
     onRundownStartTimeChange,
     rundownId,
-    onOpenTeleprompter,
     hasUnsavedChanges,
     isSaving,
     onUndo,
     canUndo,
     lastAction,
     isConnected,
-    isProcessingRealtimeUpdate
+    isProcessingRealtimeUpdate,
+    items,
+    visibleColumns
   } = props;
 
   return (
@@ -43,20 +38,14 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
           timezone={timezone}
           onTimezoneChange={onTimezoneChange}
           totalRuntime={totalRuntime}
-          isPlaying={isPlaying}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          rundownTitle={rundownTitle}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isSaving={isSaving}
+          title={rundownTitle}
           onTitleChange={onTitleChange}
           rundownStartTime={rundownStartTime}
           onRundownStartTimeChange={onRundownStartTimeChange}
-          rundownId={rundownId}
-          onOpenTeleprompter={onOpenTeleprompter}
-          hasUnsavedChanges={hasUnsavedChanges}
-          isSaving={isSaving}
+          items={items}
+          visibleColumns={visibleColumns}
           onUndo={onUndo}
           canUndo={canUndo}
           lastAction={lastAction}
