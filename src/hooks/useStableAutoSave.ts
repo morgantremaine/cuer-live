@@ -25,6 +25,7 @@ export const useStableAutoSave = (
   const isInitializedRef = useRef(false);
   const isSavingRef = useRef(false);
   const hasTriedSaveRef = useRef(false);
+  const onRundownCreatedRef = useRef<((id: string) => void) | null>(null);
 
   // Create a stable data signature for change detection
   const createDataSignature = useCallback(() => {
@@ -36,6 +37,11 @@ export const useStableAutoSave = (
       startTime: rundownStartTime || ''
     });
   }, [items, rundownTitle, columns, timezone, rundownStartTime]);
+
+  // Function to set callback for when rundown is created
+  const setOnRundownCreated = useCallback((callback: (id: string) => void) => {
+    onRundownCreatedRef.current = callback;
+  }, []);
 
   // Stable save function
   const performSave = useCallback(async () => {
@@ -64,10 +70,27 @@ export const useStableAutoSave = (
         );
 
         if (newRundownData && newRundownData.length > 0) {
-          // Redirect to the new rundown
           const newRundownId = newRundownData[0].id;
-          console.log('✅ New rundown created, redirecting to:', newRundownId);
-          window.location.href = `/${newRundownId}`;
+          console.log('✅ New rundown created:', newRundownId);
+          
+          // Mark as saved
+          lastSavedDataRef.current = createDataSignature();
+          isDirtyRef.current = false;
+          setHasUnsavedChanges(false);
+          setState('saved');
+
+          // Notify that rundown was created (this will update the URL and rundown ID)
+          if (onRundownCreatedRef.current) {
+            onRundownCreatedRef.current(newRundownId);
+          }
+
+          // Reset to idle after a short delay
+          setTimeout(() => {
+            if (!isDirtyRef.current) {
+              setState('idle');
+            }
+          }, 1000);
+          
           return;
         }
       } catch (error) {
@@ -200,6 +223,7 @@ export const useStableAutoSave = (
     hasUnsavedChanges,
     isSaving: state === 'saving',
     autoSaveState: state,
-    markAsDirty
+    markAsDirty,
+    setOnRundownCreated
   };
 };

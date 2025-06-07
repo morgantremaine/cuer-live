@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
@@ -42,7 +42,13 @@ export const useRundownStateIntegration = (
   } = useColumnsManager();
 
   // Auto-save functionality - now that columns is available
-  const { hasUnsavedChanges, isSaving, setRundownId, markAsChanged } = useAutoSave(
+  const { 
+    hasUnsavedChanges, 
+    isSaving, 
+    setRundownId, 
+    markAsChanged, 
+    setOnRundownCreated 
+  } = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
     Array.isArray(columns) ? columns : [],
@@ -51,8 +57,10 @@ export const useRundownStateIntegration = (
   );
 
   // Connect the markAsChanged function to both managers
-  setItemsMarkAsChangedCallback(markAsChanged);
-  setColumnsMarkAsChangedCallback(markAsChanged);
+  useEffect(() => {
+    setItemsMarkAsChangedCallback(markAsChanged);
+    setColumnsMarkAsChangedCallback(markAsChanged);
+  }, [markAsChanged, setItemsMarkAsChangedCallback, setColumnsMarkAsChangedCallback]);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
@@ -120,6 +128,7 @@ export const useRundownStateIntegration = (
     hasUnsavedChanges,
     isSaving,
     setRundownId,
-    markAsChanged
+    markAsChanged,
+    setOnRundownCreated
   };
 };

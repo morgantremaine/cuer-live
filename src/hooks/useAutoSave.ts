@@ -17,7 +17,8 @@ export const useAutoSave = (
     hasUnsavedChanges,
     isSaving,
     autoSaveState,
-    markAsDirty
+    markAsDirty,
+    setOnRundownCreated
   } = useStableAutoSave(
     rundownIdRef.current,
     items,
@@ -47,6 +48,7 @@ export const useAutoSave = (
     autoSaveState,
     setRundownId,
     markAsChanged,
-    markAsSaved
+    markAsSaved,
+    setOnRundownCreated
   };
 };
