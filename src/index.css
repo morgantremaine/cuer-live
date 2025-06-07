@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,16 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Enhanced hover and animation utilities */
+@layer utilities {
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
   }
 }
