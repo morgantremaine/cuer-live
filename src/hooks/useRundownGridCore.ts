@@ -172,6 +172,7 @@ export const useRundownGridCore = () => {
     ...stableDataLoaderCallbacks
   });
 
+  // Updated playback controls with showcaller integration
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -180,7 +181,7 @@ export const useRundownGridCore = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(items, updateItem);
+  } = usePlaybackControls(items, updateItem, rundownId);
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 

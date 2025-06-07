@@ -1,185 +1,59 @@
-import { useState, useRef, useEffect } from 'react';
-import { RundownItem, isHeaderItem } from '@/types/rundown';
+
+import { useEffect } from 'react';
+import { RundownItem } from '@/types/rundown';
+import { useShowcallerState } from './useShowcallerState';
+import { useShowcallerPersistence } from './useShowcallerPersistence';
+import { useShowcallerRealtime } from './useShowcallerRealtime';
 
 export const usePlaybackControls = (
   items: RundownItem[],
-  updateItem: (id: string, field: string, value: string) => void
+  updateItem: (id: string, field: string, value: string) => void,
+  rundownId?: string
 ) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Initialize showcaller state management
+  const {
+    showcallerState,
+    play,
+    pause,
+    forward,
+    backward,
+    applyShowcallerState,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining
+  } = useShowcallerState({
+    items,
+    updateItem,
+    onShowcallerStateChange: (state) => {
+      // Save state changes to database
+      saveShowcallerState(state);
+    }
+  });
 
-  // Set default current segment to first non-header item (A1) on mount
+  // Initialize persistence
+  const { saveShowcallerState, loadShowcallerState } = useShowcallerPersistence({
+    rundownId,
+    onShowcallerStateReceived: applyShowcallerState
+  });
+
+  // Initialize realtime synchronization
+  useShowcallerRealtime({
+    rundownId,
+    onShowcallerStateReceived: applyShowcallerState,
+    enabled: !!rundownId
+  });
+
+  // Load initial showcaller state when rundown changes
   useEffect(() => {
-    if (!currentSegmentId && items.length > 0) {
-      const firstSegment = items.find(item => !isHeaderItem(item));
-      if (firstSegment) {
-        setCurrentSegmentId(firstSegment.id);
-        const duration = timeToSeconds(firstSegment.duration);
-        setTimeRemaining(duration);
-      }
-    }
-  }, [items, currentSegmentId]);
-
-  const timeToSeconds = (timeStr: string) => {
-    if (!timeStr) return 0;
-    const parts = timeStr.split(':').map(Number);
-    
-    if (parts.length === 2) {
-      // MM:SS format (minutes:seconds)
-      const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
-    } else if (parts.length === 3) {
-      // HH:MM:SS format
-      const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
-    }
-    return 0;
-  };
-
-  const clearCurrentStatus = () => {
-    items.forEach(item => {
-      if (item.status === 'current') {
-        updateItem(item.id, 'status', 'completed');
-      }
-    });
-  };
-
-  const setCurrentSegment = (segmentId: string) => {
-    clearCurrentStatus();
-    const segment = items.find(item => item.id === segmentId);
-    if (segment && !isHeaderItem(segment)) {
-      updateItem(segmentId, 'status', 'current');
-      setCurrentSegmentId(segmentId);
-      const duration = timeToSeconds(segment.duration);
-      setTimeRemaining(duration);
-    }
-  };
-
-  const getNextSegment = (currentId: string) => {
-    const currentIndex = items.findIndex(item => item.id === currentId);
-    for (let i = currentIndex + 1; i < items.length; i++) {
-      if (!isHeaderItem(items[i])) {
-        return items[i];
-      }
-    }
-    return null;
-  };
-
-  const getPreviousSegment = (currentId: string) => {
-    const currentIndex = items.findIndex(item => item.id === currentId);
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      if (!isHeaderItem(items[i])) {
-        return items[i];
-      }
-    }
-    return null;
-  };
-
-  const startTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-    timerRef.current = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          // Time's up, mark current as completed and move to next segment
-          if (currentSegmentId) {
-            updateItem(currentSegmentId, 'status', 'completed');
-            const nextSegment = getNextSegment(currentSegmentId);
-            if (nextSegment) {
-              setCurrentSegment(nextSegment.id);
-              return timeToSeconds(nextSegment.duration);
-            } else {
-              // No more segments, stop playback
-              setIsPlaying(false);
-              setCurrentSegmentId(null);
-              return 0;
-            }
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const stopTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
-  const play = (selectedSegmentId?: string) => {
-    if (selectedSegmentId) {
-      // Mark all segments before the selected one as upcoming
-      const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
-      items.forEach((item, index) => {
-        if (!isHeaderItem(item)) {
-          if (index < selectedIndex) {
-            updateItem(item.id, 'status', 'upcoming');
-          } else if (index > selectedIndex) {
-            updateItem(item.id, 'status', 'upcoming');
-          }
+    if (rundownId) {
+      loadShowcallerState().then(state => {
+        if (state) {
+          console.log('📺 Loading initial showcaller state:', state);
+          applyShowcallerState(state);
         }
       });
-      setCurrentSegment(selectedSegmentId);
     }
-    setIsPlaying(true);
-    startTimer();
-  };
-
-  const pause = () => {
-    setIsPlaying(false);
-    stopTimer();
-  };
-
-  const forward = () => {
-    if (currentSegmentId) {
-      const nextSegment = getNextSegment(currentSegmentId);
-      if (nextSegment) {
-        updateItem(currentSegmentId, 'status', 'completed');
-        setCurrentSegment(nextSegment.id);
-        if (isPlaying) {
-          startTimer();
-        }
-      }
-    }
-  };
-
-  const backward = () => {
-    if (currentSegmentId) {
-      const prevSegment = getPreviousSegment(currentSegmentId);
-      if (prevSegment) {
-        updateItem(currentSegmentId, 'status', 'upcoming');
-        setCurrentSegment(prevSegment.id);
-        if (isPlaying) {
-          startTimer();
-        }
-      }
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isPlaying && currentSegmentId) {
-      startTimer();
-    } else {
-      stopTimer();
-    }
-    
-    return () => stopTimer();
-  }, [isPlaying, currentSegmentId]);
+  }, [rundownId, loadShowcallerState, applyShowcallerState]);
 
   return {
     isPlaying,
