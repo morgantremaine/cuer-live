@@ -92,15 +92,15 @@ export const useRundownStateIntegration = (
     // Mark as changed is now handled by the original function
   }, [originalUpdateItem, items]);
 
-  // Wrapper functions that trigger auto-save (now handled internally)
-  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+  // Wrapper functions that trigger auto-save - updated to use selectedRowId instead of insertAfterIndex
+  const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
     console.log('➕ Adding row');
-    originalAddRow(calculateEndTime, insertAfterIndex);
+    originalAddRow(calculateEndTime, selectedRowId);
   }, [originalAddRow]);
 
-  const addHeader = useCallback((insertAfterIndex?: number) => {
+  const addHeader = useCallback((selectedRowId?: string) => {
     console.log('📋 Adding header');
-    originalAddHeader(insertAfterIndex);
+    originalAddHeader(selectedRowId);
   }, [originalAddHeader]);
 
   return {
