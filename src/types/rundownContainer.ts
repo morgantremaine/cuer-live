@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -70,4 +69,8 @@ export interface RundownContainerProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  
+  // Realtime collaboration props
+  isConnected?: boolean;
+  isProcessingRealtimeUpdate?: boolean;
 }

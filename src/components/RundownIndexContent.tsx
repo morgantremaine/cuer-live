@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -72,7 +73,9 @@ const RundownIndexContent = () => {
     setTimezone,
     handleUndo,
     canUndo,
-    lastAction
+    lastAction,
+    isConnected,
+    isProcessingRealtimeUpdate
   } = gridState;
 
   // Set up teammate change notifications
@@ -183,6 +186,8 @@ const RundownIndexContent = () => {
         onUndo={handleUndo}
         canUndo={canUndo}
         lastAction={lastAction}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
       />
       
       {/* Cuer AI Chat Button with rundown data */}
