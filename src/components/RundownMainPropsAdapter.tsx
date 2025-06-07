@@ -1,6 +1,7 @@
-
 import React from 'react';
+import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
+import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import { RundownContainerProps } from '@/types/rundownContainer';
 
 interface RundownMainPropsAdapterProps {
@@ -8,56 +9,132 @@ interface RundownMainPropsAdapterProps {
 }
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
+  const {
+    currentTime,
+    timezone,
+    onTimezoneChange,
+    totalRuntime,
+    onAddRow,
+    onAddHeader,
+    showColumnManager,
+    setShowColumnManager,
+    selectedCount,
+    hasClipboardData,
+    onCopySelectedRows,
+    onPasteRows,
+    onDeleteSelectedRows,
+    onClearSelection,
+    selectedRowId,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    onPlay,
+    onPause,
+    onForward,
+    onBackward,
+    hasUnsavedChanges,
+    isSaving,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId,
+    onOpenTeleprompter,
+    items,
+    visibleColumns,
+    onUndo,
+    canUndo,
+    lastAction,
+    isConnected,
+    isProcessingRealtimeUpdate,
+    cellRefs,
+    columns,
+    showColorPicker,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    getColumnWidth,
+    updateColumnWidth,
+    getRowNumber,
+    getRowStatus,
+    calculateHeaderDuration,
+    onUpdateItem,
+    onCellClick,
+    onKeyDown,
+    onToggleColorPicker,
+    onColorSelect,
+    onDeleteRow,
+    onToggleFloat,
+    onRowSelect,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumnWithCleanup,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+  } = props;
+
   return (
-    <RundownMainContent
-      currentTime={props.currentTime}
-      items={props.items}
-      visibleColumns={props.visibleColumns}
-      columns={props.columns}
-      showColorPicker={props.showColorPicker}
-      cellRefs={props.cellRefs}
-      selectedRows={props.selectedRows}
-      draggedItemIndex={props.draggedItemIndex}
-      isDraggingMultiple={props.isDraggingMultiple}
-      dropTargetIndex={props.dropTargetIndex}
-      currentSegmentId={props.currentSegmentId}
-      hasClipboardData={props.hasClipboardData}
-      getColumnWidth={props.getColumnWidth}
-      updateColumnWidth={props.updateColumnWidth}
-      getRowNumber={props.getRowNumber}
-      getRowStatus={props.getRowStatus}
-      calculateHeaderDuration={props.calculateHeaderDuration}
-      onUpdateItem={props.onUpdateItem}
-      onCellClick={props.onCellClick}
-      onKeyDown={props.onKeyDown}
-      onToggleColorPicker={props.onToggleColorPicker}
-      onColorSelect={props.onColorSelect}
-      onDeleteRow={props.onDeleteRow}
-      onToggleFloat={props.onToggleFloat}
-      onRowSelect={props.onRowSelect}
-      onDragStart={props.onDragStart}
-      onDragOver={props.onDragOver}
-      onDragLeave={props.onDragLeave}
-      onDrop={props.onDrop}
-      onCopySelectedRows={props.onCopySelectedRows}
-      onDeleteSelectedRows={props.onDeleteSelectedRows}
-      onPasteRows={props.onPasteRows}
-      onClearSelection={props.onClearSelection}
-      showColumnManager={props.showColumnManager}
-      setShowColumnManager={props.setShowColumnManager}
-      handleAddColumn={props.handleAddColumn}
-      handleReorderColumns={props.handleReorderColumns}
-      handleDeleteColumnWithCleanup={props.handleDeleteColumnWithCleanup}
-      handleRenameColumn={props.handleRenameColumn}
-      handleToggleColumnVisibility={props.handleToggleColumnVisibility}
-      handleLoadLayout={props.handleLoadLayout}
-      timeRemaining={props.timeRemaining}
-      isPlaying={props.isPlaying}
-      currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
-      totalDuration={props.items.find(item => item.id === props.currentSegmentId)?.duration || '00:00'}
-      onAddRow={props.onAddRow}
-      onAddHeader={props.onAddHeader}
-    />
+    <div className="flex flex-col h-full">
+      {/* Toolbar Section with Realtime Status */}
+      <div className="relative">
+        <RundownHeaderSection
+          currentTime={currentTime}
+          timezone={timezone}
+          onTimezoneChange={onTimezoneChange}
+          totalRuntime={totalRuntime}
+          onAddRow={onAddRow}
+          onAddHeader={onAddHeader}
+          onShowColumnManager={() => setShowColumnManager(true)}
+          selectedCount={selectedCount}
+          hasClipboardData={hasClipboardData}
+          onCopySelectedRows={onCopySelectedRows}
+          onPasteRows={onPasteRows}
+          onDeleteSelectedRows={onDeleteSelectedRows}
+          onClearSelection={onClearSelection}
+          selectedRowId={selectedRowId}
+          isPlaying={isPlaying}
+          currentSegmentId={currentSegmentId}
+          timeRemaining={timeRemaining}
+          onPlay={onPlay}
+          onPause={onPause}
+          onForward={onForward}
+          onBackward={onBackward}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isSaving={isSaving}
+          rundownTitle={rundownTitle}
+          onTitleChange={onTitleChange}
+          rundownStartTime={rundownStartTime}
+          onRundownStartTimeChange={onRundownStartTimeChange}
+          rundownId={rundownId}
+          onOpenTeleprompter={onOpenTeleprompter}
+          items={items}
+          visibleColumns={visibleColumns}
+          onUndo={onUndo}
+          canUndo={canUndo}
+          lastAction={lastAction}
+        />
+        
+        {/* Realtime Status Indicator - positioned in top right */}
+        {rundownId && (
+          <div className="absolute top-2 right-2 z-10">
+            <RealtimeStatusIndicator
+              isConnected={isConnected || false}
+              isProcessingUpdate={isProcessingRealtimeUpdate || false}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <RundownMainContent {...props} />
+      </div>
+    </div>
   );
 };
 
