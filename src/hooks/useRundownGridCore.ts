@@ -154,7 +154,7 @@ export const useRundownGridCore = () => {
       }
     }
     
-    // Update title if changed - prevent overwriting with same title ONLY if user is not editing
+    // ENHANCED: Only update title if user is NOT editing and title actually changed
     if (updatedRundown.title && updatedRundown.title !== rundownTitle && !isEditing) {
       console.log('🔄 Updating title from realtime:', updatedRundown.title);
       stableCallbacksRef.current.setRundownTitleDirectly?.(updatedRundown.title);
@@ -205,6 +205,8 @@ export const useRundownGridCore = () => {
     setIgnoreShowcallerChanges,
     isEditing
   });
+
+  // ... keep existing code (stableDataLoaderCallbacks, useRundownDataLoader, playback controls)
 
   const stableDataLoaderCallbacks = useMemo(() => ({
     setRundownTitle: stableCallbacksRef.current.setRundownTitleDirectly!,

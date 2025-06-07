@@ -22,23 +22,28 @@ export const usePlaybackControls = (
   const lastSyncTimeRef = useRef<number>(0);
   const lastPlayStartTimeRef = useRef<number | undefined>(undefined);
   const isProcessingExternalUpdateRef = useRef(false);
+  const localStateRef = useRef({ isPlaying: false, currentSegmentId: null, timeRemaining: 0 });
+
+  // Update local state ref whenever state changes
+  useEffect(() => {
+    localStateRef.current = { isPlaying, currentSegmentId, timeRemaining };
+  }, [isPlaying, currentSegmentId, timeRemaining]);
 
   // Sync with external state when it changes (from real-time updates)
   useEffect(() => {
     if (externalShowcallerState && !isProcessingExternalUpdateRef.current) {
-      const hasStateChanged = (
+      const hasSignificantStateChanged = (
         externalShowcallerState.currentSegmentId !== currentSegmentId ||
-        externalShowcallerState.isPlaying !== isPlaying ||
-        Math.abs(externalShowcallerState.timeRemaining - timeRemaining) > 2
+        Math.abs(externalShowcallerState.isPlaying !== isPlaying ? 1 : 0) === 1 ||
+        Math.abs(externalShowcallerState.timeRemaining - timeRemaining) > 3
       );
 
-      if (hasStateChanged) {
+      if (hasSignificantStateChanged) {
         console.log('📡 Syncing showcaller state from remote:', externalShowcallerState);
         
         isProcessingExternalUpdateRef.current = true;
         
         setCurrentSegmentId(externalShowcallerState.currentSegmentId);
-        setIsPlaying(externalShowcallerState.isPlaying);
         
         // Calculate adjusted time remaining based on when the external play started
         if (externalShowcallerState.isPlaying && externalShowcallerState.lastPlayStartTime) {
@@ -51,10 +56,15 @@ export const usePlaybackControls = (
           lastPlayStartTimeRef.current = undefined;
         }
 
+        // Only update isPlaying if it's actually different
+        if (externalShowcallerState.isPlaying !== isPlaying) {
+          setIsPlaying(externalShowcallerState.isPlaying);
+        }
+
         // Allow state changes again after a brief delay
         setTimeout(() => {
           isProcessingExternalUpdateRef.current = false;
-        }, 100);
+        }, 200);
       }
     }
   }, [externalShowcallerState, currentSegmentId, isPlaying, timeRemaining]);
@@ -75,7 +85,7 @@ export const usePlaybackControls = (
     // Only broadcast if this is our own change (prevent infinite loops)
     const now = Date.now();
     if (now - lastSyncTimeRef.current > 500) { // Debounce broadcasts
-      console.log('📡 Preparing showcaller state change:', fullState);
+      console.log('📡 Broadcasting showcaller state change:', fullState);
       onShowcallerStateChange?.(fullState);
       lastSyncTimeRef.current = now;
     }
@@ -246,8 +256,7 @@ export const usePlaybackControls = (
       isPlaying: true, 
       lastPlayStartTime: lastPlayStartTimeRef.current 
     });
-    startTimer();
-  }, [items, setCurrentSegment, broadcastState, startTimer]);
+  }, [items, setCurrentSegment, broadcastState]);
 
   const pause = useCallback(() => {
     if (isProcessingExternalUpdateRef.current) return;
@@ -291,12 +300,12 @@ export const usePlaybackControls = (
     }
   }, [currentSegmentId, isPlaying, updateItem, setCurrentSegment, startTimer]);
 
-  // Auto-start timer when playing state changes to true
+  // Auto-start timer when playing state changes to true - FIXED to prevent conflicts
   useEffect(() => {
     if (isPlaying && currentSegmentId && !timerRef.current && !isProcessingExternalUpdateRef.current) {
       console.log('🚀 Auto-starting timer due to isPlaying change');
       startTimer();
-    } else if (!isPlaying && timerRef.current) {
+    } else if (!isPlaying && timerRef.current && !isProcessingExternalUpdateRef.current) {
       console.log('🛑 Auto-stopping timer due to isPlaying change');
       stopTimer();
     }

@@ -107,10 +107,9 @@ export const useRealtimeRundown = ({
       hasUnsavedChanges
     });
 
-    // Skip title updates if user is currently editing the title
-    const titleChanged = payload.old?.title !== payload.new?.title;
-    if (titleChanged && isEditing) {
-      console.log('⏭️ Skipping title update - user is currently editing');
+    // ENHANCED: Skip ALL content updates if user is currently editing
+    if (isEditing && !isShowcallerOnlyUpdate) {
+      console.log('⏭️ Skipping content update - user is currently editing');
       return;
     }
 
@@ -256,7 +255,7 @@ export const useRealtimeRundown = ({
           stableSetIgnoreShowcallerChangesRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 300); // Reduced delay for better responsiveness
+      }, 500); // Increased delay to prevent state conflicts
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isEditing, toast]);
 
