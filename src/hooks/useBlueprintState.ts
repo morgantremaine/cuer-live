@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -74,9 +73,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       }
       return blueprint;
     },
-    (lists, silent, showDateOverride, notesOverride, crewDataOverride, cameraPlots) => {
-      saveBlueprint(lists, silent, showDateOverride, notesOverride, crewDataOverride, cameraPlots, componentOrder);
-    },
+    saveBlueprint, // Pass the full saveBlueprint function with all parameters
     generateListId
   );
 
