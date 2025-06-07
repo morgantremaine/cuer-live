@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,6 +7,7 @@ export type { RundownItem } from '@/types/rundown';
 export const useRundownItems = () => {
   const [items, setItems] = useState<RundownItem[]>([]);
   const [itemsUpdateTrigger, setItemsUpdateTrigger] = useState(0);
+  const [forceUpdateId, setForceUpdateId] = useState(0);
   const markAsChangedRef = useRef<(() => void) | undefined>(undefined);
 
   const callMarkAsChanged = useCallback(() => {
@@ -25,21 +25,31 @@ export const useRundownItems = () => {
   const enhancedSetItems = useCallback((newItems: RundownItem[] | ((prevItems: RundownItem[]) => RundownItem[])) => {
     setItems(prevItems => {
       const updatedItems = typeof newItems === 'function' ? newItems(prevItems) : newItems;
-      // Force a trigger update to ensure components re-render
+      
+      // Force multiple update triggers to ensure React re-renders
       setItemsUpdateTrigger(prev => prev + 1);
-      return [...updatedItems]; // Always create a new array reference
+      setForceUpdateId(prev => prev + 1);
+      
+      // Always create completely new array and objects
+      const freshItems = updatedItems.map(item => ({ ...item }));
+      
+      console.log('🔄 Items updated, new count:', freshItems.length, 'trigger:', itemsUpdateTrigger + 1);
+      
+      return freshItems;
     });
-  }, []);
+  }, [itemsUpdateTrigger]);
 
   const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
     enhancedSetItems(prevItems => {
       const newItems = prevItems.map(item => 
-        item.id === id ? { ...item, ...updates } : item
+        item.id === id ? { ...item, ...updates } : { ...item }
       );
       callMarkAsChanged();
       return newItems;
     });
   }, [enhancedSetItems, callMarkAsChanged]);
+
+  // ... keep existing code (addRow, addHeader, deleteRow, deleteMultipleRows, addMultipleRows functions)
 
   const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => {
     const newItem: RundownItem = {
@@ -141,7 +151,7 @@ export const useRundownItems = () => {
     });
   }, [enhancedSetItems, callMarkAsChanged]);
 
-  // Change back to useCallback but force re-calculation by making it depend on items and trigger
+  // Force re-calculation with multiple dependencies
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
@@ -186,12 +196,12 @@ export const useRundownItems = () => {
     }
     
     return `${currentSegmentLetter}${itemCountInSegment}`;
-  }, [items, itemsUpdateTrigger]);
+  }, [items, itemsUpdateTrigger, forceUpdateId]);
 
   const toggleFloatRow = useCallback((id: string) => {
     enhancedSetItems(prevItems => {
       const newItems = prevItems.map(item => 
-        item.id === id ? { ...item, isFloating: !item.isFloating } : item
+        item.id === id ? { ...item, isFloating: !item.isFloating } : { ...item }
       );
       callMarkAsChanged();
       return newItems;
@@ -221,7 +231,7 @@ export const useRundownItems = () => {
     } else {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-  }, [items, itemsUpdateTrigger]);
+  }, [items, itemsUpdateTrigger, forceUpdateId]);
 
   const calculateHeaderDuration = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
@@ -256,7 +266,7 @@ export const useRundownItems = () => {
     } else {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-  }, [items, itemsUpdateTrigger]);
+  }, [items, itemsUpdateTrigger, forceUpdateId]);
 
   return {
     items,
@@ -272,6 +282,7 @@ export const useRundownItems = () => {
     calculateTotalRuntime,
     calculateHeaderDuration,
     setMarkAsChangedCallback,
-    itemsUpdateTrigger
+    itemsUpdateTrigger,
+    forceUpdateId
   };
 };

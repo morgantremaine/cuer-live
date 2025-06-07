@@ -52,38 +52,42 @@ export const useRealtimeRundownSync = ({
     const updatedRundown = payload.new;
     console.log('🔄 Applying realtime update from another user');
 
-    // Use flushSync to ensure immediate synchronous updates
+    // Force immediate synchronous updates
     flushSync(() => {
-      // Update the rundown data with proper React state updates
+      // Update title if changed
       if (updatedRundown.title) {
         console.log('📝 Updating title:', updatedRundown.title);
         setRundownTitle(updatedRundown.title);
       }
 
+      // Update timezone if changed
       if (updatedRundown.timezone) {
         console.log('🌍 Updating timezone:', updatedRundown.timezone);
         setTimezone(updatedRundown.timezone);
       }
 
+      // Update start time if changed
       if (updatedRundown.start_time) {
         console.log('⏰ Updating start time:', updatedRundown.start_time);
         setRundownStartTime(updatedRundown.start_time);
       }
 
+      // Update items if changed - force new array reference
       if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
         console.log('📋 Updating items:', updatedRundown.items.length, 'items');
-        // Force a completely new array reference to trigger re-render
-        const newItems = JSON.parse(JSON.stringify(updatedRundown.items));
+        // Create completely new items array with new object references
+        const newItems = updatedRundown.items.map((item: any) => ({ ...item }));
         setItems(newItems);
       }
 
+      // Update columns if changed
       if (updatedRundown.columns && Array.isArray(updatedRundown.columns)) {
         console.log('📊 Updating columns layout');
-        const newColumns = JSON.parse(JSON.stringify(updatedRundown.columns));
+        const newColumns = updatedRundown.columns.map((col: any) => ({ ...col }));
         handleLoadLayout(newColumns);
       }
 
-      // Force multiple re-render triggers
+      // Increment both triggers to force re-renders
       setUpdateTrigger(prev => prev + 1);
       setForceRenderTrigger(prev => prev + 1);
     });
@@ -141,6 +145,6 @@ export const useRealtimeRundownSync = ({
   return {
     updateLastUpdateTime,
     updateTrigger,
-    forceRenderTrigger // Additional trigger for force re-renders
+    forceRenderTrigger
   };
 };

@@ -54,18 +54,19 @@ const RundownGrid = () => {
     colorPickerSelect(id, color);
   };
 
-  // Debug logging for triggers
+  // Enhanced debug logging
   console.log('RundownGrid: updateTrigger value:', updateTrigger, '- Remote updates trigger');
   console.log('RundownGrid: forceRenderTrigger value:', forceRenderTrigger, '- Force render trigger');
   console.log('RundownGrid: items count:', items?.length || 0);
+  console.log('RundownGrid: items array reference check:', items);
 
-  // Create multiple render keys to ensure re-renders
-  const renderKey = useMemo(() => 
-    `rundown-table-${updateTrigger}-${forceRenderTrigger}-${items?.length || 0}`, 
-    [updateTrigger, forceRenderTrigger, items?.length]
-  );
+  // Create multiple render keys with timestamp to ensure re-renders
+  const renderKey = useMemo(() => {
+    const timestamp = Date.now();
+    return `rundown-table-${updateTrigger}-${forceRenderTrigger}-${items?.length || 0}-${timestamp}`;
+  }, [updateTrigger, forceRenderTrigger, items?.length, items]);
 
-  // Additional safety: force re-render on items change
+  // Additional safety: force re-render on items change with comprehensive dependencies
   const tableProps = useMemo(() => ({
     items,
     visibleColumns,
@@ -110,7 +111,7 @@ const RundownGrid = () => {
     toggleFloatRow, handleRowSelection, handleDragStart, handleDragOver,
     handleDragLeave, handleDrop, handleCopySelectedRows, handleDeleteSelectedRows,
     handlePasteRows, clearSelection, handleAddRow, handleAddHeader,
-    updateTrigger, forceRenderTrigger
+    updateTrigger, forceRenderTrigger, JSON.stringify(items)
   ]);
 
   return (

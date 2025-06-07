@@ -25,7 +25,7 @@ const TeleprompterContent = ({
     <div className="relative">
       {/* Speaking Indicator Arrow - Fixed Position */}
       <div 
-        className="fixed left-4 z-20 pointer-events-none"
+        className="fixed left-4 z-30 pointer-events-none"
         style={{ 
           top: '25%',
           transform: 'translateY(-50%)'
