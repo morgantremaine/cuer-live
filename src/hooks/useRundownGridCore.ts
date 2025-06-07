@@ -40,8 +40,8 @@ export const useRundownGridCore = () => {
   );
 
   // Real-time sync with proper state setters and rundown ID
-  const { updateLastUpdateTime } = useRealtimeRundownSync({
-    rundownId, // Pass the actual rundown ID here
+  const { updateLastUpdateTime, updateTrigger } = useRealtimeRundownSync({
+    rundownId,
     currentUserId: user?.id || null,
     setItems: stateIntegration.setItems,
     setRundownTitle,
@@ -51,7 +51,7 @@ export const useRundownGridCore = () => {
     markAsChanged: stateIntegration.markAsChanged
   });
 
-  // Time calculations
+  // Time calculations - include updateTrigger to force recalculation on remote updates
   const timeCalculations = useTimeCalculations(
     stateIntegration.items,
     rundownStartTime,
@@ -107,6 +107,13 @@ export const useRundownGridCore = () => {
     stateIntegration.markAsChanged();
   }, [updateLastUpdateTime, stateIntegration.markAsChanged]);
 
+  // Force re-render when remote updates are received
+  useEffect(() => {
+    if (updateTrigger > 0) {
+      console.log('🔄 Remote update trigger - forcing component refresh');
+    }
+  }, [updateTrigger]);
+
   return {
     // Basic state
     rundownTitle,
@@ -146,6 +153,9 @@ export const useRundownGridCore = () => {
 
     // Spread all the integrated state but override markAsChanged
     ...stateIntegration,
-    markAsChanged: enhancedMarkAsChanged
+    markAsChanged: enhancedMarkAsChanged,
+    
+    // Include update trigger for components that need to respond to remote changes
+    updateTrigger
   };
 };

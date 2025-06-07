@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
@@ -27,6 +27,7 @@ export const useRealtimeRundownSync = ({
 }: UseRealtimeRundownSyncProps) => {
   const channelRef = useRef<any>(null);
   const lastUpdateRef = useRef<number>(Date.now());
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const handleRundownUpdate = useCallback((payload: any) => {
     console.log('📡 Received realtime rundown update:', payload);
@@ -49,29 +50,41 @@ export const useRealtimeRundownSync = ({
     const updatedRundown = payload.new;
     console.log('🔄 Applying realtime update from another user');
 
-    // Update the rundown data
-    if (updatedRundown.title) {
-      setRundownTitle(updatedRundown.title);
-    }
+    // Use a slight delay to ensure state updates are batched properly
+    setTimeout(() => {
+      // Update the rundown data with proper React state updates
+      if (updatedRundown.title) {
+        console.log('📝 Updating title:', updatedRundown.title);
+        setRundownTitle(updatedRundown.title);
+      }
 
-    if (updatedRundown.timezone) {
-      setTimezone(updatedRundown.timezone);
-    }
+      if (updatedRundown.timezone) {
+        console.log('🌍 Updating timezone:', updatedRundown.timezone);
+        setTimezone(updatedRundown.timezone);
+      }
 
-    if (updatedRundown.start_time) {
-      setRundownStartTime(updatedRundown.start_time);
-    }
+      if (updatedRundown.start_time) {
+        console.log('⏰ Updating start time:', updatedRundown.start_time);
+        setRundownStartTime(updatedRundown.start_time);
+      }
 
-    if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
-      setItems(updatedRundown.items);
-    }
+      if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
+        console.log('📋 Updating items:', updatedRundown.items.length, 'items');
+        // Force a new array reference to trigger re-render
+        setItems([...updatedRundown.items]);
+      }
 
-    if (updatedRundown.columns && Array.isArray(updatedRundown.columns)) {
-      handleLoadLayout(updatedRundown.columns);
-    }
+      if (updatedRundown.columns && Array.isArray(updatedRundown.columns)) {
+        console.log('📊 Updating columns layout');
+        handleLoadLayout([...updatedRundown.columns]);
+      }
 
-    // Don't mark as changed since this is an external update
-    console.log('✅ Realtime update applied successfully');
+      // Force a re-render by updating the trigger
+      setUpdateTrigger(prev => prev + 1);
+
+      console.log('✅ Realtime update applied successfully - UI should refresh');
+    }, 10);
+
   }, [currentUserId, setItems, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
   useEffect(() => {
@@ -121,6 +134,7 @@ export const useRealtimeRundownSync = ({
   }, []);
 
   return {
-    updateLastUpdateTime
+    updateLastUpdateTime,
+    updateTrigger // Expose this so components can use it as a dependency if needed
   };
 };

@@ -19,6 +19,7 @@ const RundownGrid = () => {
     dropTargetIndex,
     currentSegmentId,
     hasClipboardData,
+    updateTrigger, // Include this to ensure re-renders on remote updates
     getColumnWidth,
     updateColumnWidth,
     handleUpdateItem,
@@ -55,6 +56,7 @@ const RundownGrid = () => {
 
   console.log('RundownGrid: handleAddRow exists?', !!handleAddRow);
   console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
+  console.log('RundownGrid: updateTrigger value:', updateTrigger);
 
   return (
     <RundownTable
