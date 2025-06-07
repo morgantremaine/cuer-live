@@ -1,6 +1,5 @@
+
 import { useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
 
 interface UseTeammateChangeNotificationProps {
   rundownId: string | null;
@@ -11,16 +10,15 @@ export const useTeammateChangeNotification = ({
   rundownId, 
   enabled = true 
 }: UseTeammateChangeNotificationProps) => {
-  const { user } = useAuth();
 
   useEffect(() => {
-    // This hook is now deprecated in favor of useStableRealtimeCollaboration
-    // which handles both notifications and data reloading more efficiently.
-    // Keeping this hook for backwards compatibility but removing the actual notification logic
-    // to prevent duplicate notifications.
+    // This hook is now deprecated in favor of useRealtimeRundown
+    // which handles both notifications and data synchronization more efficiently.
+    // All realtime functionality has been moved to the new unified system.
+    console.log('⚠️ useTeammateChangeNotification is deprecated - using useRealtimeRundown instead');
     
     return () => {
       // No cleanup needed since we're not setting up any subscriptions
     };
-  }, [rundownId, enabled, user]);
+  }, [rundownId, enabled]);
 };

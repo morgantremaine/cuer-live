@@ -21,7 +21,14 @@ export const useAutoSaveOperations = () => {
 
   const isNewRundown = !rundownId;
 
-  const performSave = useCallback(async (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
+  const performSave = useCallback(async (
+    items: RundownItem[], 
+    rundownTitle: string, 
+    columns?: Column[], 
+    timezone?: string, 
+    startTime?: string,
+    skipRealtimeUpdate?: boolean
+  ) => {
     if (isSaving) {
       return false;
     }
@@ -81,6 +88,10 @@ export const useAutoSaveOperations = () => {
           throw new Error('Failed to save new rundown - no ID returned');
         }
       } else if (rundownId) {
+        // For existing rundowns, include a flag to indicate this is an auto-save
+        // This helps prevent infinite loops with realtime updates
+        console.log('💾 Auto-saving rundown...', { skipRealtimeUpdate });
+        
         // Ensure timezone and startTime are properly passed - don't default to undefined
         const saveTimezone = timezone || undefined;
         const saveStartTime = startTime || undefined;

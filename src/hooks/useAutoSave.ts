@@ -1,5 +1,4 @@
 
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
@@ -7,7 +6,14 @@ import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
 
-export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?: Column[], timezone?: string, startTime?: string) => {
+export const useAutoSave = (
+  items: RundownItem[], 
+  rundownTitle: string, 
+  columns?: Column[], 
+  timezone?: string, 
+  startTime?: string,
+  isProcessingRealtimeUpdate?: boolean
+) => {
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
@@ -23,8 +29,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
 
   // Create a debounced save function that's stable across renders
-  const debouncedSave = useCallback(async (itemsToSave: RundownItem[], titleToSave: string, columnsToSave?: Column[], timezoneToSave?: string, startTimeToSave?: string) => {
-    if (!user || isSaving) {
+  const debouncedSave = useCallback(async (
+    itemsToSave: RundownItem[], 
+    titleToSave: string, 
+    columnsToSave?: Column[], 
+    timezoneToSave?: string, 
+    startTimeToSave?: string
+  ) => {
+    if (!user || isSaving || isProcessingRealtimeUpdate) {
       return;
     }
 
@@ -32,7 +44,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     setIsLoading(true);
 
     try {
-      const success = await performSave(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
+      console.log('💾 Performing auto-save...', { isProcessingRealtimeUpdate });
+      const success = await performSave(
+        itemsToSave, 
+        titleToSave, 
+        columnsToSave, 
+        timezoneToSave, 
+        startTimeToSave
+      );
       
       if (success) {
         markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
@@ -45,11 +64,12 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
     } finally {
       setIsLoading(false);
     }
-  }, [user, isSaving, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
+  }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
   // Main effect that schedules saves
   useEffect(() => {
-    if (!hasUnsavedChanges || !isInitialized || !user) {
+    // Don't auto-save while processing realtime updates
+    if (!hasUnsavedChanges || !isInitialized || !user || isProcessingRealtimeUpdate) {
       return;
     }
 
@@ -68,13 +88,25 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Schedule new save
+    // Schedule new save with longer delay during realtime updates
+    const delay = isProcessingRealtimeUpdate ? 5000 : 2000;
     debounceTimeoutRef.current = setTimeout(() => {
       debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       debounceTimeoutRef.current = null;
-    }, 2000);
+    }, delay);
 
-  }, [hasUnsavedChanges, isInitialized, user, items, rundownTitle, columns, timezone, startTime, debouncedSave]);
+  }, [
+    hasUnsavedChanges, 
+    isInitialized, 
+    user, 
+    items, 
+    rundownTitle, 
+    columns, 
+    timezone, 
+    startTime, 
+    debouncedSave, 
+    isProcessingRealtimeUpdate
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -86,13 +118,14 @@ export const useAutoSave = (items: RundownItem[], rundownTitle: string, columns?
   }, []);
 
   const markAsChangedCallback = () => {
-    markAsChanged();
+    if (!isProcessingRealtimeUpdate) {
+      markAsChanged();
+    }
   };
 
   return {
-    hasUnsavedChanges,
+    hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
     isSaving,
     markAsChanged: markAsChangedCallback
   };
 };
-

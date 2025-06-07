@@ -6,12 +6,15 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownUndo } from './useRundownUndo';
-import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { useRealtimeRundown } from './useRealtimeRundown';
 import { useEditingState } from './useEditingState';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { SavedRundown } from './useRundownStorage/types';
 
 export const useRundownGridCore = () => {
+  const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
+  
   // Create stable refs to prevent infinite loops
   const stableCallbacksRef = useRef<{
     markAsChanged?: () => void;
@@ -56,56 +59,6 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Create a TRULY stable callback for remote updates using ref
-  const onRemoteUpdateRef = useRef(() => {
-    console.log('📡 Remote update detected, refreshing rundowns...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      stableCallbacksRef.current.loadRundowns();
-    }
-  });
-
-  // Create a stable callback for reloading current rundown with forced refresh
-  const onReloadCurrentRundownRef = useRef(() => {
-    console.log('🔄 Forcing reload of current rundown data after remote update...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      // Force a fresh load from the database
-      stableCallbacksRef.current.loadRundowns();
-    }
-  });
-
-  // Update the refs when functions change, but don't recreate the callbacks
-  onRemoteUpdateRef.current = () => {
-    console.log('📡 Remote update detected, refreshing rundowns...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      stableCallbacksRef.current.loadRundowns();
-    }
-  };
-
-  onReloadCurrentRundownRef.current = () => {
-    console.log('🔄 Forcing reload of current rundown data after remote update...');
-    if (stableCallbacksRef.current.loadRundowns) {
-      // Force a fresh load from the database
-      stableCallbacksRef.current.loadRundowns();
-    }
-  };
-
-  // Use stable callbacks that never change
-  const stableOnRemoteUpdate = useCallback(() => {
-    onRemoteUpdateRef.current();
-  }, []); // No dependencies!
-
-  const stableOnReloadCurrentRundown = useCallback(() => {
-    onReloadCurrentRundownRef.current();
-  }, []); // No dependencies!
-
-  // Set up realtime collaboration with truly stable callbacks
-  const { isConnected } = useStableRealtimeCollaboration({
-    rundownId,
-    onRemoteUpdate: stableOnRemoteUpdate,
-    onReloadCurrentRundown: stableOnReloadCurrentRundown,
-    enabled: !!rundownId
-  });
-
   // Rundown data integration
   const {
     items,
@@ -147,6 +100,54 @@ export const useRundownGridCore = () => {
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
+  // Handle external rundown updates from realtime
+  const handleRundownUpdated = useCallback((updatedRundown: SavedRundown) => {
+    console.log('🔄 Applying realtime rundown update');
+    
+    // Update title if changed
+    if (updatedRundown.title !== rundownTitle) {
+      stableCallbacksRef.current.setRundownTitleDirectly?.(updatedRundown.title);
+    }
+    
+    // Update timezone if changed
+    if (updatedRundown.timezone && updatedRundown.timezone !== timezone) {
+      stableCallbacksRef.current.setTimezoneDirectly?.(updatedRundown.timezone);
+    }
+    
+    // Update start time if changed
+    if (updatedRundown.start_time && updatedRundown.start_time !== rundownStartTime) {
+      stableCallbacksRef.current.setRundownStartTimeDirectly?.(updatedRundown.start_time);
+    }
+    
+    // Update columns if changed
+    if (updatedRundown.columns && JSON.stringify(updatedRundown.columns) !== JSON.stringify(columns)) {
+      stableCallbacksRef.current.handleLoadLayout?.(updatedRundown.columns);
+    }
+    
+    // Update items if changed
+    if (updatedRundown.items && JSON.stringify(updatedRundown.items) !== JSON.stringify(items)) {
+      console.log('🔄 Updating items from realtime');
+      stableCallbacksRef.current.setItems?.(updatedRundown.items);
+    }
+    
+    // Load undo history if present
+    if (updatedRundown.undo_history) {
+      loadUndoHistory(updatedRundown.undo_history);
+    }
+    
+    // Refresh the rundowns list to ensure dashboard is updated
+    stableCallbacksRef.current.loadRundowns?.();
+  }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory]);
+
+  // Set up realtime collaboration
+  const { isConnected } = useRealtimeRundown({
+    rundownId,
+    onRundownUpdated: handleRundownUpdated,
+    hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
+    isProcessingUpdate: isProcessingRealtimeUpdate,
+    setIsProcessingUpdate: setIsProcessingRealtimeUpdate
+  });
+
   const stableDataLoaderCallbacks = useMemo(() => ({
     setRundownTitle: stableCallbacksRef.current.setRundownTitleDirectly!,
     setTimezone: stableCallbacksRef.current.setTimezoneDirectly!,
@@ -181,11 +182,15 @@ export const useRundownGridCore = () => {
 
   // Enhanced functions that trigger editing detection and save state
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    markAsEditing();
-    updateItem(id, field, value);
-  }, [updateItem, markAsEditing]);
+    if (!isProcessingRealtimeUpdate) {
+      markAsEditing();
+      updateItem(id, field, value);
+    }
+  }, [updateItem, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     saveState(items, columns, rundownTitle, 'Add Row');
     markAsEditing();
     
@@ -210,9 +215,11 @@ export const useRundownGridCore = () => {
     } else {
       addRow(calculateEndTimeFn);
     }
-  }, [addRow, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [addRow, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedAddHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     saveState(items, columns, rundownTitle, 'Add Header');
     markAsEditing();
     
@@ -237,63 +244,77 @@ export const useRundownGridCore = () => {
     } else {
       addHeader();
     }
-  }, [addHeader, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [addHeader, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedDeleteRow = useCallback((id: string) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     saveState(items, columns, rundownTitle, 'Delete Row');
     markAsEditing();
     deleteRow(id);
-  }, [deleteRow, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [deleteRow, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     saveState(items, columns, rundownTitle, 'Delete Multiple Rows');
     markAsEditing();
     deleteMultipleRows(ids);
-  }, [deleteMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [deleteMultipleRows, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedToggleFloatRow = useCallback((id: string) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     saveState(items, columns, rundownTitle, 'Toggle Float');
     markAsEditing();
     toggleFloatRow(id);
-  }, [toggleFloatRow, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [toggleFloatRow, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedSetItems = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     const newItems = typeof updater === 'function' ? updater(items) : updater;
     if (JSON.stringify(newItems) !== JSON.stringify(items)) {
       saveState(items, columns, rundownTitle, 'Move Rows');
       markAsEditing();
     }
     setItems(updater);
-  }, [setItems, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [setItems, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedAddMultipleRows = useCallback((newItems: RundownItem[], calculateEndTimeFn: any) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     saveState(items, columns, rundownTitle, 'Paste Rows');
     markAsEditing();
     addMultipleRows(newItems);
-  }, [addMultipleRows, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [addMultipleRows, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const wrappedSetRundownTitle = useCallback((title: string) => {
+    if (isProcessingRealtimeUpdate) return;
+    
     if (title !== rundownTitle) {
       saveState(items, columns, rundownTitle, 'Change Title');
       markAsEditing();
     }
     setRundownTitle(title);
-  }, [setRundownTitle, saveState, items, columns, rundownTitle, markAsEditing]);
+  }, [setRundownTitle, saveState, items, columns, rundownTitle, markAsEditing, isProcessingRealtimeUpdate]);
 
   const handleUndo = useCallback(() => {
+    if (isProcessingRealtimeUpdate) return;
+    
     const action = undo(setItems, handleLoadLayout, setRundownTitleDirectly);
     if (action) {
       markAsChanged();
       markAsEditing();
       console.log(`Undid: ${action}`);
     }
-  }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged, markAsEditing]);
+  }, [undo, setItems, handleLoadLayout, setRundownTitleDirectly, markAsChanged, markAsEditing, isProcessingRealtimeUpdate]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        if (canUndo) {
+        if (canUndo && !isProcessingRealtimeUpdate) {
           handleUndo();
         }
       }
@@ -301,7 +322,7 @@ export const useRundownGridCore = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, canUndo]);
+  }, [handleUndo, canUndo, isProcessingRealtimeUpdate]);
 
   return {
     // Basic state
@@ -352,7 +373,7 @@ export const useRundownGridCore = () => {
     handleUpdateColumnWidth,
 
     // Save state
-    hasUnsavedChanges,
+    hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
     isSaving,
     calculateEndTime,
 
@@ -363,6 +384,7 @@ export const useRundownGridCore = () => {
 
     // Realtime status
     isConnected,
-    isEditing
+    isEditing,
+    isProcessingRealtimeUpdate
   };
 };

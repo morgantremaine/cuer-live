@@ -11,7 +11,8 @@ export const useRundownStateIntegration = (
   timezone: string,
   rundownStartTime: string,
   setRundownTitleDirectly: (title: string) => void,
-  setTimezoneDirectly: (timezone: string) => void
+  setTimezoneDirectly: (timezone: string) => void,
+  isProcessingRealtimeUpdate?: boolean
 ) => {
   // Items management with change tracking
   const {
@@ -69,13 +70,14 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(markAsChanged);
 
-  // Auto-save functionality
+  // Auto-save functionality with realtime awareness
   const { hasUnsavedChanges, isSaving } = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
     Array.isArray(columns) ? columns : [],
     timezone,
-    rundownStartTime
+    rundownStartTime,
+    isProcessingRealtimeUpdate
   );
 
   // Wrapped addRow that supports insertion at specific index
