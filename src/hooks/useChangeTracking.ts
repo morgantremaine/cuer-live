@@ -8,7 +8,8 @@ export const useChangeTracking = (
   rundownTitle: string, 
   columns?: Column[], 
   timezone?: string, 
-  startTime?: string
+  startTime?: string,
+  isProcessingRealtimeUpdate?: boolean
 ) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -52,9 +53,12 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createDataSignature]);
 
-  // Track changes after initialization
+  // Track changes after initialization - but SKIP during realtime updates
   useEffect(() => {
-    if (!isInitialized || isLoading) {
+    if (!isInitialized || isLoading || isProcessingRealtimeUpdate) {
+      if (isProcessingRealtimeUpdate) {
+        console.log('🚫 Skipping change tracking - realtime update in progress');
+      }
       return;
     }
 
@@ -64,7 +68,7 @@ export const useChangeTracking = (
       console.log('📝 Data changed - marking as unsaved');
       setHasUnsavedChanges(true);
     }
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createDataSignature]);
+  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createDataSignature, isProcessingRealtimeUpdate]);
 
   const markAsSaved = useCallback((
     savedItems: RundownItem[], 
@@ -87,11 +91,34 @@ export const useChangeTracking = (
   }, []);
 
   const markAsChanged = useCallback(() => {
-    if (isInitialized && !isLoading) {
+    if (isInitialized && !isLoading && !isProcessingRealtimeUpdate) {
       console.log('📝 Manually marked as changed');
       setHasUnsavedChanges(true);
+    } else if (isProcessingRealtimeUpdate) {
+      console.log('🚫 Skipping manual mark as changed - realtime update in progress');
     }
-  }, [isInitialized, isLoading]);
+  }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
+
+  // Special method to update the saved data signature without triggering change detection
+  // This is used when applying remote updates
+  const updateSavedSignature = useCallback((
+    newItems: RundownItem[], 
+    newTitle: string, 
+    newColumns?: Column[], 
+    newTimezone?: string, 
+    newStartTime?: string
+  ) => {
+    const newSignature = JSON.stringify({
+      items: newItems || [],
+      title: newTitle || '',
+      columns: newColumns || [],
+      timezone: newTimezone || '',
+      startTime: newStartTime || ''
+    });
+    
+    lastSavedDataRef.current = newSignature;
+    console.log('🔄 Updated saved signature after remote update');
+  }, []);
 
   return {
     hasUnsavedChanges,
@@ -99,6 +126,7 @@ export const useChangeTracking = (
     markAsSaved,
     markAsChanged,
     isInitialized,
-    setIsLoading
+    setIsLoading,
+    updateSavedSignature
   };
 };

@@ -11,6 +11,7 @@ interface UseRealtimeRundownProps {
   hasUnsavedChanges: boolean;
   isProcessingUpdate: boolean;
   setIsProcessingUpdate: (processing: boolean) => void;
+  updateSavedSignature?: (items: any[], title: string, columns?: any[], timezone?: string, startTime?: string) => void;
 }
 
 export const useRealtimeRundown = ({
@@ -18,7 +19,8 @@ export const useRealtimeRundown = ({
   onRundownUpdated,
   hasUnsavedChanges,
   isProcessingUpdate,
-  setIsProcessingUpdate
+  setIsProcessingUpdate,
+  updateSavedSignature
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,10 +33,12 @@ export const useRealtimeRundown = ({
   // Stable refs to prevent infinite loops
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
   const stableSetIsProcessingUpdateRef = useRef(setIsProcessingUpdate);
+  const stableUpdateSavedSignatureRef = useRef(updateSavedSignature);
   
   // Update refs when functions change
   stableOnRundownUpdatedRef.current = onRundownUpdated;
   stableSetIsProcessingUpdateRef.current = setIsProcessingUpdate;
+  stableUpdateSavedSignatureRef.current = updateSavedSignature;
 
   // Track when we make updates to avoid processing our own changes
   const trackOwnUpdate = useCallback((timestamp: string) => {
@@ -154,6 +158,19 @@ export const useRealtimeRundown = ({
       };
 
       console.log('✅ Applying remote update from teammate');
+      
+      // Update the saved signature BEFORE applying the rundown update
+      // This prevents change tracking from triggering
+      if (stableUpdateSavedSignatureRef.current) {
+        stableUpdateSavedSignatureRef.current(
+          updatedRundown.items, 
+          updatedRundown.title, 
+          updatedRundown.columns, 
+          updatedRundown.timezone, 
+          updatedRundown.start_time
+        );
+      }
+      
       stableOnRundownUpdatedRef.current(updatedRundown);
 
       // Show success notification - only for remote updates

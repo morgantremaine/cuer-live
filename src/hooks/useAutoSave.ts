@@ -26,7 +26,7 @@ export const useAutoSave = (
     markAsChanged,
     isInitialized,
     setIsLoading
-  } = useChangeTracking(items, rundownTitle, columns, timezone, startTime);
+  } = useChangeTracking(items, rundownTitle, columns, timezone, startTime, isProcessingRealtimeUpdate);
 
   // Create a debounced save function that's stable across renders
   const debouncedSave = useCallback(async (
