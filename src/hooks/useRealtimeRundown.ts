@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -194,13 +193,6 @@ export const useRealtimeRundown = ({
         );
       }
 
-      // Show success notification - only for remote updates
-      toast({
-        title: 'Rundown Updated',
-        description: 'Your teammate made changes to this rundown',
-        duration: 3000,
-      });
-
       // Reset retry count on successful update
       retryCountRef.current = 0;
 
@@ -233,7 +225,7 @@ export const useRealtimeRundown = ({
         }
         stableSetIsProcessingUpdateRef.current(false);
         console.log('✅ All remote update processing flags cleared');
-      }, 100);
+      }, 250);
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);
 
