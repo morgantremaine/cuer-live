@@ -1,10 +1,12 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Copy, Trash2, Clipboard, Undo, Settings } from 'lucide-react';
+import { Plus, Copy, Trash2, Clipboard, Undo, Settings, Share2, Monitor, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import PlaybackControls from './toolbar/PlaybackControls';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface RundownToolbarProps {
   selectedCount: number;
@@ -27,6 +29,8 @@ interface RundownToolbarProps {
   onForward: () => void;
   onBackward: () => void;
   onOpenColumnManager: () => void;
+  rundownId?: string;
+  onOpenTeleprompter?: () => void;
 }
 
 const RundownToolbar = ({
@@ -49,9 +53,46 @@ const RundownToolbar = ({
   onPause,
   onForward,
   onBackward,
-  onOpenColumnManager
+  onOpenColumnManager,
+  rundownId,
+  onOpenTeleprompter
 }: RundownToolbarProps) => {
   const { isDark } = useTheme();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleShareRundown = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot share rundown",
+        description: "Save this rundown first before sharing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        title: "Share link copied!",
+        description: "Read-only rundown URL has been copied to clipboard",
+        variant: "default"
+      });
+    });
+  };
+
+  const handleOpenBlueprint = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot open blueprint",
+        description: "Save this rundown first before opening blueprint.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    navigate(`/blueprint/${rundownId}`);
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-2 p-4 border-b bg-white dark:bg-gray-900">
@@ -122,6 +163,24 @@ const RundownToolbar = ({
 
       {/* Right Side Actions */}
       <div className="flex items-center gap-2">
+        {/* Share Button */}
+        <Button onClick={handleShareRundown} size="sm" variant="outline">
+          <Share2 className="h-4 w-4 mr-1" />
+          Share
+        </Button>
+
+        {/* Teleprompter Button */}
+        <Button onClick={onOpenTeleprompter} size="sm" variant="outline">
+          <Monitor className="h-4 w-4 mr-1" />
+          Teleprompter
+        </Button>
+
+        {/* Blueprint Button */}
+        <Button onClick={handleOpenBlueprint} size="sm" variant="outline">
+          <FileText className="h-4 w-4 mr-1" />
+          Blueprint
+        </Button>
+
         {/* Undo */}
         <Button 
           onClick={onUndo} 

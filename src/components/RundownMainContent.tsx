@@ -54,31 +54,29 @@ interface RundownMainContentProps {
   totalDuration: string;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  // Playback control functions
+  onPlay: (selectedSegmentId?: string) => void;
+  onPause: () => void;
+  onForward: () => void;
+  onBackward: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
+  rundownId?: string;
+  rundownTitle?: string;
 }
 
 const RundownMainContent = (props: RundownMainContentProps) => {
   // Get the first selected row ID for toolbar actions
   const selectedRowId = props.selectedRows.size > 0 ? Array.from(props.selectedRows)[0] : null;
 
-  // Mock playback control functions - these need to be properly wired to the parent container
-  const handlePlay = (selectedSegmentId?: string) => {
-    console.log('Play functionality needs to be wired through props');
-  };
-
-  const handlePause = () => {
-    console.log('Pause functionality needs to be wired through props');
-  };
-
-  const handleForward = () => {
-    console.log('Forward functionality needs to be wired through props');
-  };
-
-  const handleBackward = () => {
-    console.log('Backward functionality needs to be wired through props');
-  };
-
-  const handleUndo = () => {
-    console.log('Undo functionality needs to be wired through props');
+  const handleOpenTeleprompter = () => {
+    if (!props.rundownId) {
+      console.log('Cannot open teleprompter - no rundownId');
+      return;
+    }
+    const teleprompterUrl = `${window.location.origin}/teleprompter/${props.rundownId}`;
+    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -93,18 +91,20 @@ const RundownMainContent = (props: RundownMainContentProps) => {
         onPasteRows={() => props.onPasteRows?.()}
         onDeleteSelectedRows={props.onDeleteSelectedRows}
         onClearSelection={() => props.onClearSelection?.()}
-        onUndo={handleUndo}
-        canUndo={false} // This should be passed as a prop
-        lastAction={undefined} // This should be passed as a prop
+        onUndo={props.onUndo}
+        canUndo={props.canUndo}
+        lastAction={props.lastAction}
         selectedRowId={selectedRowId}
         isPlaying={props.isPlaying}
         currentSegmentId={props.currentSegmentId}
         timeRemaining={props.timeRemaining}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onForward={handleForward}
-        onBackward={handleBackward}
+        onPlay={props.onPlay}
+        onPause={props.onPause}
+        onForward={props.onForward}
+        onBackward={props.onBackward}
         onOpenColumnManager={() => props.setShowColumnManager(true)}
+        rundownId={props.rundownId}
+        onOpenTeleprompter={handleOpenTeleprompter}
       />
 
       {/* Main Content Area */}

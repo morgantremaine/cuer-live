@@ -50,11 +50,24 @@ const RundownContainer = (props: RundownContainerProps) => {
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
         
-        // Playback controls - pass through from props
+        // Playback controls - properly wired
         timeRemaining={props.timeRemaining}
         isPlaying={props.isPlaying}
         currentSegmentName={props.currentSegmentId ? props.items.find(item => item.id === props.currentSegmentId)?.name || '' : ''}
         totalDuration={props.totalRuntime}
+        onPlay={props.onPlay}
+        onPause={props.onPause}
+        onForward={props.onForward}
+        onBackward={props.onBackward}
+        
+        // Undo functionality
+        onUndo={props.onUndo}
+        canUndo={props.canUndo}
+        lastAction={props.lastAction}
+        
+        // Rundown info for toolbar
+        rundownId={props.rundownId}
+        rundownTitle={props.rundownTitle}
         
         // Column management
         handleAddColumn={props.handleAddColumn}
