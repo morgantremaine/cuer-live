@@ -12,7 +12,7 @@ export const useRundownStorage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load rundowns from Supabase (both personal and team rundowns)
+  // Load rundowns from Supabase (team rundowns only)
   const loadRundowns = useCallback(async () => {
     if (!user) {
       setSavedRundowns([]);
@@ -23,7 +23,7 @@ export const useRundownStorage = () => {
     try {
       console.log('Loading rundowns from database for user:', user.id);
       
-      // First get user's team memberships to know which teams they belong to
+      // Get user's team memberships to know which teams they belong to
       const { data: teamMemberships, error: teamError } = await supabase
         .from('team_members')
         .select('team_id')
@@ -31,12 +31,22 @@ export const useRundownStorage = () => {
 
       if (teamError) {
         console.error('Error loading team memberships:', teamError);
+        setSavedRundowns([]);
+        setLoading(false);
+        return;
       }
 
       const teamIds = teamMemberships?.map(membership => membership.team_id) || [];
       
-      // Build query to get both personal rundowns and team rundowns
-      let query = supabase
+      if (teamIds.length === 0) {
+        console.log('User is not a member of any teams');
+        setSavedRundowns([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Query rundowns from user's teams
+      const { data, error } = await supabase
         .from('rundowns')
         .select(`
           *,
@@ -45,17 +55,9 @@ export const useRundownStorage = () => {
             name
           )
         `)
+        .in('team_id', teamIds)
         .eq('archived', false)
         .order('updated_at', { ascending: false });
-
-      // If user has teams, include rundowns from those teams, otherwise just personal rundowns
-      if (teamIds.length > 0) {
-        query = query.or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`);
-      } else {
-        query = query.eq('user_id', user.id);
-      }
-
-      const { data, error } = await query;
 
       if (error) {
         console.error('Database error loading rundowns:', error);
@@ -77,6 +79,21 @@ export const useRundownStorage = () => {
   const saveRundown = useCallback(async (rundown: SavedRundown): Promise<string> => {
     if (!user || !rundown) {
       throw new Error('User not authenticated or rundown is invalid');
+    }
+
+    // Ensure rundown has a team_id - get user's first team if not provided
+    if (!rundown.team_id) {
+      const { data: teamMemberships } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (!teamMemberships || teamMemberships.length === 0) {
+        throw new Error('User is not a member of any team. Cannot create rundown.');
+      }
+
+      rundown.team_id = teamMemberships[0].team_id;
     }
 
     setIsSaving(true);

@@ -122,7 +122,7 @@ export type Database = {
           id: string
           items: Json
           start_time: string | null
-          team_id: string | null
+          team_id: string
           timezone: string | null
           title: string
           undo_history: Json | null
@@ -138,7 +138,7 @@ export type Database = {
           id?: string
           items: Json
           start_time?: string | null
-          team_id?: string | null
+          team_id: string
           timezone?: string | null
           title: string
           undo_history?: Json | null
@@ -154,7 +154,7 @@ export type Database = {
           id?: string
           items?: Json
           start_time?: string | null
-          team_id?: string | null
+          team_id?: string
           timezone?: string | null
           title?: string
           undo_history?: Json | null

@@ -5,6 +5,7 @@ import { useRundownStorage } from './useRundownStorage';
 import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
+import { supabase } from '@/lib/supabase';
 
 export const useAutoSaveOperations = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -45,7 +46,18 @@ export const useAutoSaveOperations = () => {
       setIsSaving(true);
       
       if (isNewRundown) {
-        // Create a new rundown object without an ID (let database generate it)
+        // Get user's first team for new rundowns
+        const { data: teamMemberships } = await supabase
+          .from('team_members')
+          .select('team_id')
+          .eq('user_id', user.id)
+          .limit(1);
+
+        if (!teamMemberships || teamMemberships.length === 0) {
+          throw new Error('User is not a member of any team. Cannot create rundown.');
+        }
+
+        // Create a new rundown object with team_id
         const newRundown = {
           id: '', // This will be ignored in the mapper
           user_id: user.id,
@@ -54,6 +66,7 @@ export const useAutoSaveOperations = () => {
           columns,
           timezone,
           start_time: startTime,
+          team_id: teamMemberships[0].team_id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           archived: false
