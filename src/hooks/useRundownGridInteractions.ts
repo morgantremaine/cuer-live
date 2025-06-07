@@ -6,8 +6,8 @@ export const useRundownGridInteractions = (
   items: RundownItem[],
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   updateItem: (id: string, field: string, value: string) => void,
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string) => void,
-  addHeader: () => void,
+  addRow: (selectedRowId?: string) => void, // Updated signature to match core
+  addHeader: (selectedRowId?: string) => void, // Updated signature to match core
   deleteRow: (id: string) => void,
   toggleFloatRow: (id: string) => void,
   deleteMultipleRows: (ids: string[]) => void,
@@ -48,8 +48,8 @@ export const useRundownGridInteractions = (
     items,
     setItems,
     updateItem,
-    addRow,
-    addHeader,
+    addRow, // Now matches the expected signature
+    addHeader, // Now matches the expected signature
     deleteRow,
     toggleFloatRow,
     deleteMultipleRows,

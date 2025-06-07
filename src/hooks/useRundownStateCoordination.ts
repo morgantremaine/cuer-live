@@ -28,13 +28,13 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Get interaction handlers
+  // Get interaction handlers - fix the function signatures to match expected parameters
   const interactions = useRundownGridInteractions(
     coreState.items,
     coreState.setItems,
     coreState.updateItem,
-    coreState.addRow,
-    coreState.addHeader,
+    coreState.addRow, // This now has the correct signature (selectedRowId?: string) => void
+    coreState.addHeader, // This now has the correct signature (selectedRowId?: string) => void
     coreState.deleteRow,
     coreState.toggleFloatRow,
     coreState.deleteMultipleRows,
