@@ -24,6 +24,10 @@ export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
     teams: rundown.teams ? {
       id: rundown.teams.id,
       name: rundown.teams.name
+    } : null,
+    creator_profile: rundown.creator_profile ? {
+      full_name: rundown.creator_profile.full_name,
+      email: rundown.creator_profile.email
     } : null
   }))
 }
@@ -47,6 +51,10 @@ export const mapDatabaseToRundown = (data: any): SavedRundown => {
     teams: data.teams ? {
       id: data.teams.id,
       name: data.teams.name
+    } : null,
+    creator_profile: data.creator_profile ? {
+      full_name: data.creator_profile.full_name,
+      email: data.creator_profile.email
     } : null
   }
 }

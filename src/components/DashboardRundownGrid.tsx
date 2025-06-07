@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical } from 'lucide-react'
@@ -67,7 +66,17 @@ const DashboardRundownGrid = ({
       return 'You'
     }
     
-    // Fallback to "team member" if no profile or name is available
+    // Use creator profile information if available
+    if (rundown.creator_profile?.full_name) {
+      return rundown.creator_profile.full_name
+    }
+    
+    // Fall back to email if no full name
+    if (rundown.creator_profile?.email) {
+      return rundown.creator_profile.email
+    }
+    
+    // Final fallback
     return 'team member'
   }
 

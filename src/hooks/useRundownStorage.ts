@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,6 +46,7 @@ export const useRundownStorage = () => {
       }
       
       // Query rundowns from user's teams - include both archived and active
+      // Join with profiles to get creator information
       const { data, error } = await supabase
         .from('rundowns')
         .select(`
@@ -52,6 +54,10 @@ export const useRundownStorage = () => {
           teams:team_id (
             id,
             name
+          ),
+          creator_profile:profiles!rundowns_user_id_fkey (
+            full_name,
+            email
           )
         `)
         .in('team_id', teamIds)

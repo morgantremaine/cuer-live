@@ -21,6 +21,10 @@ export interface SavedRundown {
     id: string
     name: string
   } | null
+  creator_profile?: {
+    full_name: string | null
+    email: string
+  } | null
 }
 
 // Export alias for compatibility
