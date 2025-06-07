@@ -13,8 +13,6 @@ import { SavedRundown } from './useRundownStorage/types';
 
 export const useRundownGridCore = () => {
   const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
-  const [externalShowcallerState, setExternalShowcallerState] = useState<any>(null);
-  const showcallerUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Create stable refs to prevent infinite loops
   const stableCallbacksRef = useRef<{
@@ -60,7 +58,7 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Rundown data integration with passing setApplyingRemoteUpdate AND setIgnoreShowcallerChanges
+  // Rundown data integration with passing setApplyingRemoteUpdate
   const {
     items,
     setItems,
@@ -86,8 +84,7 @@ export const useRundownGridCore = () => {
     hasUnsavedChanges,
     isSaving,
     setApplyingRemoteUpdate,
-    updateSavedSignature,
-    setIgnoreShowcallerChanges
+    updateSavedSignature
   } = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
@@ -105,77 +102,27 @@ export const useRundownGridCore = () => {
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Enhanced showcaller state change handler with proper debouncing
-  const handleShowcallerStateChange = useCallback((showcallerState: any) => {
-    // CRITICAL FIX: Don't try to update showcaller state if we don't have a saved rundownId
-    if (isProcessingRealtimeUpdate || !rundownId) {
-      console.log('⏭️ Skipping showcaller update - processing realtime or no saved rundownId', { rundownId });
-      return;
-    }
-
-    console.log('📡 Preparing showcaller state change for saved rundown:', showcallerState);
-
-    // Clear any existing timer
-    if (showcallerUpdateTimerRef.current) {
-      clearTimeout(showcallerUpdateTimerRef.current);
-    }
-
-    // Temporarily ignore showcaller changes to prevent unsaved changes detection
-    setIgnoreShowcallerChanges?.(true);
-
-    // Debounce the showcaller state updates
-    showcallerUpdateTimerRef.current = setTimeout(() => {
-      console.log('📡 Broadcasting showcaller state change:', showcallerState);
-      updateRundown(rundownId, {
-        showcaller_state: showcallerState
-      }).catch(error => {
-        console.error('Failed to update showcaller state:', error);
-      }).finally(() => {
-        // Re-enable change detection after showcaller update
-        setTimeout(() => {
-          setIgnoreShowcallerChanges?.(false);
-        }, 500);
-      });
-    }, 200); // Reduced debounce for better responsiveness
-  }, [rundownId, isProcessingRealtimeUpdate, updateRundown, setIgnoreShowcallerChanges]);
-
-  // Handle external rundown updates from realtime with better showcaller handling
+  // Handle external rundown updates from realtime
   const handleRundownUpdated = useCallback((updatedRundown: SavedRundown) => {
     console.log('🔄 Applying realtime rundown update');
-    console.log('🔄 Updated rundown data:', updatedRundown);
     
-    // Update showcaller state if changed and not processing our own update
-    if (updatedRundown.showcaller_state) {
-      const currentShowcallerStateStr = JSON.stringify(externalShowcallerState);
-      const newShowcallerStateStr = JSON.stringify(updatedRundown.showcaller_state);
-      
-      if (newShowcallerStateStr !== currentShowcallerStateStr) {
-        console.log('🔄 Updating showcaller state from realtime:', updatedRundown.showcaller_state);
-        setExternalShowcallerState(updatedRundown.showcaller_state);
-      }
-    }
-    
-    // ENHANCED: Only update title if user is NOT editing and title actually changed
-    if (updatedRundown.title && updatedRundown.title !== rundownTitle && !isEditing) {
-      console.log('🔄 Updating title from realtime:', updatedRundown.title);
+    // Update title if changed
+    if (updatedRundown.title !== rundownTitle) {
       stableCallbacksRef.current.setRundownTitleDirectly?.(updatedRundown.title);
     }
     
     // Update timezone if changed
     if (updatedRundown.timezone && updatedRundown.timezone !== timezone) {
-      console.log('🔄 Updating timezone from realtime:', updatedRundown.timezone);
       stableCallbacksRef.current.setTimezoneDirectly?.(updatedRundown.timezone);
     }
     
     // Update start time if changed
     if (updatedRundown.start_time && updatedRundown.start_time !== rundownStartTime) {
-      console.log('🔄 Updating start time from realtime:', updatedRundown.start_time);
       stableCallbacksRef.current.setRundownStartTimeDirectly?.(updatedRundown.start_time);
     }
     
     // Update columns if changed
     if (updatedRundown.columns && JSON.stringify(updatedRundown.columns) !== JSON.stringify(columns)) {
-      console.log('🔄 Updating columns from realtime');
       stableCallbacksRef.current.handleLoadLayout?.(updatedRundown.columns);
     }
     
@@ -192,9 +139,9 @@ export const useRundownGridCore = () => {
     
     // Refresh the rundowns list to ensure dashboard is updated
     stableCallbacksRef.current.loadRundowns?.();
-  }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory, externalShowcallerState, isEditing]);
+  }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory]);
 
-  // Set up realtime collaboration with updateSavedSignature, setApplyingRemoteUpdate AND setIgnoreShowcallerChanges
+  // Set up realtime collaboration with updateSavedSignature and setApplyingRemoteUpdate
   const { isConnected } = useRealtimeRundown({
     rundownId,
     onRundownUpdated: handleRundownUpdated,
@@ -202,9 +149,7 @@ export const useRundownGridCore = () => {
     isProcessingUpdate: isProcessingRealtimeUpdate,
     setIsProcessingUpdate: setIsProcessingRealtimeUpdate,
     updateSavedSignature,
-    setApplyingRemoteUpdate,
-    setIgnoreShowcallerChanges,
-    isEditing
+    setApplyingRemoteUpdate
   });
 
   const stableDataLoaderCallbacks = useMemo(() => ({
@@ -217,11 +162,6 @@ export const useRundownGridCore = () => {
       if (rundown.undo_history) {
         loadUndoHistory(rundown.undo_history);
       }
-      // Load showcaller state if present
-      if (rundown.showcaller_state) {
-        console.log('🔄 Loading showcaller state from saved rundown:', rundown.showcaller_state);
-        setExternalShowcallerState(rundown.showcaller_state);
-      }
     }
   }), [loadUndoHistory]);
 
@@ -232,7 +172,6 @@ export const useRundownGridCore = () => {
     ...stableDataLoaderCallbacks
   });
 
-  // Enhanced playback controls with real-time sync - PASS rundownId to prevent broadcasts for unsaved rundowns
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -241,13 +180,7 @@ export const useRundownGridCore = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(
-    items, 
-    updateItem, 
-    handleShowcallerStateChange, 
-    externalShowcallerState,
-    rundownId // CRITICAL: Pass rundownId to prevent broadcasts for new rundowns
-  );
+  } = usePlaybackControls(items, updateItem);
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
@@ -395,15 +328,6 @@ export const useRundownGridCore = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, canUndo, isProcessingRealtimeUpdate]);
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (showcallerUpdateTimerRef.current) {
-        clearTimeout(showcallerUpdateTimerRef.current);
-      }
-    };
-  }, []);
-
   return {
     // Basic state
     currentTime,
@@ -434,10 +358,10 @@ export const useRundownGridCore = () => {
     visibleColumns,
     columns,
 
-    // Playback - use external state when available
-    isPlaying: externalShowcallerState?.isPlaying ?? isPlaying,
-    currentSegmentId: externalShowcallerState?.currentSegmentId ?? currentSegmentId,
-    timeRemaining: externalShowcallerState?.timeRemaining ?? timeRemaining,
+    // Playback
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
     play,
     pause,
     forward,

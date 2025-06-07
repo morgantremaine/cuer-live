@@ -113,13 +113,7 @@ const RundownHeaderSection = ({
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}
         onAddHeader={() => onAddHeader(selectedRowId)}
-        onOpenColumnManager={onShowColumnManager}
-        selectedCount={selectedCount}
-        hasClipboardData={hasClipboardData}
-        onCopySelectedRows={onCopySelectedRows}
-        onPasteRows={onPasteRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onClearSelection={onClearSelection}
+        onShowColumnManager={onShowColumnManager}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
@@ -128,6 +122,8 @@ const RundownHeaderSection = ({
         onPause={onPause}
         onForward={onForward}
         onBackward={onBackward}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}

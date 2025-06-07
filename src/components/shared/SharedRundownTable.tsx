@@ -71,7 +71,6 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
           {items.map((item, index) => {
-            // Use the currentSegmentId passed from the showcaller state or fallback to status
             const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
             

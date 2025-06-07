@@ -124,7 +124,6 @@ export type Database = {
           icon: string | null
           id: string
           items: Json
-          showcaller_state: Json | null
           start_time: string | null
           team_id: string
           timezone: string | null
@@ -141,7 +140,6 @@ export type Database = {
           icon?: string | null
           id?: string
           items: Json
-          showcaller_state?: Json | null
           start_time?: string | null
           team_id: string
           timezone?: string | null
@@ -158,7 +156,6 @@ export type Database = {
           icon?: string | null
           id?: string
           items?: Json
-          showcaller_state?: Json | null
           start_time?: string | null
           team_id?: string
           timezone?: string | null

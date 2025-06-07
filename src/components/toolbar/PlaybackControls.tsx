@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PlaybackControlsProps {
   selectedRowId: string | null;
@@ -12,7 +12,7 @@ interface PlaybackControlsProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
-  size?: 'sm' | 'lg';
+  size?: 'sm' | 'default';
 }
 
 const PlaybackControls = ({
@@ -26,101 +26,62 @@ const PlaybackControls = ({
   onBackward,
   size = 'sm'
 }: PlaybackControlsProps) => {
-  const handlePlay = () => {
-    try {
-      if (typeof onPlay === 'function') {
-        onPlay(selectedRowId || undefined);
-      } else {
-        console.error('Play functionality needs to be wired through props');
-      }
-    } catch (error) {
-      console.error('Error in play handler:', error);
-    }
-  };
-
-  const handlePause = () => {
-    try {
-      if (typeof onPause === 'function') {
-        onPause();
-      } else {
-        console.error('Pause functionality needs to be wired through props');
-      }
-    } catch (error) {
-      console.error('Error in pause handler:', error);
-    }
-  };
-
-  const handleForward = () => {
-    try {
-      if (typeof onForward === 'function') {
-        onForward();
-      } else {
-        console.error('Forward functionality needs to be wired through props');
-      }
-    } catch (error) {
-      console.error('Error in forward handler:', error);
-    }
-  };
-
-  const handleBackward = () => {
-    try {
-      if (typeof onBackward === 'function') {
-        onBackward();
-      } else {
-        console.error('Backward functionality needs to be wired through props');
-      }
-    } catch (error) {
-      console.error('Error in backward handler:', error);
-    }
-  };
-
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const buttonSize = size === 'lg' ? 'default' : 'sm';
-  const iconSize = size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      onPause();
+    } else {
+      // If a row is selected, play that row, otherwise play current segment
+      if (selectedRowId) {
+        onPlay(selectedRowId);
+      } else if (currentSegmentId) {
+        onPlay();
+      }
+    }
+  };
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size={buttonSize}
-        onClick={handleBackward}
-        title="Previous segment"
-      >
-        <SkipBack className={iconSize} />
-      </Button>
-      
-      <Button
-        variant={isPlaying ? "destructive" : "default"}
-        size={buttonSize}
-        onClick={isPlaying ? handlePause : handlePlay}
-        title={isPlaying ? "Pause" : "Play"}
-      >
-        {isPlaying ? (
-          <Pause className={iconSize} />
-        ) : (
-          <Play className={iconSize} />
-        )}
-      </Button>
-      
-      <Button
-        variant="outline"
-        size={buttonSize}
-        onClick={handleForward}
-        title="Next segment"
-      >
-        <SkipForward className={iconSize} />
-      </Button>
-      
-      {size === 'lg' && (
-        <div className="ml-4 text-sm font-mono">
+    <div className="flex items-center space-x-2">
+      {currentSegmentId && (
+        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border">
           {formatTime(timeRemaining)}
         </div>
       )}
+      
+      <Button
+        onClick={onBackward}
+        variant="outline"
+        size={size}
+        disabled={!currentSegmentId}
+        title="Previous segment"
+      >
+        <SkipBack className="h-4 w-4" />
+      </Button>
+      
+      <Button
+        onClick={handlePlayPause}
+        variant="outline"
+        size={size}
+        disabled={!currentSegmentId && !selectedRowId}
+        title={isPlaying ? "Pause" : "Play"}
+      >
+        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+      </Button>
+      
+      <Button
+        onClick={onForward}
+        variant="outline"
+        size={size}
+        disabled={!currentSegmentId}
+        title="Next segment"
+      >
+        <SkipForward className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

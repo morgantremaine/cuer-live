@@ -28,8 +28,7 @@ export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
     creator_profile: rundown.creator_profile ? {
       full_name: rundown.creator_profile.full_name,
       email: rundown.creator_profile.email
-    } : null,
-    showcaller_state: rundown.showcaller_state || null
+    } : null
   }))
 }
 
@@ -56,8 +55,7 @@ export const mapDatabaseToRundown = (data: any): SavedRundown => {
     creator_profile: data.creator_profile ? {
       full_name: data.creator_profile.full_name,
       email: data.creator_profile.email
-    } : null,
-    showcaller_state: data.showcaller_state || null
+    } : null
   }
 }
 
@@ -77,11 +75,6 @@ export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
     updated_at: new Date().toISOString()
   };
 
-  // Include showcaller_state if it exists
-  if (rundown.showcaller_state) {
-    data.showcaller_state = rundown.showcaller_state;
-  }
-
   // Only include id if it exists and is not empty
   if (rundown.id && rundown.id !== '') {
     data.id = rundown.id;
@@ -89,23 +82,3 @@ export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
 
   return data;
 }
-
-export const transformSupabaseRundown = (rundown: any): SavedRundown => ({
-  id: rundown.id,
-  user_id: rundown.user_id,
-  title: rundown.title,
-  items: Array.isArray(rundown.items) ? rundown.items : [],
-  columns: rundown.columns,
-  timezone: rundown.timezone,
-  start_time: rundown.start_time,
-  team_id: rundown.team_id,
-  teams: rundown.teams ? {
-    id: rundown.teams.id,
-    name: rundown.teams.name
-  } : null,
-  created_at: rundown.created_at,
-  updated_at: rundown.updated_at,
-  archived: rundown.archived || false,
-  undo_history: rundown.undo_history || [],
-  showcaller_state: rundown.showcaller_state || null
-});
