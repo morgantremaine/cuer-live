@@ -46,29 +46,70 @@ export const useRundownStorage = () => {
       }
       
       // Query rundowns from user's teams - include both archived and active
-      // Join with profiles to get creator information
-      const { data, error } = await supabase
+      const { data: rundownsData, error: rundownsError } = await supabase
         .from('rundowns')
         .select(`
           *,
           teams:team_id (
             id,
             name
-          ),
-          creator_profile:profiles!rundowns_user_id_fkey (
-            full_name,
-            email
           )
         `)
         .in('team_id', teamIds)
         .order('updated_at', { ascending: false });
 
-      if (error) {
-        console.error('Database error loading rundowns:', error);
-        throw error;
+      if (rundownsError) {
+        console.error('Database error loading rundowns:', rundownsError);
+        throw rundownsError;
       }
 
-      const rundowns = mapRundownsFromDatabase(data || []);
+      // Get all unique user IDs from rundowns to fetch their profiles
+      const userIds = [...new Set(rundownsData?.map(r => r.user_id) || [])];
+      
+      let profilesData = [];
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+
+        if (profilesError) {
+          console.error('Error loading profiles:', profilesError);
+          // Continue without profile data instead of failing
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Map rundowns and attach creator profile data
+      const rundowns = (rundownsData || []).map(rundown => {
+        const creatorProfile = profilesData.find(p => p.id === rundown.user_id);
+        return {
+          id: rundown.id,
+          user_id: rundown.user_id,
+          title: rundown.title,
+          items: rundown.items || [],
+          columns: rundown.columns,
+          timezone: rundown.timezone,
+          start_time: rundown.start_time,
+          icon: rundown.icon,
+          archived: rundown.archived || false,
+          created_at: rundown.created_at,
+          updated_at: rundown.updated_at,
+          undo_history: rundown.undo_history || [],
+          team_id: rundown.team_id,
+          visibility: rundown.visibility,
+          teams: rundown.teams ? {
+            id: rundown.teams.id,
+            name: rundown.teams.name
+          } : null,
+          creator_profile: creatorProfile ? {
+            full_name: creatorProfile.full_name,
+            email: creatorProfile.email
+          } : null
+        };
+      });
+
       setSavedRundowns(rundowns);
       console.log('Loaded rundowns from database:', rundowns.length);
     } catch (error) {
