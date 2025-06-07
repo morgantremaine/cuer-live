@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
@@ -80,59 +81,53 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar Section with Realtime Status */}
-      <div className="relative">
-        <RundownHeaderSection
-          currentTime={currentTime}
-          timezone={timezone}
-          onTimezoneChange={onTimezoneChange}
-          totalRuntime={totalRuntime}
-          onAddRow={onAddRow}
-          onAddHeader={onAddHeader}
-          onShowColumnManager={() => setShowColumnManager(true)}
-          selectedCount={selectedCount}
-          hasClipboardData={hasClipboardData}
-          onCopySelectedRows={onCopySelectedRows}
-          onPasteRows={onPasteRows}
-          onDeleteSelectedRows={onDeleteSelectedRows}
-          onClearSelection={onClearSelection}
-          selectedRowId={selectedRowId}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          hasUnsavedChanges={hasUnsavedChanges}
-          isSaving={isSaving}
-          rundownTitle={rundownTitle}
-          onTitleChange={onTitleChange}
-          rundownStartTime={rundownStartTime}
-          onRundownStartTimeChange={onRundownStartTimeChange}
-          rundownId={rundownId}
-          onOpenTeleprompter={onOpenTeleprompter}
-          items={items}
-          visibleColumns={visibleColumns}
-          onUndo={onUndo}
-          canUndo={canUndo}
-          lastAction={lastAction}
-        />
-        
-        {/* Realtime Status Indicator - positioned in top right */}
-        {rundownId && (
-          <div className="absolute top-2 right-2 z-10">
-            <RealtimeStatusIndicator
-              isConnected={isConnected || false}
-              isProcessingUpdate={isProcessingRealtimeUpdate || false}
-            />
-          </div>
-        )}
-      </div>
+      {/* Toolbar Section */}
+      <RundownHeaderSection
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
+        onShowColumnManager={() => setShowColumnManager(true)}
+        selectedCount={selectedCount}
+        hasClipboardData={hasClipboardData}
+        onCopySelectedRows={onCopySelectedRows}
+        onPasteRows={onPasteRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
+        onClearSelection={onClearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+        items={items}
+        visibleColumns={visibleColumns}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+      />
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        <RundownMainContent {...props} />
+        <RundownMainContent
+          {...props}
+          currentSegmentName={currentSegmentId ? items.find(item => item.id === currentSegmentId)?.name || '' : ''}
+          totalDuration={totalRuntime}
+        />
       </div>
     </div>
   );

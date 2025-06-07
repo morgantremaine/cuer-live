@@ -24,7 +24,9 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     canUndo,
     lastAction,
     items,
-    visibleColumns
+    visibleColumns,
+    isConnected,
+    isProcessingRealtimeUpdate
   } = props;
 
   return (
@@ -44,6 +46,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onUndo={onUndo}
       canUndo={canUndo}
       lastAction={lastAction}
+      isConnected={isConnected}
+      isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
     />
   );
 };
