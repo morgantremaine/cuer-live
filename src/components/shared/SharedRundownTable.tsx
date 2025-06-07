@@ -76,73 +76,92 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             const isFloated = item.isFloating || item.isFloated;
             
             return (
-              <tr
-                key={item.id}
-                className={`
-                  ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
-                  ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                  ${isShowcallerCurrent ? 'bg-green-50 border-l-4 border-green-500' : ''}
-                  print:break-inside-avoid
-                `}
-                style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
-              >
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                  <div className="flex items-center">
-                    {isShowcallerCurrent && (
-                      <span 
-                        className="text-green-600 mr-2 text-lg font-bold print:hidden"
-                        style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
-                      >
-                        ▶
-                      </span>
-                    )}
-                    {isFloated && (
-                      <span className="text-yellow-400 mr-1">🛟</span>
-                    )}
-                    <span>{getRowNumber(index, items)}</span>
-                  </div>
-                </td>
-                
-                {visibleColumns.map((column) => {
-                  // For headers, handle special cases
-                  if (item.type === 'header') {
-                    if (column.key === 'segmentName') {
-                      // Show the header description/notes
-                      return (
-                        <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                          <div className="break-words whitespace-pre-wrap">{item.notes || item.name || ''}</div>
-                        </td>
-                      );
-                    } else if (column.key === 'duration') {
-                      // Show the calculated header duration (excluding floated items)
-                      return (
-                        <td key={column.id} className="px-3 py-2 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400">
-                          <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
-                        </td>
-                      );
-                    } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
-                      // Don't show time fields for headers
-                      return (
-                        <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                          <div className="break-words whitespace-pre-wrap"></div>
-                        </td>
-                      );
-                    }
-                  }
-                  
-                  // For regular items, use the standard cell value
-                  const value = getCellValue(item, column);
-                  
-                  return (
-                    <td
-                      key={column.id}
-                      className={`px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400 ${isFloated ? 'text-white' : 'text-gray-900'}`}
-                    >
-                      <div className="break-words whitespace-pre-wrap">{value}</div>
+              <React.Fragment key={item.id}>
+                {/* Red line above current row */}
+                {isShowcallerCurrent && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-2 bg-red-500 mx-2 rounded-sm print:bg-red-600"></div>
                     </td>
-                  );
-                })}
-              </tr>
+                  </tr>
+                )}
+                
+                <tr
+                  className={`
+                    ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
+                    ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                    ${isShowcallerCurrent ? 'bg-green-50 border-l-4 border-green-500' : ''}
+                    print:break-inside-avoid
+                  `}
+                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
+                >
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                    <div className="flex items-center">
+                      {isShowcallerCurrent && (
+                        <span 
+                          className="text-green-600 mr-2 text-lg font-bold print:hidden"
+                          style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
+                        >
+                          ▶
+                        </span>
+                      )}
+                      {isFloated && (
+                        <span className="text-yellow-400 mr-1">🛟</span>
+                      )}
+                      <span>{getRowNumber(index, items)}</span>
+                    </div>
+                  </td>
+                  
+                  {visibleColumns.map((column) => {
+                    // For headers, handle special cases
+                    if (item.type === 'header') {
+                      if (column.key === 'segmentName') {
+                        // Show the header description/notes
+                        return (
+                          <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                            <div className="break-words whitespace-pre-wrap">{item.notes || item.name || ''}</div>
+                          </td>
+                        );
+                      } else if (column.key === 'duration') {
+                        // Show the calculated header duration (excluding floated items)
+                        return (
+                          <td key={column.id} className="px-3 py-2 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400">
+                            <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
+                          </td>
+                        );
+                      } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+                        // Don't show time fields for headers
+                        return (
+                          <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                            <div className="break-words whitespace-pre-wrap"></div>
+                          </td>
+                        );
+                      }
+                    }
+                    
+                    // For regular items, use the standard cell value
+                    const value = getCellValue(item, column);
+                    
+                    return (
+                      <td
+                        key={column.id}
+                        className={`px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400 ${isFloated ? 'text-white' : 'text-gray-900'}`}
+                      >
+                        <div className="break-words whitespace-pre-wrap">{value}</div>
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* Green line below current row */}
+                {isShowcallerCurrent && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-2 bg-green-500 mx-2 rounded-sm print:bg-green-600"></div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             );
           })}
         </tbody>
