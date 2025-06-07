@@ -44,7 +44,7 @@ const Help = () => {
               </h2>
               <div className="space-y-4 text-gray-700">
                 <p>Cuer is a collaborative rundown management system designed for broadcast professionals. Here's how to get started:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
+                <ul className="list-disc list-inside space-y-2 ml-5">
                   <li>Create a new rundown from the dashboard</li>
                   <li>Add items and headers to your rundown using the "+" buttons</li>
                   <li>Edit content by clicking on any cell</li>
