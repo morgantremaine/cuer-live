@@ -27,17 +27,6 @@ const RundownContainer = (props: RundownContainerProps) => {
       />
       
       <RundownMainContent 
-        // Toolbar props - remove playback controls as they're handled by RundownHeaderSection
-        selectedCount={props.selectedCount}
-        hasClipboardData={props.hasClipboardData}
-        onCopySelectedRows={props.onCopySelectedRows}
-        onPasteRows={props.onPasteRows}
-        onDeleteSelectedRows={props.onDeleteSelectedRows}
-        onClearSelection={props.onClearSelection}
-        onUndo={props.onUndo}
-        canUndo={props.canUndo}
-        lastAction={props.lastAction}
-        
         // Grid props
         currentTime={props.currentTime}
         showColumnManager={props.showColumnManager}
