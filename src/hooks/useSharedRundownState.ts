@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -41,7 +42,7 @@ export const useSharedRundownState = () => {
     setError(null);
 
     try {
-      // Try to access rundown without RLS enforcement
+      // Try to access rundown without RLS enforcement - now including showcaller_state
       const { data, error: queryError } = await supabase
         .from('rundowns')
         .select('id, title, items, columns, start_time, timezone, showcaller_state, created_at, updated_at')

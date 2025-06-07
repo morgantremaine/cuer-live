@@ -1,3 +1,4 @@
+
 import { SavedRundown } from './types'
 
 export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
@@ -27,7 +28,8 @@ export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
     creator_profile: rundown.creator_profile ? {
       full_name: rundown.creator_profile.full_name,
       email: rundown.creator_profile.email
-    } : null
+    } : null,
+    showcaller_state: rundown.showcaller_state || null
   }))
 }
 
@@ -54,7 +56,8 @@ export const mapDatabaseToRundown = (data: any): SavedRundown => {
     creator_profile: data.creator_profile ? {
       full_name: data.creator_profile.full_name,
       email: data.creator_profile.email
-    } : null
+    } : null,
+    showcaller_state: data.showcaller_state || null
   }
 }
 
@@ -73,6 +76,11 @@ export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
     visibility: rundown.visibility,
     updated_at: new Date().toISOString()
   };
+
+  // Include showcaller_state if it exists
+  if (rundown.showcaller_state) {
+    data.showcaller_state = rundown.showcaller_state;
+  }
 
   // Only include id if it exists and is not empty
   if (rundown.id && rundown.id !== '') {

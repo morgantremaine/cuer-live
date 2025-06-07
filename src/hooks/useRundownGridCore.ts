@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -15,6 +14,7 @@ import { SavedRundown } from './useRundownStorage/types';
 export const useRundownGridCore = () => {
   const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
   const [externalShowcallerState, setExternalShowcallerState] = useState<any>(null);
+  const showcallerUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Create stable refs to prevent infinite loops
   const stableCallbacksRef = useRef<{
@@ -104,24 +104,31 @@ export const useRundownGridCore = () => {
   // Undo functionality with persistence
   const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo();
 
-  // Showcaller state change handler - fixed to only update showcaller_state
+  // Enhanced showcaller state change handler with proper debouncing
   const handleShowcallerStateChange = useCallback((showcallerState: any) => {
-    if (!isProcessingRealtimeUpdate && rundownId) {
+    if (isProcessingRealtimeUpdate || !rundownId) return;
+
+    // Clear any existing timer
+    if (showcallerUpdateTimerRef.current) {
+      clearTimeout(showcallerUpdateTimerRef.current);
+    }
+
+    // Debounce the showcaller state updates
+    showcallerUpdateTimerRef.current = setTimeout(() => {
       console.log('📡 Broadcasting showcaller state change:', showcallerState);
-      // Only update showcaller_state, not the entire rundown
       updateRundown(rundownId, {
         showcaller_state: showcallerState
       }).catch(error => {
         console.error('Failed to update showcaller state:', error);
       });
-    }
+    }, 300); // 300ms debounce for showcaller updates
   }, [rundownId, isProcessingRealtimeUpdate, updateRundown]);
 
-  // Handle external rundown updates from realtime (updated to include showcaller state)
+  // Handle external rundown updates from realtime with better showcaller handling
   const handleRundownUpdated = useCallback((updatedRundown: SavedRundown) => {
     console.log('🔄 Applying realtime rundown update');
     
-    // Update showcaller state if changed
+    // Update showcaller state if changed and not processing our own update
     if (updatedRundown.showcaller_state && 
         JSON.stringify(updatedRundown.showcaller_state) !== JSON.stringify(externalShowcallerState)) {
       console.log('🔄 Updating showcaller state from realtime');
@@ -184,6 +191,10 @@ export const useRundownGridCore = () => {
       if (rundown.undo_history) {
         loadUndoHistory(rundown.undo_history);
       }
+      // Load showcaller state if present
+      if (rundown.showcaller_state) {
+        setExternalShowcallerState(rundown.showcaller_state);
+      }
     }
   }), [loadUndoHistory]);
 
@@ -219,6 +230,8 @@ export const useRundownGridCore = () => {
       updateItem(id, field, value);
     }
   }, [updateItem, markAsEditing, isProcessingRealtimeUpdate]);
+
+  // ... keep existing code (all the wrapped functions for adding rows, headers, etc.)
 
   const wrappedAddRow = useCallback((calculateEndTimeFn: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     if (isProcessingRealtimeUpdate) return;
@@ -356,6 +369,15 @@ export const useRundownGridCore = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, canUndo, isProcessingRealtimeUpdate]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (showcallerUpdateTimerRef.current) {
+        clearTimeout(showcallerUpdateTimerRef.current);
+      }
+    };
+  }, []);
+
   return {
     // Basic state
     currentTime,
@@ -386,8 +408,8 @@ export const useRundownGridCore = () => {
     visibleColumns,
     columns,
 
-    // Playback
-    isPlaying,
+    // Playback - use external state when available
+    isPlaying: externalShowcallerState?.isPlaying ?? isPlaying,
     currentSegmentId: externalShowcallerState?.currentSegmentId ?? currentSegmentId,
     timeRemaining: externalShowcallerState?.timeRemaining ?? timeRemaining,
     play,

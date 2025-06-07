@@ -3,6 +3,9 @@ import { supabase } from '@/lib/supabase';
 import { SavedRundown } from './types';
 import { transformSupabaseRundown } from './dataMapper';
 
+// Debounce map to prevent rapid-fire updates
+const debounceMap = new Map<string, NodeJS.Timeout>();
+
 export const updateRundownInSupabase = async (
   rundownId: string,
   data: {
@@ -73,6 +76,11 @@ export class RundownOperations {
     }
 
     try {
+      // Special handling for showcaller_state updates with debouncing
+      if (data.showcaller_state !== undefined && Object.keys(data).length === 1) {
+        return this.updateShowcallerStateDebounced(rundownId, data.showcaller_state);
+      }
+
       const rundownData: any = {};
       
       // Only include fields that are provided
@@ -105,6 +113,41 @@ export class RundownOperations {
       console.error('❌ Error updating rundown:', error);
       throw error;
     }
+  }
+
+  private async updateShowcallerStateDebounced(rundownId: string, showcallerState: any) {
+    // Clear any existing debounce timer for this rundown
+    const existingTimer = debounceMap.get(rundownId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // Set a new debounce timer
+    const timer = setTimeout(async () => {
+      try {
+        await updateRundownInSupabase(rundownId, { showcaller_state: showcallerState }, this.user.id);
+        
+        // Update local state immediately for responsive UI
+        this.setSavedRundowns(prevRundowns =>
+          prevRundowns.map(rundown =>
+            rundown.id === rundownId
+              ? { 
+                  ...rundown, 
+                  showcaller_state: showcallerState,
+                  updated_at: new Date().toISOString() 
+                }
+              : rundown
+          )
+        );
+        
+        debounceMap.delete(rundownId);
+      } catch (error) {
+        console.error('❌ Error updating showcaller state:', error);
+        debounceMap.delete(rundownId);
+      }
+    }, 500); // 500ms debounce
+
+    debounceMap.set(rundownId, timer);
   }
 
   async deleteRundown(rundownId: string) {
