@@ -27,15 +27,35 @@ export const useBlueprintPersistence = (
     try {
       console.log('Loading blueprint for rundown:', rundownId, 'user:', user.id);
       
-      // Get the most recent blueprint for this rundown and user
-      const { data, error } = await supabase
+      // First, get the rundown to check if it belongs to a team
+      const { data: rundownData, error: rundownError } = await supabase
+        .from('rundowns')
+        .select('team_id')
+        .eq('id', rundownId)
+        .single();
+
+      if (rundownError) {
+        console.error('Error getting rundown team info:', rundownError);
+        return null;
+      }
+
+      let blueprintQuery = supabase
         .from('blueprints')
         .select('*')
         .eq('rundown_id', rundownId)
-        .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+
+      // If rundown has a team_id, look for team blueprints, otherwise use user-specific
+      if (rundownData.team_id) {
+        console.log('Loading team blueprint for team:', rundownData.team_id);
+        blueprintQuery = blueprintQuery.eq('team_id', rundownData.team_id);
+      } else {
+        console.log('Loading user blueprint for user:', user.id);
+        blueprintQuery = blueprintQuery.eq('user_id', user.id).is('team_id', null);
+      }
+
+      const { data, error } = await blueprintQuery.maybeSingle();
 
       if (error) {
         console.error('Error loading blueprint:', error);
@@ -67,6 +87,25 @@ export const useBlueprintPersistence = (
       return;
     }
 
+    // First, get the rundown to check if it belongs to a team
+    const { data: rundownData, error: rundownError } = await supabase
+      .from('rundowns')
+      .select('team_id')
+      .eq('id', rundownId)
+      .single();
+
+    if (rundownError) {
+      console.error('Error getting rundown team info:', rundownError);
+      if (!silent) {
+        toast({
+          title: 'Error',
+          description: 'Failed to save blueprint - could not access rundown',
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+
     // Create the save data object with current state merged with updates
     const currentBlueprint = latestBlueprintRef.current || savedBlueprint;
     const saveData = {
@@ -75,7 +114,8 @@ export const useBlueprintPersistence = (
       showDateOverride: showDateOverride !== undefined ? showDateOverride : (currentBlueprint?.show_date || showDate),
       notes: notes !== undefined ? notes : (currentBlueprint?.notes || ''),
       crewData: crewData !== undefined ? crewData : (currentBlueprint?.crew_data || []),
-      cameraPlots: cameraPlots !== undefined ? cameraPlots : (currentBlueprint?.camera_plots || [])
+      cameraPlots: cameraPlots !== undefined ? cameraPlots : (currentBlueprint?.camera_plots || []),
+      teamId: rundownData.team_id
     };
 
     // If a save is already in progress, queue this save with merged data
@@ -89,7 +129,8 @@ export const useBlueprintPersistence = (
           showDateOverride: showDateOverride !== undefined ? showDateOverride : saveQueueRef.current.showDateOverride,
           notes: notes !== undefined ? notes : saveQueueRef.current.notes,
           crewData: crewData !== undefined ? crewData : saveQueueRef.current.crewData,
-          cameraPlots: cameraPlots !== undefined ? cameraPlots : saveQueueRef.current.cameraPlots
+          cameraPlots: cameraPlots !== undefined ? cameraPlots : saveQueueRef.current.cameraPlots,
+          teamId: rundownData.team_id
         };
       } else {
         saveQueueRef.current = saveData;
@@ -104,6 +145,7 @@ export const useBlueprintPersistence = (
         console.log('Executing blueprint save:', {
           rundownId,
           userId: user.id,
+          teamId: data.teamId,
           listsCount: data.updatedLists.length,
           notesLength: data.notes?.length || 0,
           crewDataCount: data.crewData?.length || 0,
@@ -123,16 +165,19 @@ export const useBlueprintPersistence = (
           notes: data.notes || '',
           crew_data: data.crewData || [],
           camera_plots: data.cameraPlots || [],
+          team_id: data.teamId, // Add team_id for team blueprints
           updated_at: new Date().toISOString()
         };
 
-        // Use upsert to ensure only one blueprint per rundown/user combination
+        // Use different conflict resolution based on whether it's a team blueprint or user blueprint
+        const conflictColumns = data.teamId ? 'team_id,rundown_id' : 'user_id,rundown_id';
+
         const { data: result, error } = await supabase
           .from('blueprints')
           .upsert(
             blueprintData,
             { 
-              onConflict: 'user_id,rundown_id',
+              onConflict: conflictColumns,
               ignoreDuplicates: false 
             }
           )
@@ -151,7 +196,7 @@ export const useBlueprintPersistence = (
         if (!data.silent) {
           toast({
             title: 'Success',
-            description: 'Blueprint saved successfully!',
+            description: data.teamId ? 'Team blueprint saved successfully!' : 'Blueprint saved successfully!',
           });
         }
       } catch (error) {

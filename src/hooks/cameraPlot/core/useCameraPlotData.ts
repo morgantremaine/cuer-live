@@ -35,7 +35,7 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
   const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
   const initializationRef = useRef(false);
 
-  // Get blueprint persistence functions
+  // Get blueprint persistence functions - this now handles team vs user blueprints automatically
   const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
     rundownId,
     rundownTitle,
