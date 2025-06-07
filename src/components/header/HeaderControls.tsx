@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -59,6 +59,10 @@ const HeaderControls = ({
     await signOut();
   };
 
+  const handleHelpClick = () => {
+    window.open('/help', '_blank');
+  };
+
   return (
     <div className="flex items-center space-x-4">
       <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
@@ -90,6 +94,13 @@ const HeaderControls = ({
                 className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 Account Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleHelpClick}
+                className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Help
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={handleSignOut}

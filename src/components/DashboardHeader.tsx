@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, User, LogOut } from 'lucide-react'
+import { ArrowLeft, User, LogOut, HelpCircle } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,10 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack }: DashboardHeaderProps) => {
   const navigate = useNavigate()
+
+  const handleHelpClick = () => {
+    window.open('/help', '_blank');
+  };
 
   return (
     <header className="bg-gray-800 border-b border-gray-700">
@@ -58,6 +62,13 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                   className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleHelpClick}
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                >
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Help
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={onSignOut}

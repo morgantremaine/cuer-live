@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,7 @@ import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import JoinTeam from "./pages/JoinTeam";
 import NotFound from "./pages/NotFound";
+import Help from "./pages/Help";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SharedRundown from "./pages/SharedRundown";
 import Teleprompter from "./pages/Teleprompter";
@@ -43,6 +45,7 @@ const AppRoutes = () => {
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
       <Route path="/join-team/:token" element={<JoinTeam />} />
+      <Route path="/help" element={<Help />} />
       {/* Make teleprompter public - no authentication required */}
       <Route path="/teleprompter/:id" element={<Teleprompter />} />
       
