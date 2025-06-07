@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
@@ -79,7 +78,7 @@ const DashboardRundownGrid = ({
       return rundown.creator_profile.email
     }
     
-    return 'team member'
+    return 'Unknown User'
   }
 
   const calculateTotalDuration = (items: RundownItem[]) => {
