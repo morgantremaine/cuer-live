@@ -99,6 +99,15 @@ const RundownTable = ({
             
             return (
               <React.Fragment key={item.id}>
+                {/* Extra spacing above current row */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-3"></div>
+                    </td>
+                  </tr>
+                )}
+                
                 {/* Green line above current row */}
                 {isCurrentlyPlaying && (
                   <tr>
@@ -159,6 +168,15 @@ const RundownTable = ({
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-2 bg-yellow-500 mx-2 rounded-sm"></div>
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Extra spacing below current row */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-3"></div>
                     </td>
                   </tr>
                 )}

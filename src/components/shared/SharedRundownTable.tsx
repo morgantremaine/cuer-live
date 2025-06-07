@@ -90,10 +90,9 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                     ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                    ${isShowcallerCurrent ? 'bg-green-50 border-l-4 border-green-500' : ''}
                     print:break-inside-avoid
                   `}
-                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
+                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                     <div className="flex items-center">
