@@ -104,11 +104,11 @@ const DashboardRundownGrid = ({
       segmentCount: headers.length,
       itemCount: contentItems.length,
       totalDuration: calculateTotalDuration(items),
-      firstItems: contentItems.slice(0, 3).map(item => {
-        if (item.name && item.name.trim()) return item.name.trim()
-        if (item.script && item.script.trim()) return item.script.trim().substring(0, 50) + (item.script.trim().length > 50 ? '...' : '')
-        if (item.notes && item.notes.trim()) return item.notes.trim()
-        return 'Untitled Item'
+      firstItems: headers.slice(0, 3).map(header => {
+        if (header.name && header.name.trim()) return header.name.trim()
+        if (header.script && header.script.trim()) return header.script.trim().substring(0, 50) + (header.script.trim().length > 50 ? '...' : '')
+        if (header.notes && header.notes.trim()) return header.notes.trim()
+        return 'Untitled Header'
       })
     }
   }
@@ -409,7 +409,7 @@ const DashboardRundownGrid = ({
                   <div className="bg-gray-700/30 rounded-lg p-3">
                     <div className="text-gray-300 text-xs font-medium mb-2 flex items-center gap-1">
                       <FileText className="h-3 w-3" />
-                      Preview
+                      Headers Preview
                     </div>
                     <div className="space-y-1">
                       {preview.firstItems.map((item, index) => (
@@ -417,9 +417,9 @@ const DashboardRundownGrid = ({
                           • {item}
                         </div>
                       ))}
-                      {preview.itemCount > 3 && (
+                      {preview.segmentCount > 3 && (
                         <div className="text-gray-500 text-xs">
-                          +{preview.itemCount - 3} more items...
+                          +{preview.segmentCount - 3} more headers...
                         </div>
                       )}
                     </div>
@@ -438,10 +438,10 @@ const DashboardRundownGrid = ({
                     Open
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => navigate(`/blueprint/${rundown.id}`)}
-                    className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-500 transition-all hover:scale-105"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
                   >
                     <FileText className="h-3 w-3 mr-1" />
                     Blueprint
