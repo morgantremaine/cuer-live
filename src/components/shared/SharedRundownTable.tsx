@@ -86,6 +86,15 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   </tr>
                 )}
                 
+                {/* Small spacing below green line */}
+                {isShowcallerCurrent && (
+                  <tr className="print:hidden">
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1"></div>
+                    </td>
+                  </tr>
+                )}
+                
                 <tr
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
@@ -151,6 +160,15 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                     );
                   })}
                 </tr>
+
+                {/* Small spacing above yellow line */}
+                {isShowcallerCurrent && (
+                  <tr className="print:hidden">
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1"></div>
+                    </td>
+                  </tr>
+                )}
 
                 {/* Yellow line below current row */}
                 {isShowcallerCurrent && (

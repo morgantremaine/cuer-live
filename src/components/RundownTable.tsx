@@ -117,6 +117,15 @@ const RundownTable = ({
                   </tr>
                 )}
                 
+                {/* Small spacing below green line */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1"></div>
+                    </td>
+                  </tr>
+                )}
+                
                 {/* Drop indicator above current row */}
                 {dropTargetIndex === index && (
                   <tr>
@@ -162,6 +171,15 @@ const RundownTable = ({
                   isDragging={draggedItemIndex === index}
                   getColumnWidth={getColumnWidth}
                 />
+
+                {/* Small spacing above yellow line */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1"></div>
+                    </td>
+                  </tr>
+                )}
 
                 {/* Yellow line below current row */}
                 {isCurrentlyPlaying && (
