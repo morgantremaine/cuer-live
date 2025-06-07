@@ -1,9 +1,9 @@
-
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
+import { useTeammateChangeNotification } from '@/hooks/useTeammateChangeNotification';
 
 const RundownIndexContent = () => {
   const gridState = useRundownGridState();
@@ -74,6 +74,12 @@ const RundownIndexContent = () => {
     canUndo,
     lastAction
   } = gridState;
+
+  // Set up teammate change notifications
+  useTeammateChangeNotification({
+    rundownId,
+    enabled: !!rundownId
+  });
 
   const {
     handleRundownStartTimeChange,
