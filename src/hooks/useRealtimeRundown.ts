@@ -131,9 +131,9 @@ export const useRealtimeRundown = ({
         .from('rundowns')
         .select(`
           *,
-          teams:team_id (
-            id,
-            name
+          creator_profile:profiles!rundowns_user_id_fkey (
+            full_name,
+            email
           )
         `)
         .eq('id', rundownId)
@@ -144,7 +144,7 @@ export const useRealtimeRundown = ({
         throw error;
       }
 
-      // Transform the data to match our expected format
+      // Transform the data to match our expected format - removed invalid 'teams' property
       const updatedRundown: SavedRundown = {
         id: data.id,
         user_id: data.user_id,
@@ -154,14 +154,14 @@ export const useRealtimeRundown = ({
         timezone: data.timezone,
         start_time: data.start_time,
         team_id: data.team_id,
-        teams: data.teams ? {
-          id: data.teams.id,
-          name: data.teams.name
-        } : null,
         created_at: data.created_at,
         updated_at: data.updated_at,
         archived: data.archived,
-        undo_history: data.undo_history
+        undo_history: data.undo_history,
+        creator_profile: data.creator_profile ? {
+          full_name: data.creator_profile.full_name,
+          email: data.creator_profile.email
+        } : undefined
       };
 
       console.log('✅ Applying remote update from teammate');
