@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -126,16 +127,10 @@ export const useRealtimeRundown = ({
         }
       }
 
-      // Fetch the complete updated rundown data
+      // Fetch the complete updated rundown data - simple query without joins
       const { data, error } = await supabase
         .from('rundowns')
-        .select(`
-          *,
-          creator_profile:profiles!rundowns_user_id_fkey (
-            full_name,
-            email
-          )
-        `)
+        .select('*')
         .eq('id', rundownId)
         .single();
 
@@ -144,7 +139,7 @@ export const useRealtimeRundown = ({
         throw error;
       }
 
-      // Transform the data to match our expected format - removed invalid 'teams' property
+      // Transform the data to match our expected format
       const updatedRundown: SavedRundown = {
         id: data.id,
         user_id: data.user_id,
@@ -158,10 +153,7 @@ export const useRealtimeRundown = ({
         updated_at: data.updated_at,
         archived: data.archived,
         undo_history: data.undo_history,
-        creator_profile: data.creator_profile ? {
-          full_name: data.creator_profile.full_name,
-          email: data.creator_profile.email
-        } : undefined
+        icon: data.icon
       };
 
       console.log('✅ Applying remote update from teammate');
