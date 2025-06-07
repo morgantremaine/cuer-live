@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useBlueprintState } from '@/hooks/useBlueprintState';
 import { useAuth } from '@/hooks/useAuth';
+import { useTeammateChangeNotification } from '@/hooks/useTeammateChangeNotification';
 import { Button } from '@/components/ui/button';
 import DashboardHeader from '@/components/DashboardHeader';
 import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
@@ -20,6 +20,12 @@ const Blueprint = () => {
   const { savedRundowns, loading } = useRundownStorage();
   
   const rundown = savedRundowns.find(r => r.id === id);
+  
+  // Set up teammate change notifications for blueprints
+  useTeammateChangeNotification({
+    rundownId: id || null,
+    enabled: !!id
+  });
   
   const {
     lists,
