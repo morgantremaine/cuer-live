@@ -47,21 +47,7 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-    
-    // If right-clicking inside an input/textarea, allow the native context menu
-    // but still select the row if not already selected
-    if (isInput) {
-      if (onRowSelect && !isSelected) {
-        onRowSelect(item.id, index, false, false);
-      }
-      // Don't prevent default - allow browser's spell check context menu
-      return;
-    }
-    
-    // For clicks outside input fields, prevent default and select the row
-    e.preventDefault();
+    // Select the row if not already selected
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
