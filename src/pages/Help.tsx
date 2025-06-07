@@ -46,8 +46,9 @@ const Help = () => {
                 <p>Cuer is a collaborative rundown management system designed for broadcast professionals. Here's how to get started:</p>
                 <ul className="list-disc list-inside space-y-2 ml-4">
                   <li>Create a new rundown from the dashboard</li>
-                  <li>Add items to your rundown using the "+" button</li>
+                  <li>Add items and headers to your rundown using the "+" buttons</li>
                   <li>Edit content by clicking on any cell</li>
+                  <li>Right click to change row color and float/unfloat rows
                   <li>Save your work automatically as you type</li>
                 </ul>
               </div>
