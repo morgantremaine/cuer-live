@@ -55,7 +55,7 @@ const RundownMainContent = () => {
     markAsChanged
   });
 
-  // Playback controls
+  // Playback controls - now with showcaller sync
   const {
     isPlaying,
     currentSegmentId,
