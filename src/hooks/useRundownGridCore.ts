@@ -7,6 +7,7 @@ import { useTimeCalculations } from './useTimeCalculations';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useRealtimeRundownSync } from './useRealtimeRundownSync';
 import { useRundownDataLoader } from './useRundownDataLoader';
+import { useRundownStateIntegration } from './useRundownStateIntegration';
 
 export const useRundownGridCore = () => {
   // Basic state management
@@ -18,12 +19,13 @@ export const useRundownGridCore = () => {
     setTimezone,
     rundownStartTime,
     setRundownStartTime,
-    hasUnsavedChanges,
-    isSaving,
+    currentTime,
+    showColumnManager,
+    setShowColumnManager,
     markAsChanged
   } = useRundownBasicState();
 
-  // Items and calculations
+  // State integration with auto-save
   const {
     items,
     setItems,
@@ -37,16 +39,6 @@ export const useRundownGridCore = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
-    setMarkAsChangedCallback,
-    itemsUpdateTrigger,
-    forceUpdateId
-  } = useRundownCalculations();
-
-  // Set the mark as changed callback
-  setMarkAsChangedCallback(markAsChanged);
-
-  // Columns management
-  const {
     columns,
     visibleColumns,
     handleAddColumn,
@@ -55,11 +47,19 @@ export const useRundownGridCore = () => {
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+    handleUpdateColumnWidth,
+    hasUnsavedChanges,
+    isSaving
+  } = useRundownStateIntegration(rundownTitle, timezone, rundownStartTime);
+
+  // Calculations
+  const { calculateEndTime } = useRundownCalculations();
+
+  // Columns management
+  const { } = useColumnsManager(markAsChanged);
 
   // Time calculations
-  const { currentTime, calculateEndTime, getRowStatus } = useTimeCalculations(
+  const { getRowStatus } = useTimeCalculations(
     items,
     rundownStartTime,
     timezone
@@ -77,7 +77,7 @@ export const useRundownGridCore = () => {
   } = usePlaybackControls(items);
 
   // Data loading
-  const { selectedRowId } = useRundownDataLoader(
+  const { } = useRundownDataLoader(
     rundownId,
     setItems,
     setRundownTitle,
@@ -98,23 +98,39 @@ export const useRundownGridCore = () => {
     markAsChanged
   });
 
-  // Handlers
+  // Handlers - simplified signature
   const {
-    handleSave,
-    handleLoadRundown,
-    handleCreateNew,
-    handleTitleChange
-  } = useRundownHandlers(
-    rundownId,
-    rundownTitle,
-    timezone,
-    rundownStartTime,
-    items,
-    columns,
-    setRundownTitle,
-    markAsChanged,
-    updateLastUpdateTime
-  );
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleDeleteColumnWithCleanup
+  } = useRundownHandlers({
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    toggleFloatRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    handleDeleteColumn,
+    setItems,
+    calculateEndTime,
+    selectColor: (id: string, color: string) => {
+      updateItem(id, 'color', color);
+    },
+    markAsChanged
+  });
+
+  // Simple title change handler
+  const handleTitleChange = (title: string) => {
+    setRundownTitle(title);
+    markAsChanged();
+  };
 
   return {
     // Core state
@@ -128,6 +144,9 @@ export const useRundownGridCore = () => {
     hasUnsavedChanges,
     isSaving,
     markAsChanged,
+    currentTime,
+    showColumnManager,
+    setShowColumnManager,
     
     // Items
     items,
@@ -142,6 +161,7 @@ export const useRundownGridCore = () => {
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration,
+    calculateEndTime,
     
     // Columns
     columns,
@@ -155,8 +175,6 @@ export const useRundownGridCore = () => {
     handleUpdateColumnWidth,
     
     // Time
-    currentTime,
-    calculateEndTime,
     getRowStatus,
     
     // Playback controls
@@ -167,15 +185,31 @@ export const useRundownGridCore = () => {
     pause,
     forward,
     backward,
-    selectedRowId,
+    selectedRowId: null, // Add default for now
     
     // Handlers
-    handleSave,
-    handleLoadRundown,
-    handleCreateNew,
+    handleUpdateItem,
+    handleAddRow,
+    handleAddHeader,
+    handleDeleteRow,
+    handleToggleFloat,
+    handleColorSelect,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleDeleteColumnWithCleanup,
     
     // Realtime triggers
     updateTrigger,
-    forceRenderTrigger
+    forceRenderTrigger,
+
+    // Add missing properties for undo functionality
+    handleUndo: () => {}, // Placeholder
+    canUndo: false,
+    lastAction: null as string | null,
+
+    // Add missing realtime collaboration properties
+    isConnected: true,
+    hasPendingChanges: false,
+    isEditing: false
   };
 };

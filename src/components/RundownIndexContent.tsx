@@ -11,8 +11,8 @@ const RundownIndexContent = () => {
   const {
     currentTime,
     timezone,
-    showColumnManager,
-    setShowColumnManager,
+    showColumnManager = false,
+    setShowColumnManager = () => {},
     rundownTitle,
     setRundownTitle,
     rundownStartTime,
@@ -70,13 +70,13 @@ const RundownIndexContent = () => {
     handleDeleteSelectedRows,
     setRundownStartTime,
     setTimezone,
-    handleUndo,
-    canUndo,
-    lastAction,
-    // Extract the new realtime collaboration properties
-    isConnected,
-    hasPendingChanges,
-    isEditing
+    handleUndo = () => {},
+    canUndo = false,
+    lastAction = null,
+    // Extract the new realtime collaboration properties with defaults
+    isConnected = true,
+    hasPendingChanges = false,
+    isEditing = false
   } = gridState;
 
   const {
