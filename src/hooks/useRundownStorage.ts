@@ -44,7 +44,7 @@ export const useRundownStorage = () => {
         return;
       }
       
-      // Query rundowns from user's teams - include both archived and active
+      // Query rundowns from user's teams with creator profile information
       const { data, error } = await supabase
         .from('rundowns')
         .select(`
@@ -52,6 +52,10 @@ export const useRundownStorage = () => {
           teams:team_id (
             id,
             name
+          ),
+          creator_profile:profiles!rundowns_user_id_fkey (
+            full_name,
+            email
           )
         `)
         .in('team_id', teamIds)

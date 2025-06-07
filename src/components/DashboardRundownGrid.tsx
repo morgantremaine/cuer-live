@@ -67,7 +67,16 @@ const DashboardRundownGrid = ({
       return 'You'
     }
     
-    // Fallback to "team member" if no profile or name is available
+    // Show creator's full name if available, otherwise fall back to email or "team member"
+    if (rundown.creator_profile?.full_name) {
+      return rundown.creator_profile.full_name
+    }
+    
+    if (rundown.creator_profile?.email) {
+      return rundown.creator_profile.email
+    }
+    
+    // Fallback to "team member" if no profile data is available
     return 'team member'
   }
 
