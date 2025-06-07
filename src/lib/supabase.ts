@@ -101,13 +101,10 @@ export type Database = {
 // Initialize realtime for the rundowns table on startup
 const initializeRealtime = async () => {
   try {
-    console.log('🔧 Initializing realtime for rundowns table...');
-    
     // Enable realtime replication for the rundowns table if not already enabled
     // This ensures that UPDATE events are captured and sent to subscribers
-    console.log('✅ Realtime should be working for rundowns table');
   } catch (error) {
-    console.error('❌ Error initializing realtime:', error);
+    console.error('Error initializing realtime:', error);
   }
 };
 

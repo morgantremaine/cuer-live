@@ -1,190 +1,109 @@
 
-import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '@/hooks/useAuth'
-import { RundownItem } from '@/hooks/useRundownItems'
-import { Column } from '@/hooks/useColumnsManager'
-import { useToast } from '@/hooks/use-toast'
-import { SavedRundown } from './useRundownStorage/types'
-import { mapRundownsFromDatabase } from './useRundownStorage/dataMapper'
-import {
-  loadRundownsFromDatabase,
-  saveRundownToDatabase,
-  updateRundownInDatabase,
-  deleteRundownFromDatabase
-} from './useRundownStorage/operations'
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import { mapDatabaseToRundown, mapRundownToDatabase } from './useRundownStorage/dataMapper';
+import { Rundown } from './useRundownStorage/types';
+import { RundownOperations } from './useRundownStorage/operations';
 
 export const useRundownStorage = () => {
-  const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([])
-  const [loading, setLoading] = useState(false)
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const hasLoadedRef = useRef(false)
+  const { user } = useAuth();
+  const [savedRundowns, setSavedRundowns] = useState<Rundown[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const loadRundowns = async () => {
-    if (!user || loading) return
-
-    setLoading(true)
-    const { data, error } = await loadRundownsFromDatabase(user.id)
-
-    if (error) {
-      console.error('Error loading rundowns:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load rundowns',
-        variant: 'destructive',
-      })
-    } else {
-      const mappedData = mapRundownsFromDatabase(data)
-      setSavedRundowns(mappedData)
-      hasLoadedRef.current = true
-    }
-    setLoading(false)
-  }
-
-  const saveRundown = async (
-    title: string, 
-    items: RundownItem[], 
-    columns?: Column[], 
-    timezone?: string, 
-    startTime?: string, 
-    icon?: string,
-    teamId?: string
-  ) => {
+  // Load rundowns from Supabase
+  const loadRundowns = useCallback(async () => {
     if (!user) {
-      console.error('Cannot save: no user')
-      return
+      setSavedRundowns([]);
+      setLoading(false);
+      return;
     }
 
-    const { data, error } = await saveRundownToDatabase(
-      user.id, 
-      title, 
-      items, 
-      columns, 
-      timezone, 
-      startTime, 
-      icon,
-      teamId
-    )
+    try {
+      console.log('Loading rundowns from database for user:', user.id);
+      
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('archived', false)
+        .order('updated_at', { ascending: false });
 
-    if (error) {
-      console.error('Database error saving rundown:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to save rundown',
-        variant: 'destructive',
-      })
-      throw error
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Rundown saved successfully!',
-      })
-      loadRundowns()
-      return data
-    }
-  }
-
-  const updateRundown = async (
-    id: string, 
-    title: string, 
-    items: RundownItem[], 
-    silent = false, 
-    archived = false, 
-    columns?: Column[], 
-    timezone?: string, 
-    startTime?: string, 
-    icon?: string, 
-    undoHistory?: any[],
-    teamId?: string
-  ) => {
-    if (!user) {
-      console.error('Cannot update: no user')
-      return
-    }
-
-    const { error, data } = await updateRundownInDatabase(
-      id, 
-      user.id, 
-      title, 
-      items, 
-      archived, 
-      columns, 
-      timezone, 
-      startTime, 
-      icon, 
-      undoHistory,
-      teamId
-    )
-
-    if (error) {
-      console.error('Database error updating rundown:', {
-        error,
-        errorMessage: error.message,
-        id,
-        userId: user.id
-      })
-      if (!silent) {
-        toast({
-          title: 'Error',
-          description: `Failed to update rundown: ${error.message}`,
-          variant: 'destructive',
-        })
+      if (error) {
+        throw error;
       }
-      throw error
-    } else {
-      if (!silent) {
-        const message = archived ? 'Rundown archived successfully!' : 'Rundown updated successfully!'
-        toast({
-          title: 'Success',
-          description: message,
-        })
+
+      const rundowns = data?.map(mapDatabaseToRundown) || [];
+      setSavedRundowns(rundowns);
+      console.log('Loaded rundowns from database:', rundowns.length);
+    } catch (error) {
+      console.error('Error loading rundowns:', error);
+      setSavedRundowns([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Save rundown to Supabase
+  const saveRundown = useCallback(async (rundown: Rundown): Promise<string> => {
+    if (!user || !rundown) {
+      throw new Error('User not authenticated or rundown is invalid');
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const rundownData = mapRundownToDatabase(rundown, user.id);
+      
+      const { data, error } = await supabase
+        .from('rundowns')
+        .upsert(rundownData)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
       }
-      // Refresh data to ensure consistency
-      loadRundowns()
+
+      const savedRundown = mapDatabaseToRundown(data);
+      
+      // Update local state
+      setSavedRundowns(prevRundowns => {
+        const existingIndex = prevRundowns.findIndex(r => r.id === savedRundown.id);
+        if (existingIndex >= 0) {
+          const newRundowns = [...prevRundowns];
+          newRundowns[existingIndex] = savedRundown;
+          return newRundowns;
+        } else {
+          return [savedRundown, ...prevRundowns];
+        }
+      });
+
+      return savedRundown.id;
+    } catch (error) {
+      console.error('Error saving rundown:', error);
+      throw error;
+    } finally {
+      setIsSaving(false);
     }
-  }
+  }, [user]);
 
-  const deleteRundown = async (id: string) => {
-    if (!user) return
+  const operations = new RundownOperations(user, saveRundown, setSavedRundowns);
 
-    const { error } = await deleteRundownFromDatabase(id, user.id)
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete rundown',
-        variant: 'destructive',
-      })
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Rundown deleted successfully!',
-      })
-      loadRundowns()
-    }
-  }
-
-  // Load rundowns only once when user becomes available
   useEffect(() => {
-    if (user && !hasLoadedRef.current && !loading) {
-      loadRundowns()
-    }
-  }, [user?.id])
-
-  // Reset loading state when user changes
-  useEffect(() => {
-    if (!user) {
-      hasLoadedRef.current = false
-      setSavedRundowns([])
-    }
-  }, [user?.id])
+    loadRundowns();
+  }, [loadRundowns]);
 
   return {
     savedRundowns,
     loading,
+    isSaving,
     saveRundown,
-    updateRundown,
-    deleteRundown,
-    loadRundowns,
-  }
-}
+    updateRundown: operations.updateRundown.bind(operations),
+    deleteRundown: operations.deleteRundown.bind(operations),
+    archiveRundown: operations.archiveRundown.bind(operations),
+    duplicateRundown: operations.duplicateRundown.bind(operations),
+    loadRundowns
+  };
+};
