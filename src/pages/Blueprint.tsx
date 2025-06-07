@@ -75,7 +75,7 @@ const Blueprint = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -83,7 +83,7 @@ const Blueprint = () => {
 
   if (!rundown) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-gray-900">
         <DashboardHeader 
           userEmail={user?.email} 
           onSignOut={handleSignOut} 
@@ -173,7 +173,7 @@ const Blueprint = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gray-900">
       <DashboardHeader 
         userEmail={user?.email} 
         onSignOut={handleSignOut} 
