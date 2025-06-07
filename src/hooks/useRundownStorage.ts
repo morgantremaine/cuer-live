@@ -12,7 +12,7 @@ export const useRundownStorage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load rundowns from Supabase
+  // Load rundowns from Supabase (both personal and team rundowns)
   const loadRundowns = useCallback(async () => {
     if (!user) {
       setSavedRundowns([]);
@@ -23,12 +23,39 @@ export const useRundownStorage = () => {
     try {
       console.log('Loading rundowns from database for user:', user.id);
       
-      const { data, error } = await supabase
+      // First get user's team memberships to know which teams they belong to
+      const { data: teamMemberships, error: teamError } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id);
+
+      if (teamError) {
+        console.error('Error loading team memberships:', teamError);
+      }
+
+      const teamIds = teamMemberships?.map(membership => membership.team_id) || [];
+      
+      // Build query to get both personal rundowns and team rundowns
+      let query = supabase
         .from('rundowns')
-        .select('*')
-        .eq('user_id', user.id)
+        .select(`
+          *,
+          teams:team_id (
+            id,
+            name
+          )
+        `)
         .eq('archived', false)
         .order('updated_at', { ascending: false });
+
+      // If user has teams, include rundowns from those teams, otherwise just personal rundowns
+      if (teamIds.length > 0) {
+        query = query.or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`);
+      } else {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Database error loading rundowns:', error);
