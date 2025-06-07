@@ -77,11 +77,11 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             
             return (
               <React.Fragment key={item.id}>
-                {/* Red line above current row */}
+                {/* Green line above current row */}
                 {isShowcallerCurrent && (
-                  <tr>
+                  <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-red-500 mx-2 rounded-sm print:bg-red-600"></div>
+                      <div className="h-2 bg-green-500 mx-2 rounded-sm print:bg-green-600"></div>
                     </td>
                   </tr>
                 )}
@@ -153,11 +153,11 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   })}
                 </tr>
 
-                {/* Green line below current row */}
+                {/* Yellow line below current row */}
                 {isShowcallerCurrent && (
-                  <tr>
+                  <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-green-500 mx-2 rounded-sm print:bg-green-600"></div>
+                      <div className="h-2 bg-yellow-500 mx-2 rounded-sm print:bg-yellow-600"></div>
                     </td>
                   </tr>
                 )}

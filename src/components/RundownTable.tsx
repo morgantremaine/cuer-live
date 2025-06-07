@@ -99,11 +99,11 @@ const RundownTable = ({
             
             return (
               <React.Fragment key={item.id}>
-                {/* Red line above current row */}
+                {/* Green line above current row */}
                 {isCurrentlyPlaying && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-red-500 mx-2 rounded-sm"></div>
+                      <div className="h-2 bg-green-500 mx-2 rounded-sm"></div>
                     </td>
                   </tr>
                 )}
@@ -154,11 +154,11 @@ const RundownTable = ({
                   getColumnWidth={getColumnWidth}
                 />
 
-                {/* Green line below current row */}
+                {/* Yellow line below current row */}
                 {isCurrentlyPlaying && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-green-500 mx-2 rounded-sm"></div>
+                      <div className="h-2 bg-yellow-500 mx-2 rounded-sm"></div>
                     </td>
                   </tr>
                 )}
