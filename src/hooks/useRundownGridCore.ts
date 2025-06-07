@@ -1,4 +1,3 @@
-
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -59,7 +58,7 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Rundown data integration
+  // Rundown data integration with passing setApplyingRemoteUpdate
   const {
     items,
     setItems,
@@ -83,14 +82,16 @@ export const useRundownGridCore = () => {
     handleLoadLayout,
     handleUpdateColumnWidth,
     hasUnsavedChanges,
-    isSaving
+    isSaving,
+    setApplyingRemoteUpdate
   } = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
     timezone, 
     rundownStartTime,
     setRundownTitleDirectly, 
-    setTimezoneDirectly
+    setTimezoneDirectly,
+    isProcessingRealtimeUpdate
   );
 
   // Update stable refs
@@ -139,13 +140,15 @@ export const useRundownGridCore = () => {
     stableCallbacksRef.current.loadRundowns?.();
   }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory]);
 
-  // Set up realtime collaboration
+  // Set up realtime collaboration with updateSavedSignature and setApplyingRemoteUpdate
   const { isConnected } = useRealtimeRundown({
     rundownId,
     onRundownUpdated: handleRundownUpdated,
     hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
     isProcessingUpdate: isProcessingRealtimeUpdate,
-    setIsProcessingUpdate: setIsProcessingRealtimeUpdate
+    setIsProcessingUpdate: setIsProcessingRealtimeUpdate,
+    updateSavedSignature: setApplyingRemoteUpdate ? undefined : undefined, // This will be handled by the useAutoSave hook
+    setApplyingRemoteUpdate
   });
 
   const stableDataLoaderCallbacks = useMemo(() => ({

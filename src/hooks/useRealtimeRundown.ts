@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +11,7 @@ interface UseRealtimeRundownProps {
   isProcessingUpdate: boolean;
   setIsProcessingUpdate: (processing: boolean) => void;
   updateSavedSignature?: (items: any[], title: string, columns?: any[], timezone?: string, startTime?: string) => void;
+  setApplyingRemoteUpdate?: (applying: boolean) => void;
 }
 
 export const useRealtimeRundown = ({
@@ -20,7 +20,8 @@ export const useRealtimeRundown = ({
   hasUnsavedChanges,
   isProcessingUpdate,
   setIsProcessingUpdate,
-  updateSavedSignature
+  updateSavedSignature,
+  setApplyingRemoteUpdate
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -34,11 +35,13 @@ export const useRealtimeRundown = ({
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
   const stableSetIsProcessingUpdateRef = useRef(setIsProcessingUpdate);
   const stableUpdateSavedSignatureRef = useRef(updateSavedSignature);
+  const stableSetApplyingRemoteUpdateRef = useRef(setApplyingRemoteUpdate);
   
   // Update refs when functions change
   stableOnRundownUpdatedRef.current = onRundownUpdated;
   stableSetIsProcessingUpdateRef.current = setIsProcessingUpdate;
   stableUpdateSavedSignatureRef.current = updateSavedSignature;
+  stableSetApplyingRemoteUpdateRef.current = setApplyingRemoteUpdate;
 
   // Track when we make updates to avoid processing our own changes
   const trackOwnUpdate = useCallback((timestamp: string) => {
@@ -91,7 +94,12 @@ export const useRealtimeRundown = ({
     }
 
     console.log('✅ Processing remote update from teammate');
+    
+    // CRITICAL: Set all processing flags FIRST
     stableSetIsProcessingUpdateRef.current(true);
+    if (stableSetApplyingRemoteUpdateRef.current) {
+      stableSetApplyingRemoteUpdateRef.current(true);
+    }
 
     try {
       // Enhanced conflict resolution with better UX
@@ -114,7 +122,6 @@ export const useRealtimeRundown = ({
             description: 'Your changes are preserved. Save soon to avoid conflicts.',
             duration: 5000,
           });
-          stableSetIsProcessingUpdateRef.current(false);
           return;
         }
       }
@@ -159,8 +166,11 @@ export const useRealtimeRundown = ({
 
       console.log('✅ Applying remote update from teammate');
       
-      // Update the saved signature BEFORE applying the rundown update
-      // This prevents change tracking from triggering
+      // Apply the rundown update first
+      stableOnRundownUpdatedRef.current(updatedRundown);
+
+      // CRITICAL: Update the saved signature AFTER applying the rundown data
+      // This ensures it matches the current state and prevents change tracking
       if (stableUpdateSavedSignatureRef.current) {
         stableUpdateSavedSignatureRef.current(
           updatedRundown.items, 
@@ -170,8 +180,6 @@ export const useRealtimeRundown = ({
           updatedRundown.start_time
         );
       }
-      
-      stableOnRundownUpdatedRef.current(updatedRundown);
 
       // Show success notification - only for remote updates
       toast({
@@ -205,6 +213,10 @@ export const useRealtimeRundown = ({
         });
       }
     } finally {
+      // CRITICAL: Clear all processing flags LAST
+      if (stableSetApplyingRemoteUpdateRef.current) {
+        stableSetApplyingRemoteUpdateRef.current(false);
+      }
       stableSetIsProcessingUpdateRef.current(false);
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);

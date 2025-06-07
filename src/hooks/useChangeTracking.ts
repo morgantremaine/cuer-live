@@ -17,6 +17,7 @@ export const useChangeTracking = (
   
   const lastSavedDataRef = useRef<string>('');
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isApplyingRemoteUpdateRef = useRef(false);
 
   // Create a stable signature for the current data
   const createDataSignature = useCallback(() => {
@@ -53,10 +54,11 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createDataSignature]);
 
-  // Track changes after initialization - but SKIP during realtime updates
+  // Track changes after initialization - SKIP during realtime updates
   useEffect(() => {
-    if (!isInitialized || isLoading || isProcessingRealtimeUpdate) {
-      if (isProcessingRealtimeUpdate) {
+    // CRITICAL: Skip change detection if we're applying a remote update
+    if (!isInitialized || isLoading || isProcessingRealtimeUpdate || isApplyingRemoteUpdateRef.current) {
+      if (isProcessingRealtimeUpdate || isApplyingRemoteUpdateRef.current) {
         console.log('🚫 Skipping change tracking - realtime update in progress');
       }
       return;
@@ -91,16 +93,16 @@ export const useChangeTracking = (
   }, []);
 
   const markAsChanged = useCallback(() => {
-    if (isInitialized && !isLoading && !isProcessingRealtimeUpdate) {
+    if (isInitialized && !isLoading && !isProcessingRealtimeUpdate && !isApplyingRemoteUpdateRef.current) {
       console.log('📝 Manually marked as changed');
       setHasUnsavedChanges(true);
-    } else if (isProcessingRealtimeUpdate) {
+    } else if (isProcessingRealtimeUpdate || isApplyingRemoteUpdateRef.current) {
       console.log('🚫 Skipping manual mark as changed - realtime update in progress');
     }
   }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
 
-  // Special method to update the saved data signature without triggering change detection
-  // This is used when applying remote updates
+  // Method to update the saved data signature without triggering change detection
+  // This is used AFTER applying remote updates to sync the signature with the new state
   const updateSavedSignature = useCallback((
     newItems: RundownItem[], 
     newTitle: string, 
@@ -120,6 +122,12 @@ export const useChangeTracking = (
     console.log('🔄 Updated saved signature after remote update');
   }, []);
 
+  // Method to set the applying remote update flag
+  const setApplyingRemoteUpdate = useCallback((applying: boolean) => {
+    isApplyingRemoteUpdateRef.current = applying;
+    console.log(applying ? '🔄 Starting remote update application' : '✅ Finished remote update application');
+  }, []);
+
   return {
     hasUnsavedChanges,
     setHasUnsavedChanges,
@@ -127,6 +135,7 @@ export const useChangeTracking = (
     markAsChanged,
     isInitialized,
     setIsLoading,
-    updateSavedSignature
+    updateSavedSignature,
+    setApplyingRemoteUpdate
   };
 };
