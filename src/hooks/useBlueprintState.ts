@@ -66,14 +66,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
 
   // Update checked items with proper save call
   const updateCheckedItems = useCallback((listId: string, checkedItems: Record<string, boolean>) => {
-    console.log('useBlueprintState: updateCheckedItems called for list:', listId, 'items:', checkedItems);
-    
     setLists(currentLists => {
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, checkedItems } : list
       );
       
-      console.log('useBlueprintState: saving updated lists after checkbox change');
       // Save with the correct parameter order
       setTimeout(() => {
         saveBlueprint(
@@ -102,7 +99,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     
     setLists(currentLists => {
       const updatedLists = [...currentLists, newList];
-      console.log('useBlueprintState: saving new list');
       saveBlueprint(updatedLists, false);
       return updatedLists;
     });
@@ -112,7 +108,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const deleteList = useCallback((listId: string) => {
     setLists(currentLists => {
       const updatedLists = currentLists.filter(list => list.id !== listId);
-      console.log('useBlueprintState: saving after list deletion');
       saveBlueprint(updatedLists, false);
       return updatedLists;
     });
@@ -124,7 +119,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, name: newName } : list
       );
-      console.log('useBlueprintState: saving after list rename');
       saveBlueprint(updatedLists, true);
       return updatedLists;
     });
@@ -137,7 +131,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         ...list,
         items: generateListFromColumn(items, list.sourceColumn)
       }));
-      console.log('useBlueprintState: saving after refresh all lists');
       saveBlueprint(refreshedLists, true);
       return refreshedLists;
     });
@@ -146,7 +139,6 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   // Update show date
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
-    console.log('useBlueprintState: saving after show date update');
     setTimeout(() => {
       saveBlueprint(lists, true, newDate);
     }, 100);

@@ -56,9 +56,7 @@ const Blueprint = () => {
 
   const handleSignOut = async () => {
     try {
-      console.log('Blueprint: Starting sign out process')
       await signOut()
-      console.log('Blueprint: Sign out completed, navigating to login')
       navigate('/login')
     } catch (error) {
       console.error('Blueprint: Sign out error, but still navigating to login:', error)
@@ -151,28 +149,50 @@ const Blueprint = () => {
             <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
           )}
 
-          <CrewList 
-            rundownId={id || ''}
-            rundownTitle={rundown?.title || 'Unknown Rundown'}
-            isDragging={draggedListId === 'crew-list'}
-            onDragStart={handleDragStart}
-            onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 1)}
+          <div 
+            className={`${draggedListId === 'crew-list' ? 'opacity-50' : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, 'crew-list')}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              handleDragEnterContainer(e, lists.length + 1);
+            }}
             onDragEnd={handleDragEnd}
-          />
+          >
+            <CrewList 
+              rundownId={id || ''}
+              rundownTitle={rundown?.title || 'Unknown Rundown'}
+              isDragging={draggedListId === 'crew-list'}
+              onDragStart={handleDragStart}
+              onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 1)}
+              onDragEnd={handleDragEnd}
+            />
+          </div>
 
           {/* Insertion line for camera plot */}
           {insertionIndex === lists.length + 2 && (
             <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
           )}
 
-          <CameraPlot
-            rundownId={id || ''}
-            rundownTitle={rundown?.title || 'Unknown Rundown'}
-            isDragging={draggedListId === 'camera-plot'}
-            onDragStart={handleDragStart}
-            onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 2)}
+          <div 
+            className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, 'camera-plot')}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              handleDragEnterContainer(e, lists.length + 2);
+            }}
             onDragEnd={handleDragEnd}
-          />
+          >
+            <CameraPlot
+              rundownId={id || ''}
+              rundownTitle={rundown?.title || 'Unknown Rundown'}
+              isDragging={draggedListId === 'camera-plot'}
+              onDragStart={handleDragStart}
+              onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 2)}
+              onDragEnd={handleDragEnd}
+            />
+          </div>
 
           {/* Insertion line for scratchpad */}
           {insertionIndex === lists.length + 3 && (
@@ -183,7 +203,10 @@ const Blueprint = () => {
             className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
             draggable
             onDragStart={(e) => handleDragStart(e, 'scratchpad')}
-            onDragEnter={(e) => handleDragEnterContainer(e, lists.length + 3)}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              handleDragEnterContainer(e, lists.length + 3);
+            }}
             onDragEnd={handleDragEnd}
           >
             <BlueprintScratchpad

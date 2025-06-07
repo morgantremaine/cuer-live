@@ -24,6 +24,12 @@ export const useBlueprintDragDrop = (
   const handleDragEnterContainer = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedListId) {
+      // For larger components (crew-list, camera-plot, scratchpad), use their specific indices
+      if (draggedListId === 'crew-list' || draggedListId === 'camera-plot' || draggedListId === 'scratchpad') {
+        setInsertionIndex(index);
+        return;
+      }
+
       const draggedIndex = lists.findIndex(list => list.id === draggedListId);
       
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -55,6 +61,14 @@ export const useBlueprintDragDrop = (
     
     const draggedId = e.dataTransfer.getData('text/plain');
     if (!draggedId || insertionIndex === null) {
+      setDraggedListId(null);
+      setInsertionIndex(null);
+      return;
+    }
+
+    // Handle special components (crew-list, camera-plot, scratchpad)
+    if (draggedId === 'crew-list' || draggedId === 'camera-plot' || draggedId === 'scratchpad') {
+      // These components don't reorder in the lists array, just provide visual feedback
       setDraggedListId(null);
       setInsertionIndex(null);
       return;

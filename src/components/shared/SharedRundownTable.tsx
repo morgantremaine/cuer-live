@@ -75,8 +75,6 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
             const isFloated = item.isFloating || item.isFloated;
             
-            console.log(`Item ${item.id}: isShowcallerCurrent=${isShowcallerCurrent}, currentSegmentId=${currentSegmentId}`);
-            
             return (
               <tr
                 key={item.id}

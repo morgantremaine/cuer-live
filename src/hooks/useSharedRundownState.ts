@@ -38,7 +38,6 @@ export const useSharedRundownState = () => {
       return;
     }
 
-    console.log('Loading shared rundown with ID:', rundownId);
     setError(null);
 
     try {
@@ -48,8 +47,6 @@ export const useSharedRundownState = () => {
         .select('id, title, items, columns, start_time, timezone, created_at, updated_at')
         .eq('id', rundownId)
         .single();
-
-      console.log('Supabase query result:', { data, error: queryError });
 
       if (queryError) {
         // Handle different types of errors
@@ -62,7 +59,6 @@ export const useSharedRundownState = () => {
         }
         setRundownData(null);
       } else if (data) {
-        console.log('Successfully loaded shared rundown data:', data);
         const newRundownData = {
           title: data.title || 'Untitled Rundown',
           items: data.items || [],
@@ -75,19 +71,16 @@ export const useSharedRundownState = () => {
         // Only update if data has actually changed
         setRundownData(prev => {
           if (!prev || prev.lastUpdated !== newRundownData.lastUpdated) {
-            console.log('Rundown data updated:', newRundownData.lastUpdated);
             return newRundownData;
           }
           return prev;
         });
         setError(null);
       } else {
-        console.log('No rundown found with ID:', rundownId);
         setError('Rundown not found');
         setRundownData(null);
       }
     } catch (error) {
-      console.error('Network error fetching rundown:', error);
       setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setRundownData(null);
     }
@@ -103,16 +96,12 @@ export const useSharedRundownState = () => {
   // Set up polling for updates (check every 2 seconds for more responsive showcaller updates)
   useEffect(() => {
     if (!rundownId || loading) return;
-
-    console.log('Setting up polling for rundown updates:', rundownId);
     
     const pollInterval = setInterval(() => {
-      console.log('Polling for rundown updates...');
       loadRundownData();
     }, 2000); // Poll every 2 seconds for more responsive showcaller
 
     return () => {
-      console.log('Cleaning up polling interval');
       clearInterval(pollInterval);
     };
   }, [rundownId, loading]);
@@ -121,8 +110,6 @@ export const useSharedRundownState = () => {
   const currentSegmentId = rundownData?.items.find(item => 
     item.type !== 'header' && item.status === 'current'
   )?.id || null;
-
-  console.log('Current segment ID for showcaller:', currentSegmentId);
 
   return {
     rundownData,
