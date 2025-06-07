@@ -2,13 +2,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { mapDatabaseToRundown, mapRundownToDatabase } from './useRundownStorage/dataMapper';
-import { Rundown } from './useRundownStorage/types';
+import { mapDatabaseToRundown, mapRundownToDatabase, mapRundownsFromDatabase } from './useRundownStorage/dataMapper';
+import { SavedRundown } from './useRundownStorage/types';
 import { RundownOperations } from './useRundownStorage/operations';
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
-  const [savedRundowns, setSavedRundowns] = useState<Rundown[]>([]);
+  const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -34,7 +34,7 @@ export const useRundownStorage = () => {
         throw error;
       }
 
-      const rundowns = data?.map(mapDatabaseToRundown) || [];
+      const rundowns = mapRundownsFromDatabase(data || []);
       setSavedRundowns(rundowns);
       console.log('Loaded rundowns from database:', rundowns.length);
     } catch (error) {
@@ -46,7 +46,7 @@ export const useRundownStorage = () => {
   }, [user]);
 
   // Save rundown to Supabase
-  const saveRundown = useCallback(async (rundown: Rundown): Promise<string> => {
+  const saveRundown = useCallback(async (rundown: SavedRundown): Promise<string> => {
     if (!user || !rundown) {
       throw new Error('User not authenticated or rundown is invalid');
     }

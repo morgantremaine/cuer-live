@@ -69,8 +69,8 @@ export const useAutoSaveOperations = () => {
         }
       } else if (rundownId) {
         // Ensure timezone and startTime are properly passed - don't default to undefined
-        const saveTimezone = timezone || null;
-        const saveStartTime = startTime || null;
+        const saveTimezone = timezone || undefined;
+        const saveStartTime = startTime || undefined;
         
         await updateRundown(rundownId, rundownTitle, items, true, false, columns, saveTimezone, saveStartTime);
         return true;

@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
 import { SavedRundown } from './types'
-import { mapDatabaseToRundown, mapRundownToDatabase } from './dataMapper'
+import { mapDatabaseToRundown } from './dataMapper'
 
 export class RundownOperations {
   constructor(
@@ -87,7 +87,10 @@ export class RundownOperations {
   }
 
   async archiveRundown(id: string) {
-    return this.updateRundown(id, '', [], false, true);
+    const rundown = await this.getRundownById(id);
+    if (rundown) {
+      return this.updateRundown(id, rundown.title, rundown.items, false, true);
+    }
   }
 
   async duplicateRundown(rundown: SavedRundown) {
@@ -104,5 +107,21 @@ export class RundownOperations {
     };
 
     return this.saveRundown(duplicatedRundown);
+  }
+
+  private async getRundownById(id: string): Promise<SavedRundown | null> {
+    try {
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return mapDatabaseToRundown(data);
+    } catch (error) {
+      console.error('Error fetching rundown:', error);
+      return null;
+    }
   }
 }
