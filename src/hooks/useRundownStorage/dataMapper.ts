@@ -27,3 +27,44 @@ export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
     } : null
   }))
 }
+
+export const mapDatabaseToRundown = (data: any): SavedRundown => {
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    title: data.title,
+    items: data.items || [],
+    columns: data.columns,
+    timezone: data.timezone,
+    start_time: data.start_time,
+    icon: data.icon,
+    archived: data.archived || false,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    undo_history: data.undo_history || [],
+    team_id: data.team_id,
+    visibility: data.visibility,
+    teams: data.teams ? {
+      id: data.teams.id,
+      name: data.teams.name
+    } : null
+  }
+}
+
+export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
+  return {
+    id: rundown.id,
+    user_id: userId,
+    title: rundown.title,
+    items: rundown.items,
+    columns: rundown.columns,
+    timezone: rundown.timezone,
+    start_time: rundown.start_time,
+    icon: rundown.icon,
+    archived: rundown.archived || false,
+    undo_history: rundown.undo_history || [],
+    team_id: rundown.team_id,
+    visibility: rundown.visibility,
+    updated_at: new Date().toISOString()
+  }
+}

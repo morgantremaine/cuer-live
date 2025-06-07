@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
 
@@ -21,6 +22,9 @@ export interface SavedRundown {
     name: string
   } | null
 }
+
+// Export alias for compatibility
+export type Rundown = SavedRundown
 
 export interface RundownStorage {
   saveRundown: (

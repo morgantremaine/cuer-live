@@ -35,16 +35,14 @@ export const useTeammateChangeNotification = ({
           },
           (payload) => {
             // Only show notification if the change wasn't made by current user
-            if (payload.new && payload.new.user_id !== user.id) {
+            if (payload.new && typeof payload.new === 'object' && 'user_id' in payload.new && payload.new.user_id !== user.id) {
               toast.info('Rundown updated by teammate', {
                 description: 'The rundown has been modified by another team member.'
               });
             }
           }
         )
-        .subscribe((status) => {
-          console.log('Rundown notification subscription status:', status);
-        });
+        .subscribe();
 
       // Listen for blueprint changes
       blueprintChannel = supabase
@@ -59,16 +57,14 @@ export const useTeammateChangeNotification = ({
           },
           (payload) => {
             // Only show notification if the change wasn't made by current user
-            if (payload.new && payload.new.user_id !== user.id) {
+            if (payload.new && typeof payload.new === 'object' && 'user_id' in payload.new && payload.new.user_id !== user.id) {
               toast.info('Blueprint updated by teammate', {
                 description: 'The blueprint has been modified by another team member.'
               });
             }
           }
         )
-        .subscribe((status) => {
-          console.log('Blueprint notification subscription status:', status);
-        });
+        .subscribe();
     };
 
     setupNotifications();
