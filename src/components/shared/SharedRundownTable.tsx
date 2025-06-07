@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -81,7 +80,9 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-green-500 mx-2 rounded-sm print:bg-green-600"></div>
+                      <div className="h-4 flex items-center">
+                        <div className="h-2 bg-green-500 mx-2 rounded-sm flex-1"></div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -174,7 +175,9 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-yellow-500 mx-2 rounded-sm print:bg-yellow-600"></div>
+                      <div className="h-4 flex items-center">
+                        <div className="h-2 bg-yellow-500 mx-2 rounded-sm flex-1"></div>
+                      </div>
                     </td>
                   </tr>
                 )}
