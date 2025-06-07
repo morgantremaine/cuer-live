@@ -45,8 +45,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
-    handleDragEnd
-  } = useBlueprintDragDrop(lists, setLists, saveBlueprint);
+    handleDragEnd,
+    updateComponentOrder
+  } = useBlueprintDragDrop(
+    lists, 
+    setLists, 
+    saveBlueprint,
+    savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad']
+  );
 
   useBlueprintInitialization(
     user,
@@ -60,8 +66,17 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setInitialized,
     setLoading,
     setShowDate,
-    loadBlueprint,
-    saveBlueprint,
+    async () => {
+      const blueprint = await loadBlueprint();
+      // Update component order when blueprint is loaded
+      if (blueprint?.component_order) {
+        updateComponentOrder(blueprint.component_order);
+      }
+      return blueprint;
+    },
+    (lists, silent, showDateOverride, notesOverride, crewDataOverride, cameraPlots) => {
+      saveBlueprint(lists, silent, showDateOverride, notesOverride, crewDataOverride, cameraPlots, componentOrder);
+    },
     generateListId
   );
 
@@ -72,7 +87,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         list.id === listId ? { ...list, checkedItems } : list
       );
       
-      // Save with the correct parameter order
+      // Save with the correct parameter order including component order
       setTimeout(() => {
         saveBlueprint(
           updatedLists, // updatedLists
@@ -80,13 +95,14 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
           undefined, // showDateOverride (use current)
           undefined, // notes (keep existing)
           undefined, // crewData (keep existing)
-          undefined  // cameraPlots (keep existing)
+          undefined, // cameraPlots (keep existing)
+          componentOrder // componentOrder
         );
       }, 500);
       
       return updatedLists;
     });
-  }, [saveBlueprint]);
+  }, [saveBlueprint, componentOrder]);
 
   // Add new list
   const addNewList = useCallback((name: string, sourceColumn: string) => {
@@ -100,19 +116,19 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     
     setLists(currentLists => {
       const updatedLists = [...currentLists, newList];
-      saveBlueprint(updatedLists, false);
+      saveBlueprint(updatedLists, false, undefined, undefined, undefined, undefined, componentOrder);
       return updatedLists;
     });
-  }, [items, generateListId, saveBlueprint]);
+  }, [items, generateListId, saveBlueprint, componentOrder]);
 
   // Delete list
   const deleteList = useCallback((listId: string) => {
     setLists(currentLists => {
       const updatedLists = currentLists.filter(list => list.id !== listId);
-      saveBlueprint(updatedLists, false);
+      saveBlueprint(updatedLists, false, undefined, undefined, undefined, undefined, componentOrder);
       return updatedLists;
     });
-  }, [saveBlueprint]);
+  }, [saveBlueprint, componentOrder]);
 
   // Rename list
   const renameList = useCallback((listId: string, newName: string) => {
@@ -120,10 +136,10 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, name: newName } : list
       );
-      saveBlueprint(updatedLists, true);
+      saveBlueprint(updatedLists, true, undefined, undefined, undefined, undefined, componentOrder);
       return updatedLists;
     });
-  }, [saveBlueprint]);
+  }, [saveBlueprint, componentOrder]);
 
   // Refresh all lists
   const refreshAllLists = useCallback(() => {
@@ -132,18 +148,18 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         ...list,
         items: generateListFromColumn(items, list.sourceColumn)
       }));
-      saveBlueprint(refreshedLists, true);
+      saveBlueprint(refreshedLists, true, undefined, undefined, undefined, undefined, componentOrder);
       return refreshedLists;
     });
-  }, [items, saveBlueprint]);
+  }, [items, saveBlueprint, componentOrder]);
 
   // Update show date
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
     setTimeout(() => {
-      saveBlueprint(lists, true, newDate);
+      saveBlueprint(lists, true, newDate, undefined, undefined, undefined, componentOrder);
     }, 100);
-  }, [lists, saveBlueprint]);
+  }, [lists, saveBlueprint, componentOrder]);
 
   return {
     lists,

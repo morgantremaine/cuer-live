@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useBlueprintState } from '@/hooks/useBlueprintState';
+import { useBlueprintRealtimeCollaboration } from '@/hooks/blueprint/useBlueprintRealtimeCollaboration';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -46,6 +48,17 @@ const Blueprint = () => {
     rundown?.items || [],
     rundown?.start_time
   );
+
+  // Set up realtime collaboration for blueprints
+  useBlueprintRealtimeCollaboration({
+    rundownId: id || null,
+    onBlueprintUpdated: (blueprintData) => {
+      console.log('Received blueprint update from teammate:', blueprintData);
+      // Force a page refresh to get the latest blueprint data
+      window.location.reload();
+    },
+    enabled: true
+  });
 
   const handleSignOut = async () => {
     try {

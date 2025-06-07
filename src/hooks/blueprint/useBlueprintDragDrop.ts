@@ -5,11 +5,12 @@ import { BlueprintList } from '@/types/blueprint';
 export const useBlueprintDragDrop = (
   lists: BlueprintList[],
   setLists: (lists: BlueprintList[]) => void,
-  saveBlueprint: (lists: BlueprintList[], silent?: boolean) => void
+  saveBlueprint: (lists: BlueprintList[], silent?: boolean, showDateOverride?: string, notesOverride?: string, crewDataOverride?: any, cameraPlots?: any, componentOrder?: string[]) => void,
+  initialComponentOrder: string[] = ['crew-list', 'camera-plot', 'scratchpad']
 ) => {
   const [draggedListId, setDraggedListId] = useState<string | null>(null);
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
-  const [componentOrder, setComponentOrder] = useState<string[]>(['crew-list', 'camera-plot', 'scratchpad']);
+  const [componentOrder, setComponentOrder] = useState<string[]>(initialComponentOrder);
 
   const handleDragStart = useCallback((e: React.DragEvent, listId: string) => {
     setDraggedListId(listId);
@@ -84,6 +85,10 @@ export const useBlueprintDragDrop = (
         // Insert at new position
         newOrder.splice(targetPosition, 0, draggedId);
         setComponentOrder(newOrder);
+        
+        // Save the new component order immediately
+        console.log('Saving component order:', newOrder);
+        saveBlueprint(lists, true, undefined, undefined, undefined, undefined, newOrder);
       }
       
       setDraggedListId(null);
@@ -102,7 +107,7 @@ export const useBlueprintDragDrop = (
     const [draggedList] = newLists.splice(draggedIndex, 1);
     newLists.splice(insertionIndex, 0, draggedList);
     setLists(newLists);
-    saveBlueprint(newLists, true);
+    saveBlueprint(newLists, true, undefined, undefined, undefined, undefined, componentOrder);
 
     setDraggedListId(null);
     setInsertionIndex(null);
@@ -111,6 +116,11 @@ export const useBlueprintDragDrop = (
   const handleDragEnd = useCallback(() => {
     setDraggedListId(null);
     setInsertionIndex(null);
+  }, []);
+
+  // Function to update component order from external source (like loaded blueprint)
+  const updateComponentOrder = useCallback((newOrder: string[]) => {
+    setComponentOrder(newOrder);
   }, []);
 
   return {
@@ -122,6 +132,7 @@ export const useBlueprintDragDrop = (
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
-    handleDragEnd
+    handleDragEnd,
+    updateComponentOrder
   };
 };
