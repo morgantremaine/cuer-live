@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { useColorPicker } from '@/hooks/useColorPicker';
@@ -18,7 +18,8 @@ const RundownGrid = () => {
     dropTargetIndex,
     currentSegmentId,
     hasClipboardData,
-    updateTrigger, // Include this to ensure re-renders on remote updates
+    updateTrigger,
+    forceRenderTrigger,
     getColumnWidth,
     updateColumnWidth,
     handleUpdateItem,
@@ -53,51 +54,69 @@ const RundownGrid = () => {
     colorPickerSelect(id, color);
   };
 
-  // Log the updateTrigger to confirm it's changing on remote updates
-  console.log('RundownGrid: handleAddRow exists?', !!handleAddRow);
-  console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
-  console.log('RundownGrid: updateTrigger value:', updateTrigger, '- This should change on remote updates');
+  // Debug logging for triggers
+  console.log('RundownGrid: updateTrigger value:', updateTrigger, '- Remote updates trigger');
+  console.log('RundownGrid: forceRenderTrigger value:', forceRenderTrigger, '- Force render trigger');
+  console.log('RundownGrid: items count:', items?.length || 0);
 
-  // Force a re-render key based on updateTrigger to ensure the table updates
-  const renderKey = `rundown-table-${updateTrigger}`;
+  // Create multiple render keys to ensure re-renders
+  const renderKey = useMemo(() => 
+    `rundown-table-${updateTrigger}-${forceRenderTrigger}-${items?.length || 0}`, 
+    [updateTrigger, forceRenderTrigger, items?.length]
+  );
+
+  // Additional safety: force re-render on items change
+  const tableProps = useMemo(() => ({
+    items,
+    visibleColumns,
+    currentTime,
+    showColorPicker,
+    cellRefs,
+    selectedRows,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    currentSegmentId,
+    hasClipboardData,
+    getColumnWidth,
+    updateColumnWidth,
+    getRowNumber,
+    getRowStatus,
+    calculateHeaderDuration,
+    onUpdateItem: handleUpdateItem,
+    onCellClick: handleCellClick,
+    onKeyDown: handleKeyDown,
+    onToggleColorPicker: handleToggleColorPicker,
+    onColorSelect: handleColorSelect,
+    onDeleteRow: deleteRow,
+    onToggleFloat: toggleFloatRow,
+    onRowSelect: handleRowSelection,
+    onDragStart: handleDragStart,
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+    onDrop: handleDrop,
+    onCopySelectedRows: handleCopySelectedRows,
+    onDeleteSelectedRows: handleDeleteSelectedRows,
+    onPasteRows: handlePasteRows,
+    onClearSelection: clearSelection,
+    onAddRow: handleAddRow,
+    onAddHeader: handleAddHeader,
+  }), [
+    items, visibleColumns, currentTime, showColorPicker, selectedRows,
+    draggedItemIndex, isDraggingMultiple, dropTargetIndex, currentSegmentId,
+    hasClipboardData, getColumnWidth, updateColumnWidth, getRowNumber,
+    getRowStatus, calculateHeaderDuration, handleUpdateItem, handleCellClick,
+    handleKeyDown, handleToggleColorPicker, handleColorSelect, deleteRow,
+    toggleFloatRow, handleRowSelection, handleDragStart, handleDragOver,
+    handleDragLeave, handleDrop, handleCopySelectedRows, handleDeleteSelectedRows,
+    handlePasteRows, clearSelection, handleAddRow, handleAddHeader,
+    updateTrigger, forceRenderTrigger
+  ]);
 
   return (
     <RundownTable
-      key={renderKey} // Force re-render when updateTrigger changes
-      items={items}
-      visibleColumns={visibleColumns}
-      currentTime={currentTime}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      dropTargetIndex={dropTargetIndex}
-      currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={updateColumnWidth}
-      getRowNumber={getRowNumber}
-      getRowStatus={getRowStatus}
-      calculateHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={handleUpdateItem}
-      onCellClick={handleCellClick}
-      onKeyDown={handleKeyDown}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
-      onDeleteRow={deleteRow}
-      onToggleFloat={toggleFloatRow}
-      onRowSelect={handleRowSelection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onCopySelectedRows={handleCopySelectedRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
-      onPasteRows={handlePasteRows}
-      onClearSelection={clearSelection}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
+      key={renderKey} // Force re-render when any trigger changes
+      {...tableProps}
     />
   );
 };

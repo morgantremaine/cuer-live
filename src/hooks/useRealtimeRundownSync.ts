@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
@@ -28,6 +29,7 @@ export const useRealtimeRundownSync = ({
   const channelRef = useRef<any>(null);
   const lastUpdateRef = useRef<number>(Date.now());
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [forceRenderTrigger, setForceRenderTrigger] = useState(0);
 
   const handleRundownUpdate = useCallback((payload: any) => {
     console.log('📡 Received realtime rundown update:', payload);
@@ -50,8 +52,8 @@ export const useRealtimeRundownSync = ({
     const updatedRundown = payload.new;
     console.log('🔄 Applying realtime update from another user');
 
-    // Use a slight delay to ensure state updates are batched properly
-    setTimeout(() => {
+    // Use flushSync to ensure immediate synchronous updates
+    flushSync(() => {
       // Update the rundown data with proper React state updates
       if (updatedRundown.title) {
         console.log('📝 Updating title:', updatedRundown.title);
@@ -70,20 +72,23 @@ export const useRealtimeRundownSync = ({
 
       if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
         console.log('📋 Updating items:', updatedRundown.items.length, 'items');
-        // Force a new array reference to trigger re-render
-        setItems([...updatedRundown.items]);
+        // Force a completely new array reference to trigger re-render
+        const newItems = JSON.parse(JSON.stringify(updatedRundown.items));
+        setItems(newItems);
       }
 
       if (updatedRundown.columns && Array.isArray(updatedRundown.columns)) {
         console.log('📊 Updating columns layout');
-        handleLoadLayout([...updatedRundown.columns]);
+        const newColumns = JSON.parse(JSON.stringify(updatedRundown.columns));
+        handleLoadLayout(newColumns);
       }
 
-      // Force a re-render by updating the trigger
+      // Force multiple re-render triggers
       setUpdateTrigger(prev => prev + 1);
+      setForceRenderTrigger(prev => prev + 1);
+    });
 
-      console.log('✅ Realtime update applied successfully - UI should refresh');
-    }, 10);
+    console.log('✅ Realtime update applied successfully - UI should refresh');
 
   }, [currentUserId, setItems, setRundownTitle, setTimezone, setRundownStartTime, handleLoadLayout]);
 
@@ -135,6 +140,7 @@ export const useRealtimeRundownSync = ({
 
   return {
     updateLastUpdateTime,
-    updateTrigger // Expose this so components can use it as a dependency if needed
+    updateTrigger,
+    forceRenderTrigger // Additional trigger for force re-renders
   };
 };
