@@ -232,7 +232,7 @@ export const useRundownGridCore = () => {
     ...stableDataLoaderCallbacks
   });
 
-  // Enhanced playback controls with real-time sync
+  // Enhanced playback controls with real-time sync - PASS rundownId
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -245,7 +245,8 @@ export const useRundownGridCore = () => {
     items, 
     updateItem, 
     handleShowcallerStateChange, 
-    externalShowcallerState
+    externalShowcallerState,
+    rundownId // Pass rundownId to prevent broadcasts for new rundowns
   );
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
