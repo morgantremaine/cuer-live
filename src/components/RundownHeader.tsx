@@ -82,7 +82,6 @@ const RundownHeader = ({
                 isProcessingUpdate={isProcessingRealtimeUpdate || false}
               />
             )}
-            <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           </div>
         </div>
         <HeaderControls
@@ -119,7 +118,6 @@ const RundownHeader = ({
                   isProcessingUpdate={isProcessingRealtimeUpdate || false}
                 />
               )}
-              <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
             </div>
             <HeaderControls
               currentTime={currentTime}
