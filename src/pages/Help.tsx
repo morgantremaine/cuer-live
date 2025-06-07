@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -19,7 +20,7 @@ const Help = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       <DashboardHeader 
         userEmail={user?.email}
         onSignOut={handleSignOut}
