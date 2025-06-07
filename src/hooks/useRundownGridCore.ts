@@ -6,6 +6,7 @@ import { useRundownStorage } from './useRundownStorage';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownUndo } from './useRundownUndo';
 import { useTimeCalculations } from './useTimeCalculations';
+import { usePlaybackControls } from './usePlaybackControls';
 import { RundownItem } from '@/types/rundown';
 
 export const useRundownGridCore = () => {
@@ -19,6 +20,7 @@ export const useRundownGridCore = () => {
   const [timezone, setTimezone] = useState('America/New_York');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
+  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Rundown storage
   const { savedRundowns, loading } = useRundownStorage();
@@ -31,18 +33,21 @@ export const useRundownGridCore = () => {
   );
 
   // Time calculations
-  const { currentTime, calculateEndTime } = useTimeCalculations(
+  const timeCalculations = useTimeCalculations(
     stateIntegration.items,
     rundownStartTime,
     timezone
   );
 
   // Undo functionality
-  const { handleUndo, canUndo, lastAction } = useRundownUndo(
+  const undoState = useRundownUndo(
     stateIntegration.items,
     stateIntegration.setItems,
     stateIntegration.markAsChanged
   );
+
+  // Playback controls
+  const playbackControls = usePlaybackControls(stateIntegration.items);
 
   // Data loading
   useRundownDataLoader({
@@ -88,15 +93,31 @@ export const useRundownGridCore = () => {
     currentSegmentId,
     setCurrentSegmentId,
     rundownId,
-    currentTime,
+    showColumnManager,
+    setShowColumnManager,
 
-    // Calculations
-    calculateEndTime,
+    // Time calculations
+    currentTime: timeCalculations.currentTime,
+    calculateEndTime: timeCalculations.calculateEndTime,
+    getRowStatus: timeCalculations.getRowStatus,
 
     // Undo
-    handleUndo,
-    canUndo,
-    lastAction,
+    handleUndo: undoState.handleUndo,
+    canUndo: undoState.canUndo,
+    lastAction: undoState.lastAction,
+
+    // Playback
+    isPlaying: playbackControls.isPlaying,
+    timeRemaining: playbackControls.timeRemaining,
+    play: playbackControls.play,
+    pause: playbackControls.pause,
+    forward: playbackControls.forward,
+    backward: playbackControls.backward,
+
+    // Collaboration (placeholders for now)
+    isConnected: true,
+    hasPendingChanges: false,
+    isEditing: false,
 
     // Spread all the integrated state
     ...stateIntegration

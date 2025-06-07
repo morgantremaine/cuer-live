@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,7 +29,7 @@ export const useRundownItems = () => {
     });
   }, [callMarkAsChanged]);
 
-  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+  const addRow = useCallback((calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => {
     const newItem: RundownItem = {
       id: uuidv4(),
       type: 'regular',
@@ -51,9 +50,14 @@ export const useRundownItems = () => {
 
     setItems(prevItems => {
       let newItems;
-      if (insertAfterIndex !== undefined) {
-        newItems = [...prevItems];
-        newItems.splice(insertAfterIndex + 1, 0, newItem);
+      if (selectedRowId) {
+        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          newItems = [...prevItems];
+          newItems.splice(selectedIndex + 1, 0, newItem);
+        } else {
+          newItems = [...prevItems, newItem];
+        }
       } else {
         newItems = [...prevItems, newItem];
       }
@@ -63,7 +67,7 @@ export const useRundownItems = () => {
     });
   }, [callMarkAsChanged]);
 
-  const addHeader = useCallback((insertAfterIndex?: number) => {
+  const addHeader = useCallback((selectedRowId?: string) => {
     const newItem: RundownItem = {
       id: uuidv4(),
       type: 'header',
@@ -84,9 +88,14 @@ export const useRundownItems = () => {
 
     setItems(prevItems => {
       let newItems;
-      if (insertAfterIndex !== undefined) {
-        newItems = [...prevItems];
-        newItems.splice(insertAfterIndex + 1, 0, newItem);
+      if (selectedRowId) {
+        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          newItems = [...prevItems];
+          newItems.splice(selectedIndex + 1, 0, newItem);
+        } else {
+          newItems = [...prevItems, newItem];
+        }
       } else {
         newItems = [...prevItems, newItem];
       }
