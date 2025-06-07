@@ -1,22 +1,34 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 
 export type { RundownItem } from '@/types/rundown';
 
-export const useRundownItems = (markAsChanged: () => void) => {
+export const useRundownItems = () => {
   const [items, setItems] = useState<RundownItem[]>([]);
+  const markAsChangedRef = useRef<(() => void) | undefined>(undefined);
+
+  const callMarkAsChanged = useCallback(() => {
+    if (markAsChangedRef.current) {
+      markAsChangedRef.current();
+    }
+  }, []);
+
+  // Function to set the markAsChanged callback from outside
+  const setMarkAsChangedCallback = useCallback((callback: () => void) => {
+    markAsChangedRef.current = callback;
+  }, []);
 
   const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
     setItems(prevItems => {
       const newItems = prevItems.map(item => 
         item.id === id ? { ...item, ...updates } : item
       );
-      markAsChanged();
+      callMarkAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
 
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
     const newItem: RundownItem = {
@@ -46,10 +58,10 @@ export const useRundownItems = (markAsChanged: () => void) => {
         newItems = [...prevItems, newItem];
       }
       
-      markAsChanged();
+      callMarkAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
     const newItem: RundownItem = {
@@ -79,34 +91,34 @@ export const useRundownItems = (markAsChanged: () => void) => {
         newItems = [...prevItems, newItem];
       }
       
-      markAsChanged();
+      callMarkAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
 
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
       const newItems = prevItems.filter(item => item.id !== id);
-      markAsChanged();
+      callMarkAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prevItems => {
       const newItems = prevItems.filter(item => !ids.includes(item.id));
-      markAsChanged();
+      callMarkAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
 
   const addMultipleRows = useCallback((newItems: RundownItem[]) => {
     setItems(prevItems => {
       const allItems = [...prevItems, ...newItems];
-      markAsChanged();
+      callMarkAsChanged();
       return allItems;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
 
   // Change back to useCallback but force re-calculation by making it depend on items
   const getRowNumber = useCallback((index: number) => {
@@ -160,10 +172,10 @@ export const useRundownItems = (markAsChanged: () => void) => {
       const newItems = prevItems.map(item => 
         item.id === id ? { ...item, isFloating: !item.isFloating } : item
       );
-      markAsChanged();
+      callMarkAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [callMarkAsChanged]);
 
   const calculateTotalRuntime = useCallback(() => {
     let totalSeconds = 0;
@@ -237,6 +249,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     getRowNumber,
     toggleFloatRow,
     calculateTotalRuntime,
-    calculateHeaderDuration
+    calculateHeaderDuration,
+    setMarkAsChangedCallback
   };
 };

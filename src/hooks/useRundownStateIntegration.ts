@@ -10,7 +10,7 @@ export const useRundownStateIntegration = (
   timezone: string,
   rundownStartTime: string
 ) => {
-  // Items management
+  // Items management - now with no parameters
   const {
     items,
     setItems,
@@ -23,7 +23,8 @@ export const useRundownStateIntegration = (
     getRowNumber,
     toggleFloatRow,
     calculateTotalRuntime,
-    calculateHeaderDuration
+    calculateHeaderDuration,
+    setMarkAsChangedCallback: setItemsMarkAsChangedCallback
   } = useRundownItems();
 
   // Columns management - no parameters needed
@@ -37,7 +38,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    setMarkAsChangedCallback
+    setMarkAsChangedCallback: setColumnsMarkAsChangedCallback
   } = useColumnsManager();
 
   // Auto-save functionality - now that columns is available
@@ -49,8 +50,9 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  // Connect the markAsChanged function to the columns manager
-  setMarkAsChangedCallback(markAsChanged);
+  // Connect the markAsChanged function to both managers
+  setItemsMarkAsChangedCallback(markAsChanged);
+  setColumnsMarkAsChangedCallback(markAsChanged);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
@@ -79,22 +81,19 @@ export const useRundownStateIntegration = (
       originalUpdateItem(id, { [field]: value });
     }
 
-    // Mark as changed for auto-save
-    markAsChanged();
-  }, [originalUpdateItem, items, markAsChanged]);
+    // Mark as changed is now handled by the original function
+  }, [originalUpdateItem, items]);
 
-  // Wrapper functions that trigger auto-save
+  // Wrapper functions that trigger auto-save (now handled internally)
   const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
     console.log('➕ Adding row');
     originalAddRow(calculateEndTime, insertAfterIndex);
-    markAsChanged();
-  }, [originalAddRow, markAsChanged]);
+  }, [originalAddRow]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
     console.log('📋 Adding header');
     originalAddHeader(insertAfterIndex);
-    markAsChanged();
-  }, [originalAddHeader, markAsChanged]);
+  }, [originalAddHeader]);
 
   return {
     items: Array.isArray(items) ? items : [],
