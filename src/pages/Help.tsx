@@ -109,9 +109,9 @@ const Help = () => {
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Talent Labels</h3>
                     <ul className="list-disc list-inside space-y-2 ml-4">
                       <li>Use <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[Talent Name]</code> to label who should read each section</li>
-                      <li>Add colors by including the color name: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[Talent Name {red}]</code></li>
+                      <li>Add colors by including the color name: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[Talent Name {"{"}"red"{"}"}]</code></li>
                       <li>Available colors: red, blue, green, yellow, purple, orange, pink, cyan</li>
-                      <li>Example: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[John {blue}]</code> will display "John" in blue text</li>
+                      <li>Example: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[John {"{"}"blue"{"}"}]</code> will display "John" in blue text</li>
                     </ul>
                   </div>
                   <div>
