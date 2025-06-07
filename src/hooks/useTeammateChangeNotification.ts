@@ -57,8 +57,8 @@ export const useTeammateChangeNotification = ({
             
             toast({
               title: 'Teammate Updated Rundown',
-              description: 'A teammate has made changes. Refresh the page to see the latest updates.',
-              duration: 8000,
+              description: 'A teammate has made changes to this rundown. Please refresh the page to see the latest updates.',
+              duration: 10000,
             });
           }
         }
