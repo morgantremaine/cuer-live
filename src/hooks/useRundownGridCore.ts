@@ -39,9 +39,9 @@ export const useRundownGridCore = () => {
     rundownStartTime
   );
 
-  // Real-time sync with proper state setters
+  // Real-time sync with proper state setters and rundown ID
   const { updateLastUpdateTime } = useRealtimeRundownSync({
-    rundownId,
+    rundownId, // Pass the actual rundown ID here
     currentUserId: user?.id || null,
     setItems: stateIntegration.setItems,
     setRundownTitle,
@@ -101,6 +101,12 @@ export const useRundownGridCore = () => {
     }
   }, [rundownId, stateIntegration.setRundownId]);
 
+  // Enhanced markAsChanged that includes realtime sync update
+  const enhancedMarkAsChanged = useCallback(() => {
+    updateLastUpdateTime();
+    stateIntegration.markAsChanged();
+  }, [updateLastUpdateTime, stateIntegration.markAsChanged]);
+
   return {
     // Basic state
     rundownTitle,
@@ -138,7 +144,8 @@ export const useRundownGridCore = () => {
     hasPendingChanges: false,
     isEditing: false,
 
-    // Spread all the integrated state
-    ...stateIntegration
+    // Spread all the integrated state but override markAsChanged
+    ...stateIntegration,
+    markAsChanged: enhancedMarkAsChanged
   };
 };

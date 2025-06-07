@@ -3,7 +3,6 @@ import { useCallback, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
-import { useRealtimeRundownSync } from './useRealtimeRundownSync';
 import { useAuth } from './useAuth';
 import { RundownItem } from '@/types/rundown';
 
@@ -60,28 +59,11 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  // Real-time sync
-  const { updateLastUpdateTime } = useRealtimeRundownSync({
-    rundownId: null, // Will be set by parent component
-    currentUserId: user?.id || null,
-    setItems,
-    setRundownTitle: () => {}, // Will be overridden by parent
-    setTimezone: () => {}, // Will be overridden by parent  
-    setRundownStartTime: () => {}, // Will be overridden by parent
-    handleLoadLayout,
-    markAsChanged
-  });
-
   // Connect the markAsChanged function to both managers
   useEffect(() => {
-    const enhancedMarkAsChanged = () => {
-      updateLastUpdateTime();
-      markAsChanged();
-    };
-    
-    setItemsMarkAsChangedCallback(enhancedMarkAsChanged);
-    setColumnsMarkAsChangedCallback(enhancedMarkAsChanged);
-  }, [markAsChanged, setItemsMarkAsChangedCallback, setColumnsMarkAsChangedCallback, updateLastUpdateTime]);
+    setItemsMarkAsChangedCallback(markAsChanged);
+    setColumnsMarkAsChangedCallback(markAsChanged);
+  }, [markAsChanged, setItemsMarkAsChangedCallback, setColumnsMarkAsChangedCallback]);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
