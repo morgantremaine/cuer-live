@@ -27,15 +27,7 @@ const RundownContainer = (props: RundownContainerProps) => {
       />
       
       <RundownMainContent 
-        // Playback controls props
-        isPlaying={props.isPlaying}
-        timeRemaining={props.timeRemaining}
-        onPlay={props.onPlay}
-        onPause={props.onPause}
-        onForward={props.onForward}
-        onBackward={props.onBackward}
-        
-        // Toolbar props
+        // Toolbar props - remove playback controls as they're handled by RundownHeaderSection
         selectedCount={props.selectedCount}
         hasClipboardData={props.hasClipboardData}
         onCopySelectedRows={props.onCopySelectedRows}
