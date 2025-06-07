@@ -52,8 +52,7 @@ export const mapDatabaseToRundown = (data: any): SavedRundown => {
 }
 
 export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
-  return {
-    id: rundown.id,
+  const data: any = {
     user_id: userId,
     title: rundown.title,
     items: rundown.items,
@@ -66,5 +65,12 @@ export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
     team_id: rundown.team_id,
     visibility: rundown.visibility,
     updated_at: new Date().toISOString()
+  };
+
+  // Only include id if it exists and is not empty
+  if (rundown.id && rundown.id !== '') {
+    data.id = rundown.id;
   }
+
+  return data;
 }

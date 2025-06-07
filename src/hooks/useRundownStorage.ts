@@ -31,6 +31,7 @@ export const useRundownStorage = () => {
         .order('updated_at', { ascending: false });
 
       if (error) {
+        console.error('Database error loading rundowns:', error);
         throw error;
       }
 
@@ -54,7 +55,13 @@ export const useRundownStorage = () => {
     setIsSaving(true);
     
     try {
+      // Prepare rundown data - don't include id for new rundowns
       const rundownData = mapRundownToDatabase(rundown, user.id);
+      
+      // For new rundowns, remove the id field to let database generate it
+      if (!rundown.id || rundown.id === '') {
+        delete rundownData.id;
+      }
       
       const { data, error } = await supabase
         .from('rundowns')
@@ -63,6 +70,7 @@ export const useRundownStorage = () => {
         .single();
 
       if (error) {
+        console.error('Database error saving rundown:', error);
         throw error;
       }
 
