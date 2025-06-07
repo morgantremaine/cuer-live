@@ -107,7 +107,7 @@ const DashboardRundownGrid = ({
       firstItems: contentItems.slice(0, 3).map(item => {
         if (item.name && item.name.trim()) return item.name.trim()
         if (item.script && item.script.trim()) return item.script.trim().substring(0, 50) + (item.script.trim().length > 50 ? '...' : '')
-        if (item.description && item.description.trim()) return item.description.trim()
+        if (item.notes && item.notes.trim()) return item.notes.trim()
         return 'Untitled Item'
       })
     }
