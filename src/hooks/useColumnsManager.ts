@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 export interface Column {
@@ -10,13 +11,8 @@ export interface Column {
   isVisible?: boolean;
 }
 
-export const useColumnsManager = (initialMarkAsChanged?: () => void) => {
-  const markAsChangedRef = useRef<(() => void) | undefined>(initialMarkAsChanged);
-  
-  // Update the ref when markAsChanged changes
-  useEffect(() => {
-    markAsChangedRef.current = initialMarkAsChanged;
-  }, [initialMarkAsChanged]);
+export const useColumnsManager = () => {
+  const markAsChangedRef = useRef<(() => void) | undefined>(undefined);
 
   const [columns, setColumns] = useState<Column[]>([
     { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
@@ -38,6 +34,11 @@ export const useColumnsManager = (initialMarkAsChanged?: () => void) => {
     if (markAsChangedRef.current) {
       markAsChangedRef.current();
     }
+  }, []);
+
+  // Function to set the markAsChanged callback from outside
+  const setMarkAsChangedCallback = useCallback((callback: () => void) => {
+    markAsChangedRef.current = callback;
   }, []);
 
   const handleAddColumn = useCallback((name: string) => {
@@ -201,11 +202,6 @@ export const useColumnsManager = (initialMarkAsChanged?: () => void) => {
     });
   }, [callMarkAsChanged]);
 
-  // Function to update the markAsChanged reference
-  const updateMarkAsChanged = useCallback((newMarkAsChanged: () => void) => {
-    markAsChangedRef.current = newMarkAsChanged;
-  }, []);
-
   return {
     columns: Array.isArray(columns) ? columns : [],
     visibleColumns,
@@ -216,6 +212,6 @@ export const useColumnsManager = (initialMarkAsChanged?: () => void) => {
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    updateMarkAsChanged
+    setMarkAsChangedCallback
   };
 };

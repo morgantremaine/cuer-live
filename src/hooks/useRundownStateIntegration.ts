@@ -26,7 +26,7 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems();
 
-  // Columns management - call without any arguments
+  // Columns management - no parameters needed
   const {
     columns,
     visibleColumns,
@@ -37,7 +37,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    updateMarkAsChanged
+    setMarkAsChangedCallback
   } = useColumnsManager();
 
   // Auto-save functionality - now that columns is available
@@ -49,8 +49,8 @@ export const useRundownStateIntegration = (
     rundownStartTime
   );
 
-  // Update the markAsChanged function in the columns manager
-  updateMarkAsChanged(markAsChanged);
+  // Connect the markAsChanged function to the columns manager
+  setMarkAsChangedCallback(markAsChanged);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
