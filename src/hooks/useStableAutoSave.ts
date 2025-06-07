@@ -4,7 +4,7 @@ import { useRundownStorage } from './useRundownStorage';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
-type AutoSaveState = 'idle' | 'detecting' | 'saving' | 'saved' | 'error';
+type AutoSaveState = 'idle' | 'detecting' | 'saving' | 'saved' | 'error' | 'permission-denied';
 
 export const useStableAutoSave = (
   rundownId: string | null,
@@ -14,7 +14,7 @@ export const useStableAutoSave = (
   timezone: string,
   rundownStartTime: string
 ) => {
-  const { updateRundown } = useRundownStorage();
+  const { updateRundown, saveRundown } = useRundownStorage();
   const [state, setState] = useState<AutoSaveState>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
@@ -24,6 +24,7 @@ export const useStableAutoSave = (
   const isDirtyRef = useRef(false);
   const isInitializedRef = useRef(false);
   const isSavingRef = useRef(false);
+  const hasTriedSaveRef = useRef(false);
 
   // Create a stable data signature for change detection
   const createDataSignature = useCallback(() => {
@@ -38,16 +39,54 @@ export const useStableAutoSave = (
 
   // Stable save function
   const performSave = useCallback(async () => {
-    if (!rundownId || isSavingRef.current || !isDirtyRef.current) {
+    if (isSavingRef.current || !isDirtyRef.current) {
       console.log('💾 Skipping save:', { 
-        hasRundownId: !!rundownId, 
         isSaving: isSavingRef.current, 
         isDirty: isDirtyRef.current 
       });
       return;
     }
 
-    console.log('💾 Starting auto-save...');
+    // If no rundownId and we have items, create a new rundown
+    if (!rundownId && items && items.length > 0 && !hasTriedSaveRef.current) {
+      console.log('💾 Creating new rundown for unsaved content...');
+      setState('saving');
+      isSavingRef.current = true;
+      hasTriedSaveRef.current = true;
+
+      try {
+        const newRundownData = await saveRundown(
+          rundownTitle || 'New Rundown',
+          items,
+          columns,
+          timezone,
+          rundownStartTime
+        );
+
+        if (newRundownData && newRundownData.length > 0) {
+          // Redirect to the new rundown
+          const newRundownId = newRundownData[0].id;
+          console.log('✅ New rundown created, redirecting to:', newRundownId);
+          window.location.href = `/${newRundownId}`;
+          return;
+        }
+      } catch (error) {
+        console.error('❌ Failed to create new rundown:', error);
+        setState('error');
+        setTimeout(() => setState('detecting'), 2000);
+      } finally {
+        isSavingRef.current = false;
+      }
+      return;
+    }
+
+    // Skip if no rundown ID and no content to save
+    if (!rundownId) {
+      console.log('💾 Skipping save: no rundownId and no content to create new rundown');
+      return;
+    }
+
+    console.log('💾 Starting auto-save for existing rundown...');
     setState('saving');
     isSavingRef.current = true;
 
@@ -77,15 +116,25 @@ export const useStableAutoSave = (
         }
       }, 1000);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Auto-save failed:', error);
-      setState('error');
-      // Reset to detecting after error to try again
-      setTimeout(() => setState('detecting'), 2000);
+      
+      // Check if it's a permission error
+      if (error?.message?.includes('permission') || error?.message?.includes('modify')) {
+        console.log('🚫 Permission denied - user cannot modify this rundown');
+        setState('permission-denied');
+        // Don't retry permission errors
+        isDirtyRef.current = false;
+        setHasUnsavedChanges(false);
+      } else {
+        setState('error');
+        // Reset to detecting after error to try again
+        setTimeout(() => setState('detecting'), 2000);
+      }
     } finally {
       isSavingRef.current = false;
     }
-  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, createDataSignature]);
+  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, saveRundown, createDataSignature]);
 
   // Mark as dirty (trigger save)
   const markAsDirty = useCallback(() => {
@@ -118,6 +167,11 @@ export const useStableAutoSave = (
       setState('idle');
     }
   }, [items, createDataSignature]);
+
+  // Reset when rundown changes
+  useEffect(() => {
+    hasTriedSaveRef.current = false;
+  }, [rundownId]);
 
   // Detect changes (only when initialized)
   useEffect(() => {
