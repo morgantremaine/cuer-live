@@ -40,6 +40,7 @@ const Blueprint = () => {
     refreshAllLists,
     draggedListId,
     insertionIndex,
+    componentOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
@@ -59,7 +60,6 @@ const Blueprint = () => {
       await signOut()
       navigate('/login')
     } catch (error) {
-      console.error('Blueprint: Sign out error, but still navigating to login:', error)
       navigate('/login')
     }
   }
@@ -96,6 +96,76 @@ const Blueprint = () => {
       </div>
     );
   }
+
+  // Create component mapping for rendering in the correct order
+  const componentMap = {
+    'crew-list': (
+      <div 
+        key="crew-list"
+        className={`${draggedListId === 'crew-list' ? 'opacity-50' : ''}`}
+        draggable
+        onDragStart={(e) => handleDragStart(e, 'crew-list')}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          handleDragEnterContainer(e, lists.length + 1 + componentOrder.indexOf('crew-list'));
+        }}
+        onDragEnd={handleDragEnd}
+      >
+        <CrewList 
+          rundownId={id || ''}
+          rundownTitle={rundown?.title || 'Unknown Rundown'}
+          isDragging={draggedListId === 'crew-list'}
+          onDragStart={handleDragStart}
+          onDragEnterContainer={handleDragEnterContainer}
+          onDragEnd={handleDragEnd}
+        />
+      </div>
+    ),
+    'camera-plot': (
+      <div 
+        key="camera-plot"
+        className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
+        draggable
+        onDragStart={(e) => handleDragStart(e, 'camera-plot')}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          handleDragEnterContainer(e, lists.length + 1 + componentOrder.indexOf('camera-plot'));
+        }}
+        onDragEnd={handleDragEnd}
+      >
+        <CameraPlot
+          rundownId={id || ''}
+          rundownTitle={rundown?.title || 'Unknown Rundown'}
+          isDragging={draggedListId === 'camera-plot'}
+          onDragStart={handleDragStart}
+          onDragEnterContainer={handleDragEnterContainer}
+          onDragEnd={handleDragEnd}
+        />
+      </div>
+    ),
+    'scratchpad': (
+      <div 
+        key="scratchpad"
+        className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
+        draggable
+        onDragStart={(e) => handleDragStart(e, 'scratchpad')}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          handleDragEnterContainer(e, lists.length + 1 + componentOrder.indexOf('scratchpad'));
+        }}
+        onDragEnd={handleDragEnd}
+      >
+        <BlueprintScratchpad
+          rundownId={id || ''}
+          rundownTitle={rundown?.title || 'Unknown Rundown'}
+          initialNotes={savedBlueprint?.notes || ''}
+          onNotesChange={(notes) => {
+            // Notes are automatically handled by the component
+          }}
+        />
+      </div>
+    )
+  };
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -144,80 +214,21 @@ const Blueprint = () => {
             />
           )}
 
-          {/* Insertion line for crew list */}
-          {insertionIndex === lists.length + 1 && (
+          {/* Render components in the specified order with insertion lines */}
+          {componentOrder.map((componentId, index) => (
+            <React.Fragment key={componentId}>
+              {/* Insertion line before component */}
+              {insertionIndex === lists.length + 1 + index && (
+                <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
+              )}
+              {componentMap[componentId as keyof typeof componentMap]}
+            </React.Fragment>
+          ))}
+
+          {/* Final insertion line */}
+          {insertionIndex === lists.length + 1 + componentOrder.length && (
             <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
           )}
-
-          <div 
-            className={`${draggedListId === 'crew-list' ? 'opacity-50' : ''}`}
-            draggable
-            onDragStart={(e) => handleDragStart(e, 'crew-list')}
-            onDragEnter={(e) => {
-              e.preventDefault();
-              handleDragEnterContainer(e, lists.length + 1);
-            }}
-            onDragEnd={handleDragEnd}
-          >
-            <CrewList 
-              rundownId={id || ''}
-              rundownTitle={rundown?.title || 'Unknown Rundown'}
-              isDragging={draggedListId === 'crew-list'}
-              onDragStart={handleDragStart}
-              onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 1)}
-              onDragEnd={handleDragEnd}
-            />
-          </div>
-
-          {/* Insertion line for camera plot */}
-          {insertionIndex === lists.length + 2 && (
-            <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
-          )}
-
-          <div 
-            className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
-            draggable
-            onDragStart={(e) => handleDragStart(e, 'camera-plot')}
-            onDragEnter={(e) => {
-              e.preventDefault();
-              handleDragEnterContainer(e, lists.length + 2);
-            }}
-            onDragEnd={handleDragEnd}
-          >
-            <CameraPlot
-              rundownId={id || ''}
-              rundownTitle={rundown?.title || 'Unknown Rundown'}
-              isDragging={draggedListId === 'camera-plot'}
-              onDragStart={handleDragStart}
-              onDragEnterContainer={(e, index) => handleDragEnterContainer(e, lists.length + 2)}
-              onDragEnd={handleDragEnd}
-            />
-          </div>
-
-          {/* Insertion line for scratchpad */}
-          {insertionIndex === lists.length + 3 && (
-            <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
-          )}
-
-          <div 
-            className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
-            draggable
-            onDragStart={(e) => handleDragStart(e, 'scratchpad')}
-            onDragEnter={(e) => {
-              e.preventDefault();
-              handleDragEnterContainer(e, lists.length + 3);
-            }}
-            onDragEnd={handleDragEnd}
-          >
-            <BlueprintScratchpad
-              rundownId={id || ''}
-              rundownTitle={rundown?.title || 'Unknown Rundown'}
-              initialNotes={savedBlueprint?.notes || ''}
-              onNotesChange={(notes) => {
-                // Notes are automatically handled by the component
-              }}
-            />
-          </div>
         </div>
       </div>
     </div>

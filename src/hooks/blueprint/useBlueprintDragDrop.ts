@@ -9,6 +9,7 @@ export const useBlueprintDragDrop = (
 ) => {
   const [draggedListId, setDraggedListId] = useState<string | null>(null);
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
+  const [componentOrder, setComponentOrder] = useState<string[]>(['crew-list', 'camera-plot', 'scratchpad']);
 
   const handleDragStart = useCallback((e: React.DragEvent, listId: string) => {
     setDraggedListId(listId);
@@ -24,7 +25,7 @@ export const useBlueprintDragDrop = (
   const handleDragEnterContainer = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedListId) {
-      // For larger components (crew-list, camera-plot, scratchpad), use their specific indices
+      // For larger components, handle their reordering
       if (draggedListId === 'crew-list' || draggedListId === 'camera-plot' || draggedListId === 'scratchpad') {
         setInsertionIndex(index);
         return;
@@ -66,9 +67,25 @@ export const useBlueprintDragDrop = (
       return;
     }
 
-    // Handle special components (crew-list, camera-plot, scratchpad)
+    // Handle special components reordering
     if (draggedId === 'crew-list' || draggedId === 'camera-plot' || draggedId === 'scratchpad') {
-      // These components don't reorder in the lists array, just provide visual feedback
+      const newOrder = [...componentOrder];
+      const draggedIndex = newOrder.indexOf(draggedId);
+      
+      if (draggedIndex !== -1) {
+        // Remove from current position
+        newOrder.splice(draggedIndex, 1);
+        
+        // Calculate insertion position relative to component order
+        let targetPosition = insertionIndex - lists.length - 1;
+        if (targetPosition < 0) targetPosition = 0;
+        if (targetPosition > newOrder.length) targetPosition = newOrder.length;
+        
+        // Insert at new position
+        newOrder.splice(targetPosition, 0, draggedId);
+        setComponentOrder(newOrder);
+      }
+      
       setDraggedListId(null);
       setInsertionIndex(null);
       return;
@@ -89,7 +106,7 @@ export const useBlueprintDragDrop = (
 
     setDraggedListId(null);
     setInsertionIndex(null);
-  }, [lists, insertionIndex, setLists, saveBlueprint]);
+  }, [lists, insertionIndex, setLists, saveBlueprint, componentOrder]);
 
   const handleDragEnd = useCallback(() => {
     setDraggedListId(null);
@@ -99,6 +116,7 @@ export const useBlueprintDragDrop = (
   return {
     draggedListId,
     insertionIndex,
+    componentOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,

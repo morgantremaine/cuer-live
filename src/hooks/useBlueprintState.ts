@@ -39,6 +39,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const {
     draggedListId,
     insertionIndex,
+    componentOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
@@ -158,6 +159,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     refreshAllLists,
     draggedListId,
     insertionIndex,
+    componentOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
