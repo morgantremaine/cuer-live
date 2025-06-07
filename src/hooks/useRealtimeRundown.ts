@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +31,7 @@ export const useRealtimeRundown = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
   const lastOwnUpdateRef = useRef<string | null>(null);
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
 
   // Stable refs to prevent infinite loops
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
@@ -43,10 +45,16 @@ export const useRealtimeRundown = ({
   stableUpdateSavedSignatureRef.current = updateSavedSignature;
   stableSetApplyingRemoteUpdateRef.current = setApplyingRemoteUpdate;
 
-  // Track when we make updates to avoid processing our own changes
+  // Enhanced tracking of our own updates
   const trackOwnUpdate = useCallback((timestamp: string) => {
     lastOwnUpdateRef.current = timestamp;
+    ownUpdateTrackingRef.current.add(timestamp);
     console.log('🔖 Tracking own update:', timestamp);
+    
+    // Clean up old tracked updates after 30 seconds
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(timestamp);
+    }, 30000);
   }, []);
 
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
@@ -59,11 +67,14 @@ export const useRealtimeRundown = ({
       commitTimestamp: payload.commit_timestamp
     });
     
-    // Multiple checks to skip our own updates
+    // Enhanced checks to skip our own updates
     const updateTimestamp = payload.new?.updated_at;
     
     // Skip if this is our own tracked update
-    if (updateTimestamp && updateTimestamp === lastOwnUpdateRef.current) {
+    if (updateTimestamp && (
+        updateTimestamp === lastOwnUpdateRef.current ||
+        ownUpdateTrackingRef.current.has(updateTimestamp)
+    )) {
       console.log('⏭️ Skipping own tracked update');
       return;
     }
@@ -95,7 +106,7 @@ export const useRealtimeRundown = ({
 
     console.log('✅ Processing remote update from teammate');
     
-    // CRITICAL: Set all processing flags FIRST
+    // CRITICAL: Set all processing flags FIRST with enhanced coordination
     stableSetIsProcessingUpdateRef.current(true);
     if (stableSetApplyingRemoteUpdateRef.current) {
       stableSetApplyingRemoteUpdateRef.current(true);
@@ -166,31 +177,36 @@ export const useRealtimeRundown = ({
 
       console.log('✅ Applying remote update from teammate');
       
-      // CRITICAL: Update signature BEFORE applying the rundown data
+      // CRITICAL: Enhanced signature synchronization
       if (stableUpdateSavedSignatureRef.current) {
-        console.log('🔄 Pre-updating saved signature before applying data');
-        stableUpdateSavedSignatureRef.current(
-          updatedRundown.items, 
-          updatedRundown.title, 
-          updatedRundown.columns, 
-          updatedRundown.timezone, 
-          updatedRundown.start_time
-        );
+        console.log('🔄 Pre-synchronizing saved signature');
+        // Use setTimeout to ensure this happens before any change detection
+        setTimeout(() => {
+          stableUpdateSavedSignatureRef.current?.(
+            updatedRundown.items, 
+            updatedRundown.title, 
+            updatedRundown.columns, 
+            updatedRundown.timezone, 
+            updatedRundown.start_time
+          );
+        }, 0);
       }
 
       // Apply the rundown update
       stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // CRITICAL: Update signature again AFTER applying the rundown data to ensure perfect sync
+      // CRITICAL: Post-application signature sync with delay for state settling
       if (stableUpdateSavedSignatureRef.current) {
-        console.log('🔄 Post-updating saved signature after applying data');
-        stableUpdateSavedSignatureRef.current(
-          updatedRundown.items, 
-          updatedRundown.title, 
-          updatedRundown.columns, 
-          updatedRundown.timezone, 
-          updatedRundown.start_time
-        );
+        setTimeout(() => {
+          console.log('🔄 Post-synchronizing saved signature');
+          stableUpdateSavedSignatureRef.current?.(
+            updatedRundown.items, 
+            updatedRundown.title, 
+            updatedRundown.columns, 
+            updatedRundown.timezone, 
+            updatedRundown.start_time
+          );
+        }, 100);
       }
 
       // Reset retry count on successful update
@@ -218,14 +234,14 @@ export const useRealtimeRundown = ({
         });
       }
     } finally {
-      // CRITICAL: Add a small delay before clearing flags to ensure all effects settle
+      // CRITICAL: Extended delay before clearing flags to ensure all state has settled
       setTimeout(() => {
         if (stableSetApplyingRemoteUpdateRef.current) {
           stableSetApplyingRemoteUpdateRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-        console.log('✅ All remote update processing flags cleared');
-      }, 250);
+        console.log('✅ All remote update processing flags cleared after extended delay');
+      }, 500); // Extended delay for better stability
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);
 

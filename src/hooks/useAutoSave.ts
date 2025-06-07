@@ -17,6 +17,8 @@ export const useAutoSave = (
   const { user } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
+  const saveInProgressRef = useRef(false);
+  const lastSaveTimestampRef = useRef<number>(0);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -38,18 +40,31 @@ export const useAutoSave = (
     timezoneToSave?: string, 
     startTimeToSave?: string
   ) => {
-    // CRITICAL: Block saves completely during realtime processing
-    if (!user || isSaving || isProcessingRealtimeUpdate) {
+    // CRITICAL: Enhanced blocking conditions
+    if (!user || 
+        isSaving || 
+        isProcessingRealtimeUpdate || 
+        saveInProgressRef.current) {
       console.log('💾 Blocking auto-save:', { 
         noUser: !user, 
         isSaving, 
-        isProcessingRealtimeUpdate 
+        isProcessingRealtimeUpdate,
+        saveInProgress: saveInProgressRef.current
       });
+      return;
+    }
+
+    // Prevent rapid-fire saves with minimum interval
+    const now = Date.now();
+    if (now - lastSaveTimestampRef.current < 1000) {
+      console.log('💾 Blocking auto-save - too soon since last save');
       return;
     }
 
     // Mark as loading to prevent change detection during save
     setIsLoading(true);
+    saveInProgressRef.current = true;
+    lastSaveTimestampRef.current = now;
 
     try {
       console.log('💾 Performing auto-save...');
@@ -71,14 +86,15 @@ export const useAutoSave = (
       setHasUnsavedChanges(true);
     } finally {
       setIsLoading(false);
+      saveInProgressRef.current = false;
     }
   }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
-  // Main effect that schedules saves
+  // Main effect that schedules saves with enhanced protection
   useEffect(() => {
-    // CRITICAL: Completely prevent auto-save during realtime processing
-    if (isProcessingRealtimeUpdate) {
-      console.log('🛑 Blocking auto-save scheduling - realtime update in progress');
+    // CRITICAL: Multiple blocking conditions
+    if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
+      console.log('🛑 Blocking auto-save scheduling - realtime update or save in progress');
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
         debounceTimeoutRef.current = null;
@@ -106,18 +122,18 @@ export const useAutoSave = (
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Schedule new save - with additional realtime check
-    console.log('⏰ Scheduling auto-save in 2 seconds...');
+    // Schedule new save with additional checks
+    console.log('⏰ Scheduling auto-save in 3 seconds...');
     debounceTimeoutRef.current = setTimeout(() => {
-      // Final check to ensure we're not processing realtime updates when timeout fires
-      if (!isProcessingRealtimeUpdate) {
+      // Final comprehensive check when timeout fires
+      if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
         console.log('🚀 Executing scheduled auto-save');
         debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       } else {
-        console.log('🛑 Aborting scheduled auto-save - realtime update in progress');
+        console.log('🛑 Aborting scheduled auto-save - blocking conditions detected');
       }
       debounceTimeoutRef.current = null;
-    }, 2000);
+    }, 3000); // Increased to 3 seconds for better stability
 
   }, [
     hasUnsavedChanges, 
@@ -142,17 +158,17 @@ export const useAutoSave = (
   }, []);
 
   const markAsChangedCallback = () => {
-    if (!isProcessingRealtimeUpdate) {
-      console.log('✏️ Marking as changed (not during realtime update)');
+    if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
+      console.log('✏️ Marking as changed (not during realtime update or save)');
       markAsChanged();
     } else {
-      console.log('🚫 Blocking mark as changed - realtime update in progress');
+      console.log('🚫 Blocking mark as changed - realtime update or save in progress');
     }
   };
 
   return {
     hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
-    isSaving,
+    isSaving: isSaving || saveInProgressRef.current,
     markAsChanged: markAsChangedCallback,
     setApplyingRemoteUpdate,
     updateSavedSignature
