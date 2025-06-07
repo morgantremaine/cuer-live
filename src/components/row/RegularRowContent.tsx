@@ -37,17 +37,18 @@ const RegularRowContent = ({
   return (
     <>
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle"
-        style={{ color: textColor || undefined, width: '40px' }}
+        className="px-2 py-1 text-sm font-mono align-middle relative"
+        style={{ color: textColor || undefined, width: '60px' }}
       >
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
-            <Play 
-              className="h-4 w-4 text-green-500 fill-green-500 scale-125" 
-              style={{ filter: 'drop-shadow(0 0 1px black)' }}
-            />
+            <div className="absolute -left-8 top-1/2 transform -translate-y-1/2">
+              <div className="flex items-center space-x-1">
+                <div className="w-0 h-0 border-l-8 border-l-green-500 border-t-4 border-t-transparent border-b-4 border-b-transparent animate-pulse"></div>
+              </div>
+            </div>
           )}
-          <span>{rowNumber}</span>
+          <span className="relative z-10">{rowNumber}</span>
           {isDraggingMultiple && isSelected && (
             <span className="text-xs bg-blue-500 text-white px-1 rounded">M</span>
           )}

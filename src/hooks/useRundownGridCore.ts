@@ -1,168 +1,180 @@
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useRundownStateIntegration } from './useRundownStateIntegration';
-import { useRundownStorage } from './useRundownStorage';
-import { useRundownDataLoader } from './useRundownDataLoader';
-import { useRundownUndo } from './useRundownUndo';
+import { useRundownBasicState } from './useRundownBasicState';
+import { useRundownCalculations } from './useRundownCalculations';
+import { useRundownHandlers } from './useRundownHandlers';
+import { useColumnsManager } from './useColumnsManager';
 import { useTimeCalculations } from './useTimeCalculations';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useRealtimeRundownSync } from './useRealtimeRundownSync';
-import { useAuth } from './useAuth';
-import { RundownItem } from '@/types/rundown';
+import { useRundownDataLoader } from './useRundownDataLoader';
 
 export const useRundownGridCore = () => {
-  const { user } = useAuth();
-  
-  // Router hooks
-  const params = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const rawId = params.id || null;
-
-  // Improved ID validation - ensure we don't treat "new" as a valid UUID
-  const rundownId = (!rawId || rawId === 'new' || rawId === ':id' || rawId.trim() === '') ? null : rawId;
-
-  // Basic state
-  const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
-  const [timezone, setTimezone] = useState('America/New_York');
-  const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
-  const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
-  const [showColumnManager, setShowColumnManager] = useState(false);
-
-  // Rundown storage
-  const { savedRundowns, loading } = useRundownStorage();
-
-  // Integrated state management (items, columns, auto-save)
-  const stateIntegration = useRundownStateIntegration(
-    rundownTitle,
-    timezone,
-    rundownStartTime
-  );
-
-  // Real-time sync with proper state setters and rundown ID
-  const { updateLastUpdateTime, updateTrigger, forceRenderTrigger } = useRealtimeRundownSync({
+  // Basic state management
+  const {
     rundownId,
-    currentUserId: user?.id || null,
-    setItems: stateIntegration.setItems,
+    rundownTitle,
     setRundownTitle,
+    timezone,
     setTimezone,
+    rundownStartTime,
     setRundownStartTime,
-    handleLoadLayout: stateIntegration.handleLoadLayout,
-    markAsChanged: stateIntegration.markAsChanged
-  });
+    hasUnsavedChanges,
+    isSaving,
+    markAsChanged
+  } = useRundownBasicState();
 
-  // Time calculations - include triggers to force recalculation on remote updates
-  const timeCalculations = useTimeCalculations(
-    stateIntegration.items,
+  // Items and calculations
+  const {
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    setMarkAsChangedCallback,
+    itemsUpdateTrigger,
+    forceUpdateId
+  } = useRundownCalculations();
+
+  // Set the mark as changed callback
+  setMarkAsChangedCallback(markAsChanged);
+
+  // Columns management
+  const {
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth
+  } = useColumnsManager(markAsChanged);
+
+  // Time calculations
+  const { currentTime, calculateEndTime, getRowStatus } = useTimeCalculations(
+    items,
     rundownStartTime,
     timezone
   );
 
-  // Undo functionality
-  const undoState = useRundownUndo(
-    stateIntegration.items,
-    stateIntegration.setItems,
-    stateIntegration.markAsChanged
-  );
-
-  // Playback controls
-  const playbackControls = usePlaybackControls(stateIntegration.items);
+  // Playback controls - now properly integrated
+  const {
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward
+  } = usePlaybackControls(items);
 
   // Data loading
-  useRundownDataLoader({
+  const { selectedRowId } = useRundownDataLoader(
     rundownId,
-    savedRundowns,
-    loading,
+    setItems,
     setRundownTitle,
     setTimezone,
     setRundownStartTime,
-    handleLoadLayout: stateIntegration.handleLoadLayout,
-    setItems: stateIntegration.setItems,
-    onRundownLoaded: (rundown) => {
-      console.log('🎯 Rundown loaded:', rundown.title);
-      stateIntegration.setRundownId(rundown.id);
-    }
+    handleLoadLayout
+  );
+
+  // Realtime sync
+  const { updateLastUpdateTime, updateTrigger, forceRenderTrigger } = useRealtimeRundownSync({
+    rundownId,
+    currentUserId: null, // This should come from auth context
+    setItems,
+    setRundownTitle,
+    setTimezone,
+    setRundownStartTime,
+    handleLoadLayout,
+    markAsChanged
   });
 
-  // Handle rundown creation
-  useEffect(() => {
-    stateIntegration.setOnRundownCreated((newRundownId: string) => {
-      console.log('🆕 New rundown created, updating URL to:', newRundownId);
-      stateIntegration.setRundownId(newRundownId);
-      // Update URL without reload
-      navigate(`/${newRundownId}`, { replace: true });
-    });
-  }, [stateIntegration.setOnRundownCreated, stateIntegration.setRundownId, navigate]);
-
-  // Set rundown ID when we have a valid one
-  useEffect(() => {
-    if (rundownId) {
-      stateIntegration.setRundownId(rundownId);
-    }
-  }, [rundownId, stateIntegration.setRundownId]);
-
-  // Enhanced markAsChanged that includes realtime sync update
-  const enhancedMarkAsChanged = useCallback(() => {
-    updateLastUpdateTime();
-    stateIntegration.markAsChanged();
-  }, [updateLastUpdateTime, stateIntegration.markAsChanged]);
-
-  // Force re-render when remote updates are received
-  useEffect(() => {
-    if (updateTrigger > 0) {
-      console.log('🔄 Remote update trigger - forcing component refresh');
-    }
-  }, [updateTrigger]);
-
-  // Additional force re-render effect
-  useEffect(() => {
-    if (forceRenderTrigger > 0) {
-      console.log('🔄 Force render trigger - ensuring UI refresh');
-    }
-  }, [forceRenderTrigger]);
+  // Handlers
+  const {
+    handleSave,
+    handleLoadRundown,
+    handleCreateNew,
+    handleTitleChange
+  } = useRundownHandlers(
+    rundownId,
+    rundownTitle,
+    timezone,
+    rundownStartTime,
+    items,
+    columns,
+    setRundownTitle,
+    markAsChanged,
+    updateLastUpdateTime
+  );
 
   return {
-    // Basic state
+    // Core state
+    rundownId,
     rundownTitle,
-    setRundownTitle,
+    setRundownTitle: handleTitleChange,
     timezone,
     setTimezone,
     rundownStartTime,
     setRundownStartTime,
-    currentSegmentId,
-    setCurrentSegmentId,
-    rundownId,
-    showColumnManager,
-    setShowColumnManager,
-
-    // Time calculations
-    currentTime: timeCalculations.currentTime,
-    calculateEndTime: timeCalculations.calculateEndTime,
-    getRowStatus: timeCalculations.getRowStatus,
-
-    // Undo
-    handleUndo: undoState.handleUndo,
-    canUndo: undoState.canUndo,
-    lastAction: undoState.lastAction,
-
-    // Playback
-    isPlaying: playbackControls.isPlaying,
-    timeRemaining: playbackControls.timeRemaining,
-    play: playbackControls.play,
-    pause: playbackControls.pause,
-    forward: playbackControls.forward,
-    backward: playbackControls.backward,
-
-    // Collaboration
-    isConnected: true,
-    hasPendingChanges: false,
-    isEditing: false,
-
-    // Spread all the integrated state but override markAsChanged
-    ...stateIntegration,
-    markAsChanged: enhancedMarkAsChanged,
+    hasUnsavedChanges,
+    isSaving,
+    markAsChanged,
     
-    // Include update triggers for components that need to respond to remote changes
+    // Items
+    items,
+    setItems,
+    updateItem,
+    addRow,
+    addHeader,
+    deleteRow,
+    deleteMultipleRows,
+    addMultipleRows,
+    getRowNumber,
+    toggleFloatRow,
+    calculateTotalRuntime,
+    calculateHeaderDuration,
+    
+    // Columns
+    columns,
+    visibleColumns,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth,
+    
+    // Time
+    currentTime,
+    calculateEndTime,
+    getRowStatus,
+    
+    // Playback controls
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward,
+    selectedRowId,
+    
+    // Handlers
+    handleSave,
+    handleLoadRundown,
+    handleCreateNew,
+    
+    // Realtime triggers
     updateTrigger,
     forceRenderTrigger
   };
