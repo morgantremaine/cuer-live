@@ -9,7 +9,7 @@ const RundownContainer = (props: RundownContainerProps) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <RundownHeader 
-        rundownTitle={props.rundownTitle}
+        title={props.rundownTitle}
         onTitleChange={props.onTitleChange}
         timezone={props.timezone}
         onTimezoneChange={props.onTimezoneChange}
@@ -18,15 +18,16 @@ const RundownContainer = (props: RundownContainerProps) => {
         isSaving={props.isSaving}
         rundownStartTime={props.rundownStartTime}
         onRundownStartTimeChange={props.onRundownStartTimeChange}
-        rundownId={props.rundownId}
-        onOpenTeleprompter={props.onOpenTeleprompter}
+        currentTime={props.currentTime}
+        onUndo={props.onUndo}
+        canUndo={props.canUndo}
+        lastAction={props.lastAction}
         isConnected={props.isConnected}
         isProcessingRealtimeUpdate={props.isProcessingRealtimeUpdate}
       />
       
       <RundownMainContent 
         // Playback controls props
-        selectedRowId={props.selectedRowId}
         isPlaying={props.isPlaying}
         timeRemaining={props.timeRemaining}
         onPlay={props.onPlay}
@@ -89,7 +90,7 @@ const RundownContainer = (props: RundownContainerProps) => {
       />
       
       <RundownFooter 
-        rundownId={props.rundownId}
+        totalSegments={props.items?.length || 0}
       />
     </div>
   );
