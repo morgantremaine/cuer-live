@@ -48,7 +48,7 @@ const Help = () => {
                   <li>Create a new rundown from the dashboard</li>
                   <li>Add items and headers to your rundown using the "+" buttons</li>
                   <li>Edit content by clicking on any cell</li>
-                  <li>Right click to change row color and float/unfloat rows
+                  <li>Right click to change row color and float/unfloat rows</li>
                   <li>Save your work automatically as you type</li>
                 </ul>
               </div>
