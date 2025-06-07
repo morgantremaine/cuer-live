@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 
 export const useTeleprompterControls = () => {
@@ -32,8 +33,8 @@ export const useTeleprompterControls = () => {
           toggleScrolling();
           break;
         
-        case 'ArrowRight':
-        case 'ArrowUp':
+        case 'ArrowLeft':
+        case 'ArrowDown':
           // Increase speed (move right in speed array)
           setCurrentSpeedIndex(prevIndex => {
             const newIndex = Math.min(speedSteps.length - 1, prevIndex + 1);
@@ -51,8 +52,8 @@ export const useTeleprompterControls = () => {
           });
           break;
         
-        case 'ArrowLeft':
-        case 'ArrowDown':
+        case 'ArrowRight':
+        case 'ArrowUp':
           // Decrease speed (move left in speed array)
           setCurrentSpeedIndex(prevIndex => {
             const newIndex = Math.max(0, prevIndex - 1);
@@ -137,6 +138,10 @@ export const useTeleprompterControls = () => {
   const toggleUppercase = () => {
     setIsUppercase(!isUppercase);
   };
+
+  // Get current speed value and direction
+  const getCurrentSpeed = () => speedSteps[currentSpeedIndex];
+  const isReverse = () => getCurrentSpeed() < 0;
 
   return {
     fontSize,
