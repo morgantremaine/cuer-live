@@ -54,7 +54,7 @@ export const useBlueprintPersistence = (
         throw error;
       }
 
-      // If no team blueprint exists, try to load personal blueprint and convert it to team blueprint
+      // If no team blueprint exists, try to load personal blueprint and convert it
       if (!data) {
         const { data: personalData } = await supabase
           .from('blueprints')
@@ -68,28 +68,37 @@ export const useBlueprintPersistence = (
           console.log('Converting personal blueprint to team blueprint for collaboration');
           // Convert personal blueprint to team blueprint
           const teamBlueprint = {
-            ...personalData,
+            rundown_id: personalData.rundown_id,
+            rundown_title: personalData.rundown_title,
+            user_id: user.id,
             team_id: rundownData.team_id,
-            user_id: user.id, // Keep the creator as user_id
+            lists: personalData.lists || [],
+            show_date: personalData.show_date,
+            notes: personalData.notes,
+            crew_data: personalData.crew_data || [],
+            camera_plots: personalData.camera_plots || [],
+            component_order: personalData.component_order || ['crew-list', 'camera-plot', 'scratchpad'],
             updated_at: new Date().toISOString()
           };
 
-          delete teamBlueprint.id; // Let database generate new ID
-
+          // Insert team blueprint (let database generate new ID)
           const { data: newTeamData, error: createError } = await supabase
             .from('blueprints')
             .insert(teamBlueprint)
             .select()
             .single();
 
-          if (!createError) {
-            // Delete the personal blueprint since we now have a team blueprint
+          if (!createError && newTeamData) {
+            // Delete the personal blueprint after successful conversion
             await supabase
               .from('blueprints')
               .delete()
               .eq('id', personalData.id);
 
             data = newTeamData;
+          } else {
+            console.error('Failed to convert to team blueprint:', createError);
+            data = personalData; // Fallback to personal blueprint
           }
         }
       }
@@ -170,13 +179,32 @@ export const useBlueprintPersistence = (
         has_show_date: !!blueprintData.show_date
       });
 
-      const { data, error } = await supabase
+      // Check if blueprint already exists
+      const { data: existingBlueprint } = await supabase
         .from('blueprints')
-        .upsert(blueprintData, {
-          onConflict: 'rundown_id,team_id'
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('rundown_id', rundownId)
+        .eq('team_id', rundownData.team_id)
+        .maybeSingle();
+
+      let data, error;
+
+      if (existingBlueprint) {
+        // Update existing blueprint
+        ({ data, error } = await supabase
+          .from('blueprints')
+          .update(blueprintData)
+          .eq('id', existingBlueprint.id)
+          .select()
+          .single());
+      } else {
+        // Insert new blueprint
+        ({ data, error } = await supabase
+          .from('blueprints')
+          .insert(blueprintData)
+          .select()
+          .single());
+      }
 
       if (error) {
         console.error('Database error saving team blueprint:', error);
