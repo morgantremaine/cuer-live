@@ -107,13 +107,13 @@ export const useRundownGridCore = () => {
 
   // Enhanced showcaller state change handler with proper debouncing
   const handleShowcallerStateChange = useCallback((showcallerState: any) => {
-    // CRITICAL FIX: Don't try to update showcaller state if we don't have a rundownId
+    // CRITICAL FIX: Don't try to update showcaller state if we don't have a saved rundownId
     if (isProcessingRealtimeUpdate || !rundownId) {
-      console.log('⏭️ Skipping showcaller update - processing realtime or no rundownId');
+      console.log('⏭️ Skipping showcaller update - processing realtime or no saved rundownId', { rundownId });
       return;
     }
 
-    console.log('📡 Preparing showcaller state change:', showcallerState);
+    console.log('📡 Preparing showcaller state change for saved rundown:', showcallerState);
 
     // Clear any existing timer
     if (showcallerUpdateTimerRef.current) {
@@ -232,7 +232,7 @@ export const useRundownGridCore = () => {
     ...stableDataLoaderCallbacks
   });
 
-  // Enhanced playback controls with real-time sync - PASS rundownId
+  // Enhanced playback controls with real-time sync - PASS rundownId to prevent broadcasts for unsaved rundowns
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -246,7 +246,7 @@ export const useRundownGridCore = () => {
     updateItem, 
     handleShowcallerStateChange, 
     externalShowcallerState,
-    rundownId // Pass rundownId to prevent broadcasts for new rundowns
+    rundownId // CRITICAL: Pass rundownId to prevent broadcasts for new rundowns
   );
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);

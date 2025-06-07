@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownBasicState } from './useRundownBasicState';
 import { useChangeTracking } from './useChangeTracking';
@@ -14,11 +15,13 @@ export const useAutoSave = (
   rundownStartTime: string,
   isProcessingRealtimeUpdate?: boolean
 ) => {
+  const navigate = useNavigate();
   const { rundownId } = useRundownBasicState();
   const { updateRundown, saveRundown } = useRundownStorage();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveDataRef = useRef<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
+  const isNavigatingRef = useRef(false);
 
   const {
     hasUnsavedChanges,
@@ -35,10 +38,10 @@ export const useAutoSave = (
     isProcessingRealtimeUpdate
   );
 
-  // Auto-save function with enhanced data validation
+  // Auto-save function with proper new rundown handling
   const performAutoSave = useCallback(async () => {
-    if (isProcessingRealtimeUpdate) {
-      console.log('⏭️ Skipping auto-save - processing realtime update');
+    if (isProcessingRealtimeUpdate || isNavigatingRef.current) {
+      console.log('⏭️ Skipping auto-save - processing realtime update or navigating');
       return;
     }
 
@@ -82,7 +85,7 @@ export const useAutoSave = (
         });
         console.log('✅ Auto-save completed successfully (update)');
       } else {
-        // Save new rundown
+        // Save new rundown and navigate to it
         const newRundown = {
           id: '',
           user_id: '',
@@ -96,8 +99,21 @@ export const useAutoSave = (
           archived: false
         };
         
+        console.log('💾 Creating new rundown...');
         const newRundownId = await saveRundown(newRundown);
-        console.log('✅ Auto-save completed successfully (new rundown)', newRundownId);
+        console.log('✅ New rundown created successfully:', newRundownId);
+        
+        // CRITICAL: Navigate to the new rundown to update the URL and rundownId
+        if (newRundownId) {
+          isNavigatingRef.current = true;
+          console.log('🚀 Navigating to new rundown:', newRundownId);
+          navigate(`/rundown/${newRundownId}`, { replace: true });
+          
+          // Reset navigation flag after a brief delay
+          setTimeout(() => {
+            isNavigatingRef.current = false;
+          }, 1000);
+        }
       }
 
       // Update our tracking
@@ -109,11 +125,11 @@ export const useAutoSave = (
     } finally {
       setIsSaving(false);
     }
-  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, saveRundown, markAsSaved, isProcessingRealtimeUpdate]);
+  }, [rundownId, rundownTitle, items, columns, timezone, rundownStartTime, updateRundown, saveRundown, markAsSaved, isProcessingRealtimeUpdate, navigate]);
 
   // Auto-save effect with debouncing
   useEffect(() => {
-    if (!hasUnsavedChanges || isProcessingRealtimeUpdate) {
+    if (!hasUnsavedChanges || isProcessingRealtimeUpdate || isNavigatingRef.current) {
       return;
     }
 

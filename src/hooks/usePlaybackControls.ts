@@ -14,7 +14,7 @@ export const usePlaybackControls = (
   updateItem: (id: string, field: string, value: string) => void,
   onShowcallerStateChange?: (state: ShowcallerState) => void,
   externalShowcallerState?: ShowcallerState | null,
-  rundownId?: string | null // Add rundownId parameter
+  rundownId?: string | null
 ) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
@@ -23,12 +23,6 @@ export const usePlaybackControls = (
   const lastSyncTimeRef = useRef<number>(0);
   const lastPlayStartTimeRef = useRef<number | undefined>(undefined);
   const isProcessingExternalUpdateRef = useRef(false);
-  const localStateRef = useRef({ isPlaying: false, currentSegmentId: null, timeRemaining: 0 });
-
-  // Update local state ref whenever state changes
-  useEffect(() => {
-    localStateRef.current = { isPlaying, currentSegmentId, timeRemaining };
-  }, [isPlaying, currentSegmentId, timeRemaining]);
 
   // Sync with external state when it changes (from real-time updates)
   useEffect(() => {
@@ -70,11 +64,11 @@ export const usePlaybackControls = (
     }
   }, [externalShowcallerState, currentSegmentId, isPlaying, timeRemaining]);
 
-  // Broadcast state changes to other clients - ONLY if we have a rundownId
+  // Broadcast state changes to other clients - ONLY if we have a saved rundownId
   const broadcastState = useCallback((newState: Partial<ShowcallerState>) => {
     // CRITICAL: Don't broadcast if we don't have a rundownId (new unsaved rundown)
     if (!rundownId || isProcessingExternalUpdateRef.current) {
-      console.log('⏭️ Skipping broadcast - no rundownId or processing external update');
+      console.log('⏭️ Skipping showcaller broadcast - no rundownId or processing external update', { rundownId });
       return;
     }
 
@@ -96,20 +90,17 @@ export const usePlaybackControls = (
 
   // Set default current segment to first non-header item (A1) on mount
   useEffect(() => {
-    if (!currentSegmentId && items.length > 0 && !externalShowcallerState) {
+    if (!currentSegmentId && items.length > 0 && !externalShowcallerState && rundownId) {
       const firstSegment = items.find(item => !isHeaderItem(item));
       if (firstSegment) {
         setCurrentSegmentId(firstSegment.id);
         const duration = timeToSeconds(firstSegment.duration);
         setTimeRemaining(duration);
-        // Only broadcast if we have a rundownId
-        if (rundownId) {
-          broadcastState({
-            currentSegmentId: firstSegment.id,
-            timeRemaining: duration,
-            isPlaying: false
-          });
-        }
+        broadcastState({
+          currentSegmentId: firstSegment.id,
+          timeRemaining: duration,
+          isPlaying: false
+        });
       }
     }
   }, [items, currentSegmentId, externalShowcallerState, broadcastState, rundownId]);
@@ -214,7 +205,7 @@ export const usePlaybackControls = (
           return 0;
         }
         
-        // Broadcast updated time occasionally (only if we have a rundownId)
+        // Broadcast updated time occasionally (only if we have a saved rundownId)
         if (newTime % 10 === 0 && rundownId) { // Every 10 seconds
           broadcastState({
             timeRemaining: newTime,
@@ -306,7 +297,7 @@ export const usePlaybackControls = (
     }
   }, [currentSegmentId, isPlaying, updateItem, setCurrentSegment, startTimer]);
 
-  // Auto-start timer when playing state changes to true - FIXED to prevent conflicts
+  // Auto-start timer when playing state changes to true
   useEffect(() => {
     if (isPlaying && currentSegmentId && !timerRef.current && !isProcessingExternalUpdateRef.current) {
       console.log('🚀 Auto-starting timer due to isPlaying change');
