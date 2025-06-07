@@ -26,6 +26,7 @@ export const useRealtimeRundown = ({
   const lastUpdateTimestampRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
+  const lastOwnUpdateRef = useRef<string | null>(null);
 
   // Stable refs to prevent infinite loops
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
@@ -35,18 +36,34 @@ export const useRealtimeRundown = ({
   stableOnRundownUpdatedRef.current = onRundownUpdated;
   stableSetIsProcessingUpdateRef.current = setIsProcessingUpdate;
 
+  // Track when we make updates to avoid processing our own changes
+  const trackOwnUpdate = useCallback((timestamp: string) => {
+    lastOwnUpdateRef.current = timestamp;
+    console.log('🔖 Tracking own update:', timestamp);
+  }, []);
+
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     console.log('📡 Realtime update received:', {
       event: payload.eventType,
       rundownId: payload.new?.id,
       updatedByUserId: payload.new?.user_id,
       currentUserId: user?.id,
-      timestamp: payload.commit_timestamp
+      timestamp: payload.new?.updated_at,
+      commitTimestamp: payload.commit_timestamp
     });
     
-    // Skip our own updates - this is the key fix
+    // Multiple checks to skip our own updates
+    const updateTimestamp = payload.new?.updated_at;
+    
+    // Skip if this is our own tracked update
+    if (updateTimestamp && updateTimestamp === lastOwnUpdateRef.current) {
+      console.log('⏭️ Skipping own tracked update');
+      return;
+    }
+    
+    // Skip if the user_id matches (if available)
     if (payload.new?.user_id === user?.id) {
-      console.log('⏭️ Skipping own update - user made this change');
+      console.log('⏭️ Skipping own update - user ID match');
       return;
     }
 
@@ -57,12 +74,17 @@ export const useRealtimeRundown = ({
     }
 
     // Prevent processing duplicate updates
-    const updateTimestamp = payload.new?.updated_at;
     if (updateTimestamp && updateTimestamp === lastUpdateTimestampRef.current) {
       console.log('⏭️ Skipping duplicate update');
       return;
     }
     lastUpdateTimestampRef.current = updateTimestamp;
+
+    // Additional safety check - if we're currently processing an update, skip
+    if (isProcessingUpdate) {
+      console.log('⏭️ Skipping - already processing an update');
+      return;
+    }
 
     console.log('✅ Processing remote update from teammate');
     stableSetIsProcessingUpdateRef.current(true);
@@ -168,7 +190,7 @@ export const useRealtimeRundown = ({
     } finally {
       stableSetIsProcessingUpdateRef.current(false);
     }
-  }, [rundownId, user?.id, hasUnsavedChanges, toast]);
+  }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -231,6 +253,7 @@ export const useRealtimeRundown = ({
   }, [rundownId, user, isProcessingUpdate, handleRealtimeUpdate]);
 
   return {
-    isConnected: !!subscriptionRef.current
+    isConnected: !!subscriptionRef.current,
+    trackOwnUpdate
   };
 };
