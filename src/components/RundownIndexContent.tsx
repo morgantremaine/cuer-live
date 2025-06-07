@@ -2,6 +2,7 @@
 import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
+import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useTeammateChangeNotification } from '@/hooks/useTeammateChangeNotification';
@@ -119,7 +120,10 @@ const RundownIndexContent = () => {
   };
 
   return (
-    <>
+    <RealtimeConnectionProvider
+      isConnected={isConnected || false}
+      isProcessingUpdate={isProcessingRealtimeUpdate || false}
+    >
       <RundownContainer
         currentTime={currentTime}
         timezone={timezone}
@@ -192,7 +196,7 @@ const RundownIndexContent = () => {
       
       {/* Cuer AI Chat Button with rundown data */}
       <CuerChatButton rundownData={rundownData} />
-    </>
+    </RealtimeConnectionProvider>
   );
 };
 
