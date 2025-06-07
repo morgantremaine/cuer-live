@@ -36,11 +36,17 @@ export const useRealtimeRundown = ({
   stableSetIsProcessingUpdateRef.current = setIsProcessingUpdate;
 
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
-    console.log('📡 Realtime update received:', payload);
+    console.log('📡 Realtime update received:', {
+      event: payload.eventType,
+      rundownId: payload.new?.id,
+      updatedByUserId: payload.new?.user_id,
+      currentUserId: user?.id,
+      timestamp: payload.commit_timestamp
+    });
     
-    // Skip our own updates
+    // Skip our own updates - this is the key fix
     if (payload.new?.user_id === user?.id) {
-      console.log('⏭️ Skipping own update');
+      console.log('⏭️ Skipping own update - user made this change');
       return;
     }
 
@@ -58,6 +64,7 @@ export const useRealtimeRundown = ({
     }
     lastUpdateTimestampRef.current = updateTimestamp;
 
+    console.log('✅ Processing remote update from teammate');
     stableSetIsProcessingUpdateRef.current(true);
 
     try {
@@ -124,10 +131,10 @@ export const useRealtimeRundown = ({
         undo_history: data.undo_history
       };
 
-      console.log('✅ Applying remote update');
+      console.log('✅ Applying remote update from teammate');
       stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // Show success notification
+      // Show success notification - only for remote updates
       toast({
         title: 'Rundown Updated',
         description: 'Your teammate made changes to this rundown',
