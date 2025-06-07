@@ -169,23 +169,89 @@ export const useBlueprintPersistence = (
           updated_at: new Date().toISOString()
         };
 
-        // Use different conflict resolution based on whether it's a team blueprint or user blueprint
-        const conflictColumns = data.teamId ? 'team_id,rundown_id' : 'user_id,rundown_id';
+        let result;
+        let error;
 
-        const { data: result, error } = await supabase
-          .from('blueprints')
-          .upsert(
-            blueprintData,
-            { 
-              onConflict: conflictColumns,
-              ignoreDuplicates: false 
-            }
-          )
-          .select()
-          .single();
+        // Use different upsert strategies based on whether it's a team blueprint or user blueprint
+        if (data.teamId) {
+          // For team blueprints, we need to handle the upsert differently
+          // First try to update existing team blueprint
+          const { data: existingTeamBlueprint, error: selectError } = await supabase
+            .from('blueprints')
+            .select('id')
+            .eq('team_id', data.teamId)
+            .eq('rundown_id', rundownId)
+            .maybeSingle();
+
+          if (selectError) {
+            console.error('Error checking for existing team blueprint:', selectError);
+            throw selectError;
+          }
+
+          if (existingTeamBlueprint) {
+            // Update existing team blueprint
+            const { data: updateResult, error: updateError } = await supabase
+              .from('blueprints')
+              .update(blueprintData)
+              .eq('id', existingTeamBlueprint.id)
+              .select()
+              .single();
+            
+            result = updateResult;
+            error = updateError;
+          } else {
+            // Insert new team blueprint
+            const { data: insertResult, error: insertError } = await supabase
+              .from('blueprints')
+              .insert(blueprintData)
+              .select()
+              .single();
+            
+            result = insertResult;
+            error = insertError;
+          }
+        } else {
+          // For user blueprints, we need to handle the upsert differently  
+          // First try to update existing user blueprint
+          const { data: existingUserBlueprint, error: selectError } = await supabase
+            .from('blueprints')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('rundown_id', rundownId)
+            .is('team_id', null)
+            .maybeSingle();
+
+          if (selectError) {
+            console.error('Error checking for existing user blueprint:', selectError);
+            throw selectError;
+          }
+
+          if (existingUserBlueprint) {
+            // Update existing user blueprint
+            const { data: updateResult, error: updateError } = await supabase
+              .from('blueprints')
+              .update(blueprintData)
+              .eq('id', existingUserBlueprint.id)
+              .select()
+              .single();
+            
+            result = updateResult;
+            error = updateError;
+          } else {
+            // Insert new user blueprint
+            const { data: insertResult, error: insertError } = await supabase
+              .from('blueprints')
+              .insert(blueprintData)
+              .select()
+              .single();
+            
+            result = insertResult;
+            error = insertError;
+          }
+        }
 
         if (error) {
-          console.error('Upsert blueprint error:', error);
+          console.error('Blueprint save error:', error);
           throw error;
         }
         

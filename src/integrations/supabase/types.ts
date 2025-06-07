@@ -20,6 +20,7 @@ export type Database = {
           rundown_id: string
           rundown_title: string
           show_date: string | null
+          team_id: string | null
           updated_at: string
           user_id: string
         }
@@ -33,6 +34,7 @@ export type Database = {
           rundown_id: string
           rundown_title: string
           show_date?: string | null
+          team_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -46,10 +48,19 @@ export type Database = {
           rundown_id?: string
           rundown_title?: string
           show_date?: string | null
+          team_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blueprints_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       column_layouts: {
         Row: {
