@@ -76,14 +76,13 @@ const RundownHeader = ({
             isSaving={isSaving}
           />
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1 flex items-center gap-2">
-            <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
             {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
               <RealtimeStatusIndicator
                 isConnected={isConnected || false}
                 isProcessingUpdate={isProcessingRealtimeUpdate || false}
-                className="ml-2"
               />
             )}
+            <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           </div>
         </div>
         <HeaderControls
@@ -114,13 +113,13 @@ const RundownHeader = ({
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-              <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
               {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
                 <RealtimeStatusIndicator
                   isConnected={isConnected || false}
                   isProcessingUpdate={isProcessingRealtimeUpdate || false}
                 />
               )}
+              <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
             </div>
             <HeaderControls
               currentTime={currentTime}
