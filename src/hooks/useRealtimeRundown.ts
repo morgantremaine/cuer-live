@@ -27,6 +27,14 @@ export const useRealtimeRundown = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
 
+  // Stable refs to prevent infinite loops
+  const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
+  const stableSetIsProcessingUpdateRef = useRef(setIsProcessingUpdate);
+  
+  // Update refs when functions change
+  stableOnRundownUpdatedRef.current = onRundownUpdated;
+  stableSetIsProcessingUpdateRef.current = setIsProcessingUpdate;
+
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     console.log('📡 Realtime update received:', payload);
     
@@ -50,13 +58,12 @@ export const useRealtimeRundown = ({
     }
     lastUpdateTimestampRef.current = updateTimestamp;
 
-    setIsProcessingUpdate(true);
+    stableSetIsProcessingUpdateRef.current(true);
 
     try {
       // Enhanced conflict resolution with better UX
       if (hasUnsavedChanges) {
         const result = await new Promise<boolean>((resolve) => {
-          // Show a more user-friendly conflict dialog
           const shouldAcceptRemoteChanges = window.confirm(
             `🔄 Another team member just updated this rundown.\n\n` +
             `You have unsaved changes that will be lost if you accept their update.\n\n` +
@@ -74,17 +81,10 @@ export const useRealtimeRundown = ({
             description: 'Your changes are preserved. Save soon to avoid conflicts.',
             duration: 5000,
           });
-          setIsProcessingUpdate(false);
+          stableSetIsProcessingUpdateRef.current(false);
           return;
         }
       }
-
-      // Show loading state for better UX
-      toast({
-        title: 'Syncing Changes',
-        description: 'Applying updates from your teammate...',
-        duration: 2000,
-      });
 
       // Fetch the complete updated rundown data
       const { data, error } = await supabase
@@ -125,9 +125,9 @@ export const useRealtimeRundown = ({
       };
 
       console.log('✅ Applying remote update');
-      onRundownUpdated(updatedRundown);
+      stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // Show success notification with team member info
+      // Show success notification
       toast({
         title: 'Rundown Updated',
         description: 'Your teammate made changes to this rundown',
@@ -140,7 +140,6 @@ export const useRealtimeRundown = ({
     } catch (error) {
       console.error('Error processing realtime update:', error);
       
-      // Enhanced error handling with retry logic
       retryCountRef.current++;
       const maxRetries = 3;
       
@@ -151,11 +150,6 @@ export const useRealtimeRundown = ({
           variant: 'destructive',
           duration: 3000,
         });
-        
-        // Retry after a short delay
-        setTimeout(() => {
-          handleRealtimeUpdate(payload);
-        }, 2000 * retryCountRef.current); // Exponential backoff
       } else {
         toast({
           title: 'Sync Failed',
@@ -165,13 +159,27 @@ export const useRealtimeRundown = ({
         });
       }
     } finally {
-      setIsProcessingUpdate(false);
+      stableSetIsProcessingUpdateRef.current(false);
     }
-  }, [rundownId, user?.id, hasUnsavedChanges, onRundownUpdated, setIsProcessingUpdate, toast]);
+  }, [rundownId, user?.id, hasUnsavedChanges, toast]);
 
-  const setupSubscription = useCallback(() => {
+  useEffect(() => {
+    // Clear any existing subscription
+    if (subscriptionRef.current) {
+      console.log('🧹 Cleaning up existing realtime subscription');
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+
+    // Clear any pending reconnection attempts
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
+    // Only set up subscription if we have the required data and not processing
     if (!rundownId || !user || isProcessingUpdate) {
-      return null;
+      return;
     }
 
     console.log('✅ Setting up realtime subscription for rundown:', rundownId);
@@ -192,58 +200,15 @@ export const useRealtimeRundown = ({
         console.log('📡 Realtime subscription status:', status);
         
         if (status === 'SUBSCRIBED') {
-          retryCountRef.current = 0; // Reset retry count on successful connection
-          toast({
-            title: 'Connected',
-            description: 'Real-time collaboration is active',
-            duration: 2000,
-          });
+          retryCountRef.current = 0;
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Failed to subscribe to realtime updates');
-          
-          // Implement exponential backoff for reconnection
-          if (retryCountRef.current < 5) {
-            const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000);
-            retryCountRef.current++;
-            
-            reconnectTimeoutRef.current = setTimeout(() => {
-              console.log(`🔄 Attempting to reconnect... (attempt ${retryCountRef.current})`);
-              setupSubscription();
-            }, delay);
-          } else {
-            toast({
-              title: 'Connection Issues',
-              description: 'Unable to connect for real-time updates. Changes from teammates may not appear automatically.',
-              variant: 'destructive',
-              duration: 8000,
-            });
-          }
         } else if (status === 'CLOSED') {
           console.log('📡 Realtime subscription closed');
         }
       });
 
-    return channel;
-  }, [rundownId, user, isProcessingUpdate, handleRealtimeUpdate, toast]);
-
-  useEffect(() => {
-    // Clear any existing subscription
-    if (subscriptionRef.current) {
-      console.log('🧹 Cleaning up existing realtime subscription');
-      supabase.removeChannel(subscriptionRef.current);
-      subscriptionRef.current = null;
-    }
-
-    // Clear any pending reconnection attempts
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    // Set up new subscription if we have the required data
-    if (rundownId && user && !isProcessingUpdate) {
-      subscriptionRef.current = setupSubscription();
-    }
+    subscriptionRef.current = channel;
 
     return () => {
       if (subscriptionRef.current) {
@@ -256,7 +221,7 @@ export const useRealtimeRundown = ({
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [rundownId, user, isProcessingUpdate, setupSubscription]);
+  }, [rundownId, user, isProcessingUpdate, handleRealtimeUpdate]);
 
   return {
     isConnected: !!subscriptionRef.current

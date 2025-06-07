@@ -5,7 +5,6 @@ import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { useRundownGridState } from '@/hooks/useRundownGridState';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-import { useTeammateChangeNotification } from '@/hooks/useTeammateChangeNotification';
 
 const RundownIndexContent = () => {
   const gridState = useRundownGridState();
@@ -78,12 +77,6 @@ const RundownIndexContent = () => {
     isConnected,
     isProcessingRealtimeUpdate
   } = gridState;
-
-  // Set up teammate change notifications
-  useTeammateChangeNotification({
-    rundownId,
-    enabled: !!rundownId
-  });
 
   const {
     handleRundownStartTimeChange,
@@ -194,7 +187,6 @@ const RundownIndexContent = () => {
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
       />
       
-      {/* Cuer AI Chat Button with rundown data */}
       <CuerChatButton rundownData={rundownData} />
     </RealtimeConnectionProvider>
   );
