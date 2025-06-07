@@ -1,3 +1,4 @@
+
 export interface SavedColumn {
   id: string;
   name: string;
@@ -52,4 +53,10 @@ export interface SavedRundown {
   archived?: boolean;
   undo_history?: any[];
   showcaller_state?: ShowcallerState;
+  icon?: string;
+  visibility?: string;
+  creator_profile?: {
+    full_name: string;
+    email: string;
+  } | null;
 }
