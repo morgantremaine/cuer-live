@@ -6,9 +6,11 @@ import { RundownContainerProps } from '@/types/rundownContainer';
 
 const RundownContainer = (props: RundownContainerProps) => {
   return (
-    <RundownLayoutWrapper>
-      <RundownMainPropsAdapter props={props} />
-    </RundownLayoutWrapper>
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
+      <RundownLayoutWrapper>
+        <RundownMainPropsAdapter props={props} />
+      </RundownLayoutWrapper>
+    </div>
   );
 };
 
