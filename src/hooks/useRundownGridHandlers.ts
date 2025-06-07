@@ -4,8 +4,8 @@ import { useRundownHandlers } from '@/hooks/useRundownHandlers';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (selectedRowId?: string) => void; // Updated signature to match
-  addHeader: (selectedRowId?: string) => void; // Updated signature to match
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => void; // Fix signature
+  addHeader: (selectedRowId?: string) => void; // Keep this signature
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
   deleteMultipleRows: (ids: string[]) => void;
@@ -79,10 +79,14 @@ export const useRundownGridHandlers = ({
     markAsChanged
   });
 
-  const handleAddRow = useCallback((selectedRowId?: string | null) => {
-    addRow(selectedRowId || undefined);
+  const handleAddRow = useCallback((calculateEndTimeFn?: (startTime: string, duration: string) => string, selectedRowId?: string | null) => {
+    if (calculateEndTimeFn) {
+      addRow(calculateEndTimeFn, selectedRowId || undefined);
+    } else {
+      addRow(calculateEndTime, selectedRowId || undefined);
+    }
     markAsChanged();
-  }, [addRow, markAsChanged]);
+  }, [addRow, calculateEndTime, markAsChanged]);
 
   const handleAddHeader = useCallback((selectedRowId?: string | null) => {
     addHeader(selectedRowId || undefined);

@@ -33,7 +33,7 @@ export const useRundownStateCoordination = () => {
     coreState.items,
     coreState.setItems,
     coreState.updateItem,
-    coreState.addRow, // This now has the correct signature (selectedRowId?: string) => void
+    coreState.addRow, // This now has the correct signature (calculateEndTime, selectedRowId?) => void
     coreState.addHeader, // This now has the correct signature (selectedRowId?: string) => void
     coreState.deleteRow,
     coreState.toggleFloatRow,

@@ -9,8 +9,8 @@ export const useRundownInteractionHandlers = (
   items: RundownItem[],
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   updateItem: (id: string, field: string, value: string) => void,
-  addRow: (selectedRowId?: string) => void, // Updated signature
-  addHeader: (selectedRowId?: string) => void, // Updated signature
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => void, // Fix signature
+  addHeader: (selectedRowId?: string) => void, // Keep this signature
   deleteRow: (id: string) => void,
   toggleFloatRow: (id: string) => void,
   deleteMultipleRows: (ids: string[]) => void,
