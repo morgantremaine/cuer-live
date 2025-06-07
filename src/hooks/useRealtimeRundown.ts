@@ -92,7 +92,10 @@ export const useRealtimeRundown = ({
         timezone: data.timezone,
         start_time: data.start_time,
         team_id: data.team_id,
-        team_name: data.teams?.name || 'Unknown Team',
+        teams: data.teams ? {
+          id: data.teams.id,
+          name: data.teams.name
+        } : null,
         created_at: data.created_at,
         updated_at: data.updated_at,
         archived: data.archived,
