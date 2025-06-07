@@ -26,7 +26,8 @@ export const useAutoSave = (
     markAsChanged,
     isInitialized,
     setIsLoading,
-    setApplyingRemoteUpdate
+    setApplyingRemoteUpdate,
+    updateSavedSignature
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime, isProcessingRealtimeUpdate);
 
   // Create a debounced save function that's stable across renders
@@ -153,6 +154,7 @@ export const useAutoSave = (
     hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
     isSaving,
     markAsChanged: markAsChangedCallback,
-    setApplyingRemoteUpdate
+    setApplyingRemoteUpdate,
+    updateSavedSignature
   };
 };

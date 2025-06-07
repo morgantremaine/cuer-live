@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -166,12 +167,24 @@ export const useRealtimeRundown = ({
 
       console.log('✅ Applying remote update from teammate');
       
-      // Apply the rundown update first
+      // CRITICAL: Update signature BEFORE applying the rundown data
+      if (stableUpdateSavedSignatureRef.current) {
+        console.log('🔄 Pre-updating saved signature before applying data');
+        stableUpdateSavedSignatureRef.current(
+          updatedRundown.items, 
+          updatedRundown.title, 
+          updatedRundown.columns, 
+          updatedRundown.timezone, 
+          updatedRundown.start_time
+        );
+      }
+
+      // Apply the rundown update
       stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // CRITICAL: Update the saved signature AFTER applying the rundown data
-      // This ensures it matches the current state and prevents change tracking
+      // CRITICAL: Update signature again AFTER applying the rundown data to ensure perfect sync
       if (stableUpdateSavedSignatureRef.current) {
+        console.log('🔄 Post-updating saved signature after applying data');
         stableUpdateSavedSignatureRef.current(
           updatedRundown.items, 
           updatedRundown.title, 
@@ -213,11 +226,14 @@ export const useRealtimeRundown = ({
         });
       }
     } finally {
-      // CRITICAL: Clear all processing flags LAST
-      if (stableSetApplyingRemoteUpdateRef.current) {
-        stableSetApplyingRemoteUpdateRef.current(false);
-      }
-      stableSetIsProcessingUpdateRef.current(false);
+      // CRITICAL: Add a small delay before clearing flags to ensure all effects settle
+      setTimeout(() => {
+        if (stableSetApplyingRemoteUpdateRef.current) {
+          stableSetApplyingRemoteUpdateRef.current(false);
+        }
+        stableSetIsProcessingUpdateRef.current(false);
+        console.log('✅ All remote update processing flags cleared');
+      }, 100);
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);
 

@@ -43,7 +43,7 @@ export const useChangeTracking = (
         const currentSignature = createDataSignature();
         lastSavedDataRef.current = currentSignature;
         setIsInitialized(true);
-        console.log('Change tracking initialized');
+        console.log('Change tracking initialized with signature:', currentSignature.substring(0, 100) + '...');
       }, 500);
     }
 
@@ -68,6 +68,8 @@ export const useChangeTracking = (
     
     if (lastSavedDataRef.current !== currentSignature) {
       console.log('📝 Data changed - marking as unsaved');
+      console.log('Previous signature:', lastSavedDataRef.current.substring(0, 100) + '...');
+      console.log('Current signature:', currentSignature.substring(0, 100) + '...');
       setHasUnsavedChanges(true);
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createDataSignature, isProcessingRealtimeUpdate]);
@@ -89,7 +91,7 @@ export const useChangeTracking = (
     
     lastSavedDataRef.current = savedSignature;
     setHasUnsavedChanges(false);
-    console.log('✅ Marked as saved');
+    console.log('✅ Marked as saved with signature:', savedSignature.substring(0, 100) + '...');
   }, []);
 
   const markAsChanged = useCallback(() => {
@@ -102,7 +104,7 @@ export const useChangeTracking = (
   }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
 
   // Method to update the saved data signature without triggering change detection
-  // This is used AFTER applying remote updates to sync the signature with the new state
+  // This is used SYNCHRONOUSLY during remote updates to sync the signature with the new state
   const updateSavedSignature = useCallback((
     newItems: RundownItem[], 
     newTitle: string, 
@@ -119,7 +121,8 @@ export const useChangeTracking = (
     });
     
     lastSavedDataRef.current = newSignature;
-    console.log('🔄 Updated saved signature after remote update');
+    setHasUnsavedChanges(false);
+    console.log('🔄 Updated saved signature after remote update:', newSignature.substring(0, 100) + '...');
   }, []);
 
   // Method to set the applying remote update flag

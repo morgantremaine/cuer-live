@@ -83,7 +83,8 @@ export const useRundownGridCore = () => {
     handleUpdateColumnWidth,
     hasUnsavedChanges,
     isSaving,
-    setApplyingRemoteUpdate
+    setApplyingRemoteUpdate,
+    updateSavedSignature
   } = useRundownStateIntegration(
     markAsChanged, 
     rundownTitle, 
@@ -147,7 +148,7 @@ export const useRundownGridCore = () => {
     hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
     isProcessingUpdate: isProcessingRealtimeUpdate,
     setIsProcessingUpdate: setIsProcessingRealtimeUpdate,
-    updateSavedSignature: setApplyingRemoteUpdate ? undefined : undefined, // This will be handled by the useAutoSave hook
+    updateSavedSignature,
     setApplyingRemoteUpdate
   });
 
