@@ -1,24 +1,71 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Column } from './useColumnsManager';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: string } | null>(null);
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  const [pendingNavigation, setPendingNavigation] = useState<{ itemId: string; field: string } | null>(null);
 
   // Add debug logging to track cellRefs state
   const debugCellRefs = useCallback(() => {
     console.log('Current cellRefs keys:', Object.keys(cellRefs.current));
   }, []);
 
+  // Effect to handle pending navigation after refs are updated
+  useEffect(() => {
+    if (pendingNavigation) {
+      const cellKey = `${pendingNavigation.itemId}-${pendingNavigation.field}`;
+      const targetCell = cellRefs.current[cellKey];
+      
+      if (targetCell) {
+        console.log('Successfully navigated to pending cell:', cellKey);
+        targetCell.focus();
+        setPendingNavigation(null);
+      } else {
+        // If cell is still not found, try again on next render
+        console.log('Pending navigation cell still not found:', cellKey);
+        setTimeout(() => {
+          const retryCell = cellRefs.current[cellKey];
+          if (retryCell) {
+            console.log('Successfully navigated to cell on retry:', cellKey);
+            retryCell.focus();
+            setPendingNavigation(null);
+          } else {
+            console.log('Failed to find cell on retry:', cellKey);
+            debugCellRefs();
+            setPendingNavigation(null);
+          }
+        }, 100);
+      }
+    }
+  }, [pendingNavigation, debugCellRefs]);
+
   const handleCellClick = useCallback((itemId: string, field: string) => {
     setSelectedCell({ itemId, field });
   }, []);
 
+  const navigateToCell = useCallback((targetItemId: string, targetField: string) => {
+    const cellKey = `${targetItemId}-${targetField}`;
+    console.log('Attempting to navigate to:', cellKey);
+    debugCellRefs();
+    
+    setSelectedCell({ itemId: targetItemId, field: targetField });
+    
+    // First try immediate navigation
+    const targetCell = cellRefs.current[cellKey];
+    if (targetCell) {
+      console.log('Immediate navigation successful:', cellKey);
+      targetCell.focus();
+    } else {
+      console.log('Cell not immediately available, setting pending navigation:', cellKey);
+      setPendingNavigation({ itemId: targetItemId, field: targetField });
+    }
+  }, [debugCellRefs]);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
     console.log('Navigation key pressed:', e.key, 'from', itemId, field);
-    debugCellRefs();
     
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -32,20 +79,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItemId = items[nextItemIndex].id;
-        const cellKey = `${nextItemId}-${field}`;
-        console.log('Trying to focus next cell:', cellKey);
-        setSelectedCell({ itemId: nextItemId, field });
-        
-        setTimeout(() => {
-          const targetCell = cellRefs.current[cellKey];
-          if (targetCell) {
-            targetCell.focus();
-            console.log('Focused cell:', cellKey);
-          } else {
-            console.log('Cell not found in refs:', cellKey);
-            debugCellRefs();
-          }
-        }, 0);
+        navigateToCell(nextItemId, field);
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -59,20 +93,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (prevItemIndex >= 0) {
         const prevItem = items[prevItemIndex];
-        const cellKey = `${prevItem.id}-${field}`;
-        console.log('Trying to focus previous cell:', cellKey);
-        setSelectedCell({ itemId: prevItem.id, field });
-        
-        setTimeout(() => {
-          const targetCell = cellRefs.current[cellKey];
-          if (targetCell) {
-            targetCell.focus();
-            console.log('Focused cell:', cellKey);
-          } else {
-            console.log('Cell not found in refs:', cellKey);
-            debugCellRefs();
-          }
-        }, 0);
+        navigateToCell(prevItem.id, field);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -86,23 +107,10 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItem = items[nextItemIndex];
-        const cellKey = `${nextItem.id}-${field}`;
-        console.log('Trying to focus next cell:', cellKey);
-        setSelectedCell({ itemId: nextItem.id, field });
-        
-        setTimeout(() => {
-          const targetCell = cellRefs.current[cellKey];
-          if (targetCell) {
-            targetCell.focus();
-            console.log('Focused cell:', cellKey);
-          } else {
-            console.log('Cell not found in refs:', cellKey);
-            debugCellRefs();
-          }
-        }, 0);
+        navigateToCell(nextItem.id, field);
       }
     }
-  }, [items, debugCellRefs]);
+  }, [items, navigateToCell]);
 
   return {
     selectedCell,
