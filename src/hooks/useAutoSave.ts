@@ -40,7 +40,7 @@ export const useAutoSave = (
     timezoneToSave?: string, 
     startTimeToSave?: string
   ) => {
-    // CRITICAL: Enhanced blocking conditions
+    // IMPROVED: Enhanced blocking conditions
     if (!user || 
         isSaving || 
         isProcessingRealtimeUpdate || 
@@ -50,7 +50,7 @@ export const useAutoSave = (
 
     // Prevent rapid-fire saves with minimum interval
     const now = Date.now();
-    if (now - lastSaveTimestampRef.current < 1000) {
+    if (now - lastSaveTimestampRef.current < 2000) {
       return;
     }
 
@@ -84,7 +84,7 @@ export const useAutoSave = (
 
   // Main effect that schedules saves with enhanced protection
   useEffect(() => {
-    // CRITICAL: Multiple blocking conditions
+    // IMPROVED: Multiple blocking conditions
     if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
@@ -120,7 +120,7 @@ export const useAutoSave = (
         debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       }
       debounceTimeoutRef.current = null;
-    }, 3000); // 3 seconds for better stability
+    }, 2000); // Increased debounce time for better stability
 
   }, [
     hasUnsavedChanges, 

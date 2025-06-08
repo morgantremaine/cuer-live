@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,17 +24,13 @@ export const useShowcallerRealtime = ({
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
 
   const handleShowcallerUpdate = useCallback(async (payload: any) => {
-    console.log('📺 Realtime showcaller update received:', payload);
-    
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
-      console.log('📺 Skipping update for different rundown');
       return;
     }
 
     // Check if we have showcaller_state data
     if (!payload.new?.showcaller_state) {
-      console.log('📺 No showcaller state in update');
       return;
     }
 
@@ -43,35 +38,28 @@ export const useShowcallerRealtime = ({
     
     // Prevent processing duplicate updates based on lastUpdate timestamp
     if (showcallerState.lastUpdate && showcallerState.lastUpdate === lastProcessedUpdateRef.current) {
-      console.log('📺 Skipping duplicate update based on lastUpdate');
       return;
     }
 
     // Enhanced filtering: Skip if this update originated from this user
     if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
-      console.log('📺 Skipping own tracked update');
       return;
     }
 
-    // Skip if this user is currently the controller AND they generated this update
+    // IMPROVED: More intelligent controller detection
+    // Skip if this user is currently the controller AND the update came from them
     if (showcallerState.controllerId === user?.id) {
-      console.log('📺 Skipping own controller update');
-      return;
-    }
-    
-    // Additional check: Skip updates that are very recent (within 500ms) from when we might have sent them
-    const updateTime = new Date(showcallerState.lastUpdate).getTime();
-    const now = Date.now();
-    if (now - updateTime < 500) {
-      console.log('📺 Skipping very recent update (potential own update)');
-      return;
+      // But allow non-controller updates to pass through for display synchronization
+      const updateTime = new Date(showcallerState.lastUpdate).getTime();
+      const now = Date.now();
+      if (now - updateTime < 1000) { // Within 1 second, likely from this controller
+        return;
+      }
     }
     
     lastProcessedUpdateRef.current = showcallerState.lastUpdate;
     
     try {
-      console.log('📺 Processing showcaller state update:', showcallerState);
-      
       // Apply state immediately for perfect sync
       onShowcallerStateReceivedRef.current(showcallerState);
     } catch (error) {
@@ -81,7 +69,6 @@ export const useShowcallerRealtime = ({
 
   // Function to track our own updates to prevent processing them
   const trackOwnUpdate = useCallback((lastUpdate: string) => {
-    console.log('📺 Tracking own update:', lastUpdate);
     ownUpdateTrackingRef.current.add(lastUpdate);
     
     // Clean up old tracked updates after 30 seconds
@@ -93,18 +80,14 @@ export const useShowcallerRealtime = ({
   useEffect(() => {
     // Clear any existing subscription
     if (subscriptionRef.current) {
-      console.log('📺 Cleaning up showcaller subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
     }
 
     // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
-      console.log('📺 Not setting up showcaller subscription - missing requirements');
       return;
     }
-
-    console.log('📺 Setting up showcaller realtime subscription for rundown:', rundownId);
     
     const channel = supabase
       .channel(`showcaller-${rundownId}`)
@@ -119,14 +102,15 @@ export const useShowcallerRealtime = ({
         handleShowcallerUpdate
       )
       .subscribe((status) => {
-        console.log('📺 Showcaller subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('📺 Successfully subscribed to showcaller updates');
+        }
       });
 
     subscriptionRef.current = channel;
 
     return () => {
       if (subscriptionRef.current) {
-        console.log('📺 Cleaning up showcaller subscription');
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }

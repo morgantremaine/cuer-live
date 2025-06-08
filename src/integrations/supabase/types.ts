@@ -178,6 +178,36 @@ export type Database = {
           },
         ]
       }
+      team_conversations: {
+        Row: {
+          assistant_response: string
+          created_at: string
+          id: string
+          rundown_context: Json | null
+          team_id: string
+          user_id: string
+          user_message: string
+        }
+        Insert: {
+          assistant_response: string
+          created_at?: string
+          id?: string
+          rundown_context?: Json | null
+          team_id: string
+          user_id: string
+          user_message: string
+        }
+        Update: {
+          assistant_response?: string
+          created_at?: string
+          id?: string
+          rundown_context?: Json | null
+          team_id?: string
+          user_id?: string
+          user_message?: string
+        }
+        Relationships: []
+      }
       team_invitations: {
         Row: {
           accepted: boolean | null

@@ -73,15 +73,6 @@ export const useRealtimeRundown = ({
       return;
     }
 
-    // ENHANCED: Check if this update contains showcaller state and if current user is the controller
-    if (payload.new?.showcaller_state) {
-      const showcallerState = payload.new.showcaller_state;
-      if (showcallerState.controllerId === user?.id) {
-        console.log('📺 Skipping rundown update for own showcaller control');
-        return;
-      }
-    }
-
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
       return;
@@ -98,6 +89,12 @@ export const useRealtimeRundown = ({
       return;
     }
 
+    // IMPROVED: Better handling of showcaller vs content updates
+    const isShowcallerOnlyUpdate = payload.new?.showcaller_state !== undefined && 
+      payload.old && payload.new.items === payload.old.items && 
+      payload.new.title === payload.old.title && 
+      payload.new.columns === payload.old.columns;
+
     // CRITICAL: Set all processing flags FIRST with enhanced coordination
     stableSetIsProcessingUpdateRef.current(true);
     if (stableSetApplyingRemoteUpdateRef.current) {
@@ -105,10 +102,8 @@ export const useRealtimeRundown = ({
     }
 
     try {
-      // Enhanced conflict resolution with better UX - but skip for showcaller updates
-      const isShowcallerUpdate = payload.new?.showcaller_state !== undefined;
-      
-      if (hasUnsavedChanges && !isShowcallerUpdate) {
+      // Enhanced conflict resolution - but be more permissive for content changes
+      if (hasUnsavedChanges && !isShowcallerOnlyUpdate) {
         const result = await new Promise<boolean>((resolve) => {
           const shouldAcceptRemoteChanges = window.confirm(
             `🔄 Another team member just updated this rundown.\n\n` +
@@ -168,8 +163,8 @@ export const useRealtimeRundown = ({
         undo_history: data.undo_history
       };
 
-      // CRITICAL: Enhanced signature synchronization - but skip for showcaller-only updates
-      if (stableUpdateSavedSignatureRef.current && !isShowcallerUpdate) {
+      // IMPROVED: Only update signature for content changes, not showcaller-only updates
+      if (stableUpdateSavedSignatureRef.current && !isShowcallerOnlyUpdate) {
         // Use setTimeout to ensure this happens before any change detection
         setTimeout(() => {
           stableUpdateSavedSignatureRef.current?.(
@@ -185,8 +180,8 @@ export const useRealtimeRundown = ({
       // Apply the rundown update
       stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // CRITICAL: Post-application signature sync with delay for state settling - but skip for showcaller-only updates
-      if (stableUpdateSavedSignatureRef.current && !isShowcallerUpdate) {
+      // IMPROVED: Post-application signature sync - only for content changes
+      if (stableUpdateSavedSignatureRef.current && !isShowcallerOnlyUpdate) {
         setTimeout(() => {
           stableUpdateSavedSignatureRef.current?.(
             updatedRundown.items, 
@@ -223,13 +218,13 @@ export const useRealtimeRundown = ({
         });
       }
     } finally {
-      // CRITICAL: Extended delay before clearing flags to ensure all state has settled
+      // IMPROVED: Faster recovery for better responsiveness
       setTimeout(() => {
         if (stableSetApplyingRemoteUpdateRef.current) {
           stableSetApplyingRemoteUpdateRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 1000); // Extended delay for better stability
+      }, 500); // Reduced delay for better responsiveness
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);
 
