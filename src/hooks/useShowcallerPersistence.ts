@@ -1,70 +1,67 @@
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ShowcallerState } from './useShowcallerState';
 
 interface UseShowcallerPersistenceProps {
-  rundownId: string | undefined;
-  onShowcallerStateReceived?: (state: ShowcallerState) => void;
+  rundownId: string | null;
+  trackOwnUpdate?: (timestamp: string) => void;
 }
 
-export const useShowcallerPersistence = ({
-  rundownId,
-  onShowcallerStateReceived
+export const useShowcallerPersistence = ({ 
+  rundownId, 
+  trackOwnUpdate 
 }: UseShowcallerPersistenceProps) => {
-  const lastSaveRef = useRef<string | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Save showcaller state to database with debouncing
   const saveShowcallerState = useCallback(async (state: ShowcallerState) => {
     if (!rundownId) {
-      console.log('📺 No rundownId for saving showcaller state');
-      return;
+      console.warn('📺 Cannot save showcaller state: no rundown ID');
+      return false;
     }
 
-    // Skip if this exact state was already saved
-    if (lastSaveRef.current === state.lastUpdate) {
-      console.log('📺 Skipping save - same lastUpdate');
-      return;
-    }
+    try {
+      console.log('📺 Saving showcaller state:', {
+        isPlaying: state.isPlaying,
+        currentSegment: state.currentSegmentId,
+        controller: state.controllerId,
+        rundownId
+      });
 
-    // Debounce frequent updates
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+      // ENHANCED: Always allow saves, remove restrictive blocking
+      const { error } = await supabase
+        .from('rundowns')
+        .update({ 
+          showcaller_state: state,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rundownId);
 
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        console.log('📺 Saving showcaller state:', state);
-        const { error } = await supabase
-          .from('rundowns')
-          .update({
-            showcaller_state: state,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', rundownId);
-
-        if (error) {
-          console.error('Error saving showcaller state:', error);
-        } else {
-          lastSaveRef.current = state.lastUpdate;
-          console.log('📺 Successfully saved showcaller state');
-        }
-      } catch (error) {
-        console.error('Error saving showcaller state:', error);
+      if (error) {
+        console.error('📺 Failed to save showcaller state:', error);
+        return false;
       }
-    }, 1000);
-  }, [rundownId]);
 
-  // Load showcaller state from database
+      // Track this as our own update
+      if (trackOwnUpdate && state.lastUpdate) {
+        trackOwnUpdate(state.lastUpdate);
+      }
+
+      console.log('📺 Successfully saved showcaller state');
+      return true;
+    } catch (error) {
+      console.error('📺 Error saving showcaller state:', error);
+      return false;
+    }
+  }, [rundownId, trackOwnUpdate]);
+
   const loadShowcallerState = useCallback(async (): Promise<ShowcallerState | null> => {
     if (!rundownId) {
-      console.log('📺 No rundownId for loading showcaller state');
       return null;
     }
 
     try {
       console.log('📺 Loading showcaller state for rundown:', rundownId);
+      
       const { data, error } = await supabase
         .from('rundowns')
         .select('showcaller_state')
@@ -72,19 +69,22 @@ export const useShowcallerPersistence = ({
         .single();
 
       if (error) {
-        console.error('Error loading showcaller state:', error);
+        console.error('📺 Error loading showcaller state:', error);
         return null;
       }
 
       if (data?.showcaller_state) {
-        console.log('📺 Loaded showcaller state:', data.showcaller_state);
+        console.log('📺 Loaded showcaller state:', {
+          isPlaying: data.showcaller_state.isPlaying,
+          currentSegment: data.showcaller_state.currentSegmentId,
+          controller: data.showcaller_state.controllerId
+        });
         return data.showcaller_state as ShowcallerState;
       }
 
-      console.log('📺 No showcaller state found in database');
       return null;
     } catch (error) {
-      console.error('Error loading showcaller state:', error);
+      console.error('📺 Error loading showcaller state:', error);
       return null;
     }
   }, [rundownId]);

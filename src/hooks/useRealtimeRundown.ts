@@ -101,7 +101,7 @@ export const useRealtimeRundown = ({
       return;
     }
 
-    // CRITICAL: Check if this is only a showcaller state update
+    // RELAXED: Check if this is only a showcaller state update
     const currentContentHash = createContentHash(payload.new);
     const isShowcallerOnlyUpdate = currentContentHash === lastContentHashRef.current;
 
@@ -109,19 +109,20 @@ export const useRealtimeRundown = ({
       isShowcallerOnly: isShowcallerOnlyUpdate,
       isEditing: isEditingRef.current,
       hasUnsavedChanges,
-      isProcessing: isProcessingUpdate
+      isProcessing: isProcessingUpdate,
+      fromUser: payload.new?.user_id
     });
 
-    // ENHANCED: Skip showcaller-only updates entirely to prevent interference
-    if (isShowcallerOnlyUpdate) {
-      console.log('📺 Skipping showcaller-only update to prevent conflicts');
+    // RELAXED: Allow more showcaller updates through, only skip if actively editing
+    if (isShowcallerOnlyUpdate && isEditingRef.current) {
+      console.log('📺 Skipping showcaller-only update due to active editing');
       lastUpdateTimestampRef.current = updateTimestamp;
       return;
     }
 
-    // Skip if currently editing or processing
-    if (isEditingRef.current || isProcessingUpdate) {
-      console.log('⏸️ Deferring update - editing or processing in progress');
+    // Skip if currently processing
+    if (isProcessingUpdate) {
+      console.log('⏸️ Deferring update - processing in progress');
       return;
     }
 
@@ -135,24 +136,20 @@ export const useRealtimeRundown = ({
     }
 
     try {
-      // Enhanced conflict resolution for content changes
-      if (hasUnsavedChanges) {
-        const result = await new Promise<boolean>((resolve) => {
-          const shouldAcceptRemoteChanges = window.confirm(
-            `🔄 Another team member updated this rundown.\n\n` +
-            `You have unsaved changes that will be lost if you accept their update.\n\n` +
-            `Would you like to:\n` +
-            `• "OK" - Accept their changes (your changes will be lost)\n` +
-            `• "Cancel" - Keep your changes (you'll miss their update)`
-          );
-          resolve(shouldAcceptRemoteChanges);
-        });
+      // SIMPLIFIED: Only show conflict dialog for content changes when user has unsaved changes
+      if (hasUnsavedChanges && !isShowcallerOnlyUpdate) {
+        // Use a more user-friendly approach - don't block the tab
+        const shouldAcceptRemoteChanges = confirm(
+          `Another team member updated this rundown.\n\n` +
+          `You have unsaved changes that will be lost if you accept their update.\n\n` +
+          `Accept their changes? (Your changes will be lost)`
+        );
         
-        if (!result) {
+        if (!shouldAcceptRemoteChanges) {
           toast({
             title: 'Update Skipped',
             description: 'Your changes are preserved. Save soon to avoid conflicts.',
-            duration: 5000,
+            duration: 3000,
           });
           return;
         }
@@ -227,6 +224,15 @@ export const useRealtimeRundown = ({
 
       console.log('✅ Successfully applied realtime rundown update');
 
+      // SIMPLIFIED: Don't show toast for showcaller-only updates
+      if (!isShowcallerOnlyUpdate) {
+        toast({
+          title: 'Rundown Updated',
+          description: 'Your teammate made changes to this rundown',
+          duration: 3000,
+        });
+      }
+
     } catch (error) {
       console.error('Error processing realtime update:', error);
       
@@ -243,7 +249,7 @@ export const useRealtimeRundown = ({
           stableSetApplyingRemoteUpdateRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 300);
+      }, 200);
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast, createContentHash]);
 

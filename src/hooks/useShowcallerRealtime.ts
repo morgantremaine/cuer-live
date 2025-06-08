@@ -28,7 +28,7 @@ export const useShowcallerRealtime = ({
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
   onShowcallerActivityRef.current = onShowcallerActivity;
 
-  // REDUCED FREQUENCY: Signal showcaller activity with longer timeout
+  // Signal showcaller activity
   const signalActivity = useCallback(() => {
     if (onShowcallerActivityRef.current) {
       onShowcallerActivityRef.current(true);
@@ -38,12 +38,12 @@ export const useShowcallerRealtime = ({
         clearTimeout(activityTimeoutRef.current);
       }
       
-      // LONGER TIMEOUT: Set timeout to clear activity after 10 seconds instead of 5
+      // Set timeout to clear activity after 8 seconds
       activityTimeoutRef.current = setTimeout(() => {
         if (onShowcallerActivityRef.current) {
           onShowcallerActivityRef.current(false);
         }
-      }, 10000);
+      }, 8000);
     }
   }, []);
 
@@ -65,13 +65,12 @@ export const useShowcallerRealtime = ({
       return;
     }
 
-    // SIMPLIFIED: Skip if this update originated from this user (less restrictive)
+    // SIMPLIFIED: Skip if this update originated from this user with shorter tracking
     if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
       console.log('📺 Skipping own update:', showcallerState.lastUpdate);
       return;
     }
 
-    // LESS RESTRICTIVE: Allow controller handoff - don't skip recent updates from same user
     lastProcessedUpdateRef.current = showcallerState.lastUpdate;
     
     console.log('📺 Processing showcaller state update:', {
@@ -81,7 +80,7 @@ export const useShowcallerRealtime = ({
       fromUser: showcallerState.controllerId
     });
 
-    // Signal showcaller activity with reduced frequency
+    // Signal showcaller activity
     signalActivity();
     
     try {
@@ -92,17 +91,17 @@ export const useShowcallerRealtime = ({
     }
   }, [rundownId, signalActivity]);
 
-  // SIMPLIFIED: Function to track our own updates with shorter tracking time
+  // Function to track our own updates with shorter tracking time
   const trackOwnUpdate = useCallback((lastUpdate: string) => {
     ownUpdateTrackingRef.current.add(lastUpdate);
     
     // Signal our own activity
     signalActivity();
     
-    // SHORTER CLEANUP: Clean up old tracked updates after 15 seconds instead of 30
+    // SHORTER CLEANUP: Clean up old tracked updates after 10 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(lastUpdate);
-    }, 15000);
+    }, 10000);
   }, [signalActivity]);
 
   useEffect(() => {
