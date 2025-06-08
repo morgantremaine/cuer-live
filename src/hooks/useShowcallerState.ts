@@ -31,6 +31,7 @@ export const useShowcallerState = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stateChangeCallbackRef = useRef(onShowcallerStateChange);
+  const isApplyingExternalStateRef = useRef(false);
   stateChangeCallbackRef.current = onShowcallerStateChange;
 
   // Helper function to convert time string to seconds
@@ -79,8 +80,8 @@ export const useShowcallerState = ({
     
     setShowcallerState(updatedState);
     
-    // Only notify parent (which triggers sync) for significant changes
-    if (shouldSync && stateChangeCallbackRef.current) {
+    // Only notify parent (which triggers sync) for significant changes and when not applying external state
+    if (shouldSync && !isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
       stateChangeCallbackRef.current(updatedState);
     }
   }, [showcallerState]);
@@ -94,7 +95,6 @@ export const useShowcallerState = ({
     });
   }, [items, updateItem]);
 
-  // Set current segment and update status
   const setCurrentSegment = useCallback((segmentId: string) => {
     clearCurrentStatus();
     const segment = items.find(item => item.id === segmentId);
@@ -136,8 +136,8 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              // Sync significant change (segment advancement)
-              if (stateChangeCallbackRef.current) {
+              // Sync significant change (segment advancement) only if not applying external state
+              if (!isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
               
@@ -153,7 +153,7 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              if (stateChangeCallbackRef.current) {
+              if (!isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
               
@@ -170,9 +170,9 @@ export const useShowcallerState = ({
           lastUpdate: new Date().toISOString()
         };
         
-        // Only sync every 10 seconds for timer updates to reduce database load
+        // Only sync every 10 seconds for timer updates to reduce database load and not when applying external state
         const shouldSyncTimerUpdate = prevState.timeRemaining % 10 === 0;
-        if (shouldSyncTimerUpdate && stateChangeCallbackRef.current) {
+        if (shouldSyncTimerUpdate && !isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
           stateChangeCallbackRef.current(newState);
         }
         
@@ -252,6 +252,9 @@ export const useShowcallerState = ({
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
     console.log('📺 Applying external showcaller state:', externalState);
     
+    // CRITICAL: Mark that we're applying external state to prevent saving
+    isApplyingExternalStateRef.current = true;
+    
     // CRITICAL: Stop current timer first to prevent conflicts
     stopTimer();
     
@@ -298,6 +301,11 @@ export const useShowcallerState = ({
       // If external state is playing, start our timer immediately
       startTimer();
     }
+    
+    // Reset the flag after applying external state
+    setTimeout(() => {
+      isApplyingExternalStateRef.current = false;
+    }, 100);
   }, [stopTimer, clearCurrentStatus, items, updateItem, startTimer, timeToSeconds]);
 
   // Initialize current segment on mount if none exists - only once
@@ -312,9 +320,8 @@ export const useShowcallerState = ({
         }, false); // Don't sync initial setup
       }
     }
-  }, [items.length]); // Only depend on items.length, not the whole items array
+  }, [items.length]);
 
-  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
