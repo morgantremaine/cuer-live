@@ -76,18 +76,18 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             
             return (
               <React.Fragment key={item.id}>
-                {/* Red line above current row */}
+                {/* Green line above current row */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-2 bg-red-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
                       </div>
                     </td>
                   </tr>
                 )}
                 
-                {/* Small spacing below red line */}
+                {/* Small spacing below green line */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
@@ -108,7 +108,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                     <div className="flex items-center">
                       {isShowcallerCurrent && (
                         <span 
-                          className="text-blue-500 mr-2 text-lg font-bold print:hidden"
+                          className="text-blue-500 mr-2 text-xl font-bold print:hidden"
                           style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
                         >
                           ▶
