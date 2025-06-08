@@ -23,7 +23,7 @@ const HeaderLogo = () => {
         <ArrowLeft className="h-5 w-5" />
       </Button>
       <img 
-        src="/lovable-uploads/80c14012-cb23-44c2-9c69-a3a3fd94d6fa.png" 
+        src="/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" 
         alt="Cuer Logo" 
         className="h-8 w-auto"
       />

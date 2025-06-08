@@ -48,7 +48,7 @@ const SharedRundownHeader = ({
       <div className="hidden sm:flex sm:justify-between sm:items-start mb-2">
         <div className="flex items-center space-x-3">
           <img 
-            src="/lovable-uploads/da2200e5-3194-4f43-8ec0-9266a479bbf0.png" 
+            src="/lovable-uploads/8057a074-8425-4624-8742-5685190f9716.png" 
             alt="Cuer Logo" 
             className="h-8 w-auto flex-shrink-0"
           />
