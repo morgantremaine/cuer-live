@@ -33,7 +33,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <RealtimeConnectionProvider>
+        <RealtimeConnectionProvider isConnected={false} isProcessingUpdate={false}>
           <Router>
             <Routes>
               <Route path="/" element={<Index />} />
