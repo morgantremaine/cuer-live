@@ -104,7 +104,7 @@ const RundownTable = ({
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                        <div className="h-2 bg-red-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
                       </div>
                     </td>
                   </tr>
@@ -161,7 +161,7 @@ const RundownTable = ({
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-1 bg-yellow-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                        <div className="h-1 bg-gray-400 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
                       </div>
                     </td>
                   </tr>

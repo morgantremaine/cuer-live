@@ -176,7 +176,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-1 bg-gray-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                        <div className="h-1 bg-gray-400 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
                       </div>
                     </td>
                   </tr>
