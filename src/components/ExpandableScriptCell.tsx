@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import HighlightedText from './HighlightedText';
@@ -106,6 +107,9 @@ const ExpandableScriptCell = ({
     onKeyDown(e, itemId, cellRefKey);
   };
 
+  // Create the proper cell ref key
+  const cellKey = `${itemId}-${cellRefKey}`;
+
   return (
     <div className="flex items-start space-x-2 w-full">
       <button
@@ -123,8 +127,9 @@ const ExpandableScriptCell = ({
         <textarea
           ref={(el) => {
             if (el) {
-              cellRefs.current[`${itemId}-${cellRefKey}`] = el;
+              cellRefs.current[cellKey] = el;
               textareaRef.current = el;
+              console.log('Storing expandable cell ref:', cellKey);
             }
           }}
           value={value}

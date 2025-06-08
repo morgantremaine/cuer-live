@@ -71,10 +71,18 @@ const TextAreaCell = ({
     // Allow other keys to work normally (Left/Right arrows, typing, etc.)
   };
 
+  // Create the proper cell ref key
+  const cellKey = `${itemId}-${cellRefKey}`;
+
   return (
     <div className="relative flex items-center min-h-[28px]">
       <textarea
-        ref={el => el && (cellRefs.current[`${itemId}-${cellRefKey}`] = el)}
+        ref={el => {
+          if (el) {
+            cellRefs.current[cellKey] = el;
+            console.log('Storing cell ref:', cellKey);
+          }
+        }}
         value={value}
         onChange={(e) => onUpdateValue(e.target.value)}
         onKeyDown={handleKeyDown}
