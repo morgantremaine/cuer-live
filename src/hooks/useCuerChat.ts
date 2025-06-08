@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -30,16 +31,12 @@ export const useCuerChat = () => {
       setIsConnected(connected);
       return connected;
     } catch (error) {
-      console.error('Connection check failed:', error);
       setIsConnected(false);
       return false;
     }
   }, []);
 
   const sendMessage = useCallback(async (content: string, rundownData?: any) => {
-    console.log('🚀 useCuerChat - Sending message:', content);
-    console.log('🚀 useCuerChat - With rundown data:', rundownData);
-    
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -71,8 +68,10 @@ export const useCuerChat = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
 
+      // Store this conversation in the team's knowledge base
+      await storeTeamConversation(userMessage, assistantMessage, rundownData);
+
     } catch (error) {
-      console.error('❌ useCuerChat - Error sending message:', error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -85,8 +84,40 @@ export const useCuerChat = () => {
     }
   }, []);
 
+  const storeTeamConversation = useCallback(async (userMessage: ChatMessage, assistantMessage: ChatMessage, rundownData?: any) => {
+    try {
+      // Get current user's team
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: teamMemberships } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (!teamMemberships || teamMemberships.length === 0) return;
+
+      const teamId = teamMemberships[0].team_id;
+
+      // Store the conversation
+      await supabase
+        .from('team_conversations')
+        .insert({
+          team_id: teamId,
+          user_id: user.id,
+          user_message: userMessage.content,
+          assistant_response: assistantMessage.content,
+          rundown_context: rundownData ? JSON.stringify(rundownData) : null,
+          created_at: new Date().toISOString()
+        });
+    } catch (error) {
+      // Silently fail - don't disrupt the chat experience
+      console.error('Failed to store team conversation:', error);
+    }
+  }, []);
+
   const analyzeRundown = useCallback(async (rundownData: any) => {
-    console.log('🔍 useCuerChat - Analyzing rundown:', rundownData);
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('chat', {
@@ -110,7 +141,6 @@ export const useCuerChat = () => {
       setMessages(prev => [...prev, analysisMessage]);
 
     } catch (error) {
-      console.error('❌ useCuerChat - Error analyzing rundown:', error);
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -128,12 +158,11 @@ export const useCuerChat = () => {
   }, []);
 
   const setApiKey = useCallback((apiKey: string) => {
-    console.log('API key should be set in Supabase secrets, not client-side');
     checkConnection();
   }, [checkConnection]);
 
   const clearApiKey = useCallback(() => {
-    console.log('API key should be managed in Supabase secrets');
+    // API key should be managed in Supabase secrets
   }, []);
 
   const hasApiKey = useCallback(() => {

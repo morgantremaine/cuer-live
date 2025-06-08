@@ -40,17 +40,13 @@ export const useCellNavigation = (items: RundownItem[]) => {
       }
       
       if (targetElement && typeof targetElement.focus === 'function') {
-        console.log('✅ Navigation successful to:', targetCellKey);
         targetElement.focus();
-      } else {
-        console.log('❌ Cell not found for navigation:', targetCellKey);
       }
-    }, 100); // Longer delay to ensure DOM is stable
+    }, 100);
   }, []);
 
   const handleCellNavigation = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
     const key = e.key;
-    console.log('🔽 Navigation key pressed:', key, 'from', itemId, field);
     
     if (key === 'Enter' || key === 'ArrowDown') {
       e.preventDefault();

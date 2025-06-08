@@ -4,6 +4,7 @@ import { OpenAIMessage } from './types.ts'
 import { getSystemPrompt } from './systemPrompt.ts'
 import { callOpenAI } from './openaiClient.ts'
 import { cleanMessage } from './modificationParser.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,10 +35,57 @@ serve(async (req) => {
       )
     }
 
+    // Get team conversations for context
+    const authHeader = req.headers.get('Authorization')
+    let teamContext = ''
+    
+    if (authHeader) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        // Get user from auth header
+        const jwt = authHeader.replace('Bearer ', '')
+        const { data: { user } } = await supabase.auth.getUser(jwt)
+        
+        if (user) {
+          // Get user's team
+          const { data: teamMemberships } = await supabase
+            .from('team_members')
+            .select('team_id')
+            .eq('user_id', user.id)
+            .limit(1)
+
+          if (teamMemberships && teamMemberships.length > 0) {
+            const teamId = teamMemberships[0].team_id
+            
+            // Get recent team conversations for context
+            const { data: conversations } = await supabase
+              .from('team_conversations')
+              .select('user_message, assistant_response, created_at')
+              .eq('team_id', teamId)
+              .order('created_at', { ascending: false })
+              .limit(10)
+
+            if (conversations && conversations.length > 0) {
+              teamContext = '\n\nTeam Knowledge Context (recent conversations):\n' + 
+                conversations.map(conv => 
+                  `Q: ${conv.user_message}\nA: ${conv.assistant_response}\n---`
+                ).join('\n')
+            }
+          }
+        }
+      } catch (error) {
+        // Silently continue without team context if there's an error
+        console.error('Error fetching team context:', error)
+      }
+    }
+
     const messages: OpenAIMessage[] = [
       {
         role: 'system',
-        content: getSystemPrompt(rundownData),
+        content: getSystemPrompt(rundownData) + teamContext,
       },
       {
         role: 'user',
