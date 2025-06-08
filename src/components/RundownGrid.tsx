@@ -70,7 +70,7 @@ const RundownGrid = () => {
       isDraggingMultiple={isDraggingMultiple}
       dropTargetIndex={dropTargetIndex}
       currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData}
+      hasClipboardData={hasClipboardData()}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}
       getRowNumber={getRowNumber}
