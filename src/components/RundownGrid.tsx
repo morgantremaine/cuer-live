@@ -2,7 +2,6 @@
 import React, { useRef } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
-import { useCellNavigation } from '@/hooks/useCellNavigation';
 
 const RundownGrid = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -41,16 +40,15 @@ const RundownGrid = () => {
     hasClipboardData
   } = interactions;
 
-  // Initialize cell navigation with the correct parameters
-  const { handleCellClick, handleKeyDown } = useCellNavigation(visibleColumns, items);
-
   const { 
     showColorPicker, 
     handleToggleColorPicker, 
     getRowStatus, 
     selectColor,
     getColumnWidth,
-    updateColumnWidth
+    updateColumnWidth,
+    handleCellClick,
+    handleKeyDown
   } = uiState;
 
   // Create a wrapper function that matches the expected signature

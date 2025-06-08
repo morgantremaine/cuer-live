@@ -4,6 +4,7 @@ import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
 import { useResizableColumns } from './useResizableColumns';
+import { useCellNavigation } from './useCellNavigation';
 
 export const useRundownStateCoordination = () => {
   const coreState = useRundownGridCore();
@@ -27,6 +28,9 @@ export const useRundownStateCoordination = () => {
     coreState.columns, 
     coreState.handleUpdateColumnWidth
   );
+
+  // Get cell navigation handlers
+  const { handleCellClick, handleKeyDown } = useCellNavigation(coreState.visibleColumns, coreState.items);
 
   // Get interaction handlers
   const interactions = useRundownGridInteractions(
@@ -57,13 +61,15 @@ export const useRundownStateCoordination = () => {
     coreState.markAsChanged
   );
 
-  // Override the UI state's selectColor with our stable version
+  // Override the UI state's selectColor with our stable version and add navigation
   const stableUIState = useMemo(() => ({
     ...uiState,
     selectColor: handleColorSelection,
     getColumnWidth,
-    updateColumnWidth
-  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth]);
+    updateColumnWidth,
+    handleCellClick,
+    handleKeyDown
+  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth, handleCellClick, handleKeyDown]);
 
   return {
     coreState,
