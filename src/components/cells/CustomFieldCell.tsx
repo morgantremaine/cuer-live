@@ -52,7 +52,6 @@ const CustomFieldCell = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // For Enter key and arrow keys, navigate to next/previous cell
     if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      e.preventDefault();
       onKeyDown(e, itemId, cellRefKey);
       return;
     }
@@ -68,10 +67,8 @@ const CustomFieldCell = ({
       <textarea
         ref={el => {
           if (el) {
-            console.log('Storing CustomField cell ref:', cellKey);
             cellRefs.current[cellKey] = el;
           } else {
-            console.log('Removing CustomField cell ref:', cellKey);
             delete cellRefs.current[cellKey];
           }
         }}
@@ -79,6 +76,8 @@ const CustomFieldCell = ({
         onChange={(e) => onUpdateValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onClick={onCellClick}
+        data-cell-id={cellKey}
+        data-cell-ref={cellKey}
         className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight`}
         style={{ 
           color: textColor || undefined,

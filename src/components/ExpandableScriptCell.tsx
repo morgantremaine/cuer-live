@@ -88,7 +88,6 @@ const ExpandableScriptCell = ({
       // If we're at the first line and pressing Up, or last line and pressing Down, allow navigation
       if ((e.key === 'ArrowUp' && currentLine === 0) || 
           (e.key === 'ArrowDown' && currentLine === lines.length - 1)) {
-        e.preventDefault();
         onKeyDown(e, itemId, cellRefKey);
         return;
       }
@@ -131,9 +130,7 @@ const ExpandableScriptCell = ({
             if (el) {
               cellRefs.current[cellKey] = el;
               textareaRef.current = el;
-              console.log('Storing expandable cell ref:', cellKey);
             } else {
-              console.log('Removing expandable cell ref:', cellKey);
               delete cellRefs.current[cellKey];
             }
           }}
@@ -154,6 +151,8 @@ const ExpandableScriptCell = ({
             }
           }}
           onKeyDown={handleKeyDown}
+          data-cell-id={cellKey}
+          data-cell-ref={cellKey}
           className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
           style={{ 
             color: textColor || undefined,
