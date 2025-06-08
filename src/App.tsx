@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/hooks/useAuth';
 import Index from '@/pages/Index';
 import SharedRundown from '@/pages/SharedRundown';
 import Blueprint from '@/pages/Blueprint';
@@ -17,21 +18,23 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <Router>
-      <QueryClientProvider client={queryClient}>
-        <div className="min-h-screen bg-background font-sans antialiased">
-          <Toaster />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/rundown/:id" element={<Index />} />
-            <Route path="/shared/rundown/:id" element={<SharedRundown />} />
-            <Route path="/blueprint/:id" element={<Blueprint />} />
-            <Route path="/teleprompter/:id" element={<Teleprompter />} />
-            <Route path="/external-review/:id" element={<ExternalReview />} />
-          </Routes>
-        </div>
-      </QueryClientProvider>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <QueryClientProvider client={queryClient}>
+          <div className="min-h-screen bg-background font-sans antialiased">
+            <Toaster />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/rundown/:id" element={<Index />} />
+              <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+              <Route path="/blueprint/:id" element={<Blueprint />} />
+              <Route path="/teleprompter/:id" element={<Teleprompter />} />
+              <Route path="/external-review/:id" element={<ExternalReview />} />
+            </Routes>
+          </div>
+        </QueryClientProvider>
+      </Router>
+    </AuthProvider>
   );
 }
 
