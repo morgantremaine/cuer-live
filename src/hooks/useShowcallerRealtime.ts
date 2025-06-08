@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,12 +26,6 @@ export const useShowcallerRealtime = ({
   const handleShowcallerUpdate = useCallback(async (payload: any) => {
     console.log('📺 Realtime showcaller update received:', payload);
     
-    // Skip if this is our own update
-    if (payload.new?.user_id === user?.id) {
-      console.log('📺 Skipping own update');
-      return;
-    }
-
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
       console.log('📺 Skipping update for different rundown');
@@ -43,16 +38,23 @@ export const useShowcallerRealtime = ({
       return;
     }
 
-    // Prevent processing duplicate updates
-    const updateTimestamp = payload.new?.updated_at;
-    if (updateTimestamp && updateTimestamp === lastProcessedUpdateRef.current) {
-      console.log('📺 Skipping duplicate update');
+    // Prevent processing duplicate updates based on lastUpdate timestamp
+    const showcallerState = payload.new.showcaller_state as ShowcallerState;
+    if (showcallerState.lastUpdate && showcallerState.lastUpdate === lastProcessedUpdateRef.current) {
+      console.log('📺 Skipping duplicate update based on lastUpdate');
       return;
     }
-    lastProcessedUpdateRef.current = updateTimestamp;
+
+    // Skip if this update is from the same controller as current user
+    // BUT only if this user is currently the controller
+    if (showcallerState.controllerId === user?.id) {
+      console.log('📺 Skipping own controller update');
+      return;
+    }
+    
+    lastProcessedUpdateRef.current = showcallerState.lastUpdate;
     
     try {
-      const showcallerState = payload.new.showcaller_state as ShowcallerState;
       console.log('📺 Processing showcaller state update:', showcallerState);
       
       // Apply state immediately for perfect sync
@@ -65,7 +67,7 @@ export const useShowcallerRealtime = ({
   useEffect(() => {
     // Clear any existing subscription
     if (subscriptionRef.current) {
-      console.log('📺 Removing existing showcaller subscription');
+      console.log('📺 Cleaning up showcaller subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
     }
