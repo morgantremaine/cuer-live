@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import HighlightedText from './HighlightedText';
@@ -67,14 +68,20 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Handle key down events - simplified approach
+  // Handle key down events, but allow Enter for line breaks
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Let the parent navigation handler decide what to do
+    // Allow Enter key to create new lines
+    if (e.key === 'Enter') {
+      // Don't prevent default - let the textarea handle it naturally
+      return;
+    }
+    
+    // For other keys, use the provided handler
     onKeyDown(e, itemId, cellRefKey);
   };
 
   return (
-    <div className="flex items-start space-x-2 w-full" data-expandable-cell>
+    <div className="flex items-start space-x-2 w-full">
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"

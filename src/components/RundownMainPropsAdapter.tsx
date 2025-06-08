@@ -60,6 +60,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     getRowStatus,
     calculateHeaderDuration,
     onUpdateItem,
+    onCellClick,
+    onKeyDown,
     onToggleColorPicker,
     onColorSelect,
     onDeleteRow,
@@ -122,51 +124,9 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <RundownMainContent
-          currentTime={currentTime}
-          items={items}
-          visibleColumns={visibleColumns}
-          columns={columns}
-          showColorPicker={showColorPicker}
-          cellRefs={cellRefs}
-          selectedRows={props.selectedRows}
-          draggedItemIndex={draggedItemIndex}
-          isDraggingMultiple={isDraggingMultiple}
-          dropTargetIndex={dropTargetIndex}
-          currentSegmentId={currentSegmentId}
-          hasClipboardData={hasClipboardData}
-          getColumnWidth={getColumnWidth}
-          updateColumnWidth={updateColumnWidth}
-          getRowNumber={getRowNumber}
-          getRowStatus={getRowStatus}
-          calculateHeaderDuration={calculateHeaderDuration}
-          onUpdateItem={onUpdateItem}
-          onToggleColorPicker={onToggleColorPicker}
-          onColorSelect={onColorSelect}
-          onDeleteRow={onDeleteRow}
-          onToggleFloat={onToggleFloat}
-          onRowSelect={onRowSelect}
-          onDragStart={onDragStart}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          onCopySelectedRows={onCopySelectedRows}
-          onDeleteSelectedRows={onDeleteSelectedRows}
-          onPasteRows={onPasteRows}
-          onClearSelection={onClearSelection}
-          showColumnManager={showColumnManager}
-          setShowColumnManager={setShowColumnManager}
-          handleAddColumn={handleAddColumn}
-          handleReorderColumns={handleReorderColumns}
-          handleDeleteColumnWithCleanup={handleDeleteColumnWithCleanup}
-          handleRenameColumn={handleRenameColumn}
-          handleToggleColumnVisibility={handleToggleColumnVisibility}
-          handleLoadLayout={handleLoadLayout}
-          timeRemaining={timeRemaining}
-          isPlaying={isPlaying}
+          {...props}
           currentSegmentName={currentSegmentId ? items.find(item => item.id === currentSegmentId)?.name || '' : ''}
           totalDuration={totalRuntime}
-          onAddRow={onAddRow}
-          onAddHeader={onAddHeader}
         />
       </div>
     </div>

@@ -19,6 +19,8 @@ interface HeaderRowProps {
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
+  onCellClick: (itemId: string, field: string) => void;
+  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onDeleteRow: (id: string) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -118,6 +120,8 @@ const HeaderRow = (props: HeaderRowProps) => {
           rowNumber={rowNumber}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
+          onCellClick={props.onCellClick}
+          onKeyDown={props.onKeyDown}
           getColumnWidth={props.getColumnWidth}
         />
       </tr>

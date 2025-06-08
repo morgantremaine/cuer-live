@@ -84,8 +84,6 @@ export const usePlaybackControls = (
     }
   }, [rundownId, loadInitialState]);
 
-  // Removed all keyboard controls to prevent interference with cell navigation
-
   return {
     isPlaying,
     currentSegmentId,

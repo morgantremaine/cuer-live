@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -80,6 +81,8 @@ const RundownIndexContent = () => {
 
   const { 
     showColorPicker, 
+    handleCellClick, 
+    handleKeyDown, 
     handleToggleColorPicker, 
     selectColor, 
     getRowStatus,
@@ -149,6 +152,8 @@ const RundownIndexContent = () => {
         getRowStatus={(item) => getRowStatus(item)}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={updateItem}
+        onCellClick={handleCellClick}
+        onKeyDown={handleKeyDown}
         onToggleColorPicker={handleToggleColorPicker}
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}

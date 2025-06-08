@@ -32,20 +32,20 @@ const TextAreaCell = ({
   onCellClick,
   onKeyDown
 }: TextAreaCellProps) => {
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    onKeyDown(e, itemId, cellRefKey);
+  // Helper function to determine if content needs two lines
+  const needsTwoLines = (text: string) => {
+    return text.length > 40 || text.includes('\n');
   };
+
+  const shouldExpandRow = needsTwoLines(value);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
-    // Check if textColor is set (indicating a colored row)
     const hasCustomColor = textColor && textColor !== '';
     
     if (hasCustomColor) {
-      // For colored rows, force white text on focus in dark mode and black in light mode
       return 'focus:bg-white dark:focus:bg-gray-800 focus:!text-gray-900 dark:focus:!text-white';
     } else {
-      // For normal rows, use standard focus styles
       return 'focus:bg-white dark:focus:bg-gray-700';
     }
   };
@@ -53,26 +53,33 @@ const TextAreaCell = ({
   const focusStyles = getFocusStyles();
 
   return (
-    <div className="relative w-full">
+    <div className="relative flex items-center min-h-[28px]">
       <textarea
-        ref={el => {
-          if (el) {
-            cellRefs.current[`${itemId}-${cellRefKey}`] = el;
-          }
-        }}
+        ref={el => el && (cellRefs.current[`${itemId}-${cellRefKey}`] = el)}
         value={value}
         onChange={(e) => onUpdateValue(e.target.value)}
+        onKeyDown={(e) => onKeyDown(e, itemId, cellRefKey)}
         onClick={onCellClick}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        className={`w-full h-6 border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none overflow-hidden whitespace-nowrap`}
+        className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight ${
+          isDuration ? 'font-mono text-center' : ''
+        }`}
         style={{ 
           color: textColor || undefined,
-          textOverflow: 'ellipsis'
+          minHeight: '20px',
+          height: shouldExpandRow ? '40px' : '20px',
+          lineHeight: '1.2'
+        }}
+        rows={shouldExpandRow ? 2 : 1}
+        placeholder={placeholder}
+        onInput={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          target.style.height = 'auto';
+          const scrollHeight = target.scrollHeight;
+          target.style.height = Math.min(scrollHeight, 40) + 'px';
         }}
       />
       {highlight && (
-        <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
+        <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm flex items-center" style={{ color: 'transparent' }}>
           <HighlightedText text={value} highlight={highlight} />
         </div>
       )}
