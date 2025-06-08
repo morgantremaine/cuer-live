@@ -45,7 +45,6 @@ const HeaderRowContent = ({
               ref={el => {
                 if (el) {
                   cellRefs.current[`${item.id}-segmentName`] = el;
-                  console.log('Header cell ref registered:', `${item.id}-segmentName`);
                 }
               }}
               type="text"
