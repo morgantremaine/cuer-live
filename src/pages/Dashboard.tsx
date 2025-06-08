@@ -1,9 +1,10 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import CreateNewButton from '@/components/CreateNewButton';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -14,6 +15,13 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { savedRundowns, loading, deleteRundown, updateRundown } = useRundownStorage();
   const { toast } = useToast();
+  
+  // State for delete confirmation dialog
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    rundownId: '',
+    title: ''
+  });
   
   // Handle any pending team invitations after login
   useInvitationHandler();
@@ -33,10 +41,27 @@ const Dashboard = () => {
 
   const handleDeleteRundown = async (rundownId: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    setDeleteDialog({
+      open: true,
+      rundownId,
+      title
+    });
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      await deleteRundown(rundownId);
+      await deleteRundown(deleteDialog.rundownId);
+      toast({
+        title: 'Rundown deleted',
+        description: `"${deleteDialog.title}" has been permanently deleted.`,
+      });
     } catch (error) {
       console.error('Error deleting rundown:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete rundown. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -115,6 +140,14 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        rundownTitle={deleteDialog.title}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };
