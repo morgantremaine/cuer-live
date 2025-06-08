@@ -14,7 +14,6 @@ export const useShowcallerPersistence = ({
 }: UseShowcallerPersistenceProps) => {
   const lastSaveRef = useRef<string | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const loadingRef = useRef<boolean>(false);
 
   // Save showcaller state to database with debouncing
   const saveShowcallerState = useCallback(async (state: ShowcallerState) => {
@@ -53,13 +52,11 @@ export const useShowcallerPersistence = ({
     }, 1000);
   }, [rundownId]);
 
-  // Load showcaller state from database without caching to prevent infinite loops
+  // Load showcaller state from database
   const loadShowcallerState = useCallback(async (): Promise<ShowcallerState | null> => {
-    if (!rundownId || loadingRef.current) {
+    if (!rundownId) {
       return null;
     }
-
-    loadingRef.current = true;
 
     try {
       const { data, error } = await supabase
@@ -81,8 +78,6 @@ export const useShowcallerPersistence = ({
     } catch (error) {
       console.error('Error loading showcaller state:', error);
       return null;
-    } finally {
-      loadingRef.current = false;
     }
   }, [rundownId]);
 

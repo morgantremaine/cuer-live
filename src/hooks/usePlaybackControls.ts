@@ -28,7 +28,7 @@ export const usePlaybackControls = (
   } = useShowcallerState({
     items,
     updateItem,
-    userId: user?.id, // Pass user ID for control logic
+    userId: user?.id,
     onShowcallerStateChange: (state) => {
       // Only save if this user is the controller
       if (isController) {
