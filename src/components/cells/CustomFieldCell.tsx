@@ -48,13 +48,32 @@ const CustomFieldCell = ({
 
   const focusStyles = getFocusStyles();
 
+  // Handle key navigation - allow Enter to navigate to next cell, arrows for navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // For Enter key, navigate to next cell
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onKeyDown(e, itemId, cellRefKey);
+      return;
+    }
+    
+    // For Up/Down arrows, navigate to cells above/below
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      onKeyDown(e, itemId, cellRefKey);
+      return;
+    }
+    
+    // Allow other keys to work normally (Left/Right arrows, typing, etc.)
+  };
+
   return (
     <div className="relative flex items-center min-h-[28px]">
       <textarea
         ref={el => el && (cellRefs.current[`${itemId}-${cellRefKey}`] = el)}
         value={value}
         onChange={(e) => onUpdateValue(e.target.value)}
-        onKeyDown={(e) => onKeyDown(e, itemId, cellRefKey)}
+        onKeyDown={handleKeyDown}
         onClick={onCellClick}
         className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight`}
         style={{ 
