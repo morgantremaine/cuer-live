@@ -76,18 +76,18 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             
             return (
               <React.Fragment key={item.id}>
-                {/* Green line above current row */}
+                {/* Red line above current row */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                        <div className="h-2 bg-red-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
                       </div>
                     </td>
                   </tr>
                 )}
                 
-                {/* Small spacing below green line */}
+                {/* Small spacing below red line */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
@@ -162,7 +162,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   })}
                 </tr>
 
-                {/* Small spacing above yellow line */}
+                {/* Small spacing above grey line */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
@@ -171,12 +171,12 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   </tr>
                 )}
 
-                {/* Yellow line below current row */}
+                {/* Grey line below current row */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
-                        <div className="h-1 bg-yellow-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                        <div className="h-1 bg-gray-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
                       </div>
                     </td>
                   </tr>
