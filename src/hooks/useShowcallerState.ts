@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -125,29 +124,18 @@ export const useShowcallerState = ({
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
 
-  // Timer logic - only run if we're the controller
+  // Enhanced timer logic - runs for both controller and non-controller
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
 
-    // Only start timer if we're the controller
-    if (!isController()) {
-      console.log('📺 Not controller, not starting timer');
-      return;
-    }
-
-    console.log('📺 Starting timer');
+    console.log('📺 Starting timer', isController() ? '(controller)' : '(display only)');
     timerRef.current = setInterval(() => {
       setShowcallerState(prevState => {
-        // Double-check we're still the controller
-        if (prevState.controllerId !== userId) {
-          return prevState;
-        }
-
         if (prevState.timeRemaining <= 1) {
-          // Time's up, advance to next segment
-          if (prevState.currentSegmentId) {
+          // Only controller handles segment advancement
+          if (isController() && prevState.currentSegmentId) {
             updateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
@@ -187,8 +175,14 @@ export const useShowcallerState = ({
               
               return newState;
             }
+          } else {
+            // Non-controller just stops at 0
+            return {
+              ...prevState,
+              timeRemaining: 0,
+              isPlaying: false
+            };
           }
-          return prevState;
         }
         
         // Regular timer tick
@@ -198,9 +192,8 @@ export const useShowcallerState = ({
           lastUpdate: new Date().toISOString()
         };
         
-        // Only sync every 10 seconds to reduce database load
-        const shouldSync = prevState.timeRemaining % 10 === 0;
-        if (shouldSync && stateChangeCallbackRef.current) {
+        // Only controller syncs state changes, and only every 10 seconds
+        if (isController() && prevState.timeRemaining % 10 === 0 && stateChangeCallbackRef.current) {
           stateChangeCallbackRef.current(newState);
         }
         
@@ -330,12 +323,12 @@ export const useShowcallerState = ({
     // Set the synchronized state
     setShowcallerState(synchronizedState);
     
-    // Only restart timer if we're the controller
-    if (synchronizedState.isPlaying && synchronizedState.controllerId === userId) {
-      console.log('📺 Restarting timer as controller after sync');
+    // Restart timer for both controller and non-controller if playing
+    if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
+      console.log('📺 Restarting timer after sync');
       setTimeout(() => startTimer(), 100);
     }
-  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, userId, startTimer]);
+  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer]);
 
   // Initialize current segment on mount if none exists
   useEffect(() => {
