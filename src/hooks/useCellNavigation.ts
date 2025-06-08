@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Column } from './useColumnsManager';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -43,20 +44,34 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   const navigateToCell = (itemId: string, field: string) => {
     console.log('Navigating to cell:', itemId, field);
     setSelectedCell({ itemId, field });
-    setTimeout(() => {
-      const cellRef = cellRefs.current[`${itemId}-${field}`];
-      console.log('Cell ref found:', !!cellRef, `${itemId}-${field}`);
-      if (cellRef) {
-        cellRef.focus();
-        // For textareas, place cursor at the end
-        if (cellRef instanceof HTMLTextAreaElement) {
-          const length = cellRef.value.length;
-          cellRef.setSelectionRange(length, length);
+    
+    // Use requestAnimationFrame instead of setTimeout for better timing
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const cellRef = cellRefs.current[`${itemId}-${field}`];
+        console.log('Cell ref found:', !!cellRef, `${itemId}-${field}`);
+        if (cellRef) {
+          cellRef.focus();
+          // For textareas, place cursor at the end
+          if (cellRef instanceof HTMLTextAreaElement) {
+            const length = cellRef.value.length;
+            cellRef.setSelectionRange(length, length);
+          }
+        } else {
+          console.log('Cell ref not found, available refs:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
+          
+          // Fallback: try to find any available ref for this item
+          const availableRefs = Object.keys(cellRefs.current).filter(key => key.startsWith(itemId));
+          if (availableRefs.length > 0) {
+            console.log('Using fallback ref:', availableRefs[0]);
+            const fallbackRef = cellRefs.current[availableRefs[0]];
+            if (fallbackRef) {
+              fallbackRef.focus();
+            }
+          }
         }
-      } else {
-        console.log('Cell ref not found, available refs:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
-      }
-    }, 0);
+      });
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
