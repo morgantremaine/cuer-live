@@ -14,7 +14,11 @@ const RundownIndexContent = () => {
     onAddHeader: handleAddHeader
   });
 
-  return <RundownLayoutWrapper />;
+  return (
+    <RundownLayoutWrapper>
+      {/* Content will be added here */}
+    </RundownLayoutWrapper>
+  );
 };
 
 export default RundownIndexContent;
