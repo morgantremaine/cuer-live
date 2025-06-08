@@ -8,32 +8,39 @@ export interface ShowcallerState {
   timeRemaining: number;
   playbackStartTime: number | null;
   lastUpdate: string;
+  controllerId: string | null; // NEW: Track who controls the timer
 }
 
 interface UseShowcallerStateProps {
   items: RundownItem[];
   updateItem: (id: string, field: string, value: string) => void;
   onShowcallerStateChange?: (state: ShowcallerState) => void;
+  userId?: string; // NEW: Current user ID for control logic
 }
 
 export const useShowcallerState = ({
   items,
   updateItem,
-  onShowcallerStateChange
+  onShowcallerStateChange,
+  userId
 }: UseShowcallerStateProps) => {
   const [showcallerState, setShowcallerState] = useState<ShowcallerState>({
     isPlaying: false,
     currentSegmentId: null,
     timeRemaining: 0,
     playbackStartTime: null,
-    lastUpdate: new Date().toISOString()
+    lastUpdate: new Date().toISOString(),
+    controllerId: null
   });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stateChangeCallbackRef = useRef(onShowcallerStateChange);
-  const isApplyingExternalStateRef = useRef(false);
-  const lastExternalUpdateRef = useRef<string | null>(null);
   stateChangeCallbackRef.current = onShowcallerStateChange;
+
+  // Check if current user is the controller
+  const isController = useCallback(() => {
+    return showcallerState.controllerId === userId || showcallerState.controllerId === null;
+  }, [showcallerState.controllerId, userId]);
 
   // Helper function to convert time string to seconds
   const timeToSeconds = useCallback((timeStr: string) => {
@@ -71,12 +78,7 @@ export const useShowcallerState = ({
     return null;
   }, [items]);
 
-  // Check if we should skip saving (when applying external state)
-  const shouldSkipSaving = useCallback(() => {
-    return isApplyingExternalStateRef.current;
-  }, []);
-
-  // Update showcaller state and notify parent - with sync control
+  // Update showcaller state with proper control logic
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
     const updatedState = {
       ...showcallerState,
@@ -86,11 +88,12 @@ export const useShowcallerState = ({
     
     setShowcallerState(updatedState);
     
-    // Only notify parent (which triggers sync) for significant changes and when not applying external state
-    if (shouldSync && !shouldSkipSaving() && stateChangeCallbackRef.current) {
+    // Only sync if this user is the controller and shouldSync is true
+    if (shouldSync && isController() && stateChangeCallbackRef.current) {
+      console.log('📺 Controller saving state:', updatedState);
       stateChangeCallbackRef.current(updatedState);
     }
-  }, [showcallerState, shouldSkipSaving]);
+  }, [showcallerState, isController]);
 
   // Clear current status from all items
   const clearCurrentStatus = useCallback(() => {
@@ -111,21 +114,36 @@ export const useShowcallerState = ({
       updateShowcallerState({
         currentSegmentId: segmentId,
         timeRemaining: duration,
-        playbackStartTime: Date.now()
-      }, true); // Sync this significant change
+        playbackStartTime: Date.now(),
+        controllerId: userId // Take control when setting segment
+      }, true);
     }
-  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState]);
+  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
 
-  // Timer logic - sync significant changes immediately
+  // Timer logic - only runs for controller
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
 
+    // Only start timer if we're the controller
+    if (!isController()) {
+      console.log('📺 Not controller, not starting timer');
+      return;
+    }
+
+    console.log('📺 Controller starting timer');
+
     timerRef.current = setInterval(() => {
       setShowcallerState(prevState => {
+        // Double-check we're still the controller
+        if (prevState.controllerId !== userId) {
+          console.log('📺 No longer controller, stopping timer');
+          return prevState;
+        }
+
         if (prevState.timeRemaining <= 1) {
-          // Time's up, advance to next segment - this needs immediate sync
+          // Time's up, advance to next segment
           if (prevState.currentSegmentId) {
             updateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
@@ -142,24 +160,25 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              // Sync significant change (segment advancement) only if not applying external state
-              if (!shouldSkipSaving() && stateChangeCallbackRef.current) {
+              // Sync segment advancement immediately
+              if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
               
               return newState;
             } else {
-              // No more segments, stop playback - sync this change
+              // No more segments, stop playback
               const newState = {
                 ...prevState,
                 isPlaying: false,
                 currentSegmentId: null,
                 timeRemaining: 0,
                 playbackStartTime: null,
+                controllerId: null, // Release control
                 lastUpdate: new Date().toISOString()
               };
               
-              if (!shouldSkipSaving() && stateChangeCallbackRef.current) {
+              if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
               
@@ -169,33 +188,36 @@ export const useShowcallerState = ({
           return prevState;
         }
         
-        // Regular timer tick - only sync every 10 seconds to reduce load
+        // Regular timer tick
         const newState = {
           ...prevState,
           timeRemaining: prevState.timeRemaining - 1,
           lastUpdate: new Date().toISOString()
         };
         
-        // Only sync every 10 seconds for timer updates to reduce database load and not when applying external state
-        const shouldSyncTimerUpdate = prevState.timeRemaining % 10 === 0;
-        if (shouldSyncTimerUpdate && !shouldSkipSaving() && stateChangeCallbackRef.current) {
+        // Only sync every 10 seconds to reduce database load
+        const shouldSync = prevState.timeRemaining % 10 === 0;
+        if (shouldSync && stateChangeCallbackRef.current) {
           stateChangeCallbackRef.current(newState);
         }
         
         return newState;
       });
     }, 1000);
-  }, [updateItem, getNextSegment, timeToSeconds, shouldSkipSaving]);
+  }, [isController, updateItem, getNextSegment, timeToSeconds, userId]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+      console.log('📺 Timer stopped');
     }
   }, []);
 
-  // Control functions - these are significant changes that should sync immediately
+  // Control functions - take control when user acts
   const play = useCallback((selectedSegmentId?: string) => {
+    console.log('📺 Play requested by user:', userId);
+    
     const playbackStartTime = Date.now();
     
     if (selectedSegmentId) {
@@ -215,18 +237,23 @@ export const useShowcallerState = ({
     
     updateShowcallerState({ 
       isPlaying: true,
-      playbackStartTime
-    }, true); // Sync play action immediately
+      playbackStartTime,
+      controllerId: userId // Take control
+    }, true);
+    
     startTimer();
-  }, [items, updateItem, setCurrentSegment, updateShowcallerState, startTimer]);
+  }, [items, updateItem, setCurrentSegment, updateShowcallerState, startTimer, userId]);
 
   const pause = useCallback(() => {
+    console.log('📺 Pause requested by user:', userId);
+    
     stopTimer();
     updateShowcallerState({ 
       isPlaying: false,
-      playbackStartTime: null
-    }, true); // Sync pause action immediately
-  }, [updateShowcallerState, stopTimer]);
+      playbackStartTime: null,
+      controllerId: null // Release control when pausing
+    }, true);
+  }, [updateShowcallerState, stopTimer, userId]);
 
   const forward = useCallback(() => {
     if (showcallerState.currentSegmentId) {
@@ -254,15 +281,15 @@ export const useShowcallerState = ({
     }
   }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, startTimer]);
 
-  // Apply external showcaller state (from realtime updates) - CRITICAL for sync
+  // Apply external showcaller state (from realtime updates)
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
-    console.log('📺 Applying external showcaller state:', externalState);
+    console.log('📺 Applying external showcaller state:', {
+      externalController: externalState.controllerId,
+      currentUser: userId,
+      isPlaying: externalState.isPlaying
+    });
     
-    // CRITICAL: Mark that we're applying external state to prevent saving
-    isApplyingExternalStateRef.current = true;
-    lastExternalUpdateRef.current = externalState.lastUpdate;
-    
-    // CRITICAL: Stop current timer first to prevent conflicts
+    // Stop our timer first
     stopTimer();
     
     // Clear all current statuses first
@@ -276,7 +303,7 @@ export const useShowcallerState = ({
       }
     }
     
-    // CRITICAL: Calculate synchronized time remaining based on shared playback start time
+    // Calculate synchronized time remaining if playing
     let synchronizedState = { ...externalState };
     
     if (externalState.isPlaying && externalState.playbackStartTime && externalState.currentSegmentId) {
@@ -300,29 +327,32 @@ export const useShowcallerState = ({
       }
     }
     
-    // Set the synchronized state immediately
+    // Set the synchronized state
     setShowcallerState(synchronizedState);
     
-    // CRITICAL: Handle timer state based on external playing status
-    if (synchronizedState.isPlaying && synchronizedState.currentSegmentId) {
-      // If external state is playing, start our timer immediately
-      startTimer();
-    } else {
-      // CRITICAL: If external state is not playing, ensure timer stays stopped
-      // This is the key fix - we must not restart the timer if isPlaying is false
-      console.log('📺 External state shows not playing - keeping timer stopped');
+    // If external state is playing and we're not the controller, start observing timer
+    if (synchronizedState.isPlaying && synchronizedState.controllerId !== userId) {
+      console.log('📺 Following external controller, starting observer timer');
+      // Start a simple observer timer that just updates local display
+      if (timerRef.current) clearInterval(timerRef.current);
+      
+      timerRef.current = setInterval(() => {
+        setShowcallerState(prevState => {
+          if (!prevState.isPlaying || prevState.controllerId === userId) {
+            return prevState; // Stop if no longer playing or we became controller
+          }
+          
+          return {
+            ...prevState,
+            timeRemaining: Math.max(0, prevState.timeRemaining - 1),
+            lastUpdate: new Date().toISOString()
+          };
+        });
+      }, 1000);
     }
-    
-    // Reset the flag after a longer delay to ensure all async operations complete
-    setTimeout(() => {
-      // Only reset if this was the last external update we processed
-      if (lastExternalUpdateRef.current === externalState.lastUpdate) {
-        isApplyingExternalStateRef.current = false;
-      }
-    }, 500); // Increased from 100ms to 500ms for better reliability
-  }, [stopTimer, clearCurrentStatus, items, updateItem, startTimer, timeToSeconds]);
+  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, userId]);
 
-  // Initialize current segment on mount if none exists - only once
+  // Initialize current segment on mount if none exists
   useEffect(() => {
     if (!showcallerState.currentSegmentId && items.length > 0) {
       const firstSegment = items.find(item => item.type === 'regular');
@@ -353,6 +383,7 @@ export const useShowcallerState = ({
     applyShowcallerState,
     isPlaying: showcallerState.isPlaying,
     currentSegmentId: showcallerState.currentSegmentId,
-    timeRemaining: showcallerState.timeRemaining
+    timeRemaining: showcallerState.timeRemaining,
+    isController: isController()
   };
 };

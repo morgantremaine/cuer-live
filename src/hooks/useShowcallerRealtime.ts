@@ -32,7 +32,7 @@ export const useShowcallerRealtime = ({
       timestamp: payload.new?.updated_at
     });
     
-    // Skip if this is our own update
+    // Skip if this is our own update - more reliable check
     if (payload.new?.user_id === user?.id) {
       console.log('⏭️ Skipping own showcaller update');
       return;
@@ -63,7 +63,7 @@ export const useShowcallerRealtime = ({
     try {
       const showcallerState = payload.new.showcaller_state as ShowcallerState;
       
-      // CRITICAL: Apply state immediately for perfect sync
+      // Apply state immediately for perfect sync
       onShowcallerStateReceivedRef.current(showcallerState);
     } catch (error) {
       console.error('Error processing showcaller realtime update:', error);

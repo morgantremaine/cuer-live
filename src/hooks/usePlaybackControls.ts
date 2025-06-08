@@ -4,13 +4,16 @@ import { RundownItem } from '@/types/rundown';
 import { useShowcallerState } from './useShowcallerState';
 import { useShowcallerPersistence } from './useShowcallerPersistence';
 import { useShowcallerRealtime } from './useShowcallerRealtime';
+import { useAuth } from './useAuth';
 
 export const usePlaybackControls = (
   items: RundownItem[],
   updateItem: (id: string, field: string, value: string) => void,
   rundownId?: string
 ) => {
-  // Initialize showcaller state management
+  const { user } = useAuth();
+
+  // Initialize showcaller state management with user ID
   const {
     showcallerState,
     play,
@@ -20,13 +23,17 @@ export const usePlaybackControls = (
     applyShowcallerState,
     isPlaying,
     currentSegmentId,
-    timeRemaining
+    timeRemaining,
+    isController
   } = useShowcallerState({
     items,
     updateItem,
+    userId: user?.id, // Pass user ID for control logic
     onShowcallerStateChange: (state) => {
-      // Save state changes to database (with debouncing)
-      saveShowcallerState(state);
+      // Only save if this user is the controller
+      if (isController) {
+        saveShowcallerState(state);
+      }
     }
   });
 
@@ -43,7 +50,7 @@ export const usePlaybackControls = (
     enabled: !!rundownId
   });
 
-  // Load initial showcaller state when rundown changes - memoized to prevent loops
+  // Load initial showcaller state when rundown changes
   const loadInitialState = useCallback(async () => {
     if (rundownId) {
       const state = await loadShowcallerState();
@@ -52,7 +59,7 @@ export const usePlaybackControls = (
         applyShowcallerState(state);
       }
     }
-  }, [rundownId]); // Only depend on rundownId
+  }, [rundownId, loadShowcallerState, applyShowcallerState]);
 
   useEffect(() => {
     loadInitialState();
@@ -65,6 +72,7 @@ export const usePlaybackControls = (
     play,
     pause,
     forward,
-    backward
+    backward,
+    isController
   };
 };
