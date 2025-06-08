@@ -8,14 +8,14 @@ export interface ShowcallerState {
   timeRemaining: number;
   playbackStartTime: number | null;
   lastUpdate: string;
-  controllerId: string | null; // NEW: Track who controls the timer
+  controllerId: string | null;
 }
 
 interface UseShowcallerStateProps {
   items: RundownItem[];
   updateItem: (id: string, field: string, value: string) => void;
   onShowcallerStateChange?: (state: ShowcallerState) => void;
-  userId?: string; // NEW: Current user ID for control logic
+  userId?: string;
 }
 
 export const useShowcallerState = ({
@@ -114,7 +114,7 @@ export const useShowcallerState = ({
         currentSegmentId: segmentId,
         timeRemaining: duration,
         playbackStartTime: Date.now(),
-        controllerId: userId // Take control when setting segment
+        controllerId: userId
       }, true);
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
@@ -169,7 +169,7 @@ export const useShowcallerState = ({
                 currentSegmentId: null,
                 timeRemaining: 0,
                 playbackStartTime: null,
-                controllerId: null, // Release control
+                controllerId: null,
                 lastUpdate: new Date().toISOString()
               };
               
@@ -230,7 +230,7 @@ export const useShowcallerState = ({
     updateShowcallerState({ 
       isPlaying: true,
       playbackStartTime,
-      controllerId: userId // Take control
+      controllerId: userId
     }, true);
     
     startTimer();
@@ -241,7 +241,7 @@ export const useShowcallerState = ({
     updateShowcallerState({ 
       isPlaying: false,
       playbackStartTime: null,
-      controllerId: null // Release control when pausing
+      controllerId: null
     }, true);
   }, [updateShowcallerState, stopTimer, userId]);
 
@@ -337,7 +337,7 @@ export const useShowcallerState = ({
         updateShowcallerState({
           currentSegmentId: firstSegment.id,
           timeRemaining: duration
-        }, false); // Don't sync initial setup
+        }, false);
       }
     }
   }, [items.length]);

@@ -14,12 +14,11 @@ export const useShowcallerPersistence = ({
 }: UseShowcallerPersistenceProps) => {
   const lastSaveRef = useRef<string | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const loadCacheRef = useRef<{ [key: string]: ShowcallerState }>({});
+  const loadingRef = useRef<boolean>(false);
 
-  // Save showcaller state to database with longer debouncing
+  // Save showcaller state to database with debouncing
   const saveShowcallerState = useCallback(async (state: ShowcallerState) => {
     if (!rundownId) {
-      console.log('📺 Skipping showcaller save - no rundown ID');
       return;
     }
 
@@ -28,15 +27,13 @@ export const useShowcallerPersistence = ({
       return;
     }
 
-    // Longer debounce for frequent timer updates
+    // Debounce frequent updates
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        console.log('📺 Saving showcaller state:', state);
-        
         const { error } = await supabase
           .from('rundowns')
           .update({
@@ -49,29 +46,22 @@ export const useShowcallerPersistence = ({
           console.error('Error saving showcaller state:', error);
         } else {
           lastSaveRef.current = state.lastUpdate;
-          console.log('📺 Showcaller state saved successfully');
         }
       } catch (error) {
         console.error('Error saving showcaller state:', error);
       }
-    }, 2000); // Increased debounce to 2 seconds
+    }, 1000);
   }, [rundownId]);
 
-  // Load showcaller state from database with caching
+  // Load showcaller state from database without caching to prevent infinite loops
   const loadShowcallerState = useCallback(async (): Promise<ShowcallerState | null> => {
-    if (!rundownId) {
+    if (!rundownId || loadingRef.current) {
       return null;
     }
 
-    // Check cache first
-    if (loadCacheRef.current[rundownId]) {
-      console.log('📺 Using cached showcaller state');
-      return loadCacheRef.current[rundownId];
-    }
+    loadingRef.current = true;
 
     try {
-      console.log('📺 Loading showcaller state for rundown:', rundownId);
-      
       const { data, error } = await supabase
         .from('rundowns')
         .select('showcaller_state')
@@ -84,22 +74,15 @@ export const useShowcallerPersistence = ({
       }
 
       if (data?.showcaller_state) {
-        const state = data.showcaller_state as ShowcallerState;
-        console.log('📺 Loaded showcaller state:', state);
-        
-        // Cache the result for a short time
-        loadCacheRef.current[rundownId] = state;
-        setTimeout(() => {
-          delete loadCacheRef.current[rundownId];
-        }, 5000); // Cache for 5 seconds
-        
-        return state;
+        return data.showcaller_state as ShowcallerState;
       }
 
       return null;
     } catch (error) {
       console.error('Error loading showcaller state:', error);
       return null;
+    } finally {
+      loadingRef.current = false;
     }
   }, [rundownId]);
 
