@@ -5,8 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { useRundownKeyboardShortcuts } from "@/hooks/useRundownKeyboardShortcuts";
-import { useRundownStateCoordination } from "@/hooks/useRundownStateCoordination";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -24,19 +22,6 @@ import CameraPlotEditor from "./pages/CameraPlotEditor";
 
 const queryClient = new QueryClient();
 
-const GlobalKeyboardShortcuts = () => {
-  const { interactions } = useRundownStateCoordination();
-  const { handleAddRow, handleAddHeader } = interactions;
-
-  // Add global keyboard shortcuts for rundown pages
-  useRundownKeyboardShortcuts({
-    onAddRow: handleAddRow,
-    onAddHeader: handleAddHeader
-  });
-
-  return null;
-};
-
 const AppRoutes = () => {
   const { user, loading } = useAuth();
 
@@ -49,81 +34,78 @@ const AppRoutes = () => {
   }
 
   return (
-    <>
-      <GlobalKeyboardShortcuts />
-      <Routes>
-        {/* Redirect root to appropriate page based on auth state */}
-        <Route 
-          path="/" 
-          element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
-        />
-        
-        {/* Public routes */}
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
-        <Route path="/shared/rundown/:id" element={<SharedRundown />} />
-        <Route path="/join-team/:token" element={<JoinTeam />} />
-        <Route path="/help" element={<Help />} />
-        {/* Make teleprompter public - no authentication required */}
-        <Route path="/teleprompter/:id" element={<Teleprompter />} />
-        
-        {/* Auth callback routes */}
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/auth/reset-password" element={<ResetPassword />} />
-        
-        {/* Protected routes */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/account" 
-          element={
-            <ProtectedRoute>
-              <AccountManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/rundown" 
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/rundown/:id" 
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/blueprint/:id" 
-          element={
-            <ProtectedRoute>
-              <Blueprint />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/camera-plot-editor/:id" 
-          element={
-            <ProtectedRoute>
-              <CameraPlotEditor />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Catch-all route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </>
+    <Routes>
+      {/* Redirect root to appropriate page based on auth state */}
+      <Route 
+        path="/" 
+        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+      />
+      
+      {/* Public routes */}
+      <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+      <Route path="/join-team/:token" element={<JoinTeam />} />
+      <Route path="/help" element={<Help />} />
+      {/* Make teleprompter public - no authentication required */}
+      <Route path="/teleprompter/:id" element={<Teleprompter />} />
+      
+      {/* Auth callback routes */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
+      
+      {/* Protected routes */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/account" 
+        element={
+          <ProtectedRoute>
+            <AccountManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/rundown" 
+        element={
+          <ProtectedRoute>
+            <Index />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/rundown/:id" 
+        element={
+          <ProtectedRoute>
+            <Index />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/blueprint/:id" 
+        element={
+          <ProtectedRoute>
+            <Blueprint />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/camera-plot-editor/:id" 
+        element={
+          <ProtectedRoute>
+            <CameraPlotEditor />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
