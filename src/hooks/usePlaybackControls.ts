@@ -34,6 +34,8 @@ export const usePlaybackControls = (
       // Only save if this user is the controller
       if (isController) {
         console.log('📺 State changed, saving...');
+        // Track the update before saving to prevent our own update from triggering conflicts
+        trackOwnShowcallerUpdate(state.lastUpdate);
         saveShowcallerState(state);
       }
     }
@@ -45,8 +47,8 @@ export const usePlaybackControls = (
     onShowcallerStateReceived: applyShowcallerState
   });
 
-  // Initialize realtime synchronization
-  useShowcallerRealtime({
+  // Initialize realtime synchronization with tracking
+  const { trackOwnUpdate: trackOwnShowcallerUpdate } = useShowcallerRealtime({
     rundownId,
     onShowcallerStateReceived: applyShowcallerState,
     enabled: !!rundownId

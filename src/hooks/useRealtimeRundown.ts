@@ -73,6 +73,15 @@ export const useRealtimeRundown = ({
       return;
     }
 
+    // ENHANCED: Check if this update contains showcaller state and if current user is the controller
+    if (payload.new?.showcaller_state) {
+      const showcallerState = payload.new.showcaller_state;
+      if (showcallerState.controllerId === user?.id) {
+        console.log('📺 Skipping rundown update for own showcaller control');
+        return;
+      }
+    }
+
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
       return;
@@ -96,8 +105,10 @@ export const useRealtimeRundown = ({
     }
 
     try {
-      // Enhanced conflict resolution with better UX
-      if (hasUnsavedChanges) {
+      // Enhanced conflict resolution with better UX - but skip for showcaller updates
+      const isShowcallerUpdate = payload.new?.showcaller_state !== undefined;
+      
+      if (hasUnsavedChanges && !isShowcallerUpdate) {
         const result = await new Promise<boolean>((resolve) => {
           const shouldAcceptRemoteChanges = window.confirm(
             `🔄 Another team member just updated this rundown.\n\n` +
@@ -157,8 +168,8 @@ export const useRealtimeRundown = ({
         undo_history: data.undo_history
       };
 
-      // CRITICAL: Enhanced signature synchronization
-      if (stableUpdateSavedSignatureRef.current) {
+      // CRITICAL: Enhanced signature synchronization - but skip for showcaller-only updates
+      if (stableUpdateSavedSignatureRef.current && !isShowcallerUpdate) {
         // Use setTimeout to ensure this happens before any change detection
         setTimeout(() => {
           stableUpdateSavedSignatureRef.current?.(
@@ -174,8 +185,8 @@ export const useRealtimeRundown = ({
       // Apply the rundown update
       stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // CRITICAL: Post-application signature sync with delay for state settling
-      if (stableUpdateSavedSignatureRef.current) {
+      // CRITICAL: Post-application signature sync with delay for state settling - but skip for showcaller-only updates
+      if (stableUpdateSavedSignatureRef.current && !isShowcallerUpdate) {
         setTimeout(() => {
           stableUpdateSavedSignatureRef.current?.(
             updatedRundown.items, 

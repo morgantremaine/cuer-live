@@ -59,10 +59,10 @@ export const useShowcallerRealtime = ({
       return;
     }
     
-    // Additional check: Skip updates that are very recent (within 100ms) from when we might have sent them
+    // Additional check: Skip updates that are very recent (within 500ms) from when we might have sent them
     const updateTime = new Date(showcallerState.lastUpdate).getTime();
     const now = Date.now();
-    if (now - updateTime < 100) {
+    if (now - updateTime < 500) {
       console.log('📺 Skipping very recent update (potential own update)');
       return;
     }
