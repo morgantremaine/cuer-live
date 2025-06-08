@@ -10,8 +10,8 @@ interface UseRundownDataLoaderProps {
   savedRundowns: SavedRundown[];
   loading: boolean;
   setRundownTitle: (title: string) => void;
-  setTimezone: (timezone: string) => void;
-  setRundownStartTime: (startTime: string) => void;
+  setTimezoneDirectly: (timezone: string) => void; // Use direct setter
+  setRundownStartTimeDirectly: (startTime: string) => void; // Use direct setter
   handleLoadLayout: (columns: Column[]) => void;
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
   onRundownLoaded?: (rundown: SavedRundown) => void;
@@ -22,8 +22,8 @@ export const useRundownDataLoader = ({
   savedRundowns,
   loading,
   setRundownTitle,
-  setTimezone,
-  setRundownStartTime,
+  setTimezoneDirectly,
+  setRundownStartTimeDirectly,
   handleLoadLayout,
   setItems,
   onRundownLoaded
@@ -57,13 +57,13 @@ export const useRundownDataLoader = ({
     
     // Load timezone - use saved value or fallback to default
     const timezoneToLoad = rundown.timezone || 'America/New_York';
-    console.log('🌍 Loading timezone:', timezoneToLoad);
-    setTimezone(timezoneToLoad);
+    console.log('🌍 Loading timezone directly:', timezoneToLoad);
+    setTimezoneDirectly(timezoneToLoad);
     
     // Load start time - use saved value or fallback to default
     const startTimeToLoad = rundown.start_time || '09:00:00';
-    console.log('⏰ Loading start time:', startTimeToLoad);
-    setRundownStartTime(startTimeToLoad);
+    console.log('⏰ Loading start time directly:', startTimeToLoad);
+    setRundownStartTimeDirectly(startTimeToLoad);
     
     if (rundown.columns) {
       handleLoadLayout(rundown.columns);
@@ -90,8 +90,8 @@ export const useRundownDataLoader = ({
     savedRundowns,
     loading, 
     setRundownTitle, 
-    setTimezone, 
-    setRundownStartTime, 
+    setTimezoneDirectly, 
+    setRundownStartTimeDirectly, 
     handleLoadLayout,
     setItems,
     onRundownLoaded
