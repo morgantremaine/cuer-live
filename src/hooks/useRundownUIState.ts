@@ -1,7 +1,6 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useColorPicker } from './useColorPicker';
-import { useCellNavigation } from './useCellNavigation';
 import { useResizableColumns } from './useResizableColumns';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
@@ -18,12 +17,6 @@ export const useRundownUIState = (
   // Color picker
   const { showColorPicker, handleToggleColorPicker } = useColorPicker();
 
-  // Cell navigation - fix the function call to use correct order: columns first, then items
-  const { cellRefs, handleCellClick, handleKeyDown } = useCellNavigation(
-    visibleColumns, 
-    items
-  );
-
   // Resizable columns
   const { getColumnWidth, updateColumnWidth } = useResizableColumns(columns);
 
@@ -38,7 +31,7 @@ export const useRundownUIState = (
     return currentTimeForComparison > itemStartTime ? 'completed' : 'upcoming';
   }, [currentSegmentId, currentTime]);
 
-  // Color selection function - FIX: correct the parameter order
+  // Color selection function
   const selectColor = useCallback((id: string, color: string) => {
     console.log('Selecting color for item:', id, color);
     updateItem(id, 'color', color);
@@ -48,9 +41,6 @@ export const useRundownUIState = (
   return {
     showColorPicker,
     handleToggleColorPicker,
-    cellRefs,
-    handleCellClick,
-    handleKeyDown,
     getColumnWidth,
     updateColumnWidth,
     getRowStatus,
