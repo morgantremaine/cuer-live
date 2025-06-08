@@ -24,9 +24,21 @@ export const useRundownPresence = (rundownId: string | null) => {
     if (!rundownId || !user) return;
 
     try {
-      await supabase.rpc('update_rundown_presence', {
-        rundown_uuid: rundownId
-      });
+      const { error } = await supabase
+        .from('rundown_presence')
+        .upsert({
+          rundown_id: rundownId,
+          user_id: user.id,
+          last_seen: new Date().toISOString()
+        }, {
+          onConflict: 'rundown_id,user_id'
+        });
+
+      if (error) {
+        console.error('Error updating presence:', error);
+      } else {
+        console.log('Presence updated successfully');
+      }
     } catch (error) {
       console.error('Error updating presence:', error);
     }
@@ -57,6 +69,8 @@ export const useRundownPresence = (rundownId: string | null) => {
         return;
       }
 
+      console.log('Raw active users data:', data);
+
       // Map the data to match our ActiveUser interface
       const mappedUsers: ActiveUser[] = (data || []).map(item => ({
         user_id: item.user_id,
@@ -64,6 +78,7 @@ export const useRundownPresence = (rundownId: string | null) => {
         profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
       }));
 
+      console.log('Mapped active users:', mappedUsers);
       setActiveUsers(mappedUsers);
     } catch (error) {
       console.error('Error loading active users:', error);
@@ -72,7 +87,12 @@ export const useRundownPresence = (rundownId: string | null) => {
 
   // Set up presence tracking
   useEffect(() => {
-    if (!rundownId || !user) return;
+    if (!rundownId || !user) {
+      console.log('No rundownId or user, skipping presence setup');
+      return;
+    }
+
+    console.log('Setting up presence for rundown:', rundownId, 'user:', user.id);
 
     // Update presence immediately
     updatePresence();
@@ -94,16 +114,20 @@ export const useRundownPresence = (rundownId: string | null) => {
           table: 'rundown_presence',
           filter: `rundown_id=eq.${rundownId}`
         },
-        () => {
+        (payload) => {
+          console.log('Presence change detected:', payload);
           // Reload active users when presence changes
           loadActiveUsers();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Presence subscription status:', status);
+      });
 
     subscriptionRef.current = channel;
 
     return () => {
+      console.log('Cleaning up presence tracking');
       // Clean up interval
       if (presenceIntervalRef.current) {
         clearInterval(presenceIntervalRef.current);
@@ -120,6 +144,7 @@ export const useRundownPresence = (rundownId: string | null) => {
   useEffect(() => {
     return () => {
       if (rundownId && user) {
+        console.log('Removing presence on unmount');
         // Remove user's presence when leaving
         supabase
           .from('rundown_presence')
