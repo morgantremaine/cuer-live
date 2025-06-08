@@ -64,7 +64,7 @@ export const useRundownGridCore = ({
     }
   });
 
-  // Playback controls
+  // Playback controls - fix the function call with correct parameters
   const {
     isPlaying,
     timeRemaining,
@@ -72,14 +72,23 @@ export const useRundownGridCore = ({
     pause,
     forward,
     backward
-  } = usePlaybackControls(stateIntegration.items, currentSegmentId, setCurrentSegmentId);
+  } = usePlaybackControls(stateIntegration.items, stateIntegration.updateItem, rundownId);
 
-  // Undo functionality
+  // Undo functionality - fix the destructuring and function call
   const {
-    handleUndo,
+    undo,
     canUndo,
     lastAction
-  } = useRundownUndo(stateIntegration.items, stateIntegration.setItems, markAsChanged);
+  } = useRundownUndo();
+
+  // Create a wrapper for handleUndo that matches the expected signature
+  const handleUndo = useCallback(() => {
+    return undo(
+      stateIntegration.setItems,
+      () => {}, // setColumns - placeholder since we don't have columns setter here
+      setRundownTitleDirectly
+    );
+  }, [undo, stateIntegration.setItems, setRundownTitleDirectly]);
 
   const {
     isConnected
