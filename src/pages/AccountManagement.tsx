@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import DashboardHeader from '@/components/DashboardHeader'
 import TeamManagement from '@/components/TeamManagement'
+import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 
 const AccountManagement = () => {
   const [fullName, setFullName] = useState('')
@@ -135,10 +137,16 @@ const AccountManagement = () => {
               <CardHeader>
                 <CardTitle className="text-white">Profile Information</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Update your profile information
+                  Update your profile information and picture
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                {/* Profile Picture Upload */}
+                <ProfilePictureUpload />
+                
+                <Separator className="bg-gray-700" />
+                
+                {/* Profile Form */}
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-300">Email</Label>
