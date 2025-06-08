@@ -15,9 +15,6 @@ export const useRundownGridUI = (
   const {
     showColorPicker,
     handleToggleColorPicker,
-    cellRefs,
-    handleCellClick,
-    handleKeyDown,
     getColumnWidth,
     updateColumnWidth,
     getRowStatus,
@@ -35,9 +32,6 @@ export const useRundownGridUI = (
   return {
     showColorPicker,
     handleToggleColorPicker,
-    cellRefs,
-    handleCellClick,
-    handleKeyDown,
     getColumnWidth,
     updateColumnWidth,
     getRowStatus,
