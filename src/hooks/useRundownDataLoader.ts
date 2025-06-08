@@ -13,7 +13,7 @@ interface UseRundownDataLoaderProps {
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
   handleLoadLayout: (columns: Column[]) => void;
-  setItems: (items: RundownItem[]) => void; // Add this critical function
+  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void; // Fix the type to match what's being passed
   onRundownLoaded?: (rundown: SavedRundown) => void;
 }
 
@@ -25,7 +25,7 @@ export const useRundownDataLoader = ({
   setTimezone,
   setRundownStartTime,
   handleLoadLayout,
-  setItems, // Now we can set the items
+  setItems,
   onRundownLoaded
 }: UseRundownDataLoaderProps) => {
   const params = useParams<{ id: string }>();
@@ -52,7 +52,7 @@ export const useRundownDataLoader = ({
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
     
-    // Set the rundown data - THIS WAS MISSING!
+    // Set the rundown data
     setRundownTitle(rundown.title);
     
     if (rundown.timezone) {
@@ -67,10 +67,10 @@ export const useRundownDataLoader = ({
       handleLoadLayout(rundown.columns);
     }
 
-    // CRITICAL: Load the items back into the state
+    // Load the items back into the state using the updater pattern
     if (rundown.items && Array.isArray(rundown.items)) {
       console.log('Setting rundown items:', rundown.items.length);
-      setItems(rundown.items);
+      setItems(() => rundown.items); // Use updater function pattern
     }
 
     // Call the callback with the loaded rundown
@@ -91,7 +91,7 @@ export const useRundownDataLoader = ({
     setTimezone, 
     setRundownStartTime, 
     handleLoadLayout,
-    setItems, // Include setItems in dependencies
+    setItems,
     onRundownLoaded
   ]);
 
