@@ -16,7 +16,9 @@ const RundownIndexContent = () => {
 
   return (
     <RundownLayoutWrapper>
-      {/* Content will be added here */}
+      <div>
+        {/* Content will be added here */}
+      </div>
     </RundownLayoutWrapper>
   );
 };
