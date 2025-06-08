@@ -19,6 +19,7 @@ export const useShowcallerRealtime = ({
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onShowcallerStateReceivedRef = useRef(onShowcallerStateReceived);
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   
   // Keep callback ref updated
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
@@ -38,15 +39,21 @@ export const useShowcallerRealtime = ({
       return;
     }
 
-    // Prevent processing duplicate updates based on lastUpdate timestamp
     const showcallerState = payload.new.showcaller_state as ShowcallerState;
+    
+    // Prevent processing duplicate updates based on lastUpdate timestamp
     if (showcallerState.lastUpdate && showcallerState.lastUpdate === lastProcessedUpdateRef.current) {
       console.log('📺 Skipping duplicate update based on lastUpdate');
       return;
     }
 
-    // Skip if this update is from the same controller as current user
-    // BUT only if this user is currently the controller
+    // Skip if this update originated from this user (check our tracking set first)
+    if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
+      console.log('📺 Skipping own tracked update');
+      return;
+    }
+
+    // Skip if this user is currently the controller (they generated this update)
     if (showcallerState.controllerId === user?.id) {
       console.log('📺 Skipping own controller update');
       return;
@@ -63,6 +70,16 @@ export const useShowcallerRealtime = ({
       console.error('Error processing showcaller realtime update:', error);
     }
   }, [rundownId, user?.id]);
+
+  // Function to track our own updates to prevent processing them
+  const trackOwnUpdate = useCallback((lastUpdate: string) => {
+    ownUpdateTrackingRef.current.add(lastUpdate);
+    
+    // Clean up old tracked updates after 30 seconds
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(lastUpdate);
+    }, 30000);
+  }, []);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -108,6 +125,7 @@ export const useShowcallerRealtime = ({
   }, [rundownId, user, enabled, handleShowcallerUpdate]);
 
   return {
-    isConnected: !!subscriptionRef.current
+    isConnected: !!subscriptionRef.current,
+    trackOwnUpdate
   };
 };

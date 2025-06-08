@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -15,13 +16,15 @@ interface UseShowcallerStateProps {
   updateItem: (id: string, field: string, value: string) => void;
   onShowcallerStateChange?: (state: ShowcallerState) => void;
   userId?: string;
+  trackOwnUpdate?: (lastUpdate: string) => void;
 }
 
 export const useShowcallerState = ({
   items,
   updateItem,
   onShowcallerStateChange,
-  userId
+  userId,
+  trackOwnUpdate
 }: UseShowcallerStateProps) => {
   const [showcallerState, setShowcallerState] = useState<ShowcallerState>({
     isPlaying: false,
@@ -92,12 +95,17 @@ export const useShowcallerState = ({
     console.log('📺 Updating showcaller state:', updatedState);
     setShowcallerState(updatedState);
     
+    // Track this update as our own before syncing
+    if (shouldSync && trackOwnUpdate) {
+      trackOwnUpdate(updatedState.lastUpdate);
+    }
+    
     // Only sync if this user is the controller and shouldSync is true
     if (shouldSync && isController() && stateChangeCallbackRef.current) {
       console.log('📺 Syncing state change');
       stateChangeCallbackRef.current(updatedState);
     }
-  }, [showcallerState, isController]);
+  }, [showcallerState, isController, trackOwnUpdate]);
 
   // Clear current status from all items
   const clearCurrentStatus = useCallback(() => {
@@ -151,7 +159,10 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              // Sync segment advancement immediately
+              // Track and sync segment advancement immediately
+              if (trackOwnUpdate) {
+                trackOwnUpdate(newState.lastUpdate);
+              }
               if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
@@ -169,6 +180,9 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
+              if (trackOwnUpdate) {
+                trackOwnUpdate(newState.lastUpdate);
+              }
               if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
@@ -194,13 +208,16 @@ export const useShowcallerState = ({
         
         // Only controller syncs state changes, and only every 10 seconds
         if (isController() && prevState.timeRemaining % 10 === 0 && stateChangeCallbackRef.current) {
+          if (trackOwnUpdate) {
+            trackOwnUpdate(newState.lastUpdate);
+          }
           stateChangeCallbackRef.current(newState);
         }
         
         return newState;
       });
     }, 1000);
-  }, [isController, updateItem, getNextSegment, timeToSeconds, userId]);
+  }, [isController, updateItem, getNextSegment, timeToSeconds, userId, trackOwnUpdate]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
