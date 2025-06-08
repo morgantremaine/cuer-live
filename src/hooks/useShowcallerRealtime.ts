@@ -63,7 +63,7 @@ export const useShowcallerRealtime = ({
     try {
       const showcallerState = payload.new.showcaller_state as ShowcallerState;
       
-      // CRITICAL: Apply state immediately to ensure sync
+      // CRITICAL: Apply state immediately for perfect sync
       onShowcallerStateReceivedRef.current(showcallerState);
     } catch (error) {
       console.error('Error processing showcaller realtime update:', error);

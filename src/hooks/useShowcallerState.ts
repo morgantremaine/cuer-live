@@ -110,7 +110,7 @@ export const useShowcallerState = ({
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState]);
 
-  // Timer logic - only sync on segment changes, not every tick
+  // Timer logic - sync significant changes immediately
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -119,7 +119,7 @@ export const useShowcallerState = ({
     timerRef.current = setInterval(() => {
       setShowcallerState(prevState => {
         if (prevState.timeRemaining <= 1) {
-          // Time's up, advance to next segment - this needs sync
+          // Time's up, advance to next segment - this needs immediate sync
           if (prevState.currentSegmentId) {
             updateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
@@ -188,7 +188,7 @@ export const useShowcallerState = ({
     }
   }, []);
 
-  // Control functions - these are significant changes that should sync
+  // Control functions - these are significant changes that should sync immediately
   const play = useCallback((selectedSegmentId?: string) => {
     if (selectedSegmentId) {
       // Mark segments before selected as upcoming
@@ -208,7 +208,7 @@ export const useShowcallerState = ({
     updateShowcallerState({ 
       isPlaying: true,
       playbackStartTime: Date.now()
-    }, true); // Sync play action
+    }, true); // Sync play action immediately
     startTimer();
   }, [items, updateItem, setCurrentSegment, updateShowcallerState, startTimer]);
 
@@ -217,7 +217,7 @@ export const useShowcallerState = ({
     updateShowcallerState({ 
       isPlaying: false,
       playbackStartTime: null
-    }, true); // Sync pause action
+    }, true); // Sync pause action immediately
   }, [updateShowcallerState, stopTimer]);
 
   const forward = useCallback(() => {
@@ -246,39 +246,35 @@ export const useShowcallerState = ({
     }
   }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, startTimer]);
 
-  // Apply external showcaller state (from realtime updates) - ENHANCED
+  // Apply external showcaller state (from realtime updates) - CRITICAL for sync
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
-    // Only apply if the external state is newer
-    if (new Date(externalState.lastUpdate) > new Date(showcallerState.lastUpdate)) {
-      console.log('📺 Applying external showcaller state:', externalState);
-      
-      // CRITICAL: Stop current timer first to prevent conflicts
-      stopTimer();
-      
-      // Clear all current statuses first
-      clearCurrentStatus();
-      
-      // Apply the external state
-      if (externalState.currentSegmentId) {
-        const segment = items.find(item => item.id === externalState.currentSegmentId);
-        if (segment) {
-          updateItem(externalState.currentSegmentId, 'status', 'current');
-        }
+    // Always apply external state to ensure sync, regardless of timestamps
+    console.log('📺 Applying external showcaller state:', externalState);
+    
+    // CRITICAL: Stop current timer first to prevent conflicts
+    stopTimer();
+    
+    // Clear all current statuses first
+    clearCurrentStatus();
+    
+    // Apply the external state to items
+    if (externalState.currentSegmentId) {
+      const segment = items.find(item => item.id === externalState.currentSegmentId);
+      if (segment) {
+        updateItem(externalState.currentSegmentId, 'status', 'current');
       }
-      
-      // Set the state synchronously
-      setShowcallerState(externalState);
-      
-      // CRITICAL: Handle timer state based on external playing status
-      if (externalState.isPlaying && externalState.currentSegmentId) {
-        // If external state is playing, start our timer
-        setTimeout(() => {
-          startTimer();
-        }, 100); // Small delay to ensure state is set
-      }
-      // If external state is not playing, timer is already stopped above
     }
-  }, [showcallerState.lastUpdate, stopTimer, clearCurrentStatus, items, updateItem, startTimer]);
+    
+    // Set the state immediately - no async delays
+    setShowcallerState(externalState);
+    
+    // CRITICAL: Handle timer state based on external playing status
+    if (externalState.isPlaying && externalState.currentSegmentId) {
+      // If external state is playing, start our timer immediately
+      startTimer();
+    }
+    // If external state is not playing, timer is already stopped above
+  }, [stopTimer, clearCurrentStatus, items, updateItem, startTimer]);
 
   // Initialize current segment on mount if none exists - only once
   useEffect(() => {
