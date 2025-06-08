@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Column } from './useColumnsManager';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -7,12 +7,18 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: string } | null>(null);
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
-  const handleCellClick = (itemId: string, field: string) => {
-    setSelectedCell({ itemId, field });
-  };
+  // Add debug logging to track cellRefs state
+  const debugCellRefs = useCallback(() => {
+    console.log('Current cellRefs keys:', Object.keys(cellRefs.current));
+  }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
+  const handleCellClick = useCallback((itemId: string, field: string) => {
+    setSelectedCell({ itemId, field });
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
     console.log('Navigation key pressed:', e.key, 'from', itemId, field);
+    debugCellRefs();
     
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -36,7 +42,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
             targetCell.focus();
             console.log('Focused cell:', cellKey);
           } else {
-            console.log('Cell not found in refs:', cellKey, Object.keys(cellRefs.current));
+            console.log('Cell not found in refs:', cellKey);
+            debugCellRefs();
           }
         }, 0);
       }
@@ -62,7 +69,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
             targetCell.focus();
             console.log('Focused cell:', cellKey);
           } else {
-            console.log('Cell not found in refs:', cellKey, Object.keys(cellRefs.current));
+            console.log('Cell not found in refs:', cellKey);
+            debugCellRefs();
           }
         }, 0);
       }
@@ -88,12 +96,13 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
             targetCell.focus();
             console.log('Focused cell:', cellKey);
           } else {
-            console.log('Cell not found in refs:', cellKey, Object.keys(cellRefs.current));
+            console.log('Cell not found in refs:', cellKey);
+            debugCellRefs();
           }
         }, 0);
       }
     }
-  };
+  }, [items, debugCellRefs]);
 
   return {
     selectedCell,

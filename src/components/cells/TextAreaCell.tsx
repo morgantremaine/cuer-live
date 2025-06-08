@@ -79,8 +79,12 @@ const TextAreaCell = ({
       <textarea
         ref={el => {
           if (el) {
+            console.log('Storing TextArea cell ref:', cellKey, 'Total refs before:', Object.keys(cellRefs.current).length);
             cellRefs.current[cellKey] = el;
-            console.log('Storing cell ref:', cellKey);
+            console.log('Total refs after:', Object.keys(cellRefs.current).length);
+          } else {
+            console.log('Removing TextArea cell ref:', cellKey);
+            delete cellRefs.current[cellKey];
           }
         }}
         value={value}
