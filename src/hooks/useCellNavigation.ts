@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Column } from './useColumnsManager';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -17,28 +16,18 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
     const targetItem = items.find(item => item.id === targetItemId);
     if (!targetItem) return currentField;
 
-    // If navigating from header to regular row, or vice versa, we need to map fields appropriately
     if (isHeaderItem(targetItem)) {
-      // Navigating to a header - use segmentName if coming from any field
-      if (currentField === 'segmentName' || currentField === 'script' || currentField === 'notes') {
-        return 'segmentName';
-      }
+      // Navigating to a header - headers only have segmentName
+      return 'segmentName';
     } else {
       // Navigating to a regular row
       if (currentField === 'segmentName') {
         // Coming from header segmentName, go to script field on regular row
         return 'script';
       }
-      // For other fields, keep the same field if it exists
-      const targetRef = cellRefs.current[`${targetItemId}-${currentField}`];
-      if (targetRef) {
-        return currentField;
-      }
-      // Fallback to script if the current field doesn't exist on target
-      return 'script';
+      // For other fields, keep the same field
+      return currentField;
     }
-    
-    return currentField;
   };
 
   const navigateToCell = (itemId: string, field: string) => {
@@ -98,12 +87,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       const currentIndex = items.findIndex(item => item.id === itemId);
       
-      // Find the next non-header item
+      // Find the next item (skip headers when looking for regular items)
       let nextItemIndex = currentIndex + 1;
-      while (nextItemIndex < items.length && isHeaderItem(items[nextItemIndex])) {
-        nextItemIndex++;
-      }
-      
       if (nextItemIndex < items.length) {
         const nextItemId = items[nextItemIndex].id;
         const targetField = findNavigationField(nextItemId, field);
@@ -116,12 +101,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       const currentItemIndex = items.findIndex(item => item.id === itemId);
       
-      // Find the previous non-header item
+      // Find the previous item
       let prevItemIndex = currentItemIndex - 1;
-      while (prevItemIndex >= 0 && isHeaderItem(items[prevItemIndex])) {
-        prevItemIndex--;
-      }
-      
       if (prevItemIndex >= 0) {
         const prevItem = items[prevItemIndex];
         const targetField = findNavigationField(prevItem.id, field);
@@ -134,12 +115,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       const currentItemIndex = items.findIndex(item => item.id === itemId);
       
-      // Find the next non-header item
+      // Find the next item
       let nextItemIndex = currentItemIndex + 1;
-      while (nextItemIndex < items.length && isHeaderItem(items[nextItemIndex])) {
-        nextItemIndex++;
-      }
-      
       if (nextItemIndex < items.length) {
         const nextItem = items[nextItemIndex];
         const targetField = findNavigationField(nextItem.id, field);
