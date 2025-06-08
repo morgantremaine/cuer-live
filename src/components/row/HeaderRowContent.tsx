@@ -42,15 +42,20 @@ const HeaderRowContent = ({
         >
           {column.key === 'segmentName' ? (
             <input
-              ref={el => el && (cellRefs.current[`${item.id}-segmentName`] = el)}
+              ref={el => {
+                if (el) {
+                  cellRefs.current[`${item.id}-segmentName`] = el;
+                  console.log('Header cell ref registered:', `${item.id}-segmentName`);
+                }
+              }}
               type="text"
               value={item.name || ''}
               onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
               onClick={(e) => {
                 e.stopPropagation();
-                onCellClick(item.id, 'name');
+                onCellClick(item.id, 'segmentName');
               }}
-              onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
+              onKeyDown={(e) => onKeyDown(e, item.id, 'segmentName')}
               className="flex-1 border-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-gray-300 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-400 rounded px-1 py-0.5 text-base w-full font-bold"
               placeholder="Segment Name"
             />

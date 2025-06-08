@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Column } from './useColumnsManager';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -10,6 +9,35 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   const handleCellClick = (itemId: string, field: string) => {
     console.log('Cell clicked:', itemId, field);
     setSelectedCell({ itemId, field });
+  };
+
+  // Helper function to find the best matching field for navigation between different row types
+  const findNavigationField = (targetItemId: string, currentField: string): string => {
+    const targetItem = items.find(item => item.id === targetItemId);
+    if (!targetItem) return currentField;
+
+    // If navigating from header to regular row, or vice versa, we need to map fields appropriately
+    if (isHeaderItem(targetItem)) {
+      // Navigating to a header - use segmentName if coming from any field
+      if (currentField === 'segmentName' || currentField === 'script' || currentField === 'notes') {
+        return 'segmentName';
+      }
+    } else {
+      // Navigating to a regular row
+      if (currentField === 'segmentName') {
+        // Coming from header segmentName, go to script field on regular row
+        return 'script';
+      }
+      // For other fields, keep the same field if it exists
+      const targetRef = cellRefs.current[`${targetItemId}-${currentField}`];
+      if (targetRef) {
+        return currentField;
+      }
+      // Fallback to script if the current field doesn't exist on target
+      return 'script';
+    }
+    
+    return currentField;
   };
 
   const navigateToCell = (itemId: string, field: string) => {
@@ -25,6 +53,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
           const length = cellRef.value.length;
           cellRef.setSelectionRange(length, length);
         }
+      } else {
+        console.log('Cell ref not found, available refs:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
       }
     }, 0);
   };
@@ -47,7 +77,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItemId = items[nextItemIndex].id;
-        navigateToCell(nextItemId, field);
+        const targetField = findNavigationField(nextItemId, field);
+        navigateToCell(nextItemId, targetField);
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -64,7 +95,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (prevItemIndex >= 0) {
         const prevItem = items[prevItemIndex];
-        navigateToCell(prevItem.id, field);
+        const targetField = findNavigationField(prevItem.id, field);
+        navigateToCell(prevItem.id, targetField);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -81,7 +113,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItem = items[nextItemIndex];
-        navigateToCell(nextItem.id, field);
+        const targetField = findNavigationField(nextItem.id, field);
+        navigateToCell(nextItem.id, targetField);
       }
     }
   };
