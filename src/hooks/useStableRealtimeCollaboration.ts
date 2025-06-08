@@ -81,14 +81,7 @@ export const useStableRealtimeCollaboration = ({
         onReloadCurrentRundownRef.current?.();
       }, 100);
     }
-    
-    // Show notification
-    toast({
-      title: 'Rundown Updated',
-      description: 'Your teammate made changes to this rundown',
-      duration: 3000,
-    });
-  }, [toast]);
+  }, []);
 
   // ONE stable effect that only runs when absolutely necessary
   useEffect(() => {

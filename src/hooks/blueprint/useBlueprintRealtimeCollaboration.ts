@@ -59,17 +59,10 @@ export const useBlueprintRealtimeCollaboration = ({
     try {
       // Apply the blueprint update
       onBlueprintUpdatedRef.current(payload.new);
-      
-      // Show notification
-      toast({
-        title: 'Blueprint Updated',
-        description: 'Your teammate made changes to the blueprint',
-        duration: 3000,
-      });
     } catch (error) {
       console.error('Error processing blueprint realtime update:', error);
     }
-  }, [rundownId, user?.id, toast]);
+  }, [rundownId, user?.id]);
 
   useEffect(() => {
     // Clear any existing subscription

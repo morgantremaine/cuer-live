@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -223,15 +222,6 @@ export const useRealtimeRundown = ({
       }
 
       console.log('✅ Successfully applied realtime rundown update');
-
-      // SIMPLIFIED: Don't show toast for showcaller-only updates
-      if (!isShowcallerOnlyUpdate) {
-        toast({
-          title: 'Rundown Updated',
-          description: 'Your teammate made changes to this rundown',
-          duration: 3000,
-        });
-      }
 
     } catch (error) {
       console.error('Error processing realtime update:', error);
