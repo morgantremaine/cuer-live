@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export interface ShowcallerState {
@@ -35,6 +34,9 @@ export const useShowcallerState = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stateChangeCallbackRef = useRef(onShowcallerStateChange);
+  const hasInitialized = useRef(false);
+  
+  // Keep callback ref updated
   stateChangeCallbackRef.current = onShowcallerStateChange;
 
   // Check if current user is the controller
@@ -338,21 +340,24 @@ export const useShowcallerState = ({
     }
   }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, userId]);
 
-  // Initialize current segment on mount if none exists
+  // Initialize current segment on mount if none exists - with proper initialization guard
   useEffect(() => {
-    if (!showcallerState.currentSegmentId && items.length > 0) {
+    if (!hasInitialized.current && !showcallerState.currentSegmentId && items.length > 0) {
       const firstSegment = items.find(item => item.type === 'regular');
       if (firstSegment) {
         const duration = timeToSeconds(firstSegment.duration);
         console.log('📺 Initializing with first segment:', firstSegment.id);
-        updateShowcallerState({
+        setShowcallerState(prev => ({
+          ...prev,
           currentSegmentId: firstSegment.id,
           timeRemaining: duration
-        }, false);
+        }));
+        hasInitialized.current = true;
       }
     }
-  }, [items.length, showcallerState.currentSegmentId, timeToSeconds, updateShowcallerState]);
+  }, [items.length, showcallerState.currentSegmentId, timeToSeconds]);
 
+  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -361,7 +366,8 @@ export const useShowcallerState = ({
     };
   }, []);
 
-  return {
+  // Memoize the return object to prevent unnecessary re-renders
+  return useMemo(() => ({
     showcallerState,
     play,
     pause,
@@ -372,5 +378,13 @@ export const useShowcallerState = ({
     currentSegmentId: showcallerState.currentSegmentId,
     timeRemaining: showcallerState.timeRemaining,
     isController: isController()
-  };
+  }), [
+    showcallerState,
+    play,
+    pause,
+    forward,
+    backward,
+    applyShowcallerState,
+    isController
+  ]);
 };

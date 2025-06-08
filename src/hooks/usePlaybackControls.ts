@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerState } from './useShowcallerState';
 import { useShowcallerPersistence } from './useShowcallerPersistence';
@@ -12,6 +12,7 @@ export const usePlaybackControls = (
   rundownId?: string
 ) => {
   const { user } = useAuth();
+  const hasLoadedInitialState = useRef(false);
 
   // Initialize showcaller state management with user ID
   const {
@@ -51,10 +52,16 @@ export const usePlaybackControls = (
     enabled: !!rundownId
   });
 
-  // Load initial showcaller state when rundown changes
+  // Load initial showcaller state when rundown changes - with proper memoization
   const loadInitialState = useCallback(async () => {
-    if (rundownId) {
-      console.log('📺 Loading initial showcaller state for rundown:', rundownId);
+    if (!rundownId || hasLoadedInitialState.current) {
+      return;
+    }
+
+    console.log('📺 Loading initial showcaller state for rundown:', rundownId);
+    hasLoadedInitialState.current = true;
+    
+    try {
       const state = await loadShowcallerState();
       if (state) {
         console.log('📺 Applying loaded state:', state);
@@ -62,12 +69,18 @@ export const usePlaybackControls = (
       } else {
         console.log('📺 No initial state found');
       }
+    } catch (error) {
+      console.error('📺 Error loading initial state:', error);
     }
-  }, [rundownId, loadShowcallerState, applyShowcallerState]);
+  }, [rundownId]); // Only depend on rundownId
 
+  // Reset the loading flag when rundownId changes
   useEffect(() => {
-    loadInitialState();
-  }, [loadInitialState]);
+    if (rundownId) {
+      hasLoadedInitialState.current = false;
+      loadInitialState();
+    }
+  }, [rundownId, loadInitialState]);
 
   return {
     isPlaying,
