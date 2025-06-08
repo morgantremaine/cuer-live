@@ -307,6 +307,10 @@ export const useShowcallerState = ({
     if (synchronizedState.isPlaying && synchronizedState.currentSegmentId) {
       // If external state is playing, start our timer immediately
       startTimer();
+    } else {
+      // CRITICAL: If external state is not playing, ensure timer stays stopped
+      // This is the key fix - we must not restart the timer if isPlaying is false
+      console.log('📺 External state shows not playing - keeping timer stopped');
     }
     
     // Reset the flag after a longer delay to ensure all async operations complete
