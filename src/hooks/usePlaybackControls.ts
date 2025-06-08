@@ -45,7 +45,10 @@ export const usePlaybackControls = (
   // Initialize persistence
   const { saveShowcallerState, loadShowcallerState } = useShowcallerPersistence({
     rundownId,
-    onShowcallerStateReceived: applyShowcallerState
+    trackOwnUpdate: (timestamp) => {
+      // Track our own updates to prevent conflicts
+      trackOwnShowcallerUpdate(timestamp);
+    }
   });
 
   // Initialize realtime synchronization with tracking and activity callback
