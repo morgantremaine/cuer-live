@@ -18,11 +18,13 @@ export const useShowcallerPersistence = ({
   // Save showcaller state to database with debouncing
   const saveShowcallerState = useCallback(async (state: ShowcallerState) => {
     if (!rundownId) {
+      console.log('📺 No rundownId for saving showcaller state');
       return;
     }
 
     // Skip if this exact state was already saved
     if (lastSaveRef.current === state.lastUpdate) {
+      console.log('📺 Skipping save - same lastUpdate');
       return;
     }
 
@@ -33,6 +35,7 @@ export const useShowcallerPersistence = ({
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
+        console.log('📺 Saving showcaller state:', state);
         const { error } = await supabase
           .from('rundowns')
           .update({
@@ -45,6 +48,7 @@ export const useShowcallerPersistence = ({
           console.error('Error saving showcaller state:', error);
         } else {
           lastSaveRef.current = state.lastUpdate;
+          console.log('📺 Successfully saved showcaller state');
         }
       } catch (error) {
         console.error('Error saving showcaller state:', error);
@@ -55,10 +59,12 @@ export const useShowcallerPersistence = ({
   // Load showcaller state from database
   const loadShowcallerState = useCallback(async (): Promise<ShowcallerState | null> => {
     if (!rundownId) {
+      console.log('📺 No rundownId for loading showcaller state');
       return null;
     }
 
     try {
+      console.log('📺 Loading showcaller state for rundown:', rundownId);
       const { data, error } = await supabase
         .from('rundowns')
         .select('showcaller_state')
@@ -71,9 +77,11 @@ export const useShowcallerPersistence = ({
       }
 
       if (data?.showcaller_state) {
+        console.log('📺 Loaded showcaller state:', data.showcaller_state);
         return data.showcaller_state as ShowcallerState;
       }
 
+      console.log('📺 No showcaller state found in database');
       return null;
     } catch (error) {
       console.error('Error loading showcaller state:', error);

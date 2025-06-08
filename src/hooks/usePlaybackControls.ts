@@ -32,6 +32,7 @@ export const usePlaybackControls = (
     onShowcallerStateChange: (state) => {
       // Only save if this user is the controller
       if (isController) {
+        console.log('📺 State changed, saving...');
         saveShowcallerState(state);
       }
     }
@@ -53,9 +54,13 @@ export const usePlaybackControls = (
   // Load initial showcaller state when rundown changes
   const loadInitialState = useCallback(async () => {
     if (rundownId) {
+      console.log('📺 Loading initial showcaller state for rundown:', rundownId);
       const state = await loadShowcallerState();
       if (state) {
+        console.log('📺 Applying loaded state:', state);
         applyShowcallerState(state);
+      } else {
+        console.log('📺 No initial state found');
       }
     }
   }, [rundownId, loadShowcallerState, applyShowcallerState]);
