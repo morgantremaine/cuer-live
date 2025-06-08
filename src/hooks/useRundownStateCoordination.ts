@@ -13,7 +13,7 @@ export const useRundownStateCoordination = () => {
   const stableUpdateItemRef = useRef(coreState.updateItem);
   const stableMarkAsChangedRef = useRef(coreState.markAsChanged);
   
-  // Simple cellRefs storage
+  // Simple cellRefs storage with stable reference
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   // Update refs when core functions change
@@ -32,7 +32,7 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Simple cell navigation function with correct signature
+  // Simple cell navigation function with correct signature and improved timing
   const handleCellNavigation = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
     const key = e.key;
     console.log('Navigation key pressed:', key, 'from', itemId, field);
@@ -49,16 +49,20 @@ export const useRundownStateCoordination = () => {
       if (nextItemIndex < coreState.items.length) {
         const nextItemId = coreState.items[nextItemIndex].id;
         const targetCellKey = `${nextItemId}-${field}`;
-        const targetCell = cellRefs.current[targetCellKey];
         
-        console.log('Trying to focus next cell:', targetCellKey);
-        if (targetCell) {
-          console.log('Navigation successful to:', targetCellKey);
-          targetCell.focus();
-        } else {
-          console.log('Cell not found in refs:', targetCellKey);
+        // Add a small delay to ensure refs are available after re-render
+        setTimeout(() => {
+          const targetCell = cellRefs.current[targetCellKey];
+          console.log('Trying to focus next cell:', targetCellKey);
           console.log('Available refs:', Object.keys(cellRefs.current));
-        }
+          
+          if (targetCell) {
+            console.log('Navigation successful to:', targetCellKey);
+            targetCell.focus();
+          } else {
+            console.log('Cell not found in refs:', targetCellKey);
+          }
+        }, 10);
       }
     } else if (key === 'ArrowUp') {
       const currentItemIndex = coreState.items.findIndex(item => item.id === itemId);
@@ -72,16 +76,20 @@ export const useRundownStateCoordination = () => {
       if (prevItemIndex >= 0) {
         const prevItem = coreState.items[prevItemIndex];
         const targetCellKey = `${prevItem.id}-${field}`;
-        const targetCell = cellRefs.current[targetCellKey];
         
-        console.log('Trying to focus previous cell:', targetCellKey);
-        if (targetCell) {
-          console.log('Navigation successful to:', targetCellKey);
-          targetCell.focus();
-        } else {
-          console.log('Cell not found in refs:', targetCellKey);
+        // Add a small delay to ensure refs are available after re-render
+        setTimeout(() => {
+          const targetCell = cellRefs.current[targetCellKey];
+          console.log('Trying to focus previous cell:', targetCellKey);
           console.log('Available refs:', Object.keys(cellRefs.current));
-        }
+          
+          if (targetCell) {
+            console.log('Navigation successful to:', targetCellKey);
+            targetCell.focus();
+          } else {
+            console.log('Cell not found in refs:', targetCellKey);
+          }
+        }, 10);
       }
     }
   }, [coreState.items]);
