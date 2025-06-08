@@ -55,7 +55,6 @@ export const usePlaybackControls = (
     if (rundownId) {
       const state = await loadShowcallerState();
       if (state) {
-        console.log('📺 Loading initial showcaller state:', state);
         applyShowcallerState(state);
       }
     }
