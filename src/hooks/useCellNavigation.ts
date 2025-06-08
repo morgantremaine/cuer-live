@@ -1,11 +1,14 @@
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Column } from './useColumnsManager';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
-export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
+export const useCellNavigation = (
+  columns: Column[], 
+  items: RundownItem[], 
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>
+) => {
   const [selectedCell, setSelectedCell] = useState<{ itemId: string; field: string } | null>(null);
-  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
   const handleCellClick = (itemId: string, field: string) => {
     setSelectedCell({ itemId, field });
@@ -97,7 +100,6 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
 
   return {
     selectedCell,
-    cellRefs,
     handleCellClick,
     handleKeyDown
   };

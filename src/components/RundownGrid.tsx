@@ -45,13 +45,18 @@ const RundownGrid = () => {
   const { 
     showColorPicker, 
     handleToggleColorPicker, 
-    handleCellClick, 
-    handleKeyDown, 
     getRowStatus, 
     selectColor,
     getColumnWidth,
     updateColumnWidth
   } = uiState;
+
+  // Use the navigation hook with the shared cellRefs
+  const { selectedCell, handleCellClick, handleKeyDown } = useCellNavigation(
+    visibleColumns, 
+    items, 
+    cellRefs
+  );
 
   // Create a wrapper function that matches the expected signature
   const handleColorSelect = (id: string, color: string) => {
