@@ -35,9 +35,22 @@ export const useRundownGridUI = (
   );
 
   const {
-    handleCellClick,
-    handleKeyDown
-  } = useCellNavigation(cellRefs, items, visibleColumns);
+    handleCellNavigation
+  } = useCellNavigation(items);
+
+  // Create wrapper functions for compatibility
+  const handleCellClick = (itemId: string, field: string) => {
+    // Focus the specific cell
+    const cellKey = `${itemId}-${field}`;
+    const element = cellRefs.current[cellKey];
+    if (element) {
+      element.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    handleCellNavigation(e, itemId, field);
+  };
 
   return {
     showColorPicker,

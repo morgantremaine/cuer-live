@@ -1,7 +1,6 @@
 
 import { useMemo } from 'react';
 import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
@@ -10,19 +9,16 @@ export const useRundownStateCoordination = () => {
   // Core rundown state and operations
   const basicState = useRundownBasicState();
   
-  // Enhanced state with auto-save, realtime, and playback
-  const integratedState = useRundownStateIntegration(
-    basicState.markAsChanged,
-    basicState.rundownTitle,
-    basicState.timezone,
-    basicState.rundownStartTime,
-    basicState.setRundownTitleDirectly,
-    basicState.setTimezoneDirectly,
-    false // isProcessingRealtimeUpdate - will be set by gridCore
-  );
-  
-  // Grid-specific core functionality
-  const gridCore = useRundownGridCore(integratedState);
+  // Grid-specific core functionality - pass the basic state as integration props
+  const gridCore = useRundownGridCore({
+    markAsChanged: basicState.markAsChanged,
+    rundownTitle: basicState.rundownTitle,
+    timezone: basicState.timezone,
+    rundownStartTime: basicState.rundownStartTime,
+    setRundownTitleDirectly: basicState.setRundownTitleDirectly,
+    setTimezoneDirectly: basicState.setTimezoneDirectly,
+    isProcessingRealtimeUpdate: false // Will be managed internally by gridCore
+  });
   
   // Grid interactions (drag/drop, selection, clipboard)
   const gridInteractions = useRundownGridInteractions(
@@ -55,35 +51,10 @@ export const useRundownStateCoordination = () => {
     gridCore.markAsChanged
   );
 
-  // Enhanced auto-save integration with showcaller activity detection
-  const enhancedAutoSave = useMemo(() => {
-    const { hasUnsavedChanges, isSaving, markAsChanged, setApplyingRemoteUpdate, updateSavedSignature } = gridCore;
-    
-    return {
-      hasUnsavedChanges,
-      isSaving,
-      markAsChanged,
-      setApplyingRemoteUpdate,
-      updateSavedSignature
-    };
-  }, [gridCore.hasUnsavedChanges, gridCore.isSaving, gridCore.markAsChanged, gridCore.setApplyingRemoteUpdate, gridCore.updateSavedSignature]);
-
-  // Enhanced realtime with editing state detection
-  const enhancedRealtime = useMemo(() => {
-    const { isConnected, isProcessingRealtimeUpdate } = gridCore;
-    
-    return {
-      isConnected,
-      isProcessingRealtimeUpdate
-    };
-  }, [gridCore.isConnected, gridCore.isProcessingRealtimeUpdate]);
-
   return {
     coreState: {
       ...basicState,
-      ...gridCore,
-      ...enhancedAutoSave,
-      ...enhancedRealtime
+      ...gridCore
     },
     interactions: gridInteractions,
     uiState: gridUI

@@ -13,31 +13,13 @@ import { RundownItem } from '@/types/rundown';
 import { SavedRundown } from './useRundownStorage/types';
 
 interface GridCoreProps {
-  items: RundownItem[];
-  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
-  updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void;
-  addHeader: (insertAfterIndex?: number) => void;
-  deleteRow: (id: string) => void;
-  deleteMultipleRows: (ids: string[]) => void;
-  addMultipleRows: (items: RundownItem[], calculateEndTime: any) => void;
-  getRowNumber: (index: number) => string;
-  toggleFloatRow: (id: string) => void;
-  calculateTotalRuntime: () => string;
-  calculateHeaderDuration: (index: number) => string;
-  columns: any[];
-  visibleColumns: any[];
-  handleAddColumn: (name: string) => void;
-  handleReorderColumns: (reorderedColumns: any[]) => void;
-  handleDeleteColumn: (columnId: string) => void;
-  handleRenameColumn: (columnId: string, newName: string) => void;
-  handleToggleColumnVisibility: (columnId: string) => void;
-  handleLoadLayout: (layout: any) => void;
-  handleUpdateColumnWidth: (columnId: string, width: number) => void;
-  hasUnsavedChanges: boolean;
-  isSaving: boolean;
-  setApplyingRemoteUpdate: (applying: boolean) => void;
-  updateSavedSignature: (items: any[], title: string, columns?: any[], timezone?: string, startTime?: string) => void;
+  markAsChanged: () => void;
+  rundownTitle: string;
+  timezone: string;
+  rundownStartTime: string;
+  setRundownTitleDirectly: (title: string) => void;
+  setTimezoneDirectly: (timezone: string) => void;
+  isProcessingRealtimeUpdate?: boolean;
 }
 
 export const useRundownGridCore = (integratedState: GridCoreProps) => {
@@ -50,7 +32,7 @@ export const useRundownGridCore = (integratedState: GridCoreProps) => {
     setTimezoneDirectly?: (timezone: string) => void;
     setRundownStartTimeDirectly?: (time: string) => void;
     handleLoadLayout?: (layout: any) => void;
-    setItems?: (items: RundownItem[]) => void;
+    setItems?: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
     loadRundowns?: () => void;
   }>({});
 
@@ -87,7 +69,17 @@ export const useRundownGridCore = (integratedState: GridCoreProps) => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Use the provided integrated state
+  // Use the provided integrated state for state integration
+  const stateIntegration = useRundownStateIntegration(
+    integratedState.markAsChanged,
+    integratedState.rundownTitle,
+    integratedState.timezone,
+    integratedState.rundownStartTime,
+    integratedState.setRundownTitleDirectly,
+    integratedState.setTimezoneDirectly,
+    isProcessingRealtimeUpdate
+  );
+
   const {
     items,
     setItems,
@@ -114,7 +106,7 @@ export const useRundownGridCore = (integratedState: GridCoreProps) => {
     isSaving,
     setApplyingRemoteUpdate,
     updateSavedSignature
-  } = integratedState;
+  } = stateIntegration;
 
   // Update stable refs
   stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
@@ -150,7 +142,7 @@ export const useRundownGridCore = (integratedState: GridCoreProps) => {
     // Update items if changed
     if (updatedRundown.items && JSON.stringify(updatedRundown.items) !== JSON.stringify(items)) {
       console.log('🔄 Updating items from realtime');
-      stableCallbacksRef.current.setItems?.(updatedRundown.items);
+      stableCallbacksRef.current.setItems?.(() => updatedRundown.items);
     }
     
     // Load undo history if present
