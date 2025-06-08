@@ -30,7 +30,7 @@ export const useRundownStateIntegration = (
     calculateHeaderDuration
   } = useRundownItems(markAsChanged);
 
-  // Enhanced updateItem to handle both standard and custom fields
+  // Enhanced updateItem to handle both standard and custom fields, including external notes
   const updateItem = useCallback((id: string, field: string, value: string) => {
     // Ensure items is an array before finding
     if (!Array.isArray(items)) {
@@ -49,6 +49,16 @@ export const useRundownStateIntegration = (
         customFields: {
           ...currentCustomFields,
           [customFieldKey]: value
+        }
+      });
+    } else if (field === 'externalNotes') {
+      // Handle external notes field - this will be stored separately in the database
+      // For now, we'll store it as a custom field to maintain compatibility
+      const currentCustomFields = item.customFields || {};
+      originalUpdateItem(id, {
+        customFields: {
+          ...currentCustomFields,
+          externalNotes: value
         }
       });
     } else {

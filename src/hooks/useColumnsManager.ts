@@ -22,7 +22,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
     { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-    { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+    { id: 'notes', name: 'Team Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'externalNotes', name: 'External Notes', key: 'externalNotes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
   // Ensure columns is always an array before filtering
