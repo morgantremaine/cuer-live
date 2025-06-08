@@ -190,6 +190,8 @@ export const useShowcallerState = ({
 
   // Control functions - these are significant changes that should sync immediately
   const play = useCallback((selectedSegmentId?: string) => {
+    const playbackStartTime = Date.now();
+    
     if (selectedSegmentId) {
       // Mark segments before selected as upcoming
       const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
@@ -207,7 +209,7 @@ export const useShowcallerState = ({
     
     updateShowcallerState({ 
       isPlaying: true,
-      playbackStartTime: Date.now()
+      playbackStartTime
     }, true); // Sync play action immediately
     startTimer();
   }, [items, updateItem, setCurrentSegment, updateShowcallerState, startTimer]);
@@ -248,7 +250,6 @@ export const useShowcallerState = ({
 
   // Apply external showcaller state (from realtime updates) - CRITICAL for sync
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
-    // Always apply external state to ensure sync, regardless of timestamps
     console.log('📺 Applying external showcaller state:', externalState);
     
     // CRITICAL: Stop current timer first to prevent conflicts
@@ -265,16 +266,39 @@ export const useShowcallerState = ({
       }
     }
     
-    // Set the state immediately - no async delays
-    setShowcallerState(externalState);
+    // CRITICAL: Calculate synchronized time remaining based on shared playback start time
+    let synchronizedState = { ...externalState };
+    
+    if (externalState.isPlaying && externalState.playbackStartTime && externalState.currentSegmentId) {
+      const segment = items.find(item => item.id === externalState.currentSegmentId);
+      if (segment) {
+        const segmentDuration = timeToSeconds(segment.duration);
+        const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000);
+        const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
+        
+        synchronizedState = {
+          ...externalState,
+          timeRemaining: syncedTimeRemaining
+        };
+        
+        console.log('🕐 Synchronized timer:', {
+          segmentDuration,
+          elapsedTime,
+          syncedTimeRemaining,
+          originalTimeRemaining: externalState.timeRemaining
+        });
+      }
+    }
+    
+    // Set the synchronized state immediately
+    setShowcallerState(synchronizedState);
     
     // CRITICAL: Handle timer state based on external playing status
-    if (externalState.isPlaying && externalState.currentSegmentId) {
+    if (synchronizedState.isPlaying && synchronizedState.currentSegmentId) {
       // If external state is playing, start our timer immediately
       startTimer();
     }
-    // If external state is not playing, timer is already stopped above
-  }, [stopTimer, clearCurrentStatus, items, updateItem, startTimer]);
+  }, [stopTimer, clearCurrentStatus, items, updateItem, startTimer, timeToSeconds]);
 
   // Initialize current segment on mount if none exists - only once
   useEffect(() => {
