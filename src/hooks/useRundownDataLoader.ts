@@ -13,7 +13,7 @@ interface UseRundownDataLoaderProps {
   setTimezone: (timezone: string) => void;
   setRundownStartTime: (startTime: string) => void;
   handleLoadLayout: (columns: Column[]) => void;
-  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void; // Fix the type to match what's being passed
+  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
   onRundownLoaded?: (rundown: SavedRundown) => void;
 }
 
@@ -46,22 +46,24 @@ export const useRundownDataLoader = ({
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
-    console.log('Loading rundown data:', rundown.title, 'with items:', rundown.items?.length || 0);
+    console.log('🔄 Loading rundown data:', rundown.title, 'with timezone:', rundown.timezone, 'start_time:', rundown.start_time);
     
     // Mark as loading and loaded to prevent loops
     isLoadingRef.current = true;
     loadedRef.current = currentRundownId;
     
-    // Set the rundown data
+    // Set the rundown data using direct setters to avoid triggering auto-save
     setRundownTitle(rundown.title);
     
-    if (rundown.timezone) {
-      setTimezone(rundown.timezone);
-    }
+    // Load timezone - use saved value or fallback to default
+    const timezoneToLoad = rundown.timezone || 'America/New_York';
+    console.log('🌍 Loading timezone:', timezoneToLoad);
+    setTimezone(timezoneToLoad);
     
-    if (rundown.start_time) {
-      setRundownStartTime(rundown.start_time);
-    }
+    // Load start time - use saved value or fallback to default
+    const startTimeToLoad = rundown.start_time || '09:00:00';
+    console.log('⏰ Loading start time:', startTimeToLoad);
+    setRundownStartTime(startTimeToLoad);
     
     if (rundown.columns) {
       handleLoadLayout(rundown.columns);
@@ -69,8 +71,8 @@ export const useRundownDataLoader = ({
 
     // Load the items back into the state using the updater pattern
     if (rundown.items && Array.isArray(rundown.items)) {
-      console.log('Setting rundown items:', rundown.items.length);
-      setItems(() => rundown.items); // Use updater function pattern
+      console.log('📋 Setting rundown items:', rundown.items.length);
+      setItems(() => rundown.items);
     }
 
     // Call the callback with the loaded rundown
@@ -85,7 +87,7 @@ export const useRundownDataLoader = ({
   }, [
     rundownId, 
     paramId, 
-    savedRundowns.length,
+    savedRundowns,
     loading, 
     setRundownTitle, 
     setTimezone, 
