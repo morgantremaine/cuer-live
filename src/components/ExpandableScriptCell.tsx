@@ -71,14 +71,19 @@ const ExpandableScriptCell = ({
   // Handle key down events - different behavior for expanded vs collapsed
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (isExpanded) {
-      // When expanded, allow Enter key to create new lines
+      // When expanded, allow Enter key to create new lines but still handle arrow keys
       if (e.key === 'Enter') {
         // Don't prevent default - let the textarea handle it naturally
         return;
       }
+      // For arrow keys when expanded, let them work normally within the textarea
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        // Don't prevent default - let textarea handle cursor movement
+        return;
+      }
     } else {
-      // When collapsed, use navigation for Enter key
-      if (e.key === 'Enter') {
+      // When collapsed, use navigation for Enter and arrow keys
+      if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         onKeyDown(e, itemId, cellRefKey);
         return;
       }
@@ -89,7 +94,7 @@ const ExpandableScriptCell = ({
   };
 
   return (
-    <div className="flex items-start space-x-2 w-full">
+    <div className="flex items-start space-x-2 w-full" data-expandable-cell>
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"

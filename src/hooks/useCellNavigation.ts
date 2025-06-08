@@ -12,6 +12,15 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    // For expandable script cells, don't interfere with their internal navigation logic
+    const target = e.target as HTMLElement;
+    const isExpandableCell = target.closest('[data-expandable-cell]');
+    
+    if (isExpandableCell) {
+      // Let expandable cells handle their own navigation
+      return;
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault();
       const currentIndex = items.findIndex(item => item.id === itemId);
