@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -124,7 +125,7 @@ export const useShowcallerState = ({
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
 
-  // Simplified timer logic
+  // Timer logic - only run if we're the controller
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -283,7 +284,7 @@ export const useShowcallerState = ({
     }
   }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, startTimer]);
 
-  // Simplified external state application - no timer conflicts
+  // External state application with improved timer sync
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
     // Prevent applying the same state multiple times
     if (lastSyncedStateRef.current === externalState.lastUpdate) {
@@ -329,7 +330,7 @@ export const useShowcallerState = ({
     // Set the synchronized state
     setShowcallerState(synchronizedState);
     
-    // Only restart timer if we're still the controller
+    // Only restart timer if we're the controller
     if (synchronizedState.isPlaying && synchronizedState.controllerId === userId) {
       console.log('📺 Restarting timer as controller after sync');
       setTimeout(() => startTimer(), 100);

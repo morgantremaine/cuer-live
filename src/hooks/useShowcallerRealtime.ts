@@ -79,7 +79,7 @@ export const useShowcallerRealtime = ({
     console.log('📺 Setting up showcaller realtime subscription for rundown:', rundownId);
     
     const channel = supabase
-      .channel(`showcaller-${rundownId}-${user.id}`)
+      .channel(`showcaller-${rundownId}`)
       .on(
         'postgres_changes',
         {
