@@ -43,13 +43,13 @@ const RegularRowContent = ({
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
             <Play 
-              className="h-4 w-4 text-blue-500 fill-blue-500 scale-125" 
+              className="h-4 w-4 text-red-500 fill-red-500 scale-125" 
               style={{ filter: 'drop-shadow(0 0 1px black)' }}
             />
           )}
           <span>{rowNumber}</span>
           {isDraggingMultiple && isSelected && (
-            <span className="text-xs bg-blue-500 text-white px-1 rounded">M</span>
+            <span className="text-xs bg-red-500 text-white px-1 rounded">M</span>
           )}
         </div>
       </td>
