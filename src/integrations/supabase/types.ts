@@ -101,45 +101,18 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
-          profile_picture_url: string | null
         }
         Insert: {
           created_at?: string | null
           email: string
           full_name?: string | null
           id: string
-          profile_picture_url?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string
           full_name?: string | null
           id?: string
-          profile_picture_url?: string | null
-        }
-        Relationships: []
-      }
-      rundown_presence: {
-        Row: {
-          created_at: string
-          id: string
-          last_seen: string
-          rundown_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          last_seen?: string
-          rundown_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          last_seen?: string
-          rundown_id?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -342,10 +315,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      cleanup_old_presence: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       get_user_role_in_team: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string
@@ -393,10 +362,6 @@ export type Database = {
       is_user_team_member: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
-      }
-      update_rundown_presence: {
-        Args: { rundown_uuid: string }
-        Returns: undefined
       }
     }
     Enums: {

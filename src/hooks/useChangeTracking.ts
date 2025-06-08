@@ -18,6 +18,9 @@ export const useChangeTracking = (
   const lastSavedDataRef = useRef<string>('');
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isApplyingRemoteUpdateRef = useRef(false);
+  const realtimeCooldownRef = useRef<NodeJS.Timeout | null>(null);
+  const isInRealtimeCooldown = useRef(false);
+  const lastProcessingFlagClearTime = useRef<number>(0);
 
   // Create a stable signature for the current data
   const createDataSignature = useCallback(() => {
@@ -43,7 +46,6 @@ export const useChangeTracking = (
         const currentSignature = createDataSignature();
         lastSavedDataRef.current = currentSignature;
         setIsInitialized(true);
-        console.log('📋 Change tracking initialized');
       }, 500);
     }
 
@@ -54,19 +56,26 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createDataSignature]);
 
-  // Track changes after initialization - simplified logic
+  // Track changes after initialization - ENHANCED protection against realtime updates
   useEffect(() => {
+    // CRITICAL: Multiple layers of protection against realtime update interference
     if (!isInitialized || 
         isLoading || 
         isProcessingRealtimeUpdate || 
-        isApplyingRemoteUpdateRef.current) {
+        isApplyingRemoteUpdateRef.current ||
+        isInRealtimeCooldown.current) {
+      return;
+    }
+
+    // Additional protection: don't process changes too soon after clearing processing flags
+    const timeSinceLastClear = Date.now() - lastProcessingFlagClearTime.current;
+    if (timeSinceLastClear < 1000) {
       return;
     }
 
     const currentSignature = createDataSignature();
     
     if (lastSavedDataRef.current !== currentSignature) {
-      console.log('📝 Changes detected, marking as unsaved');
       setHasUnsavedChanges(true);
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createDataSignature, isProcessingRealtimeUpdate]);
@@ -88,20 +97,19 @@ export const useChangeTracking = (
     
     lastSavedDataRef.current = savedSignature;
     setHasUnsavedChanges(false);
-    console.log('💾 Marked as saved');
   }, []);
 
   const markAsChanged = useCallback(() => {
     if (isInitialized && 
         !isLoading && 
         !isProcessingRealtimeUpdate && 
-        !isApplyingRemoteUpdateRef.current) {
-      console.log('✏️ Manually marking as changed');
+        !isApplyingRemoteUpdateRef.current &&
+        !isInRealtimeCooldown.current) {
       setHasUnsavedChanges(true);
     }
   }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
 
-  // Update saved signature for external updates
+  // ENHANCED signature update with perfect synchronization
   const updateSavedSignature = useCallback((
     newItems: RundownItem[], 
     newTitle: string, 
@@ -109,6 +117,12 @@ export const useChangeTracking = (
     newTimezone?: string, 
     newStartTime?: string
   ) => {
+    // Start realtime cooldown period to prevent any changes from being detected
+    isInRealtimeCooldown.current = true;
+    if (realtimeCooldownRef.current) {
+      clearTimeout(realtimeCooldownRef.current);
+    }
+
     const newSignature = JSON.stringify({
       items: newItems || [],
       title: newTitle || '',
@@ -119,13 +133,37 @@ export const useChangeTracking = (
     
     lastSavedDataRef.current = newSignature;
     setHasUnsavedChanges(false);
-    console.log('🔄 Updated saved signature from external source');
+
+    // Set cooldown period to prevent immediate change detection
+    realtimeCooldownRef.current = setTimeout(() => {
+      isInRealtimeCooldown.current = false;
+    }, 1500); // 1.5 second cooldown
   }, []);
 
   // Method to set the applying remote update flag
   const setApplyingRemoteUpdate = useCallback((applying: boolean) => {
     isApplyingRemoteUpdateRef.current = applying;
-    console.log('🌐 Setting applying remote update:', applying);
+
+    if (!applying) {
+      // When finishing remote update, ensure cooldown is active and track timing
+      lastProcessingFlagClearTime.current = Date.now();
+      isInRealtimeCooldown.current = true;
+      if (realtimeCooldownRef.current) {
+        clearTimeout(realtimeCooldownRef.current);
+      }
+      realtimeCooldownRef.current = setTimeout(() => {
+        isInRealtimeCooldown.current = false;
+      }, 2000); // Extended cooldown after remote updates
+    }
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (realtimeCooldownRef.current) {
+        clearTimeout(realtimeCooldownRef.current);
+      }
+    };
   }, []);
 
   return {
