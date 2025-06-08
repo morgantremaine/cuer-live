@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import SearchBar from '../SearchBar';
+import ThemeToggle from '../ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderControlsProps {
@@ -78,6 +79,7 @@ const HeaderControls = ({
           onReplaceText={onReplaceText}
         />
       </div>
+      <ThemeToggle />
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
