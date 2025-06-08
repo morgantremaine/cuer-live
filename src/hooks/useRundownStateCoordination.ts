@@ -30,7 +30,7 @@ export const useRundownStateCoordination = () => {
   );
 
   // Get cell navigation handlers
-  const { handleCellClick, handleKeyDown } = useCellNavigation(coreState.visibleColumns, coreState.items);
+  const { handleCellClick, handleKeyDown, cellRefs } = useCellNavigation(coreState.visibleColumns, coreState.items);
 
   // Get interaction handlers
   const interactions = useRundownGridInteractions(
@@ -68,8 +68,9 @@ export const useRundownStateCoordination = () => {
     getColumnWidth,
     updateColumnWidth,
     handleCellClick,
-    handleKeyDown
-  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth, handleCellClick, handleKeyDown]);
+    handleKeyDown,
+    cellRefs
+  }), [uiState, handleColorSelection, getColumnWidth, updateColumnWidth, handleCellClick, handleKeyDown, cellRefs]);
 
   return {
     coreState,

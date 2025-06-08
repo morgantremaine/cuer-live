@@ -12,6 +12,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    console.log('Navigation key pressed:', e.key, 'from', itemId, field);
+    
     if (e.key === 'Enter') {
       e.preventDefault();
       const currentIndex = items.findIndex(item => item.id === itemId);
@@ -24,9 +26,18 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItemId = items[nextItemIndex].id;
+        const cellKey = `${nextItemId}-${field}`;
+        console.log('Trying to focus next cell:', cellKey);
         setSelectedCell({ itemId: nextItemId, field });
+        
         setTimeout(() => {
-          cellRefs.current[`${nextItemId}-${field}`]?.focus();
+          const targetCell = cellRefs.current[cellKey];
+          if (targetCell) {
+            targetCell.focus();
+            console.log('Focused cell:', cellKey);
+          } else {
+            console.log('Cell not found in refs:', cellKey, Object.keys(cellRefs.current));
+          }
         }, 0);
       }
     } else if (e.key === 'ArrowUp') {
@@ -41,9 +52,18 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (prevItemIndex >= 0) {
         const prevItem = items[prevItemIndex];
+        const cellKey = `${prevItem.id}-${field}`;
+        console.log('Trying to focus previous cell:', cellKey);
         setSelectedCell({ itemId: prevItem.id, field });
+        
         setTimeout(() => {
-          cellRefs.current[`${prevItem.id}-${field}`]?.focus();
+          const targetCell = cellRefs.current[cellKey];
+          if (targetCell) {
+            targetCell.focus();
+            console.log('Focused cell:', cellKey);
+          } else {
+            console.log('Cell not found in refs:', cellKey, Object.keys(cellRefs.current));
+          }
         }, 0);
       }
     } else if (e.key === 'ArrowDown') {
@@ -58,9 +78,18 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItem = items[nextItemIndex];
+        const cellKey = `${nextItem.id}-${field}`;
+        console.log('Trying to focus next cell:', cellKey);
         setSelectedCell({ itemId: nextItem.id, field });
+        
         setTimeout(() => {
-          cellRefs.current[`${nextItem.id}-${field}`]?.focus();
+          const targetCell = cellRefs.current[cellKey];
+          if (targetCell) {
+            targetCell.focus();
+            console.log('Focused cell:', cellKey);
+          } else {
+            console.log('Cell not found in refs:', cellKey, Object.keys(cellRefs.current));
+          }
         }, 0);
       }
     }

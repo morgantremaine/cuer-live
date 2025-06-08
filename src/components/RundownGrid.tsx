@@ -1,11 +1,9 @@
 
-import React, { useRef } from 'react';
+import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 
 const RundownGrid = () => {
-  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
-  
   const {
     coreState,
     interactions,
@@ -48,7 +46,8 @@ const RundownGrid = () => {
     getColumnWidth,
     updateColumnWidth,
     handleCellClick,
-    handleKeyDown
+    handleKeyDown,
+    cellRefs
   } = uiState;
 
   // Create a wrapper function that matches the expected signature
