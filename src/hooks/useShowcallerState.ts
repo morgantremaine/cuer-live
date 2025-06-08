@@ -32,6 +32,7 @@ export const useShowcallerState = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stateChangeCallbackRef = useRef(onShowcallerStateChange);
   const isApplyingExternalStateRef = useRef(false);
+  const lastExternalUpdateRef = useRef<string | null>(null);
   stateChangeCallbackRef.current = onShowcallerStateChange;
 
   // Helper function to convert time string to seconds
@@ -70,6 +71,11 @@ export const useShowcallerState = ({
     return null;
   }, [items]);
 
+  // Check if we should skip saving (when applying external state)
+  const shouldSkipSaving = useCallback(() => {
+    return isApplyingExternalStateRef.current;
+  }, []);
+
   // Update showcaller state and notify parent - with sync control
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
     const updatedState = {
@@ -81,10 +87,10 @@ export const useShowcallerState = ({
     setShowcallerState(updatedState);
     
     // Only notify parent (which triggers sync) for significant changes and when not applying external state
-    if (shouldSync && !isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
+    if (shouldSync && !shouldSkipSaving() && stateChangeCallbackRef.current) {
       stateChangeCallbackRef.current(updatedState);
     }
-  }, [showcallerState]);
+  }, [showcallerState, shouldSkipSaving]);
 
   // Clear current status from all items
   const clearCurrentStatus = useCallback(() => {
@@ -137,7 +143,7 @@ export const useShowcallerState = ({
               };
               
               // Sync significant change (segment advancement) only if not applying external state
-              if (!isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
+              if (!shouldSkipSaving() && stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
               
@@ -153,7 +159,7 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              if (!isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
+              if (!shouldSkipSaving() && stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
               
@@ -172,14 +178,14 @@ export const useShowcallerState = ({
         
         // Only sync every 10 seconds for timer updates to reduce database load and not when applying external state
         const shouldSyncTimerUpdate = prevState.timeRemaining % 10 === 0;
-        if (shouldSyncTimerUpdate && !isApplyingExternalStateRef.current && stateChangeCallbackRef.current) {
+        if (shouldSyncTimerUpdate && !shouldSkipSaving() && stateChangeCallbackRef.current) {
           stateChangeCallbackRef.current(newState);
         }
         
         return newState;
       });
     }, 1000);
-  }, [updateItem, getNextSegment, timeToSeconds]);
+  }, [updateItem, getNextSegment, timeToSeconds, shouldSkipSaving]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -254,6 +260,7 @@ export const useShowcallerState = ({
     
     // CRITICAL: Mark that we're applying external state to prevent saving
     isApplyingExternalStateRef.current = true;
+    lastExternalUpdateRef.current = externalState.lastUpdate;
     
     // CRITICAL: Stop current timer first to prevent conflicts
     stopTimer();
@@ -302,10 +309,13 @@ export const useShowcallerState = ({
       startTimer();
     }
     
-    // Reset the flag after applying external state
+    // Reset the flag after a longer delay to ensure all async operations complete
     setTimeout(() => {
-      isApplyingExternalStateRef.current = false;
-    }, 100);
+      // Only reset if this was the last external update we processed
+      if (lastExternalUpdateRef.current === externalState.lastUpdate) {
+        isApplyingExternalStateRef.current = false;
+      }
+    }, 500); // Increased from 100ms to 500ms for better reliability
   }, [stopTimer, clearCurrentStatus, items, updateItem, startTimer, timeToSeconds]);
 
   // Initialize current segment on mount if none exists - only once
