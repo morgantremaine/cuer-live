@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,38 +23,30 @@ export const useShowcallerRealtime = ({
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
 
   const handleShowcallerUpdate = useCallback(async (payload: any) => {
-    console.log('📺 Realtime showcaller update received:', payload);
-    
+    // Skip if this is our own update - more reliable check
+    if (payload.new?.user_id === user?.id) {
+      return;
+    }
+
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
-      console.log('📺 Skipping update for different rundown');
       return;
     }
 
     // Check if we have showcaller_state data
     if (!payload.new?.showcaller_state) {
-      console.log('📺 No showcaller state in update');
       return;
     }
 
-    // Prevent processing duplicate updates based on lastUpdate timestamp
-    const showcallerState = payload.new.showcaller_state as ShowcallerState;
-    if (showcallerState.lastUpdate && showcallerState.lastUpdate === lastProcessedUpdateRef.current) {
-      console.log('📺 Skipping duplicate update based on lastUpdate');
+    // Prevent processing duplicate updates
+    const updateTimestamp = payload.new?.updated_at;
+    if (updateTimestamp && updateTimestamp === lastProcessedUpdateRef.current) {
       return;
     }
-
-    // Skip if this update is from the same controller as current user
-    // BUT only if this user is currently the controller
-    if (showcallerState.controllerId === user?.id) {
-      console.log('📺 Skipping own controller update');
-      return;
-    }
-    
-    lastProcessedUpdateRef.current = showcallerState.lastUpdate;
+    lastProcessedUpdateRef.current = updateTimestamp;
     
     try {
-      console.log('📺 Processing showcaller state update:', showcallerState);
+      const showcallerState = payload.new.showcaller_state as ShowcallerState;
       
       // Apply state immediately for perfect sync
       onShowcallerStateReceivedRef.current(showcallerState);
@@ -67,19 +58,15 @@ export const useShowcallerRealtime = ({
   useEffect(() => {
     // Clear any existing subscription
     if (subscriptionRef.current) {
-      console.log('📺 Cleaning up showcaller subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
     }
 
     // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
-      console.log('📺 Not setting up showcaller subscription - missing requirements');
       return;
     }
 
-    console.log('📺 Setting up showcaller realtime subscription for rundown:', rundownId);
-    
     const channel = supabase
       .channel(`showcaller-${rundownId}`)
       .on(
@@ -92,15 +79,12 @@ export const useShowcallerRealtime = ({
         },
         handleShowcallerUpdate
       )
-      .subscribe((status) => {
-        console.log('📺 Showcaller subscription status:', status);
-      });
+      .subscribe();
 
     subscriptionRef.current = channel;
 
     return () => {
       if (subscriptionRef.current) {
-        console.log('📺 Cleaning up showcaller subscription');
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
