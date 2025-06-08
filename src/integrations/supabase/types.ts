@@ -148,7 +148,6 @@ export type Database = {
           archived: boolean
           columns: Json | null
           created_at: string | null
-          external_notes: Json | null
           icon: string | null
           id: string
           items: Json
@@ -166,7 +165,6 @@ export type Database = {
           archived?: boolean
           columns?: Json | null
           created_at?: string | null
-          external_notes?: Json | null
           icon?: string | null
           id?: string
           items: Json
@@ -184,7 +182,6 @@ export type Database = {
           archived?: boolean
           columns?: Json | null
           created_at?: string | null
-          external_notes?: Json | null
           icon?: string | null
           id?: string
           items?: Json

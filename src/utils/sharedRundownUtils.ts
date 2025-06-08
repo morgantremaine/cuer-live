@@ -66,10 +66,6 @@ export const getCellValue = (item: RundownItem, column: any) => {
       case 'talent':
         value = item.talent || '';
         break;
-      case 'externalNotes':
-        // External notes are stored as custom fields for now
-        value = item.customFields?.externalNotes || '';
-        break;
       default:
         // Handle any other fields that might exist on the item
         value = (item as any)[column.key] || '';

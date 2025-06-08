@@ -1,13 +1,7 @@
 
-import React, { useState } from 'react';
-import { Plus, Settings, Share2, Monitor, FileText, Undo, ChevronDown } from 'lucide-react';
+import React from 'react';
+import { Plus, Settings, Share2, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,9 +32,8 @@ const MainActionButtons = ({
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [shareMenuOpen, setShareMenuOpen] = useState(false);
 
-  const handleShareReadOnly = () => {
+  const handleShareRundown = () => {
     if (!rundownId) {
       toast({
         title: "Cannot share rundown",
@@ -53,55 +46,11 @@ const MainActionButtons = ({
     const shareUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       toast({
-        title: "Read-only link copied!",
-        description: "Shared rundown URL has been copied to clipboard",
+        title: "Share link copied!",
+        description: "Read-only rundown URL has been copied to clipboard",
         variant: "default"
       });
     });
-    setShareMenuOpen(false);
-  };
-
-  const handleShareExternalReview = async () => {
-    if (!rundownId) {
-      toast({
-        title: "Cannot share rundown",
-        description: "Save this rundown first before sharing.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Update the rundown visibility to 'external_review'
-      const response = await fetch(`https://khdiwrkgahsbjszlwnob.supabase.co/rest/v1/rundowns?id=eq.${rundownId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoZGl3cmtnYWhzYmpzemx3bm9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2MzcwNTYsImV4cCI6MjA2NDIxMzA1Nn0.__Z_HYaLyyvYa5yNHwjsln3ti6sQoflRoEYCq6Agedk',
-        },
-        body: JSON.stringify({ visibility: 'external_review' })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update rundown visibility');
-      }
-
-      const shareUrl = `${window.location.origin}/external-review/${rundownId}`;
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        toast({
-          title: "External review link copied!",
-          description: "Clients can now view and add notes to this rundown",
-          variant: "default"
-        });
-      });
-    } catch (error) {
-      toast({
-        title: "Error creating external review link",
-        description: "Please try again",
-        variant: "destructive"
-      });
-    }
-    setShareMenuOpen(false);
   };
 
   const handleOpenBlueprint = () => {
@@ -160,27 +109,10 @@ const MainActionButtons = ({
         <Settings className="h-4 w-4" />
         <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
       </Button>
-      
-      <DropdownMenu open={shareMenuOpen} onOpenChange={setShareMenuOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size={buttonSize} className={buttonClass}>
-            <Share2 className="h-4 w-4" />
-            <span>{isMobile ? 'Share' : 'Share Rundown'}</span>
-            <ChevronDown className="h-3 w-3 ml-1" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={handleShareReadOnly}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Read-Only Share
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleShareExternalReview}>
-            <FileText className="h-4 w-4 mr-2" />
-            External Review
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
+      <Button onClick={handleShareRundown} variant="outline" size={buttonSize} className={buttonClass}>
+        <Share2 className="h-4 w-4" />
+        <span>{isMobile ? 'Share' : 'Share Rundown'}</span>
+      </Button>
       <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
         <Monitor className="h-4 w-4" />
         <span>Teleprompter</span>

@@ -1,41 +1,126 @@
 
-import React from 'react';
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes
-} from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/hooks/useAuth';
-import Index from '@/pages/Index';
-import SharedRundown from '@/pages/SharedRundown';
-import Blueprint from '@/pages/Blueprint';
-import Teleprompter from '@/pages/Teleprompter';
-import ExternalReview from '@/pages/ExternalReview';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import AccountManagement from "./pages/AccountManagement";
+import AuthCallback from "./pages/AuthCallback";
+import ResetPassword from "./pages/ResetPassword";
+import JoinTeam from "./pages/JoinTeam";
+import NotFound from "./pages/NotFound";
+import Help from "./pages/Help";
+import ProtectedRoute from "./components/ProtectedRoute";
+import SharedRundown from "./pages/SharedRundown";
+import Teleprompter from "./pages/Teleprompter";
+import Blueprint from "./pages/Blueprint";
+import CameraPlotEditor from "./pages/CameraPlotEditor";
 
 const queryClient = new QueryClient();
 
-function App() {
+const AppRoutes = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <AuthProvider>
-      <Router>
-        <QueryClientProvider client={queryClient}>
-          <div className="min-h-screen bg-background font-sans antialiased">
-            <Toaster />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/rundown/:id" element={<Index />} />
-              <Route path="/shared/rundown/:id" element={<SharedRundown />} />
-              <Route path="/blueprint/:id" element={<Blueprint />} />
-              <Route path="/teleprompter/:id" element={<Teleprompter />} />
-              <Route path="/external-review/:id" element={<ExternalReview />} />
-            </Routes>
-          </div>
-        </QueryClientProvider>
-      </Router>
-    </AuthProvider>
+    <Routes>
+      {/* Redirect root to appropriate page based on auth state */}
+      <Route 
+        path="/" 
+        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+      />
+      
+      {/* Public routes */}
+      <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+      <Route path="/join-team/:token" element={<JoinTeam />} />
+      <Route path="/help" element={<Help />} />
+      {/* Make teleprompter public - no authentication required */}
+      <Route path="/teleprompter/:id" element={<Teleprompter />} />
+      
+      {/* Auth callback routes */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
+      
+      {/* Protected routes */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/account" 
+        element={
+          <ProtectedRoute>
+            <AccountManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/rundown" 
+        element={
+          <ProtectedRoute>
+            <Index />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/rundown/:id" 
+        element={
+          <ProtectedRoute>
+            <Index />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/blueprint/:id" 
+        element={
+          <ProtectedRoute>
+            <Blueprint />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/camera-plot-editor/:id" 
+        element={
+          <ProtectedRoute>
+            <CameraPlotEditor />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
-}
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;
