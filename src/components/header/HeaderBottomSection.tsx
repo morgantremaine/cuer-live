@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 
 interface HeaderBottomSectionProps {
@@ -13,10 +13,39 @@ const HeaderBottomSection = ({
   rundownStartTime,
   onRundownStartTimeChange
 }: HeaderBottomSectionProps) => {
+  // Local state for the input to prevent external updates from interfering with typing
+  const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Update local state only when not focused and external value changes
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalStartTime(rundownStartTime);
+    }
+  }, [rundownStartTime, isFocused]);
+
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartTime = e.target.value;
     console.log('⏰ HeaderBottomSection: Start time change requested:', { from: rundownStartTime, to: newStartTime });
-    onRundownStartTimeChange(newStartTime);
+    setLocalStartTime(newStartTime);
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    // Only call the parent handler on blur to avoid constant updates
+    if (localStartTime !== rundownStartTime) {
+      onRundownStartTimeChange(localStartTime);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur(); // This will trigger handleBlur
+    }
   };
 
   return (
@@ -28,8 +57,11 @@ const HeaderBottomSection = ({
           <span className="opacity-75">Start Time:</span>
           <input
             type="text"
-            value={rundownStartTime}
+            value={localStartTime}
             onChange={handleStartTimeChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-24 focus:outline-none focus:border-blue-500"
             placeholder="00:00:00"
           />
