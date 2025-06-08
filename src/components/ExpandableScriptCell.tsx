@@ -68,12 +68,20 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Handle key down events, but allow Enter for line breaks
+  // Handle key down events - different behavior for expanded vs collapsed
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Allow Enter key to create new lines
-    if (e.key === 'Enter') {
-      // Don't prevent default - let the textarea handle it naturally
-      return;
+    if (isExpanded) {
+      // When expanded, allow Enter key to create new lines
+      if (e.key === 'Enter') {
+        // Don't prevent default - let the textarea handle it naturally
+        return;
+      }
+    } else {
+      // When collapsed, use navigation for Enter key
+      if (e.key === 'Enter') {
+        onKeyDown(e, itemId, cellRefKey);
+        return;
+      }
     }
     
     // For other keys, use the provided handler
