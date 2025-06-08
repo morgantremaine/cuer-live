@@ -1,6 +1,7 @@
 
 import React from 'react';
 import RundownLayoutWrapper from './RundownLayoutWrapper';
+import RundownGrid from './RundownGrid';
 import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 
@@ -16,9 +17,7 @@ const RundownIndexContent = () => {
 
   return (
     <RundownLayoutWrapper>
-      <div>
-        {/* Content will be added here */}
-      </div>
+      <RundownGrid />
     </RundownLayoutWrapper>
   );
 };
