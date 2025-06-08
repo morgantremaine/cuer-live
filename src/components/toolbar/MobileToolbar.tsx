@@ -1,5 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
@@ -41,38 +48,53 @@ const MobileToolbar = ({
   onForward,
   onBackward
 }: MobileToolbarProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div className="p-3 border-b bg-gray-50 dark:bg-gray-700">
-      {/* First row - Main action buttons */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        <MainActionButtons
-          onAddRow={onAddRow}
-          onAddHeader={onAddHeader}
-          onShowColumnManager={onShowColumnManager}
-          onUndo={onUndo}
-          canUndo={canUndo}
-          lastAction={lastAction}
-          rundownId={rundownId}
-          onOpenTeleprompter={onOpenTeleprompter}
-          selectedRowId={selectedRowId}
-          isMobile={true}
-        />
-      </div>
-
-      {/* Second row - Playback controls and theme toggle */}
       <div className="flex items-center justify-between">
-        <PlaybackControls
-          selectedRowId={selectedRowId}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          size="sm"
-        />
-        <ThemeToggle />
+        {/* Dropdown Menu for Actions */}
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              Actions
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="start" 
+            className="w-64 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
+          >
+            <MainActionButtons
+              onAddRow={onAddRow}
+              onAddHeader={onAddHeader}
+              onShowColumnManager={onShowColumnManager}
+              onUndo={onUndo}
+              canUndo={canUndo}
+              lastAction={lastAction}
+              rundownId={rundownId}
+              onOpenTeleprompter={onOpenTeleprompter}
+              selectedRowId={selectedRowId}
+              isMobile={true}
+            />
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Playback Controls and Theme Toggle */}
+        <div className="flex items-center gap-2">
+          <PlaybackControls
+            selectedRowId={selectedRowId}
+            isPlaying={isPlaying}
+            currentSegmentId={currentSegmentId}
+            timeRemaining={timeRemaining}
+            onPlay={onPlay}
+            onPause={onPause}
+            onForward={onForward}
+            onBackward={onBackward}
+            size="sm"
+          />
+          <ThemeToggle />
+        </div>
       </div>
     </div>
   );
