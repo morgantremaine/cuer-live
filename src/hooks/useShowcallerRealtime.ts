@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,21 +8,45 @@ interface UseShowcallerRealtimeProps {
   rundownId: string | null;
   onShowcallerStateReceived: (state: ShowcallerState) => void;
   enabled?: boolean;
+  onShowcallerActivity?: (active: boolean) => void;
 }
 
 export const useShowcallerRealtime = ({
   rundownId,
   onShowcallerStateReceived,
-  enabled = true
+  enabled = true,
+  onShowcallerActivity
 }: UseShowcallerRealtimeProps) => {
   const { user } = useAuth();
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onShowcallerStateReceivedRef = useRef(onShowcallerStateReceived);
+  const onShowcallerActivityRef = useRef(onShowcallerActivity);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
+  const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Keep callback ref updated
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
+  onShowcallerActivityRef.current = onShowcallerActivity;
+
+  // Signal showcaller activity
+  const signalActivity = useCallback(() => {
+    if (onShowcallerActivityRef.current) {
+      onShowcallerActivityRef.current(true);
+      
+      // Clear existing timeout
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+      }
+      
+      // Set timeout to clear activity after 5 seconds
+      activityTimeoutRef.current = setTimeout(() => {
+        if (onShowcallerActivityRef.current) {
+          onShowcallerActivityRef.current(false);
+        }
+      }, 5000);
+    }
+  }, []);
 
   const handleShowcallerUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
@@ -46,18 +71,25 @@ export const useShowcallerRealtime = ({
       return;
     }
 
-    // IMPROVED: More intelligent controller detection
-    // Skip if this user is currently the controller AND the update came from them
+    // Enhanced controller detection with better timing logic
     if (showcallerState.controllerId === user?.id) {
-      // But allow non-controller updates to pass through for display synchronization
       const updateTime = new Date(showcallerState.lastUpdate).getTime();
       const now = Date.now();
-      if (now - updateTime < 1000) { // Within 1 second, likely from this controller
+      if (now - updateTime < 2000) { // Within 2 seconds, likely from this controller
         return;
       }
     }
     
     lastProcessedUpdateRef.current = showcallerState.lastUpdate;
+    
+    console.log('📺 Processing showcaller state update:', {
+      controllerId: showcallerState.controllerId,
+      isPlaying: showcallerState.isPlaying,
+      currentSegment: showcallerState.currentSegmentId
+    });
+
+    // Signal showcaller activity
+    signalActivity();
     
     try {
       // Apply state immediately for perfect sync
@@ -65,17 +97,20 @@ export const useShowcallerRealtime = ({
     } catch (error) {
       console.error('Error processing showcaller realtime update:', error);
     }
-  }, [rundownId, user?.id]);
+  }, [rundownId, user?.id, signalActivity]);
 
   // Function to track our own updates to prevent processing them
   const trackOwnUpdate = useCallback((lastUpdate: string) => {
     ownUpdateTrackingRef.current.add(lastUpdate);
     
+    // Signal our own activity
+    signalActivity();
+    
     // Clean up old tracked updates after 30 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(lastUpdate);
     }, 30000);
-  }, []);
+  }, [signalActivity]);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -90,7 +125,7 @@ export const useShowcallerRealtime = ({
     }
     
     const channel = supabase
-      .channel(`showcaller-${rundownId}`)
+      .channel(`showcaller-state-${rundownId}`)
       .on(
         'postgres_changes',
         {
@@ -113,6 +148,9 @@ export const useShowcallerRealtime = ({
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
+      }
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
       }
     };
   }, [rundownId, user, enabled, handleShowcallerUpdate]);

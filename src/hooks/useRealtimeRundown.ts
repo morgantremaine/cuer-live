@@ -28,10 +28,10 @@ export const useRealtimeRundown = ({
   const { toast } = useToast();
   const subscriptionRef = useRef<any>(null);
   const lastUpdateTimestampRef = useRef<string | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const retryCountRef = useRef(0);
   const lastOwnUpdateRef = useRef<string | null>(null);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
+  const isEditingRef = useRef(false);
+  const lastContentHashRef = useRef<string>('');
 
   // Stable refs to prevent infinite loops
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
@@ -54,6 +54,24 @@ export const useRealtimeRundown = ({
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
     }, 30000);
+  }, []);
+
+  // Set editing state
+  const setEditingState = useCallback((editing: boolean) => {
+    isEditingRef.current = editing;
+  }, []);
+
+  // Create content hash to detect actual content changes
+  const createContentHash = useCallback((data: any) => {
+    if (!data) return '';
+    const contentData = {
+      items: data.items,
+      title: data.title,
+      columns: data.columns,
+      timezone: data.timezone,
+      start_time: data.start_time
+    };
+    return JSON.stringify(contentData);
   }, []);
 
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
@@ -82,31 +100,46 @@ export const useRealtimeRundown = ({
     if (updateTimestamp && updateTimestamp === lastUpdateTimestampRef.current) {
       return;
     }
-    lastUpdateTimestampRef.current = updateTimestamp;
 
-    // Additional safety check - if we're currently processing an update, skip
-    if (isProcessingUpdate) {
+    // CRITICAL: Check if this is only a showcaller state update
+    const currentContentHash = createContentHash(payload.new);
+    const isShowcallerOnlyUpdate = currentContentHash === lastContentHashRef.current;
+
+    console.log('📡 Realtime update analysis:', {
+      isShowcallerOnly: isShowcallerOnlyUpdate,
+      isEditing: isEditingRef.current,
+      hasUnsavedChanges,
+      isProcessing: isProcessingUpdate
+    });
+
+    // ENHANCED: Skip showcaller-only updates entirely to prevent interference
+    if (isShowcallerOnlyUpdate) {
+      console.log('📺 Skipping showcaller-only update to prevent conflicts');
+      lastUpdateTimestampRef.current = updateTimestamp;
       return;
     }
 
-    // IMPROVED: Better handling of showcaller vs content updates
-    const isShowcallerOnlyUpdate = payload.new?.showcaller_state !== undefined && 
-      payload.old && payload.new.items === payload.old.items && 
-      payload.new.title === payload.old.title && 
-      payload.new.columns === payload.old.columns;
+    // Skip if currently editing or processing
+    if (isEditingRef.current || isProcessingUpdate) {
+      console.log('⏸️ Deferring update - editing or processing in progress');
+      return;
+    }
 
-    // CRITICAL: Set all processing flags FIRST with enhanced coordination
+    lastUpdateTimestampRef.current = updateTimestamp;
+    lastContentHashRef.current = currentContentHash;
+
+    // CRITICAL: Set all processing flags FIRST
     stableSetIsProcessingUpdateRef.current(true);
     if (stableSetApplyingRemoteUpdateRef.current) {
       stableSetApplyingRemoteUpdateRef.current(true);
     }
 
     try {
-      // Enhanced conflict resolution - but be more permissive for content changes
-      if (hasUnsavedChanges && !isShowcallerOnlyUpdate) {
+      // Enhanced conflict resolution for content changes
+      if (hasUnsavedChanges) {
         const result = await new Promise<boolean>((resolve) => {
           const shouldAcceptRemoteChanges = window.confirm(
-            `🔄 Another team member just updated this rundown.\n\n` +
+            `🔄 Another team member updated this rundown.\n\n` +
             `You have unsaved changes that will be lost if you accept their update.\n\n` +
             `Would you like to:\n` +
             `• "OK" - Accept their changes (your changes will be lost)\n` +
@@ -124,6 +157,8 @@ export const useRealtimeRundown = ({
           return;
         }
       }
+
+      console.log('🔄 Applying realtime rundown update');
 
       // Fetch the complete updated rundown data
       const { data, error } = await supabase
@@ -163,25 +198,22 @@ export const useRealtimeRundown = ({
         undo_history: data.undo_history
       };
 
-      // IMPROVED: Only update signature for content changes, not showcaller-only updates
-      if (stableUpdateSavedSignatureRef.current && !isShowcallerOnlyUpdate) {
-        // Use setTimeout to ensure this happens before any change detection
-        setTimeout(() => {
-          stableUpdateSavedSignatureRef.current?.(
-            updatedRundown.items, 
-            updatedRundown.title, 
-            updatedRundown.columns, 
-            updatedRundown.timezone, 
-            updatedRundown.start_time
-          );
-        }, 0);
+      // Pre-update signature sync
+      if (stableUpdateSavedSignatureRef.current) {
+        stableUpdateSavedSignatureRef.current(
+          updatedRundown.items, 
+          updatedRundown.title, 
+          updatedRundown.columns, 
+          updatedRundown.timezone, 
+          updatedRundown.start_time
+        );
       }
 
       // Apply the rundown update
       stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // IMPROVED: Post-application signature sync - only for content changes
-      if (stableUpdateSavedSignatureRef.current && !isShowcallerOnlyUpdate) {
+      // Post-application signature sync
+      if (stableUpdateSavedSignatureRef.current) {
         setTimeout(() => {
           stableUpdateSavedSignatureRef.current?.(
             updatedRundown.items, 
@@ -193,40 +225,27 @@ export const useRealtimeRundown = ({
         }, 100);
       }
 
-      // Reset retry count on successful update
-      retryCountRef.current = 0;
+      console.log('✅ Successfully applied realtime rundown update');
 
     } catch (error) {
       console.error('Error processing realtime update:', error);
       
-      retryCountRef.current++;
-      const maxRetries = 3;
-      
-      if (retryCountRef.current <= maxRetries) {
-        toast({
-          title: 'Sync Error',
-          description: `Failed to apply remote changes. Retrying... (${retryCountRef.current}/${maxRetries})`,
-          variant: 'destructive',
-          duration: 3000,
-        });
-      } else {
-        toast({
-          title: 'Sync Failed',
-          description: 'Unable to apply remote changes. Please refresh the page.',
-          variant: 'destructive',
-          duration: 8000,
-        });
-      }
+      toast({
+        title: 'Sync Error',
+        description: 'Failed to apply remote changes. Please refresh if issues persist.',
+        variant: 'destructive',
+        duration: 5000,
+      });
     } finally {
-      // IMPROVED: Faster recovery for better responsiveness
+      // Quick recovery for better responsiveness
       setTimeout(() => {
         if (stableSetApplyingRemoteUpdateRef.current) {
           stableSetApplyingRemoteUpdateRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 500); // Reduced delay for better responsiveness
+      }, 300);
     }
-  }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast]);
+  }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast, createContentHash]);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -235,19 +254,13 @@ export const useRealtimeRundown = ({
       subscriptionRef.current = null;
     }
 
-    // Clear any pending reconnection attempts
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    // Only set up subscription if we have the required data and not processing
-    if (!rundownId || !user || isProcessingUpdate) {
+    // Only set up subscription if we have the required data
+    if (!rundownId || !user) {
       return;
     }
 
     const channel = supabase
-      .channel(`rundown-${rundownId}`)
+      .channel(`rundown-content-${rundownId}`)
       .on(
         'postgres_changes',
         {
@@ -260,9 +273,9 @@ export const useRealtimeRundown = ({
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          retryCountRef.current = 0;
+          console.log('✅ Successfully subscribed to rundown content updates');
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Failed to subscribe to realtime updates');
+          console.error('❌ Failed to subscribe to rundown content updates');
         }
       });
 
@@ -273,15 +286,12 @@ export const useRealtimeRundown = ({
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
     };
-  }, [rundownId, user, isProcessingUpdate, handleRealtimeUpdate]);
+  }, [rundownId, user, handleRealtimeUpdate]);
 
   return {
     isConnected: !!subscriptionRef.current,
-    trackOwnUpdate
+    trackOwnUpdate,
+    setEditingState
   };
 };

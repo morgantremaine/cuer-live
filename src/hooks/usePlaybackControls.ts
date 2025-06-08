@@ -9,7 +9,8 @@ import { useAuth } from './useAuth';
 export const usePlaybackControls = (
   items: RundownItem[],
   updateItem: (id: string, field: string, value: string) => void,
-  rundownId?: string
+  rundownId?: string,
+  onShowcallerActivity?: (active: boolean) => void
 ) => {
   const { user } = useAuth();
   const hasLoadedInitialState = useRef(false);
@@ -47,11 +48,12 @@ export const usePlaybackControls = (
     onShowcallerStateReceived: applyShowcallerState
   });
 
-  // Initialize realtime synchronization with tracking
+  // Initialize realtime synchronization with tracking and activity callback
   const { trackOwnUpdate: trackOwnShowcallerUpdate } = useShowcallerRealtime({
     rundownId,
     onShowcallerStateReceived: applyShowcallerState,
-    enabled: !!rundownId
+    enabled: !!rundownId,
+    onShowcallerActivity
   });
 
   // Load initial showcaller state when rundown changes - with proper memoization

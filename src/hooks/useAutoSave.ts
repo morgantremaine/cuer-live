@@ -19,6 +19,7 @@ export const useAutoSave = (
   const lastSaveDataRef = useRef<string>('');
   const saveInProgressRef = useRef(false);
   const lastSaveTimestampRef = useRef<number>(0);
+  const showcallerActiveRef = useRef(false);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -32,6 +33,12 @@ export const useAutoSave = (
     updateSavedSignature
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime, isProcessingRealtimeUpdate);
 
+  // Method to set showcaller active state
+  const setShowcallerActive = useCallback((active: boolean) => {
+    showcallerActiveRef.current = active;
+    console.log('💾 Showcaller active state:', active);
+  }, []);
+
   // Create a debounced save function that's stable across renders
   const debouncedSave = useCallback(async (
     itemsToSave: RundownItem[], 
@@ -40,19 +47,33 @@ export const useAutoSave = (
     timezoneToSave?: string, 
     startTimeToSave?: string
   ) => {
-    // IMPROVED: Enhanced blocking conditions
+    // ENHANCED: Check showcaller state and other blocking conditions
     if (!user || 
         isSaving || 
         isProcessingRealtimeUpdate || 
-        saveInProgressRef.current) {
+        saveInProgressRef.current ||
+        showcallerActiveRef.current) {
+      console.log('💾 Save blocked:', {
+        noUser: !user,
+        isSaving,
+        isProcessingRealtimeUpdate,
+        saveInProgress: saveInProgressRef.current,
+        showcallerActive: showcallerActiveRef.current
+      });
       return;
     }
 
     // Prevent rapid-fire saves with minimum interval
     const now = Date.now();
-    if (now - lastSaveTimestampRef.current < 2000) {
+    if (now - lastSaveTimestampRef.current < 3000) {
+      console.log('💾 Save throttled - too soon since last save');
       return;
     }
+
+    console.log('💾 Auto-saving rundown...', { 
+      itemCount: itemsToSave.length, 
+      title: titleToSave 
+    });
 
     // Mark as loading to prevent change detection during save
     setIsLoading(true);
@@ -70,8 +91,10 @@ export const useAutoSave = (
       
       if (success) {
         markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
+        console.log('✅ Auto-save successful');
       } else {
         setHasUnsavedChanges(true);
+        console.log('❌ Auto-save failed');
       }
     } catch (error) {
       console.error('Auto-save error:', error);
@@ -84,8 +107,10 @@ export const useAutoSave = (
 
   // Main effect that schedules saves with enhanced protection
   useEffect(() => {
-    // IMPROVED: Multiple blocking conditions
-    if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
+    // ENHANCED: Multiple blocking conditions including showcaller
+    if (isProcessingRealtimeUpdate || 
+        saveInProgressRef.current || 
+        showcallerActiveRef.current) {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
         debounceTimeoutRef.current = null;
@@ -113,14 +138,16 @@ export const useAutoSave = (
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Schedule new save with additional checks
+    // Schedule new save with comprehensive checks
     debounceTimeoutRef.current = setTimeout(() => {
-      // Final comprehensive check when timeout fires
-      if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
+      // Final check when timeout fires
+      if (!isProcessingRealtimeUpdate && 
+          !saveInProgressRef.current && 
+          !showcallerActiveRef.current) {
         debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       }
       debounceTimeoutRef.current = null;
-    }, 2000); // Increased debounce time for better stability
+    }, 2500); // Slightly longer debounce for stability
 
   }, [
     hasUnsavedChanges, 
@@ -145,7 +172,9 @@ export const useAutoSave = (
   }, []);
 
   const markAsChangedCallback = () => {
-    if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
+    if (!isProcessingRealtimeUpdate && 
+        !saveInProgressRef.current && 
+        !showcallerActiveRef.current) {
       markAsChanged();
     }
   };
@@ -155,6 +184,7 @@ export const useAutoSave = (
     isSaving: isSaving || saveInProgressRef.current,
     markAsChanged: markAsChangedCallback,
     setApplyingRemoteUpdate,
-    updateSavedSignature
+    updateSavedSignature,
+    setShowcallerActive
   };
 };
