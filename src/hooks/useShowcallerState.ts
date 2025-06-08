@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -35,6 +36,7 @@ export const useShowcallerState = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stateChangeCallbackRef = useRef(onShowcallerStateChange);
   const hasInitialized = useRef(false);
+  const lastSyncedStateRef = useRef<string | null>(null);
   
   // Keep callback ref updated
   stateChangeCallbackRef.current = onShowcallerStateChange;
@@ -123,7 +125,7 @@ export const useShowcallerState = ({
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
 
-  // Timer logic - only runs for controller
+  // Enhanced timer logic with better synchronization
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -207,6 +209,29 @@ export const useShowcallerState = ({
     }, 1000);
   }, [isController, updateItem, getNextSegment, timeToSeconds, userId]);
 
+  // Enhanced observer timer for non-controllers
+  const startObserverTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    console.log('📺 Starting observer timer (non-controller)');
+    timerRef.current = setInterval(() => {
+      setShowcallerState(prevState => {
+        // Stop if no longer playing or we became controller
+        if (!prevState.isPlaying || prevState.controllerId === userId) {
+          return prevState;
+        }
+        
+        return {
+          ...prevState,
+          timeRemaining: Math.max(0, prevState.timeRemaining - 1),
+          lastUpdate: new Date().toISOString()
+        };
+      });
+    }, 1000);
+  }, [userId]);
+
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -282,10 +307,17 @@ export const useShowcallerState = ({
     }
   }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, startTimer]);
 
-  // Apply external showcaller state (from realtime updates)
+  // Enhanced external state application with better timer synchronization
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
+    // Prevent applying the same state multiple times
+    if (lastSyncedStateRef.current === externalState.lastUpdate) {
+      return;
+    }
+    lastSyncedStateRef.current = externalState.lastUpdate;
+
     console.log('📺 Applying external showcaller state:', externalState);
-    // Stop our timer first
+    
+    // Always stop our current timer first
     stopTimer();
     
     // Clear all current statuses first
@@ -313,32 +345,27 @@ export const useShowcallerState = ({
           ...externalState,
           timeRemaining: syncedTimeRemaining
         };
+        
+        console.log('📺 Synchronized time remaining:', syncedTimeRemaining, 'from elapsed:', elapsedTime);
       }
     }
     
     // Set the synchronized state
     setShowcallerState(synchronizedState);
     
-    // If external state is playing and we're not the controller, start observing timer
-    if (synchronizedState.isPlaying && synchronizedState.controllerId !== userId) {
-      // Start a simple observer timer that just updates local display
-      if (timerRef.current) clearInterval(timerRef.current);
-      
-      timerRef.current = setInterval(() => {
-        setShowcallerState(prevState => {
-          if (!prevState.isPlaying || prevState.controllerId === userId) {
-            return prevState; // Stop if no longer playing or we became controller
-          }
-          
-          return {
-            ...prevState,
-            timeRemaining: Math.max(0, prevState.timeRemaining - 1),
-            lastUpdate: new Date().toISOString()
-          };
-        });
-      }, 1000);
+    // Handle timer based on whether we're the controller or not
+    if (synchronizedState.isPlaying) {
+      if (synchronizedState.controllerId === userId) {
+        // We are the controller, start control timer
+        console.log('📺 Starting control timer after sync');
+        setTimeout(() => startTimer(), 100); // Small delay to ensure state is set
+      } else if (synchronizedState.controllerId && synchronizedState.controllerId !== userId) {
+        // Someone else is controlling, start observer timer
+        console.log('📺 Starting observer timer after sync');
+        setTimeout(() => startObserverTimer(), 100);
+      }
     }
-  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, userId]);
+  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, userId, startTimer, startObserverTimer]);
 
   // Initialize current segment on mount if none exists - with proper initialization guard
   useEffect(() => {
