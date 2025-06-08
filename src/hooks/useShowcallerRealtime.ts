@@ -47,15 +47,23 @@ export const useShowcallerRealtime = ({
       return;
     }
 
-    // Skip if this update originated from this user (check our tracking set first)
+    // Enhanced filtering: Skip if this update originated from this user
     if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
       console.log('📺 Skipping own tracked update');
       return;
     }
 
-    // Skip if this user is currently the controller (they generated this update)
+    // Skip if this user is currently the controller AND they generated this update
     if (showcallerState.controllerId === user?.id) {
       console.log('📺 Skipping own controller update');
+      return;
+    }
+    
+    // Additional check: Skip updates that are very recent (within 100ms) from when we might have sent them
+    const updateTime = new Date(showcallerState.lastUpdate).getTime();
+    const now = Date.now();
+    if (now - updateTime < 100) {
+      console.log('📺 Skipping very recent update (potential own update)');
       return;
     }
     
@@ -73,6 +81,7 @@ export const useShowcallerRealtime = ({
 
   // Function to track our own updates to prevent processing them
   const trackOwnUpdate = useCallback((lastUpdate: string) => {
+    console.log('📺 Tracking own update:', lastUpdate);
     ownUpdateTrackingRef.current.add(lastUpdate);
     
     // Clean up old tracked updates after 30 seconds
