@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import HighlightedText from './HighlightedText';
@@ -68,28 +67,28 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Handle key down events - allow arrows for navigation but preserve Enter for line breaks
+  // Simple key navigation for script cells
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // For Up/Down arrows, check if we're at the beginning/end of the text to allow cell navigation
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       const textarea = e.target as HTMLTextAreaElement;
-      const { selectionStart, selectionEnd } = textarea;
       const lines = value.split('\n');
       
       // Calculate which line the cursor is on
       let currentLine = 0;
       let position = 0;
       for (let i = 0; i < lines.length; i++) {
-        if (position + lines[i].length >= selectionStart) {
+        if (position + lines[i].length >= textarea.selectionStart) {
           currentLine = i;
           break;
         }
-        position += lines[i].length + 1; // +1 for the newline character
+        position += lines[i].length + 1;
       }
       
       // If we're at the first line and pressing Up, or last line and pressing Down, allow navigation
       if ((e.key === 'ArrowUp' && currentLine === 0) || 
           (e.key === 'ArrowDown' && currentLine === lines.length - 1)) {
+        e.preventDefault();
         onKeyDown(e, itemId, cellRefKey);
         return;
       }
@@ -103,8 +102,11 @@ const ExpandableScriptCell = ({
       return;
     }
     
-    // For other keys, use the provided handler
-    onKeyDown(e, itemId, cellRefKey);
+    // For other navigation keys, use the provided handler
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
+      // Let these work normally in the textarea
+      return;
+    }
   };
 
   // Create the proper cell ref key
@@ -130,6 +132,9 @@ const ExpandableScriptCell = ({
               cellRefs.current[cellKey] = el;
               textareaRef.current = el;
               console.log('Storing expandable cell ref:', cellKey);
+            } else {
+              console.log('Removing expandable cell ref:', cellKey);
+              delete cellRefs.current[cellKey];
             }
           }}
           value={value}

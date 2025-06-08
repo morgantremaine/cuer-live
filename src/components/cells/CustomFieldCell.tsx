@@ -48,23 +48,16 @@ const CustomFieldCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Handle key navigation - allow Enter to navigate to next cell, arrows for navigation
+  // Simple key navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // For Enter key, navigate to next cell
-    if (e.key === 'Enter') {
+    // For Enter key and arrow keys, navigate to next/previous cell
+    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
       onKeyDown(e, itemId, cellRefKey);
       return;
     }
     
-    // For Up/Down arrows, navigate to cells above/below
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      onKeyDown(e, itemId, cellRefKey);
-      return;
-    }
-    
-    // Allow other keys to work normally (Left/Right arrows, typing, etc.)
+    // Allow other keys to work normally
   };
 
   // Create the proper cell ref key
@@ -79,8 +72,7 @@ const CustomFieldCell = ({
             cellRefs.current[cellKey] = el;
           } else {
             console.log('Removing CustomField cell ref:', cellKey);
-            // Don't delete the ref immediately - let React handle cleanup
-            // delete cellRefs.current[cellKey];
+            delete cellRefs.current[cellKey];
           }
         }}
         value={value}
