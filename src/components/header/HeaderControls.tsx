@@ -65,6 +65,7 @@ const HeaderControls = ({
 
   const handleTimezoneChange = (newTimezone: string) => {
     console.log('🌍 HeaderControls: Timezone change requested:', { from: timezone, to: newTimezone });
+    // Call the parent handler directly - this should trigger the enhanced setter
     onTimezoneChange(newTimezone);
   };
 

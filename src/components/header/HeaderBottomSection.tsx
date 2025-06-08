@@ -24,9 +24,27 @@ const HeaderBottomSection = ({
     }
   }, [rundownStartTime, isFocused]);
 
+  // Validate time format
+  const validateTimeInput = (timeString: string): string => {
+    // Remove any non-time characters
+    let cleanTime = timeString.replace(/[^0-9:]/g, '');
+    
+    // If it's a valid time format, return it
+    if (/^\d{1,2}:\d{1,2}:\d{1,2}$/.test(cleanTime)) {
+      const parts = cleanTime.split(':');
+      const hours = Math.min(23, Math.max(0, parseInt(parts[0]) || 0)).toString().padStart(2, '0');
+      const minutes = Math.min(59, Math.max(0, parseInt(parts[1]) || 0)).toString().padStart(2, '0');
+      const seconds = Math.min(59, Math.max(0, parseInt(parts[2]) || 0)).toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+    
+    // Return original if not valid
+    return cleanTime;
+  };
+
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartTime = e.target.value;
-    console.log('⏰ HeaderBottomSection: Start time change requested:', { from: rundownStartTime, to: newStartTime });
+    console.log('⏰ HeaderBottomSection: Start time input change:', { from: localStartTime, to: newStartTime });
     setLocalStartTime(newStartTime);
   };
 
@@ -36,10 +54,12 @@ const HeaderBottomSection = ({
 
   const handleBlur = () => {
     setIsFocused(false);
-    // Only call the parent handler on blur to avoid constant updates
-    if (localStartTime !== rundownStartTime) {
-      onRundownStartTimeChange(localStartTime);
-    }
+    const validatedTime = validateTimeInput(localStartTime);
+    console.log('⏰ HeaderBottomSection: Start time blur - submitting:', { input: localStartTime, validated: validatedTime });
+    
+    // Always call the parent handler with validated time
+    onRundownStartTimeChange(validatedTime);
+    setLocalStartTime(validatedTime);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

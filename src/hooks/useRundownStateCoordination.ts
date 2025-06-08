@@ -16,12 +16,7 @@ export const useRundownStateCoordination = () => {
     timezone: basicState.timezone,
     rundownStartTime: basicState.rundownStartTime,
     setRundownTitleDirectly: basicState.setRundownTitleDirectly,
-    setTimezoneDirectly: (newTimezone: string) => {
-      console.log('🌍 useRundownStateCoordination: Setting timezone directly:', newTimezone);
-      basicState.setTimezoneDirectly(newTimezone);
-      // Immediately mark as changed to trigger auto-save
-      basicState.markAsChanged();
-    },
+    setTimezoneDirectly: basicState.setTimezoneDirectly,
     isProcessingRealtimeUpdate: false // Will be managed internally by gridCore
   });
   
@@ -56,10 +51,39 @@ export const useRundownStateCoordination = () => {
     gridCore.markAsChanged
   );
 
-  // Enhanced start time setter that triggers change tracking
+  // Validate and clean time format
+  const validateTimeFormat = (timeString: string): string => {
+    if (!timeString) return '09:00:00';
+    
+    // Remove any non-time characters (like the 'd' suffix)
+    let cleanTime = timeString.replace(/[^0-9:]/g, '');
+    
+    // Ensure proper format HH:MM:SS
+    const timeParts = cleanTime.split(':');
+    if (timeParts.length === 3) {
+      const hours = timeParts[0].padStart(2, '0');
+      const minutes = timeParts[1].padStart(2, '0');
+      const seconds = timeParts[2].padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+    
+    // Fallback to default
+    return '09:00:00';
+  };
+
+  // Enhanced timezone setter that triggers change tracking
+  const setTimezone = (newTimezone: string) => {
+    console.log('🌍 useRundownStateCoordination: Setting timezone:', newTimezone);
+    basicState.setTimezone(newTimezone);
+    // Immediately mark as changed to trigger auto-save
+    basicState.markAsChanged();
+  };
+
+  // Enhanced start time setter that validates and triggers change tracking
   const setRundownStartTime = (newStartTime: string) => {
-    console.log('⏰ useRundownStateCoordination: Setting start time:', newStartTime);
-    basicState.setRundownStartTime(newStartTime);
+    const validatedTime = validateTimeFormat(newStartTime);
+    console.log('⏰ useRundownStateCoordination: Setting start time:', { original: newStartTime, validated: validatedTime });
+    basicState.setRundownStartTime(validatedTime);
     // Immediately mark as changed to trigger auto-save
     basicState.markAsChanged();
   };
@@ -68,7 +92,10 @@ export const useRundownStateCoordination = () => {
     coreState: {
       ...basicState,
       ...gridCore,
-      setRundownStartTime // Override with our enhanced version
+      timezone: basicState.timezone,
+      rundownStartTime: validateTimeFormat(basicState.rundownStartTime),
+      setTimezone, // Use our enhanced version
+      setRundownStartTime // Use our enhanced version
     },
     interactions: gridInteractions,
     uiState: gridUI

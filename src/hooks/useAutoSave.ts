@@ -33,18 +33,36 @@ export const useAutoSave = (
     updateSavedSignature
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime, isProcessingRealtimeUpdate);
 
-  // SIMPLIFIED: Method to set showcaller active state with reduced interference
+  // Method to set showcaller active state
   const setShowcallerActive = useCallback((active: boolean) => {
     const wasActive = showcallerActiveRef.current;
     showcallerActiveRef.current = active;
     
-    // Only log changes, not every state
     if (wasActive !== active) {
       console.log('💾 Showcaller active state changed:', active);
     }
   }, []);
 
-  // ENHANCED: Create a debounced save function with less restrictive blocking
+  // Validate start time before saving
+  const validateStartTime = useCallback((timeString?: string): string => {
+    if (!timeString) return '09:00:00';
+    
+    // Remove any non-time characters
+    let cleanTime = timeString.replace(/[^0-9:]/g, '');
+    
+    // Ensure proper format HH:MM:SS
+    const timeParts = cleanTime.split(':');
+    if (timeParts.length === 3) {
+      const hours = Math.min(23, Math.max(0, parseInt(timeParts[0]) || 0)).toString().padStart(2, '0');
+      const minutes = Math.min(59, Math.max(0, parseInt(timeParts[1]) || 0)).toString().padStart(2, '0');
+      const seconds = Math.min(59, Math.max(0, parseInt(timeParts[2]) || 0)).toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+    
+    return '09:00:00';
+  }, []);
+
+  // Create a debounced save function
   const debouncedSave = useCallback(async (
     itemsToSave: RundownItem[], 
     titleToSave: string, 
@@ -52,7 +70,6 @@ export const useAutoSave = (
     timezoneToSave?: string, 
     startTimeToSave?: string
   ) => {
-    // SIMPLIFIED: Reduce blocking conditions - only block for critical states
     if (!user || 
         isSaving || 
         isProcessingRealtimeUpdate || 
@@ -66,7 +83,7 @@ export const useAutoSave = (
       return;
     }
 
-    // REDUCED: Showcaller activity only blocks for 2 seconds instead of full duration
+    // Brief showcaller activity blocking
     if (showcallerActiveRef.current) {
       const now = Date.now();
       if (now - lastSaveTimestampRef.current < 2000) {
@@ -75,21 +92,23 @@ export const useAutoSave = (
       }
     }
 
-    // REDUCED: Minimum interval between saves reduced to 2 seconds
+    // Minimum interval between saves
     const now = Date.now();
-    if (now - lastSaveTimestampRef.current < 2000) {
+    if (now - lastSaveTimestampRef.current < 1500) {
       console.log('💾 Save throttled - too soon since last save');
       return;
     }
 
+    // Validate the start time before saving
+    const validatedStartTime = validateStartTime(startTimeToSave);
+    
     console.log('💾 Auto-saving rundown...', { 
       itemCount: itemsToSave.length, 
       title: titleToSave,
       timezone: timezoneToSave,
-      startTime: startTimeToSave 
+      startTime: validatedStartTime 
     });
 
-    // Mark as loading to prevent change detection during save
     setIsLoading(true);
     saveInProgressRef.current = true;
     lastSaveTimestampRef.current = now;
@@ -100,11 +119,11 @@ export const useAutoSave = (
         titleToSave, 
         columnsToSave, 
         timezoneToSave, 
-        startTimeToSave
+        validatedStartTime
       );
       
       if (success) {
-        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, startTimeToSave);
+        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, validatedStartTime);
         console.log('✅ Auto-save successful');
       } else {
         setHasUnsavedChanges(true);
@@ -117,11 +136,10 @@ export const useAutoSave = (
       setIsLoading(false);
       saveInProgressRef.current = false;
     }
-  }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
+  }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, validateStartTime]);
 
-  // SIMPLIFIED: Main effect with reduced conflict detection
+  // Main effect for auto-save
   useEffect(() => {
-    // BASIC blocking for critical states only
     if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
@@ -130,52 +148,49 @@ export const useAutoSave = (
       return;
     }
 
-    // Don't auto-save if not ready
     if (!hasUnsavedChanges || !isInitialized || !user) {
       return;
     }
 
-    // Create a unique signature for this data - include current values
+    // Validate start time in the signature
+    const validatedStartTime = validateStartTime(startTime);
+    
     const currentDataSignature = JSON.stringify({ 
       items, 
       title: rundownTitle, 
       columns, 
       timezone, 
-      startTime 
+      startTime: validatedStartTime 
     });
     
-    // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
       return;
     }
 
     console.log('💾 Data changed, scheduling save with current values:', {
       timezone,
-      startTime,
+      startTime: validatedStartTime,
       title: rundownTitle,
       itemCount: items.length
     });
 
     lastSaveDataRef.current = currentDataSignature;
 
-    // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // REDUCED: Schedule new save with shorter debounce for better responsiveness
     debounceTimeoutRef.current = setTimeout(() => {
-      // Final check when timeout fires - use current values at time of execution
       if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
         console.log('💾 Executing save with values:', {
           timezone,
-          startTime,
+          startTime: validatedStartTime,
           title: rundownTitle
         });
-        debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
+        debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, validatedStartTime);
       }
       debounceTimeoutRef.current = null;
-    }, 1500); // Reduced from 2500ms to 1500ms
+    }, 1500);
 
   }, [
     hasUnsavedChanges, 
@@ -187,7 +202,8 @@ export const useAutoSave = (
     timezone, 
     startTime, 
     debouncedSave, 
-    isProcessingRealtimeUpdate
+    isProcessingRealtimeUpdate,
+    validateStartTime
   ]);
 
   // Cleanup on unmount
@@ -199,7 +215,6 @@ export const useAutoSave = (
     };
   }, []);
 
-  // SIMPLIFIED: markAsChanged callback with reduced restrictions
   const markAsChangedCallback = () => {
     if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
       markAsChanged();
