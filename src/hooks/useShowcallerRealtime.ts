@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,7 +28,7 @@ export const useShowcallerRealtime = ({
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
   onShowcallerActivityRef.current = onShowcallerActivity;
 
-  // Signal showcaller activity
+  // REDUCED FREQUENCY: Signal showcaller activity with longer timeout
   const signalActivity = useCallback(() => {
     if (onShowcallerActivityRef.current) {
       onShowcallerActivityRef.current(true);
@@ -39,12 +38,12 @@ export const useShowcallerRealtime = ({
         clearTimeout(activityTimeoutRef.current);
       }
       
-      // Set timeout to clear activity after 5 seconds
+      // LONGER TIMEOUT: Set timeout to clear activity after 10 seconds instead of 5
       activityTimeoutRef.current = setTimeout(() => {
         if (onShowcallerActivityRef.current) {
           onShowcallerActivityRef.current(false);
         }
-      }, 5000);
+      }, 10000);
     }
   }, []);
 
@@ -66,50 +65,44 @@ export const useShowcallerRealtime = ({
       return;
     }
 
-    // Enhanced filtering: Skip if this update originated from this user
+    // SIMPLIFIED: Skip if this update originated from this user (less restrictive)
     if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
+      console.log('📺 Skipping own update:', showcallerState.lastUpdate);
       return;
     }
 
-    // Enhanced controller detection with better timing logic
-    if (showcallerState.controllerId === user?.id) {
-      const updateTime = new Date(showcallerState.lastUpdate).getTime();
-      const now = Date.now();
-      if (now - updateTime < 2000) { // Within 2 seconds, likely from this controller
-        return;
-      }
-    }
-    
+    // LESS RESTRICTIVE: Allow controller handoff - don't skip recent updates from same user
     lastProcessedUpdateRef.current = showcallerState.lastUpdate;
     
     console.log('📺 Processing showcaller state update:', {
       controllerId: showcallerState.controllerId,
       isPlaying: showcallerState.isPlaying,
-      currentSegment: showcallerState.currentSegmentId
+      currentSegment: showcallerState.currentSegmentId,
+      fromUser: showcallerState.controllerId
     });
 
-    // Signal showcaller activity
+    // Signal showcaller activity with reduced frequency
     signalActivity();
     
     try {
-      // Apply state immediately for perfect sync
+      // Apply state immediately for better sync
       onShowcallerStateReceivedRef.current(showcallerState);
     } catch (error) {
       console.error('Error processing showcaller realtime update:', error);
     }
-  }, [rundownId, user?.id, signalActivity]);
+  }, [rundownId, signalActivity]);
 
-  // Function to track our own updates to prevent processing them
+  // SIMPLIFIED: Function to track our own updates with shorter tracking time
   const trackOwnUpdate = useCallback((lastUpdate: string) => {
     ownUpdateTrackingRef.current.add(lastUpdate);
     
     // Signal our own activity
     signalActivity();
     
-    // Clean up old tracked updates after 30 seconds
+    // SHORTER CLEANUP: Clean up old tracked updates after 15 seconds instead of 30
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(lastUpdate);
-    }, 30000);
+    }, 15000);
   }, [signalActivity]);
 
   useEffect(() => {

@@ -33,13 +33,18 @@ export const useAutoSave = (
     updateSavedSignature
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime, isProcessingRealtimeUpdate);
 
-  // Method to set showcaller active state
+  // SIMPLIFIED: Method to set showcaller active state with reduced interference
   const setShowcallerActive = useCallback((active: boolean) => {
+    const wasActive = showcallerActiveRef.current;
     showcallerActiveRef.current = active;
-    console.log('💾 Showcaller active state:', active);
+    
+    // Only log changes, not every state
+    if (wasActive !== active) {
+      console.log('💾 Showcaller active state changed:', active);
+    }
   }, []);
 
-  // Create a debounced save function that's stable across renders
+  // ENHANCED: Create a debounced save function with less restrictive blocking
   const debouncedSave = useCallback(async (
     itemsToSave: RundownItem[], 
     titleToSave: string, 
@@ -47,25 +52,32 @@ export const useAutoSave = (
     timezoneToSave?: string, 
     startTimeToSave?: string
   ) => {
-    // ENHANCED: Check showcaller state and other blocking conditions
+    // SIMPLIFIED: Reduce blocking conditions - only block for critical states
     if (!user || 
         isSaving || 
         isProcessingRealtimeUpdate || 
-        saveInProgressRef.current ||
-        showcallerActiveRef.current) {
+        saveInProgressRef.current) {
       console.log('💾 Save blocked:', {
         noUser: !user,
         isSaving,
         isProcessingRealtimeUpdate,
-        saveInProgress: saveInProgressRef.current,
-        showcallerActive: showcallerActiveRef.current
+        saveInProgress: saveInProgressRef.current
       });
       return;
     }
 
-    // Prevent rapid-fire saves with minimum interval
+    // REDUCED: Showcaller activity only blocks for 2 seconds instead of full duration
+    if (showcallerActiveRef.current) {
+      const now = Date.now();
+      if (now - lastSaveTimestampRef.current < 2000) {
+        console.log('💾 Save briefly deferred due to showcaller activity');
+        return;
+      }
+    }
+
+    // REDUCED: Minimum interval between saves reduced to 2 seconds
     const now = Date.now();
-    if (now - lastSaveTimestampRef.current < 3000) {
+    if (now - lastSaveTimestampRef.current < 2000) {
       console.log('💾 Save throttled - too soon since last save');
       return;
     }
@@ -105,12 +117,10 @@ export const useAutoSave = (
     }
   }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading]);
 
-  // Main effect that schedules saves with enhanced protection
+  // SIMPLIFIED: Main effect with reduced conflict detection
   useEffect(() => {
-    // ENHANCED: Multiple blocking conditions including showcaller
-    if (isProcessingRealtimeUpdate || 
-        saveInProgressRef.current || 
-        showcallerActiveRef.current) {
+    // BASIC blocking for critical states only
+    if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
         debounceTimeoutRef.current = null;
@@ -138,16 +148,14 @@ export const useAutoSave = (
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Schedule new save with comprehensive checks
+    // REDUCED: Schedule new save with shorter debounce for better responsiveness
     debounceTimeoutRef.current = setTimeout(() => {
       // Final check when timeout fires
-      if (!isProcessingRealtimeUpdate && 
-          !saveInProgressRef.current && 
-          !showcallerActiveRef.current) {
+      if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
         debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       }
       debounceTimeoutRef.current = null;
-    }, 2500); // Slightly longer debounce for stability
+    }, 1500); // Reduced from 2500ms to 1500ms
 
   }, [
     hasUnsavedChanges, 
@@ -171,10 +179,9 @@ export const useAutoSave = (
     };
   }, []);
 
+  // SIMPLIFIED: markAsChanged callback with reduced restrictions
   const markAsChangedCallback = () => {
-    if (!isProcessingRealtimeUpdate && 
-        !saveInProgressRef.current && 
-        !showcallerActiveRef.current) {
+    if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
       markAsChanged();
     }
   };
