@@ -32,8 +32,9 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Simple cell navigation function
-  const handleCellNavigation = useCallback((itemId: string, field: string, key: string) => {
+  // Simple cell navigation function with correct signature
+  const handleCellNavigation = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
+    const key = e.key;
     console.log('Navigation key pressed:', key, 'from', itemId, field);
     
     if (key === 'Enter' || key === 'ArrowDown') {
