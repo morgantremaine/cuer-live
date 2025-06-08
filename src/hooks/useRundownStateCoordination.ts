@@ -12,6 +12,7 @@ export const useRundownStateCoordination = () => {
   // Stable refs to prevent infinite loops
   const stableUpdateItemRef = useRef(coreState.updateItem);
   const stableMarkAsChangedRef = useRef(coreState.markAsChanged);
+  const stableItemsRef = useRef(coreState.items);
   
   // Simple cellRefs storage with stable reference
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -19,6 +20,7 @@ export const useRundownStateCoordination = () => {
   // Update refs when core functions change
   stableUpdateItemRef.current = coreState.updateItem;
   stableMarkAsChangedRef.current = coreState.markAsChanged;
+  stableItemsRef.current = coreState.items;
 
   // Stable color selection function
   const handleColorSelection = useCallback((id: string, color: string) => {
@@ -32,22 +34,22 @@ export const useRundownStateCoordination = () => {
     coreState.handleUpdateColumnWidth
   );
 
-  // Simple cell navigation function with correct signature and improved timing
+  // Simple cell navigation function with correct signature and stable items ref
   const handleCellNavigation = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
     const key = e.key;
     console.log('Navigation key pressed:', key, 'from', itemId, field);
     
     if (key === 'Enter' || key === 'ArrowDown') {
-      const currentIndex = coreState.items.findIndex(item => item.id === itemId);
+      const currentIndex = stableItemsRef.current.findIndex(item => item.id === itemId);
       
       // Find the next non-header item
       let nextItemIndex = currentIndex + 1;
-      while (nextItemIndex < coreState.items.length && isHeaderItem(coreState.items[nextItemIndex])) {
+      while (nextItemIndex < stableItemsRef.current.length && isHeaderItem(stableItemsRef.current[nextItemIndex])) {
         nextItemIndex++;
       }
       
-      if (nextItemIndex < coreState.items.length) {
-        const nextItemId = coreState.items[nextItemIndex].id;
+      if (nextItemIndex < stableItemsRef.current.length) {
+        const nextItemId = stableItemsRef.current[nextItemIndex].id;
         const targetCellKey = `${nextItemId}-${field}`;
         
         // Add a small delay to ensure refs are available after re-render
@@ -62,19 +64,19 @@ export const useRundownStateCoordination = () => {
           } else {
             console.log('Cell not found in refs:', targetCellKey);
           }
-        }, 10);
+        }, 50); // Increased delay to 50ms
       }
     } else if (key === 'ArrowUp') {
-      const currentItemIndex = coreState.items.findIndex(item => item.id === itemId);
+      const currentItemIndex = stableItemsRef.current.findIndex(item => item.id === itemId);
       
       // Find the previous non-header item
       let prevItemIndex = currentItemIndex - 1;
-      while (prevItemIndex >= 0 && isHeaderItem(coreState.items[prevItemIndex])) {
+      while (prevItemIndex >= 0 && isHeaderItem(stableItemsRef.current[prevItemIndex])) {
         prevItemIndex--;
       }
       
       if (prevItemIndex >= 0) {
-        const prevItem = coreState.items[prevItemIndex];
+        const prevItem = stableItemsRef.current[prevItemIndex];
         const targetCellKey = `${prevItem.id}-${field}`;
         
         // Add a small delay to ensure refs are available after re-render
@@ -89,12 +91,12 @@ export const useRundownStateCoordination = () => {
           } else {
             console.log('Cell not found in refs:', targetCellKey);
           }
-        }, 10);
+        }, 50); // Increased delay to 50ms
       }
     }
-  }, [coreState.items]);
+  }, []); // Empty dependency array since we use refs
 
-  // Simple cell click handler
+  // Simple cell click handler - completely stable
   const handleCellClick = useCallback((itemId: string, field: string) => {
     // Just log for now, can be expanded if needed
     console.log('Cell clicked:', itemId, field);
