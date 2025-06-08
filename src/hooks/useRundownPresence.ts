@@ -19,36 +19,48 @@ export const useRundownPresence = (rundownId: string | null) => {
   const presenceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const subscriptionRef = useRef<any>(null);
 
-  // Update user's presence
+  // Update user's presence - simplified version
   const updatePresence = useCallback(async () => {
-    if (!rundownId || !user) return;
+    if (!rundownId || !user) {
+      console.log('⚠️ Cannot update presence - missing rundownId or user');
+      return;
+    }
 
     try {
+      console.log('📍 Updating presence for rundown:', rundownId);
+      
       const { error } = await supabase
         .from('rundown_presence')
         .upsert({
           rundown_id: rundownId,
           user_id: user.id,
           last_seen: new Date().toISOString()
-        }, {
-          onConflict: 'rundown_id,user_id'
         });
 
       if (error) {
-        console.error('Error updating presence:', error);
+        console.error('❌ Error updating presence:', error);
       } else {
-        console.log('Presence updated successfully');
+        console.log('✅ Presence updated successfully');
       }
     } catch (error) {
-      console.error('Error updating presence:', error);
+      console.error('❌ Exception updating presence:', error);
     }
   }, [rundownId, user]);
 
-  // Load active users
+  // Load active users - simplified version
   const loadActiveUsers = useCallback(async () => {
-    if (!rundownId) return;
+    if (!rundownId || !user) {
+      console.log('⚠️ Cannot load active users - missing rundownId or user');
+      setActiveUsers([]);
+      return;
+    }
 
     try {
+      console.log('👥 Loading active users for rundown:', rundownId);
+      
+      // Get users active in the last 5 minutes, excluding current user
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      
       const { data, error } = await supabase
         .from('rundown_presence')
         .select(`
@@ -61,47 +73,51 @@ export const useRundownPresence = (rundownId: string | null) => {
           )
         `)
         .eq('rundown_id', rundownId)
-        .gte('last_seen', new Date(Date.now() - 5 * 60 * 1000).toISOString()) // Last 5 minutes
-        .neq('user_id', user?.id || ''); // Exclude current user
+        .gte('last_seen', fiveMinutesAgo)
+        .neq('user_id', user.id);
 
       if (error) {
-        console.error('Error loading active users:', error);
+        console.error('❌ Error loading active users:', error);
         return;
       }
 
-      console.log('Raw active users data:', data);
+      console.log('📊 Raw active users data:', data);
 
-      // Map the data to match our ActiveUser interface
-      const mappedUsers: ActiveUser[] = (data || []).map(item => ({
+      // Transform the data to match our interface
+      const transformedUsers: ActiveUser[] = (data || []).map(item => ({
         user_id: item.user_id,
         last_seen: item.last_seen,
-        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
+        profiles: item.profiles
       }));
 
-      console.log('Mapped active users:', mappedUsers);
-      setActiveUsers(mappedUsers);
+      console.log('✅ Active users loaded:', transformedUsers.length, transformedUsers);
+      setActiveUsers(transformedUsers);
     } catch (error) {
-      console.error('Error loading active users:', error);
+      console.error('❌ Exception loading active users:', error);
+      setActiveUsers([]);
     }
-  }, [rundownId, user?.id]);
+  }, [rundownId, user]);
 
   // Set up presence tracking
   useEffect(() => {
     if (!rundownId || !user) {
-      console.log('No rundownId or user, skipping presence setup');
+      console.log('⚠️ Skipping presence setup - missing rundownId or user');
       return;
     }
 
-    console.log('Setting up presence for rundown:', rundownId, 'user:', user.id);
+    console.log('🚀 Setting up presence for rundown:', rundownId, 'user:', user.id);
 
     // Update presence immediately
     updatePresence();
-
-    // Set up interval to update presence every 30 seconds
-    presenceIntervalRef.current = setInterval(updatePresence, 30000);
-
+    
     // Load active users initially
     loadActiveUsers();
+
+    // Set up interval to update presence every 30 seconds
+    presenceIntervalRef.current = setInterval(() => {
+      updatePresence();
+      loadActiveUsers(); // Also refresh the list periodically
+    }, 30000);
 
     // Set up real-time subscription for presence changes
     const channel = supabase
@@ -115,27 +131,30 @@ export const useRundownPresence = (rundownId: string | null) => {
           filter: `rundown_id=eq.${rundownId}`
         },
         (payload) => {
-          console.log('Presence change detected:', payload);
+          console.log('📡 Presence change detected:', payload);
           // Reload active users when presence changes
           loadActiveUsers();
         }
       )
       .subscribe((status) => {
-        console.log('Presence subscription status:', status);
+        console.log('📡 Presence subscription status:', status);
       });
 
     subscriptionRef.current = channel;
 
     return () => {
-      console.log('Cleaning up presence tracking');
+      console.log('🧹 Cleaning up presence tracking');
+      
       // Clean up interval
       if (presenceIntervalRef.current) {
         clearInterval(presenceIntervalRef.current);
+        presenceIntervalRef.current = null;
       }
 
       // Clean up subscription
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
       }
     };
   }, [rundownId, user, updatePresence, loadActiveUsers]);
@@ -144,19 +163,21 @@ export const useRundownPresence = (rundownId: string | null) => {
   useEffect(() => {
     return () => {
       if (rundownId && user) {
-        console.log('Removing presence on unmount');
-        // Remove user's presence when leaving
+        console.log('🧹 Removing presence on unmount');
         supabase
           .from('rundown_presence')
           .delete()
           .eq('rundown_id', rundownId)
           .eq('user_id', user.id)
           .then(() => {
-            console.log('Cleaned up presence on unmount');
+            console.log('✅ Cleaned up presence on unmount');
+          })
+          .catch((error) => {
+            console.error('❌ Error cleaning up presence:', error);
           });
       }
     };
-  }, []);
+  }, [rundownId, user]);
 
   return {
     activeUsers,
