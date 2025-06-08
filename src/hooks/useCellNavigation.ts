@@ -45,33 +45,47 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
     console.log('Navigating to cell:', itemId, field);
     setSelectedCell({ itemId, field });
     
-    // Use requestAnimationFrame instead of setTimeout for better timing
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const cellRef = cellRefs.current[`${itemId}-${field}`];
-        console.log('Cell ref found:', !!cellRef, `${itemId}-${field}`);
-        if (cellRef) {
-          cellRef.focus();
-          // For textareas, place cursor at the end
-          if (cellRef instanceof HTMLTextAreaElement) {
-            const length = cellRef.value.length;
-            cellRef.setSelectionRange(length, length);
-          }
-        } else {
-          console.log('Cell ref not found, available refs:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
-          
-          // Fallback: try to find any available ref for this item
-          const availableRefs = Object.keys(cellRefs.current).filter(key => key.startsWith(itemId));
-          if (availableRefs.length > 0) {
-            console.log('Using fallback ref:', availableRefs[0]);
-            const fallbackRef = cellRefs.current[availableRefs[0]];
-            if (fallbackRef) {
-              fallbackRef.focus();
-            }
+    // Use a polling approach to wait for the cell ref to be available
+    const maxAttempts = 20; // Maximum attempts (20 * 10ms = 200ms max wait)
+    let attempts = 0;
+    
+    const tryFocus = () => {
+      attempts++;
+      const cellRef = cellRefs.current[`${itemId}-${field}`];
+      
+      console.log(`Attempt ${attempts}: Cell ref found:`, !!cellRef, `${itemId}-${field}`);
+      
+      if (cellRef) {
+        cellRef.focus();
+        // For textareas, place cursor at the end
+        if (cellRef instanceof HTMLTextAreaElement) {
+          const length = cellRef.value.length;
+          cellRef.setSelectionRange(length, length);
+        }
+        console.log('Successfully focused cell:', `${itemId}-${field}`);
+        return;
+      }
+      
+      // If we haven't found the ref yet and haven't exceeded max attempts, try again
+      if (attempts < maxAttempts) {
+        setTimeout(tryFocus, 10); // Wait 10ms before trying again
+      } else {
+        console.log('Cell ref not found after max attempts, available refs:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
+        
+        // Final fallback: try to find any available ref for this item
+        const availableRefs = Object.keys(cellRefs.current).filter(key => key.startsWith(itemId));
+        if (availableRefs.length > 0) {
+          console.log('Using fallback ref:', availableRefs[0]);
+          const fallbackRef = cellRefs.current[availableRefs[0]];
+          if (fallbackRef) {
+            fallbackRef.focus();
           }
         }
-      });
-    });
+      }
+    };
+    
+    // Start the polling process
+    tryFocus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
