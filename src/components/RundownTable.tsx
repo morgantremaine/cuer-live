@@ -155,17 +155,6 @@ const RundownTable = ({
                   isDragging={draggedItemIndex === index}
                   getColumnWidth={getColumnWidth}
                 />
-
-                {/* Extra spacing below current row */}
-                {isCurrentlyPlaying && (
-                  <tr>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-1 bg-gray-400 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
                 
                 {/* Drop indicator after last row */}
                 {index === items.length - 1 && dropTargetIndex === items.length && (
