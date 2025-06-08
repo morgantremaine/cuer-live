@@ -23,8 +23,6 @@ interface RegularRowProps {
   selectedRows?: Set<string>;
   hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
-  onCellClick: (itemId: string, field: string) => void;
-  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
@@ -135,8 +133,6 @@ const RegularRow = (props: RegularRowProps) => {
           isDraggingMultiple={isDraggingMultiple}
           isSelected={isSelected}
           onUpdateItem={props.onUpdateItem}
-          onCellClick={props.onCellClick}
-          onKeyDown={props.onKeyDown}
           getColumnWidth={props.getColumnWidth}
         />
       </tr>
