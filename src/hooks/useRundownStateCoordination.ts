@@ -17,8 +17,8 @@ export const useRundownStateCoordination = () => {
     rundownStartTime: basicState.rundownStartTime,
     setRundownTitleDirectly: basicState.setRundownTitleDirectly,
     setTimezoneDirectly: basicState.setTimezoneDirectly,
-    setRundownStartTimeDirectly: basicState.setRundownStartTimeDirectly, // Pass the direct setter
-    isProcessingRealtimeUpdate: false // Will be managed internally by gridCore
+    setRundownStartTimeDirectly: basicState.setRundownStartTimeDirectly,
+    isProcessingRealtimeUpdate: false
   });
   
   // Grid interactions (drag/drop, selection, clipboard)

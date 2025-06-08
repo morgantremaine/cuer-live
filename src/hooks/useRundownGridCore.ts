@@ -5,6 +5,8 @@ import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { usePlaybackControls } from './usePlaybackControls';
+import { useRundownUndo } from './useRundownUndo';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
@@ -15,7 +17,7 @@ interface UseRundownGridCoreProps {
   rundownStartTime: string;
   setRundownTitleDirectly: (title: string) => void;
   setTimezoneDirectly: (timezone: string) => void;
-  setRundownStartTimeDirectly: (startTime: string) => void; // Add this prop
+  setRundownStartTimeDirectly: (startTime: string) => void;
   isProcessingRealtimeUpdate: boolean;
 }
 
@@ -26,7 +28,7 @@ export const useRundownGridCore = ({
   rundownStartTime,
   setRundownTitleDirectly,
   setTimezoneDirectly,
-  setRundownStartTimeDirectly, // Receive from parent
+  setRundownStartTimeDirectly,
   isProcessingRealtimeUpdate
 }: UseRundownGridCoreProps) => {
   const params = useParams<{ id: string }>();
@@ -62,20 +64,33 @@ export const useRundownGridCore = ({
     }
   });
 
+  // Playback controls
   const {
-    isConnected,
-    isProcessingUpdate,
-    setApplyingRemoteUpdate
-  } = useStableRealtimeCollaboration(
-    rundownId,
-    stateIntegration.items,
-    stateIntegration.setItems,
-    stateIntegration.updateSavedSignature,
-    rundownTitle,
-    stateIntegration.columns,
-    timezone,
-    rundownStartTime
-  );
+    isPlaying,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward
+  } = usePlaybackControls(stateIntegration.items, currentSegmentId, setCurrentSegmentId);
+
+  // Undo functionality
+  const {
+    handleUndo,
+    canUndo,
+    lastAction
+  } = useRundownUndo(stateIntegration.items, stateIntegration.setItems, markAsChanged);
+
+  const {
+    isConnected
+  } = useStableRealtimeCollaboration({
+    rundownId: rundownId || null,
+    onRemoteUpdate: () => {
+      // Handle remote updates
+      console.log('📡 Remote update received');
+    },
+    enabled: !!rundownId
+  });
 
   // Timer effect for current time
   useEffect(() => {
@@ -105,7 +120,7 @@ export const useRundownGridCore = ({
     
     let totalSeconds = 0;
     stateIntegration.items.forEach(item => {
-      if (item.type === 'item' && item.duration) {
+      if (item.type === 'regular' && item.duration) {
         const [hours, minutes, seconds] = item.duration.split(':').map(Number);
         totalSeconds += hours * 3600 + minutes * 60 + seconds;
       }
@@ -127,7 +142,17 @@ export const useRundownGridCore = ({
     calculateEndTime,
     calculateTotalRuntime,
     isConnected,
-    isProcessingRealtimeUpdate: isProcessingUpdate,
-    setApplyingRemoteUpdate
+    isProcessingRealtimeUpdate,
+    isPlaying,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward,
+    handleUndo,
+    canUndo,
+    lastAction,
+    markAsChanged,
+    setRundownTitle: setRundownTitleDirectly
   };
 };

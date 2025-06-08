@@ -80,15 +80,31 @@ export const useRundownStateIntegration = (
     isProcessingRealtimeUpdate
   );
 
-  // Wrapped addRow that supports insertion at specific index
-  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+  // Wrapped addRow that supports insertion at specific index but compatible with expected signature
+  const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
+    // Convert selectedRowId to insertAfterIndex if needed
+    let insertAfterIndex: number | undefined;
+    if (selectedRowId && items) {
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
     originalAddRow(calculateEndTime, insertAfterIndex);
-  }, [originalAddRow]);
+  }, [originalAddRow, items]);
 
-  // Wrapped addHeader that supports insertion at specific index  
-  const addHeader = useCallback((insertAfterIndex?: number) => {
+  // Wrapped addHeader that supports insertion at specific index but compatible with expected signature
+  const addHeader = useCallback((selectedRowId?: string) => {
+    // Convert selectedRowId to insertAfterIndex if needed
+    let insertAfterIndex: number | undefined;
+    if (selectedRowId && items) {
+      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
+      if (selectedIndex !== -1) {
+        insertAfterIndex = selectedIndex;
+      }
+    }
     originalAddHeader(insertAfterIndex);
-  }, [originalAddHeader]);
+  }, [originalAddHeader, items]);
 
   return {
     items: Array.isArray(items) ? items : [],
