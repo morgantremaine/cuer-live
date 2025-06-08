@@ -19,7 +19,7 @@ export const useRundownPresence = (rundownId: string | null) => {
   const presenceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const subscriptionRef = useRef<any>(null);
 
-  // Update user's presence
+  // Update user's presence using the database function to avoid conflicts
   const updatePresence = useCallback(async () => {
     if (!rundownId || !user) {
       console.log('⚠️ Cannot update presence - missing rundownId or user');
@@ -29,13 +29,10 @@ export const useRundownPresence = (rundownId: string | null) => {
     try {
       console.log('📍 Updating presence for rundown:', rundownId);
       
-      const { error } = await supabase
-        .from('rundown_presence')
-        .upsert({
-          rundown_id: rundownId,
-          user_id: user.id,
-          last_seen: new Date().toISOString()
-        });
+      // Use the database function to handle upsert properly
+      const { error } = await supabase.rpc('update_rundown_presence', {
+        rundown_uuid: rundownId
+      });
 
       if (error) {
         console.error('❌ Error updating presence:', error);
@@ -47,7 +44,7 @@ export const useRundownPresence = (rundownId: string | null) => {
     }
   }, [rundownId, user]);
 
-  // Load active users
+  // Load active users with proper join to profiles
   const loadActiveUsers = useCallback(async () => {
     if (!rundownId || !user) {
       console.log('⚠️ Cannot load active users - missing rundownId or user');
@@ -61,34 +58,53 @@ export const useRundownPresence = (rundownId: string | null) => {
       // Get users active in the last 5 minutes, excluding current user
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
-      const { data, error } = await supabase
+      // First get the presence data
+      const { data: presenceData, error: presenceError } = await supabase
         .from('rundown_presence')
-        .select(`
-          user_id,
-          last_seen,
-          profiles!inner(
-            full_name,
-            email,
-            profile_picture_url
-          )
-        `)
+        .select('user_id, last_seen')
         .eq('rundown_id', rundownId)
         .gte('last_seen', fiveMinutesAgo)
         .neq('user_id', user.id);
 
-      if (error) {
-        console.error('❌ Error loading active users:', error);
+      if (presenceError) {
+        console.error('❌ Error loading presence data:', presenceError);
         return;
       }
 
-      console.log('📊 Raw active users data:', data);
+      if (!presenceData || presenceData.length === 0) {
+        console.log('📊 No active users found');
+        setActiveUsers([]);
+        return;
+      }
 
-      // Transform the data to match our interface
-      const transformedUsers: ActiveUser[] = (data || []).map(item => ({
-        user_id: item.user_id,
-        last_seen: item.last_seen,
-        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
-      }));
+      // Get user IDs for profile lookup
+      const userIds = presenceData.map(p => p.user_id);
+
+      // Fetch profiles separately
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, profile_picture_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('❌ Error loading profiles:', profilesError);
+        setActiveUsers([]);
+        return;
+      }
+
+      // Combine presence and profile data
+      const transformedUsers: ActiveUser[] = presenceData.map(presence => {
+        const profile = profilesData?.find(p => p.id === presence.user_id);
+        return {
+          user_id: presence.user_id,
+          last_seen: presence.last_seen,
+          profiles: profile ? {
+            full_name: profile.full_name,
+            email: profile.email,
+            profile_picture_url: profile.profile_picture_url
+          } : null
+        };
+      });
 
       console.log('✅ Active users loaded:', transformedUsers.length, transformedUsers);
       setActiveUsers(transformedUsers);
