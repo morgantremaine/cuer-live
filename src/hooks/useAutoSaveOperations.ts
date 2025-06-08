@@ -1,118 +1,63 @@
 
-import { useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useCallback, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
-import { useAuth } from './useAuth';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
-import { supabase } from '@/lib/supabase';
 
 export const useAutoSaveOperations = () => {
-  const [isSaving, setIsSaving] = useState(false);
   const params = useParams<{ id: string }>();
-  const rawId = params.id;
-  
-  // Improved ID validation - ensure we don't treat "new" as a valid UUID
-  const rundownId = (!rawId || rawId === 'new' || rawId === ':id' || rawId.trim() === '') ? undefined : rawId;
-  
-  const { updateRundown, saveRundown } = useRundownStorage();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const isNewRundown = !rundownId;
+  const rundownId = (!params.id || params.id === 'new' || params.id === ':id' || params.id.trim() === '') ? undefined : params.id;
+  const { updateRundown } = useRundownStorage();
+  const [isSaving, setIsSaving] = useState(false);
 
   const performSave = useCallback(async (
     items: RundownItem[], 
-    rundownTitle: string, 
+    title: string, 
     columns?: Column[], 
     timezone?: string, 
     startTime?: string,
-    skipRealtimeUpdate?: boolean
-  ) => {
-    if (isSaving) {
+    skipRealtimeUpdate: boolean = false
+  ): Promise<boolean> => {
+    if (!rundownId) {
+      console.log('💾 Cannot save - no rundown ID');
       return false;
     }
 
-    if (!user) {
-      console.error('Cannot save: user not authenticated');
-      return false;
-    }
+    console.log('💾 Auto-saving rundown...', { 
+      itemCount: items.length, 
+      title,
+      timezone,
+      startTime,
+      skipRealtimeUpdate 
+    });
 
-    // Validate data before saving
-    if (!rundownTitle || rundownTitle.trim() === '') {
-      console.error('Cannot save: title is empty');
-      return false;
-    }
-
-    if (!Array.isArray(items)) {
-      console.error('Cannot save: items is not an array');
-      return false;
-    }
-
+    setIsSaving(true);
+    
     try {
-      setIsSaving(true);
+      await updateRundown(
+        rundownId,
+        title,
+        items,
+        true, // silent save
+        false, // not archived
+        columns,
+        timezone,
+        startTime
+      );
       
-      if (isNewRundown) {
-        // Get user's first team for new rundowns
-        const { data: teamMemberships } = await supabase
-          .from('team_members')
-          .select('team_id')
-          .eq('user_id', user.id)
-          .limit(1);
-
-        if (!teamMemberships || teamMemberships.length === 0) {
-          throw new Error('User is not a member of any team. Cannot create rundown.');
-        }
-
-        // Create a new rundown object with team_id
-        const newRundown = {
-          id: '', // This will be ignored in the mapper
-          user_id: user.id,
-          title: rundownTitle,
-          items,
-          columns,
-          timezone,
-          start_time: startTime,
-          team_id: teamMemberships[0].team_id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          archived: false
-        };
-        
-        const savedId = await saveRundown(newRundown);
-        
-        if (savedId) {
-          navigate(`/rundown/${savedId}`, { replace: true });
-          return true;
-        } else {
-          throw new Error('Failed to save new rundown - no ID returned');
-        }
-      } else if (rundownId) {
-        // For existing rundowns, include a flag to indicate this is an auto-save
-        // This helps prevent infinite loops with realtime updates
-        console.log('💾 Auto-saving rundown...', { skipRealtimeUpdate });
-        
-        // Ensure timezone and startTime are properly passed - don't default to undefined
-        const saveTimezone = timezone || undefined;
-        const saveStartTime = startTime || undefined;
-        
-        await updateRundown(rundownId, rundownTitle, items, true, false, columns, saveTimezone, saveStartTime);
-        return true;
-      }
-      
-      console.error('No valid save path found');
-      return false;
+      console.log('✅ Auto-save successful');
+      return true;
     } catch (error) {
-      console.error('Save failed:', error);
+      console.error('❌ Auto-save failed:', error);
       return false;
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, user, isNewRundown, rundownId, saveRundown, updateRundown, navigate]);
+  }, [rundownId, updateRundown]);
 
   return {
     isSaving,
-    performSave,
-    isNewRundown
+    performSave
   };
 };

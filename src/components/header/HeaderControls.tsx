@@ -63,12 +63,17 @@ const HeaderControls = ({
     window.open('/help', '_blank');
   };
 
+  const handleTimezoneChange = (newTimezone: string) => {
+    console.log('🌍 HeaderControls: Timezone change requested:', { from: timezone, to: newTimezone });
+    onTimezoneChange(newTimezone);
+  };
+
   return (
     <div className="flex items-center space-x-4">
       <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
       <TimezoneSelector 
         currentTimezone={timezone}
-        onTimezoneChange={onTimezoneChange}
+        onTimezoneChange={handleTimezoneChange}
       />
       <div className="relative">
         <SearchBar
