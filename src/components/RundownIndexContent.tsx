@@ -3,11 +3,15 @@ import React from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
-import { useRundownGridState } from '@/hooks/useRundownGridState';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 
 const RundownIndexContent = () => {
-  const gridState = useRundownGridState();
+  const {
+    coreState,
+    interactions,
+    uiState
+  } = useRundownStateCoordination();
   
   const {
     currentTime,
@@ -21,34 +25,16 @@ const RundownIndexContent = () => {
     items,
     visibleColumns,
     columns,
-    showColorPicker,
-    cellRefs,
-    selectedRows,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
     currentSegmentId,
     getColumnWidth,
     updateColumnWidth,
     getRowNumber,
-    getRowStatus,
     calculateHeaderDuration,
     updateItem,
-    handleCellClick,
-    handleKeyDown,
-    handleToggleColorPicker,
-    selectColor,
     deleteRow,
     toggleFloatRow,
-    toggleRowSelection,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
     addRow,
     addHeader,
-    hasClipboardData,
-    clearSelection,
     isPlaying,
     timeRemaining,
     play,
@@ -66,9 +52,6 @@ const RundownIndexContent = () => {
     calculateTotalRuntime,
     calculateEndTime,
     markAsChanged,
-    handleCopySelectedRows,
-    handlePasteRows,
-    handleDeleteSelectedRows,
     setRundownStartTime,
     setTimezone,
     handleUndo,
@@ -76,7 +59,27 @@ const RundownIndexContent = () => {
     lastAction,
     isConnected,
     isProcessingRealtimeUpdate
-  } = gridState;
+  } = coreState;
+
+  const {
+    selectedRows,
+    toggleRowSelection,
+    clearSelection,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    hasClipboardData,
+    handleCopySelectedRows,
+    handlePasteRows,
+    handleDeleteSelectedRows,
+    handleRowSelection
+  } = interactions;
+
+  const { showColorPicker, handleCellClick, handleKeyDown, handleToggleColorPicker, selectColor, getRowStatus } = uiState;
 
   const {
     handleRundownStartTimeChange,
@@ -128,7 +131,7 @@ const RundownIndexContent = () => {
         visibleColumns={visibleColumns}
         columns={columns}
         showColorPicker={showColorPicker}
-        cellRefs={cellRefs}
+        cellRefs={{}}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}
         isDraggingMultiple={isDraggingMultiple}
@@ -137,7 +140,7 @@ const RundownIndexContent = () => {
         getColumnWidth={getColumnWidth}
         updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
-        getRowStatus={getRowStatus}
+        getRowStatus={(item) => getRowStatus(item)}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={updateItem}
         onCellClick={handleCellClick}
@@ -182,7 +185,7 @@ const RundownIndexContent = () => {
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={handleUndo}
         canUndo={canUndo}
-        lastAction={lastAction}
+        lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
       />

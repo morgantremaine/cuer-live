@@ -1,8 +1,12 @@
 
-import { useRundownGridState } from '@/hooks/useRundownGridState';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useModificationApplier } from './useCuerModifications/useModificationApplier';
 
 export const useCuerModifications = () => {
+  const {
+    coreState
+  } = useRundownStateCoordination();
+
   const {
     items,
     updateItem,
@@ -11,7 +15,7 @@ export const useCuerModifications = () => {
     deleteRow,
     calculateEndTime,
     markAsChanged
-  } = useRundownGridState();
+  } = coreState;
 
   const { applyModifications } = useModificationApplier({
     items,

@@ -1,8 +1,7 @@
 
 import React, { useRef } from 'react';
 import RundownTable from './RundownTable';
-import { useRundownGridState } from '@/hooks/useRundownGridState';
-import { useRundownGridUI } from '@/hooks/useRundownGridUI';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useColorPicker } from '@/hooks/useColorPicker';
 import { useCellNavigation } from '@/hooks/useCellNavigation';
 
@@ -10,19 +9,28 @@ const RundownGrid = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   const {
+    coreState,
+    interactions,
+    uiState
+  } = useRundownStateCoordination();
+
+  const {
     items,
     visibleColumns,
     currentTime,
-    selectedRows,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
     currentSegmentId,
     hasClipboardData,
     getColumnWidth,
     updateColumnWidth,
-    handleUpdateItem,
-    handleRowSelection,
+    getRowNumber,
+    calculateHeaderDuration
+  } = coreState;
+
+  const {
+    selectedRows,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
     handleDragStart,
     handleDragOver,
     handleDragLeave,
@@ -33,28 +41,15 @@ const RundownGrid = () => {
     clearSelection,
     handleAddRow,
     handleAddHeader,
-    toggleFloatRow,
-    deleteRow,
-    getRowNumber,
-    getRowStatus,
-    calculateHeaderDuration
-  } = useRundownGridState();
+    handleRowSelection
+  } = interactions;
 
-  const { showColorPicker, handleToggleColorPicker, handleColorSelect: colorPickerSelect } = useColorPicker();
-
-  const { handleCellClick, handleKeyDown } = useCellNavigation(
-    visibleColumns,
-    items
-  );
+  const { showColorPicker, handleToggleColorPicker, handleCellClick, handleKeyDown, getRowStatus, selectColor } = uiState;
 
   // Create a wrapper function that matches the expected signature
   const handleColorSelect = (id: string, color: string) => {
-    handleUpdateItem(id, 'color', color);
-    colorPickerSelect(id, color);
+    selectColor(id, color);
   };
-
-  console.log('RundownGrid: handleAddRow exists?', !!handleAddRow);
-  console.log('RundownGrid: handleAddHeader exists?', !!handleAddHeader);
 
   return (
     <RundownTable
@@ -72,15 +67,15 @@ const RundownGrid = () => {
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}
       getRowNumber={getRowNumber}
-      getRowStatus={getRowStatus}
+      getRowStatus={(item) => getRowStatus(item)}
       calculateHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={handleUpdateItem}
+      onUpdateItem={coreState.updateItem}
       onCellClick={handleCellClick}
       onKeyDown={handleKeyDown}
       onToggleColorPicker={handleToggleColorPicker}
       onColorSelect={handleColorSelect}
-      onDeleteRow={deleteRow}
-      onToggleFloat={toggleFloatRow}
+      onDeleteRow={coreState.deleteRow}
+      onToggleFloat={coreState.toggleFloatRow}
       onRowSelect={handleRowSelection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
