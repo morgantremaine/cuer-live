@@ -19,7 +19,7 @@ export const useRundownPresence = (rundownId: string | null) => {
   const presenceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const subscriptionRef = useRef<any>(null);
 
-  // Update user's presence - simplified version
+  // Update user's presence
   const updatePresence = useCallback(async () => {
     if (!rundownId || !user) {
       console.log('⚠️ Cannot update presence - missing rundownId or user');
@@ -47,7 +47,7 @@ export const useRundownPresence = (rundownId: string | null) => {
     }
   }, [rundownId, user]);
 
-  // Load active users - simplified version
+  // Load active users
   const loadActiveUsers = useCallback(async () => {
     if (!rundownId || !user) {
       console.log('⚠️ Cannot load active users - missing rundownId or user');
@@ -87,7 +87,7 @@ export const useRundownPresence = (rundownId: string | null) => {
       const transformedUsers: ActiveUser[] = (data || []).map(item => ({
         user_id: item.user_id,
         last_seen: item.last_seen,
-        profiles: item.profiles
+        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
       }));
 
       console.log('✅ Active users loaded:', transformedUsers.length, transformedUsers);
@@ -164,17 +164,26 @@ export const useRundownPresence = (rundownId: string | null) => {
     return () => {
       if (rundownId && user) {
         console.log('🧹 Removing presence on unmount');
-        supabase
-          .from('rundown_presence')
-          .delete()
-          .eq('rundown_id', rundownId)
-          .eq('user_id', user.id)
-          .then(() => {
-            console.log('✅ Cleaned up presence on unmount');
-          })
-          .catch((error) => {
-            console.error('❌ Error cleaning up presence:', error);
-          });
+        // Use async function to handle the promise properly
+        const cleanupPresence = async () => {
+          try {
+            const { error } = await supabase
+              .from('rundown_presence')
+              .delete()
+              .eq('rundown_id', rundownId)
+              .eq('user_id', user.id);
+              
+            if (error) {
+              console.error('❌ Error cleaning up presence:', error);
+            } else {
+              console.log('✅ Cleaned up presence on unmount');
+            }
+          } catch (error) {
+            console.error('❌ Exception cleaning up presence:', error);
+          }
+        };
+        
+        cleanupPresence();
       }
     };
   }, [rundownId, user]);
