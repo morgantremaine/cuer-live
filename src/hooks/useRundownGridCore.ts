@@ -1,3 +1,4 @@
+
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { usePlaybackControls } from './usePlaybackControls';
@@ -11,7 +12,35 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { SavedRundown } from './useRundownStorage/types';
 
-export const useRundownGridCore = () => {
+interface GridCoreProps {
+  items: RundownItem[];
+  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
+  updateItem: (id: string, field: string, value: string) => void;
+  addRow: (calculateEndTime: any, insertAfterIndex?: number) => void;
+  addHeader: (insertAfterIndex?: number) => void;
+  deleteRow: (id: string) => void;
+  deleteMultipleRows: (ids: string[]) => void;
+  addMultipleRows: (items: RundownItem[], calculateEndTime: any) => void;
+  getRowNumber: (index: number) => string;
+  toggleFloatRow: (id: string) => void;
+  calculateTotalRuntime: () => string;
+  calculateHeaderDuration: (index: number) => string;
+  columns: any[];
+  visibleColumns: any[];
+  handleAddColumn: (name: string) => void;
+  handleReorderColumns: (reorderedColumns: any[]) => void;
+  handleDeleteColumn: (columnId: string) => void;
+  handleRenameColumn: (columnId: string, newName: string) => void;
+  handleToggleColumnVisibility: (columnId: string) => void;
+  handleLoadLayout: (layout: any) => void;
+  handleUpdateColumnWidth: (columnId: string, width: number) => void;
+  hasUnsavedChanges: boolean;
+  isSaving: boolean;
+  setApplyingRemoteUpdate: (applying: boolean) => void;
+  updateSavedSignature: (items: any[], title: string, columns?: any[], timezone?: string, startTime?: string) => void;
+}
+
+export const useRundownGridCore = (integratedState: GridCoreProps) => {
   const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
   
   // Create stable refs to prevent infinite loops
@@ -58,7 +87,7 @@ export const useRundownGridCore = () => {
   // Editing detection
   const { isEditing, markAsEditing } = useEditingState();
 
-  // Rundown data integration with passing setApplyingRemoteUpdate
+  // Use the provided integrated state
   const {
     items,
     setItems,
@@ -85,15 +114,7 @@ export const useRundownGridCore = () => {
     isSaving,
     setApplyingRemoteUpdate,
     updateSavedSignature
-  } = useRundownStateIntegration(
-    markAsChanged, 
-    rundownTitle, 
-    timezone, 
-    rundownStartTime,
-    setRundownTitleDirectly, 
-    setTimezoneDirectly,
-    isProcessingRealtimeUpdate
-  );
+  } = integratedState;
 
   // Update stable refs
   stableCallbacksRef.current.handleLoadLayout = handleLoadLayout;
@@ -141,7 +162,7 @@ export const useRundownGridCore = () => {
     stableCallbacksRef.current.loadRundowns?.();
   }, [rundownTitle, timezone, rundownStartTime, columns, items, loadUndoHistory]);
 
-  // Set up realtime collaboration with updateSavedSignature and setApplyingRemoteUpdate
+  // Set up realtime collaboration
   const { isConnected } = useRealtimeRundown({
     rundownId,
     onRundownUpdated: handleRundownUpdated,
@@ -173,6 +194,11 @@ export const useRundownGridCore = () => {
   });
 
   // Updated playback controls with showcaller integration
+  const showcallerActivityCallback = useCallback((active: boolean) => {
+    // This will be passed to auto-save to prevent conflicts
+    console.log('📺 Showcaller activity changed:', active);
+  }, []);
+
   const { 
     isPlaying, 
     currentSegmentId, 
@@ -181,7 +207,7 @@ export const useRundownGridCore = () => {
     pause, 
     forward, 
     backward 
-  } = usePlaybackControls(items, updateItem, rundownId);
+  } = usePlaybackControls(items, updateItem, rundownId, showcallerActivityCallback);
 
   const { calculateEndTime } = useTimeCalculations(items, updateItem, rundownStartTime);
 
@@ -381,6 +407,8 @@ export const useRundownGridCore = () => {
     hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
     isSaving,
     calculateEndTime,
+    setApplyingRemoteUpdate,
+    updateSavedSignature,
 
     // Undo functionality
     handleUndo,

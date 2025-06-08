@@ -11,25 +11,53 @@ export const useRundownStateCoordination = () => {
   const basicState = useRundownBasicState();
   
   // Enhanced state with auto-save, realtime, and playback
-  const integratedState = useRundownStateIntegration(basicState);
+  const integratedState = useRundownStateIntegration(
+    basicState.markAsChanged,
+    basicState.rundownTitle,
+    basicState.timezone,
+    basicState.rundownStartTime,
+    basicState.setRundownTitleDirectly,
+    basicState.setTimezoneDirectly,
+    false // isProcessingRealtimeUpdate - will be set by gridCore
+  );
   
   // Grid-specific core functionality
   const gridCore = useRundownGridCore(integratedState);
   
   // Grid interactions (drag/drop, selection, clipboard)
-  const gridInteractions = useRundownGridInteractions(gridCore);
+  const gridInteractions = useRundownGridInteractions(
+    gridCore.items,
+    gridCore.setItems,
+    gridCore.updateItem,
+    gridCore.addRow,
+    gridCore.addHeader,
+    gridCore.deleteRow,
+    gridCore.toggleFloatRow,
+    gridCore.deleteMultipleRows,
+    gridCore.addMultipleRows,
+    gridCore.handleDeleteColumn,
+    gridCore.calculateEndTime,
+    (id: string, color: string) => {
+      gridCore.updateItem(id, 'color', color);
+    },
+    gridCore.markAsChanged,
+    gridCore.setRundownTitle
+  );
   
   // Grid UI state (colors, editing, etc.)
-  const gridUI = useRundownGridUI(gridCore);
+  const gridUI = useRundownGridUI(
+    gridCore.items,
+    gridCore.visibleColumns,
+    gridCore.columns,
+    gridCore.updateItem,
+    gridCore.currentSegmentId,
+    gridCore.currentTime,
+    gridCore.markAsChanged
+  );
 
   // Enhanced auto-save integration with showcaller activity detection
   const enhancedAutoSave = useMemo(() => {
-    const { hasUnsavedChanges, isSaving, markAsChanged, setApplyingRemoteUpdate, updateSavedSignature, setShowcallerActive } = integratedState.autoSave;
-    
-    // Pass showcaller activity to auto-save
-    if (setShowcallerActive && integratedState.playback.isPlaying !== undefined) {
-      setShowcallerActive(integratedState.playback.isPlaying);
-    }
+    const { hasUnsavedChanges, isSaving, markAsChanged, setApplyingRemoteUpdate, updateSavedSignature } = gridCore;
     
     return {
       hasUnsavedChanges,
@@ -38,26 +66,24 @@ export const useRundownStateCoordination = () => {
       setApplyingRemoteUpdate,
       updateSavedSignature
     };
-  }, [integratedState.autoSave, integratedState.playback.isPlaying]);
+  }, [gridCore.hasUnsavedChanges, gridCore.isSaving, gridCore.markAsChanged, gridCore.setApplyingRemoteUpdate, gridCore.updateSavedSignature]);
 
   // Enhanced realtime with editing state detection
   const enhancedRealtime = useMemo(() => {
-    const { isConnected, trackOwnUpdate, setEditingState } = integratedState.realtime;
+    const { isConnected, isProcessingRealtimeUpdate } = gridCore;
     
     return {
       isConnected,
-      trackOwnUpdate,
-      setEditingState
+      isProcessingRealtimeUpdate
     };
-  }, [integratedState.realtime]);
+  }, [gridCore.isConnected, gridCore.isProcessingRealtimeUpdate]);
 
   return {
     coreState: {
+      ...basicState,
       ...gridCore,
       ...enhancedAutoSave,
-      ...enhancedRealtime,
-      ...integratedState.playback,
-      isProcessingRealtimeUpdate: integratedState.realtime.isProcessingRealtimeUpdate
+      ...enhancedRealtime
     },
     interactions: gridInteractions,
     uiState: gridUI

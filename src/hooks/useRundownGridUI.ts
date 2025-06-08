@@ -1,5 +1,8 @@
 
 import { useRundownUIState } from './useRundownUIState';
+import { useCellNavigation } from './useCellNavigation';
+import { useColorPicker } from './useColorPicker';
+import { useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
@@ -12,6 +15,8 @@ export const useRundownGridUI = (
   currentTime: Date,
   markAsChanged: () => void
 ) => {
+  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+
   const {
     showColorPicker,
     handleToggleColorPicker,
@@ -29,12 +34,20 @@ export const useRundownGridUI = (
     markAsChanged
   );
 
+  const {
+    handleCellClick,
+    handleKeyDown
+  } = useCellNavigation(cellRefs, items, visibleColumns);
+
   return {
     showColorPicker,
     handleToggleColorPicker,
     getColumnWidth,
     updateColumnWidth,
     getRowStatus,
-    selectColor
+    selectColor,
+    handleCellClick,
+    handleKeyDown,
+    cellRefs
   };
 };
