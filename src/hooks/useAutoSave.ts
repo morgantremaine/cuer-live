@@ -84,7 +84,9 @@ export const useAutoSave = (
 
     console.log('💾 Auto-saving rundown...', { 
       itemCount: itemsToSave.length, 
-      title: titleToSave 
+      title: titleToSave,
+      timezone: timezoneToSave,
+      startTime: startTimeToSave 
     });
 
     // Mark as loading to prevent change detection during save
@@ -133,13 +135,26 @@ export const useAutoSave = (
       return;
     }
 
-    // Create a unique signature for this data
-    const currentDataSignature = JSON.stringify({ items, title: rundownTitle, columns, timezone, startTime });
+    // Create a unique signature for this data - include current values
+    const currentDataSignature = JSON.stringify({ 
+      items, 
+      title: rundownTitle, 
+      columns, 
+      timezone, 
+      startTime 
+    });
     
     // Only schedule if data actually changed
     if (lastSaveDataRef.current === currentDataSignature) {
       return;
     }
+
+    console.log('💾 Data changed, scheduling save with current values:', {
+      timezone,
+      startTime,
+      title: rundownTitle,
+      itemCount: items.length
+    });
 
     lastSaveDataRef.current = currentDataSignature;
 
@@ -150,8 +165,13 @@ export const useAutoSave = (
 
     // REDUCED: Schedule new save with shorter debounce for better responsiveness
     debounceTimeoutRef.current = setTimeout(() => {
-      // Final check when timeout fires
+      // Final check when timeout fires - use current values at time of execution
       if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
+        console.log('💾 Executing save with values:', {
+          timezone,
+          startTime,
+          title: rundownTitle
+        });
         debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, startTime);
       }
       debounceTimeoutRef.current = null;

@@ -16,7 +16,12 @@ export const useRundownStateCoordination = () => {
     timezone: basicState.timezone,
     rundownStartTime: basicState.rundownStartTime,
     setRundownTitleDirectly: basicState.setRundownTitleDirectly,
-    setTimezoneDirectly: basicState.setTimezoneDirectly,
+    setTimezoneDirectly: (newTimezone: string) => {
+      console.log('🌍 useRundownStateCoordination: Setting timezone directly:', newTimezone);
+      basicState.setTimezoneDirectly(newTimezone);
+      // Immediately mark as changed to trigger auto-save
+      basicState.markAsChanged();
+    },
     isProcessingRealtimeUpdate: false // Will be managed internally by gridCore
   });
   
@@ -51,10 +56,19 @@ export const useRundownStateCoordination = () => {
     gridCore.markAsChanged
   );
 
+  // Enhanced start time setter that triggers change tracking
+  const setRundownStartTime = (newStartTime: string) => {
+    console.log('⏰ useRundownStateCoordination: Setting start time:', newStartTime);
+    basicState.setRundownStartTime(newStartTime);
+    // Immediately mark as changed to trigger auto-save
+    basicState.markAsChanged();
+  };
+
   return {
     coreState: {
       ...basicState,
-      ...gridCore
+      ...gridCore,
+      setRundownStartTime // Override with our enhanced version
     },
     interactions: gridInteractions,
     uiState: gridUI
