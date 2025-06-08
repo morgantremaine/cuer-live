@@ -8,13 +8,16 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
   const handleCellClick = (itemId: string, field: string) => {
+    console.log('Cell clicked:', itemId, field);
     setSelectedCell({ itemId, field });
   };
 
   const navigateToCell = (itemId: string, field: string) => {
+    console.log('Navigating to cell:', itemId, field);
     setSelectedCell({ itemId, field });
     setTimeout(() => {
       const cellRef = cellRefs.current[`${itemId}-${field}`];
+      console.log('Cell ref found:', !!cellRef, `${itemId}-${field}`);
       if (cellRef) {
         cellRef.focus();
         // For textareas, place cursor at the end
@@ -27,8 +30,13 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    console.log('Key pressed:', e.key, 'in cell:', itemId, field);
+    
     if (e.key === 'Enter') {
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Enter key - navigating down');
+      
       const currentIndex = items.findIndex(item => item.id === itemId);
       
       // Find the next non-header item
@@ -43,6 +51,9 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Arrow up - navigating up');
+      
       const currentItemIndex = items.findIndex(item => item.id === itemId);
       
       // Find the previous non-header item
@@ -57,6 +68,9 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Arrow down - navigating down');
+      
       const currentItemIndex = items.findIndex(item => item.id === itemId);
       
       // Find the next non-header item

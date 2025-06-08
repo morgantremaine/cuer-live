@@ -67,23 +67,19 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Handle key down events - different behavior for expanded vs collapsed
+  // Handle key down events
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (isExpanded) {
-      // When expanded, only allow normal textarea behavior for Enter
-      // Arrow keys should still navigate between cells
-      if (e.key === 'Enter') {
-        // Allow Enter to create new lines in expanded mode
+    console.log('ExpandableScriptCell key:', e.key, 'expanded:', isExpanded);
+    
+    // Always handle navigation keys by calling the parent handler
+    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      if (isExpanded && e.key === 'Enter') {
+        // In expanded mode, allow Enter to create new lines
+        // Don't call the navigation handler
         return;
-      }
-      // Arrow keys should navigate between cells even when expanded
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        onKeyDown(e, itemId, cellRefKey);
-        return;
-      }
-    } else {
-      // When collapsed, all navigation keys should move between cells
-      if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      } else {
+        // For all other cases, use navigation
+        console.log('Calling navigation handler');
         onKeyDown(e, itemId, cellRefKey);
         return;
       }
@@ -109,6 +105,7 @@ const ExpandableScriptCell = ({
             if (el) {
               cellRefs.current[`${itemId}-${cellRefKey}`] = el;
               textareaRef.current = el;
+              console.log('Cell ref registered:', `${itemId}-${cellRefKey}`);
             }
           }}
           value={value}
