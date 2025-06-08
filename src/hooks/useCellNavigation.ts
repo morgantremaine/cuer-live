@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Column } from './useColumnsManager';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -8,6 +9,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
 
   const handleCellClick = (itemId: string, field: string) => {
     console.log('Cell clicked:', itemId, field);
+    console.log('Available cell refs for this item:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
     setSelectedCell({ itemId, field });
   };
 
@@ -15,6 +17,8 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
   const findNavigationField = (targetItemId: string, currentField: string): string => {
     const targetItem = items.find(item => item.id === targetItemId);
     if (!targetItem) return currentField;
+
+    console.log('Finding navigation field for:', targetItemId, 'current field:', currentField, 'target is header:', isHeaderItem(targetItem));
 
     if (isHeaderItem(targetItem)) {
       // Navigating to a header - headers only have segmentName
@@ -25,13 +29,43 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
         // Coming from header segmentName, go to script field on regular row
         return 'script';
       }
-      // For other fields, keep the same field
+      
+      // Check if the current field exists for the target item
+      const targetRef = `${targetItemId}-${currentField}`;
+      console.log('Checking if target ref exists:', targetRef, 'exists:', !!cellRefs.current[targetRef]);
+      
+      if (cellRefs.current[targetRef]) {
+        return currentField;
+      }
+      
+      // Fallback: try script, then notes, then the first available field
+      if (cellRefs.current[`${targetItemId}-script`]) {
+        console.log('Fallback to script field');
+        return 'script';
+      }
+      if (cellRefs.current[`${targetItemId}-notes`]) {
+        console.log('Fallback to notes field');
+        return 'notes';
+      }
+      
+      // Find the first available field for this item
+      const availableFields = Object.keys(cellRefs.current)
+        .filter(key => key.startsWith(targetItemId + '-'))
+        .map(key => key.split('-')[1]);
+      
+      if (availableFields.length > 0) {
+        console.log('Fallback to first available field:', availableFields[0]);
+        return availableFields[0];
+      }
+      
+      console.log('No available field found, keeping current field');
       return currentField;
     }
   };
 
   const navigateToCell = (itemId: string, field: string) => {
     console.log('Navigating to cell:', itemId, field);
+    console.log('All available refs:', Object.keys(cellRefs.current));
     setSelectedCell({ itemId, field });
     
     // Use a polling approach to wait for the cell ref to be available
@@ -59,7 +93,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       if (attempts < maxAttempts) {
         setTimeout(tryFocus, 10); // Wait 10ms before trying again
       } else {
-        console.log('Cell ref not found after max attempts, available refs:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
+        console.log('Cell ref not found after max attempts, available refs for item:', Object.keys(cellRefs.current).filter(key => key.startsWith(itemId)));
         
         // Final fallback: try to find any available ref for this item
         const availableRefs = Object.keys(cellRefs.current).filter(key => key.startsWith(itemId));
