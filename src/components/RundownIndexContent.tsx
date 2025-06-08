@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
@@ -7,6 +7,8 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 
 const RundownIndexContent = () => {
+  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  
   const {
     coreState,
     interactions,
@@ -26,8 +28,6 @@ const RundownIndexContent = () => {
     visibleColumns,
     columns,
     currentSegmentId,
-    getColumnWidth,
-    updateColumnWidth,
     getRowNumber,
     calculateHeaderDuration,
     updateItem,
@@ -79,7 +79,16 @@ const RundownIndexContent = () => {
     handleRowSelection
   } = interactions;
 
-  const { showColorPicker, handleCellClick, handleKeyDown, handleToggleColorPicker, selectColor, getRowStatus } = uiState;
+  const { 
+    showColorPicker, 
+    handleCellClick, 
+    handleKeyDown, 
+    handleToggleColorPicker, 
+    selectColor, 
+    getRowStatus,
+    getColumnWidth,
+    updateColumnWidth
+  } = uiState;
 
   const {
     handleRundownStartTimeChange,
@@ -131,7 +140,7 @@ const RundownIndexContent = () => {
         visibleColumns={visibleColumns}
         columns={columns}
         showColorPicker={showColorPicker}
-        cellRefs={{}}
+        cellRefs={cellRefs}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}
         isDraggingMultiple={isDraggingMultiple}

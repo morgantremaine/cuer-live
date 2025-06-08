@@ -19,9 +19,6 @@ const RundownGrid = () => {
     visibleColumns,
     currentTime,
     currentSegmentId,
-    hasClipboardData,
-    getColumnWidth,
-    updateColumnWidth,
     getRowNumber,
     calculateHeaderDuration
   } = coreState;
@@ -41,10 +38,20 @@ const RundownGrid = () => {
     clearSelection,
     handleAddRow,
     handleAddHeader,
-    handleRowSelection
+    handleRowSelection,
+    hasClipboardData
   } = interactions;
 
-  const { showColorPicker, handleToggleColorPicker, handleCellClick, handleKeyDown, getRowStatus, selectColor } = uiState;
+  const { 
+    showColorPicker, 
+    handleToggleColorPicker, 
+    handleCellClick, 
+    handleKeyDown, 
+    getRowStatus, 
+    selectColor,
+    getColumnWidth,
+    updateColumnWidth
+  } = uiState;
 
   // Create a wrapper function that matches the expected signature
   const handleColorSelect = (id: string, color: string) => {
