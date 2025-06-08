@@ -57,7 +57,14 @@ export const useRundownPresence = (rundownId: string | null) => {
         return;
       }
 
-      setActiveUsers(data || []);
+      // Map the data to match our ActiveUser interface
+      const mappedUsers: ActiveUser[] = (data || []).map(item => ({
+        user_id: item.user_id,
+        last_seen: item.last_seen,
+        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
+      }));
+
+      setActiveUsers(mappedUsers);
     } catch (error) {
       console.error('Error loading active users:', error);
     }
