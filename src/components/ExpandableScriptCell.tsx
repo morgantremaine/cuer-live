@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import HighlightedText from './HighlightedText';
@@ -71,26 +70,24 @@ const ExpandableScriptCell = ({
   // Handle key down events - different behavior for expanded vs collapsed
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (isExpanded) {
-      // When expanded, allow Enter key to create new lines but still handle arrow keys
+      // When expanded, only allow normal textarea behavior for Enter
+      // Arrow keys should still navigate between cells
       if (e.key === 'Enter') {
-        // Don't prevent default - let the textarea handle it naturally
+        // Allow Enter to create new lines in expanded mode
         return;
       }
-      // For arrow keys when expanded, let them work normally within the textarea
+      // Arrow keys should navigate between cells even when expanded
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        // Don't prevent default - let textarea handle cursor movement
+        onKeyDown(e, itemId, cellRefKey);
         return;
       }
     } else {
-      // When collapsed, use navigation for Enter and arrow keys
+      // When collapsed, all navigation keys should move between cells
       if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         onKeyDown(e, itemId, cellRefKey);
         return;
       }
     }
-    
-    // For other keys, use the provided handler
-    onKeyDown(e, itemId, cellRefKey);
   };
 
   return (

@@ -11,16 +11,22 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
     setSelectedCell({ itemId, field });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
-    // For expandable script cells, don't interfere with their internal navigation logic
-    const target = e.target as HTMLElement;
-    const isExpandableCell = target.closest('[data-expandable-cell]');
-    
-    if (isExpandableCell) {
-      // Let expandable cells handle their own navigation
-      return;
-    }
+  const navigateToCell = (itemId: string, field: string) => {
+    setSelectedCell({ itemId, field });
+    setTimeout(() => {
+      const cellRef = cellRefs.current[`${itemId}-${field}`];
+      if (cellRef) {
+        cellRef.focus();
+        // For textareas, place cursor at the end
+        if (cellRef instanceof HTMLTextAreaElement) {
+          const length = cellRef.value.length;
+          cellRef.setSelectionRange(length, length);
+        }
+      }
+    }, 0);
+  };
 
+  const handleKeyDown = (e: React.KeyboardEvent, itemId: string, field: string) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const currentIndex = items.findIndex(item => item.id === itemId);
@@ -33,10 +39,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItemId = items[nextItemIndex].id;
-        setSelectedCell({ itemId: nextItemId, field });
-        setTimeout(() => {
-          cellRefs.current[`${nextItemId}-${field}`]?.focus();
-        }, 0);
+        navigateToCell(nextItemId, field);
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -50,10 +53,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (prevItemIndex >= 0) {
         const prevItem = items[prevItemIndex];
-        setSelectedCell({ itemId: prevItem.id, field });
-        setTimeout(() => {
-          cellRefs.current[`${prevItem.id}-${field}`]?.focus();
-        }, 0);
+        navigateToCell(prevItem.id, field);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -67,10 +67,7 @@ export const useCellNavigation = (columns: Column[], items: RundownItem[]) => {
       
       if (nextItemIndex < items.length) {
         const nextItem = items[nextItemIndex];
-        setSelectedCell({ itemId: nextItem.id, field });
-        setTimeout(() => {
-          cellRefs.current[`${nextItem.id}-${field}`]?.focus();
-        }, 0);
+        navigateToCell(nextItem.id, field);
       }
     }
   };
