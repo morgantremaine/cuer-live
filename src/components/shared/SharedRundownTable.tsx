@@ -76,26 +76,6 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             
             return (
               <React.Fragment key={item.id}>
-                {/* Green line above current row */}
-                {isShowcallerCurrent && (
-                  <tr className="print:hidden">
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                
-                {/* Small spacing below green line */}
-                {isShowcallerCurrent && (
-                  <tr className="print:hidden">
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1"></div>
-                    </td>
-                  </tr>
-                )}
-                
                 <tr
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
@@ -161,6 +141,26 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                     );
                   })}
                 </tr>
+                
+                {/* Green line below current row */}
+                {isShowcallerCurrent && (
+                  <tr className="print:hidden">
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-4 flex items-center">
+                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Small spacing below green line */}
+                {isShowcallerCurrent && (
+                  <tr className="print:hidden">
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1"></div>
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             );
           })}
