@@ -13,7 +13,7 @@ export const useRundownGridUI = (
   updateItem: (id: string, field: string, value: string) => void,
   currentSegmentId: string | null,
   currentTime: Date,
-  markAsChanged: () => void
+  handleUpdateColumnWidth: (columnId: string, width: number) => void
 ) => {
   // Color picker
   const {
@@ -43,8 +43,9 @@ export const useRundownGridUI = (
   // Column resizing
   const {
     getColumnWidth: getColumnWidthNumber,
-    updateColumnWidth
-  } = useColumnResizing(visibleColumns, markAsChanged);
+    updateColumnWidth,
+    initializeWidths
+  } = useColumnResizing(visibleColumns, handleUpdateColumnWidth);
 
   // Wrapper function to convert number to string with px
   const getColumnWidth = useCallback((column: Column): string => {
@@ -60,7 +61,7 @@ export const useRundownGridUI = (
     const currentTimeString = now.toTimeString().slice(0, 8);
     
     if (currentTimeString < item.startTime) return 'upcoming';
-    if (currentTimeString >= item.startTime && currentTimeString < item.endTime) return 'current';
+    if (currentTimeString >= item.startTime && currentTimeString < item.endTime) return 'completed';
     return 'completed';
   }, [currentTime]);
 
@@ -69,9 +70,9 @@ export const useRundownGridUI = (
     updateItem(id, 'color', color);
   }, [updateItem]);
 
-  // Column width change handler with auto-save
+  // Column width change handler for header
   const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
-    console.log('💾 Column width changed, triggering auto-save');
+    console.log('💾 Column width changed in header, updating');
     updateColumnWidth(columnId, width);
   }, [updateColumnWidth]);
 
@@ -98,6 +99,7 @@ export const useRundownGridUI = (
     // Column width handling
     getColumnWidth,
     updateColumnWidth,
-    handleColumnWidthChange
+    handleColumnWidthChange,
+    initializeWidths
   };
 };

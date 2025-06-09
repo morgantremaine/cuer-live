@@ -8,7 +8,7 @@ interface ColumnWidths {
 
 export const useColumnResizing = (
   columns: Column[],
-  onColumnWidthChange: (columnId: string, width: number) => void
+  onColumnWidthUpdate: (columnId: string, width: number) => void
 ) => {
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>({});
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -63,9 +63,9 @@ export const useColumnResizing = (
     // Set up debounced save
     saveTimeoutRef.current = setTimeout(() => {
       console.log('💾 Auto-saving column width change');
-      onColumnWidthChange(columnId, newWidth);
+      onColumnWidthUpdate(columnId, newWidth);
     }, 500);
-  }, [onColumnWidthChange]);
+  }, [onColumnWidthUpdate]);
 
   // Initialize widths from columns when they change
   const initializeWidths = useCallback(() => {

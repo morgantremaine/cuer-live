@@ -2,23 +2,20 @@
 import React, { useEffect } from 'react';
 import { ResizableColumnHeader } from './ResizableColumnHeader';
 import { Column } from '@/hooks/useColumnsManager';
-import { useColumnResizing } from '@/hooks/useColumnResizing';
 
 interface RundownTableHeaderProps {
   visibleColumns: Column[];
+  getColumnWidth: (column: Column) => number;
   onColumnWidthChange: (columnId: string, width: number) => void;
+  initializeWidths: () => void;
 }
 
 const RundownTableHeader = React.memo(({
   visibleColumns,
-  onColumnWidthChange
+  getColumnWidth,
+  onColumnWidthChange,
+  initializeWidths
 }: RundownTableHeaderProps) => {
-  const {
-    getColumnWidth,
-    updateColumnWidth,
-    initializeWidths
-  } = useColumnResizing(visibleColumns, onColumnWidthChange);
-
   // Initialize widths when columns change
   useEffect(() => {
     initializeWidths();
@@ -38,7 +35,7 @@ const RundownTableHeader = React.memo(({
             key={column.id}
             column={column}
             width={getColumnWidth(column)}
-            onWidthChange={updateColumnWidth}
+            onWidthChange={onColumnWidthChange}
           >
             {column.name}
           </ResizableColumnHeader>
