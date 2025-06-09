@@ -27,7 +27,7 @@ export const useRundownStateCoordination = () => {
   const { calculateEndTime, getRowStatus } = useTimeCalculations(
     gridCore.items, 
     gridCore.updateItem, 
-    gridCore.rundownStartTime || basicState.rundownStartTime
+    basicState.rundownStartTime || '09:00:00'
   );
 
   // Add the rundown calculations hook for row numbers and durations

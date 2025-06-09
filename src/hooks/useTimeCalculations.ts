@@ -42,7 +42,8 @@ export const useTimeCalculations = (
     return secondsToTime(Math.max(0, elapsedSeconds));
   };
 
-  const getRowStatus = (item: RundownItem, currentTime: Date) => {
+  const getRowStatus = (item: RundownItem) => {
+    const currentTime = new Date();
     const formatTime = (time: Date) => {
       return time.toLocaleTimeString('en-US', { hour12: false });
     };
