@@ -55,9 +55,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     isDraggingMultiple,
     dropTargetIndex,
     getColumnWidth,
-    getColumnWidthNumber,
     updateColumnWidth,
-    initializeWidths,
     getRowNumber,
     getRowStatus,
     calculateHeaderDuration,
@@ -127,8 +125,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       <div className="flex-1 overflow-hidden">
         <RundownMainContent
           {...props}
-          getColumnWidthNumber={getColumnWidthNumber}
-          initializeWidths={initializeWidths}
           currentSegmentName={currentSegmentId ? items.find(item => item.id === currentSegmentId)?.name || '' : ''}
           totalDuration={totalRuntime}
         />

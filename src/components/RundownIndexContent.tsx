@@ -87,10 +87,7 @@ const RundownIndexContent = () => {
     selectColor, 
     getRowStatus,
     getColumnWidth,
-    getColumnWidthNumber,
-    updateColumnWidth,
-    handleColumnWidthChange,
-    initializeWidths
+    updateColumnWidth
   } = uiState;
 
   const {
@@ -150,9 +147,7 @@ const RundownIndexContent = () => {
         dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
         getColumnWidth={getColumnWidth}
-        getColumnWidthNumber={getColumnWidthNumber}
         updateColumnWidth={updateColumnWidth}
-        initializeWidths={initializeWidths}
         getRowNumber={getRowNumber}
         getRowStatus={(item) => getRowStatus(item)}
         calculateHeaderDuration={calculateHeaderDuration}

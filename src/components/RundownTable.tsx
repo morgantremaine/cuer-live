@@ -19,9 +19,7 @@ interface RundownTableProps {
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
   getColumnWidth: (column: Column) => string;
-  getColumnWidthNumber: (column: Column) => number;
   updateColumnWidth: (columnId: string, width: number) => void;
-  initializeWidths: () => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
@@ -59,9 +57,7 @@ const RundownTable = ({
   currentSegmentId,
   hasClipboardData = false,
   getColumnWidth,
-  getColumnWidthNumber,
   updateColumnWidth,
-  initializeWidths,
   getRowNumber,
   getRowStatus,
   calculateHeaderDuration,
@@ -94,9 +90,8 @@ const RundownTable = ({
       <table className="w-full min-w-max">
         <RundownTableHeader
           visibleColumns={visibleColumns}
-          getColumnWidth={getColumnWidthNumber}
-          onColumnWidthChange={updateColumnWidth}
-          initializeWidths={initializeWidths}
+          getColumnWidth={getColumnWidth}
+          updateColumnWidth={updateColumnWidth}
         />
         <tbody>
           {items.map((item, index) => {

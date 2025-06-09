@@ -43,13 +43,11 @@ const RundownGrid = () => {
     handleToggleColorPicker, 
     getRowStatus, 
     selectColor,
+    getColumnWidth,
+    updateColumnWidth,
     handleCellClick,
     handleKeyDown,
-    cellRefs,
-    getColumnWidth,
-    getColumnWidthNumber,
-    updateColumnWidth,
-    initializeWidths
+    cellRefs
   } = uiState;
 
   // Create a wrapper function that matches the expected signature
@@ -71,9 +69,7 @@ const RundownGrid = () => {
       currentSegmentId={currentSegmentId}
       hasClipboardData={hasClipboardData()}
       getColumnWidth={getColumnWidth}
-      getColumnWidthNumber={getColumnWidthNumber}
       updateColumnWidth={updateColumnWidth}
-      initializeWidths={initializeWidths}
       getRowNumber={getRowNumber}
       getRowStatus={(item) => getRowStatus(item)}
       calculateHeaderDuration={calculateHeaderDuration}

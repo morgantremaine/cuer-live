@@ -1,20 +1,37 @@
 
-import { useCallback } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
+import { useResizableColumns } from './useResizableColumns';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
-import { useColumnResizing } from './useColumnResizing';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
 export const useRundownGridUI = (
   items: RundownItem[],
   visibleColumns: Column[],
+  columns: Column[],
   updateItem: (id: string, field: string, value: string) => void,
   currentSegmentId: string | null,
   currentTime: Date,
-  handleUpdateColumnWidth: (columnId: string, width: number) => void
+  markAsChanged: () => void
 ) => {
+  // Enhanced column width callback that triggers both column update and auto-save
+  const handleColumnWidthChangeWithSave = useCallback((columnId: string, width: number) => {
+    console.log('🔄 Column width change detected in GridUI:', { columnId, width });
+    // The column width change will be handled by the columns manager
+    // We just need to ensure markAsChanged is called
+    markAsChanged();
+  }, [markAsChanged]);
+
+  // Resizable columns
+  const {
+    columnWidths,
+    updateColumnWidth,
+    getColumnWidth,
+    getColumnWidthsForSaving
+  } = useResizableColumns(columns, handleColumnWidthChangeWithSave);
+
   // Color picker
   const {
     showColorPicker,
@@ -40,19 +57,6 @@ export const useRundownGridUI = (
     setEditingCell
   );
 
-  // Column resizing
-  const {
-    getColumnWidth: getColumnWidthNumber,
-    updateColumnWidth,
-    initializeWidths
-  } = useColumnResizing(visibleColumns, handleUpdateColumnWidth);
-
-  // Wrapper function to convert number to string with px
-  const getColumnWidth = useCallback((column: Column): string => {
-    const width = getColumnWidthNumber(column);
-    return `${width}px`;
-  }, [getColumnWidthNumber]);
-
   // Get row status based on current time and playback
   const getRowStatus = useCallback((item: RundownItem) => {
     if (!item.startTime || !item.endTime) return 'upcoming';
@@ -61,7 +65,7 @@ export const useRundownGridUI = (
     const currentTimeString = now.toTimeString().slice(0, 8);
     
     if (currentTimeString < item.startTime) return 'upcoming';
-    if (currentTimeString >= item.startTime && currentTimeString < item.endTime) return 'completed';
+    if (currentTimeString >= item.startTime && currentTimeString < item.endTime) return 'current';
     return 'completed';
   }, [currentTime]);
 
@@ -70,13 +74,13 @@ export const useRundownGridUI = (
     updateItem(id, 'color', color);
   }, [updateItem]);
 
-  // Column width change handler for header
-  const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
-    console.log('💾 Column width changed in header, updating');
-    updateColumnWidth(columnId, width);
-  }, [updateColumnWidth]);
-
   return {
+    // Column management
+    columnWidths,
+    updateColumnWidth,
+    getColumnWidth,
+    getColumnWidthsForSaving,
+    
     // Color picker
     showColorPicker,
     handleToggleColorPicker,
@@ -94,13 +98,6 @@ export const useRundownGridUI = (
     
     // Editing state
     editingCell,
-    setEditingCell,
-
-    // Column width handling
-    getColumnWidth,
-    getColumnWidthNumber,
-    updateColumnWidth,
-    handleColumnWidthChange,
-    initializeWidths
+    setEditingCell
   };
 };

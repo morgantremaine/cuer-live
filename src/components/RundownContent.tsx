@@ -18,9 +18,7 @@ interface RundownContentProps {
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
   getColumnWidth: (column: Column) => string;
-  getColumnWidthNumber: (column: Column) => number;
   updateColumnWidth: (columnId: string, width: number) => void;
-  initializeWidths: () => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
@@ -57,9 +55,7 @@ const RundownContent = ({
   currentSegmentId,
   hasClipboardData = false,
   getColumnWidth,
-  getColumnWidthNumber,
   updateColumnWidth,
-  initializeWidths,
   getRowNumber,
   getRowStatus,
   calculateHeaderDuration,
@@ -100,9 +96,7 @@ const RundownContent = ({
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
             getColumnWidth={getColumnWidth}
-            getColumnWidthNumber={getColumnWidthNumber}
             updateColumnWidth={updateColumnWidth}
-            initializeWidths={initializeWidths}
             getRowNumber={getRowNumber}
             getRowStatus={getRowStatus}
             calculateHeaderDuration={calculateHeaderDuration}
