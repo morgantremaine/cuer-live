@@ -35,27 +35,27 @@ const ResizableColumnHeader = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsResizing(true);
-    startX.current = e.clientX;
     
     // Parse the current width properly
     const currentWidth = parseInt(width.replace('px', '')) || 120;
+    
+    setIsResizing(true);
+    startX.current = e.clientX;
     startWidth.current = currentWidth;
     setTempWidth(currentWidth);
     
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
-      // Only update the visual temp width, don't call onWidthChange yet
       throttledUpdate(newWidth);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      setIsResizing(false);
-      
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      
+      setIsResizing(false);
       
       const diff = e.clientX - startX.current;
       const finalWidth = Math.max(50, startWidth.current + diff);
@@ -71,13 +71,18 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Use tempWidth during resize, otherwise use the prop width
+  // During resize, completely ignore the prop width and use tempWidth
+  // When not resizing, use the prop width
   const displayWidth = isResizing ? `${tempWidth}px` : width;
 
   return (
     <th 
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
-      style={{ width: displayWidth }}
+      style={{ 
+        width: displayWidth,
+        minWidth: displayWidth,
+        maxWidth: displayWidth
+      }}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
