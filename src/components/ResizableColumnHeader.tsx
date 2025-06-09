@@ -23,12 +23,8 @@ const ResizableColumnHeader = ({
   const startWidth = useRef(0);
   const isDragging = useRef(false);
 
-  // Only update display width when NOT resizing to prevent interference
-  useEffect(() => {
-    if (!isResizing) {
-      setResizeWidth(0);
-    }
-  }, [width, isResizing]);
+  // Store the initial width when resizing starts to prevent interference from prop updates
+  const initialResizeWidth = useRef(0);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     console.log('🔽 Mouse down - starting resize');
@@ -40,6 +36,7 @@ const ResizableColumnHeader = ({
     // Parse the current width properly
     const currentWidth = parseInt(width.replace('px', '')) || 120;
     startWidth.current = currentWidth;
+    initialResizeWidth.current = currentWidth;
     setResizeWidth(currentWidth);
     
     console.log('📏 Initial resize state:', { currentWidth, startX: startX.current });
@@ -71,7 +68,7 @@ const ResizableColumnHeader = ({
       
       console.log('✅ Final resize:', { finalWidth });
       
-      // Clear the resize width state to prevent visual inconsistencies
+      // Reset resize width to 0 to use prop width again
       setResizeWidth(0);
       
       onWidthChange(column.id, finalWidth);
