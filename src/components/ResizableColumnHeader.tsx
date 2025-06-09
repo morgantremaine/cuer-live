@@ -21,23 +21,14 @@ const ResizableColumnHeader = ({
   const [tempWidth, setTempWidth] = useState(0);
   const startX = useRef(0);
   const startWidth = useRef(0);
-  const animationFrameRef = useRef<number>();
-
-  const throttledUpdate = useCallback((newWidth: number) => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    
-    animationFrameRef.current = requestAnimationFrame(() => {
-      setTempWidth(newWidth);
-    });
-  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     
     // Parse the current width properly
     const currentWidth = parseInt(width.replace('px', '')) || 120;
+    console.log('🎯 Starting resize for column:', column.id, 'from width:', currentWidth);
     
     setIsResizing(true);
     startX.current = e.clientX;
@@ -47,18 +38,16 @@ const ResizableColumnHeader = ({
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
-      throttledUpdate(newWidth);
+      setTempWidth(newWidth);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      
-      setIsResizing(false);
-      
       const diff = e.clientX - startX.current;
       const finalWidth = Math.max(50, startWidth.current + diff);
+      
+      console.log('🎯 Ending resize for column:', column.id, 'final width:', finalWidth);
+      
+      setIsResizing(false);
       
       // Only call onWidthChange once at the very end
       onWidthChange(column.id, finalWidth);
@@ -71,7 +60,7 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  // During resize, completely ignore the prop width and use tempWidth
+  // During resize, completely override everything with tempWidth
   // When not resizing, use the prop width
   const displayWidth = isResizing ? `${tempWidth}px` : width;
 

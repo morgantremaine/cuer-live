@@ -37,10 +37,12 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
     setColumnWidths(prev => {
       // Only update if width actually changed
       if (prev[columnId] === width) {
+        console.log('📏 Width unchanged, skipping update');
         return prev;
       }
       
       const newWidths = { ...prev, [columnId]: width };
+      console.log('📏 Setting new width immediately:', newWidths);
       
       // Debounce the callback to prevent excessive auto-save triggers
       if (debounceTimeoutRef.current) {
@@ -52,33 +54,38 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
           console.log('🔍 Calling debounced onColumnWidthChange callback');
           lastCallbackRef.current(columnId, width);
         }
-      }, 150); // 150ms debounce to allow for smooth dragging
+      }, 300); // Increased debounce to 300ms to ensure resize is complete
       
       return newWidths;
     });
   }, []);
 
   const getColumnWidth = useCallback((column: Column) => {
+    // First check our local columnWidths state
     if (columnWidths[column.id]) {
-      return `${columnWidths[column.id]}px`;
+      const width = `${columnWidths[column.id]}px`;
+      console.log('📏 getColumnWidth from state:', column.id, width);
+      return width;
     }
     
     // Parse existing width if it's in pixels
     if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
+      console.log('📏 getColumnWidth from column:', column.id, column.width);
       return column.width;
     }
     
     // Reduced default widths based on column type
+    let defaultWidth = '120px';
     if (column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime') {
-      return '100px';
+      defaultWidth = '100px';
+    } else if (column.key === 'segmentName') {
+      defaultWidth = '150px';
+    } else if (column.key === 'notes') {
+      defaultWidth = '200px';
     }
-    if (column.key === 'segmentName') {
-      return '150px';
-    }
-    if (column.key === 'notes') {
-      return '200px';
-    }
-    return '120px';
+    
+    console.log('📏 getColumnWidth using default:', column.id, defaultWidth);
+    return defaultWidth;
   }, [columnWidths]);
 
   const getColumnWidthsForSaving = useCallback(() => {
