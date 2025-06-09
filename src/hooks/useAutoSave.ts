@@ -22,11 +22,35 @@ export const useAutoSave = (
   const saveStateOnSaveRef = useRef<((items: RundownItem[], columns: Column[], title: string, action: string) => void) | null>(null);
 
   // Get the auto-save operations
-  const { handleAutoSave, updateSavedSignature } = useAutoSaveOperations(
-    setHasUnsavedChanges,
-    setIsSaving,
-    lastSavedSignature
-  );
+  const { performSave } = useAutoSaveOperations();
+
+  // Create handleAutoSave function using performSave
+  const handleAutoSave = useCallback(async (
+    items: RundownItem[], 
+    title: string, 
+    columns: Column[], 
+    timezone: string, 
+    startTime: string
+  ) => {
+    setIsSaving(true);
+    try {
+      const success = await performSave(items, title, columns, timezone, startTime);
+      if (success) {
+        const newSignature = createStateSignature();
+        lastSavedSignature.current = newSignature;
+        setHasUnsavedChanges(false);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }, [performSave]);
+
+  // Create updateSavedSignature function
+  const updateSavedSignature = useCallback(() => {
+    const newSignature = createStateSignature();
+    lastSavedSignature.current = newSignature;
+    setHasUnsavedChanges(false);
+  }, []);
 
   // Allow external registration of undo save function
   const registerUndoSave = useCallback((saveFunction: (items: RundownItem[], columns: Column[], title: string, action: string) => void) => {
