@@ -26,18 +26,21 @@ const ResizableColumnHeader = ({
     setIsResizing(true);
     startX.current = e.clientX;
     startWidth.current = parseInt(width);
+    setCurrentWidth(startWidth.current); // Initialize current width
     
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
-      // Only update visual width during resize, don't trigger callbacks
+      // Always update visual width during resize for smooth feedback
       setCurrentWidth(newWidth);
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       setIsResizing(false);
-      // Only call onWidthChange when resize is complete
-      const finalWidth = Math.max(50, startWidth.current + (event as MouseEvent).clientX - startX.current);
+      // Calculate final width and trigger callback
+      const diff = e.clientX - startX.current;
+      const finalWidth = Math.max(50, startWidth.current + diff);
+      setCurrentWidth(finalWidth); // Ensure visual state matches final state
       onWidthChange(column.id, finalWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
@@ -48,6 +51,7 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  // Use currentWidth during resize, otherwise use the prop width
   const displayWidth = isResizing ? `${currentWidth}px` : width;
 
   return (
