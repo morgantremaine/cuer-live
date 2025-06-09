@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface ResizableColumnHeaderProps {
@@ -22,16 +22,22 @@ const ResizableColumnHeader = ({
   const startX = useRef(0);
   const startWidth = useRef(0);
 
+  // Sync currentWidth with prop width when not resizing
+  useEffect(() => {
+    if (!isResizing) {
+      setCurrentWidth(parseInt(width));
+    }
+  }, [width, isResizing]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsResizing(true);
     startX.current = e.clientX;
     startWidth.current = parseInt(width);
-    setCurrentWidth(startWidth.current); // Initialize current width
     
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
-      // Always update visual width during resize for smooth feedback
+      // Update visual width immediately for smooth feedback
       setCurrentWidth(newWidth);
     };
 
@@ -40,7 +46,6 @@ const ResizableColumnHeader = ({
       // Calculate final width and trigger callback
       const diff = e.clientX - startX.current;
       const finalWidth = Math.max(50, startWidth.current + diff);
-      setCurrentWidth(finalWidth); // Ensure visual state matches final state
       onWidthChange(column.id, finalWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
@@ -51,13 +56,10 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Use currentWidth during resize, otherwise use the prop width
-  const displayWidth = isResizing ? `${currentWidth}px` : width;
-
   return (
     <th 
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
-      style={{ width: displayWidth }}
+      style={{ width: `${currentWidth}px` }}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
