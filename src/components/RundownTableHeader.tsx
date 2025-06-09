@@ -1,6 +1,6 @@
 
 import React from 'react';
-import ResizableColumnHeader from './ResizableColumnHeader';
+import SimpleResizableColumnHeader from './SimpleResizableColumnHeader';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownTableHeaderProps {
@@ -21,7 +21,7 @@ const RundownTableHeader = React.memo(({
           #
         </th>
         {visibleColumns.map((column, index) => (
-          <ResizableColumnHeader
+          <SimpleResizableColumnHeader
             key={column.id}
             column={column}
             width={getColumnWidth(column)}
@@ -29,17 +29,10 @@ const RundownTableHeader = React.memo(({
             showLeftSeparator={index > 0}
           >
             {column.name}
-          </ResizableColumnHeader>
+          </SimpleResizableColumnHeader>
         ))}
       </tr>
     </thead>
-  );
-}, (prevProps, nextProps) => {
-  // Only re-render if columns or width function reference changes
-  return (
-    prevProps.visibleColumns === nextProps.visibleColumns &&
-    prevProps.getColumnWidth === nextProps.getColumnWidth &&
-    prevProps.updateColumnWidth === nextProps.updateColumnWidth
   );
 });
 

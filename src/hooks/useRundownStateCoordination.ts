@@ -11,7 +11,7 @@ export const useRundownStateCoordination = () => {
   // Core rundown state and operations
   const basicState = useRundownBasicState();
   
-  // Grid-specific core functionality - pass the basic state as integration props
+  // Grid-specific core functionality
   const gridCore = useRundownGridCore({
     markAsChanged: basicState.markAsChanged,
     rundownTitle: basicState.rundownTitle,
@@ -24,17 +24,17 @@ export const useRundownStateCoordination = () => {
     isProcessingRealtimeUpdate: false
   });
 
-  // Add the time calculations hook that was missing
+  // Time calculations
   const { calculateEndTime, getRowStatus } = useTimeCalculations(
     gridCore.items, 
     gridCore.updateItem, 
     basicState.rundownStartTime || '09:00:00'
   );
 
-  // Add the rundown calculations hook for row numbers and durations
+  // Rundown calculations
   const { getRowNumber, calculateTotalRuntime, calculateHeaderDuration } = useRundownCalculations(gridCore.items);
   
-  // Grid interactions (drag/drop, selection, clipboard)
+  // Grid interactions
   const gridInteractions = useRundownGridInteractions(
     gridCore.items,
     gridCore.setItems,
@@ -46,38 +46,15 @@ export const useRundownStateCoordination = () => {
     gridCore.deleteMultipleRows,
     gridCore.addMultipleRows,
     gridCore.handleDeleteColumn,
-    calculateEndTime, // Use the one from useTimeCalculations
+    calculateEndTime,
     (id: string, color: string) => {
       gridCore.updateItem(id, 'color', color);
     },
-    basicState.markAsChanged, // Pass the basic state markAsChanged for auto-save
+    basicState.markAsChanged,
     gridCore.setRundownTitle
   );
   
-  // Completely isolated column width handler that doesn't trigger any other updates
-  const handleColumnWidthChange = useMemo(() => {
-    let isHandling = false;
-    
-    return (columnId: string, width: number) => {
-      if (isHandling) {
-        console.log('🔄 Skipping handleColumnWidthChange - already handling');
-        return;
-      }
-      
-      isHandling = true;
-      console.log('🔄 handleColumnWidthChange isolated:', { columnId, width });
-      
-      // Only update the column width in the columns manager - no other side effects
-      gridCore.handleUpdateColumnWidth(columnId, width);
-      
-      // Reset the flag after a short delay
-      setTimeout(() => {
-        isHandling = false;
-      }, 100);
-    };
-  }, [gridCore.handleUpdateColumnWidth]);
-  
-  // Grid UI state (colors, editing, etc.) - with completely isolated column handling
+  // Grid UI state with simplified column handling
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
@@ -85,17 +62,15 @@ export const useRundownStateCoordination = () => {
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,
-    basicState.markAsChanged // This will be debounced in the UI hook
+    basicState.markAsChanged
   );
 
   // Validate and clean time format
   const validateTimeFormat = (timeString: string): string => {
     if (!timeString) return '09:00:00';
     
-    // Remove any non-time characters (like the 'd' suffix)
     let cleanTime = timeString.replace(/[^0-9:]/g, '');
     
-    // Ensure proper format HH:MM:SS
     const timeParts = cleanTime.split(':');
     if (timeParts.length === 3) {
       const hours = timeParts[0].padStart(2, '0');
@@ -104,26 +79,23 @@ export const useRundownStateCoordination = () => {
       return `${hours}:${minutes}:${seconds}`;
     }
     
-    // Fallback to default
     return '09:00:00';
   };
 
-  // Enhanced timezone setter that triggers change tracking
+  // Enhanced timezone setter
   const setTimezone = (newTimezone: string) => {
     basicState.setTimezone(newTimezone);
-    // Immediately mark as changed to trigger auto-save
     basicState.markAsChanged();
   };
 
-  // Enhanced start time setter that validates and triggers change tracking
+  // Enhanced start time setter
   const setRundownStartTime = (newStartTime: string) => {
     const validatedTime = validateTimeFormat(newStartTime);
     basicState.setRundownStartTime(validatedTime);
-    // Immediately mark as changed to trigger auto-save
     basicState.markAsChanged();
   };
 
-  // Direct setters for data loading (no change tracking)
+  // Direct setters for data loading
   const setTimezoneDirectly = (newTimezone: string) => {
     basicState.setTimezoneDirectly(newTimezone);
   };
@@ -139,11 +111,10 @@ export const useRundownStateCoordination = () => {
       ...gridCore,
       timezone: basicState.timezone,
       rundownStartTime: validateTimeFormat(basicState.rundownStartTime),
-      setTimezone, // Use our enhanced version for UI interactions
-      setRundownStartTime, // Use our enhanced version for UI interactions
-      setTimezoneDirectly, // Direct setters for data loading
-      setRundownStartTimeDirectly, // Direct setters for data loading
-      // Override with the properly calculated functions
+      setTimezone,
+      setRundownStartTime,
+      setTimezoneDirectly,
+      setRundownStartTimeDirectly,
       calculateEndTime,
       calculateTotalRuntime,
       getRowNumber,
@@ -152,9 +123,7 @@ export const useRundownStateCoordination = () => {
     interactions: gridInteractions,
     uiState: {
       ...gridUI,
-      getRowStatus, // Add the getRowStatus function from useTimeCalculations
-      // Override updateColumnWidth to use our completely isolated handler
-      updateColumnWidth: handleColumnWidthChange
+      getRowStatus
     }
   };
 };
