@@ -38,7 +38,10 @@ export const useRundownBasicState = () => {
 
   // Change tracking for timezone and other fields
   const markAsChanged = () => {
-    // Removed console.log to reduce noise
+    console.log('🔄 markAsChanged called in useRundownBasicState');
+    console.log('📊 Current rundown ID:', rundownId);
+    // The actual auto-save logic should be handled by the integration layer
+    // This is just for debugging to trace the call
   };
 
   // Direct setters without change tracking (for initial load)

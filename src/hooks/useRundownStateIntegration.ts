@@ -14,6 +14,14 @@ export const useRundownStateIntegration = (
   setTimezoneDirectly: (timezone: string) => void,
   isProcessingRealtimeUpdate?: boolean
 ) => {
+  console.log('🏗️ useRundownStateIntegration: markAsChanged function type:', typeof markAsChanged);
+
+  // Enhanced markAsChanged that also logs
+  const enhancedMarkAsChanged = useCallback(() => {
+    console.log('🚀 Enhanced markAsChanged called in state integration');
+    markAsChanged();
+  }, [markAsChanged]);
+
   // Items management with change tracking
   const {
     items,
@@ -28,7 +36,7 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems(markAsChanged);
+  } = useRundownItems(enhancedMarkAsChanged);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
@@ -57,7 +65,7 @@ export const useRundownStateIntegration = (
     }
   }, [originalUpdateItem, items]);
 
-  // Columns management
+  // Columns management with enhanced markAsChanged
   const {
     columns,
     visibleColumns,
@@ -68,7 +76,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  } = useColumnsManager(markAsChanged);
+  } = useColumnsManager(enhancedMarkAsChanged);
 
   // Auto-save functionality with realtime awareness
   const { hasUnsavedChanges, isSaving, setApplyingRemoteUpdate, updateSavedSignature } = useAutoSave(
@@ -131,6 +139,7 @@ export const useRundownStateIntegration = (
     hasUnsavedChanges,
     isSaving,
     setApplyingRemoteUpdate,
-    updateSavedSignature
+    updateSavedSignature,
+    markAsChanged: enhancedMarkAsChanged
   };
 };

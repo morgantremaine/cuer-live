@@ -20,7 +20,10 @@ export const useRundownUIState = (
   // Enhanced column width change handler that triggers auto-save
   const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
     console.log('📏 Column width changed - triggering auto-save:', { columnId, width });
+    console.log('🔍 markAsChanged function type:', typeof markAsChanged);
+    console.log('🔍 About to call markAsChanged for column resize');
     markAsChanged(); // Trigger auto-save when column width changes
+    console.log('✅ markAsChanged called for column width change');
   }, [markAsChanged]);
 
   // Resizable columns with auto-save integration
