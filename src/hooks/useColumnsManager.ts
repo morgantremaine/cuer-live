@@ -104,25 +104,18 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   }, [markAsChanged]);
 
+  // Simplified width update that directly updates the column state
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
-    console.log('🔄 handleUpdateColumnWidth called:', { columnId, width });
     setColumns(prev => {
       if (!Array.isArray(prev)) return [];
-      const updated = prev.map(col => {
+      return prev.map(col => {
         if (col.id === columnId) {
           return { ...col, width: `${width}px` };
         }
         return col;
       });
-      return updated;
     });
-    
-    // Immediately mark as changed for column width updates
-    if (markAsChanged) {
-      console.log('🚀 Calling markAsChanged for column width update');
-      markAsChanged();
-    }
-  }, [markAsChanged]);
+  }, []);
 
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     // Validate that layoutColumns is an array

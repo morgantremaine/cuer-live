@@ -1,6 +1,6 @@
 
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { useSimpleColumnResize } from './useSimpleColumnResize';
+import { useCallback, useEffect } from 'react';
+import { useColumnWidthManager } from './useColumnWidthManager';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
@@ -16,27 +16,22 @@ export const useRundownGridUI = (
   currentTime: Date,
   markAsChanged: () => void
 ) => {
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  
-  // Simple column resize with clean auto-save integration
-  const handleColumnWidthChangeWithSave = useCallback((columnId: string, width: number) => {
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    // Debounced auto-save
-    saveTimeoutRef.current = setTimeout(() => {
-      console.log('💾 Auto-save triggered from column width change');
-      markAsChanged();
-    }, 750);
+  // Column width management with auto-save integration
+  const handleColumnWidthSave = useCallback((columnId: string, width: number) => {
+    console.log('💾 Column width changed, triggering auto-save');
+    markAsChanged();
   }, [markAsChanged]);
 
   const {
-    columnWidths,
-    updateColumnWidth,
-    getColumnWidth
-  } = useSimpleColumnResize(columns, handleColumnWidthChangeWithSave);
+    getWidth: getColumnWidth,
+    setWidth: updateColumnWidth,
+    initializeFromColumns
+  } = useColumnWidthManager(columns, handleColumnWidthSave);
+
+  // Initialize column widths when columns change
+  useEffect(() => {
+    initializeFromColumns();
+  }, [initializeFromColumns]);
 
   // Color picker
   const {
@@ -80,20 +75,10 @@ export const useRundownGridUI = (
     updateItem(id, 'color', color);
   }, [updateItem]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
-
   return {
     // Column management
-    columnWidths,
-    updateColumnWidth,
     getColumnWidth,
+    updateColumnWidth,
     
     // Color picker
     showColorPicker,
