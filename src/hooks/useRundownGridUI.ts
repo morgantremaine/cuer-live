@@ -98,6 +98,7 @@ export const useRundownGridUI = (
 
     // Column width handling
     getColumnWidth,
+    getColumnWidthNumber,
     updateColumnWidth,
     handleColumnWidthChange,
     initializeWidths

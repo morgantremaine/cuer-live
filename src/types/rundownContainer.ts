@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -21,6 +22,7 @@ export interface RundownContainerProps {
   currentSegmentId: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
+  initializeWidths: () => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;

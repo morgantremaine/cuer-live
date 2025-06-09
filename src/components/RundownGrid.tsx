@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -45,7 +46,10 @@ const RundownGrid = () => {
     handleCellClick,
     handleKeyDown,
     cellRefs,
-    handleColumnWidthChange
+    getColumnWidth,
+    getColumnWidthNumber,
+    updateColumnWidth,
+    initializeWidths
   } = uiState;
 
   // Create a wrapper function that matches the expected signature
@@ -66,8 +70,10 @@ const RundownGrid = () => {
       dropTargetIndex={dropTargetIndex}
       currentSegmentId={currentSegmentId}
       hasClipboardData={hasClipboardData()}
-      getColumnWidth={() => '120px'}
-      updateColumnWidth={handleColumnWidthChange}
+      getColumnWidth={getColumnWidth}
+      getColumnWidthNumber={getColumnWidthNumber}
+      updateColumnWidth={updateColumnWidth}
+      initializeWidths={initializeWidths}
       getRowNumber={getRowNumber}
       getRowStatus={(item) => getRowStatus(item)}
       calculateHeaderDuration={calculateHeaderDuration}
