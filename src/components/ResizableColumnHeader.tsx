@@ -1,48 +1,47 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface ResizableColumnHeaderProps {
   column: Column;
-  width: string;
+  width: number;
   onWidthChange: (columnId: string, width: number) => void;
   children: React.ReactNode;
-  showLeftSeparator?: boolean;
 }
 
-const ResizableColumnHeader = React.memo(({ 
-  column, 
-  width, 
-  onWidthChange, 
-  children, 
-  showLeftSeparator = false 
-}: ResizableColumnHeaderProps) => {
-  const [isResizing, setIsResizing] = useState(false);
+export const ResizableColumnHeader: React.FC<ResizableColumnHeaderProps> = ({
+  column,
+  width,
+  onWidthChange,
+  children
+}) => {
   const headerRef = useRef<HTMLTableCellElement>(null);
+  const resizeHandleRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
   const startWidthRef = useRef(0);
-  const originalWidthRef = useRef<string>('');
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (isDraggingRef.current) return;
+    if (!headerRef.current) return;
     
     isDraggingRef.current = true;
-    setIsResizing(true);
+    startXRef.current = e.clientX;
+    startWidthRef.current = width;
     
-    const startX = e.clientX;
-    startWidthRef.current = parseInt(width);
-    originalWidthRef.current = width;
-    
-    const handleMouseMove = (e: MouseEvent) => {
+    // Add cursor style to body during resize
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingRef.current || !headerRef.current) return;
       
-      const diff = e.clientX - startX;
-      const newWidth = Math.max(50, Math.min(800, startWidthRef.current + diff));
+      const deltaX = moveEvent.clientX - startXRef.current;
+      const newWidth = Math.max(80, Math.min(600, startWidthRef.current + deltaX));
       
-      // Direct DOM manipulation for instant visual feedback
+      // Apply width directly to DOM for immediate visual feedback
       headerRef.current.style.width = `${newWidth}px`;
       headerRef.current.style.minWidth = `${newWidth}px`;
       headerRef.current.style.maxWidth = `${newWidth}px`;
@@ -51,62 +50,56 @@ const ResizableColumnHeader = React.memo(({
     const handleMouseUp = () => {
       if (!isDraggingRef.current || !headerRef.current) return;
       
-      const finalWidth = parseInt(headerRef.current.style.width);
+      isDraggingRef.current = false;
       
-      // Reset DOM styles
+      // Reset body styles
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      
+      // Get the final width and update state
+      const finalWidth = parseInt(headerRef.current.style.width) || width;
+      
+      // Clear temporary DOM styles
       headerRef.current.style.width = '';
       headerRef.current.style.minWidth = '';
       headerRef.current.style.maxWidth = '';
       
-      isDraggingRef.current = false;
-      setIsResizing(false);
-      
-      // Only trigger state update if width actually changed
-      if (finalWidth !== startWidthRef.current && finalWidth >= 50 && finalWidth <= 800) {
-        // Use setTimeout to ensure this happens after the current render cycle
-        setTimeout(() => {
-          onWidthChange(column.id, finalWidth);
-        }, 0);
+      // Update the width through the callback
+      if (finalWidth !== startWidthRef.current) {
+        onWidthChange(column.id, finalWidth);
       }
       
+      // Clean up event listeners
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [column.id, onWidthChange, width]);
+  }, [column.id, width, onWidthChange]);
+
+  // Apply the width to the header
+  useEffect(() => {
+    if (headerRef.current) {
+      headerRef.current.style.width = `${width}px`;
+    }
+  }, [width]);
 
   return (
     <th 
       ref={headerRef}
-      className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
-      style={{ width }}
+      className="px-2 py-3 text-left text-sm font-semibold text-white relative border-r border-blue-500 bg-blue-600 dark:bg-blue-700"
+      style={{ width: `${width}px` }}
     >
-      {showLeftSeparator && (
-        <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
-      )}
-      {children}
+      <div className="select-none truncate">
+        {children}
+      </div>
       <div 
-        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors"
-        onMouseDown={handleMouseDown}
-        style={{ 
-          backgroundColor: isResizing ? '#60a5fa' : 'transparent',
-          zIndex: 10
-        }}
+        ref={resizeHandleRef}
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 hover:w-2 transition-all duration-150 z-20"
+        onMouseDown={handleResizeStart}
+        title="Resize column"
       />
     </th>
   );
-}, (prevProps, nextProps) => {
-  // Only re-render if essential props change
-  return (
-    prevProps.column.id === nextProps.column.id &&
-    prevProps.width === nextProps.width &&
-    prevProps.children === nextProps.children &&
-    prevProps.showLeftSeparator === nextProps.showLeftSeparator
-  );
-});
-
-ResizableColumnHeader.displayName = 'ResizableColumnHeader';
-
-export default ResizableColumnHeader;
+};

@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownGridCore } from './useRundownGridCore';
@@ -54,11 +53,10 @@ export const useRundownStateCoordination = () => {
     gridCore.setRundownTitle
   );
   
-  // Grid UI state with simplified column handling
+  // Grid UI state
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
-    gridCore.columns,
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,

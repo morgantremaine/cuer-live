@@ -1,6 +1,5 @@
 
-import { useCallback, useEffect } from 'react';
-import { useColumnWidthManager } from './useColumnWidthManager';
+import { useCallback } from 'react';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
@@ -10,29 +9,11 @@ import { Column } from './useColumnsManager';
 export const useRundownGridUI = (
   items: RundownItem[],
   visibleColumns: Column[],
-  columns: Column[],
   updateItem: (id: string, field: string, value: string) => void,
   currentSegmentId: string | null,
   currentTime: Date,
   markAsChanged: () => void
 ) => {
-  // Column width management with auto-save integration
-  const handleColumnWidthSave = useCallback((columnId: string, width: number) => {
-    console.log('💾 Column width changed, triggering auto-save');
-    markAsChanged();
-  }, [markAsChanged]);
-
-  const {
-    getWidth: getColumnWidth,
-    setWidth: updateColumnWidth,
-    initializeFromColumns
-  } = useColumnWidthManager(columns, handleColumnWidthSave);
-
-  // Initialize column widths when columns change
-  useEffect(() => {
-    initializeFromColumns();
-  }, [initializeFromColumns]);
-
   // Color picker
   const {
     showColorPicker,
@@ -75,11 +56,13 @@ export const useRundownGridUI = (
     updateItem(id, 'color', color);
   }, [updateItem]);
 
+  // Column width change handler with auto-save
+  const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
+    console.log('💾 Column width changed, triggering auto-save');
+    markAsChanged();
+  }, [markAsChanged]);
+
   return {
-    // Column management
-    getColumnWidth,
-    updateColumnWidth,
-    
     // Color picker
     showColorPicker,
     handleToggleColorPicker,
@@ -97,6 +80,9 @@ export const useRundownGridUI = (
     
     // Editing state
     editingCell,
-    setEditingCell
+    setEditingCell,
+
+    // Column width handling
+    handleColumnWidthChange
   };
 };

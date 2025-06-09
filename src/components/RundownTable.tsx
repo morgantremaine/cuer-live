@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTableHeader from './RundownTableHeader';
 import RundownRow from './RundownRow';
@@ -90,8 +89,7 @@ const RundownTable = ({
       <table className="w-full min-w-max">
         <RundownTableHeader
           visibleColumns={visibleColumns}
-          getColumnWidth={getColumnWidth}
-          updateColumnWidth={updateColumnWidth}
+          onColumnWidthChange={updateColumnWidth}
         />
         <tbody>
           {items.map((item, index) => {

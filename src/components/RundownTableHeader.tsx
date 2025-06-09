@@ -1,34 +1,47 @@
 
-import React from 'react';
-import { ResizableHeader } from './ResizableHeader';
+import React, { useEffect } from 'react';
+import { ResizableColumnHeader } from './ResizableColumnHeader';
 import { Column } from '@/hooks/useColumnsManager';
+import { useColumnResizing } from '@/hooks/useColumnResizing';
 
 interface RundownTableHeaderProps {
   visibleColumns: Column[];
-  getColumnWidth: (column: Column) => string;
-  updateColumnWidth: (columnId: string, width: number) => void;
+  onColumnWidthChange: (columnId: string, width: number) => void;
 }
 
 const RundownTableHeader = React.memo(({
   visibleColumns,
-  getColumnWidth,
-  updateColumnWidth
+  onColumnWidthChange
 }: RundownTableHeaderProps) => {
+  const {
+    getColumnWidth,
+    updateColumnWidth,
+    initializeWidths
+  } = useColumnResizing(visibleColumns, onColumnWidthChange);
+
+  // Initialize widths when columns change
+  useEffect(() => {
+    initializeWidths();
+  }, [initializeWidths]);
+
   return (
     <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-10">
       <tr>
-        <th className="px-1 py-2 text-left text-sm font-semibold text-white bg-blue-600 dark:bg-blue-700" style={{ width: '40px' }}>
+        <th 
+          className="px-2 py-3 text-left text-sm font-semibold text-white bg-blue-600 dark:bg-blue-700" 
+          style={{ width: '50px', minWidth: '50px' }}
+        >
           #
         </th>
         {visibleColumns.map((column) => (
-          <ResizableHeader
+          <ResizableColumnHeader
             key={column.id}
             column={column}
             width={getColumnWidth(column)}
             onWidthChange={updateColumnWidth}
           >
             {column.name}
-          </ResizableHeader>
+          </ResizableColumnHeader>
         ))}
       </tr>
     </thead>
