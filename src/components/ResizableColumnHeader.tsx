@@ -63,6 +63,10 @@ const ResizableColumnHeader = ({
       const finalWidth = Math.max(50, startWidth.current + diff);
       
       console.log('✅ Final resize:', { finalWidth });
+      
+      // Clear the resize width state to prevent visual inconsistencies
+      setResizeWidth(0);
+      
       onWidthChange(column.id, finalWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
