@@ -20,6 +20,7 @@ const ResizableColumnHeader = ({
   const headerRef = useRef<HTMLTableHeaderCellElement>(null);
   const initialWidthRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
+  const animationFrameRef = useRef<number>();
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -31,27 +32,32 @@ const ResizableColumnHeader = ({
     initialWidthRef.current = startWidth;
     isDraggingRef.current = true;
 
-    // Disable pointer events on header content during drag
-    headerRef.current.style.pointerEvents = 'none';
+    // Set cursor and disable text selection globally
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+
+    // Visual feedback on resize handle
+    const resizeHandle = headerRef.current.querySelector('.resize-handle') as HTMLElement;
+    if (resizeHandle) {
+      resizeHandle.style.backgroundColor = '#60a5fa';
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current || !headerRef.current) return;
       
-      const deltaX = e.clientX - startX;
-      const newWidth = Math.max(50, initialWidthRef.current + deltaX);
-      
-      // Use CSS transform for smooth visual feedback
-      const scale = newWidth / initialWidthRef.current;
-      headerRef.current.style.transform = `scaleX(${scale})`;
-      headerRef.current.style.transformOrigin = 'left center';
-      
-      // Visual feedback on resize handle
-      const resizeHandle = headerRef.current.querySelector('.resize-handle') as HTMLElement;
-      if (resizeHandle) {
-        resizeHandle.style.backgroundColor = '#60a5fa';
+      // Cancel any pending animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
+
+      // Use requestAnimationFrame for smooth updates
+      animationFrameRef.current = requestAnimationFrame(() => {
+        const deltaX = e.clientX - startX;
+        const newWidth = Math.max(50, initialWidthRef.current + deltaX);
+        
+        // Update the actual width during drag for real-time preview
+        onWidthChange(column.id, newWidth);
+      });
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -59,14 +65,17 @@ const ResizableColumnHeader = ({
       
       isDraggingRef.current = false;
       
-      // Calculate final width
+      // Cancel any pending animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
+      // Calculate final width and ensure it's applied
       const deltaX = e.clientX - startX;
       const finalWidth = Math.max(50, initialWidthRef.current + deltaX);
       
-      // Reset all visual transforms
-      headerRef.current.style.transform = '';
-      headerRef.current.style.transformOrigin = '';
-      headerRef.current.style.pointerEvents = '';
+      // Final width update to ensure state is correct
+      onWidthChange(column.id, finalWidth);
       
       // Reset global styles
       document.body.style.cursor = '';
@@ -77,9 +86,6 @@ const ResizableColumnHeader = ({
       if (resizeHandle) {
         resizeHandle.style.backgroundColor = '';
       }
-      
-      // Single state update at the end - this is the only React state change
-      onWidthChange(column.id, finalWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);

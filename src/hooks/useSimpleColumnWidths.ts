@@ -24,13 +24,14 @@ export const useSimpleColumnWidths = (
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumnWidths(prev => {
-      if (prev[columnId] === width) return prev;
-      
       const newWidths = { ...prev, [columnId]: width };
       
-      // Call the callback immediately (no debouncing)
+      // Call the callback for each update to trigger save mechanism
       if (onColumnWidthChange) {
-        onColumnWidthChange(columnId, width);
+        // Use setTimeout to ensure this doesn't block the UI during drag
+        setTimeout(() => {
+          onColumnWidthChange(columnId, width);
+        }, 0);
       }
       
       return newWidths;
