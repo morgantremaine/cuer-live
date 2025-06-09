@@ -64,11 +64,13 @@ export const useRundownGridCore = ({
     return undo(
       state.setItems,
       (layoutData) => {
-        // handleLoadLayout expects an object with columns property
-        if (layoutData && Array.isArray(layoutData)) {
-          state.handleLoadLayout({ columns: layoutData });
-        } else {
+        // handleLoadLayout expects a Column[] array directly
+        if (Array.isArray(layoutData)) {
           state.handleLoadLayout(layoutData);
+        } else if (layoutData && typeof layoutData === 'object' && 'columns' in layoutData) {
+          state.handleLoadLayout(layoutData.columns);
+        } else {
+          console.warn('Invalid layout data for undo:', layoutData);
         }
       },
       setRundownTitleDirectly
