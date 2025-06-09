@@ -117,9 +117,10 @@ export const useTimeCalculations = (
       } else {
         // For regular items, handle floated vs non-floated differently
         if (isFloated(item)) {
-          // Floated items get special time handling - they don't advance the timeline
-          // They should show start time but NOT show calculated end time
-          // Instead, clear their end time to indicate they're floated
+          // Floated items show times but don't advance the timeline
+          // They inherit the current timeline position as their start time
+          // and show their calculated end time based on duration
+          const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:00');
           
           if (item.startTime !== currentTime) {
             console.log('🕒 Updating floated item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
@@ -127,10 +128,10 @@ export const useTimeCalculations = (
             needsUpdate = true;
           }
           
-          // Clear the end time for floated items to make it visually clear they don't advance timeline
-          if (item.endTime !== '') {
-            console.log('🕒 Clearing floated item end time:', item.id);
-            updateItemWithoutUndo(item.id, 'endTime', '');
+          // Floated items still show their calculated end time for display purposes
+          if (item.endTime !== expectedEndTime) {
+            console.log('🕒 Updating floated item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
+            updateItemWithoutUndo(item.id, 'endTime', expectedEndTime);
             needsUpdate = true;
           }
 
