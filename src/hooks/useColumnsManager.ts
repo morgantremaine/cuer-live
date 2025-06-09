@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -106,6 +105,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
+    console.log('🔄 handleUpdateColumnWidth called:', { columnId, width });
     setColumns(prev => {
       if (!Array.isArray(prev)) return [];
       const updated = prev.map(col => {
@@ -116,7 +116,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       });
       return updated;
     });
+    
+    // Immediately mark as changed for column width updates
     if (markAsChanged) {
+      console.log('🚀 Calling markAsChanged for column width update');
       markAsChanged();
     }
   }, [markAsChanged]);

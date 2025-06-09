@@ -31,6 +31,8 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
   }, [initialColumns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
+    console.log('📏 updateColumnWidth called:', { columnId, width });
+    
     setColumnWidths(prev => {
       // Only update if width actually changed
       if (prev[columnId] === width) {
@@ -39,20 +41,14 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
       
       const newWidths = { ...prev, [columnId]: width };
       
-      console.log('📏 Column width changed - triggering auto-save:', { columnId, width });
+      console.log('📏 Column width changed - triggering callback:', { columnId, width });
       
-      // Debounce the callback to prevent excessive calls
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
+      // Call the callback immediately for column width changes
+      if (lastCallbackRef.current) {
+        console.log('🔍 About to call onColumnWidthChange callback');
+        lastCallbackRef.current(columnId, width);
+        console.log('✅ onColumnWidthChange callback completed');
       }
-      
-      updateTimeoutRef.current = setTimeout(() => {
-        if (lastCallbackRef.current) {
-          console.log('🔍 About to call onColumnWidthChange callback');
-          lastCallbackRef.current(columnId, width);
-          console.log('✅ onColumnWidthChange callback completed');
-        }
-      }, 150); // Slightly longer delay to batch updates better
       
       return newWidths;
     });
