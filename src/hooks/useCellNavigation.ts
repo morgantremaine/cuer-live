@@ -11,7 +11,7 @@ export const useCellNavigation = (
   setEditingCell: (cell: string | null) => void
 ) => {
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const cellRefs = useRef<{ [key: string]: HTMLElement }>({});
+  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
 
   const navigateToCell = useCallback((targetItemId: string, targetField: string) => {
     // Clear any existing timeout
