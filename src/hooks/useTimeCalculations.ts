@@ -14,10 +14,13 @@ export const useTimeCalculations = (
     try {
       const [startHours, startMinutes, startSeconds = '0'] = startTime.split(':').map(Number);
       const [durationMinutes, durationSecondsStr] = duration.split(':');
-      const durationSeconds = Number(durationSecondsStr) || 0;
+      
+      // Ensure all values are numbers
+      const durationMinutesNum = Number(durationMinutes) || 0;
+      const durationSecondsNum = Number(durationSecondsStr) || 0;
       
       const startTotalSeconds = startHours * 3600 + startMinutes * 60 + startSeconds;
-      const durationTotalSeconds = (Number(durationMinutes) || 0) * 60 + durationSeconds;
+      const durationTotalSeconds = durationMinutesNum * 60 + durationSecondsNum;
       const endTotalSeconds = startTotalSeconds + durationTotalSeconds;
       
       const endHours = Math.floor(endTotalSeconds / 3600);
