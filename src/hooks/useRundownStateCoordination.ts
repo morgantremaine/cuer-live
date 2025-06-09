@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownGridCore } from './useRundownGridCore';
@@ -128,7 +129,11 @@ export const useRundownStateCoordination = () => {
       calculateEndTime,
       calculateTotalRuntime,
       getRowNumber,
-      calculateHeaderDuration
+      calculateHeaderDuration,
+      // Pass through the undo functionality from gridCore
+      handleUndo: gridCore.handleUndo,
+      canUndo: gridCore.canUndo,
+      lastAction: gridCore.lastAction
     },
     interactions: gridInteractions,
     uiState: {
