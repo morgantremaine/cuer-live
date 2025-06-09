@@ -52,25 +52,43 @@ export const useRundownItems = (markAsChanged: () => void) => {
   }, [markAsChanged]);
 
   const addHeader = useCallback((insertAfterIndex?: number) => {
-    const newItem: RundownItem = {
-      id: uuidv4(),
-      type: 'header',
-      rowNumber: '',
-      name: 'New Header',
-      startTime: '',
-      duration: '',
-      endTime: '',
-      elapsedTime: '',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      notes: '',
-      color: '',
-      isFloating: false
-    };
-
     setItems(prevItems => {
+      // Calculate what the header letter should be based on insertion position
+      let headerCount = 0;
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      
+      if (insertAfterIndex !== undefined) {
+        // Count headers up to the insertion point
+        for (let i = 0; i <= insertAfterIndex; i++) {
+          if (prevItems[i]?.type === 'header') {
+            headerCount++;
+          }
+        }
+      } else {
+        // If inserting at the end, count all existing headers
+        headerCount = prevItems.filter(item => item.type === 'header').length;
+      }
+      
+      const headerLetter = letters[headerCount] || 'A';
+      
+      const newItem: RundownItem = {
+        id: uuidv4(),
+        type: 'header',
+        rowNumber: headerLetter,
+        name: 'New Header',
+        startTime: '',
+        duration: '',
+        endTime: '',
+        elapsedTime: '',
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        notes: '',
+        color: '',
+        isFloating: false
+      };
+
       let newItems;
       if (insertAfterIndex !== undefined) {
         newItems = [...prevItems];
