@@ -49,11 +49,11 @@ export const useRundownStateCoordination = () => {
     (id: string, color: string) => {
       gridCore.updateItem(id, 'color', color);
     },
-    gridCore.markAsChanged,
+    basicState.markAsChanged, // Pass the basic state markAsChanged for auto-save
     gridCore.setRundownTitle
   );
   
-  // Grid UI state (colors, editing, etc.) - pass markAsChanged for column width auto-save
+  // Grid UI state (colors, editing, etc.) - pass basicState.markAsChanged for column width auto-save
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
@@ -61,7 +61,7 @@ export const useRundownStateCoordination = () => {
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,
-    gridCore.markAsChanged // This ensures column width changes trigger auto-save
+    basicState.markAsChanged // Use basicState.markAsChanged to ensure auto-save works
   );
 
   // Validate and clean time format

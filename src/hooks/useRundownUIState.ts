@@ -19,7 +19,7 @@ export const useRundownUIState = (
 
   // Enhanced column width change handler that triggers auto-save
   const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
-    console.log('📏 Column width changed:', { columnId, width });
+    console.log('📏 Column width changed - triggering auto-save:', { columnId, width });
     markAsChanged(); // Trigger auto-save when column width changes
   }, [markAsChanged]);
 
