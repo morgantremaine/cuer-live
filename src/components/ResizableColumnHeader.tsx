@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface ResizableColumnHeaderProps {
@@ -10,7 +10,7 @@ interface ResizableColumnHeaderProps {
   showLeftSeparator?: boolean;
 }
 
-const ResizableColumnHeader = ({ 
+const ResizableColumnHeader = React.memo(({ 
   column, 
   width, 
   onWidthChange, 
@@ -21,32 +21,42 @@ const ResizableColumnHeader = ({
   const [tempWidth, setTempWidth] = useState(0);
   const startX = useRef(0);
   const startWidth = useRef(0);
+  const isDragging = useRef(false);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Memoize the current width parsing to prevent recalculation
+  const currentWidth = useMemo(() => {
+    return parseInt(width.replace('px', '')) || 120;
+  }, [width]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Parse the current width properly
-    const currentWidth = parseInt(width.replace('px', '')) || 120;
     console.log('🎯 Starting resize for column:', column.id, 'from width:', currentWidth);
     
+    isDragging.current = true;
     setIsResizing(true);
     startX.current = e.clientX;
     startWidth.current = currentWidth;
     setTempWidth(currentWidth);
     
     const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
       setTempWidth(newWidth);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      
       const diff = e.clientX - startX.current;
       const finalWidth = Math.max(50, startWidth.current + diff);
       
       console.log('🎯 Ending resize for column:', column.id, 'final width:', finalWidth);
       
+      isDragging.current = false;
       setIsResizing(false);
       
       // Only call onWidthChange once at the very end
@@ -58,20 +68,24 @@ const ResizableColumnHeader = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  };
+  }, [column.id, currentWidth, onWidthChange]);
 
-  // During resize, completely override everything with tempWidth
-  // When not resizing, use the prop width
-  const displayWidth = isResizing ? `${tempWidth}px` : width;
+  // Memoize the display width calculation
+  const displayWidth = useMemo(() => {
+    return isResizing ? `${tempWidth}px` : width;
+  }, [isResizing, tempWidth, width]);
+
+  // Memoize the style object to prevent recreation
+  const thStyle = useMemo(() => ({
+    width: displayWidth,
+    minWidth: displayWidth,
+    maxWidth: displayWidth
+  }), [displayWidth]);
 
   return (
     <th 
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
-      style={{ 
-        width: displayWidth,
-        minWidth: displayWidth,
-        maxWidth: displayWidth
-      }}
+      style={thStyle}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
@@ -84,6 +98,8 @@ const ResizableColumnHeader = ({
       />
     </th>
   );
-};
+});
+
+ResizableColumnHeader.displayName = 'ResizableColumnHeader';
 
 export default ResizableColumnHeader;

@@ -1,17 +1,19 @@
-
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Column } from './useColumnsManager';
 
 export const useResizableColumns = (initialColumns: Column[], onColumnWidthChange?: (columnId: string, width: number) => void) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
   const lastCallbackRef = useRef(onColumnWidthChange);
+  const isInitializedRef = useRef(false);
 
   // Keep callback ref updated
   lastCallbackRef.current = onColumnWidthChange;
 
   // Initialize column widths from the columns data
   useEffect(() => {
+    if (isInitializedRef.current) return; // Only initialize once
+    
     const widthsFromColumns: { [key: string]: number } = {};
     initialColumns.forEach(column => {
       if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
@@ -21,14 +23,11 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
         }
       }
     });
-    setColumnWidths(prev => {
-      // Only update if actually different to prevent unnecessary re-renders
-      const hasChanges = Object.keys(widthsFromColumns).some(key => 
-        prev[key] !== widthsFromColumns[key]
-      ) || Object.keys(prev).length !== Object.keys(widthsFromColumns).length;
-      
-      return hasChanges ? widthsFromColumns : prev;
-    });
+    
+    if (Object.keys(widthsFromColumns).length > 0) {
+      setColumnWidths(widthsFromColumns);
+      isInitializedRef.current = true;
+    }
   }, [initialColumns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
@@ -54,27 +53,26 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
           console.log('🔍 Calling debounced onColumnWidthChange callback');
           lastCallbackRef.current(columnId, width);
         }
-      }, 300); // Increased debounce to 300ms to ensure resize is complete
+      }, 500); // Increased debounce to 500ms to ensure resize is complete
       
       return newWidths;
     });
   }, []);
 
+  // Memoize the getColumnWidth function to prevent recreation on every render
   const getColumnWidth = useCallback((column: Column) => {
     // First check our local columnWidths state
     if (columnWidths[column.id]) {
       const width = `${columnWidths[column.id]}px`;
-      console.log('📏 getColumnWidth from state:', column.id, width);
       return width;
     }
     
     // Parse existing width if it's in pixels
     if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
-      console.log('📏 getColumnWidth from column:', column.id, column.width);
       return column.width;
     }
     
-    // Reduced default widths based on column type
+    // Default widths based on column type
     let defaultWidth = '120px';
     if (column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime') {
       defaultWidth = '100px';
@@ -84,7 +82,6 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
       defaultWidth = '200px';
     }
     
-    console.log('📏 getColumnWidth using default:', column.id, defaultWidth);
     return defaultWidth;
   }, [columnWidths]);
 
