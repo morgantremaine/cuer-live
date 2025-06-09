@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface ResizableColumnHeaderProps {
@@ -18,27 +18,32 @@ const ResizableColumnHeader = ({
   showLeftSeparator = false 
 }: ResizableColumnHeaderProps) => {
   const [isResizing, setIsResizing] = useState(false);
-  const [currentWidth, setCurrentWidth] = useState(parseInt(width));
+  const [dragOffset, setDragOffset] = useState(0);
   const startX = useRef(0);
   const startWidth = useRef(0);
+  const headerRef = useRef<HTMLTableHeaderCellElement>(null);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     setIsResizing(true);
+    setDragOffset(0);
     startX.current = e.clientX;
     startWidth.current = parseInt(width);
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
-      const newWidth = Math.max(50, startWidth.current + diff);
-      // Only update visual width during resize, don't trigger callbacks
-      setCurrentWidth(newWidth);
+      setDragOffset(diff);
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       setIsResizing(false);
+      setDragOffset(0);
+      
+      const finalDiff = e.clientX - startX.current;
+      const newWidth = Math.max(50, startWidth.current + finalDiff);
+      
       // Only call onWidthChange when resize is complete
-      const finalWidth = Math.max(50, startWidth.current + (event as MouseEvent).clientX - startX.current);
-      onWidthChange(column.id, finalWidth);
+      onWidthChange(column.id, newWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -46,23 +51,44 @@ const ResizableColumnHeader = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  };
+  }, [column.id, onWidthChange, width]);
 
-  const displayWidth = isResizing ? `${currentWidth}px` : width;
-
+  // Calculate the visual width with transform
+  const baseWidth = parseInt(width);
+  const visualWidth = Math.max(50, baseWidth + dragOffset);
+  
   return (
     <th 
+      ref={headerRef}
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
-      style={{ width: displayWidth }}
+      style={{ 
+        width: width,
+        minWidth: isResizing ? `${visualWidth}px` : width,
+        transition: isResizing ? 'none' : 'width 0.1s ease-out'
+      }}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
       )}
-      {children}
+      
+      <div 
+        style={{
+          transform: isResizing ? `scaleX(${visualWidth / baseWidth})` : 'scaleX(1)',
+          transformOrigin: 'left',
+          transition: isResizing ? 'none' : 'transform 0.1s ease-out'
+        }}
+      >
+        {children}
+      </div>
+      
       <div 
         className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors"
         onMouseDown={handleMouseDown}
-        style={{ backgroundColor: isResizing ? '#60a5fa' : 'transparent' }}
+        style={{ 
+          backgroundColor: isResizing ? '#60a5fa' : 'transparent',
+          transform: isResizing ? `translateX(${dragOffset}px)` : 'translateX(0)',
+          transition: isResizing ? 'none' : 'transform 0.1s ease-out'
+        }}
       />
     </th>
   );

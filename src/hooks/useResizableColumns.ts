@@ -1,9 +1,10 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Column } from './useColumnsManager';
 
 export const useResizableColumns = (initialColumns: Column[], onColumnWidthChange?: (columnId: string, width: number) => void) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
-  const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
   const lastCallbackRef = useRef(onColumnWidthChange);
 
   // Keep callback ref updated
@@ -41,14 +42,17 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
       
       const newWidths = { ...prev, [columnId]: width };
       
-      console.log('📏 Column width changed - triggering callback:', { columnId, width });
-      
-      // Call the callback immediately for column width changes
-      if (lastCallbackRef.current) {
-        console.log('🔍 About to call onColumnWidthChange callback');
-        lastCallbackRef.current(columnId, width);
-        console.log('✅ onColumnWidthChange callback completed');
+      // Debounce the callback to prevent rapid auto-save triggers
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
+      
+      debounceTimeoutRef.current = setTimeout(() => {
+        if (lastCallbackRef.current) {
+          console.log('🔍 Calling debounced onColumnWidthChange callback');
+          lastCallbackRef.current(columnId, width);
+        }
+      }, 300); // 300ms debounce
       
       return newWidths;
     });
@@ -84,8 +88,8 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
   }, []);

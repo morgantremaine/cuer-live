@@ -16,13 +16,26 @@ export const useRundownGridUI = (
   currentTime: Date,
   markAsChanged: () => void
 ) => {
-  // Enhanced column width callback that triggers both column update and auto-save
+  // Debounced markAsChanged to prevent rapid auto-save during resize
+  const markAsChangedTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  const debouncedMarkAsChanged = useCallback(() => {
+    if (markAsChangedTimeoutRef.current) {
+      clearTimeout(markAsChangedTimeoutRef.current);
+    }
+    
+    markAsChangedTimeoutRef.current = setTimeout(() => {
+      markAsChanged();
+    }, 500); // 500ms debounce for auto-save
+  }, [markAsChanged]);
+
+  // Enhanced column width callback that triggers debounced auto-save
   const handleColumnWidthChangeWithSave = useCallback((columnId: string, width: number) => {
     console.log('🔄 Column width change detected in GridUI:', { columnId, width });
     // The column width change will be handled by the columns manager
-    // We just need to ensure markAsChanged is called
-    markAsChanged();
-  }, [markAsChanged]);
+    // We just need to ensure markAsChanged is called (debounced)
+    debouncedMarkAsChanged();
+  }, [debouncedMarkAsChanged]);
 
   // Resizable columns
   const {
@@ -65,7 +78,7 @@ export const useRundownGridUI = (
     const currentTimeString = now.toTimeString().slice(0, 8);
     
     if (currentTimeString < item.startTime) return 'upcoming';
-    if (currentTimeString >= item.startTime && currentTimeString < item.endTime) return 'current';
+    if (currentTimeString >= item.startTime && currentTimeString < item.endTime) return 'completed';
     return 'completed';
   }, [currentTime]);
 
@@ -73,6 +86,15 @@ export const useRundownGridUI = (
   const selectColor = useCallback((id: string, color: string) => {
     updateItem(id, 'color', color);
   }, [updateItem]);
+
+  // Cleanup timeout on unmount
+  useMemo(() => {
+    return () => {
+      if (markAsChangedTimeoutRef.current) {
+        clearTimeout(markAsChangedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     // Column management
