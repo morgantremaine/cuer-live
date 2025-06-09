@@ -13,10 +13,11 @@ export const useTimeCalculations = (
     
     try {
       const [startHours, startMinutes, startSeconds = '0'] = startTime.split(':').map(Number);
-      const [durationMinutes, durationSeconds] = duration.split(':').map(Number);
+      const [durationMinutes, durationSecondsStr] = duration.split(':');
+      const durationSeconds = Number(durationSecondsStr) || 0;
       
       const startTotalSeconds = startHours * 3600 + startMinutes * 60 + startSeconds;
-      const durationTotalSeconds = durationMinutes * 60 + durationSeconds;
+      const durationTotalSeconds = Number(durationMinutes) * 60 + durationSeconds;
       const endTotalSeconds = startTotalSeconds + durationTotalSeconds;
       
       const endHours = Math.floor(endTotalSeconds / 3600);
@@ -62,21 +63,21 @@ export const useTimeCalculations = (
 
     if (hasChanges) {
       // Only log when there are actual changes
-      console.log('🕒 useTimeCalculations: Time updates completed');
+      console.log('Time updates completed');
     }
   }, [items, startTime, updateItem, calculateEndTime]);
 
-  // Get status for a specific item
-  const getRowStatus = useCallback((item: RundownItem) => {
-    if (item.type === 'header') return 'neutral';
-    if (item.isFloating) return 'neutral';
+  // Get status for a specific item - return compatible status types
+  const getRowStatus = useCallback((item: RundownItem): 'upcoming' | 'current' | 'completed' => {
+    if (item.type === 'header') return 'upcoming';
+    if (item.isFloating) return 'upcoming';
     
     const now = new Date();
     const currentTimeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     
     if (item.startTime && item.endTime) {
       if (currentTimeString >= item.startTime && currentTimeString <= item.endTime) {
-        return 'live';
+        return 'current';
       } else if (currentTimeString > item.endTime) {
         return 'completed';
       }
