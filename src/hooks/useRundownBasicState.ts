@@ -38,11 +38,15 @@ export const useRundownBasicState = () => {
 
   // Store the auto-save trigger function - use a stable ref
   const autoSaveTriggerRef = useRef<(() => void) | null>(null);
+  const autoSaveTriggerSetRef = useRef(false);
 
-  // Set the auto-save trigger function (called from integration layer)
+  // Set the auto-save trigger function (called from integration layer) - ONLY ONCE
   const setAutoSaveTrigger = (trigger: () => void) => {
-    console.log('🔗 Setting auto-save trigger in useRundownBasicState');
-    autoSaveTriggerRef.current = trigger;
+    if (!autoSaveTriggerSetRef.current) {
+      console.log('🔗 Setting auto-save trigger in useRundownBasicState (ONCE)');
+      autoSaveTriggerRef.current = trigger;
+      autoSaveTriggerSetRef.current = true;
+    }
   };
 
   // Change tracking function that calls the actual auto-save

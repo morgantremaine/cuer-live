@@ -65,11 +65,16 @@ export const useRundownGridCore = ({
     return undo(
       state.setItems,
       (layoutData: any) => {
-        // handleLoadLayout expects a Column[] array directly
+        // Check if layoutData is an array (Column[])
         if (Array.isArray(layoutData)) {
           state.handleLoadLayout(layoutData);
-        } else if (layoutData && typeof layoutData === 'object' && 'columns' in layoutData && Array.isArray(layoutData.columns)) {
-          state.handleLoadLayout(layoutData.columns);
+        } else if (layoutData && typeof layoutData === 'object') {
+          // Check if it has a columns property
+          if ('columns' in layoutData && Array.isArray(layoutData.columns)) {
+            state.handleLoadLayout(layoutData.columns);
+          } else {
+            console.warn('Invalid layout data for undo - no columns array found:', layoutData);
+          }
         } else {
           console.warn('Invalid layout data for undo:', layoutData);
         }
@@ -101,9 +106,19 @@ export const useRundownGridCore = ({
     state.updateItem
   );
 
-  // Realtime collaboration
+  // Realtime collaboration - Extract rundownId from the URL if available
+  const getCurrentRundownId = () => {
+    const pathParts = window.location.pathname.split('/');
+    const rundownIndex = pathParts.indexOf('rundown');
+    if (rundownIndex !== -1 && pathParts[rundownIndex + 1]) {
+      const id = pathParts[rundownIndex + 1];
+      return (id === 'new' || id === ':id') ? null : id;
+    }
+    return null;
+  };
+
   const { isConnected } = useStableRealtimeCollaboration({
-    rundownId: null, // Will be set by parent component
+    rundownId: getCurrentRundownId(),
     onRemoteUpdate: loadRundowns,
     enabled: true
   });

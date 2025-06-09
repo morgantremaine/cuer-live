@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
@@ -16,7 +16,8 @@ export const useRundownStateIntegration = (
   setAutoSaveTrigger: (trigger: () => void) => void,
   isProcessingRealtimeUpdate?: boolean
 ) => {
-  console.log('🏗️ useRundownStateIntegration: markAsChanged function type:', typeof markAsChanged);
+  // Use a ref to track if we've already set up the auto-save trigger
+  const autoSaveTriggerSetRef = useRef(false);
 
   // Stable markAsChanged that prevents excessive calls
   const stableMarkAsChanged = useCallback(() => {
@@ -90,18 +91,21 @@ export const useRundownStateIntegration = (
     isProcessingRealtimeUpdate
   );
 
-  // Create a stable auto-save trigger function
+  // Create a stable auto-save trigger function ONCE
   const autoSaveTrigger = useCallback(() => {
     console.log('💾 Auto-save trigger called from state integration');
     // The auto-save is handled by useAutoSave internally
     // This function just exists to satisfy the interface
   }, []);
 
-  // Connect the auto-save trigger to the basic state - only once
+  // Connect the auto-save trigger to the basic state - ONLY ONCE
   useEffect(() => {
-    console.log('🔗 Setting up auto-save trigger connection');
-    setAutoSaveTrigger(autoSaveTrigger);
-  }, [autoSaveTrigger, setAutoSaveTrigger]);
+    if (!autoSaveTriggerSetRef.current) {
+      console.log('🔗 Setting up auto-save trigger connection (ONCE)');
+      setAutoSaveTrigger(autoSaveTrigger);
+      autoSaveTriggerSetRef.current = true;
+    }
+  }, []); // Empty dependency array - only run once
 
   // Wrapped addRow that supports insertion at specific index but compatible with expected signature
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
