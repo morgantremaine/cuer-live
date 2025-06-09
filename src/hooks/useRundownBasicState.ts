@@ -41,6 +41,7 @@ export const useRundownBasicState = () => {
 
   // Set the auto-save trigger function (called from integration layer)
   const setAutoSaveTrigger = (trigger: () => void) => {
+    console.log('🔗 Setting auto-save trigger in useRundownBasicState');
     autoSaveTriggerRef.current = trigger;
   };
 
@@ -52,10 +53,10 @@ export const useRundownBasicState = () => {
     
     // Call the actual auto-save trigger if it's available
     if (autoSaveTriggerRef.current) {
-      console.log('🚀 Triggering auto-save');
+      console.log('🚀 Triggering auto-save from markAsChanged');
       autoSaveTriggerRef.current();
     } else {
-      console.log('⚠️ No auto-save trigger available yet');
+      console.log('⚠️ No auto-save trigger available yet in markAsChanged');
     }
   };
 

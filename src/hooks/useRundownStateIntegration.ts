@@ -81,7 +81,7 @@ export const useRundownStateIntegration = (
   } = useColumnsManager(enhancedMarkAsChanged);
 
   // Auto-save functionality with realtime awareness
-  const { hasUnsavedChanges, isSaving, setApplyingRemoteUpdate, updateSavedSignature, triggerSave } = useAutoSave(
+  const autoSaveResult = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
     Array.isArray(columns) ? columns : [],
@@ -90,13 +90,11 @@ export const useRundownStateIntegration = (
     isProcessingRealtimeUpdate
   );
 
-  // Connect the auto-save trigger to the basic state
+  // Connect the auto-save trigger to the basic state - use markAsChanged as the trigger
   useEffect(() => {
-    if (triggerSave) {
-      console.log('🔗 Setting up auto-save trigger connection');
-      setAutoSaveTrigger(triggerSave);
-    }
-  }, [triggerSave, setAutoSaveTrigger]);
+    console.log('🔗 Setting up auto-save trigger connection with markAsChanged');
+    setAutoSaveTrigger(enhancedMarkAsChanged);
+  }, [enhancedMarkAsChanged, setAutoSaveTrigger]);
 
   // Wrapped addRow that supports insertion at specific index but compatible with expected signature
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
@@ -146,10 +144,10 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    hasUnsavedChanges,
-    isSaving,
-    setApplyingRemoteUpdate,
-    updateSavedSignature,
+    hasUnsavedChanges: autoSaveResult.hasUnsavedChanges,
+    isSaving: autoSaveResult.isSaving,
+    setApplyingRemoteUpdate: autoSaveResult.setApplyingRemoteUpdate,
+    updateSavedSignature: autoSaveResult.updateSavedSignature,
     markAsChanged: enhancedMarkAsChanged
   };
 };

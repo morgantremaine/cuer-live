@@ -5,6 +5,7 @@ import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { useRealtimeRundown } from './useRealtimeRundown';
 import { usePlaybackControls } from './usePlaybackControls';
+import { useRundownUndo } from './useRundownUndo';
 
 interface UseRundownGridCoreProps {
   markAsChanged: () => void;
@@ -56,8 +57,9 @@ export const useRundownGridCore = ({
     setItems: state.setItems
   });
 
-  // Realtime collaboration
-  const { isProcessingRealtimeUpdate: realtimeProcessing } = useRealtimeRundown({
+  // Realtime collaboration - fix the props to match expected interface
+  const realtimeResult = useRealtimeRundown({
+    rundownId: undefined, // This will be set by the data loader
     items: state.items,
     columns: state.columns,
     rundownTitle,
@@ -71,6 +73,21 @@ export const useRundownGridCore = ({
     updateSavedSignature: state.updateSavedSignature,
     setApplyingRemoteUpdate: state.setApplyingRemoteUpdate
   });
+
+  // Undo functionality
+  const { saveState, undo, canUndo, lastAction } = useRundownUndo();
+
+  // Enhanced undo handler
+  const handleUndo = useCallback(() => {
+    return undo(
+      state.setItems,
+      (columns) => {
+        // We don't have direct setColumns, so we use handleLoadLayout
+        state.handleLoadLayout({ columns });
+      },
+      setRundownTitleDirectly
+    );
+  }, [undo, state.setItems, state.handleLoadLayout, setRundownTitleDirectly]);
 
   // Showcaller/playback controls
   const {
@@ -97,7 +114,8 @@ export const useRundownGridCore = ({
     ...state,
     savedRundowns,
     loading: storageLoading,
-    isProcessingRealtimeUpdate: realtimeProcessing || isProcessingRealtimeUpdate,
+    isProcessingRealtimeUpdate: realtimeResult.isProcessingRealtimeUpdate || isProcessingRealtimeUpdate,
+    isConnected: realtimeResult.isConnected || false,
     isPlaying,
     currentSegmentId,
     timeRemaining,
@@ -107,6 +125,9 @@ export const useRundownGridCore = ({
     backward,
     isController,
     setRundownTitle,
-    currentTime: new Date()
+    currentTime: new Date(),
+    handleUndo,
+    canUndo,
+    lastAction
   };
 };
