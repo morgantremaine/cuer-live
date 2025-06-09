@@ -1,102 +1,128 @@
 
-import { useCallback, useEffect, useMemo } from 'react';
-import { RundownItem } from '@/types/rundown';
+import { useEffect } from 'react';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useTimeCalculations = (
-  items: RundownItem[],
-  updateItem: (id: string, field: string, value: string) => void,
-  startTime: string
+  items: RundownItem[], 
+  updateItem: (id: string, field: string, value: string) => void, 
+  rundownStartTime: string
 ) => {
-  // Calculate end time based on start time and duration
-  const calculateEndTime = useCallback((startTime: string, duration: string): string => {
-    if (!startTime || !duration) return '';
-    
-    try {
-      const [startHours, startMinutes, startSeconds = '0'] = startTime.split(':').map(Number);
-      const durationParts = duration.split(':');
-      
-      // Ensure we get valid numbers with explicit conversion
-      const durationMinutes = parseInt(durationParts[0] || '0', 10);
-      const durationSeconds = parseInt(durationParts[1] || '0', 10);
-      
-      // Ensure we have valid numbers, default to 0 if NaN
-      const durationMinutesNum = isNaN(durationMinutes) ? 0 : durationMinutes;
-      const durationSecondsNum = isNaN(durationSeconds) ? 0 : durationSeconds;
-      
-      const startTotalSeconds = startHours * 3600 + startMinutes * 60 + startSeconds;
-      const durationTotalSeconds = durationMinutesNum * 60 + durationSecondsNum;
-      const endTotalSeconds = startTotalSeconds + durationTotalSeconds;
-      
-      const endHours = Math.floor(endTotalSeconds / 3600);
-      const endMinutes = Math.floor((endTotalSeconds % 3600) / 60);
-      const endSecondsRemainder = endTotalSeconds % 60;
-      
-      return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:${endSecondsRemainder.toString().padStart(2, '0')}`;
-    } catch (error) {
-      console.error('Error calculating end time:', error);
-      return '';
+  const timeToSeconds = (timeStr: string) => {
+    // Handle both MM:SS and HH:MM:SS formats
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+      // MM:SS format (minutes:seconds)
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+      // HH:MM:SS format
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
     }
-  }, []);
+    return 0;
+  };
 
-  // Calculate running time for items
-  const calculateRunningTimes = useCallback(() => {
-    if (!Array.isArray(items) || items.length === 0 || !startTime) {
+  const secondsToTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const calculateEndTime = (startTime: string, duration: string) => {
+    const startSeconds = timeToSeconds(startTime);
+    const durationSeconds = timeToSeconds(duration);
+    return secondsToTime(startSeconds + durationSeconds);
+  };
+
+  const calculateElapsedTime = (startTime: string, rundownStartTime: string) => {
+    const startSeconds = timeToSeconds(startTime);
+    const rundownStartSeconds = timeToSeconds(rundownStartTime);
+    const elapsedSeconds = startSeconds - rundownStartSeconds;
+    return secondsToTime(Math.max(0, elapsedSeconds));
+  };
+
+  const getRowStatus = (item: RundownItem) => {
+    const currentTime = new Date();
+    const formatTime = (time: Date) => {
+      return time.toLocaleTimeString('en-US', { hour12: false });
+    };
+    
+    const now = formatTime(currentTime);
+    const currentSeconds = timeToSeconds(now);
+    const startSeconds = timeToSeconds(item.startTime);
+    const endSeconds = timeToSeconds(item.endTime);
+    
+    if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
+      return 'current';
+    } else if (currentSeconds >= endSeconds) {
+      return 'completed';
+    }
+    return 'upcoming';
+  };
+
+  // Recalculate all start, end, and elapsed times based on rundown start time and durations
+  // This now properly handles floated items by excluding them from the time progression
+  useEffect(() => {
+    console.log('🕒 useTimeCalculations: Recalculating times for', items.length, 'items with start time:', rundownStartTime);
+    
+    if (!rundownStartTime || items.length === 0) {
+      console.log('🕒 useTimeCalculations: Skipping - no start time or no items');
       return;
     }
 
-    let currentTime = startTime;
-    let hasChanges = false;
+    let currentTime = rundownStartTime;
+    let needsUpdate = false;
 
     items.forEach((item, index) => {
-      if (item.type === 'regular' && !item.isFloating) {
-        // Update start time if needed
-        if (item.startTime !== currentTime) {
+      // Calculate elapsed time for this item
+      const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
+
+      // For headers, they don't have duration, so they start at current time and end at current time
+      if (isHeaderItem(item)) {
+        if (item.startTime !== currentTime || item.endTime !== currentTime) {
+          console.log('🕒 Updating header times:', item.id, 'start/end:', currentTime);
           updateItem(item.id, 'startTime', currentTime);
-          hasChanges = true;
+          updateItem(item.id, 'endTime', currentTime);
+          needsUpdate = true;
+        }
+        if (item.elapsedTime !== expectedElapsedTime) {
+          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
+          needsUpdate = true;
+        }
+      } else {
+        // For regular items, calculate start and end based on duration
+        const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:00');
+        
+        if (item.startTime !== currentTime) {
+          console.log('🕒 Updating item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
+          updateItem(item.id, 'startTime', currentTime);
+          needsUpdate = true;
+        }
+        
+        if (item.endTime !== expectedEndTime) {
+          console.log('🕒 Updating item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
+          updateItem(item.id, 'endTime', expectedEndTime);
+          needsUpdate = true;
         }
 
-        // Calculate and update end time if duration exists
-        if (item.duration) {
-          const endTime = calculateEndTime(currentTime, item.duration);
-          if (item.endTime !== endTime) {
-            updateItem(item.id, 'endTime', endTime);
-            hasChanges = true;
-          }
-          // Move current time forward for next item
-          currentTime = endTime;
+        if (item.elapsedTime !== expectedElapsedTime) {
+          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
+          needsUpdate = true;
+        }
+        
+        // Only advance time if the item is not floated
+        // Floated items don't contribute to the timeline progression
+        if (!item.isFloating && !item.isFloated) {
+          currentTime = expectedEndTime;
         }
       }
     });
 
-    if (hasChanges) {
-      // Only log when there are actual changes
-      console.log('Time updates completed');
+    if (needsUpdate) {
+      console.log('🕒 useTimeCalculations: Time updates completed');
     }
-  }, [items, startTime, updateItem, calculateEndTime]);
-
-  // Get status for a specific item - return compatible status types
-  const getRowStatus = useCallback((item: RundownItem): 'upcoming' | 'current' | 'completed' => {
-    if (item.type === 'header') return 'upcoming';
-    if (item.isFloating) return 'upcoming';
-    
-    const now = new Date();
-    const currentTimeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-    
-    if (item.startTime && item.endTime) {
-      if (currentTimeString >= item.startTime && currentTimeString <= item.endTime) {
-        return 'current';
-      } else if (currentTimeString > item.endTime) {
-        return 'completed';
-      }
-    }
-    
-    return 'upcoming';
-  }, []);
-
-  // Run calculations when dependencies change
-  useEffect(() => {
-    calculateRunningTimes();
-  }, [calculateRunningTimes]);
+  }, [items, updateItem, rundownStartTime]);
 
   return {
     calculateEndTime,

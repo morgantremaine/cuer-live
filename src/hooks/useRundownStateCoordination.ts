@@ -86,20 +86,20 @@ export const useRundownStateCoordination = () => {
     return '09:00:00';
   };
 
-  // Enhanced timezone setter that triggers change tracking and saves undo state
+  // Enhanced timezone setter that triggers change tracking
   const setTimezone = (newTimezone: string) => {
     console.log('🌍 useRundownStateCoordination: Setting timezone:', newTimezone);
-    gridCore.saveStateOnSave(gridCore.items, gridCore.columns, basicState.rundownTitle, 'Change timezone');
     basicState.setTimezone(newTimezone);
+    // Immediately mark as changed to trigger auto-save
     basicState.markAsChanged();
   };
 
-  // Enhanced start time setter that validates, triggers change tracking, and saves undo state
+  // Enhanced start time setter that validates and triggers change tracking
   const setRundownStartTime = (newStartTime: string) => {
     const validatedTime = validateTimeFormat(newStartTime);
     console.log('⏰ useRundownStateCoordination: Setting start time:', { original: newStartTime, validated: validatedTime });
-    gridCore.saveStateOnSave(gridCore.items, gridCore.columns, basicState.rundownTitle, 'Change start time');
     basicState.setRundownStartTime(validatedTime);
+    // Immediately mark as changed to trigger auto-save
     basicState.markAsChanged();
   };
 

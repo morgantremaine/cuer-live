@@ -18,23 +18,11 @@ export const useRundownStateIntegration = (
 ) => {
   // Use a ref to track if we've already set up the auto-save trigger
   const autoSaveTriggerSetRef = useRef(false);
-  const isProcessingChangeRef = useRef(false);
 
-  // Create a stable markAsChanged that prevents cascading calls
+  // Stable markAsChanged that prevents excessive calls
   const stableMarkAsChanged = useCallback(() => {
-    if (isProcessingChangeRef.current) {
-      console.log('🚀 Skipping markAsChanged - already processing');
-      return;
-    }
-    
-    isProcessingChangeRef.current = true;
     console.log('🚀 Enhanced markAsChanged called in state integration');
     markAsChanged();
-    
-    // Reset the flag after a short delay
-    setTimeout(() => {
-      isProcessingChangeRef.current = false;
-    }, 100);
   }, [markAsChanged]);
 
   // Items management with change tracking
@@ -103,14 +91,21 @@ export const useRundownStateIntegration = (
     isProcessingRealtimeUpdate
   );
 
+  // Create a stable auto-save trigger function ONCE
+  const autoSaveTrigger = useCallback(() => {
+    console.log('💾 Auto-save trigger called from state integration');
+    // The auto-save is handled by useAutoSave internally
+    // This function just exists to satisfy the interface
+  }, []);
+
   // Connect the auto-save trigger to the basic state - ONLY ONCE
   useEffect(() => {
-    if (!autoSaveTriggerSetRef.current && autoSaveResult.triggerAutoSave) {
+    if (!autoSaveTriggerSetRef.current) {
       console.log('🔗 Setting up auto-save trigger connection (ONCE)');
-      setAutoSaveTrigger(autoSaveResult.triggerAutoSave);
+      setAutoSaveTrigger(autoSaveTrigger);
       autoSaveTriggerSetRef.current = true;
     }
-  }, [autoSaveResult.triggerAutoSave, setAutoSaveTrigger]);
+  }, []); // Empty dependency array - only run once
 
   // Wrapped addRow that supports insertion at specific index but compatible with expected signature
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
@@ -164,7 +159,6 @@ export const useRundownStateIntegration = (
     isSaving: autoSaveResult.isSaving,
     setApplyingRemoteUpdate: autoSaveResult.setApplyingRemoteUpdate,
     updateSavedSignature: autoSaveResult.updateSavedSignature,
-    markAsChanged: stableMarkAsChanged,
-    registerUndoSave: autoSaveResult.registerUndoSave
+    markAsChanged: stableMarkAsChanged
   };
 };

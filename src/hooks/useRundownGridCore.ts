@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
@@ -57,22 +57,69 @@ export const useRundownGridCore = ({
     setItems: state.setItems
   });
 
-  // Undo functionality - simplified to only save on auto-save
-  const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
+  // Undo functionality
+  const { saveState, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
     rundownId: getCurrentRundownId(),
     currentTitle: rundownTitle,
     currentItems: state.items,
     currentColumns: state.columns
   });
 
-  // Register the undo save function with auto-save
-  useEffect(() => {
-    if (state.registerUndoSave) {
-      state.registerUndoSave(saveStateOnSave);
+  // More targeted undo state saving - only save on actual user actions
+  const saveUndoState = useCallback((action: string) => {
+    if (!isProcessingRealtimeUpdate) {
+      // Add a small delay to ensure state has fully updated
+      setTimeout(() => {
+        saveState(state.items, state.columns, rundownTitle, action);
+      }, 100);
     }
-  }, [state.registerUndoSave, saveStateOnSave]);
+  }, [saveState, state.items, state.columns, rundownTitle, isProcessingRealtimeUpdate]);
 
-  // Enhanced undo handler
+  // Wrap state operations to save undo states - with debouncing for rapid changes
+  const wrappedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    state.updateItem(id, field, value);
+    // Only save undo state for significant changes, not every keystroke
+    if (field !== 'name' && field !== 'script') {
+      saveUndoState('Update item');
+    }
+  }, [state.updateItem, saveUndoState]);
+
+  const wrappedAddRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
+    saveUndoState('Add segment');
+    state.addRow(calculateEndTime, selectedRowId);
+  }, [state.addRow, saveUndoState]);
+
+  const wrappedAddHeader = useCallback((selectedRowId?: string) => {
+    saveUndoState('Add header');
+    state.addHeader(selectedRowId);
+  }, [state.addHeader, saveUndoState]);
+
+  const wrappedDeleteRow = useCallback((id: string) => {
+    saveUndoState('Delete row');
+    state.deleteRow(id);
+  }, [state.deleteRow, saveUndoState]);
+
+  const wrappedToggleFloatRow = useCallback((id: string) => {
+    saveUndoState('Toggle float');
+    state.toggleFloatRow(id);
+  }, [state.toggleFloatRow, saveUndoState]);
+
+  const wrappedDeleteMultipleRows = useCallback((ids: string[]) => {
+    saveUndoState('Delete multiple rows');
+    state.deleteMultipleRows(ids);
+  }, [state.deleteMultipleRows, saveUndoState]);
+
+  const wrappedAddMultipleRows = useCallback((items: any[], calculateEndTime: any) => {
+    saveUndoState('Add multiple rows');
+    state.addMultipleRows(items);
+  }, [state.addMultipleRows, saveUndoState]);
+
+  const wrappedHandleDeleteColumn = useCallback((columnId: string) => {
+    saveUndoState('Delete column');
+    state.handleDeleteColumn(columnId);
+  }, [state.handleDeleteColumn, saveUndoState]);
+
+  // Enhanced undo handler that works with the current state structure
   const handleUndo = useCallback(() => {
     console.log('handleUndo called, canUndo:', canUndo);
     if (!canUndo) {
@@ -83,9 +130,11 @@ export const useRundownGridCore = ({
     return undo(
       state.setItems,
       (layoutData: any) => {
+        // Check if layoutData is an array (Column[])
         if (Array.isArray(layoutData)) {
           state.handleLoadLayout(layoutData);
         } else if (layoutData && typeof layoutData === 'object') {
+          // Check if it has a columns property
           if ('columns' in layoutData && Array.isArray(layoutData.columns)) {
             state.handleLoadLayout(layoutData.columns);
           } else {
@@ -99,13 +148,14 @@ export const useRundownGridCore = ({
     );
   }, [undo, canUndo, state.setItems, state.handleLoadLayout, setRundownTitleDirectly]);
 
-  // Enhanced setRundownTitle that also triggers change tracking
+  // Enhanced setRundownTitle that also triggers change tracking and undo state
   const setRundownTitle = useCallback((newTitle: string) => {
     if (rundownTitle !== newTitle) {
+      saveUndoState('Change title');
       setRundownTitleDirectly(newTitle);
       markAsChanged();
     }
-  }, [setRundownTitleDirectly, markAsChanged, rundownTitle]);
+  }, [setRundownTitleDirectly, markAsChanged, rundownTitle, saveUndoState]);
 
   // Showcaller/playback controls
   const {
@@ -119,7 +169,7 @@ export const useRundownGridCore = ({
     isController
   } = usePlaybackControls(
     state.items,
-    state.updateItem
+    wrappedUpdateItem
   );
 
   // Extract rundownId from the URL if available
@@ -141,7 +191,16 @@ export const useRundownGridCore = ({
   });
 
   return {
+    // Use wrapped functions that save undo states
     ...state,
+    updateItem: wrappedUpdateItem,
+    addRow: wrappedAddRow,
+    addHeader: wrappedAddHeader,
+    deleteRow: wrappedDeleteRow,
+    toggleFloatRow: wrappedToggleFloatRow,
+    deleteMultipleRows: wrappedDeleteMultipleRows,
+    addMultipleRows: wrappedAddMultipleRows,
+    handleDeleteColumn: wrappedHandleDeleteColumn,
     savedRundowns,
     loading: storageLoading,
     isProcessingRealtimeUpdate: isProcessingRealtimeUpdate || false,
@@ -159,7 +218,6 @@ export const useRundownGridCore = ({
     handleUndo,
     canUndo,
     lastAction,
-    loadUndoHistory,
-    saveStateOnSave // Expose this for auto-save integration
+    loadUndoHistory
   };
 };
