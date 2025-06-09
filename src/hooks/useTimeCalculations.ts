@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export const useTimeCalculations = (
@@ -7,6 +7,8 @@ export const useTimeCalculations = (
   updateItem: (id: string, field: string, value: string) => void, 
   rundownStartTime: string
 ) => {
+  const isUpdatingTimesRef = useRef(false);
+
   const timeToSeconds = (timeStr: string) => {
     // Handle both MM:SS and HH:MM:SS formats
     const parts = timeStr.split(':').map(Number);
@@ -61,6 +63,17 @@ export const useTimeCalculations = (
     return 'upcoming';
   };
 
+  // Create a wrapper that prevents undo state saves during time calculations
+  const updateItemWithoutUndo = (id: string, field: string, value: string) => {
+    // Mark that we're updating times automatically
+    isUpdatingTimesRef.current = true;
+    updateItem(id, field, value);
+    // Use setTimeout to ensure the flag is cleared after the update completes
+    setTimeout(() => {
+      isUpdatingTimesRef.current = false;
+    }, 10);
+  };
+
   // Recalculate all start, end, and elapsed times based on rundown start time and durations
   // This now properly handles floated items by excluding them from the time progression
   useEffect(() => {
@@ -68,6 +81,11 @@ export const useTimeCalculations = (
     
     if (!rundownStartTime || items.length === 0) {
       console.log('🕒 useTimeCalculations: Skipping - no start time or no items');
+      return;
+    }
+
+    // Prevent cascading updates during time calculations
+    if (isUpdatingTimesRef.current) {
       return;
     }
 
@@ -82,12 +100,12 @@ export const useTimeCalculations = (
       if (isHeaderItem(item)) {
         if (item.startTime !== currentTime || item.endTime !== currentTime) {
           console.log('🕒 Updating header times:', item.id, 'start/end:', currentTime);
-          updateItem(item.id, 'startTime', currentTime);
-          updateItem(item.id, 'endTime', currentTime);
+          updateItemWithoutUndo(item.id, 'startTime', currentTime);
+          updateItemWithoutUndo(item.id, 'endTime', currentTime);
           needsUpdate = true;
         }
         if (item.elapsedTime !== expectedElapsedTime) {
-          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
+          updateItemWithoutUndo(item.id, 'elapsedTime', expectedElapsedTime);
           needsUpdate = true;
         }
       } else {
@@ -96,18 +114,18 @@ export const useTimeCalculations = (
         
         if (item.startTime !== currentTime) {
           console.log('🕒 Updating item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
-          updateItem(item.id, 'startTime', currentTime);
+          updateItemWithoutUndo(item.id, 'startTime', currentTime);
           needsUpdate = true;
         }
         
         if (item.endTime !== expectedEndTime) {
           console.log('🕒 Updating item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
-          updateItem(item.id, 'endTime', expectedEndTime);
+          updateItemWithoutUndo(item.id, 'endTime', expectedEndTime);
           needsUpdate = true;
         }
 
         if (item.elapsedTime !== expectedElapsedTime) {
-          updateItem(item.id, 'elapsedTime', expectedElapsedTime);
+          updateItemWithoutUndo(item.id, 'elapsedTime', expectedElapsedTime);
           needsUpdate = true;
         }
         
@@ -122,10 +140,11 @@ export const useTimeCalculations = (
     if (needsUpdate) {
       console.log('🕒 useTimeCalculations: Time updates completed');
     }
-  }, [items, updateItem, rundownStartTime]);
+  }, [items, rundownStartTime]);
 
   return {
     calculateEndTime,
-    getRowStatus
+    getRowStatus,
+    isUpdatingTimes: () => isUpdatingTimesRef.current
   };
 };

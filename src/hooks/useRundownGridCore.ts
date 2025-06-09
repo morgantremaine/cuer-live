@@ -65,7 +65,7 @@ export const useRundownGridCore = ({
     currentColumns: state.columns
   });
 
-  // Enhanced undo state saving - only save on actual user actions with debouncing
+  // Enhanced undo state saving - only save on actual user actions, not automatic time updates
   const saveUndoState = useCallback((action: string) => {
     if (!isProcessingRealtimeUpdate) {
       // Add a small delay to ensure state has fully updated, but coordinate with auto-save
@@ -73,25 +73,27 @@ export const useRundownGridCore = ({
         if (!state.isSaving) { // Only save if auto-save is not active
           saveState(state.items, state.columns, rundownTitle, action);
         }
-      }, 150); // Reduced delay for better responsiveness
+      }, 150);
     }
   }, [saveState, state.items, state.columns, rundownTitle, isProcessingRealtimeUpdate, state.isSaving]);
 
   // Wrap state operations to save undo states - with better action grouping
   const wrappedUpdateItem = useCallback((id: string, field: string, value: string) => {
     state.updateItem(id, field, value);
-    // Only save undo state for significant changes, not every keystroke
-    if (field !== 'name' && field !== 'script') {
+    // Only save undo state for significant manual changes, not automatic time updates
+    if (field !== 'name' && field !== 'script' && field !== 'startTime' && field !== 'endTime' && field !== 'elapsedTime') {
       saveUndoState(`Update ${field}`);
     }
   }, [state.updateItem, saveUndoState]);
 
   const wrappedAddRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
+    // Save undo state BEFORE the action to capture the current state
     saveUndoState('Add segment');
     state.addRow(calculateEndTime, selectedRowId);
   }, [state.addRow, saveUndoState]);
 
   const wrappedAddHeader = useCallback((selectedRowId?: string) => {
+    // Save undo state BEFORE the action to capture the current state
     saveUndoState('Add header');
     state.addHeader(selectedRowId);
   }, [state.addHeader, saveUndoState]);
