@@ -74,6 +74,11 @@ export const useTimeCalculations = (
     }, 10);
   };
 
+  // Helper function to check if an item is floated
+  const isFloated = (item: RundownItem) => {
+    return item.isFloating || item.isFloated;
+  };
+
   // Recalculate all start, end, and elapsed times based on rundown start time and durations
   // This now properly handles floated items by excluding them from the time progression
   useEffect(() => {
@@ -93,10 +98,11 @@ export const useTimeCalculations = (
     let needsUpdate = false;
 
     items.forEach((item, index) => {
-      // Calculate elapsed time for this item
+      // Calculate elapsed time for this item based on the current timeline position
       const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
 
       // For headers, they don't have duration, so they start at current time and end at current time
+      // Headers are never floated, so they always get the current timeline position
       if (isHeaderItem(item)) {
         if (item.startTime !== currentTime || item.endTime !== currentTime) {
           console.log('🕒 Updating header times:', item.id, 'start/end:', currentTime);
@@ -109,29 +115,53 @@ export const useTimeCalculations = (
           needsUpdate = true;
         }
       } else {
-        // For regular items, calculate start and end based on duration
-        const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:00');
-        
-        if (item.startTime !== currentTime) {
-          console.log('🕒 Updating item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
-          updateItemWithoutUndo(item.id, 'startTime', currentTime);
-          needsUpdate = true;
-        }
-        
-        if (item.endTime !== expectedEndTime) {
-          console.log('🕒 Updating item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
-          updateItemWithoutUndo(item.id, 'endTime', expectedEndTime);
-          needsUpdate = true;
-        }
+        // For regular items, handle floated vs non-floated differently
+        if (isFloated(item)) {
+          // Floated items get special time handling - they don't advance the timeline
+          // but they should still have proper elapsed time calculation from when they would have started
+          const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:00');
+          
+          if (item.startTime !== currentTime) {
+            console.log('🕒 Updating floated item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
+            updateItemWithoutUndo(item.id, 'startTime', currentTime);
+            needsUpdate = true;
+          }
+          
+          if (item.endTime !== expectedEndTime) {
+            console.log('🕒 Updating floated item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
+            updateItemWithoutUndo(item.id, 'endTime', expectedEndTime);
+            needsUpdate = true;
+          }
 
-        if (item.elapsedTime !== expectedElapsedTime) {
-          updateItemWithoutUndo(item.id, 'elapsedTime', expectedElapsedTime);
-          needsUpdate = true;
-        }
-        
-        // Only advance time if the item is not floated
-        // Floated items don't contribute to the timeline progression
-        if (!item.isFloating && !item.isFloated) {
+          if (item.elapsedTime !== expectedElapsedTime) {
+            updateItemWithoutUndo(item.id, 'elapsedTime', expectedElapsedTime);
+            needsUpdate = true;
+          }
+          
+          // IMPORTANT: Floated items do NOT advance the timeline
+          // currentTime stays the same for the next item
+        } else {
+          // Non-floated regular items: calculate start and end based on duration and advance timeline
+          const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:00');
+          
+          if (item.startTime !== currentTime) {
+            console.log('🕒 Updating item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
+            updateItemWithoutUndo(item.id, 'startTime', currentTime);
+            needsUpdate = true;
+          }
+          
+          if (item.endTime !== expectedEndTime) {
+            console.log('🕒 Updating item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
+            updateItemWithoutUndo(item.id, 'endTime', expectedEndTime);
+            needsUpdate = true;
+          }
+
+          if (item.elapsedTime !== expectedElapsedTime) {
+            updateItemWithoutUndo(item.id, 'elapsedTime', expectedElapsedTime);
+            needsUpdate = true;
+          }
+          
+          // Only non-floated items advance the timeline
           currentTime = expectedEndTime;
         }
       }

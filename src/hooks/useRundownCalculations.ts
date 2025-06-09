@@ -18,6 +18,11 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     return 0;
   }, []);
 
+  // Helper function to check if an item is floated
+  const isFloated = useCallback((item: RundownItem) => {
+    return item.isFloating || item.isFloated;
+  }, []);
+
   const getRowNumber = useCallback((index: number) => {
     const item = items[index];
     if (!item) return '1';
@@ -63,7 +68,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Only include non-floated items in the total runtime calculation
     let totalSeconds = items.reduce((acc, item) => {
       // Skip floated items - they don't count towards runtime
-      if (item.isFloating || item.isFloated) {
+      if (isFloated(item)) {
         return acc;
       }
       return acc + timeToSeconds(item.duration);
@@ -79,7 +84,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     const formattedSeconds = String(seconds).padStart(2, '0');
   
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-  }, [items, timeToSeconds]);
+  }, [items, timeToSeconds, isFloated]);
 
   const calculateHeaderDuration = useCallback((index: number) => {
     if (index < 0 || index >= items.length || !isHeaderItem(items[index])) {
@@ -92,7 +97,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Sum up durations of non-floated items until next header
     while (i < items.length && !isHeaderItem(items[i])) {
       // Only count non-floated items
-      if (!items[i].isFloating && !items[i].isFloated) {
+      if (!isFloated(items[i])) {
         totalSeconds += timeToSeconds(items[i].duration);
       }
       i++;
@@ -108,7 +113,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     const formattedSeconds = String(seconds).padStart(2, '0');
   
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-  }, [items, timeToSeconds]);
+  }, [items, timeToSeconds, isFloated]);
 
   return {
     getRowNumber,

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -6,6 +7,11 @@ export type { RundownItem } from '@/types/rundown';
 
 export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
+
+  // Helper function to check if an item is floated
+  const isFloated = useCallback((item: RundownItem) => {
+    return item.isFloating || item.isFloated;
+  }, []);
 
   // Helper function to renumber all headers in sequence
   const renumberItems = useCallback((items: RundownItem[]) => {
@@ -208,7 +214,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const calculateTotalRuntime = useCallback(() => {
     let totalSeconds = 0;
     items.forEach(item => {
-      if (item.type === 'regular' && item.duration) {
+      // Only count non-floated regular items in total runtime
+      if (item.type === 'regular' && !isFloated(item) && item.duration) {
         const duration = item.duration;
         const parts = duration.split(':');
         if (parts.length === 2) {
@@ -228,7 +235,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     } else {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-  }, [items]);
+  }, [items, isFloated]);
 
   const calculateHeaderDuration = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
@@ -238,12 +245,13 @@ export const useRundownItems = (markAsChanged: () => void) => {
     
     let totalSeconds = 0;
     
-    // Sum up durations of all regular items after this header until the next header
+    // Sum up durations of all non-floated regular items after this header until the next header
     for (let i = index + 1; i < items.length; i++) {
       const item = items[i];
       if (item.type === 'header') break; // Stop at next header
       
-      if (item.type === 'regular' && item.duration) {
+      // Only count non-floated regular items
+      if (item.type === 'regular' && !isFloated(item) && item.duration) {
         const duration = item.duration;
         const parts = duration.split(':');
         if (parts.length === 2) {
@@ -263,7 +271,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     } else {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-  }, [items]);
+  }, [items, isFloated]);
 
   return {
     items,
