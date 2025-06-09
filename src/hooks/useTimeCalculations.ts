@@ -15,9 +15,9 @@ export const useTimeCalculations = (
       const [startHours, startMinutes, startSeconds = '0'] = startTime.split(':').map(Number);
       const durationParts = duration.split(':');
       
-      // Ensure we have exactly 2 parts and convert to numbers
-      const durationMinutesNum = Number(durationParts[0]) || 0;
-      const durationSecondsNum = Number(durationParts[1]) || 0;
+      // Explicitly convert to numbers with proper type safety
+      const durationMinutesNum: number = parseInt(durationParts[0] || '0', 10) || 0;
+      const durationSecondsNum: number = parseInt(durationParts[1] || '0', 10) || 0;
       
       const startTotalSeconds = startHours * 3600 + startMinutes * 60 + startSeconds;
       const durationTotalSeconds = durationMinutesNum * 60 + durationSecondsNum;
