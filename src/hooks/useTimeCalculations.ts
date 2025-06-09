@@ -98,16 +98,19 @@ export const useTimeCalculations = (
     let needsUpdate = false;
 
     items.forEach((item, index) => {
+      // Store the timeline position before processing any floated items
+      const timelinePosition = currentTime;
+      
       // Calculate elapsed time for this item based on the current timeline position
-      const expectedElapsedTime = calculateElapsedTime(currentTime, rundownStartTime);
+      const expectedElapsedTime = calculateElapsedTime(timelinePosition, rundownStartTime);
 
       // For headers, they don't have duration, so they start at current time and end at current time
       // Headers are never floated, so they always get the current timeline position
       if (isHeaderItem(item)) {
-        if (item.startTime !== currentTime || item.endTime !== currentTime) {
-          console.log('🕒 Updating header times:', item.id, 'start/end:', currentTime);
-          updateItemWithoutUndo(item.id, 'startTime', currentTime);
-          updateItemWithoutUndo(item.id, 'endTime', currentTime);
+        if (item.startTime !== timelinePosition || item.endTime !== timelinePosition) {
+          console.log('🕒 Updating header times:', item.id, 'start/end:', timelinePosition);
+          updateItemWithoutUndo(item.id, 'startTime', timelinePosition);
+          updateItemWithoutUndo(item.id, 'endTime', timelinePosition);
           needsUpdate = true;
         }
         if (item.elapsedTime !== expectedElapsedTime) {
@@ -117,18 +120,17 @@ export const useTimeCalculations = (
       } else {
         // For regular items, handle floated vs non-floated differently
         if (isFloated(item)) {
-          // Floated items show times but don't advance the timeline
-          // They inherit the current timeline position as their start time
-          // and show their calculated end time based on duration
-          const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:00');
+          // Floated items inherit the timeline position (not currentTime which might have been updated by other floated items)
+          // They show their calculated end time based on duration but don't advance the timeline
+          const expectedEndTime = calculateEndTime(timelinePosition, item.duration || '00:00');
           
-          if (item.startTime !== currentTime) {
-            console.log('🕒 Updating floated item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
-            updateItemWithoutUndo(item.id, 'startTime', currentTime);
+          if (item.startTime !== timelinePosition) {
+            console.log('🕒 Updating floated item start time:', item.id, 'from:', item.startTime, 'to:', timelinePosition);
+            updateItemWithoutUndo(item.id, 'startTime', timelinePosition);
             needsUpdate = true;
           }
           
-          // Floated items still show their calculated end time for display purposes
+          // Floated items show their calculated end time for display purposes
           if (item.endTime !== expectedEndTime) {
             console.log('🕒 Updating floated item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
             updateItemWithoutUndo(item.id, 'endTime', expectedEndTime);
