@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
+import { useColumnResizing } from './useColumnResizing';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
@@ -39,6 +40,12 @@ export const useRundownGridUI = (
     setEditingCell
   );
 
+  // Column resizing
+  const {
+    getColumnWidth,
+    updateColumnWidth
+  } = useColumnResizing(visibleColumns, markAsChanged);
+
   // Get row status based on current time and playback
   const getRowStatus = useCallback((item: RundownItem) => {
     if (!item.startTime || !item.endTime) return 'upcoming';
@@ -59,8 +66,8 @@ export const useRundownGridUI = (
   // Column width change handler with auto-save
   const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
     console.log('💾 Column width changed, triggering auto-save');
-    markAsChanged();
-  }, [markAsChanged]);
+    updateColumnWidth(columnId, width);
+  }, [updateColumnWidth]);
 
   return {
     // Color picker
@@ -83,6 +90,8 @@ export const useRundownGridUI = (
     setEditingCell,
 
     // Column width handling
+    getColumnWidth,
+    updateColumnWidth,
     handleColumnWidthChange
   };
 };
