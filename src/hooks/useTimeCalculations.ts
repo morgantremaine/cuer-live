@@ -15,9 +15,13 @@ export const useTimeCalculations = (
       const [startHours, startMinutes, startSeconds = '0'] = startTime.split(':').map(Number);
       const durationParts = duration.split(':');
       
-      // Explicitly convert to numbers with proper type safety
-      const durationMinutesNum: number = parseInt(durationParts[0] || '0', 10) || 0;
-      const durationSecondsNum: number = parseInt(durationParts[1] || '0', 10) || 0;
+      // Ensure we get valid numbers with explicit conversion
+      const durationMinutes = parseInt(durationParts[0] || '0', 10);
+      const durationSeconds = parseInt(durationParts[1] || '0', 10);
+      
+      // Ensure we have valid numbers, default to 0 if NaN
+      const durationMinutesNum = isNaN(durationMinutes) ? 0 : durationMinutes;
+      const durationSecondsNum = isNaN(durationSeconds) ? 0 : durationSeconds;
       
       const startTotalSeconds = startHours * 3600 + startMinutes * 60 + startSeconds;
       const durationTotalSeconds = durationMinutesNum * 60 + durationSecondsNum;
