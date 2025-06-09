@@ -3,8 +3,15 @@ import { useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isHeaderItem } from '@/types/rundown';
 
-export const useCellNavigation = (items: RundownItem[]) => {
+export const useCellNavigation = (
+  items: RundownItem[],
+  visibleColumns: any[],
+  updateItem: (id: string, field: string, value: string) => void,
+  editingCell: string | null,
+  setEditingCell: (cell: string | null) => void
+) => {
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cellRefs = useRef<{ [key: string]: HTMLElement }>({});
 
   const navigateToCell = useCallback((targetItemId: string, targetField: string) => {
     // Clear any existing timeout
@@ -79,5 +86,19 @@ export const useCellNavigation = (items: RundownItem[]) => {
     }
   }, [items, navigateToCell]);
 
-  return { handleCellNavigation };
+  const handleCellClick = useCallback((itemId: string, field: string) => {
+    const cellKey = `${itemId}-${field}`;
+    setEditingCell(cellKey);
+  }, [setEditingCell]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
+    handleCellNavigation(e, itemId, field);
+  }, [handleCellNavigation]);
+
+  return { 
+    handleCellNavigation,
+    cellRefs,
+    handleCellClick,
+    handleKeyDown
+  };
 };

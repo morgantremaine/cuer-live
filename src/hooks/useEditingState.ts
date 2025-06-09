@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from 'react';
 
 export const useEditingState = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [editingCell, setEditingCell] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   const markAsEditing = useCallback(() => {
@@ -25,6 +26,8 @@ export const useEditingState = () => {
 
   return {
     isEditing,
-    markAsEditing
+    markAsEditing,
+    editingCell,
+    setEditingCell
   };
 };

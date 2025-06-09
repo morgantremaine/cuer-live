@@ -62,7 +62,7 @@ export const useRundownStateCoordination = () => {
     // This will trigger markAsChanged through the columns manager
   };
   
-  // Grid UI state (colors, editing, etc.) - pass the enhanced column width handler
+  // Grid UI state (colors, editing, etc.) - pass markAsChanged instead of the column width handler
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
@@ -70,7 +70,7 @@ export const useRundownStateCoordination = () => {
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,
-    handleColumnWidthChange // Pass our enhanced handler
+    basicState.markAsChanged // Pass the basic markAsChanged function
   );
 
   // Validate and clean time format
