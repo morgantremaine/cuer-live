@@ -17,8 +17,14 @@ export const useRundownUIState = (
   // Color picker
   const { showColorPicker, handleToggleColorPicker } = useColorPicker();
 
-  // Resizable columns
-  const { getColumnWidth, updateColumnWidth } = useResizableColumns(columns);
+  // Enhanced column width change handler that triggers auto-save
+  const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
+    console.log('📏 Column width changed:', { columnId, width });
+    markAsChanged(); // Trigger auto-save when column width changes
+  }, [markAsChanged]);
+
+  // Resizable columns with auto-save integration
+  const { getColumnWidth, updateColumnWidth } = useResizableColumns(columns, handleColumnWidthChange);
 
   // Status calculations
   const getRowStatus = useCallback((item: RundownItem) => {

@@ -53,7 +53,7 @@ export const useRundownStateCoordination = () => {
     gridCore.setRundownTitle
   );
   
-  // Grid UI state (colors, editing, etc.)
+  // Grid UI state (colors, editing, etc.) - pass markAsChanged for column width auto-save
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
@@ -61,7 +61,7 @@ export const useRundownStateCoordination = () => {
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,
-    gridCore.markAsChanged
+    gridCore.markAsChanged // This ensures column width changes trigger auto-save
   );
 
   // Validate and clean time format
