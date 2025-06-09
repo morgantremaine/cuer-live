@@ -37,12 +37,12 @@ const ResizableColumnHeader = ({
 
     const handleMouseUp = (e: MouseEvent) => {
       setIsResizing(false);
-      setDragOffset(0);
       
       const finalDiff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + finalDiff);
       
-      // Only call onWidthChange when resize is complete
+      // Reset drag offset first, then update width
+      setDragOffset(0);
       onWidthChange(column.id, newWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
@@ -53,7 +53,7 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   }, [column.id, onWidthChange, width]);
 
-  // Calculate the visual width with transform
+  // Calculate the visual width during resize
   const baseWidth = parseInt(width);
   const visualWidth = Math.max(50, baseWidth + dragOffset);
   
@@ -62,8 +62,7 @@ const ResizableColumnHeader = ({
       ref={headerRef}
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
       style={{ 
-        width: width,
-        minWidth: isResizing ? `${visualWidth}px` : width,
+        width: isResizing ? `${visualWidth}px` : width,
         transition: isResizing ? 'none' : 'width 0.1s ease-out'
       }}
     >
@@ -71,13 +70,7 @@ const ResizableColumnHeader = ({
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
       )}
       
-      <div 
-        style={{
-          transform: isResizing ? `scaleX(${visualWidth / baseWidth})` : 'scaleX(1)',
-          transformOrigin: 'left',
-          transition: isResizing ? 'none' : 'transform 0.1s ease-out'
-        }}
-      >
+      <div className="truncate">
         {children}
       </div>
       
@@ -86,8 +79,8 @@ const ResizableColumnHeader = ({
         onMouseDown={handleMouseDown}
         style={{ 
           backgroundColor: isResizing ? '#60a5fa' : 'transparent',
-          transform: isResizing ? `translateX(${dragOffset}px)` : 'translateX(0)',
-          transition: isResizing ? 'none' : 'transform 0.1s ease-out'
+          right: isResizing ? `${-dragOffset}px` : '0px',
+          transition: isResizing ? 'none' : 'right 0.1s ease-out'
         }}
       />
     </th>
