@@ -130,7 +130,7 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
         className="leading-relaxed text-left whitespace-pre-wrap"
         style={{ 
           fontSize: `${fontSize}px`,
-          lineHeight: '1.6'
+          lineHeight: '1.2'
         }}
       >
         {item.script ? renderScriptWithBrackets(item.script) : ''}
