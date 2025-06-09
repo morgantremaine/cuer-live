@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface ResizableColumnHeaderProps {
@@ -21,6 +21,17 @@ const ResizableColumnHeader = ({
   const [tempWidth, setTempWidth] = useState(0);
   const startX = useRef(0);
   const startWidth = useRef(0);
+  const animationFrameRef = useRef<number>();
+
+  const throttledUpdate = useCallback((newWidth: number) => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    animationFrameRef.current = requestAnimationFrame(() => {
+      setTempWidth(newWidth);
+    });
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -35,15 +46,20 @@ const ResizableColumnHeader = ({
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
-      setTempWidth(newWidth);
+      throttledUpdate(newWidth);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
       setIsResizing(false);
       
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
       const diff = e.clientX - startX.current;
       const finalWidth = Math.max(50, startWidth.current + diff);
       
+      // Only call onWidthChange once at the end
       onWidthChange(column.id, finalWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
