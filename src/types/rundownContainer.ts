@@ -21,6 +21,7 @@ export interface RundownContainerProps {
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
   getColumnWidth: (column: Column) => string;
+  getColumnWidthNumber: (column: Column) => number;
   updateColumnWidth: (columnId: string, width: number) => void;
   initializeWidths: () => void;
   getRowNumber: (index: number) => string;
