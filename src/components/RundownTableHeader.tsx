@@ -9,7 +9,7 @@ interface RundownTableHeaderProps {
   updateColumnWidth: (columnId: string, width: number) => void;
 }
 
-const RundownTableHeader = ({
+const RundownTableHeader = React.memo(({
   visibleColumns,
   getColumnWidth,
   updateColumnWidth
@@ -34,6 +34,15 @@ const RundownTableHeader = ({
       </tr>
     </thead>
   );
-};
+}, (prevProps, nextProps) => {
+  // Only re-render if columns or width function reference changes
+  return (
+    prevProps.visibleColumns === nextProps.visibleColumns &&
+    prevProps.getColumnWidth === nextProps.getColumnWidth &&
+    prevProps.updateColumnWidth === nextProps.updateColumnWidth
+  );
+});
+
+RundownTableHeader.displayName = 'RundownTableHeader';
 
 export default RundownTableHeader;

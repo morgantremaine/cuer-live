@@ -54,15 +54,14 @@ export const useRundownStateCoordination = () => {
     gridCore.setRundownTitle
   );
   
-  // Enhanced column width handler that connects to the columns manager
+  // Optimized column width handler that prevents redundant updates
   const handleColumnWidthChange = (columnId: string, width: number) => {
-    console.log('🔄 handleColumnWidthChange in coordination:', { columnId, width });
-    // Update the column width in the columns manager
+    // Only update the column width in the columns manager
     gridCore.handleUpdateColumnWidth(columnId, width);
-    // This will trigger markAsChanged through the columns manager
+    // The auto-save will be handled by the gridUI hook with proper debouncing
   };
   
-  // Grid UI state (colors, editing, etc.) - pass markAsChanged instead of the column width handler
+  // Grid UI state (colors, editing, etc.) - with optimized column handling
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
@@ -70,7 +69,7 @@ export const useRundownStateCoordination = () => {
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,
-    basicState.markAsChanged // Pass the basic markAsChanged function
+    basicState.markAsChanged // This will be debounced in the UI hook
   );
 
   // Validate and clean time format
@@ -95,7 +94,6 @@ export const useRundownStateCoordination = () => {
 
   // Enhanced timezone setter that triggers change tracking
   const setTimezone = (newTimezone: string) => {
-    console.log('🌍 useRundownStateCoordination: Setting timezone:', newTimezone);
     basicState.setTimezone(newTimezone);
     // Immediately mark as changed to trigger auto-save
     basicState.markAsChanged();
@@ -104,7 +102,6 @@ export const useRundownStateCoordination = () => {
   // Enhanced start time setter that validates and triggers change tracking
   const setRundownStartTime = (newStartTime: string) => {
     const validatedTime = validateTimeFormat(newStartTime);
-    console.log('⏰ useRundownStateCoordination: Setting start time:', { original: newStartTime, validated: validatedTime });
     basicState.setRundownStartTime(validatedTime);
     // Immediately mark as changed to trigger auto-save
     basicState.markAsChanged();
@@ -112,13 +109,11 @@ export const useRundownStateCoordination = () => {
 
   // Direct setters for data loading (no change tracking)
   const setTimezoneDirectly = (newTimezone: string) => {
-    console.log('🌍 useRundownStateCoordination: Setting timezone directly (no auto-save):', newTimezone);
     basicState.setTimezoneDirectly(newTimezone);
   };
 
   const setRundownStartTimeDirectly = (newStartTime: string) => {
     const validatedTime = validateTimeFormat(newStartTime);
-    console.log('⏰ useRundownStateCoordination: Setting start time directly (no auto-save):', { original: newStartTime, validated: validatedTime });
     basicState.setRundownStartTimeDirectly(validatedTime);
   };
 
@@ -142,7 +137,7 @@ export const useRundownStateCoordination = () => {
     uiState: {
       ...gridUI,
       getRowStatus, // Add the getRowStatus function from useTimeCalculations
-      // Override updateColumnWidth to use our enhanced handler
+      // Override updateColumnWidth to use our optimized handler
       updateColumnWidth: handleColumnWidthChange
     }
   };

@@ -1,16 +1,17 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Column } from './useColumnsManager';
 
 export const useResizableColumns = (initialColumns: Column[], onColumnWidthChange?: (columnId: string, width: number) => void) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
   const lastCallbackRef = useRef(onColumnWidthChange);
+  const isUpdatingRef = useRef(false);
 
   // Keep callback ref updated
   lastCallbackRef.current = onColumnWidthChange;
 
-  // Initialize column widths from the columns data
-  useEffect(() => {
+  // Initialize column widths from the columns data - memoized to prevent excessive recalculations
+  const initialWidths = useMemo(() => {
     const widthsFromColumns: { [key: string]: number } = {};
     initialColumns.forEach(column => {
       if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
@@ -20,18 +21,23 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
         }
       }
     });
-    setColumnWidths(prev => {
-      // Only update if actually different to prevent unnecessary re-renders
-      const hasChanges = Object.keys(widthsFromColumns).some(key => 
-        prev[key] !== widthsFromColumns[key]
-      ) || Object.keys(prev).length !== Object.keys(widthsFromColumns).length;
-      
-      return hasChanges ? widthsFromColumns : prev;
-    });
+    return widthsFromColumns;
   }, [initialColumns]);
 
+  // Only update state if widths actually changed
+  useEffect(() => {
+    setColumnWidths(prev => {
+      const hasChanges = Object.keys(initialWidths).some(key => 
+        prev[key] !== initialWidths[key]
+      ) || Object.keys(prev).length !== Object.keys(initialWidths).length;
+      
+      return hasChanges ? initialWidths : prev;
+    });
+  }, [initialWidths]);
+
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
-    console.log('📏 updateColumnWidth called:', { columnId, width });
+    // Prevent recursive updates
+    if (isUpdatingRef.current) return;
     
     setColumnWidths(prev => {
       // Only update if width actually changed
@@ -39,21 +45,27 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
         return prev;
       }
       
+      isUpdatingRef.current = true;
       const newWidths = { ...prev, [columnId]: width };
       
-      console.log('📏 Column width changed - triggering callback:', { columnId, width });
-      
-      // Call the callback immediately for column width changes
-      if (lastCallbackRef.current) {
-        console.log('🔍 About to call onColumnWidthChange callback');
-        lastCallbackRef.current(columnId, width);
-        console.log('✅ onColumnWidthChange callback completed');
+      // Clear any existing timeout
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
+      
+      // Debounce the callback to prevent excessive auto-saves
+      updateTimeoutRef.current = setTimeout(() => {
+        if (lastCallbackRef.current) {
+          lastCallbackRef.current(columnId, width);
+        }
+        isUpdatingRef.current = false;
+      }, 100); // Short debounce for responsiveness
       
       return newWidths;
     });
   }, []);
 
+  // Memoized getColumnWidth to prevent recalculations
   const getColumnWidth = useCallback((column: Column) => {
     if (columnWidths[column.id]) {
       return `${columnWidths[column.id]}px`;
@@ -64,7 +76,7 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
       return column.width;
     }
     
-    // Reduced default widths based on column type
+    // Default widths based on column type
     if (column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime') {
       return '100px';
     }

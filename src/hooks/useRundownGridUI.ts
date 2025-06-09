@@ -16,21 +16,31 @@ export const useRundownGridUI = (
   currentTime: Date,
   markAsChanged: () => void
 ) => {
-  // Enhanced column width callback that triggers both column update and auto-save
+  const columnWidthTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Enhanced column width callback with separate debouncing for auto-save
   const handleColumnWidthChangeWithSave = useCallback((columnId: string, width: number) => {
-    console.log('🔄 Column width change detected in GridUI:', { columnId, width });
-    // The column width change will be handled by the columns manager
-    // We just need to ensure markAsChanged is called
-    markAsChanged();
+    // Clear existing timeout
+    if (columnWidthTimeoutRef.current) {
+      clearTimeout(columnWidthTimeoutRef.current);
+    }
+    
+    // Debounce the auto-save separately from the visual update
+    columnWidthTimeoutRef.current = setTimeout(() => {
+      markAsChanged();
+    }, 500); // Longer debounce for auto-save
   }, [markAsChanged]);
 
-  // Resizable columns
+  // Resizable columns with optimized callback
   const {
     columnWidths,
     updateColumnWidth,
     getColumnWidth,
     getColumnWidthsForSaving
   } = useResizableColumns(columns, handleColumnWidthChangeWithSave);
+
+  // Memoized getColumnWidth to prevent unnecessary re-renders
+  const memoizedGetColumnWidth = useMemo(() => getColumnWidth, [getColumnWidth]);
 
   // Color picker
   const {
@@ -78,7 +88,7 @@ export const useRundownGridUI = (
     // Column management
     columnWidths,
     updateColumnWidth,
-    getColumnWidth,
+    getColumnWidth: memoizedGetColumnWidth,
     getColumnWidthsForSaving,
     
     // Color picker
