@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { useSimpleColumnWidths } from './useSimpleColumnWidths';
 import { useColorPicker } from './useColorPicker';
@@ -14,7 +15,7 @@ export const useRundownGridUI = (
   currentSegmentId: string | null,
   currentTime: Date,
   markAsChanged: () => void,
-  handleUpdateColumnWidth?: (columnId: string, width: string) => void
+  handleUpdateColumnWidth?: (columnId: string, width: number) => void
 ) => {
   // Debounced markAsChanged to prevent rapid auto-save during resize
   const markAsChangedTimeoutRef = useRef<NodeJS.Timeout>();

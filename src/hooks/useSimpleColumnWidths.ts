@@ -5,7 +5,7 @@ import { Column } from './useColumnsManager';
 export const useSimpleColumnWidths = (
   columns: Column[], 
   onColumnWidthChange?: (columnId: string, width: number) => void,
-  onUpdateColumnWidth?: (columnId: string, width: string) => void
+  onUpdateColumnWidth?: (columnId: string, width: number) => void
 ) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
 
@@ -38,7 +38,7 @@ export const useSimpleColumnWidths = (
       // Also update the actual column data structure for persistence
       if (onUpdateColumnWidth) {
         setTimeout(() => {
-          onUpdateColumnWidth(columnId, `${width}px`);
+          onUpdateColumnWidth(columnId, width);
         }, 0);
       }
       
