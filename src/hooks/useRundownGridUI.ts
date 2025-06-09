@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { useResizableColumns } from './useResizableColumns';
+import { useSimpleColumnWidths } from './useSimpleColumnWidths';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
@@ -26,24 +26,17 @@ export const useRundownGridUI = (
     
     markAsChangedTimeoutRef.current = setTimeout(() => {
       markAsChanged();
-    }, 500); // 500ms debounce for auto-save
+    }, 300); // 300ms debounce for auto-save
   }, [markAsChanged]);
 
-  // Enhanced column width callback that triggers debounced auto-save
-  const handleColumnWidthChangeWithSave = useCallback((columnId: string, width: number) => {
-    console.log('🔄 Column width change detected in GridUI:', { columnId, width });
-    // The column width change will be handled by the columns manager
-    // We just need to ensure markAsChanged is called (debounced)
-    debouncedMarkAsChanged();
-  }, [debouncedMarkAsChanged]);
-
-  // Resizable columns
+  // Simple column widths with immediate callback
   const {
-    columnWidths,
     updateColumnWidth,
-    getColumnWidth,
-    getColumnWidthsForSaving
-  } = useResizableColumns(columns, handleColumnWidthChangeWithSave);
+    getColumnWidth
+  } = useSimpleColumnWidths(columns, (columnId: string, width: number) => {
+    // Trigger debounced auto-save when column width changes
+    debouncedMarkAsChanged();
+  });
 
   // Color picker
   const {
@@ -97,11 +90,9 @@ export const useRundownGridUI = (
   }, []);
 
   return {
-    // Column management
-    columnWidths,
+    // Column management - simplified
     updateColumnWidth,
     getColumnWidth,
-    getColumnWidthsForSaving,
     
     // Color picker
     showColorPicker,

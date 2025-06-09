@@ -54,15 +54,7 @@ export const useRundownStateCoordination = () => {
     gridCore.setRundownTitle
   );
   
-  // Enhanced column width handler that connects to the columns manager
-  const handleColumnWidthChange = (columnId: string, width: number) => {
-    console.log('🔄 handleColumnWidthChange in coordination:', { columnId, width });
-    // Update the column width in the columns manager
-    gridCore.handleUpdateColumnWidth(columnId, width);
-    // This will trigger markAsChanged through the columns manager
-  };
-  
-  // Grid UI state (colors, editing, etc.) - pass markAsChanged instead of the column width handler
+  // Grid UI state (colors, editing, etc.) - using new simplified system
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
@@ -70,7 +62,7 @@ export const useRundownStateCoordination = () => {
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,
-    basicState.markAsChanged // Pass the basic markAsChanged function
+    basicState.markAsChanged
   );
 
   // Validate and clean time format
@@ -142,8 +134,6 @@ export const useRundownStateCoordination = () => {
     uiState: {
       ...gridUI,
       getRowStatus, // Add the getRowStatus function from useTimeCalculations
-      // Override updateColumnWidth to use our enhanced handler
-      updateColumnWidth: handleColumnWidthChange
     }
   };
 };
