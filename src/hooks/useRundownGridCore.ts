@@ -65,17 +65,23 @@ export const useRundownGridCore = ({
     currentColumns: state.columns
   });
 
-  // Save state whenever items, columns, or title changes
+  // More targeted undo state saving - only save on actual user actions
   const saveUndoState = useCallback((action: string) => {
     if (!isProcessingRealtimeUpdate) {
-      saveState(state.items, state.columns, rundownTitle, action);
+      // Add a small delay to ensure state has fully updated
+      setTimeout(() => {
+        saveState(state.items, state.columns, rundownTitle, action);
+      }, 100);
     }
   }, [saveState, state.items, state.columns, rundownTitle, isProcessingRealtimeUpdate]);
 
-  // Wrap state operations to save undo states
+  // Wrap state operations to save undo states - with debouncing for rapid changes
   const wrappedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    saveUndoState('Update item');
     state.updateItem(id, field, value);
+    // Only save undo state for significant changes, not every keystroke
+    if (field !== 'name' && field !== 'script') {
+      saveUndoState('Update item');
+    }
   }, [state.updateItem, saveUndoState]);
 
   const wrappedAddRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
@@ -115,6 +121,12 @@ export const useRundownGridCore = ({
 
   // Enhanced undo handler that works with the current state structure
   const handleUndo = useCallback(() => {
+    console.log('handleUndo called, canUndo:', canUndo);
+    if (!canUndo) {
+      console.log('Cannot undo - no states available');
+      return null;
+    }
+
     return undo(
       state.setItems,
       (layoutData: any) => {
@@ -134,7 +146,7 @@ export const useRundownGridCore = ({
       },
       setRundownTitleDirectly
     );
-  }, [undo, state.setItems, state.handleLoadLayout, setRundownTitleDirectly]);
+  }, [undo, canUndo, state.setItems, state.handleLoadLayout, setRundownTitleDirectly]);
 
   // Enhanced setRundownTitle that also triggers change tracking and undo state
   const setRundownTitle = useCallback((newTitle: string) => {

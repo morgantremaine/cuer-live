@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -24,13 +23,15 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   const isUndoing = useRef(false);
   const isSavingHistory = useRef(false);
   const lastSavedHistoryRef = useRef<string>('');
+  const lastStateSignature = useRef<string>('');
+  const saveTimeout = useRef<NodeJS.Timeout>();
 
   // Load undo history when rundown is loaded
   const loadUndoHistory = useCallback((history: UndoState[] = []) => {
-    setUndoStack(history.slice(-10)); // Keep only last 10 states
+    setUndoStack(history.slice(-20)); // Keep more states for better undo experience
   }, []);
 
-  // Save undo history to database - with debouncing
+  // Save undo history to database - with better debouncing
   const saveUndoHistoryToDatabase = useCallback(async (newStack: UndoState[]) => {
     if (!props?.rundownId || !props.updateRundown || isSavingHistory.current) return;
     if (!props.currentTitle || !props.currentItems || !props.currentColumns) return;
@@ -43,7 +44,6 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       isSavingHistory.current = true;
       lastSavedHistoryRef.current = historyKey;
       
-      // Update only the undo history, keeping all other fields as they are
       await props.updateRundown(
         props.rundownId,
         props.currentTitle,
@@ -58,7 +58,6 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       );
     } catch (error) {
       console.error('Failed to save undo history:', error);
-      // Reset the saved history key on error so we can try again
       lastSavedHistoryRef.current = '';
     } finally {
       isSavingHistory.current = false;
@@ -74,6 +73,16 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     // Don't save state during undo operations or when saving history
     if (isUndoing.current || isSavingHistory.current) return;
 
+    // Create a signature for the current state to avoid duplicate saves
+    const currentSignature = JSON.stringify({ items, columns, title });
+    if (lastStateSignature.current === currentSignature) {
+      console.log('Skipping duplicate state save for action:', action);
+      return;
+    }
+
+    console.log('Saving undo state for action:', action);
+    lastStateSignature.current = currentSignature;
+
     const newState: UndoState = {
       items: JSON.parse(JSON.stringify(items)), // Deep clone
       columns: JSON.parse(JSON.stringify(columns)), // Deep clone
@@ -83,13 +92,34 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     };
 
     setUndoStack(prev => {
+      // Don't add if the last state is identical
+      if (prev.length > 0) {
+        const lastState = prev[prev.length - 1];
+        const lastSignature = JSON.stringify({ 
+          items: lastState.items, 
+          columns: lastState.columns, 
+          title: lastState.title 
+        });
+        if (lastSignature === currentSignature) {
+          console.log('Skipping identical state save');
+          return prev;
+        }
+      }
+
       const newStack = [...prev, newState];
-      // Keep only last 10 states to prevent memory issues
-      const trimmedStack = newStack.slice(-10);
+      // Keep only last 20 states to prevent memory issues
+      const trimmedStack = newStack.slice(-20);
       
-      // Save to database asynchronously with longer delay to reduce frequency
+      // Clear any existing timeout
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current);
+      }
+      
+      // Save to database with longer delay to reduce frequency
       if (props?.rundownId && props?.updateRundown) {
-        setTimeout(() => saveUndoHistoryToDatabase(trimmedStack), 2000);
+        saveTimeout.current = setTimeout(() => {
+          saveUndoHistoryToDatabase(trimmedStack);
+        }, 3000);
       }
       
       return trimmedStack;
@@ -101,12 +131,19 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     setColumns: (columns: Column[]) => void,
     setTitle: (title: string) => void
   ) => {
-    if (undoStack.length === 0) return null;
+    if (undoStack.length === 0) {
+      console.log('No undo states available');
+      return null;
+    }
 
     const lastState = undoStack[undoStack.length - 1];
+    console.log('Undoing action:', lastState.action);
     
     // Mark that we're undoing to prevent saving this as a new state
     isUndoing.current = true;
+    
+    // Clear the last state signature to allow the restored state to be saved again if needed
+    lastStateSignature.current = '';
     
     // Restore the previous state
     setItems(lastState.items);
@@ -117,18 +154,35 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     const newStack = undoStack.slice(0, -1);
     setUndoStack(newStack);
     
-    // Save updated history to database with delay
-    if (props?.rundownId && props?.updateRundown) {
-      setTimeout(() => saveUndoHistoryToDatabase(newStack), 1000);
+    // Clear any existing timeout
+    if (saveTimeout.current) {
+      clearTimeout(saveTimeout.current);
     }
     
-    // Reset the undoing flag after a delay
+    // Save updated history to database
+    if (props?.rundownId && props?.updateRundown) {
+      saveTimeout.current = setTimeout(() => {
+        saveUndoHistoryToDatabase(newStack);
+      }, 1000);
+    }
+    
+    // Reset the undoing flag after a longer delay to ensure all related updates complete
     setTimeout(() => {
       isUndoing.current = false;
-    }, 500); // Increased delay to prevent interference
+      console.log('Undo operation completed');
+    }, 1000);
 
     return lastState.action;
   }, [undoStack, saveUndoHistoryToDatabase, props?.rundownId, props?.updateRundown]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current);
+      }
+    };
+  }, []);
 
   const canUndo = undoStack.length > 0;
   const lastAction = undoStack.length > 0 ? undoStack[undoStack.length - 1].action : null;
