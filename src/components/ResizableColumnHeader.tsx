@@ -46,6 +46,7 @@ const ResizableColumnHeader = ({
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
+      // Only update the visual temp width, don't call onWidthChange yet
       throttledUpdate(newWidth);
     };
 
@@ -59,7 +60,7 @@ const ResizableColumnHeader = ({
       const diff = e.clientX - startX.current;
       const finalWidth = Math.max(50, startWidth.current + diff);
       
-      // Only call onWidthChange once at the end
+      // Only call onWidthChange once at the very end
       onWidthChange(column.id, finalWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
