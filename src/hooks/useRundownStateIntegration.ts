@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRundownItems } from './useRundownItems';
 import { useColumnsManager } from './useColumnsManager';
 import { useAutoSave } from './useAutoSave';
@@ -12,6 +12,8 @@ export const useRundownStateIntegration = (
   rundownStartTime: string,
   setRundownTitleDirectly: (title: string) => void,
   setTimezoneDirectly: (timezone: string) => void,
+  setRundownStartTimeDirectly: (startTime: string) => void,
+  setAutoSaveTrigger: (trigger: () => void) => void,
   isProcessingRealtimeUpdate?: boolean
 ) => {
   console.log('🏗️ useRundownStateIntegration: markAsChanged function type:', typeof markAsChanged);
@@ -79,7 +81,7 @@ export const useRundownStateIntegration = (
   } = useColumnsManager(enhancedMarkAsChanged);
 
   // Auto-save functionality with realtime awareness
-  const { hasUnsavedChanges, isSaving, setApplyingRemoteUpdate, updateSavedSignature } = useAutoSave(
+  const { hasUnsavedChanges, isSaving, setApplyingRemoteUpdate, updateSavedSignature, triggerSave } = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
     Array.isArray(columns) ? columns : [],
@@ -87,6 +89,14 @@ export const useRundownStateIntegration = (
     rundownStartTime,
     isProcessingRealtimeUpdate
   );
+
+  // Connect the auto-save trigger to the basic state
+  useEffect(() => {
+    if (triggerSave) {
+      console.log('🔗 Setting up auto-save trigger connection');
+      setAutoSaveTrigger(triggerSave);
+    }
+  }, [triggerSave, setAutoSaveTrigger]);
 
   // Wrapped addRow that supports insertion at specific index but compatible with expected signature
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {

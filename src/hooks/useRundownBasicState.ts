@@ -36,12 +36,27 @@ export const useRundownBasicState = () => {
     }
   }, [rundownId]);
 
-  // Change tracking for timezone and other fields
+  // Store the auto-save trigger function
+  const autoSaveTriggerRef = useRef<(() => void) | null>(null);
+
+  // Set the auto-save trigger function (called from integration layer)
+  const setAutoSaveTrigger = (trigger: () => void) => {
+    autoSaveTriggerRef.current = trigger;
+  };
+
+  // Change tracking function that calls the actual auto-save
   const markAsChanged = () => {
     console.log('🔄 markAsChanged called in useRundownBasicState');
     console.log('📊 Current rundown ID:', rundownId);
-    // The actual auto-save logic should be handled by the integration layer
-    // This is just for debugging to trace the call
+    console.log('🔗 Auto-save trigger available:', !!autoSaveTriggerRef.current);
+    
+    // Call the actual auto-save trigger if it's available
+    if (autoSaveTriggerRef.current) {
+      console.log('🚀 Triggering auto-save');
+      autoSaveTriggerRef.current();
+    } else {
+      console.log('⚠️ No auto-save trigger available yet');
+    }
   };
 
   // Direct setters without change tracking (for initial load)
@@ -87,6 +102,7 @@ export const useRundownBasicState = () => {
     setRundownStartTime: setRundownStartTimeWithChange,
     setRundownStartTimeDirectly,
     rundownId,
-    markAsChanged
+    markAsChanged,
+    setAutoSaveTrigger
   };
 };

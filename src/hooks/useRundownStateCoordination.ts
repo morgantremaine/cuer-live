@@ -20,6 +20,7 @@ export const useRundownStateCoordination = () => {
     setRundownTitleDirectly: basicState.setRundownTitleDirectly,
     setTimezoneDirectly: basicState.setTimezoneDirectly,
     setRundownStartTimeDirectly: basicState.setRundownStartTimeDirectly,
+    setAutoSaveTrigger: basicState.setAutoSaveTrigger,
     isProcessingRealtimeUpdate: false
   });
 
