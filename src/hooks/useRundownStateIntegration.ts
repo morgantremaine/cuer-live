@@ -91,21 +91,14 @@ export const useRundownStateIntegration = (
     isProcessingRealtimeUpdate
   );
 
-  // Create a stable auto-save trigger function ONCE
-  const autoSaveTrigger = useCallback(() => {
-    console.log('💾 Auto-save trigger called from state integration');
-    // The auto-save is handled by useAutoSave internally
-    // This function just exists to satisfy the interface
-  }, []);
-
   // Connect the auto-save trigger to the basic state - ONLY ONCE
   useEffect(() => {
-    if (!autoSaveTriggerSetRef.current) {
+    if (!autoSaveTriggerSetRef.current && autoSaveResult.triggerAutoSave) {
       console.log('🔗 Setting up auto-save trigger connection (ONCE)');
-      setAutoSaveTrigger(autoSaveTrigger);
+      setAutoSaveTrigger(autoSaveResult.triggerAutoSave);
       autoSaveTriggerSetRef.current = true;
     }
-  }, []); // Empty dependency array - only run once
+  }, [autoSaveResult.triggerAutoSave, setAutoSaveTrigger]);
 
   // Wrapped addRow that supports insertion at specific index but compatible with expected signature
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {

@@ -71,15 +71,19 @@ export const useAutoSave = (
     saveStateOnSaveRef.current = saveFunction;
   }, []);
 
-  // Auto-save effect
-  useEffect(() => {
+  // Create the trigger function that actually handles the auto-save logic
+  const triggerAutoSave = useCallback(() => {
+    console.log('🔥 triggerAutoSave called - processing auto-save logic');
+    
     // Skip during initial load or when processing realtime updates
     if (isInitialLoad.current || isProcessingRealtimeUpdate || applyingRemoteUpdate) {
+      console.log('🔥 Skipping auto-save - initial load or realtime update');
       return;
     }
 
     const currentSignature = createStateSignature();
     if (currentSignature === lastSavedSignature.current || !currentSignature) {
+      console.log('🔥 Skipping auto-save - no changes detected');
       return;
     }
 
@@ -107,7 +111,6 @@ export const useAutoSave = (
         console.error('❌ Auto-save failed:', error);
       }
     }, 2000); // 2 second delay
-
   }, [
     items,
     rundownTitle,
@@ -120,9 +123,35 @@ export const useAutoSave = (
     applyingRemoteUpdate
   ]);
 
+  // Auto-save effect - this monitors for changes but doesn't trigger saves directly
+  useEffect(() => {
+    // Skip during initial load or when processing realtime updates
+    if (isInitialLoad.current || isProcessingRealtimeUpdate || applyingRemoteUpdate) {
+      return;
+    }
+
+    const currentSignature = createStateSignature();
+    if (currentSignature === lastSavedSignature.current || !currentSignature) {
+      return;
+    }
+
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true);
+  }, [
+    items,
+    rundownTitle,
+    columns,
+    timezone,
+    rundownStartTime,
+    createStateSignature,
+    isProcessingRealtimeUpdate,
+    applyingRemoteUpdate
+  ]);
+
   // Mark initial load as complete after first render
   useEffect(() => {
     const timer = setTimeout(() => {
+      console.log('🔥 Initial load completed - auto-save enabled');
       isInitialLoad.current = false;
     }, 1000);
     return () => clearTimeout(timer);
@@ -142,6 +171,7 @@ export const useAutoSave = (
     isSaving,
     setApplyingRemoteUpdate,
     updateSavedSignature,
-    registerUndoSave
+    registerUndoSave,
+    triggerAutoSave // Export the trigger function
   };
 };
