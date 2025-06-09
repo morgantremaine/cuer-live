@@ -63,11 +63,11 @@ export const useRundownGridCore = ({
   const handleUndo = useCallback(() => {
     return undo(
       state.setItems,
-      (layoutData) => {
+      (layoutData: any) => {
         // handleLoadLayout expects a Column[] array directly
         if (Array.isArray(layoutData)) {
           state.handleLoadLayout(layoutData);
-        } else if (layoutData && typeof layoutData === 'object' && 'columns' in layoutData) {
+        } else if (layoutData && typeof layoutData === 'object' && 'columns' in layoutData && Array.isArray(layoutData.columns)) {
           state.handleLoadLayout(layoutData.columns);
         } else {
           console.warn('Invalid layout data for undo:', layoutData);
