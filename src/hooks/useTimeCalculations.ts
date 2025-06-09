@@ -17,7 +17,7 @@ export const useTimeCalculations = (
       const durationSeconds = Number(durationSecondsStr) || 0;
       
       const startTotalSeconds = startHours * 3600 + startMinutes * 60 + startSeconds;
-      const durationTotalSeconds = Number(durationMinutes) * 60 + durationSeconds;
+      const durationTotalSeconds = (Number(durationMinutes) || 0) * 60 + durationSeconds;
       const endTotalSeconds = startTotalSeconds + durationTotalSeconds;
       
       const endHours = Math.floor(endTotalSeconds / 3600);
