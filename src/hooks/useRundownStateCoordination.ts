@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownGridCore } from './useRundownGridCore';
@@ -62,7 +61,8 @@ export const useRundownStateCoordination = () => {
     gridCore.updateItem,
     gridCore.currentSegmentId,
     gridCore.currentTime,
-    basicState.markAsChanged
+    basicState.markAsChanged,
+    gridCore.handleUpdateColumnWidth // Pass the column width update function
   );
 
   // Validate and clean time format

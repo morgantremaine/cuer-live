@@ -4,7 +4,8 @@ import { Column } from './useColumnsManager';
 
 export const useSimpleColumnWidths = (
   columns: Column[], 
-  onColumnWidthChange?: (columnId: string, width: number) => void
+  onColumnWidthChange?: (columnId: string, width: number) => void,
+  onUpdateColumnWidth?: (columnId: string, width: string) => void
 ) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
 
@@ -33,10 +34,17 @@ export const useSimpleColumnWidths = (
           onColumnWidthChange(columnId, width);
         }, 0);
       }
+
+      // Also update the actual column data structure for persistence
+      if (onUpdateColumnWidth) {
+        setTimeout(() => {
+          onUpdateColumnWidth(columnId, `${width}px`);
+        }, 0);
+      }
       
       return newWidths;
     });
-  }, [onColumnWidthChange]);
+  }, [onColumnWidthChange, onUpdateColumnWidth]);
 
   const getColumnWidth = useCallback((column: Column) => {
     if (columnWidths[column.id]) {
