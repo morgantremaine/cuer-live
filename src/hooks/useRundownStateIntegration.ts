@@ -159,6 +159,7 @@ export const useRundownStateIntegration = (
     isSaving: autoSaveResult.isSaving,
     setApplyingRemoteUpdate: autoSaveResult.setApplyingRemoteUpdate,
     updateSavedSignature: autoSaveResult.updateSavedSignature,
-    markAsChanged: stableMarkAsChanged
+    markAsChanged: stableMarkAsChanged,
+    registerUndoSave: autoSaveResult.registerUndoSave
   };
 };
