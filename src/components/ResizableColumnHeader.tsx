@@ -19,34 +19,54 @@ const ResizableColumnHeader = React.memo(({
 }: ResizableColumnHeaderProps) => {
   const [isResizing, setIsResizing] = useState(false);
   const headerRef = useRef<HTMLTableCellElement>(null);
-  const startX = useRef(0);
-  const startWidth = useRef(0);
-  const finalWidth = useRef(0);
+  const isDraggingRef = useRef(false);
+  const startWidthRef = useRef(0);
+  const originalWidthRef = useRef<string>('');
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    if (isDraggingRef.current) return;
+    
+    isDraggingRef.current = true;
     setIsResizing(true);
-    startX.current = e.clientX;
-    startWidth.current = parseInt(width);
-    finalWidth.current = startWidth.current;
+    
+    const startX = e.clientX;
+    startWidthRef.current = parseInt(width);
+    originalWidthRef.current = width;
     
     const handleMouseMove = (e: MouseEvent) => {
-      if (!headerRef.current) return;
+      if (!isDraggingRef.current || !headerRef.current) return;
       
-      const diff = e.clientX - startX.current;
-      const newWidth = Math.max(50, Math.min(800, startWidth.current + diff));
-      finalWidth.current = newWidth;
+      const diff = e.clientX - startX;
+      const newWidth = Math.max(50, Math.min(800, startWidthRef.current + diff));
       
-      // Direct DOM manipulation for smooth visual feedback
+      // Direct DOM manipulation for instant visual feedback
       headerRef.current.style.width = `${newWidth}px`;
+      headerRef.current.style.minWidth = `${newWidth}px`;
+      headerRef.current.style.maxWidth = `${newWidth}px`;
     };
 
     const handleMouseUp = () => {
+      if (!isDraggingRef.current || !headerRef.current) return;
+      
+      const finalWidth = parseInt(headerRef.current.style.width);
+      
+      // Reset DOM styles
+      headerRef.current.style.width = '';
+      headerRef.current.style.minWidth = '';
+      headerRef.current.style.maxWidth = '';
+      
+      isDraggingRef.current = false;
       setIsResizing(false);
       
-      // Only trigger callback once at the end with final width
-      if (finalWidth.current !== startWidth.current) {
-        onWidthChange(column.id, finalWidth.current);
+      // Only trigger state update if width actually changed
+      if (finalWidth !== startWidthRef.current && finalWidth >= 50 && finalWidth <= 800) {
+        // Use setTimeout to ensure this happens after the current render cycle
+        setTimeout(() => {
+          onWidthChange(column.id, finalWidth);
+        }, 0);
       }
       
       document.removeEventListener('mousemove', handleMouseMove);
@@ -70,7 +90,10 @@ const ResizableColumnHeader = React.memo(({
       <div 
         className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors"
         onMouseDown={handleMouseDown}
-        style={{ backgroundColor: isResizing ? '#60a5fa' : 'transparent' }}
+        style={{ 
+          backgroundColor: isResizing ? '#60a5fa' : 'transparent',
+          zIndex: 10
+        }}
       />
     </th>
   );

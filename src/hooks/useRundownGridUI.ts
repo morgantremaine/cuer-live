@@ -17,18 +17,26 @@ export const useRundownGridUI = (
   markAsChanged: () => void
 ) => {
   const columnWidthTimeoutRef = useRef<NodeJS.Timeout>();
+  const isMarkingChangedRef = useRef(false);
   
   // Enhanced column width callback with separate debouncing for auto-save
   const handleColumnWidthChangeWithSave = useCallback((columnId: string, width: number) => {
+    // Prevent rapid fire markAsChanged calls
+    if (isMarkingChangedRef.current) return;
+    
     // Clear existing timeout
     if (columnWidthTimeoutRef.current) {
       clearTimeout(columnWidthTimeoutRef.current);
     }
     
-    // Debounce the auto-save separately from the visual update
+    isMarkingChangedRef.current = true;
+    
+    // Debounce the auto-save separately from the visual update - longer for stability
     columnWidthTimeoutRef.current = setTimeout(() => {
+      console.log('💾 Auto-save trigger called from column width change');
       markAsChanged();
-    }, 500); // Longer debounce for auto-save
+      isMarkingChangedRef.current = false;
+    }, 1000); // Increased from 500ms for more stability
   }, [markAsChanged]);
 
   // Resizable columns with optimized callback
@@ -39,8 +47,22 @@ export const useRundownGridUI = (
     getColumnWidthsForSaving
   } = useResizableColumns(columns, handleColumnWidthChangeWithSave);
 
-  // Memoized getColumnWidth to prevent unnecessary re-renders
-  const memoizedGetColumnWidth = useMemo(() => getColumnWidth, [getColumnWidth]);
+  // Super aggressive memoization to prevent unnecessary re-renders
+  const memoizedGetColumnWidth = useMemo(() => {
+    const cachedWidths = new Map<string, string>();
+    
+    return (column: Column) => {
+      const cacheKey = `${column.id}-${column.width}-${columnWidths[column.id] || ''}`;
+      
+      if (cachedWidths.has(cacheKey)) {
+        return cachedWidths.get(cacheKey)!;
+      }
+      
+      const result = getColumnWidth(column);
+      cachedWidths.set(cacheKey, result);
+      return result;
+    };
+  }, [getColumnWidth, columnWidths]);
 
   // Color picker
   const {
@@ -83,6 +105,16 @@ export const useRundownGridUI = (
   const selectColor = useCallback((id: string, color: string) => {
     updateItem(id, 'color', color);
   }, [updateItem]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (columnWidthTimeoutRef.current) {
+        clearTimeout(columnWidthTimeoutRef.current);
+      }
+      isMarkingChangedRef.current = false;
+    };
+  }, []);
 
   return {
     // Column management

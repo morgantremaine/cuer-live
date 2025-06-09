@@ -54,14 +54,30 @@ export const useRundownStateCoordination = () => {
     gridCore.setRundownTitle
   );
   
-  // Optimized column width handler that prevents redundant updates
-  const handleColumnWidthChange = (columnId: string, width: number) => {
-    // Only update the column width in the columns manager
-    gridCore.handleUpdateColumnWidth(columnId, width);
-    // The auto-save will be handled by the gridUI hook with proper debouncing
-  };
+  // Completely isolated column width handler that doesn't trigger any other updates
+  const handleColumnWidthChange = useMemo(() => {
+    let isHandling = false;
+    
+    return (columnId: string, width: number) => {
+      if (isHandling) {
+        console.log('🔄 Skipping handleColumnWidthChange - already handling');
+        return;
+      }
+      
+      isHandling = true;
+      console.log('🔄 handleColumnWidthChange isolated:', { columnId, width });
+      
+      // Only update the column width in the columns manager - no other side effects
+      gridCore.handleUpdateColumnWidth(columnId, width);
+      
+      // Reset the flag after a short delay
+      setTimeout(() => {
+        isHandling = false;
+      }, 100);
+    };
+  }, [gridCore.handleUpdateColumnWidth]);
   
-  // Grid UI state (colors, editing, etc.) - with optimized column handling
+  // Grid UI state (colors, editing, etc.) - with completely isolated column handling
   const gridUI = useRundownGridUI(
     gridCore.items,
     gridCore.visibleColumns,
@@ -137,7 +153,7 @@ export const useRundownStateCoordination = () => {
     uiState: {
       ...gridUI,
       getRowStatus, // Add the getRowStatus function from useTimeCalculations
-      // Override updateColumnWidth to use our optimized handler
+      // Override updateColumnWidth to use our completely isolated handler
       updateColumnWidth: handleColumnWidthChange
     }
   };
