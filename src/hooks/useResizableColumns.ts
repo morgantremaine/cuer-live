@@ -1,19 +1,16 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Column } from './useColumnsManager';
 
 export const useResizableColumns = (initialColumns: Column[], onColumnWidthChange?: (columnId: string, width: number) => void) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
   const lastCallbackRef = useRef(onColumnWidthChange);
-  const isInitializedRef = useRef(false);
 
   // Keep callback ref updated
   lastCallbackRef.current = onColumnWidthChange;
 
   // Initialize column widths from the columns data
   useEffect(() => {
-    if (isInitializedRef.current) return; // Only initialize once
-    
     const widthsFromColumns: { [key: string]: number } = {};
     initialColumns.forEach(column => {
       if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
@@ -23,11 +20,14 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
         }
       }
     });
-    
-    if (Object.keys(widthsFromColumns).length > 0) {
-      setColumnWidths(widthsFromColumns);
-      isInitializedRef.current = true;
-    }
+    setColumnWidths(prev => {
+      // Only update if actually different to prevent unnecessary re-renders
+      const hasChanges = Object.keys(widthsFromColumns).some(key => 
+        prev[key] !== widthsFromColumns[key]
+      ) || Object.keys(prev).length !== Object.keys(widthsFromColumns).length;
+      
+      return hasChanges ? widthsFromColumns : prev;
+    });
   }, [initialColumns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
@@ -36,35 +36,27 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
     setColumnWidths(prev => {
       // Only update if width actually changed
       if (prev[columnId] === width) {
-        console.log('📏 Width unchanged, skipping update');
         return prev;
       }
       
       const newWidths = { ...prev, [columnId]: width };
-      console.log('📏 Setting new width immediately:', newWidths);
       
-      // Debounce the callback to prevent excessive auto-save triggers
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
+      console.log('📏 Column width changed - triggering callback:', { columnId, width });
+      
+      // Call the callback immediately for column width changes
+      if (lastCallbackRef.current) {
+        console.log('🔍 About to call onColumnWidthChange callback');
+        lastCallbackRef.current(columnId, width);
+        console.log('✅ onColumnWidthChange callback completed');
       }
-      
-      debounceTimeoutRef.current = setTimeout(() => {
-        if (lastCallbackRef.current) {
-          console.log('🔍 Calling debounced onColumnWidthChange callback');
-          lastCallbackRef.current(columnId, width);
-        }
-      }, 500); // Increased debounce to 500ms to ensure resize is complete
       
       return newWidths;
     });
   }, []);
 
-  // Memoize the getColumnWidth function to prevent recreation on every render
   const getColumnWidth = useCallback((column: Column) => {
-    // First check our local columnWidths state
     if (columnWidths[column.id]) {
-      const width = `${columnWidths[column.id]}px`;
-      return width;
+      return `${columnWidths[column.id]}px`;
     }
     
     // Parse existing width if it's in pixels
@@ -72,17 +64,17 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
       return column.width;
     }
     
-    // Default widths based on column type
-    let defaultWidth = '120px';
+    // Reduced default widths based on column type
     if (column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime') {
-      defaultWidth = '100px';
-    } else if (column.key === 'segmentName') {
-      defaultWidth = '150px';
-    } else if (column.key === 'notes') {
-      defaultWidth = '200px';
+      return '100px';
     }
-    
-    return defaultWidth;
+    if (column.key === 'segmentName') {
+      return '150px';
+    }
+    if (column.key === 'notes') {
+      return '200px';
+    }
+    return '120px';
   }, [columnWidths]);
 
   const getColumnWidthsForSaving = useCallback(() => {
@@ -92,8 +84,8 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
     };
   }, []);
