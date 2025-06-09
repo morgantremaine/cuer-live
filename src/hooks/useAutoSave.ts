@@ -24,6 +24,20 @@ export const useAutoSave = (
   // Get the auto-save operations
   const { performSave } = useAutoSaveOperations();
 
+  // Create current state signature for comparison
+  const createStateSignature = useCallback(() => {
+    if (!Array.isArray(items) || !Array.isArray(columns)) {
+      return '';
+    }
+    return JSON.stringify({
+      items,
+      rundownTitle,
+      columns,
+      timezone,
+      rundownStartTime
+    });
+  }, [items, rundownTitle, columns, timezone, rundownStartTime]);
+
   // Create handleAutoSave function using performSave
   const handleAutoSave = useCallback(async (
     items: RundownItem[], 
@@ -43,33 +57,19 @@ export const useAutoSave = (
     } finally {
       setIsSaving(false);
     }
-  }, [performSave]);
+  }, [performSave, createStateSignature]);
 
   // Create updateSavedSignature function
   const updateSavedSignature = useCallback(() => {
     const newSignature = createStateSignature();
     lastSavedSignature.current = newSignature;
     setHasUnsavedChanges(false);
-  }, []);
+  }, [createStateSignature]);
 
   // Allow external registration of undo save function
   const registerUndoSave = useCallback((saveFunction: (items: RundownItem[], columns: Column[], title: string, action: string) => void) => {
     saveStateOnSaveRef.current = saveFunction;
   }, []);
-
-  // Create current state signature for comparison
-  const createStateSignature = useCallback(() => {
-    if (!Array.isArray(items) || !Array.isArray(columns)) {
-      return '';
-    }
-    return JSON.stringify({
-      items,
-      rundownTitle,
-      columns,
-      timezone,
-      rundownStartTime
-    });
-  }, [items, rundownTitle, columns, timezone, rundownStartTime]);
 
   // Auto-save effect
   useEffect(() => {
