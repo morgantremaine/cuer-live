@@ -28,6 +28,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
 
   // Load undo history when rundown is loaded
   const loadUndoHistory = useCallback((history: UndoState[] = []) => {
+    console.log('Loading undo history:', history.length, 'states');
     setUndoStack(history.slice(-10)); // Keep fewer states since we're saving less frequently
   }, []);
 
@@ -70,9 +71,18 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     title: string,
     action: string = 'Auto-save'
   ) => {
-    if (isUndoing.current || isSavingHistory.current) return;
+    if (isUndoing.current || isSavingHistory.current) {
+      console.log('Skipping undo state save - undoing or saving history');
+      return;
+    }
 
-    console.log('Saving undo state on save:', action);
+    console.log('Saving undo state:', action, 'Items:', items.length, 'Columns:', columns.length);
+
+    // Validate data before saving
+    if (!Array.isArray(items) || !Array.isArray(columns) || !title) {
+      console.warn('Invalid data for undo state - skipping save');
+      return;
+    }
 
     const newState: UndoState = {
       items: JSON.parse(JSON.stringify(items)),
@@ -91,7 +101,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
         clearTimeout(saveTimeout.current);
       }
       
-      // Save to database
+      // Save to database after a delay
       if (props?.rundownId && props?.updateRundown) {
         saveTimeout.current = setTimeout(() => {
           saveUndoHistoryToDatabase(trimmedStack);
@@ -113,7 +123,13 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     }
 
     const lastState = undoStack[undoStack.length - 1];
-    console.log('Undoing to state:', lastState.action);
+    console.log('Undoing to state:', lastState.action, 'Items:', lastState.items.length);
+    
+    // Validate the undo state
+    if (!Array.isArray(lastState.items) || !Array.isArray(lastState.columns)) {
+      console.error('Invalid undo state data');
+      return null;
+    }
     
     // Mark that we're undoing to prevent saving this as a new state
     isUndoing.current = true;
@@ -161,7 +177,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   const lastAction = undoStack.length > 0 ? undoStack[undoStack.length - 1].action : null;
 
   return {
-    saveStateOnSave, // New function for saving state on auto-save
+    saveStateOnSave,
     undo,
     canUndo,
     lastAction,

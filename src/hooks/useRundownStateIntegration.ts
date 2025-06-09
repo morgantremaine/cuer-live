@@ -18,11 +18,23 @@ export const useRundownStateIntegration = (
 ) => {
   // Use a ref to track if we've already set up the auto-save trigger
   const autoSaveTriggerSetRef = useRef(false);
+  const isProcessingChangeRef = useRef(false);
 
-  // Stable markAsChanged that prevents excessive calls
+  // Create a stable markAsChanged that prevents cascading calls
   const stableMarkAsChanged = useCallback(() => {
+    if (isProcessingChangeRef.current) {
+      console.log('🚀 Skipping markAsChanged - already processing');
+      return;
+    }
+    
+    isProcessingChangeRef.current = true;
     console.log('🚀 Enhanced markAsChanged called in state integration');
     markAsChanged();
+    
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      isProcessingChangeRef.current = false;
+    }, 100);
   }, [markAsChanged]);
 
   // Items management with change tracking

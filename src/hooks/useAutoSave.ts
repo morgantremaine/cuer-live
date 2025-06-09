@@ -53,7 +53,10 @@ export const useAutoSave = (
         const newSignature = createStateSignature();
         lastSavedSignature.current = newSignature;
         setHasUnsavedChanges(false);
+        console.log('✅ Auto-save completed successfully');
       }
+    } catch (error) {
+      console.error('❌ Auto-save failed:', error);
     } finally {
       setIsSaving(false);
     }
@@ -73,11 +76,11 @@ export const useAutoSave = (
 
   // Create the trigger function that actually handles the auto-save logic
   const triggerAutoSave = useCallback(() => {
-    console.log('🔥 triggerAutoSave called - processing auto-save logic');
+    console.log('🔥 triggerAutoSave called');
     
-    // Skip during initial load or when processing realtime updates
-    if (isInitialLoad.current || isProcessingRealtimeUpdate || applyingRemoteUpdate) {
-      console.log('🔥 Skipping auto-save - initial load or realtime update');
+    // Skip during initial load or when processing realtime updates or already saving
+    if (isInitialLoad.current || isProcessingRealtimeUpdate || applyingRemoteUpdate || isSaving) {
+      console.log('🔥 Skipping auto-save - initial load, realtime update, or already saving');
       return;
     }
 
@@ -98,7 +101,7 @@ export const useAutoSave = (
     // Set new timeout for auto-save
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        console.log('🔄 Auto-saving rundown...');
+        console.log('🔄 Performing auto-save...');
         
         // Save undo state before auto-save
         if (saveStateOnSaveRef.current) {
@@ -106,7 +109,6 @@ export const useAutoSave = (
         }
         
         await handleAutoSave(items, rundownTitle, columns, timezone, rundownStartTime);
-        console.log('✅ Auto-save completed');
       } catch (error) {
         console.error('❌ Auto-save failed:', error);
       }
@@ -120,32 +122,8 @@ export const useAutoSave = (
     createStateSignature,
     handleAutoSave,
     isProcessingRealtimeUpdate,
-    applyingRemoteUpdate
-  ]);
-
-  // Auto-save effect - this monitors for changes but doesn't trigger saves directly
-  useEffect(() => {
-    // Skip during initial load or when processing realtime updates
-    if (isInitialLoad.current || isProcessingRealtimeUpdate || applyingRemoteUpdate) {
-      return;
-    }
-
-    const currentSignature = createStateSignature();
-    if (currentSignature === lastSavedSignature.current || !currentSignature) {
-      return;
-    }
-
-    // Mark as having unsaved changes
-    setHasUnsavedChanges(true);
-  }, [
-    items,
-    rundownTitle,
-    columns,
-    timezone,
-    rundownStartTime,
-    createStateSignature,
-    isProcessingRealtimeUpdate,
-    applyingRemoteUpdate
+    applyingRemoteUpdate,
+    isSaving
   ]);
 
   // Mark initial load as complete after first render
@@ -172,6 +150,6 @@ export const useAutoSave = (
     setApplyingRemoteUpdate,
     updateSavedSignature,
     registerUndoSave,
-    triggerAutoSave // Export the trigger function
+    triggerAutoSave
   };
 };
