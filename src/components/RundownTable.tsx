@@ -99,6 +99,17 @@ const RundownTable = ({
             
             return (
               <React.Fragment key={item.id}>
+                {/* Extra spacing above current row */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-4 flex items-center">
+                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                
                 {/* Drop indicator above current row */}
                 {dropTargetIndex === index && (
                   <tr>
@@ -144,17 +155,6 @@ const RundownTable = ({
                   isDragging={draggedItemIndex === index}
                   getColumnWidth={getColumnWidth}
                 />
-                
-                {/* Green line below current row */}
-                {isCurrentlyPlaying && (
-                  <tr>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
                 
                 {/* Drop indicator after last row */}
                 {index === items.length - 1 && dropTargetIndex === items.length && (
