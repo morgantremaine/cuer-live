@@ -63,6 +63,13 @@ export const useTimeCalculations = (
   // Recalculate all start, end, and elapsed times based on rundown start time and durations
   // This now properly handles floated items by excluding them from the time progression
   useEffect(() => {
+    console.log('🕒 useTimeCalculations: Recalculating times for', items.length, 'items with start time:', rundownStartTime);
+    
+    if (!rundownStartTime || items.length === 0) {
+      console.log('🕒 useTimeCalculations: Skipping - no start time or no items');
+      return;
+    }
+
     let currentTime = rundownStartTime;
     let needsUpdate = false;
 
@@ -73,6 +80,7 @@ export const useTimeCalculations = (
       // For headers, they don't have duration, so they start at current time and end at current time
       if (isHeaderItem(item)) {
         if (item.startTime !== currentTime || item.endTime !== currentTime) {
+          console.log('🕒 Updating header times:', item.id, 'start/end:', currentTime);
           updateItem(item.id, 'startTime', currentTime);
           updateItem(item.id, 'endTime', currentTime);
           needsUpdate = true;
@@ -83,14 +91,16 @@ export const useTimeCalculations = (
         }
       } else {
         // For regular items, calculate start and end based on duration
-        const expectedEndTime = calculateEndTime(currentTime, item.duration);
+        const expectedEndTime = calculateEndTime(currentTime, item.duration || '00:00');
         
         if (item.startTime !== currentTime) {
+          console.log('🕒 Updating item start time:', item.id, 'from:', item.startTime, 'to:', currentTime);
           updateItem(item.id, 'startTime', currentTime);
           needsUpdate = true;
         }
         
         if (item.endTime !== expectedEndTime) {
+          console.log('🕒 Updating item end time:', item.id, 'from:', item.endTime, 'to:', expectedEndTime);
           updateItem(item.id, 'endTime', expectedEndTime);
           needsUpdate = true;
         }
@@ -107,6 +117,10 @@ export const useTimeCalculations = (
         }
       }
     });
+
+    if (needsUpdate) {
+      console.log('🕒 useTimeCalculations: Time updates completed');
+    }
   }, [items, updateItem, rundownStartTime]);
 
   return {

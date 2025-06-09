@@ -4,6 +4,8 @@ import { useRundownBasicState } from './useRundownBasicState';
 import { useRundownGridCore } from './useRundownGridCore';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
+import { useTimeCalculations } from './useTimeCalculations';
+import { useRundownCalculations } from './useRundownCalculations';
 
 export const useRundownStateCoordination = () => {
   // Core rundown state and operations
@@ -20,6 +22,16 @@ export const useRundownStateCoordination = () => {
     setRundownStartTimeDirectly: basicState.setRundownStartTimeDirectly,
     isProcessingRealtimeUpdate: false
   });
+
+  // Add the time calculations hook that was missing
+  const { calculateEndTime, getRowStatus } = useTimeCalculations(
+    gridCore.items, 
+    gridCore.updateItem, 
+    gridCore.rundownStartTime || basicState.rundownStartTime
+  );
+
+  // Add the rundown calculations hook for row numbers and durations
+  const { getRowNumber, calculateTotalRuntime, calculateHeaderDuration } = useRundownCalculations(gridCore.items);
   
   // Grid interactions (drag/drop, selection, clipboard)
   const gridInteractions = useRundownGridInteractions(
@@ -33,7 +45,7 @@ export const useRundownStateCoordination = () => {
     gridCore.deleteMultipleRows,
     gridCore.addMultipleRows,
     gridCore.handleDeleteColumn,
-    gridCore.calculateEndTime,
+    calculateEndTime, // Use the one from useTimeCalculations
     (id: string, color: string) => {
       gridCore.updateItem(id, 'color', color);
     },
@@ -110,9 +122,17 @@ export const useRundownStateCoordination = () => {
       setTimezone, // Use our enhanced version for UI interactions
       setRundownStartTime, // Use our enhanced version for UI interactions
       setTimezoneDirectly, // Direct setters for data loading
-      setRundownStartTimeDirectly // Direct setters for data loading
+      setRundownStartTimeDirectly, // Direct setters for data loading
+      // Override with the properly calculated functions
+      calculateEndTime,
+      calculateTotalRuntime,
+      getRowNumber,
+      calculateHeaderDuration
     },
     interactions: gridInteractions,
-    uiState: gridUI
+    uiState: {
+      ...gridUI,
+      getRowStatus // Add the getRowStatus function from useTimeCalculations
+    }
   };
 };
