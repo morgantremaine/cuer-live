@@ -3,7 +3,6 @@ import { useCallback } from 'react';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
-import { useRealtimeRundown } from './useRealtimeRundown';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useRundownUndo } from './useRundownUndo';
 
@@ -57,37 +56,30 @@ export const useRundownGridCore = ({
     setItems: state.setItems
   });
 
-  // Realtime collaboration - fix the props to match expected interface
-  const realtimeResult = useRealtimeRundown({
-    rundownId: undefined, // This will be set by the data loader
-    items: state.items,
-    columns: state.columns,
-    rundownTitle,
-    timezone,
-    rundownStartTime,
-    setItems: state.setItems,
-    handleLoadLayout: state.handleLoadLayout,
-    setRundownTitle: setRundownTitleDirectly,
-    setTimezone: setTimezoneDirectly,
-    setRundownStartTime: setRundownStartTimeDirectly,
-    updateSavedSignature: state.updateSavedSignature,
-    setApplyingRemoteUpdate: state.setApplyingRemoteUpdate
-  });
-
   // Undo functionality
   const { saveState, undo, canUndo, lastAction } = useRundownUndo();
 
-  // Enhanced undo handler
+  // Enhanced undo handler that works with the current state structure
   const handleUndo = useCallback(() => {
     return undo(
       state.setItems,
-      (columns) => {
-        // We don't have direct setColumns, so we use handleLoadLayout
-        state.handleLoadLayout({ columns });
+      (layoutData) => {
+        // handleLoadLayout expects an object with columns property
+        if (layoutData && Array.isArray(layoutData)) {
+          state.handleLoadLayout({ columns: layoutData });
+        } else {
+          state.handleLoadLayout(layoutData);
+        }
       },
       setRundownTitleDirectly
     );
   }, [undo, state.setItems, state.handleLoadLayout, setRundownTitleDirectly]);
+
+  // Enhanced setRundownTitle that also triggers change tracking
+  const setRundownTitle = useCallback((newTitle: string) => {
+    setRundownTitleDirectly(newTitle);
+    markAsChanged();
+  }, [setRundownTitleDirectly, markAsChanged]);
 
   // Showcaller/playback controls
   const {
@@ -104,18 +96,12 @@ export const useRundownGridCore = ({
     state.updateItem
   );
 
-  // Enhanced setRundownTitle that also triggers change tracking
-  const setRundownTitle = useCallback((newTitle: string) => {
-    setRundownTitleDirectly(newTitle);
-    markAsChanged();
-  }, [setRundownTitleDirectly, markAsChanged]);
-
   return {
     ...state,
     savedRundowns,
     loading: storageLoading,
-    isProcessingRealtimeUpdate: realtimeResult.isProcessingRealtimeUpdate || isProcessingRealtimeUpdate,
-    isConnected: realtimeResult.isConnected || false,
+    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate || false,
+    isConnected: false, // Default to false since we're not using realtime in this simplified version
     isPlaying,
     currentSegmentId,
     timeRemaining,
