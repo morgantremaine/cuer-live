@@ -21,23 +21,48 @@ const ResizableColumnHeader = ({
   const [resizeWidth, setResizeWidth] = useState(0);
   const startX = useRef(0);
   const startWidth = useRef(0);
+  const isDragging = useRef(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    console.log('🔽 Mouse down - starting resize');
+    e.preventDefault();
     setIsResizing(true);
+    isDragging.current = true;
     startX.current = e.clientX;
-    startWidth.current = parseInt(width);
-    setResizeWidth(startWidth.current);
+    
+    // Parse the current width properly
+    const currentWidth = parseInt(width.replace('px', '')) || 120;
+    startWidth.current = currentWidth;
+    setResizeWidth(currentWidth);
+    
+    console.log('📏 Initial resize state:', { currentWidth, startX: startX.current });
     
     const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      
       const diff = e.clientX - startX.current;
       const newWidth = Math.max(50, startWidth.current + diff);
+      
+      console.log('🔄 Resizing:', { 
+        diff, 
+        startWidth: startWidth.current, 
+        newWidth,
+        mouseX: e.clientX,
+        startX: startX.current
+      });
+      
       setResizeWidth(newWidth);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
+      console.log('🔼 Mouse up - ending resize');
       setIsResizing(false);
+      isDragging.current = false;
+      
       const diff = e.clientX - startX.current;
       const finalWidth = Math.max(50, startWidth.current + diff);
+      
+      console.log('✅ Final resize:', { finalWidth });
       onWidthChange(column.id, finalWidth);
       
       document.removeEventListener('mousemove', handleMouseMove);
@@ -50,6 +75,14 @@ const ResizableColumnHeader = ({
 
   // Use resizeWidth during resize, otherwise use the prop width
   const displayWidth = isResizing ? `${resizeWidth}px` : width;
+
+  console.log('🎯 Render state:', { 
+    isResizing, 
+    resizeWidth, 
+    width, 
+    displayWidth,
+    columnId: column.id
+  });
 
   return (
     <th 
