@@ -20,6 +20,7 @@ export const useAutoSave = (
   const saveInProgressRef = useRef(false);
   const lastSaveTimestampRef = useRef<number>(0);
   const showcallerActiveRef = useRef(false);
+  const undoActiveRef = useRef(false);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -43,6 +44,16 @@ export const useAutoSave = (
     }
   }, []);
 
+  // Method to coordinate with undo operations
+  const setUndoActive = useCallback((active: boolean) => {
+    const wasActive = undoActiveRef.current;
+    undoActiveRef.current = active;
+    
+    if (wasActive !== active) {
+      console.log('💾 Undo active state changed:', active);
+    }
+  }, []);
+
   // Validate start time before saving
   const validateStartTime = useCallback((timeString?: string): string => {
     if (!timeString) return '09:00:00';
@@ -62,7 +73,7 @@ export const useAutoSave = (
     return '09:00:00';
   }, []);
 
-  // Create a debounced save function
+  // Create a debounced save function with undo coordination
   const debouncedSave = useCallback(async (
     itemsToSave: RundownItem[], 
     titleToSave: string, 
@@ -73,12 +84,14 @@ export const useAutoSave = (
     if (!user || 
         isSaving || 
         isProcessingRealtimeUpdate || 
-        saveInProgressRef.current) {
+        saveInProgressRef.current ||
+        undoActiveRef.current) { // Don't save during undo operations
       console.log('💾 Save blocked:', {
         noUser: !user,
         isSaving,
         isProcessingRealtimeUpdate,
-        saveInProgress: saveInProgressRef.current
+        saveInProgress: saveInProgressRef.current,
+        undoActive: undoActiveRef.current
       });
       return;
     }
@@ -138,9 +151,9 @@ export const useAutoSave = (
     }
   }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, validateStartTime]);
 
-  // Main effect for auto-save
+  // Main effect for auto-save with undo coordination
   useEffect(() => {
-    if (isProcessingRealtimeUpdate || saveInProgressRef.current) {
+    if (isProcessingRealtimeUpdate || saveInProgressRef.current || undoActiveRef.current) {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
         debounceTimeoutRef.current = null;
@@ -181,7 +194,7 @@ export const useAutoSave = (
     }
 
     debounceTimeoutRef.current = setTimeout(() => {
-      if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
+      if (!isProcessingRealtimeUpdate && !saveInProgressRef.current && !undoActiveRef.current) {
         console.log('💾 Executing save with values:', {
           timezone,
           startTime: validatedStartTime,
@@ -216,7 +229,7 @@ export const useAutoSave = (
   }, []);
 
   const markAsChangedCallback = () => {
-    if (!isProcessingRealtimeUpdate && !saveInProgressRef.current) {
+    if (!isProcessingRealtimeUpdate && !saveInProgressRef.current && !undoActiveRef.current) {
       markAsChanged();
     }
   };
@@ -227,6 +240,7 @@ export const useAutoSave = (
     markAsChanged: markAsChangedCallback,
     setApplyingRemoteUpdate,
     updateSavedSignature,
-    setShowcallerActive
+    setShowcallerActive,
+    setUndoActive // Export for undo coordination
   };
 };

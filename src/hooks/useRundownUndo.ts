@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -25,15 +26,16 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   const lastSavedHistoryRef = useRef<string>('');
   const lastStateSignature = useRef<string>('');
   const saveTimeout = useRef<NodeJS.Timeout>();
+  const isAutoSaving = useRef(false);
 
   // Load undo history when rundown is loaded
   const loadUndoHistory = useCallback((history: UndoState[] = []) => {
-    setUndoStack(history.slice(-20)); // Keep more states for better undo experience
+    setUndoStack(history.slice(-20));
   }, []);
 
-  // Save undo history to database - with better debouncing
+  // Save undo history to database - with better debouncing and auto-save coordination
   const saveUndoHistoryToDatabase = useCallback(async (newStack: UndoState[]) => {
-    if (!props?.rundownId || !props.updateRundown || isSavingHistory.current) return;
+    if (!props?.rundownId || !props.updateRundown || isSavingHistory.current || isUndoing.current || isAutoSaving.current) return;
     if (!props.currentTitle || !props.currentItems || !props.currentColumns) return;
     
     // Prevent saving the same history multiple times
@@ -64,14 +66,27 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     }
   }, [props?.rundownId, props?.updateRundown, props?.currentTitle, props?.currentItems, props?.currentColumns]);
 
+  // Method to indicate when auto-save is active
+  const setAutoSaving = useCallback((saving: boolean) => {
+    isAutoSaving.current = saving;
+  }, []);
+
   const saveState = useCallback((
     items: RundownItem[],
     columns: Column[],
     title: string,
     action: string
   ) => {
-    // Don't save state during undo operations or when saving history
-    if (isUndoing.current || isSavingHistory.current) return;
+    // Don't save state during undo operations, when saving history, or during auto-save
+    if (isUndoing.current || isSavingHistory.current || isAutoSaving.current) {
+      console.log('Skipping undo state save during:', { 
+        isUndoing: isUndoing.current, 
+        isSavingHistory: isSavingHistory.current, 
+        isAutoSaving: isAutoSaving.current,
+        action 
+      });
+      return;
+    }
 
     // Create a signature for the current state to avoid duplicate saves
     const currentSignature = JSON.stringify({ items, columns, title });
@@ -170,7 +185,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     setTimeout(() => {
       isUndoing.current = false;
       console.log('Undo operation completed');
-    }, 1000);
+    }, 1500); // Increased delay to prevent interference with auto-save
 
     return lastState.action;
   }, [undoStack, saveUndoHistoryToDatabase, props?.rundownId, props?.updateRundown]);
@@ -192,6 +207,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     undo,
     canUndo,
     lastAction,
-    loadUndoHistory
+    loadUndoHistory,
+    setAutoSaving // Export this so auto-save can coordinate
   };
 };

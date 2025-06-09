@@ -81,7 +81,7 @@ export const useRundownStateIntegration = (
     handleUpdateColumnWidth
   } = useColumnsManager(stableMarkAsChanged);
 
-  // Auto-save functionality with realtime awareness
+  // Auto-save functionality with realtime awareness and undo coordination
   const autoSaveResult = useAutoSave(
     Array.isArray(items) ? items : [],
     rundownTitle,
@@ -159,6 +159,7 @@ export const useRundownStateIntegration = (
     isSaving: autoSaveResult.isSaving,
     setApplyingRemoteUpdate: autoSaveResult.setApplyingRemoteUpdate,
     updateSavedSignature: autoSaveResult.updateSavedSignature,
-    markAsChanged: stableMarkAsChanged
+    markAsChanged: stableMarkAsChanged,
+    setUndoActive: autoSaveResult.setUndoActive // Export for undo coordination
   };
 };
