@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
-import { getRowNumber, getCellValue, calculateHeaderDuration } from '@/utils/sharedRundownUtils';
+import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -10,6 +10,47 @@ interface SharedRundownTableProps {
 }
 
 const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
+  // Calculate header duration (sum of all non-floated regular items until next header)
+  const calculateHeaderDuration = (headerIndex: number) => {
+    if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
+      return '00:00:00';
+    }
+
+    const timeToSeconds = (timeStr: string) => {
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return minutes * 60 + seconds;
+      } else if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return hours * 3600 + minutes * 60 + seconds;
+      }
+      return 0;
+    };
+
+    let totalSeconds = 0;
+    let i = headerIndex + 1;
+
+    while (i < items.length && items[i].type !== 'header') {
+      // Only count non-floated items in header duration
+      if (!items[i].isFloating && !items[i].isFloated) {
+        totalSeconds += timeToSeconds(items[i].duration || '00:00');
+      }
+      i++;
+    }
+
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  };
+
   return (
     <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
       <table className="w-full">
@@ -35,6 +76,17 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
             
             return (
               <React.Fragment key={item.id}>
+                {/* Green line above current row */}
+                {isShowcallerCurrent && (
+                  <tr className="print:hidden">
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-4 flex items-center">
+                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                
                 {/* Small spacing below green line */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
@@ -83,7 +135,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                         // Show the calculated header duration (excluding floated items)
                         return (
                           <td key={column.id} className="px-3 py-2 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400">
-                            <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index, items)})</div>
+                            <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
                           </td>
                         );
                       } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
@@ -109,17 +161,6 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                     );
                   })}
                 </tr>
-
-                {/* Green line below current row */}
-                {isShowcallerCurrent && (
-                  <tr className="print:hidden">
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </React.Fragment>
             );
           })}

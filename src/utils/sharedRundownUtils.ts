@@ -1,11 +1,6 @@
 
 import { RundownItem } from '@/types/rundown';
 
-// Helper function to check if an item is floated
-const isFloated = (item: RundownItem) => {
-  return item.isFloating || item.isFloated;
-};
-
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns) return [];
   return columns.filter(col => col.isVisible !== false && col.key !== 'notes');
@@ -78,46 +73,4 @@ export const getCellValue = (item: RundownItem, column: any) => {
   }
   
   return value;
-};
-
-// Time conversion utilities for shared rundown calculations
-const timeToSeconds = (timeStr: string) => {
-  const parts = timeStr.split(':').map(Number);
-  if (parts.length === 2) {
-    const [minutes, seconds] = parts;
-    return minutes * 60 + seconds;
-  } else if (parts.length === 3) {
-    const [hours, minutes, seconds] = parts;
-    return hours * 3600 + minutes * 60 + seconds;
-  }
-  return 0;
-};
-
-// Calculate header duration excluding floated items
-export const calculateHeaderDuration = (headerIndex: number, items: RundownItem[]) => {
-  if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
-    return '00:00:00';
-  }
-
-  let totalSeconds = 0;
-  let i = headerIndex + 1;
-
-  while (i < items.length && items[i].type !== 'header') {
-    // Only count non-floated items in header duration
-    if (!isFloated(items[i])) {
-      totalSeconds += timeToSeconds(items[i].duration || '00:00');
-    }
-    i++;
-  }
-
-  const hours = Math.floor(totalSeconds / 3600);
-  totalSeconds %= 3600;
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  const formattedHours = String(hours).padStart(2, '0');
-  const formattedMinutes = String(minutes).padStart(2, '0');
-  const formattedSeconds = String(seconds).padStart(2, '0');
-
-  return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
 };
