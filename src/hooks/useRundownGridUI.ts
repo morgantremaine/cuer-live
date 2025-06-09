@@ -42,9 +42,15 @@ export const useRundownGridUI = (
 
   // Column resizing
   const {
-    getColumnWidth,
+    getColumnWidth: getColumnWidthNumber,
     updateColumnWidth
   } = useColumnResizing(visibleColumns, markAsChanged);
+
+  // Wrapper function to convert number to string with px
+  const getColumnWidth = useCallback((column: Column): string => {
+    const width = getColumnWidthNumber(column);
+    return `${width}px`;
+  }, [getColumnWidthNumber]);
 
   // Get row status based on current time and playback
   const getRowStatus = useCallback((item: RundownItem) => {
