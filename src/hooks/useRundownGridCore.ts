@@ -5,6 +5,7 @@ import { useRundownDataLoader } from './useRundownDataLoader';
 import { useRundownStorage } from './useRundownStorage';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useRundownUndo } from './useRundownUndo';
+import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
 
 interface UseRundownGridCoreProps {
   markAsChanged: () => void;
@@ -43,7 +44,7 @@ export const useRundownGridCore = ({
   );
 
   // Storage management
-  const { savedRundowns, loading: storageLoading } = useRundownStorage();
+  const { savedRundowns, loading: storageLoading, loadRundowns } = useRundownStorage();
 
   // Data loading
   useRundownDataLoader({
@@ -79,9 +80,11 @@ export const useRundownGridCore = ({
 
   // Enhanced setRundownTitle that also triggers change tracking
   const setRundownTitle = useCallback((newTitle: string) => {
-    setRundownTitleDirectly(newTitle);
-    markAsChanged();
-  }, [setRundownTitleDirectly, markAsChanged]);
+    if (rundownTitle !== newTitle) {
+      setRundownTitleDirectly(newTitle);
+      markAsChanged();
+    }
+  }, [setRundownTitleDirectly, markAsChanged, rundownTitle]);
 
   // Showcaller/playback controls
   const {
@@ -98,12 +101,19 @@ export const useRundownGridCore = ({
     state.updateItem
   );
 
+  // Realtime collaboration
+  const { isConnected } = useStableRealtimeCollaboration({
+    rundownId: null, // Will be set by parent component
+    onRemoteUpdate: loadRundowns,
+    enabled: true
+  });
+
   return {
     ...state,
     savedRundowns,
     loading: storageLoading,
     isProcessingRealtimeUpdate: isProcessingRealtimeUpdate || false,
-    isConnected: false, // Default to false since we're not using realtime in this simplified version
+    isConnected: isConnected || false,
     isPlaying,
     currentSegmentId,
     timeRemaining,

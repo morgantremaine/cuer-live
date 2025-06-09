@@ -1,10 +1,13 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Column } from './useColumnsManager';
 
 export const useResizableColumns = (initialColumns: Column[], onColumnWidthChange?: (columnId: string, width: number) => void) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastCallbackRef = useRef(onColumnWidthChange);
+
+  // Keep callback ref updated
+  lastCallbackRef.current = onColumnWidthChange;
 
   // Initialize column widths from the columns data
   useEffect(() => {
@@ -17,12 +20,26 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
         }
       }
     });
-    setColumnWidths(widthsFromColumns);
+    setColumnWidths(prev => {
+      // Only update if actually different to prevent unnecessary re-renders
+      const hasChanges = Object.keys(widthsFromColumns).some(key => 
+        prev[key] !== widthsFromColumns[key]
+      ) || Object.keys(prev).length !== Object.keys(widthsFromColumns).length;
+      
+      return hasChanges ? widthsFromColumns : prev;
+    });
   }, [initialColumns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumnWidths(prev => {
+      // Only update if width actually changed
+      if (prev[columnId] === width) {
+        return prev;
+      }
+      
       const newWidths = { ...prev, [columnId]: width };
+      
+      console.log('📏 Column width changed - triggering auto-save:', { columnId, width });
       
       // Debounce the callback to prevent excessive calls
       if (updateTimeoutRef.current) {
@@ -30,14 +47,16 @@ export const useResizableColumns = (initialColumns: Column[], onColumnWidthChang
       }
       
       updateTimeoutRef.current = setTimeout(() => {
-        if (onColumnWidthChange) {
-          onColumnWidthChange(columnId, width);
+        if (lastCallbackRef.current) {
+          console.log('🔍 About to call onColumnWidthChange callback');
+          lastCallbackRef.current(columnId, width);
+          console.log('✅ onColumnWidthChange callback completed');
         }
-      }, 100); // Small delay to batch updates
+      }, 150); // Slightly longer delay to batch updates better
       
       return newWidths;
     });
-  }, [onColumnWidthChange]);
+  }, []);
 
   const getColumnWidth = useCallback((column: Column) => {
     if (columnWidths[column.id]) {

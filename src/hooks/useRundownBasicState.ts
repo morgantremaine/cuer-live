@@ -36,7 +36,7 @@ export const useRundownBasicState = () => {
     }
   }, [rundownId]);
 
-  // Store the auto-save trigger function
+  // Store the auto-save trigger function - use a stable ref
   const autoSaveTriggerRef = useRef<(() => void) | null>(null);
 
   // Set the auto-save trigger function (called from integration layer)
@@ -73,20 +73,26 @@ export const useRundownBasicState = () => {
     setRundownStartTime(newStartTime);
   };
 
-  // Change-tracking setters (for user interactions)
+  // Change-tracking setters (for user interactions) - stabilize these functions
   const setTimezoneWithChange = (newTimezone: string) => {
-    setTimezone(newTimezone);
-    markAsChanged();
+    if (timezone !== newTimezone) {
+      setTimezone(newTimezone);
+      markAsChanged();
+    }
   };
 
   const setRundownTitleWithChange = (newTitle: string) => {
-    setRundownTitle(newTitle);
-    markAsChanged();
+    if (rundownTitle !== newTitle) {
+      setRundownTitle(newTitle);
+      markAsChanged();
+    }
   };
 
   const setRundownStartTimeWithChange = (newStartTime: string) => {
-    setRundownStartTime(newStartTime);
-    markAsChanged();
+    if (rundownStartTime !== newStartTime) {
+      setRundownStartTime(newStartTime);
+      markAsChanged();
+    }
   };
 
   return {

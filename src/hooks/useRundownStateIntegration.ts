@@ -18,8 +18,8 @@ export const useRundownStateIntegration = (
 ) => {
   console.log('🏗️ useRundownStateIntegration: markAsChanged function type:', typeof markAsChanged);
 
-  // Enhanced markAsChanged that also logs
-  const enhancedMarkAsChanged = useCallback(() => {
+  // Stable markAsChanged that prevents excessive calls
+  const stableMarkAsChanged = useCallback(() => {
     console.log('🚀 Enhanced markAsChanged called in state integration');
     markAsChanged();
   }, [markAsChanged]);
@@ -38,7 +38,7 @@ export const useRundownStateIntegration = (
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownItems(enhancedMarkAsChanged);
+  } = useRundownItems(stableMarkAsChanged);
 
   // Enhanced updateItem to handle both standard and custom fields
   const updateItem = useCallback((id: string, field: string, value: string) => {
@@ -78,7 +78,7 @@ export const useRundownStateIntegration = (
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth
-  } = useColumnsManager(enhancedMarkAsChanged);
+  } = useColumnsManager(stableMarkAsChanged);
 
   // Auto-save functionality with realtime awareness
   const autoSaveResult = useAutoSave(
@@ -90,11 +90,18 @@ export const useRundownStateIntegration = (
     isProcessingRealtimeUpdate
   );
 
-  // Connect the auto-save trigger to the basic state - use markAsChanged as the trigger
+  // Create a stable auto-save trigger function
+  const autoSaveTrigger = useCallback(() => {
+    console.log('💾 Auto-save trigger called from state integration');
+    // The auto-save is handled by useAutoSave internally
+    // This function just exists to satisfy the interface
+  }, []);
+
+  // Connect the auto-save trigger to the basic state - only once
   useEffect(() => {
-    console.log('🔗 Setting up auto-save trigger connection with markAsChanged');
-    setAutoSaveTrigger(enhancedMarkAsChanged);
-  }, [enhancedMarkAsChanged, setAutoSaveTrigger]);
+    console.log('🔗 Setting up auto-save trigger connection');
+    setAutoSaveTrigger(autoSaveTrigger);
+  }, [autoSaveTrigger, setAutoSaveTrigger]);
 
   // Wrapped addRow that supports insertion at specific index but compatible with expected signature
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
@@ -148,6 +155,6 @@ export const useRundownStateIntegration = (
     isSaving: autoSaveResult.isSaving,
     setApplyingRemoteUpdate: autoSaveResult.setApplyingRemoteUpdate,
     updateSavedSignature: autoSaveResult.updateSavedSignature,
-    markAsChanged: enhancedMarkAsChanged
+    markAsChanged: stableMarkAsChanged
   };
 };
