@@ -127,12 +127,6 @@ const RundownIndexContent = () => {
     totalRuntime: calculateTotalRuntime()
   };
 
-  // Get column width as number for header
-  const getColumnWidthNumber = (column: any) => {
-    const widthString = getColumnWidth(column);
-    return parseInt(widthString.replace('px', '')) || 150;
-  };
-
   return (
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
