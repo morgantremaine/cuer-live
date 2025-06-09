@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useResizableColumns } from './useResizableColumns';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
