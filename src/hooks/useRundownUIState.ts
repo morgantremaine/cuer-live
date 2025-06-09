@@ -1,7 +1,6 @@
 
 import { useCallback } from 'react';
 import { useColorPicker } from './useColorPicker';
-import { useResizableColumns } from './useResizableColumns';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
 
@@ -16,18 +15,6 @@ export const useRundownUIState = (
 ) => {
   // Color picker
   const { showColorPicker, handleToggleColorPicker } = useColorPicker();
-
-  // Enhanced column width change handler that triggers auto-save
-  const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
-    console.log('📏 Column width changed - triggering auto-save:', { columnId, width });
-    console.log('🔍 markAsChanged function type:', typeof markAsChanged);
-    console.log('🔍 About to call markAsChanged for column resize');
-    markAsChanged(); // Trigger auto-save when column width changes
-    console.log('✅ markAsChanged called for column width change');
-  }, [markAsChanged]);
-
-  // Resizable columns with auto-save integration
-  const { getColumnWidth, updateColumnWidth } = useResizableColumns(columns, handleColumnWidthChange);
 
   // Status calculations
   const getRowStatus = useCallback((item: RundownItem) => {
@@ -50,8 +37,6 @@ export const useRundownUIState = (
   return {
     showColorPicker,
     handleToggleColorPicker,
-    getColumnWidth,
-    updateColumnWidth,
     getRowStatus,
     selectColor
   };
