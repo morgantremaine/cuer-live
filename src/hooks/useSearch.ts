@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { SearchMatch } from '@/types/search';
+import { getCellValue } from '@/utils/sharedRundownUtils';
 
 export const useSearch = (
   items: any[], 
@@ -26,7 +28,8 @@ export const useSearch = (
       if (item.type === 'header') return;
 
       visibleColumns.forEach((column) => {
-        const cellValue = item[column.id] || '';
+        // Get the actual cell value using the shared utility
+        const cellValue = getCellValue(item, column);
         const cellValueLower = cellValue.toLowerCase();
         let index = 0;
 
@@ -36,7 +39,7 @@ export const useSearch = (
 
           foundMatches.push({
             itemId: item.id,
-            field: column.id,
+            field: column.key, // Use column.key instead of column.id
             index: foundIndex,
             length: text.length
           });
