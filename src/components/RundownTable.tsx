@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import RundownRow from './RundownRow';
 import RundownTableHeader from './RundownTableHeader';
@@ -82,7 +83,7 @@ const RundownTable = ({
   return (
     <div className="relative">
       <RundownTableHeader 
-        columns={visibleColumns}
+        visibleColumns={visibleColumns}
         getColumnWidth={getColumnWidth}
         updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       />
@@ -164,3 +165,4 @@ const RundownTable = ({
 };
 
 export default RundownTable;
+
