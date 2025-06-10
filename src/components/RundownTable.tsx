@@ -83,88 +83,83 @@ const RundownTable = ({
   console.log('🏗️ RundownTable visible columns:', visibleColumns.length);
 
   return (
-    <div className="relative w-full border-4 border-purple-500">
-      <div className="text-sm text-purple-600 p-2 bg-purple-100">
-        DEBUG: RundownTable Container - Items: {items.length}, Columns: {visibleColumns.length}
-      </div>
-      <div className="rundown-table w-full border-2 border-orange-400">
-        <table className="w-full table-fixed border-collapse border-2 border-green-500">
-          <RundownTableHeader 
-            visibleColumns={visibleColumns}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-          />
-          <tbody className="border-2 border-blue-400">
-            {items.map((item, index) => {
-              console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
-              console.log(`🔄 Row ${index} type:`, item.type);
-              
-              const rowNumber = getRowNumber(index);
-              const status = getRowStatus(item);
-              const headerDuration = isHeaderItem(item) ? calculateHeaderDuration(index) : '';
-              const isSelected = selectedRows.has(item.id);
-              const isDragging = draggedItemIndex === index;
-              const isCurrentlyPlaying = item.id === currentSegmentId;
+    <div className="relative w-full overflow-auto">
+      <table className="w-full table-fixed border-collapse bg-white">
+        <RundownTableHeader 
+          visibleColumns={visibleColumns}
+          getColumnWidth={getColumnWidth}
+          updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+        />
+        <tbody>
+          {items.map((item, index) => {
+            console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
+            console.log(`🔄 Row ${index} type:`, item.type);
+            
+            const rowNumber = getRowNumber(index);
+            const status = getRowStatus(item);
+            const headerDuration = isHeaderItem(item) ? calculateHeaderDuration(index) : '';
+            const isSelected = selectedRows.has(item.id);
+            const isDragging = draggedItemIndex === index;
+            const isCurrentlyPlaying = item.id === currentSegmentId;
 
-              return (
-                <React.Fragment key={item.id}>
-                  <RundownRow
-                    item={item}
-                    index={index}
-                    rowNumber={rowNumber}
-                    status={status}
-                    showColorPicker={showColorPicker}
-                    cellRefs={cellRefs}
-                    columns={visibleColumns}
-                    isSelected={isSelected}
-                    isCurrentlyPlaying={isCurrentlyPlaying}
-                    isDraggingMultiple={isDraggingMultiple}
-                    selectedRowsCount={selectedRows.size}
-                    selectedRows={selectedRows}
-                    headerDuration={headerDuration}
-                    hasClipboardData={hasClipboardData}
-                    isDragging={isDragging}
-                    onUpdateItem={onUpdateItem}
-                    onCellClick={onCellClick}
-                    onKeyDown={onKeyDown}
-                    onToggleColorPicker={onToggleColorPicker}
-                    onColorSelect={onColorSelect}
-                    onDeleteRow={onDeleteRow}
-                    onToggleFloat={onToggleFloat}
-                    onRowSelect={onRowSelect}
-                    onDragStart={onDragStart}
-                    onDragOver={onDragOver}
-                    onDrop={onDrop}
-                    onCopySelectedRows={onCopySelectedRows}
-                    onDeleteSelectedRows={onDeleteSelectedRows}
-                    onPasteRows={onPasteRows}
-                    onClearSelection={onClearSelection}
-                    onAddRow={onAddRow}
-                    onAddHeader={onAddHeader}
-                    getColumnWidth={getColumnWidth}
-                  />
-                  
-                  {/* Green line below current item for showcaller */}
-                  {isCurrentlyPlaying && (
-                    <tr>
-                      <td colSpan={visibleColumns.length + 1} className="p-0">
-                        <div className="h-1 bg-green-500 w-full"></div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-        
-        {/* Debug info */}
-        {items.length === 0 && (
-          <div className="p-4 text-center text-gray-500">
-            No items to display
-          </div>
-        )}
-      </div>
+            return (
+              <React.Fragment key={item.id}>
+                <RundownRow
+                  item={item}
+                  index={index}
+                  rowNumber={rowNumber}
+                  status={status}
+                  showColorPicker={showColorPicker}
+                  cellRefs={cellRefs}
+                  columns={visibleColumns}
+                  isSelected={isSelected}
+                  isCurrentlyPlaying={isCurrentlyPlaying}
+                  isDraggingMultiple={isDraggingMultiple}
+                  selectedRowsCount={selectedRows.size}
+                  selectedRows={selectedRows}
+                  headerDuration={headerDuration}
+                  hasClipboardData={hasClipboardData}
+                  isDragging={isDragging}
+                  onUpdateItem={onUpdateItem}
+                  onCellClick={onCellClick}
+                  onKeyDown={onKeyDown}
+                  onToggleColorPicker={onToggleColorPicker}
+                  onColorSelect={onColorSelect}
+                  onDeleteRow={onDeleteRow}
+                  onToggleFloat={onToggleFloat}
+                  onRowSelect={onRowSelect}
+                  onDragStart={onDragStart}
+                  onDragOver={onDragOver}
+                  onDrop={onDrop}
+                  onCopySelectedRows={onCopySelectedRows}
+                  onDeleteSelectedRows={onDeleteSelectedRows}
+                  onPasteRows={onPasteRows}
+                  onClearSelection={onClearSelection}
+                  onAddRow={onAddRow}
+                  onAddHeader={onAddHeader}
+                  getColumnWidth={getColumnWidth}
+                />
+                
+                {/* Green line below current item for showcaller */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1 bg-green-500 w-full"></div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+      
+      {/* Debug info */}
+      {items.length === 0 && (
+        <div className="p-4 text-center text-gray-500">
+          No items to display
+        </div>
+      )}
     </div>
   );
 };

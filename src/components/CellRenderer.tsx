@@ -70,8 +70,7 @@ const CellRenderer = ({
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     console.log(`📝 Using TimeDisplayCell for ${column.key}`);
     return (
-      <div className="w-full p-2 bg-yellow-100 border border-yellow-300">
-        <div className="text-xs text-yellow-600 mb-1">DEBUG: TimeDisplayCell</div>
+      <div className="w-full h-full p-2 min-h-[32px] flex items-center justify-start">
         <TimeDisplayCell value={value} />
       </div>
     );
@@ -84,8 +83,7 @@ const CellRenderer = ({
   if (column.isCustom) {
     console.log(`📝 Using CustomFieldCell for ${column.key}`);
     return (
-      <div className="w-full p-2 bg-blue-100 border border-blue-300">
-        <div className="text-xs text-blue-600 mb-1">DEBUG: CustomFieldCell</div>
+      <div className="w-full h-full p-2 min-h-[32px]">
         <CustomFieldCell
           value={value}
           itemId={item.id}
@@ -107,8 +105,7 @@ const CellRenderer = ({
   if (column.key === 'script' || column.key === 'notes') {
     console.log(`📝 Using TextAreaCell for ${column.key}`);
     return (
-      <div className="w-full p-2 bg-green-100 border border-green-300">
-        <div className="text-xs text-green-600 mb-1">DEBUG: TextAreaCell</div>
+      <div className="w-full h-full p-2 min-h-[32px]">
         <TextAreaCell
           value={value}
           itemId={item.id}
@@ -126,12 +123,10 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields - return only the input element with proper styling
+  // Default input cell for other fields
   console.log(`📝 Using default input for ${column.key}`);
   return (
-    <div className="w-full p-2 bg-red-100 border border-red-300">
-      <div className="text-xs text-red-600 mb-1">DEBUG: Default Input - {column.key}</div>
-      <div className="text-xs text-gray-600 mb-1">Value: "{value}"</div>
+    <div className="w-full h-full p-2 min-h-[32px] flex items-center">
       <input
         ref={(el) => {
           if (el) {
@@ -146,7 +141,7 @@ const CellRenderer = ({
         }}
         onClick={() => onCellClick(item.id, column.key)}
         onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full px-2 py-1 text-sm border border-gray-300 bg-white outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 rounded"
+        className="w-full px-2 py-1 text-sm border-0 bg-transparent outline-none focus:bg-white focus:border focus:border-blue-500 focus:ring-1 focus:ring-blue-200 rounded text-gray-900"
         style={{ color: textColor }}
         placeholder={`Enter ${column.name.toLowerCase()}...`}
       />
