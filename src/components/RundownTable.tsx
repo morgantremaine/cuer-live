@@ -80,6 +80,7 @@ const RundownTable = ({
 }: RundownTableProps) => {
 
   console.log('🏗️ RundownTable rendering with items:', items.length);
+  console.log('🏗️ RundownTable visible columns:', visibleColumns.length);
 
   return (
     <div className="relative w-full">
@@ -94,6 +95,7 @@ const RundownTable = ({
           <tbody>
             {items.map((item, index) => {
               console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
+              console.log(`🔄 Row ${index} type:`, item.type);
               
               const rowNumber = getRowNumber(index);
               const status = getRowStatus(item);

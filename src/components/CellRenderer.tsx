@@ -58,7 +58,7 @@ const CellRenderer = ({
   };
 
   const value = getCellValue();
-  console.log(`📝 Cell value for ${item.id}.${column.key}:`, value);
+  console.log(`📝 CellRenderer for ${item.id}.${column.key}:`, value);
 
   // Determine if this is a read-only field
   const isReadOnly = !column.isEditable || 
@@ -68,6 +68,7 @@ const CellRenderer = ({
 
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
+    console.log(`📝 Using TimeDisplayCell for ${column.key}`);
     return (
       <TimeDisplayCell
         value={value}
@@ -80,6 +81,7 @@ const CellRenderer = ({
 
   // Use CustomFieldCell for custom fields
   if (column.isCustom) {
+    console.log(`📝 Using CustomFieldCell for ${column.key}`);
     return (
       <CustomFieldCell
         value={value}
@@ -99,6 +101,7 @@ const CellRenderer = ({
 
   // Use TextAreaCell for script and notes fields
   if (column.key === 'script' || column.key === 'notes') {
+    console.log(`📝 Using TextAreaCell for ${column.key}`);
     return (
       <TextAreaCell
         value={value}
@@ -117,8 +120,9 @@ const CellRenderer = ({
   }
 
   // Default input cell for other fields
+  console.log(`📝 Using default input for ${column.key}`);
   return (
-    <div className="p-1" style={{ width }}>
+    <td className="p-1 border-r border-gray-300 dark:border-gray-600" style={{ width }}>
       <input
         ref={(el) => {
           if (el) {
@@ -137,7 +141,7 @@ const CellRenderer = ({
         style={{ color: textColor }}
         placeholder={`Enter ${column.name.toLowerCase()}...`}
       />
-    </div>
+    </td>
   );
 };
 
