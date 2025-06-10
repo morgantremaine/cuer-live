@@ -9,7 +9,7 @@ export const useSimpleColumnWidths = (
 ) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
 
-  // Initialize from columns
+  // Initialize from columns with better defaults
   useEffect(() => {
     const widths: { [key: string]: number } = {};
     columns.forEach(column => {
@@ -18,10 +18,34 @@ export const useSimpleColumnWidths = (
         if (!isNaN(widthValue)) {
           widths[column.id] = widthValue;
         }
+      } else {
+        // Set default widths if none specified
+        widths[column.id] = getDefaultWidth(column);
       }
     });
     setColumnWidths(widths);
   }, [columns]);
+
+  const getDefaultWidth = (column: Column): number => {
+    switch (column.key) {
+      case 'duration':
+      case 'startTime':
+      case 'endTime':
+      case 'elapsedTime':
+        return 100;
+      case 'segmentName':
+        return 200;
+      case 'talent':
+        return 120;
+      case 'gfx':
+      case 'video':
+        return 150;
+      case 'notes':
+        return 250;
+      default:
+        return 120;
+    }
+  };
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumnWidths(prev => {
@@ -47,25 +71,14 @@ export const useSimpleColumnWidths = (
   }, [onColumnWidthChange, onUpdateColumnWidth]);
 
   const getColumnWidth = useCallback((column: Column) => {
-    if (columnWidths[column.id]) {
-      return `${columnWidths[column.id]}px`;
+    const width = columnWidths[column.id];
+    if (width) {
+      return `${width}px`;
     }
     
-    if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
-      return column.width;
-    }
-    
-    // Default widths
-    if (column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime') {
-      return '100px';
-    }
-    if (column.key === 'segmentName') {
-      return '150px';
-    }
-    if (column.key === 'notes') {
-      return '200px';
-    }
-    return '120px';
+    // Fallback to default widths
+    const defaultWidth = getDefaultWidth(column);
+    return `${defaultWidth}px`;
   }, [columnWidths]);
 
   return {

@@ -17,19 +17,9 @@ const RundownTableHeader = ({
   console.log('🏷️ Rendering table header with columns:', visibleColumns.map(c => c.name));
   
   return (
-    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-10 border-b-2 border-blue-700">
-      <tr className="border-b border-blue-700">
-        <th 
-          className="px-2 py-3 text-left text-sm font-semibold text-white border-r border-blue-500 bg-blue-600"
-          style={{ 
-            width: '50px', 
-            minWidth: '50px', 
-            maxWidth: '50px',
-            display: 'table-cell',
-            visibility: 'visible',
-            opacity: 1
-          }}
-        >
+    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-10">
+      <tr>
+        <th className="px-2 py-3 text-left text-sm font-semibold text-white border-r border-blue-500 bg-blue-600 w-12 min-w-12">
           #
         </th>
         {visibleColumns.map((column, index) => {

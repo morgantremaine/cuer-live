@@ -36,22 +36,7 @@ const RegularRowContent = ({
 }: RegularRowContentProps) => {
   return (
     <>
-      <td 
-        className="px-2 py-1 text-sm font-mono align-middle border border-gray-300 bg-white"
-        style={{ 
-          color: textColor || '#000000', 
-          width: '50px', 
-          minWidth: '50px',
-          maxWidth: '50px',
-          display: 'table-cell',
-          visibility: 'visible',
-          opacity: 1,
-          minHeight: '40px',
-          border: '2px solid #d1d5db',
-          position: 'relative',
-          zIndex: 1
-        }}
-      >
+      <td className="px-2 py-1 text-sm font-mono align-middle border border-gray-300 bg-white w-12 min-w-12">
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
             <Play 
@@ -73,20 +58,7 @@ const RegularRowContent = ({
           <td
             key={column.id}
             className="align-middle border border-gray-300 bg-white p-1"
-            style={{ 
-              width: columnWidth,
-              minWidth: columnWidth,
-              maxWidth: columnWidth,
-              display: 'table-cell',
-              visibility: 'visible',
-              opacity: 1,
-              minHeight: '40px',
-              border: '2px solid #d1d5db',
-              backgroundColor: '#ffffff',
-              position: 'relative',
-              zIndex: 1,
-              overflow: 'hidden'
-            }}
+            style={{ width: columnWidth, minWidth: columnWidth }}
           >
             <CellRenderer
               column={column}
