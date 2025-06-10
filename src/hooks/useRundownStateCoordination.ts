@@ -1,8 +1,9 @@
+
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIManager } from './useRundownUIManager';
-import { getRowStatus } from '@/utils/rundownCalculations';
+import { getRowStatus, calculateEndTime, calculateTotalRuntime } from '@/utils/rundownCalculations';
 
 export const useRundownStateCoordination = () => {
   // Add missing UI state
@@ -108,6 +109,8 @@ export const useRundownStateCoordination = () => {
         const item = simplifiedState.items[index];
         return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
       },
+      calculateTotalRuntime: () => simplifiedState.totalRuntime,
+      calculateEndTime: (startTime: string, duration: string) => calculateEndTime(startTime, duration),
       
       // Simplified no-op functions for compatibility
       handleUndo: () => null,
