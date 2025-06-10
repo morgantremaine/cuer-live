@@ -39,9 +39,9 @@ const CellRenderer = ({
       case 'duration':
         return item.duration || '';
       case 'startTime':
-        return item.calculatedStartTime || item.startTime || '';
+        return item.startTime || '';
       case 'endTime':
-        return item.calculatedEndTime || item.endTime || '';
+        return item.endTime || '';
       case 'talent':
         return item.talent || '';
       case 'script':
@@ -71,8 +71,6 @@ const CellRenderer = ({
     return (
       <TimeDisplayCell
         value={value}
-        textColor={textColor}
-        width={width}
       />
     );
   }
@@ -87,7 +85,7 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={textColor}
         onUpdateItem={onUpdateItem}
-        onCellClick={onCellClick}
+        onCellClick={(e) => onCellClick(item.id, column.key)}
         onKeyDown={onKeyDown}
         width={width}
       />
@@ -104,7 +102,7 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={textColor}
         onUpdateItem={onUpdateItem}
-        onCellClick={onCellClick}
+        onCellClick={(e) => onCellClick(item.id, column.key)}
         onKeyDown={onKeyDown}
         width={width}
       />
