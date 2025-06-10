@@ -12,13 +12,15 @@ interface TimeDisplayCellProps {
 
 const TimeDisplayCell = ({ value, highlight }: TimeDisplayCellProps) => {
   return (
-    <span className="text-sm font-mono bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded text-gray-900 dark:text-gray-100 inline-block min-w-[60px] text-center">
-      {highlight ? (
-        <HighlightedText text={value} highlight={highlight} />
-      ) : (
-        value || '00:00:00'
-      )}
-    </span>
+    <div className="w-full h-full min-h-[32px] p-1">
+      <span className="inline-block w-full text-sm font-mono bg-gray-50 border border-gray-300 px-2 py-1 rounded-sm text-gray-900 min-h-[28px] text-center leading-6">
+        {highlight ? (
+          <HighlightedText text={value} highlight={highlight} />
+        ) : (
+          value || '00:00:00'
+        )}
+      </span>
+    </div>
   );
 };
 

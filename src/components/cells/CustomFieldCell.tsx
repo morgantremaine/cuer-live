@@ -50,7 +50,7 @@ const CustomFieldCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full min-h-[32px] p-1">
       <textarea
         ref={el => {
           if (el) {
@@ -65,9 +65,9 @@ const CustomFieldCell = ({
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className="w-full h-full border-0 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:bg-white focus:border focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded px-2 py-1 text-sm resize-none"
+        className="w-full h-full px-2 py-1 text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded-sm resize-none"
         style={{ 
-          color: textColor || undefined,
+          color: textColor || '#374151',
           minHeight: shouldExpandRow ? '40px' : '28px',
           lineHeight: '1.2'
         }}
