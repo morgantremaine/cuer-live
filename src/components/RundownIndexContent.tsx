@@ -90,6 +90,7 @@ const RundownIndexContent = () => {
     updateColumnWidth
   } = uiState;
 
+  // Fix useIndexHandlers to match expected signature
   const {
     handleRundownStartTimeChange,
     handleTimezoneChange,
@@ -101,8 +102,8 @@ const RundownIndexContent = () => {
     items,
     selectedRows,
     rundownId,
-    addRow: () => addRow(),
-    addHeader: () => addHeader(),
+    addRow: (calculateEndTime, selectedRowId) => addRow(),
+    addHeader: (selectedRowId) => addHeader(),
     calculateEndTime,
     toggleRowSelection,
     setRundownStartTime,

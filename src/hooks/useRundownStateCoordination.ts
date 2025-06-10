@@ -10,7 +10,7 @@ export const useRundownStateCoordination = () => {
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
   
-  // Grid interactions (drag/drop, selection, clipboard) - simplified parameters
+  // Grid interactions - fix function signatures
   const gridInteractions = useRundownGridInteractions(
     simplifiedState.items,
     (updater) => {
@@ -20,26 +20,25 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    () => simplifiedState.addRow(), // Simplified - no complex parameters
-    () => simplifiedState.addHeader(), // Simplified - no complex parameters
-    simplifiedState.deleteItem,
+    () => simplifiedState.addRow(),
+    () => simplifiedState.addHeader(),
+    simplifiedState.deleteRow,
     simplifiedState.toggleFloat,
     simplifiedState.deleteMultipleItems,
     (items) => {
       items.forEach(item => simplifiedState.addItem(item));
     },
     (columnId) => {
-      // Simplified column deletion
       const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
       simplifiedState.setColumns(newColumns);
     },
-    () => '00:00:00', // Simplified - calculations are handled centrally
+    () => '00:00:00',
     (id, color) => simplifiedState.updateItem(id, 'color', color),
-    () => {}, // No complex change tracking needed
+    () => {},
     simplifiedState.setTitle
   );
   
-  // Grid UI state - simplified parameters
+  // Grid UI state - fix width parameter type
   const gridUI = useRundownGridUI(
     simplifiedState.items,
     simplifiedState.visibleColumns,
@@ -47,8 +46,10 @@ export const useRundownStateCoordination = () => {
     simplifiedState.updateItem,
     simplifiedState.currentSegmentId,
     simplifiedState.currentTime,
-    () => {}, // No complex change tracking needed
-    simplifiedState.updateColumnWidth
+    () => {},
+    (columnId: string, width: number) => {
+      simplifiedState.updateColumnWidth(columnId, `${width}px`);
+    }
   );
 
   // Simple status calculation
@@ -88,7 +89,7 @@ export const useRundownStateCoordination = () => {
       setShowColumnManager,
       
       // Renamed functions to match component expectations
-      deleteRow: simplifiedState.deleteItem,
+      deleteRow: simplifiedState.deleteRow,
       toggleFloatRow: simplifiedState.toggleFloat,
       setRundownTitle: simplifiedState.setTitle,
       
@@ -121,7 +122,7 @@ export const useRundownStateCoordination = () => {
       handleLoadLayout: (columns: any[]) => simplifiedState.setColumns(columns),
       
       // Other missing functions
-      markAsChanged: () => {}, // Simplified - auto-save handles this
+      markAsChanged: () => {},
       setRundownStartTime: simplifiedState.setStartTime,
       setTimezone: simplifiedState.setTimezone,
       

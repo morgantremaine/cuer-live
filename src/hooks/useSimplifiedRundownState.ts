@@ -15,7 +15,7 @@ export const useSimplifiedRundownState = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize with default data - fix width types to be strings
+  // Initialize with default data - add missing isEditable property
   const {
     state,
     calculations,
@@ -24,12 +24,12 @@ export const useSimplifiedRundownState = () => {
   } = useRundownState({
     items: defaultRundownItems,
     columns: [
-      { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false },
-      { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false },
-      { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false },
-      { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false },
-      { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false },
-      { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false }
+      { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false, isEditable: true },
+      { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false, isEditable: true },
+      { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
+      { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
+      { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false, isEditable: true },
+      { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false, isEditable: true }
     ]
   });
 
@@ -102,12 +102,18 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.updateItem, state.items]),
 
+    // Fix toggleFloat to match expected signature
     toggleFloat: useCallback((id: string) => {
       const item = state.items.find(i => i.id === id);
       if (item) {
         actions.updateItem(id, { isFloating: !item.isFloating });
       }
-    }, [actions.updateItem, state.items])
+    }, [actions.updateItem, state.items]),
+
+    // Fix deleteRow to match expected signature
+    deleteRow: useCallback((id: string) => {
+      actions.deleteItem(id);
+    }, [actions.deleteItem])
   };
 
   // Get visible columns
@@ -138,14 +144,20 @@ export const useSimplifiedRundownState = () => {
     getRowNumber: helpers.getRowNumber,
     getHeaderDuration: helpers.getHeaderDuration,
     
-    // Actions with correct names expected by components
-    ...enhancedActions,
-    deleteItem: actions.deleteItem,
+    // Actions with correct signatures
+    updateItem: enhancedActions.updateItem,
+    deleteItem: enhancedActions.deleteRow,
+    deleteRow: enhancedActions.deleteRow,
+    toggleFloat: enhancedActions.toggleFloat,
     deleteMultipleItems: actions.deleteMultipleItems,
     addItem: actions.addItem,
     setTitle: actions.setTitle,
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
+    
+    // Row operations with proper signatures
+    addRow: useCallback(() => helpers.addRow(), [helpers.addRow]),
+    addHeader: useCallback(() => helpers.addHeader(), [helpers.addHeader]),
     
     // Column management
     addColumn: (column: Column) => {
