@@ -37,7 +37,7 @@ const RegularRowContent = ({
   return (
     <>
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle"
+        className="px-2 py-1 text-sm font-mono align-middle border border-gray-300 bg-white"
         style={{ color: textColor || undefined, width: '40px' }}
       >
         <div className="flex items-center space-x-1">
@@ -56,7 +56,7 @@ const RegularRowContent = ({
       {columns.map((column) => (
         <td
           key={column.id}
-          className="align-middle"
+          className="align-middle border border-gray-300 bg-white"
           style={{ width: getColumnWidth(column) }}
         >
           <CellRenderer

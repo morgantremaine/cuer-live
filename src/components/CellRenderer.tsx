@@ -70,7 +70,7 @@ const CellRenderer = ({
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     console.log(`📝 Using TimeDisplayCell for ${column.key}`);
     return (
-      <div className="w-full h-full p-2 min-h-[32px] flex items-center justify-start bg-white">
+      <div className="w-full h-full p-1 min-h-[32px] flex items-center justify-start">
         <TimeDisplayCell value={value} />
       </div>
     );
@@ -83,7 +83,7 @@ const CellRenderer = ({
   if (column.isCustom) {
     console.log(`📝 Using CustomFieldCell for ${column.key}`);
     return (
-      <div className="w-full h-full p-2 min-h-[32px] bg-white">
+      <div className="w-full h-full p-1 min-h-[32px]">
         <CustomFieldCell
           value={value}
           itemId={item.id}
@@ -105,7 +105,7 @@ const CellRenderer = ({
   if (column.key === 'script' || column.key === 'notes') {
     console.log(`📝 Using TextAreaCell for ${column.key}`);
     return (
-      <div className="w-full h-full p-2 min-h-[32px] bg-white">
+      <div className="w-full h-full p-1 min-h-[32px]">
         <TextAreaCell
           value={value}
           itemId={item.id}
@@ -126,7 +126,7 @@ const CellRenderer = ({
   // Default input cell for other fields
   console.log(`📝 Using default input for ${column.key}`);
   return (
-    <div className="w-full h-full p-2 min-h-[32px] flex items-center bg-white">
+    <div className="w-full h-full p-1 min-h-[32px] flex items-center">
       <input
         ref={(el) => {
           if (el) {
