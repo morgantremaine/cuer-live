@@ -115,10 +115,10 @@ const RegularRow = (props: RegularRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b border-gray-300 ${rowClass}`}
+        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
         style={{ 
-          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : '#ffffff'),
-          color: textColor || '#000000'
+          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : 'transparent'),
+          color: textColor || 'inherit'
         }}
         draggable
         onClick={handleRowClick}

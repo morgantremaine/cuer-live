@@ -113,7 +113,7 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields with fixed styling
+  // Default input cell for other fields with proper dark mode styling
   return (
     <div className="w-full h-full p-1">
       <input
@@ -130,9 +130,9 @@ const CellRenderer = ({
         }}
         onClick={() => onCellClick(item.id, column.key)}
         onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full h-full px-2 py-1 text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded-sm"
+        className="w-full h-full px-2 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-600 rounded-sm"
         style={{ 
-          color: textColor || '#374151',
+          color: textColor || '',
           minHeight: '28px'
         }}
         placeholder={`Enter ${column.name.toLowerCase()}...`}
