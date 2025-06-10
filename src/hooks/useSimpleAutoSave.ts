@@ -32,6 +32,8 @@ export const useSimpleAutoSave = (
       return;
     }
 
+    console.log('💾 Auto-save triggered for rundown:', rundownId);
+
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -42,6 +44,7 @@ export const useSimpleAutoSave = (
       if (isSavingRef.current) return;
       
       isSavingRef.current = true;
+      console.log('💾 Executing auto-save...');
       
       try {
         const { error } = await supabase
@@ -57,13 +60,14 @@ export const useSimpleAutoSave = (
           .eq('id', rundownId);
 
         if (error) {
-          console.error('Auto-save failed:', error);
+          console.error('❌ Auto-save failed:', error);
         } else {
+          console.log('✅ Auto-save successful');
           lastSavedRef.current = currentSignature;
           onSaved();
         }
       } catch (error) {
-        console.error('Auto-save error:', error);
+        console.error('❌ Auto-save error:', error);
       } finally {
         isSavingRef.current = false;
       }
@@ -74,7 +78,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone]);
 
   return {
     isSaving: isSavingRef.current

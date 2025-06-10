@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -11,6 +10,8 @@ export const useRundownStateCoordination = () => {
   
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
+  
+  console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
   
   // Grid interactions
   const gridInteractions = useRundownGridInteractions(
@@ -57,68 +58,85 @@ export const useRundownStateCoordination = () => {
     return getRowStatus(item, simplifiedState.currentTime);
   };
 
-  return {
-    coreState: {
-      // Basic state
-      ...simplifiedState,
-      
-      // UI state
-      showColumnManager,
-      setShowColumnManager,
-      
-      // Renamed functions to match component expectations
-      deleteRow: simplifiedState.deleteRow,
-      toggleFloatRow: simplifiedState.toggleFloat,
-      setRundownTitle: simplifiedState.setTitle,
-      
-      // Playback controls (simplified)
-      timeRemaining: '00:00:00',
-      play: () => {},
-      pause: () => {},
-      forward: () => {},
-      backward: () => {},
-      
-      // Column management functions
-      handleAddColumn: simplifiedState.addColumn,
-      handleReorderColumns: (columns: any[]) => simplifiedState.setColumns(columns),
-      handleDeleteColumn: (columnId: string) => {
-        const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
-        simplifiedState.setColumns(newColumns);
-      },
-      handleRenameColumn: (columnId: string, newName: string) => {
-        const newColumns = simplifiedState.columns.map(col =>
-          col.id === columnId ? { ...col, name: newName } : col
-        );
-        simplifiedState.setColumns(newColumns);
-      },
-      handleToggleColumnVisibility: (columnId: string) => {
-        const newColumns = simplifiedState.columns.map(col =>
-          col.id === columnId ? { ...col, isVisible: !col.isVisible } : col
-        );
-        simplifiedState.setColumns(newColumns);
-      },
-      handleLoadLayout: (columns: any[]) => simplifiedState.setColumns(columns),
-      
-      // Other missing functions
-      markAsChanged: () => {},
-      setRundownStartTime: simplifiedState.setStartTime,
-      setTimezone: simplifiedState.setTimezone,
-      
-      // Calculation functions
-      calculateHeaderDuration: (index: number) => {
-        const item = simplifiedState.items[index];
-        return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
-      },
-      calculateTotalRuntime: () => simplifiedState.totalRuntime,
-      calculateEndTime: (startTime: string, duration: string) => calculateEndTime(startTime, duration),
-      
-      // Simplified no-op functions for compatibility
-      handleUndo: () => null,
-      canUndo: false,
-      lastAction: '',
-      isConnected: false,
-      isProcessingRealtimeUpdate: false
+  // Create enhanced core state with all necessary properties
+  const coreState = useMemo(() => ({
+    // Basic state
+    items: simplifiedState.items,
+    visibleColumns: simplifiedState.visibleColumns,
+    currentTime: simplifiedState.currentTime,
+    currentSegmentId: simplifiedState.currentSegmentId,
+    rundownTitle: simplifiedState.rundownTitle,
+    rundownStartTime: simplifiedState.rundownStartTime,
+    timezone: simplifiedState.timezone,
+    columns: simplifiedState.columns,
+    rundownId: simplifiedState.rundownId,
+    isLoading: simplifiedState.isLoading,
+    hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
+    isSaving: simplifiedState.isSaving,
+    
+    // UI state
+    showColumnManager,
+    setShowColumnManager,
+    
+    // Core functions
+    updateItem: simplifiedState.updateItem,
+    deleteRow: simplifiedState.deleteRow,
+    toggleFloatRow: simplifiedState.toggleFloat,
+    setRundownTitle: simplifiedState.setTitle,
+    getRowNumber: simplifiedState.getRowNumber,
+    
+    // Calculations
+    calculateHeaderDuration: (index: number) => {
+      const item = simplifiedState.items[index];
+      return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
     },
+    calculateTotalRuntime: () => simplifiedState.totalRuntime,
+    calculateEndTime: (startTime: string, duration: string) => calculateEndTime(startTime, duration),
+    
+    // Playback controls (simplified)
+    isPlaying: simplifiedState.isPlaying,
+    timeRemaining: '00:00:00',
+    play: () => {},
+    pause: () => {},
+    forward: () => {},
+    backward: () => {},
+    
+    // Column management functions
+    handleAddColumn: simplifiedState.addColumn,
+    handleReorderColumns: (columns: any[]) => simplifiedState.setColumns(columns),
+    handleDeleteColumn: (columnId: string) => {
+      const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
+      simplifiedState.setColumns(newColumns);
+    },
+    handleRenameColumn: (columnId: string, newName: string) => {
+      const newColumns = simplifiedState.columns.map(col =>
+        col.id === columnId ? { ...col, name: newName } : col
+      );
+      simplifiedState.setColumns(newColumns);
+    },
+    handleToggleColumnVisibility: (columnId: string) => {
+      const newColumns = simplifiedState.columns.map(col =>
+        col.id === columnId ? { ...col, isVisible: !col.isVisible } : col
+      );
+      simplifiedState.setColumns(newColumns);
+    },
+    handleLoadLayout: (columns: any[]) => simplifiedState.setColumns(columns),
+    
+    // Other missing functions
+    markAsChanged: () => {},
+    setRundownStartTime: simplifiedState.setStartTime,
+    setTimezone: simplifiedState.setTimezone,
+    
+    // Simplified no-op functions for compatibility
+    handleUndo: () => null,
+    canUndo: false,
+    lastAction: '',
+    isConnected: false,
+    isProcessingRealtimeUpdate: false
+  }), [simplifiedState, showColumnManager]);
+
+  return {
+    coreState,
     interactions: gridInteractions,
     uiState: {
       ...uiManager,

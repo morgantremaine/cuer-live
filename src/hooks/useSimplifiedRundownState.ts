@@ -8,6 +8,16 @@ import { Column } from './useColumnsManager';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 
+// Default columns configuration
+const defaultColumns: Column[] = [
+  { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false, isEditable: true },
+  { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false, isEditable: true },
+  { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
+  { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
+  { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false, isEditable: true },
+  { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false, isEditable: true }
+];
+
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
   const rundownId = params.id === 'new' ? null : params.id || null;
@@ -22,15 +32,11 @@ export const useSimplifiedRundownState = () => {
     actions,
     helpers
   } = useRundownState({
-    items: defaultRundownItems,
-    columns: [
-      { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false, isEditable: true },
-      { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false, isEditable: true },
-      { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
-      { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
-      { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false, isEditable: true },
-      { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false, isEditable: true }
-    ]
+    items: [],
+    columns: defaultColumns,
+    title: 'Untitled Rundown',
+    startTime: '09:00:00',
+    timezone: 'America/New_York'
   });
 
   // Auto-save functionality
@@ -51,6 +57,8 @@ export const useSimplifiedRundownState = () => {
 
       setIsLoading(true);
       try {
+        console.log('🔄 Loading rundown from database:', rundownId);
+        
         const { data, error } = await supabase
           .from('rundowns')
           .select('*')
@@ -60,16 +68,37 @@ export const useSimplifiedRundownState = () => {
         if (error) {
           console.error('Error loading rundown:', error);
         } else if (data) {
+          console.log('📋 Loaded rundown data:', data);
+          
+          // Load the data into state, ensuring we have valid items and columns
+          const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
+            ? data.items 
+            : defaultRundownItems;
+          
+          const columnsToLoad = Array.isArray(data.columns) && data.columns.length > 0 
+            ? data.columns 
+            : defaultColumns;
+
+          console.log('📋 Loading items:', itemsToLoad.length, 'columns:', columnsToLoad.length);
+
           actions.loadState({
-            items: data.items || defaultRundownItems,
-            columns: data.columns || state.columns,
+            items: itemsToLoad,
+            columns: columnsToLoad,
             title: data.title || 'Untitled Rundown',
             startTime: data.start_time || '09:00:00',
-            timezone: data.timezone || 'UTC'
+            timezone: data.timezone || 'America/New_York'
           });
         }
       } catch (error) {
         console.error('Failed to load rundown:', error);
+        // Load defaults if there's an error
+        actions.loadState({
+          items: defaultRundownItems,
+          columns: defaultColumns,
+          title: 'Untitled Rundown',
+          startTime: '09:00:00',
+          timezone: 'America/New_York'
+        });
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -77,14 +106,37 @@ export const useSimplifiedRundownState = () => {
     };
 
     loadRundown();
-  }, [rundownId, isInitialized]);
+  }, [rundownId, isInitialized, actions]);
+
+  // Initialize with defaults for new rundowns
+  useEffect(() => {
+    if (!rundownId && !isInitialized) {
+      console.log('🆕 Initializing new rundown with defaults');
+      actions.loadState({
+        items: defaultRundownItems,
+        columns: defaultColumns,
+        title: 'Untitled Rundown',
+        startTime: '09:00:00',
+        timezone: 'America/New_York'
+      });
+      setIsLoading(false);
+      setIsInitialized(true);
+    }
+  }, [rundownId, isInitialized, actions]);
 
   // Calculate all derived values using pure functions
   const calculatedItems = useMemo(() => {
+    if (!state.items || !Array.isArray(state.items)) {
+      console.log('⚠️ No items available for calculation');
+      return [];
+    }
+    
+    console.log('🧮 Calculating items with timing:', state.items.length);
     return calculateItemsWithTiming(state.items, state.startTime);
   }, [state.items, state.startTime]);
 
   const totalRuntime = useMemo(() => {
+    if (!state.items || !Array.isArray(state.items)) return '00:00:00';
     return calculateTotalRuntime(state.items);
   }, [state.items]);
 
@@ -94,6 +146,8 @@ export const useSimplifiedRundownState = () => {
     ...helpers,
     
     updateItem: useCallback((id: string, field: string, value: string) => {
+      console.log('📝 Updating item:', id, field, value);
+      
       if (field.startsWith('customFields.')) {
         const customFieldKey = field.replace('customFields.', '');
         const item = state.items.find(i => i.id === id);
@@ -107,7 +161,11 @@ export const useSimplifiedRundownState = () => {
           });
         }
       } else {
-        actions.updateItem(id, { [field]: value });
+        // Map field names to proper item properties
+        let updateField = field;
+        if (field === 'segmentName') updateField = 'name';
+        
+        actions.updateItem(id, { [updateField]: value });
       }
     }, [actions.updateItem, state.items]),
 
@@ -119,12 +177,22 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items]),
 
     deleteRow: useCallback((id: string) => {
+      console.log('🗑️ Deleting row:', id);
       actions.deleteItem(id);
     }, [actions.deleteItem])
   };
 
-  // Get visible columns
-  const visibleColumns = state.columns.filter(col => col.isVisible !== false);
+  // Get visible columns - ensure they actually exist and are marked visible
+  const visibleColumns = useMemo(() => {
+    if (!state.columns || !Array.isArray(state.columns)) {
+      console.log('⚠️ No columns available, using defaults');
+      return defaultColumns.filter(col => col.isVisible !== false);
+    }
+    
+    const visible = state.columns.filter(col => col.isVisible !== false);
+    console.log('👁️ Visible columns:', visible.length, 'of', state.columns.length);
+    return visible;
+  }, [state.columns]);
 
   // Helper function to get header duration
   const getHeaderDuration = useCallback((id: string) => {
@@ -139,11 +207,20 @@ export const useSimplifiedRundownState = () => {
     return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
+  console.log('🔄 State summary:', {
+    items: calculatedItems.length,
+    columns: state.columns?.length || 0,
+    visibleColumns: visibleColumns.length,
+    title: state.title,
+    isLoading,
+    hasUnsavedChanges: state.hasUnsavedChanges
+  });
+
   return {
     // Core state with calculated values
     items: calculatedItems,
     setItems: actions.setItems,
-    columns: state.columns,
+    columns: state.columns || defaultColumns,
     setColumns: actions.setColumns,
     visibleColumns,
     rundownTitle: state.title,
@@ -181,7 +258,7 @@ export const useSimplifiedRundownState = () => {
     
     // Column management
     addColumn: (column: Column) => {
-      actions.setColumns([...state.columns, column]);
+      actions.setColumns([...(state.columns || defaultColumns), column]);
     },
     
     updateColumnWidth: (columnId: string, width: string) => {
