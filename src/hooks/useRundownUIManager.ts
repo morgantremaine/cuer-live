@@ -1,20 +1,17 @@
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useSimpleColumnWidths } from './useSimpleColumnWidths';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
-import { RundownItem } from '@/types/rundown';
+import { CalculatedRundownItem } from '@/utils/rundownCalculations';
 import { Column } from './useColumnsManager';
-import { getRowStatus, CalculatedRundownItem } from '@/utils/rundownCalculations';
 
-export const useRundownGridUI = (
+export const useRundownUIManager = (
   items: CalculatedRundownItem[],
   visibleColumns: Column[],
   columns: Column[],
   updateItem: (id: string, field: string, value: string) => void,
-  currentSegmentId: string | null,
-  currentTime: Date,
   markAsChanged: () => void,
   handleUpdateColumnWidth?: (columnId: string, width: number) => void
 ) => {
@@ -31,7 +28,7 @@ export const useRundownGridUI = (
     }, 300);
   }, [markAsChanged]);
 
-  // Simple column widths with immediate callback
+  // Column width management
   const {
     updateColumnWidth,
     getColumnWidth
@@ -43,7 +40,7 @@ export const useRundownGridUI = (
     handleUpdateColumnWidth
   );
 
-  // Color picker
+  // Color picker state
   const {
     showColorPicker,
     handleToggleColorPicker
@@ -55,17 +52,16 @@ export const useRundownGridUI = (
     setEditingCell
   } = useEditingState();
 
-  // Cell navigation - convert CalculatedRundownItem to RundownItem for compatibility
-  const regularItems = useMemo(() => {
-    return items.map(item => ({
-      ...item,
-      startTime: item.calculatedStartTime,
-      endTime: item.calculatedEndTime,
-      elapsedTime: item.calculatedElapsedTime,
-      rowNumber: item.calculatedRowNumber
-    }));
-  }, [items]);
+  // Convert CalculatedRundownItem to RundownItem for cell navigation compatibility
+  const regularItems = items.map(item => ({
+    ...item,
+    startTime: item.calculatedStartTime,
+    endTime: item.calculatedEndTime,
+    elapsedTime: item.calculatedElapsedTime,
+    rowNumber: item.calculatedRowNumber
+  }));
 
+  // Cell navigation
   const {
     cellRefs,
     handleCellClick,
@@ -78,23 +74,16 @@ export const useRundownGridUI = (
     setEditingCell
   );
 
-  // Get row status using pure function
-  const getRowStatusForItem = useCallback((item: CalculatedRundownItem) => {
-    return getRowStatus(item, currentTime);
-  }, [currentTime]);
-
   // Color selection function
   const selectColor = useCallback((id: string, color: string) => {
     updateItem(id, 'color', color);
   }, [updateItem]);
 
   // Cleanup timeout on unmount
-  useMemo(() => {
-    return () => {
-      if (markAsChangedTimeoutRef.current) {
-        clearTimeout(markAsChangedTimeoutRef.current);
-      }
-    };
+  const cleanup = useCallback(() => {
+    if (markAsChangedTimeoutRef.current) {
+      clearTimeout(markAsChangedTimeoutRef.current);
+    }
   }, []);
 
   return {
@@ -105,11 +94,6 @@ export const useRundownGridUI = (
     // Color picker
     showColorPicker,
     handleToggleColorPicker,
-    
-    // Row status
-    getRowStatus: getRowStatusForItem,
-    
-    // Color selection
     selectColor,
     
     // Cell interactions
@@ -119,6 +103,9 @@ export const useRundownGridUI = (
     
     // Editing state
     editingCell,
-    setEditingCell
+    setEditingCell,
+    
+    // Cleanup
+    cleanup
   };
 };
