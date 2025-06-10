@@ -99,7 +99,14 @@ const ResizableColumnHeader = ({
     <th 
       ref={headerRef}
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500"
-      style={{ width, minWidth: width }}
+      style={{ 
+        width, 
+        minWidth: width, 
+        maxWidth: width,
+        display: 'table-cell',
+        visibility: 'visible',
+        opacity: 1
+      }}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />

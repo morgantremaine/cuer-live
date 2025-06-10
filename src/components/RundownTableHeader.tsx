@@ -42,14 +42,6 @@ const RundownTableHeader = ({
               width={columnWidth}
               onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
               showLeftSeparator={index > 0}
-              style={{
-                width: columnWidth,
-                minWidth: columnWidth,
-                maxWidth: columnWidth,
-                display: 'table-cell',
-                visibility: 'visible',
-                opacity: 1
-              }}
             >
               {column.name || column.key}
             </ResizableColumnHeader>
