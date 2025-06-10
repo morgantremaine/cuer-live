@@ -35,19 +35,6 @@ const CustomFieldCell = ({
 
   const shouldExpandRow = needsTwoLines(value);
 
-  // Get the appropriate focus styles for colored rows in dark mode
-  const getFocusStyles = () => {
-    const hasCustomColor = textColor && textColor !== '';
-    
-    if (hasCustomColor) {
-      return 'focus:bg-white dark:focus:bg-gray-800 focus:!text-gray-900 dark:focus:!text-white';
-    } else {
-      return 'focus:bg-white dark:focus:bg-gray-700';
-    }
-  };
-
-  const focusStyles = getFocusStyles();
-
   // Simple key navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // For Enter key and arrow keys, navigate to next/previous cell
@@ -63,7 +50,7 @@ const CustomFieldCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="relative flex items-center min-h-[28px] w-full h-full">
+    <div className="relative w-full h-full">
       <textarea
         ref={el => {
           if (el) {
@@ -78,23 +65,17 @@ const CustomFieldCell = ({
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-0.5 text-sm resize-none overflow-hidden leading-tight`}
+        className="w-full h-full border-0 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:bg-white focus:border focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded px-2 py-1 text-sm resize-none"
         style={{ 
           color: textColor || undefined,
-          minHeight: '20px',
-          height: shouldExpandRow ? '40px' : '20px',
+          minHeight: shouldExpandRow ? '40px' : '28px',
           lineHeight: '1.2'
         }}
         rows={shouldExpandRow ? 2 : 1}
-        onInput={(e) => {
-          const target = e.target as HTMLTextAreaElement;
-          target.style.height = 'auto';
-          const scrollHeight = target.scrollHeight;
-          target.style.height = Math.min(scrollHeight, 40) + 'px';
-        }}
+        placeholder="Enter value..."
       />
       {highlight && (
-        <div className="absolute inset-0 pointer-events-none px-1 py-0.5 text-sm flex items-center" style={{ color: 'transparent' }}>
+        <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm flex items-center" style={{ color: 'transparent' }}>
           <HighlightedText text={value} highlight={highlight} />
         </div>
       )}

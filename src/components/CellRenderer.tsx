@@ -70,9 +70,7 @@ const CellRenderer = ({
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     console.log(`📝 Using TimeDisplayCell for ${column.key}`);
     return (
-      <div className="w-full h-full p-1 min-h-[32px] flex items-center justify-start">
-        <TimeDisplayCell value={value} />
-      </div>
+      <TimeDisplayCell value={value} />
     );
   }
 
@@ -83,21 +81,19 @@ const CellRenderer = ({
   if (column.isCustom) {
     console.log(`📝 Using CustomFieldCell for ${column.key}`);
     return (
-      <div className="w-full h-full p-1 min-h-[32px]">
-        <CustomFieldCell
-          value={value}
-          itemId={item.id}
-          cellRefKey={column.key}
-          cellRefs={cellRefs}
-          textColor={textColor}
-          onUpdateValue={(newValue) => {
-            const field = `customFields.${column.key}`;
-            onUpdateItem(item.id, field, newValue);
-          }}
-          onCellClick={(e) => onCellClick(item.id, column.key)}
-          onKeyDown={onKeyDown}
-        />
-      </div>
+      <CustomFieldCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        onUpdateValue={(newValue) => {
+          const field = `customFields.${column.key}`;
+          onUpdateItem(item.id, field, newValue);
+        }}
+        onCellClick={(e) => onCellClick(item.id, column.key)}
+        onKeyDown={onKeyDown}
+      />
     );
   }
 
@@ -105,47 +101,43 @@ const CellRenderer = ({
   if (column.key === 'script' || column.key === 'notes') {
     console.log(`📝 Using TextAreaCell for ${column.key}`);
     return (
-      <div className="w-full h-full p-1 min-h-[32px]">
-        <TextAreaCell
-          value={value}
-          itemId={item.id}
-          cellRefKey={column.key}
-          cellRefs={cellRefs}
-          textColor={textColor}
-          placeholder={`Enter ${column.name.toLowerCase()}...`}
-          onUpdateValue={(newValue) => {
-            onUpdateItem(item.id, column.key, newValue);
-          }}
-          onCellClick={(e) => onCellClick(item.id, column.key)}
-          onKeyDown={onKeyDown}
-        />
-      </div>
+      <TextAreaCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        placeholder={`Enter ${column.name.toLowerCase()}...`}
+        onUpdateValue={(newValue) => {
+          onUpdateItem(item.id, column.key, newValue);
+        }}
+        onCellClick={(e) => onCellClick(item.id, column.key)}
+        onKeyDown={onKeyDown}
+      />
     );
   }
 
   // Default input cell for other fields
   console.log(`📝 Using default input for ${column.key}`);
   return (
-    <div className="w-full h-full p-1 min-h-[32px] flex items-center">
-      <input
-        ref={(el) => {
-          if (el) {
-            cellRefs.current[cellKey] = el;
-          }
-        }}
-        type="text"
-        value={value}
-        onChange={(e) => {
-          const field = column.isCustom ? `customFields.${column.key}` : column.key;
-          onUpdateItem(item.id, field, e.target.value);
-        }}
-        onClick={() => onCellClick(item.id, column.key)}
-        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full px-2 py-1 text-sm border border-gray-200 bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 rounded text-gray-900"
-        style={{ color: textColor }}
-        placeholder={`Enter ${column.name.toLowerCase()}...`}
-      />
-    </div>
+    <input
+      ref={(el) => {
+        if (el) {
+          cellRefs.current[cellKey] = el;
+        }
+      }}
+      type="text"
+      value={value}
+      onChange={(e) => {
+        const field = column.isCustom ? `customFields.${column.key}` : column.key;
+        onUpdateItem(item.id, field, e.target.value);
+      }}
+      onClick={() => onCellClick(item.id, column.key)}
+      onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+      className="w-full h-full px-2 py-1 text-sm border-0 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:bg-white focus:border focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded"
+      style={{ color: textColor || undefined }}
+      placeholder={`Enter ${column.name.toLowerCase()}...`}
+    />
   );
 };
 
