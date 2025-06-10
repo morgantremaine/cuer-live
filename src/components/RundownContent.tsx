@@ -96,9 +96,9 @@ const RundownContent = ({
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
             getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
+            updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
-            getRowStatus={getRowStatus}
+            getRowStatus={(item) => getRowStatus(item, currentTime)}
             calculateHeaderDuration={calculateHeaderDuration}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}

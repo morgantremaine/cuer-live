@@ -69,7 +69,7 @@ const RundownGrid = () => {
       currentSegmentId={currentSegmentId}
       hasClipboardData={hasClipboardData()}
       getColumnWidth={getColumnWidth}
-      updateColumnWidth={updateColumnWidth}
+      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth({ id: columnId } as any, width)}
       getRowNumber={getRowNumber}
       getRowStatus={(item) => getRowStatus(item)}
       calculateHeaderDuration={calculateHeaderDuration}

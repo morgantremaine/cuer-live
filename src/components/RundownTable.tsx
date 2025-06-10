@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownRow from './RundownRow';
 import RundownTableHeader from './RundownTableHeader';
@@ -15,9 +16,9 @@ interface RundownTableProps {
   isDraggingMultiple: boolean;
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
-  hasClipboardData: () => boolean;
+  hasClipboardData: boolean;
   getColumnWidth: (column: Column) => string;
-  updateColumnWidth: (column: Column, width: number) => void;
+  updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
@@ -83,7 +84,7 @@ const RundownTable = ({
       <RundownTableHeader 
         columns={visibleColumns}
         getColumnWidth={getColumnWidth}
-        updateColumnWidth={updateColumnWidth}
+        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       />
       
       <div className="rundown-table-body">

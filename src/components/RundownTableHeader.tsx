@@ -25,7 +25,7 @@ const RundownTableHeader = ({
             key={column.id}
             column={column}
             width={getColumnWidth(column)}
-            onWidthChange={updateColumnWidth}
+            onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             showLeftSeparator={index > 0}
           >
             {column.name}
