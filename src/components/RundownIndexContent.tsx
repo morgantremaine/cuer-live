@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -102,8 +101,8 @@ const RundownIndexContent = () => {
     items,
     selectedRows,
     rundownId,
-    addRow: (calculateEndTime, selectedRowId) => addRow(),
-    addHeader: (selectedRowId) => addHeader(),
+    addRow: () => addRow(),
+    addHeader: () => addHeader(),
     calculateEndTime,
     toggleRowSelection,
     setRundownStartTime,
@@ -113,6 +112,23 @@ const RundownIndexContent = () => {
 
   const selectedRowsArray = Array.from(selectedRows);
   const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+
+  // Convert timeRemaining to number (assuming it's in seconds)
+  const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
+
+  // Create a wrapper for handleAddColumn that takes a string
+  const handleAddColumnWrapper = (name: string) => {
+    const newColumn = {
+      id: `custom_${Date.now()}`,
+      name,
+      key: name.toLowerCase().replace(/\s+/g, '_'),
+      isVisible: true,
+      width: '150px',
+      isCustom: true,
+      isEditable: true
+    };
+    handleAddColumn(newColumn);
+  };
 
   // Prepare rundown data for Cuer AI
   const rundownData = {
@@ -174,12 +190,12 @@ const RundownIndexContent = () => {
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
-        timeRemaining={timeRemaining}
+        timeRemaining={timeRemainingNumber}
         onPlay={play}
         onPause={pause}
         onForward={forward}
         onBackward={backward}
-        handleAddColumn={handleAddColumn}
+        handleAddColumn={handleAddColumnWrapper}
         handleReorderColumns={handleReorderColumns}
         handleDeleteColumnWithCleanup={handleDeleteColumn}
         handleRenameColumn={handleRenameColumn}
