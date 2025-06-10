@@ -84,14 +84,13 @@ const RundownTable = ({
 
   return (
     <div className="relative w-full">
-      <RundownTableHeader 
-        visibleColumns={visibleColumns}
-        getColumnWidth={getColumnWidth}
-        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-      />
-      
-      <div className="rundown-table-body w-full">
+      <div className="rundown-table w-full">
         <table className="w-full table-fixed border-collapse">
+          <RundownTableHeader 
+            visibleColumns={visibleColumns}
+            getColumnWidth={getColumnWidth}
+            updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+          />
           <tbody>
             {items.map((item, index) => {
               console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
