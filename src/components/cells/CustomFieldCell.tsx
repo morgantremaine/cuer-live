@@ -63,7 +63,7 @@ const CustomFieldCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="relative flex items-center min-h-[28px]">
+    <div className="relative flex items-center min-h-[28px] w-full h-full">
       <textarea
         ref={el => {
           if (el) {

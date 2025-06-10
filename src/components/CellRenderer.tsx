@@ -119,27 +119,29 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields - return only the input element, NOT wrapped in <td>
+  // Default input cell for other fields - return only the input element with proper styling
   console.log(`📝 Using default input for ${column.key}`);
   return (
-    <input
-      ref={(el) => {
-        if (el) {
-          cellRefs.current[cellKey] = el;
-        }
-      }}
-      type="text"
-      value={value}
-      onChange={(e) => {
-        const field = column.isCustom ? `customFields.${column.key}` : column.key;
-        onUpdateItem(item.id, field, e.target.value);
-      }}
-      onClick={() => onCellClick(item.id, column.key)}
-      onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-      className="w-full px-1 py-0.5 text-sm border-none bg-transparent outline-none resize-none"
-      style={{ color: textColor }}
-      placeholder={`Enter ${column.name.toLowerCase()}...`}
-    />
+    <div className="flex items-center min-h-[28px] w-full h-full">
+      <input
+        ref={(el) => {
+          if (el) {
+            cellRefs.current[cellKey] = el;
+          }
+        }}
+        type="text"
+        value={value}
+        onChange={(e) => {
+          const field = column.isCustom ? `customFields.${column.key}` : column.key;
+          onUpdateItem(item.id, field, e.target.value);
+        }}
+        onClick={() => onCellClick(item.id, column.key)}
+        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+        className="w-full px-1 py-0.5 text-sm border-none bg-transparent outline-none focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded"
+        style={{ color: textColor }}
+        placeholder={`Enter ${column.name.toLowerCase()}...`}
+      />
+    </div>
   );
 };
 
