@@ -70,9 +70,10 @@ const CellRenderer = ({
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     console.log(`📝 Using TimeDisplayCell for ${column.key}`);
     return (
-      <TimeDisplayCell
-        value={value}
-      />
+      <div className="w-full p-2 bg-yellow-100 border border-yellow-300">
+        <div className="text-xs text-yellow-600 mb-1">DEBUG: TimeDisplayCell</div>
+        <TimeDisplayCell value={value} />
+      </div>
     );
   }
 
@@ -83,19 +84,22 @@ const CellRenderer = ({
   if (column.isCustom) {
     console.log(`📝 Using CustomFieldCell for ${column.key}`);
     return (
-      <CustomFieldCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={textColor}
-        onUpdateValue={(newValue) => {
-          const field = `customFields.${column.key}`;
-          onUpdateItem(item.id, field, newValue);
-        }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
-        onKeyDown={onKeyDown}
-      />
+      <div className="w-full p-2 bg-blue-100 border border-blue-300">
+        <div className="text-xs text-blue-600 mb-1">DEBUG: CustomFieldCell</div>
+        <CustomFieldCell
+          value={value}
+          itemId={item.id}
+          cellRefKey={column.key}
+          cellRefs={cellRefs}
+          textColor={textColor}
+          onUpdateValue={(newValue) => {
+            const field = `customFields.${column.key}`;
+            onUpdateItem(item.id, field, newValue);
+          }}
+          onCellClick={(e) => onCellClick(item.id, column.key)}
+          onKeyDown={onKeyDown}
+        />
+      </div>
     );
   }
 
@@ -103,26 +107,31 @@ const CellRenderer = ({
   if (column.key === 'script' || column.key === 'notes') {
     console.log(`📝 Using TextAreaCell for ${column.key}`);
     return (
-      <TextAreaCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={textColor}
-        placeholder={`Enter ${column.name.toLowerCase()}...`}
-        onUpdateValue={(newValue) => {
-          onUpdateItem(item.id, column.key, newValue);
-        }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
-        onKeyDown={onKeyDown}
-      />
+      <div className="w-full p-2 bg-green-100 border border-green-300">
+        <div className="text-xs text-green-600 mb-1">DEBUG: TextAreaCell</div>
+        <TextAreaCell
+          value={value}
+          itemId={item.id}
+          cellRefKey={column.key}
+          cellRefs={cellRefs}
+          textColor={textColor}
+          placeholder={`Enter ${column.name.toLowerCase()}...`}
+          onUpdateValue={(newValue) => {
+            onUpdateItem(item.id, column.key, newValue);
+          }}
+          onCellClick={(e) => onCellClick(item.id, column.key)}
+          onKeyDown={onKeyDown}
+        />
+      </div>
     );
   }
 
   // Default input cell for other fields - return only the input element with proper styling
   console.log(`📝 Using default input for ${column.key}`);
   return (
-    <div className="flex items-center min-h-[28px] w-full h-full">
+    <div className="w-full p-2 bg-red-100 border border-red-300">
+      <div className="text-xs text-red-600 mb-1">DEBUG: Default Input - {column.key}</div>
+      <div className="text-xs text-gray-600 mb-1">Value: "{value}"</div>
       <input
         ref={(el) => {
           if (el) {
@@ -137,7 +146,7 @@ const CellRenderer = ({
         }}
         onClick={() => onCellClick(item.id, column.key)}
         onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full px-1 py-0.5 text-sm border-none bg-transparent outline-none focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-400 rounded"
+        className="w-full px-2 py-1 text-sm border border-gray-300 bg-white outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 rounded"
         style={{ color: textColor }}
         placeholder={`Enter ${column.name.toLowerCase()}...`}
       />

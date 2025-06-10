@@ -83,15 +83,18 @@ const RundownTable = ({
   console.log('🏗️ RundownTable visible columns:', visibleColumns.length);
 
   return (
-    <div className="relative w-full">
-      <div className="rundown-table w-full">
-        <table className="w-full table-fixed border-collapse">
+    <div className="relative w-full border-4 border-purple-500">
+      <div className="text-sm text-purple-600 p-2 bg-purple-100">
+        DEBUG: RundownTable Container - Items: {items.length}, Columns: {visibleColumns.length}
+      </div>
+      <div className="rundown-table w-full border-2 border-orange-400">
+        <table className="w-full table-fixed border-collapse border-2 border-green-500">
           <RundownTableHeader 
             visibleColumns={visibleColumns}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
           />
-          <tbody>
+          <tbody className="border-2 border-blue-400">
             {items.map((item, index) => {
               console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
               console.log(`🔄 Row ${index} type:`, item.type);
