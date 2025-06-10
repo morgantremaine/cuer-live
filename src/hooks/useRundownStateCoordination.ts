@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -23,8 +24,8 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    () => simplifiedState.addRow(),
-    () => simplifiedState.addHeader(),
+    simplifiedState.addRow,
+    simplifiedState.addHeader,
     simplifiedState.deleteRow,
     simplifiedState.toggleFloat,
     simplifiedState.deleteMultipleItems,
@@ -84,6 +85,10 @@ export const useRundownStateCoordination = () => {
     toggleFloatRow: simplifiedState.toggleFloat,
     setRundownTitle: simplifiedState.setTitle,
     getRowNumber: simplifiedState.getRowNumber,
+    
+    // Row operations - add these missing functions
+    addRow: simplifiedState.addRow,
+    addHeader: simplifiedState.addHeader,
     
     // Calculations
     calculateHeaderDuration: (index: number) => {

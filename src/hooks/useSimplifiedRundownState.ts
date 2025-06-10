@@ -207,6 +207,17 @@ export const useSimplifiedRundownState = () => {
     return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
+  // Define addRow and addHeader functions properly
+  const addRowFunction = useCallback(() => {
+    console.log('➕ Adding new row');
+    helpers.addRow();
+  }, [helpers]);
+
+  const addHeaderFunction = useCallback(() => {
+    console.log('➕ Adding new header');
+    helpers.addHeader();
+  }, [helpers]);
+
   console.log('🔄 State summary:', {
     items: calculatedItems.length,
     columns: state.columns?.length || 0,
@@ -252,9 +263,9 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations with proper signatures
-    addRow: useCallback(() => helpers.addRow(), [helpers.addRow]),
-    addHeader: useCallback(() => helpers.addHeader(), [helpers.addHeader]),
+    // Row operations with proper signatures - fix these
+    addRow: addRowFunction,
+    addHeader: addHeaderFunction,
     
     // Column management
     addColumn: (column: Column) => {
