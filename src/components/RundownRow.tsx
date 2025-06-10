@@ -44,10 +44,12 @@ interface RundownRowProps {
 }
 
 const RundownRow = (props: RundownRowProps) => {
-  // Calculate if this row is selected based on selectedRows Set
+  console.log(`🎯 RundownRow rendering for ${props.item.id}, type: ${props.item.type}`);
+  
   const isActuallySelected = props.selectedRows ? props.selectedRows.has(props.item.id) : false;
 
   if (isHeaderItem(props.item)) {
+    console.log(`📋 Rendering HeaderRow for ${props.item.id}`);
     return (
       <HeaderRow 
         {...props} 
@@ -64,6 +66,7 @@ const RundownRow = (props: RundownRowProps) => {
     );
   }
 
+  console.log(`📄 Rendering RegularRow for ${props.item.id}`);
   return (
     <RegularRow 
       {...props} 

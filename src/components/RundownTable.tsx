@@ -6,7 +6,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownTableProps {
-  items: any[]; // RundownItem[] | CalculatedRundownItem[];
+  items: any[];
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
@@ -84,11 +84,11 @@ const RundownTable = ({
 
   return (
     <div className="relative w-full overflow-auto bg-white">
-      <table className="w-full border-collapse table-fixed border border-gray-300">
+      <table className="w-full border-collapse border border-gray-300">
         <RundownTableHeader 
           visibleColumns={visibleColumns}
           getColumnWidth={getColumnWidth}
-          updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+          updateColumnWidth={updateColumnWidth}
         />
         <tbody className="bg-white">
           {items.map((item, index) => {
@@ -101,6 +101,8 @@ const RundownTable = ({
             const isSelected = selectedRows.has(item.id);
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
+
+            console.log(`🎯 About to render RundownRow for ${item.id}`);
 
             return (
               <React.Fragment key={item.id}>
@@ -140,7 +142,6 @@ const RundownTable = ({
                   getColumnWidth={getColumnWidth}
                 />
                 
-                {/* Green line below current item for showcaller */}
                 {isCurrentlyPlaying && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
@@ -154,7 +155,6 @@ const RundownTable = ({
         </tbody>
       </table>
       
-      {/* Debug info */}
       {items.length === 0 && (
         <div className="p-4 text-center text-gray-500 bg-white border border-gray-200 rounded">
           No items to display

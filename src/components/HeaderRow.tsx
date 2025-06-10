@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -40,6 +39,8 @@ interface HeaderRowProps {
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
+  console.log(`📋 HeaderRow rendering for ${props.item.id}`);
+  
   const {
     item,
     index,

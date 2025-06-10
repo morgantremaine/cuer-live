@@ -44,6 +44,8 @@ interface RegularRowProps {
 }
 
 const RegularRow = (props: RegularRowProps) => {
+  console.log(`📄 RegularRow rendering for ${props.item.id}`);
+  
   const {
     item,
     index,
@@ -113,16 +115,10 @@ const RegularRow = (props: RegularRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
+        className={`border-b border-gray-300 ${rowClass}`}
         style={{ 
           backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : '#ffffff'),
-          color: textColor || '#000000',
-          display: 'table-row',
-          visibility: 'visible',
-          opacity: 1,
-          minHeight: '40px',
-          position: 'relative',
-          zIndex: 1
+          color: textColor || '#000000'
         }}
         draggable
         onClick={handleRowClick}
