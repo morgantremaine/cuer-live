@@ -80,9 +80,9 @@ const RundownContent = ({
 }: RundownContentProps) => {
 
   return (
-    <div className="relative">
-      <ScrollArea className="w-full h-[calc(100vh-200px)]">
-        <div className="min-w-max">
+    <div className="relative bg-white">
+      <ScrollArea className="w-full h-[calc(100vh-200px)] bg-white">
+        <div className="min-w-max bg-white">
           <RundownTable
             items={items}
             visibleColumns={visibleColumns}
