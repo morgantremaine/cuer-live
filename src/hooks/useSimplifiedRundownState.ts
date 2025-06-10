@@ -1,11 +1,12 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
+import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -15,10 +16,9 @@ export const useSimplifiedRundownState = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize with default data - add missing isEditable property
+  // Initialize with default data
   const {
     state,
-    calculations,
     actions,
     helpers
   } = useRundownState({
@@ -79,7 +79,16 @@ export const useSimplifiedRundownState = () => {
     loadRundown();
   }, [rundownId, isInitialized]);
 
-  // Enhanced action wrappers that include field-specific logic
+  // Calculate all derived values using pure functions
+  const calculatedItems = useMemo(() => {
+    return calculateItemsWithTiming(state.items, state.startTime);
+  }, [state.items, state.startTime]);
+
+  const totalRuntime = useMemo(() => {
+    return calculateTotalRuntime(state.items);
+  }, [state.items]);
+
+  // Enhanced action wrappers
   const enhancedActions = {
     ...actions,
     ...helpers,
@@ -102,7 +111,6 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.updateItem, state.items]),
 
-    // Fix toggleFloat to match expected signature
     toggleFloat: useCallback((id: string) => {
       const item = state.items.find(i => i.id === id);
       if (item) {
@@ -110,7 +118,6 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.updateItem, state.items]),
 
-    // Fix deleteRow to match expected signature
     deleteRow: useCallback((id: string) => {
       actions.deleteItem(id);
     }, [actions.deleteItem])
@@ -119,9 +126,22 @@ export const useSimplifiedRundownState = () => {
   // Get visible columns
   const visibleColumns = state.columns.filter(col => col.isVisible !== false);
 
+  // Helper function to get header duration
+  const getHeaderDuration = useCallback((id: string) => {
+    const itemIndex = state.items.findIndex(item => item.id === id);
+    if (itemIndex === -1) return '00:00:00';
+    return calculateHeaderDuration(state.items, itemIndex);
+  }, [state.items]);
+
+  // Helper function to get row number
+  const getRowNumber = useCallback((index: number) => {
+    if (index < 0 || index >= calculatedItems.length) return '';
+    return calculatedItems[index].calculatedRowNumber;
+  }, [calculatedItems]);
+
   return {
-    // Core state
-    items: calculations.itemsWithCalculatedTimes,
+    // Core state with calculated values
+    items: calculatedItems,
     setItems: actions.setItems,
     columns: state.columns,
     setColumns: actions.setColumns,
@@ -140,9 +160,9 @@ export const useSimplifiedRundownState = () => {
     isSaving,
     
     // Calculations
-    totalRuntime: calculations.totalRuntime,
-    getRowNumber: helpers.getRowNumber,
-    getHeaderDuration: helpers.getHeaderDuration,
+    totalRuntime,
+    getRowNumber,
+    getHeaderDuration,
     
     // Actions with correct signatures
     updateItem: enhancedActions.updateItem,

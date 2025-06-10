@@ -1,13 +1,11 @@
-
 import React from 'react';
-import RundownTableHeader from './RundownTableHeader';
 import RundownRow from './RundownRow';
+import RundownTableHeader from './RundownTableHeader';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import { SearchHighlight } from '@/types/search';
 
 interface RundownTableProps {
-  items: RundownItem[];
+  items: any[]; // RundownItem[] | CalculatedRundownItem[];
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
@@ -17,31 +15,30 @@ interface RundownTableProps {
   isDraggingMultiple: boolean;
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
-  hasClipboardData?: boolean;
+  hasClipboardData: () => boolean;
   getColumnWidth: (column: Column) => string;
-  updateColumnWidth: (columnId: string, width: number) => void;
+  updateColumnWidth: (column: Column, width: number) => void;
   getRowNumber: (index: number) => string;
-  getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
+  getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
-  onColorSelect: (id: string, color: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent, index?: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
-  onPasteRows?: () => void;
-  onClearSelection?: () => void;
-  onAddRow?: () => void;
-  onAddHeader?: () => void;
-  currentHighlight?: SearchHighlight | null;
+  onPasteRows: () => void;
+  onClearSelection: () => void;
+  onAddRow: () => void;
+  onAddHeader: () => void;
 }
 
 const RundownTable = ({
@@ -55,7 +52,7 @@ const RundownTable = ({
   isDraggingMultiple,
   dropTargetIndex,
   currentSegmentId,
-  hasClipboardData = false,
+  hasClipboardData,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -78,97 +75,89 @@ const RundownTable = ({
   onPasteRows,
   onClearSelection,
   onAddRow,
-  onAddHeader,
-  currentHighlight
+  onAddHeader
 }: RundownTableProps) => {
-  
+
   return (
-    <div 
-      className="w-full"
-      onDragLeave={onDragLeave}
-    >
-      <table className="w-full min-w-max">
-        <RundownTableHeader
-          visibleColumns={visibleColumns}
-          getColumnWidth={getColumnWidth}
-          updateColumnWidth={updateColumnWidth}
-        />
-        <tbody>
-          {items.map((item, index) => {
-            const isCurrentlyPlaying = !isHeaderItem(item) && currentSegmentId === item.id;
-            
-            return (
-              <React.Fragment key={item.id}>
-                {/* Extra spacing above current row */}
-                {isCurrentlyPlaying && (
-                  <tr>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                
-                {/* Drop indicator above current row */}
-                {dropTargetIndex === index && (
-                  <tr>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-400 mx-2"></div>
-                    </td>
-                  </tr>
-                )}
-                
-                <RundownRow
-                  item={item}
-                  index={index}
-                  rowNumber={getRowNumber(index)}
-                  status={item.status}
-                  showColorPicker={showColorPicker}
-                  cellRefs={cellRefs}
-                  columns={visibleColumns}
-                  isSelected={selectedRows.has(item.id)}
-                  isCurrentlyPlaying={isCurrentlyPlaying}
-                  isDraggingMultiple={isDraggingMultiple && selectedRows.has(item.id)}
-                  selectedRowsCount={selectedRows.size}
-                  selectedRows={selectedRows}
-                  headerDuration={isHeaderItem(item) ? calculateHeaderDuration(index) : ''}
-                  hasClipboardData={hasClipboardData}
-                  currentHighlight={currentHighlight}
-                  onUpdateItem={onUpdateItem}
-                  onCellClick={onCellClick}
-                  onKeyDown={onKeyDown}
-                  onToggleColorPicker={onToggleColorPicker}
-                  onColorSelect={(id, color) => onColorSelect(id, color)}
-                  onDeleteRow={onDeleteRow}
-                  onToggleFloat={onToggleFloat}
-                  onRowSelect={onRowSelect}
-                  onDragStart={onDragStart}
-                  onDragOver={(e) => onDragOver(e, index)}
-                  onDrop={onDrop}
-                  onCopySelectedRows={onCopySelectedRows}
-                  onDeleteSelectedRows={onDeleteSelectedRows}
-                  onPasteRows={onPasteRows}
-                  onClearSelection={onClearSelection}
-                  onAddRow={onAddRow}
-                  onAddHeader={onAddHeader}
-                  isDragging={draggedItemIndex === index}
-                  getColumnWidth={getColumnWidth}
-                />
-                
-                {/* Drop indicator after last row */}
-                {index === items.length - 1 && dropTargetIndex === items.length && (
-                  <tr>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-400 mx-2"></div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="relative">
+      <RundownTableHeader 
+        columns={visibleColumns}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={updateColumnWidth}
+      />
+      
+      <div className="rundown-table-body">
+        <table className="w-full table-fixed">
+          <tbody>
+            {items.map((item, index) => {
+              // Convert calculated item back to regular item for display
+              const displayItem = {
+                ...item,
+                startTime: item.calculatedStartTime || item.startTime,
+                endTime: item.calculatedEndTime || item.endTime,
+                elapsedTime: item.calculatedElapsedTime || item.elapsedTime,
+                rowNumber: item.calculatedRowNumber || item.rowNumber
+              };
+
+              const rowNumber = getRowNumber(index);
+              const status = getRowStatus(item);
+              const headerDuration = isHeaderItem(item) ? calculateHeaderDuration(index) : '';
+              const isSelected = selectedRows.has(item.id);
+              const isDragging = draggedItemIndex === index;
+              const isCurrentlyPlaying = item.id === currentSegmentId;
+
+              return (
+                <React.Fragment key={item.id}>
+                  <RundownRow
+                    item={displayItem}
+                    index={index}
+                    rowNumber={rowNumber}
+                    status={status}
+                    showColorPicker={showColorPicker}
+                    cellRefs={cellRefs}
+                    columns={visibleColumns}
+                    isSelected={isSelected}
+                    isCurrentlyPlaying={isCurrentlyPlaying}
+                    isDraggingMultiple={isDraggingMultiple}
+                    selectedRowsCount={selectedRows.size}
+                    selectedRows={selectedRows}
+                    headerDuration={headerDuration}
+                    hasClipboardData={hasClipboardData}
+                    isDragging={isDragging}
+                    onUpdateItem={onUpdateItem}
+                    onCellClick={onCellClick}
+                    onKeyDown={onKeyDown}
+                    onToggleColorPicker={onToggleColorPicker}
+                    onColorSelect={onColorSelect}
+                    onDeleteRow={onDeleteRow}
+                    onToggleFloat={onToggleFloat}
+                    onRowSelect={onRowSelect}
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDrop={onDrop}
+                    onCopySelectedRows={onCopySelectedRows}
+                    onDeleteSelectedRows={onDeleteSelectedRows}
+                    onPasteRows={onPasteRows}
+                    onClearSelection={onClearSelection}
+                    onAddRow={onAddRow}
+                    onAddHeader={onAddHeader}
+                    getColumnWidth={getColumnWidth}
+                  />
+                  
+                  {/* Green line below current item for showcaller */}
+                  {isCurrentlyPlaying && (
+                    <tr>
+                      <td colSpan={visibleColumns.length + 1} className="p-0">
+                        <div className="h-1 bg-green-500 w-full"></div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

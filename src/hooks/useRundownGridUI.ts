@@ -6,9 +6,10 @@ import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
 import { RundownItem } from '@/types/rundown';
 import { Column } from './useColumnsManager';
+import { getRowStatus, CalculatedRundownItem } from '@/utils/rundownCalculations';
 
 export const useRundownGridUI = (
-  items: RundownItem[],
+  items: CalculatedRundownItem[],
   visibleColumns: Column[],
   columns: Column[],
   updateItem: (id: string, field: string, value: string) => void,
@@ -27,7 +28,7 @@ export const useRundownGridUI = (
     
     markAsChangedTimeoutRef.current = setTimeout(() => {
       markAsChanged();
-    }, 300); // 300ms debounce for auto-save
+    }, 300);
   }, [markAsChanged]);
 
   // Simple column widths with immediate callback
@@ -37,10 +38,9 @@ export const useRundownGridUI = (
   } = useSimpleColumnWidths(
     columns, 
     (columnId: string, width: number) => {
-      // Trigger debounced auto-save when column width changes
       debouncedMarkAsChanged();
     },
-    handleUpdateColumnWidth // Pass the column update function
+    handleUpdateColumnWidth
   );
 
   // Color picker
@@ -55,29 +55,32 @@ export const useRundownGridUI = (
     setEditingCell
   } = useEditingState();
 
-  // Cell navigation
+  // Cell navigation - convert CalculatedRundownItem to RundownItem for compatibility
+  const regularItems = useMemo(() => {
+    return items.map(item => ({
+      ...item,
+      startTime: item.calculatedStartTime,
+      endTime: item.calculatedEndTime,
+      elapsedTime: item.calculatedElapsedTime,
+      rowNumber: item.calculatedRowNumber
+    }));
+  }, [items]);
+
   const {
     cellRefs,
     handleCellClick,
     handleKeyDown
   } = useCellNavigation(
-    items,
+    regularItems,
     visibleColumns,
     updateItem,
     editingCell,
     setEditingCell
   );
 
-  // Get row status based on current time and playback
-  const getRowStatus = useCallback((item: RundownItem) => {
-    if (!item.startTime || !item.endTime) return 'upcoming';
-    
-    const now = currentTime;
-    const currentTimeString = now.toTimeString().slice(0, 8);
-    
-    if (currentTimeString < item.startTime) return 'upcoming';
-    if (currentTimeString >= item.startTime && currentTimeString < item.endTime) return 'completed';
-    return 'completed';
+  // Get row status using pure function
+  const getRowStatusForItem = useCallback((item: CalculatedRundownItem) => {
+    return getRowStatus(item, currentTime);
   }, [currentTime]);
 
   // Color selection function
@@ -95,7 +98,7 @@ export const useRundownGridUI = (
   }, []);
 
   return {
-    // Column management - simplified
+    // Column management
     updateColumnWidth,
     getColumnWidth,
     
@@ -104,7 +107,7 @@ export const useRundownGridUI = (
     handleToggleColorPicker,
     
     // Row status
-    getRowStatus,
+    getRowStatus: getRowStatusForItem,
     
     // Color selection
     selectColor,
