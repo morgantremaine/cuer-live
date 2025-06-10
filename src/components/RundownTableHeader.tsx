@@ -14,6 +14,8 @@ const RundownTableHeader = ({
   getColumnWidth,
   updateColumnWidth
 }: RundownTableHeaderProps) => {
+  console.log('🏷️ Rendering table header with columns:', visibleColumns.map(c => c.name));
+  
   return (
     <div className="rundown-table-header">
       <table className="w-full table-fixed">
@@ -30,7 +32,7 @@ const RundownTableHeader = ({
                 onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
                 showLeftSeparator={index > 0}
               >
-                {column.name}
+                {column.name || column.key}
               </ResizableColumnHeader>
             ))}
           </tr>
