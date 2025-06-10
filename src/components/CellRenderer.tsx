@@ -75,19 +75,24 @@ const CellRenderer = ({
     );
   }
 
+  // Create cell key for referencing
+  const cellKey = `${item.id}-${column.key}`;
+
   // Use CustomFieldCell for custom fields
   if (column.isCustom) {
     return (
       <CustomFieldCell
-        column={column}
-        item={item}
         value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
-        onUpdateItem={onUpdateItem}
+        onUpdateValue={(newValue) => {
+          const field = `customFields.${column.key}`;
+          onUpdateItem(item.id, field, newValue);
+        }}
         onCellClick={(e) => onCellClick(item.id, column.key)}
         onKeyDown={onKeyDown}
-        width={width}
       />
     );
   }
@@ -96,22 +101,22 @@ const CellRenderer = ({
   if (column.key === 'script' || column.key === 'notes') {
     return (
       <TextAreaCell
-        column={column}
-        item={item}
         value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
-        onUpdateItem={onUpdateItem}
+        placeholder={`Enter ${column.name.toLowerCase()}...`}
+        onUpdateValue={(newValue) => {
+          onUpdateItem(item.id, column.key, newValue);
+        }}
         onCellClick={(e) => onCellClick(item.id, column.key)}
         onKeyDown={onKeyDown}
-        width={width}
       />
     );
   }
 
   // Default input cell for other fields
-  const cellKey = `${item.id}-${column.key}`;
-  
   return (
     <div className="p-1" style={{ width }}>
       <input
