@@ -1,144 +1,114 @@
 
 import { useMemo } from 'react';
-import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownGridCore } from './useRundownGridCore';
+import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
-import { useTimeCalculations } from './useTimeCalculations';
-import { useRundownCalculations } from './useRundownCalculations';
 
 export const useRundownStateCoordination = () => {
-  // Core rundown state and operations
-  const basicState = useRundownBasicState();
+  // Use the simplified state system
+  const simplifiedState = useSimplifiedRundownState();
   
-  // Grid-specific core functionality - pass the basic state as integration props
-  const gridCore = useRundownGridCore({
-    markAsChanged: basicState.markAsChanged,
-    rundownTitle: basicState.rundownTitle,
-    timezone: basicState.timezone,
-    rundownStartTime: basicState.rundownStartTime,
-    setRundownTitleDirectly: basicState.setRundownTitleDirectly,
-    setTimezoneDirectly: basicState.setTimezoneDirectly,
-    setRundownStartTimeDirectly: basicState.setRundownStartTimeDirectly,
-    setAutoSaveTrigger: basicState.setAutoSaveTrigger,
-    isProcessingRealtimeUpdate: false
-  });
-
-  // Add the time calculations hook that was missing
-  const { calculateEndTime, getRowStatus } = useTimeCalculations(
-    gridCore.items, 
-    gridCore.updateItem, 
-    basicState.rundownStartTime || '09:00:00'
-  );
-
-  // Add the rundown calculations hook for row numbers and durations
-  const { getRowNumber, calculateTotalRuntime, calculateHeaderDuration } = useRundownCalculations(gridCore.items);
-  
-  // Grid interactions (drag/drop, selection, clipboard)
+  // Grid interactions (drag/drop, selection, clipboard) - simplified parameters
   const gridInteractions = useRundownGridInteractions(
-    gridCore.items,
-    gridCore.setItems,
-    gridCore.updateItem,
-    gridCore.addRow,
-    gridCore.addHeader,
-    gridCore.deleteRow,
-    gridCore.toggleFloatRow,
-    gridCore.deleteMultipleRows,
-    gridCore.addMultipleRows,
-    gridCore.handleDeleteColumn,
-    calculateEndTime, // Use the one from useTimeCalculations
-    (id: string, color: string) => {
-      gridCore.updateItem(id, 'color', color);
+    simplifiedState.items,
+    (updater) => {
+      if (typeof updater === 'function') {
+        const newItems = updater(simplifiedState.items);
+        simplifiedState.setItems(newItems);
+      }
     },
-    basicState.markAsChanged, // Pass the basic state markAsChanged for auto-save
-    gridCore.setRundownTitle
+    simplifiedState.updateItem,
+    () => simplifiedState.addRow(), // Simplified - no complex parameters
+    () => simplifiedState.addHeader(), // Simplified - no complex parameters
+    simplifiedState.deleteItem,
+    simplifiedState.toggleFloat,
+    simplifiedState.deleteMultipleItems,
+    (items) => {
+      items.forEach(item => simplifiedState.addItem(item));
+    },
+    (columnId) => {
+      // Simplified column deletion
+      const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
+      simplifiedState.setColumns(newColumns);
+    },
+    () => '00:00:00', // Simplified - calculations are handled centrally
+    (id, color) => simplifiedState.updateItem(id, 'color', color),
+    () => {}, // No complex change tracking needed
+    simplifiedState.setTitle
   );
   
-  // Grid UI state (colors, editing, etc.) - using new simplified system
+  // Grid UI state - simplified parameters
   const gridUI = useRundownGridUI(
-    gridCore.items,
-    gridCore.visibleColumns,
-    gridCore.columns,
-    gridCore.updateItem,
-    gridCore.currentSegmentId,
-    gridCore.currentTime,
-    basicState.markAsChanged,
-    gridCore.handleUpdateColumnWidth // Pass the column width update function
+    simplifiedState.items,
+    simplifiedState.visibleColumns,
+    simplifiedState.columns,
+    simplifiedState.updateItem,
+    simplifiedState.currentSegmentId,
+    simplifiedState.currentTime,
+    () => {}, // No complex change tracking needed
+    simplifiedState.updateColumnWidth
   );
 
-  // Validate and clean time format
-  const validateTimeFormat = (timeString: string): string => {
-    if (!timeString) return '09:00:00';
+  // Simple status calculation
+  const getRowStatus = (item: any) => {
+    const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const currentSeconds = timeToSeconds(now);
+    const startSeconds = timeToSeconds(item.startTime);
+    const endSeconds = timeToSeconds(item.endTime);
     
-    // Remove any non-time characters (like the 'd' suffix)
-    let cleanTime = timeString.replace(/[^0-9:]/g, '');
-    
-    // Ensure proper format HH:MM:SS
-    const timeParts = cleanTime.split(':');
-    if (timeParts.length === 3) {
-      const hours = timeParts[0].padStart(2, '0');
-      const minutes = timeParts[1].padStart(2, '0');
-      const seconds = timeParts[2].padStart(2, '0');
-      return `${hours}:${minutes}:${seconds}`;
+    if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
+      return 'current';
+    } else if (currentSeconds >= endSeconds) {
+      return 'completed';
     }
-    
-    // Fallback to default
-    return '09:00:00';
+    return 'upcoming';
   };
 
-  // Enhanced timezone setter that triggers change tracking
-  const setTimezone = (newTimezone: string) => {
-    console.log('🌍 useRundownStateCoordination: Setting timezone:', newTimezone);
-    basicState.setTimezone(newTimezone);
-    // Immediately mark as changed to trigger auto-save
-    basicState.markAsChanged();
-  };
-
-  // Enhanced start time setter that validates and triggers change tracking
-  const setRundownStartTime = (newStartTime: string) => {
-    const validatedTime = validateTimeFormat(newStartTime);
-    console.log('⏰ useRundownStateCoordination: Setting start time:', { original: newStartTime, validated: validatedTime });
-    basicState.setRundownStartTime(validatedTime);
-    // Immediately mark as changed to trigger auto-save
-    basicState.markAsChanged();
-  };
-
-  // Direct setters for data loading (no change tracking)
-  const setTimezoneDirectly = (newTimezone: string) => {
-    console.log('🌍 useRundownStateCoordination: Setting timezone directly (no auto-save):', newTimezone);
-    basicState.setTimezoneDirectly(newTimezone);
-  };
-
-  const setRundownStartTimeDirectly = (newStartTime: string) => {
-    const validatedTime = validateTimeFormat(newStartTime);
-    console.log('⏰ useRundownStateCoordination: Setting start time directly (no auto-save):', { original: newStartTime, validated: validatedTime });
-    basicState.setRundownStartTimeDirectly(validatedTime);
+  const timeToSeconds = (timeStr: string) => {
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+    return 0;
   };
 
   return {
     coreState: {
-      ...basicState,
-      ...gridCore,
-      timezone: basicState.timezone,
-      rundownStartTime: validateTimeFormat(basicState.rundownStartTime),
-      setTimezone, // Use our enhanced version for UI interactions
-      setRundownStartTime, // Use our enhanced version for UI interactions
-      setTimezoneDirectly, // Direct setters for data loading
-      setRundownStartTimeDirectly, // Direct setters for data loading
-      // Override with the properly calculated functions
-      calculateEndTime,
-      calculateTotalRuntime,
-      getRowNumber,
-      calculateHeaderDuration,
-      // Pass through the undo functionality from gridCore
-      handleUndo: gridCore.handleUndo,
-      canUndo: gridCore.canUndo,
-      lastAction: gridCore.lastAction
+      // Basic state
+      ...simplifiedState,
+      
+      // Simplified calculated functions
+      calculateEndTime: (startTime: string, duration: string) => {
+        const startSeconds = timeToSeconds(startTime);
+        const durationSeconds = timeToSeconds(duration);
+        const totalSeconds = startSeconds + durationSeconds;
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      },
+      
+      calculateTotalRuntime: () => simplifiedState.totalRuntime,
+      calculateHeaderDuration: (index: number) => {
+        const item = simplifiedState.items[index];
+        return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
+      },
+      
+      // Simplified no-op functions for compatibility
+      handleUndo: () => null,
+      canUndo: false,
+      lastAction: '',
+      isConnected: false,
+      isProcessingRealtimeUpdate: false
     },
     interactions: gridInteractions,
     uiState: {
       ...gridUI,
-      getRowStatus, // Add the getRowStatus function from useTimeCalculations
+      getRowStatus
     }
   };
 };
