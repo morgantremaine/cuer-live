@@ -119,29 +119,27 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields
+  // Default input cell for other fields - return only the input element, NOT wrapped in <td>
   console.log(`📝 Using default input for ${column.key}`);
   return (
-    <td className="p-1 border-r border-gray-300 dark:border-gray-600" style={{ width }}>
-      <input
-        ref={(el) => {
-          if (el) {
-            cellRefs.current[cellKey] = el;
-          }
-        }}
-        type="text"
-        value={value}
-        onChange={(e) => {
-          const field = column.isCustom ? `customFields.${column.key}` : column.key;
-          onUpdateItem(item.id, field, e.target.value);
-        }}
-        onClick={() => onCellClick(item.id, column.key)}
-        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full px-1 py-0.5 text-sm border-none bg-transparent outline-none resize-none"
-        style={{ color: textColor }}
-        placeholder={`Enter ${column.name.toLowerCase()}...`}
-      />
-    </td>
+    <input
+      ref={(el) => {
+        if (el) {
+          cellRefs.current[cellKey] = el;
+        }
+      }}
+      type="text"
+      value={value}
+      onChange={(e) => {
+        const field = column.isCustom ? `customFields.${column.key}` : column.key;
+        onUpdateItem(item.id, field, e.target.value);
+      }}
+      onClick={() => onCellClick(item.id, column.key)}
+      onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+      className="w-full px-1 py-0.5 text-sm border-none bg-transparent outline-none resize-none"
+      style={{ color: textColor }}
+      placeholder={`Enter ${column.name.toLowerCase()}...`}
+    />
   );
 };
 
