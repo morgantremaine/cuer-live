@@ -58,7 +58,6 @@ const CellRenderer = ({
   };
 
   const value = getCellValue();
-  console.log(`📝 CellRenderer for ${item.id}.${column.key}:`, value);
 
   // Determine if this is a read-only field
   const isReadOnly = !column.isEditable || 
@@ -68,7 +67,6 @@ const CellRenderer = ({
 
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
-    console.log(`📝 Using TimeDisplayCell for ${column.key}`);
     return (
       <TimeDisplayCell value={value} />
     );
@@ -79,7 +77,6 @@ const CellRenderer = ({
 
   // Use CustomFieldCell for custom fields
   if (column.isCustom) {
-    console.log(`📝 Using CustomFieldCell for ${column.key}`);
     return (
       <CustomFieldCell
         value={value}
@@ -99,7 +96,6 @@ const CellRenderer = ({
 
   // Use TextAreaCell for script and notes fields
   if (column.key === 'script' || column.key === 'notes') {
-    console.log(`📝 Using TextAreaCell for ${column.key}`);
     return (
       <TextAreaCell
         value={value}
@@ -117,20 +113,9 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields with proper styling
-  console.log(`📝 Using default input for ${column.key}`);
+  // Default input cell for other fields with fixed styling
   return (
-    <div 
-      className="w-full h-full min-h-[32px] p-1"
-      style={{
-        display: 'block',
-        visibility: 'visible',
-        opacity: 1,
-        minHeight: '32px',
-        position: 'relative',
-        zIndex: 2
-      }}
-    >
+    <div className="w-full h-full p-1">
       <input
         ref={(el) => {
           if (el) {
@@ -148,14 +133,7 @@ const CellRenderer = ({
         className="w-full h-full px-2 py-1 text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded-sm"
         style={{ 
           color: textColor || '#374151',
-          minHeight: '28px',
-          display: 'block',
-          visibility: 'visible',
-          opacity: 1,
-          backgroundColor: '#ffffff',
-          border: '1px solid #d1d5db',
-          position: 'relative',
-          zIndex: 2
+          minHeight: '28px'
         }}
         placeholder={`Enter ${column.name.toLowerCase()}...`}
       />

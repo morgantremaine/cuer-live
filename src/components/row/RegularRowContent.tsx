@@ -52,12 +52,11 @@ const RegularRowContent = ({
       </td>
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
-        console.log(`📏 Column ${column.key} width:`, columnWidth);
         
         return (
           <td
             key={column.id}
-            className="align-middle border border-gray-300 bg-white p-1"
+            className="align-middle border border-gray-300 bg-white"
             style={{ width: columnWidth, minWidth: columnWidth }}
           >
             <CellRenderer

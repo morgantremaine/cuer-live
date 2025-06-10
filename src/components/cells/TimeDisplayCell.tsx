@@ -12,8 +12,8 @@ interface TimeDisplayCellProps {
 
 const TimeDisplayCell = ({ value, highlight }: TimeDisplayCellProps) => {
   return (
-    <div className="w-full h-full min-h-[32px] p-1">
-      <span className="inline-block w-full text-sm font-mono bg-gray-50 border border-gray-300 px-2 py-1 rounded-sm text-gray-900 min-h-[28px] text-center leading-6">
+    <div className="w-full h-full p-1">
+      <span className="inline-block w-full text-sm font-mono bg-gray-50 border border-gray-300 px-2 py-1 rounded-sm text-gray-900 text-center">
         {highlight ? (
           <HighlightedText text={value} highlight={highlight} />
         ) : (

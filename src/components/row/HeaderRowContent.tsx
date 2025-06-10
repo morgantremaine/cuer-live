@@ -59,7 +59,7 @@ const HeaderRowContent = ({
                 ({headerDuration})
               </span>
             ) : (
-              // For all other columns (including custom columns), show empty cell for headers
+              // For all other columns, show empty cell for headers
               <div className="px-1 py-0.5 text-sm text-gray-400 dark:text-gray-500">
                 {/* Empty cell - headers don't use these columns */}
               </div>
