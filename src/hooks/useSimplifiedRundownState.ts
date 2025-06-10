@@ -100,6 +100,13 @@ export const useSimplifiedRundownState = () => {
       } else {
         actions.updateItem(id, { [field]: value });
       }
+    }, [actions.updateItem, state.items]),
+
+    toggleFloat: useCallback((id: string) => {
+      const item = state.items.find(i => i.id === id);
+      if (item) {
+        actions.updateItem(id, { isFloating: !item.isFloating });
+      }
     }, [actions.updateItem, state.items])
   };
 
@@ -134,7 +141,6 @@ export const useSimplifiedRundownState = () => {
     // Actions with correct names expected by components
     ...enhancedActions,
     deleteItem: actions.deleteItem,
-    toggleFloat: actions.updateItem, // Simplified toggle
     deleteMultipleItems: actions.deleteMultipleItems,
     addItem: actions.addItem,
     setTitle: actions.setTitle,
