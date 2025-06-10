@@ -33,12 +33,14 @@ const HeaderRowContent = ({
         style={{ 
           width: '40px',
           minWidth: '40px',
-          display: 'table-cell !important',
-          visibility: 'visible !important',
-          opacity: '1 !important',
+          display: 'table-cell',
+          visibility: 'visible',
+          opacity: 1,
           minHeight: '32px',
-          border: '1px solid #d1d5db !important',
-          backgroundColor: '#f3f4f6 !important'
+          border: '1px solid #d1d5db',
+          backgroundColor: '#f3f4f6',
+          position: 'relative',
+          zIndex: 1
         }}
       >
         <span className="text-lg font-bold text-gray-900 dark:text-white">{rowNumber}</span>
@@ -50,12 +52,14 @@ const HeaderRowContent = ({
           style={{ 
             width: getColumnWidth(column),
             minWidth: '100px',
-            display: 'table-cell !important',
-            visibility: 'visible !important',
-            opacity: '1 !important',
+            display: 'table-cell',
+            visibility: 'visible',
+            opacity: 1,
             minHeight: '32px',
-            border: '1px solid #d1d5db !important',
-            backgroundColor: '#f3f4f6 !important'
+            border: '1px solid #d1d5db',
+            backgroundColor: '#f3f4f6',
+            position: 'relative',
+            zIndex: 1
           }}
         >
           {column.key === 'segmentName' ? (
@@ -71,10 +75,12 @@ const HeaderRowContent = ({
               onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
               className="w-full border border-gray-200 bg-white text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-gray-400 rounded px-2 py-1 text-base font-bold"
               style={{
-                display: 'block !important',
-                visibility: 'visible !important',
-                opacity: '1 !important',
-                minHeight: '28px'
+                display: 'block',
+                visibility: 'visible',
+                opacity: 1,
+                minHeight: '28px',
+                position: 'relative',
+                zIndex: 2
               }}
               placeholder="Segment Name"
             />
@@ -82,9 +88,11 @@ const HeaderRowContent = ({
             <span 
               className="text-sm text-gray-600 dark:text-gray-400 font-mono"
               style={{
-                display: 'block !important',
-                visibility: 'visible !important',
-                opacity: '1 !important'
+                display: 'block',
+                visibility: 'visible',
+                opacity: 1,
+                position: 'relative',
+                zIndex: 2
               }}
             >
               ({headerDuration})
@@ -94,10 +102,12 @@ const HeaderRowContent = ({
             <div 
               className="px-1 py-0.5 text-sm text-gray-400 dark:text-gray-500"
               style={{
-                display: 'block !important',
-                visibility: 'visible !important',
-                opacity: '1 !important',
-                minHeight: '20px'
+                display: 'block',
+                visibility: 'visible',
+                opacity: 1,
+                minHeight: '20px',
+                position: 'relative',
+                zIndex: 2
               }}
             >
               {/* Empty cell - headers don't use these columns */}

@@ -117,10 +117,12 @@ const RegularRow = (props: RegularRowProps) => {
         style={{ 
           backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : '#ffffff'),
           color: textColor || '#000000',
-          display: 'table-row !important',
-          visibility: 'visible !important',
-          opacity: '1 !important',
-          minHeight: '40px'
+          display: 'table-row',
+          visibility: 'visible',
+          opacity: 1,
+          minHeight: '40px',
+          position: 'relative',
+          zIndex: 1
         }}
         draggable
         onClick={handleRowClick}

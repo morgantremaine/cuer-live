@@ -109,10 +109,12 @@ const HeaderRow = (props: HeaderRowProps) => {
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
         style={{
           backgroundColor: '#f3f4f6',
-          display: 'table-row !important',
-          visibility: 'visible !important',
-          opacity: '1 !important',
-          minHeight: '40px'
+          display: 'table-row',
+          visibility: 'visible',
+          opacity: 1,
+          minHeight: '40px',
+          position: 'relative',
+          zIndex: 1
         }}
         draggable
         onDragStart={(e) => props.onDragStart(e, index)}

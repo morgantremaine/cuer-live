@@ -123,10 +123,12 @@ const CellRenderer = ({
     <div 
       className="w-full h-full min-h-[32px] p-1"
       style={{
-        display: 'block !important',
-        visibility: 'visible !important',
-        opacity: '1 !important',
-        minHeight: '32px'
+        display: 'block',
+        visibility: 'visible',
+        opacity: 1,
+        minHeight: '32px',
+        position: 'relative',
+        zIndex: 2
       }}
     >
       <input
@@ -147,11 +149,13 @@ const CellRenderer = ({
         style={{ 
           color: textColor || '#374151',
           minHeight: '28px',
-          display: 'block !important',
-          visibility: 'visible !important',
-          opacity: '1 !important',
-          backgroundColor: '#ffffff !important',
-          border: '1px solid #d1d5db !important'
+          display: 'block',
+          visibility: 'visible',
+          opacity: 1,
+          backgroundColor: '#ffffff',
+          border: '1px solid #d1d5db',
+          position: 'relative',
+          zIndex: 2
         }}
         placeholder={`Enter ${column.name.toLowerCase()}...`}
       />
