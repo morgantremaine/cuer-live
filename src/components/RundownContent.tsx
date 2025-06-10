@@ -114,10 +114,10 @@ const RundownContent = ({
             onDrop={onDrop}
             onCopySelectedRows={onCopySelectedRows}
             onDeleteSelectedRows={onDeleteSelectedRows}
-            onPasteRows={onPasteRows}
-            onClearSelection={onClearSelection}
-            onAddRow={onAddRow}
-            onAddHeader={onAddHeader}
+            onPasteRows={onPasteRows || (() => {})}
+            onClearSelection={onClearSelection || (() => {})}
+            onAddRow={onAddRow || (() => {})}
+            onAddHeader={onAddHeader || (() => {})}
           />
         </div>
         <ScrollBar orientation="horizontal" />

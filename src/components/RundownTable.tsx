@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import RundownRow from './RundownRow';
 import RundownTableHeader from './RundownTableHeader';
@@ -92,15 +91,6 @@ const RundownTable = ({
         <table className="w-full table-fixed">
           <tbody>
             {items.map((item, index) => {
-              // Convert calculated item back to regular item for display
-              const displayItem = {
-                ...item,
-                startTime: item.calculatedStartTime || item.startTime,
-                endTime: item.calculatedEndTime || item.endTime,
-                elapsedTime: item.calculatedElapsedTime || item.elapsedTime,
-                rowNumber: item.calculatedRowNumber || item.rowNumber
-              };
-
               const rowNumber = getRowNumber(index);
               const status = getRowStatus(item);
               const headerDuration = isHeaderItem(item) ? calculateHeaderDuration(index) : '';
@@ -111,7 +101,7 @@ const RundownTable = ({
               return (
                 <React.Fragment key={item.id}>
                   <RundownRow
-                    item={displayItem}
+                    item={item}
                     index={index}
                     rowNumber={rowNumber}
                     status={status}
@@ -165,4 +155,3 @@ const RundownTable = ({
 };
 
 export default RundownTable;
-
