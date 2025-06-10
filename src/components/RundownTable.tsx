@@ -79,18 +79,22 @@ const RundownTable = ({
   onAddHeader
 }: RundownTableProps) => {
 
+  console.log('🏗️ RundownTable rendering with items:', items.length);
+
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <RundownTableHeader 
         visibleColumns={visibleColumns}
         getColumnWidth={getColumnWidth}
         updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       />
       
-      <div className="rundown-table-body">
-        <table className="w-full table-fixed">
+      <div className="rundown-table-body w-full">
+        <table className="w-full table-fixed border-collapse">
           <tbody>
             {items.map((item, index) => {
+              console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
+              
               const rowNumber = getRowNumber(index);
               const status = getRowStatus(item);
               const headerDuration = isHeaderItem(item) ? calculateHeaderDuration(index) : '';
@@ -149,6 +153,13 @@ const RundownTable = ({
             })}
           </tbody>
         </table>
+        
+        {/* Debug info */}
+        {items.length === 0 && (
+          <div className="p-4 text-center text-gray-500">
+            No items to display
+          </div>
+        )}
       </div>
     </div>
   );
