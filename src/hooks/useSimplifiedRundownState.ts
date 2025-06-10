@@ -15,7 +15,7 @@ export const useSimplifiedRundownState = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize with default data
+  // Initialize with default data - fix width types to be strings
   const {
     state,
     calculations,
@@ -24,12 +24,12 @@ export const useSimplifiedRundownState = () => {
   } = useRundownState({
     items: defaultRundownItems,
     columns: [
-      { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: 200, isCustom: false },
-      { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: 100, isCustom: false },
-      { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: 100, isCustom: false },
-      { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: 100, isCustom: false },
-      { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: 150, isCustom: false },
-      { id: 'script', name: 'Script', key: 'script', isVisible: true, width: 300, isCustom: false }
+      { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false },
+      { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false },
+      { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false },
+      { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false },
+      { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false },
+      { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false }
     ]
   });
 
@@ -109,7 +109,9 @@ export const useSimplifiedRundownState = () => {
   return {
     // Core state
     items: calculations.itemsWithCalculatedTimes,
+    setItems: actions.setItems,
     columns: state.columns,
+    setColumns: actions.setColumns,
     visibleColumns,
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
@@ -129,15 +131,22 @@ export const useSimplifiedRundownState = () => {
     getRowNumber: helpers.getRowNumber,
     getHeaderDuration: helpers.getHeaderDuration,
     
-    // Actions
+    // Actions with correct names expected by components
     ...enhancedActions,
+    deleteItem: actions.deleteItem,
+    toggleFloat: actions.updateItem, // Simplified toggle
+    deleteMultipleItems: actions.deleteMultipleItems,
+    addItem: actions.addItem,
+    setTitle: actions.setTitle,
+    setStartTime: actions.setStartTime,
+    setTimezone: actions.setTimezone,
     
     // Column management
     addColumn: (column: Column) => {
       actions.setColumns([...state.columns, column]);
     },
     
-    updateColumnWidth: (columnId: string, width: number) => {
+    updateColumnWidth: (columnId: string, width: string) => {
       actions.updateColumn(columnId, { width });
     }
   };

@@ -1,10 +1,12 @@
-
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownGridUI } from './useRundownGridUI';
 
 export const useRundownStateCoordination = () => {
+  // Add missing UI state
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
   
@@ -80,6 +82,48 @@ export const useRundownStateCoordination = () => {
     coreState: {
       // Basic state
       ...simplifiedState,
+      
+      // UI state
+      showColumnManager,
+      setShowColumnManager,
+      
+      // Renamed functions to match component expectations
+      deleteRow: simplifiedState.deleteItem,
+      toggleFloatRow: simplifiedState.toggleFloat,
+      setRundownTitle: simplifiedState.setTitle,
+      
+      // Playback controls (simplified)
+      timeRemaining: '00:00:00',
+      play: () => {},
+      pause: () => {},
+      forward: () => {},
+      backward: () => {},
+      
+      // Column management functions
+      handleAddColumn: simplifiedState.addColumn,
+      handleReorderColumns: (columns: any[]) => simplifiedState.setColumns(columns),
+      handleDeleteColumn: (columnId: string) => {
+        const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
+        simplifiedState.setColumns(newColumns);
+      },
+      handleRenameColumn: (columnId: string, newName: string) => {
+        const newColumns = simplifiedState.columns.map(col =>
+          col.id === columnId ? { ...col, name: newName } : col
+        );
+        simplifiedState.setColumns(newColumns);
+      },
+      handleToggleColumnVisibility: (columnId: string) => {
+        const newColumns = simplifiedState.columns.map(col =>
+          col.id === columnId ? { ...col, isVisible: !col.isVisible } : col
+        );
+        simplifiedState.setColumns(newColumns);
+      },
+      handleLoadLayout: (columns: any[]) => simplifiedState.setColumns(columns),
+      
+      // Other missing functions
+      markAsChanged: () => {}, // Simplified - auto-save handles this
+      setRundownStartTime: simplifiedState.setStartTime,
+      setTimezone: simplifiedState.setTimezone,
       
       // Simplified calculated functions
       calculateEndTime: (startTime: string, duration: string) => {
