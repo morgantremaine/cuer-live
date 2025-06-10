@@ -40,13 +40,14 @@ const RegularRowContent = ({
         className="px-2 py-1 text-sm font-mono align-middle border border-gray-300 bg-white"
         style={{ 
           color: textColor || '#000000', 
-          width: '40px', 
-          minWidth: '40px',
+          width: '50px', 
+          minWidth: '50px',
+          maxWidth: '50px',
           display: 'table-cell',
           visibility: 'visible',
           opacity: 1,
-          minHeight: '32px',
-          border: '1px solid #d1d5db',
+          minHeight: '40px',
+          border: '2px solid #d1d5db',
           position: 'relative',
           zIndex: 1
         }}
@@ -64,35 +65,42 @@ const RegularRowContent = ({
           )}
         </div>
       </td>
-      {columns.map((column) => (
-        <td
-          key={column.id}
-          className="align-middle border border-gray-300 bg-white"
-          style={{ 
-            width: getColumnWidth(column),
-            minWidth: '100px',
-            display: 'table-cell',
-            visibility: 'visible',
-            opacity: 1,
-            minHeight: '32px',
-            border: '1px solid #d1d5db',
-            backgroundColor: '#ffffff',
-            position: 'relative',
-            zIndex: 1
-          }}
-        >
-          <CellRenderer
-            column={column}
-            item={item}
-            cellRefs={cellRefs}
-            textColor={textColor}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            width={getColumnWidth(column)}
-          />
-        </td>
-      ))}
+      {columns.map((column) => {
+        const columnWidth = getColumnWidth(column);
+        console.log(`📏 Column ${column.key} width:`, columnWidth);
+        
+        return (
+          <td
+            key={column.id}
+            className="align-middle border border-gray-300 bg-white p-1"
+            style={{ 
+              width: columnWidth,
+              minWidth: columnWidth,
+              maxWidth: columnWidth,
+              display: 'table-cell',
+              visibility: 'visible',
+              opacity: 1,
+              minHeight: '40px',
+              border: '2px solid #d1d5db',
+              backgroundColor: '#ffffff',
+              position: 'relative',
+              zIndex: 1,
+              overflow: 'hidden'
+            }}
+          >
+            <CellRenderer
+              column={column}
+              item={item}
+              cellRefs={cellRefs}
+              textColor={textColor}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              width={columnWidth}
+            />
+          </td>
+        );
+      })}
     </>
   );
 };

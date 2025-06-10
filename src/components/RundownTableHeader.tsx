@@ -21,21 +21,40 @@ const RundownTableHeader = ({
       <tr className="border-b border-blue-700">
         <th 
           className="px-2 py-3 text-left text-sm font-semibold text-white border-r border-blue-500 bg-blue-600"
-          style={{ width: '40px', minWidth: '40px' }}
+          style={{ 
+            width: '50px', 
+            minWidth: '50px', 
+            maxWidth: '50px',
+            display: 'table-cell',
+            visibility: 'visible',
+            opacity: 1
+          }}
         >
           #
         </th>
-        {visibleColumns.map((column, index) => (
-          <ResizableColumnHeader
-            key={column.id}
-            column={column}
-            width={getColumnWidth(column)}
-            onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-            showLeftSeparator={index > 0}
-          >
-            {column.name || column.key}
-          </ResizableColumnHeader>
-        ))}
+        {visibleColumns.map((column, index) => {
+          const columnWidth = getColumnWidth(column);
+          
+          return (
+            <ResizableColumnHeader
+              key={column.id}
+              column={column}
+              width={columnWidth}
+              onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+              showLeftSeparator={index > 0}
+              style={{
+                width: columnWidth,
+                minWidth: columnWidth,
+                maxWidth: columnWidth,
+                display: 'table-cell',
+                visibility: 'visible',
+                opacity: 1
+              }}
+            >
+              {column.name || column.key}
+            </ResizableColumnHeader>
+          );
+        })}
       </tr>
     </thead>
   );
