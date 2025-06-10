@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -106,6 +107,13 @@ const HeaderRow = (props: HeaderRowProps) => {
     >
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
+        style={{
+          backgroundColor: '#f3f4f6',
+          display: 'table-row !important',
+          visibility: 'visible !important',
+          opacity: '1 !important',
+          minHeight: '40px'
+        }}
         draggable
         onDragStart={(e) => props.onDragStart(e, index)}
         onDragOver={props.onDragOver}

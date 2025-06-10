@@ -120,7 +120,15 @@ const CellRenderer = ({
   // Default input cell for other fields with proper styling
   console.log(`📝 Using default input for ${column.key}`);
   return (
-    <div className="w-full h-full min-h-[32px] p-1">
+    <div 
+      className="w-full h-full min-h-[32px] p-1"
+      style={{
+        display: 'block !important',
+        visibility: 'visible !important',
+        opacity: '1 !important',
+        minHeight: '32px'
+      }}
+    >
       <input
         ref={(el) => {
           if (el) {
@@ -138,7 +146,12 @@ const CellRenderer = ({
         className="w-full h-full px-2 py-1 text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded-sm"
         style={{ 
           color: textColor || '#374151',
-          minHeight: '28px'
+          minHeight: '28px',
+          display: 'block !important',
+          visibility: 'visible !important',
+          opacity: '1 !important',
+          backgroundColor: '#ffffff !important',
+          border: '1px solid #d1d5db !important'
         }}
         placeholder={`Enter ${column.name.toLowerCase()}...`}
       />

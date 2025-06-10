@@ -115,8 +115,12 @@ const RegularRow = (props: RegularRowProps) => {
       <tr 
         className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-all cursor-pointer select-none`}
         style={{ 
-          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : undefined),
-          color: textColor || undefined
+          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : '#ffffff'),
+          color: textColor || '#000000',
+          display: 'table-row !important',
+          visibility: 'visible !important',
+          opacity: '1 !important',
+          minHeight: '40px'
         }}
         draggable
         onClick={handleRowClick}
