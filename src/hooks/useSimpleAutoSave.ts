@@ -21,68 +21,42 @@ export const useSimpleAutoSave = (
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isInitializedRef = useRef(false);
+  const skipNextChangeRef = useRef(false);
 
   const performSave = useCallback(async () => {
-    if (!user || isSavingRef.current) return false;
+    if (!user || isSavingRef.current || !rundownId) return false;
 
     isSavingRef.current = true;
     setIsSaving(true);
-    console.log('💾 Auto-save triggered for rundown:', rundownId);
 
     try {
-      if (rundownId) {
-        // Update existing rundown
-        await updateRundown(
-          rundownId,
-          title,
-          items,
-          true, // silent
-          false, // not archived
-          columns,
-          timezone,
-          startTime
-        );
-        
-        console.log('✅ Auto-save successful');
-      } else {
-        // Create new rundown
-        const newRundown = {
-          id: '',
-          title,
-          items,
-          columns,
-          timezone,
-          start_time: startTime,
-          user_id: '',
-          team_id: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          archived: false,
-          icon: null,
-          visibility: 'private' as const,
-          undo_history: [],
-          teams: null,
-          creator_profile: null
-        };
-
-        const newId = await saveRundown(newRundown);
-        console.log('💾 Created new rundown:', newId);
-      }
-
+      // Update existing rundown
+      await updateRundown(
+        rundownId,
+        title,
+        items,
+        true, // silent
+        false, // not archived
+        columns,
+        timezone,
+        startTime
+      );
+      
       // Update the saved data reference and clear unsaved changes
       const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
       lastSaveDataRef.current = currentData;
       setHasUnsavedChanges(false);
+      skipNextChangeRef.current = true; // Skip the next change detection
 
       return true;
     } catch (error) {
-      console.error('❌ Auto-save failed:', error);
+      console.error('Auto-save failed:', error);
       return false;
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);
     }
-  }, [user, rundownId, updateRundown, saveRundown, title, items, columns, timezone, startTime]);
+  }, [user, rundownId, updateRundown, title, items, columns, timezone, startTime]);
 
   // Main auto-save effect
   useEffect(() => {
@@ -92,7 +66,12 @@ export const useSimpleAutoSave = (
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
       lastSaveDataRef.current = currentData;
-      console.log('🔄 Auto-save initialized');
+      return;
+    }
+
+    // Skip if we just saved and this is the echo
+    if (skipNextChangeRef.current) {
+      skipNextChangeRef.current = false;
       return;
     }
 
@@ -105,7 +84,6 @@ export const useSimpleAutoSave = (
     const hasChanges = lastSaveDataRef.current !== currentData;
     
     if (hasChanges) {
-      console.log('📝 Changes detected, marking as unsaved');
       setHasUnsavedChanges(true);
 
       // Clear existing timeout
@@ -118,7 +96,7 @@ export const useSimpleAutoSave = (
         if (!isSavingRef.current) {
           performSave();
         }
-      }, 2000); // 2 second delay for auto-save
+      }, 3000); // 3 second delay for auto-save
     }
 
     return () => {

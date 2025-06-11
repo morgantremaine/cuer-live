@@ -1,40 +1,53 @@
-import { useState, useCallback, useEffect } from 'react';
-import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
+
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAuth } from './useAuth';
 import { useRundownStorage } from './useRundownStorage';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useRundownUndo } from './useRundownUndo';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
+import { v4 as uuidv4 } from 'uuid';
+
+const DEFAULT_COLUMNS: Column[] = [
+  { id: 'source', name: 'Source', type: 'text', width: '60px', isVisible: true, isCustom: false, key: 'rowNumber' },
+  { id: 'segmentName', name: 'Segment Name', type: 'text', width: '200px', isVisible: true, isCustom: false, key: 'name' },
+  { id: 'talent', name: 'Talent', type: 'text', width: '120px', isVisible: true, isCustom: false, key: 'talent' },
+  { id: 'script', name: 'Script', type: 'text', width: '200px', isVisible: true, isCustom: false, key: 'script' },
+  { id: 'gfx', name: 'GFX', type: 'text', width: '120px', isVisible: true, isCustom: false, key: 'gfx' },
+  { id: 'video', name: 'Video', type: 'text', width: '120px', isVisible: true, isCustom: false, key: 'video' },
+  { id: 'stage', name: 'Stage', type: 'text', width: '80px', isVisible: true, isCustom: false, key: 'notes' },
+  { id: 'duration', name: 'Duration', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'duration' },
+  { id: 'startTime', name: 'Start', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'startTime' },
+  { id: 'endTime', name: 'End', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'endTime' },
+  { id: 'elapsedTime', name: 'Elapsed', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'elapsedTime' },
+  { id: 'notes', name: 'Notes', type: 'text', width: '200px', isVisible: true, isCustom: false, key: 'notes' }
+];
 
 export const useSimplifiedRundownState = () => {
+  const { user } = useAuth();
   const params = useParams<{ id: string }>();
-  const rundownId = params.id && params.id !== 'new' ? params.id : undefined;
+  const rundownId = (!params.id || params.id === 'new' || params.id === ':id' || params.id.trim() === '') ? undefined : params.id;
+  const { getRundown } = useRundownStorage();
   
   // Core state
   const [items, setItems] = useState<RundownItem[]>([]);
-  const [columns, setColumns] = useState<Column[]>([]);
+  const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
   const [rundownTitle, setRundownTitle] = useState('Untitled Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   const [timezone, setTimezone] = useState('America/New_York');
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isController, setIsController] = useState(false);
-
-  // Storage and auto-save
-  const { savedRundowns, loading, updateRundown } = useRundownStorage();
   
-  // Undo functionality - pass updateRundown to enable undo history saving
-  const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
-    rundownId,
-    updateRundown,
-    currentTitle: rundownTitle,
-    currentItems: items,
-    currentColumns: columns
-  });
-
-  // Auto-save - now properly tracks changes
+  const isInitialized = useRef(false);
+  const autoSaveEnabled = useRef(true);
+  
+  // Auto-save functionality
   const { hasUnsavedChanges, isSaving } = useSimpleAutoSave(
     rundownId,
     items,
@@ -44,226 +57,310 @@ export const useSimplifiedRundownState = () => {
     rundownStartTime
   );
 
-  // Save undo state for user actions - reduce logging
-  const saveUserAction = useCallback((action: string) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('💾 Saving user action state:', action);
+  // Undo functionality
+  const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
+    rundownId,
+    currentTitle: rundownTitle,
+    currentItems: items,
+    currentColumns: columns
+  });
+
+  // Time helper functions
+  const timeToSeconds = useCallback((timeStr: string): number => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
     }
-    saveStateOnSave(items, columns, rundownTitle, action);
-  }, [saveStateOnSave, items, columns, rundownTitle]);
+    return 0;
+  }, []);
+
+  const secondsToTime = useCallback((seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  // Calculate items with proper timing and row numbers
+  const itemsWithCalculations = useMemo(() => {
+    let currentTime = rundownStartTime;
+    let headerIndex = 0;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    return items.map((item, index) => {
+      let calculatedStartTime = currentTime;
+      let calculatedEndTime = currentTime;
+      let rowNumber = '';
+
+      if (isHeaderItem(item)) {
+        // Headers get the current timeline position and don't advance time
+        calculatedStartTime = currentTime;
+        calculatedEndTime = currentTime;
+        rowNumber = letters[headerIndex] || 'A';
+        headerIndex++;
+      } else {
+        // Regular items
+        calculatedStartTime = currentTime;
+        
+        if (item.duration) {
+          const durationSeconds = timeToSeconds(item.duration);
+          const startSeconds = timeToSeconds(currentTime);
+          calculatedEndTime = secondsToTime(startSeconds + durationSeconds);
+          
+          // Only advance timeline if item is not floated
+          if (!item.isFloating && !item.isFloated) {
+            currentTime = calculatedEndTime;
+          }
+        } else {
+          calculatedEndTime = currentTime;
+        }
+
+        // Calculate row number for regular items
+        let currentSegment = 'A';
+        let itemCountInSegment = 0;
+
+        // Find current segment
+        for (let i = 0; i <= index; i++) {
+          const currentItem = items[i];
+          if (isHeaderItem(currentItem)) {
+            let segmentHeaderIndex = 0;
+            for (let j = 0; j <= i; j++) {
+              if (isHeaderItem(items[j])) {
+                segmentHeaderIndex++;
+              }
+            }
+            currentSegment = letters[segmentHeaderIndex - 1] || 'A';
+            itemCountInSegment = 0;
+          } else {
+            itemCountInSegment++;
+          }
+        }
+
+        rowNumber = `${currentSegment}${itemCountInSegment}`;
+      }
+
+      const elapsedSeconds = timeToSeconds(calculatedStartTime) - timeToSeconds(rundownStartTime);
+      const calculatedElapsedTime = secondsToTime(Math.max(0, elapsedSeconds));
+
+      return {
+        ...item,
+        startTime: calculatedStartTime,
+        endTime: calculatedEndTime,
+        elapsedTime: calculatedElapsedTime,
+        rowNumber
+      };
+    });
+  }, [items, rundownStartTime, timeToSeconds, secondsToTime]);
+
+  // Visible columns
+  const visibleColumns = useMemo(() => {
+    return columns.filter(col => col.isVisible !== false);
+  }, [columns]);
+
+  // Calculate total runtime
+  const totalRuntime = useCallback(() => {
+    const totalSeconds = items.reduce((acc, item) => {
+      if (isHeaderItem(item) || item.isFloating || item.isFloated) return acc;
+      return acc + timeToSeconds(item.duration || '00:00');
+    }, 0);
+    return secondsToTime(totalSeconds);
+  }, [items, timeToSeconds, secondsToTime]);
+
+  // Get row number for a specific index
+  const getRowNumber = useCallback((index: number) => {
+    if (index < 0 || index >= itemsWithCalculations.length) return '';
+    return itemsWithCalculations[index]?.rowNumber || '';
+  }, [itemsWithCalculations]);
+
+  // Get header duration
+  const getHeaderDuration = useCallback((headerId: string) => {
+    const headerIndex = items.findIndex(item => item.id === headerId);
+    if (headerIndex === -1 || !isHeaderItem(items[headerIndex])) {
+      return '00:00:00';
+    }
+
+    let totalSeconds = 0;
+    let i = headerIndex + 1;
+
+    // Sum up durations of non-floated items until next header
+    while (i < items.length && !isHeaderItem(items[i])) {
+      if (!items[i].isFloating && !items[i].isFloated) {
+        totalSeconds += timeToSeconds(items[i].duration || '00:00');
+      }
+      i++;
+    }
+
+    return secondsToTime(totalSeconds);
+  }, [items, timeToSeconds, secondsToTime]);
 
   // Load rundown data
-  useEffect(() => {
-    if (loading || !rundownId) return;
-    
-    const rundown = savedRundowns.find(r => r.id === rundownId);
-    if (rundown) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📚 Loading rundown data:', rundown.title);
-      }
-      setItems(rundown.items || []);
-      setColumns(rundown.columns || []);
-      setRundownTitle(rundown.title || 'Untitled Rundown');
-      setTimezone(rundown.timezone || 'America/New_York');
-      setRundownStartTime(rundown.start_time || '09:00:00');
-      
-      // Load undo history
-      if (rundown.undo_history && Array.isArray(rundown.undo_history)) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📚 Loading undo history:', rundown.undo_history.length, 'states');
-        }
-        loadUndoHistory(rundown.undo_history);
-      }
-    }
-  }, [savedRundowns, loading, rundownId, loadUndoHistory]);
+  const loadRundown = useCallback(async () => {
+    if (!user || !rundownId || isInitialized.current) return;
 
-  // Enhanced undo handler with better logging and error handling
-  const handleUndo = useCallback(() => {
-    if (!canUndo) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('❌ Cannot undo - no states available');
-      }
-      return null;
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔄 Executing undo...');
-    }
-    
     try {
-      const result = undo(
-        setItems,
-        setColumns,
-        setRundownTitle
-      );
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Undo completed:', result);
+      setIsLoading(true);
+      const rundown = await getRundown(rundownId);
+      
+      if (rundown) {
+        setItems(rundown.items || []);
+        setColumns(rundown.columns || DEFAULT_COLUMNS);
+        setRundownTitle(rundown.title || 'Untitled Rundown');
+        setRundownStartTime(rundown.start_time || '09:00:00');
+        setTimezone(rundown.timezone || 'America/New_York');
+        
+        // Load undo history
+        if (rundown.undo_history) {
+          loadUndoHistory(rundown.undo_history);
+        }
+        
+        isInitialized.current = true;
       }
-      return result;
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Undo failed:', error);
-      }
-      return null;
+      console.error('Failed to load rundown:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [undo, canUndo]);
+  }, [user, rundownId, getRundown, loadUndoHistory]);
+
+  // Initialize data
+  useEffect(() => {
+    if (user && rundownId && !isInitialized.current) {
+      loadRundown();
+    }
+  }, [user, rundownId, loadRundown]);
+
+  // Update current time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Save state for undo when items change
+  useEffect(() => {
+    if (isInitialized.current && autoSaveEnabled.current) {
+      saveStateOnSave(items, columns, rundownTitle, 'Items updated');
+    }
+  }, [items, columns, rundownTitle, saveStateOnSave]);
+
+  // Item management functions
+  const updateItem = useCallback((id: string, field: string, value: string) => {
+    setItems(prev => prev.map(item => {
+      if (item.id === id) {
+        if (field.startsWith('customFields.')) {
+          const customFieldKey = field.replace('customFields.', '');
+          return {
+            ...item,
+            customFields: {
+              ...item.customFields,
+              [customFieldKey]: value
+            }
+          };
+        } else {
+          return { ...item, [field]: value };
+        }
+      }
+      return item;
+    }));
+  }, []);
 
   const addItem = useCallback((item: RundownItem) => {
     setItems(prev => [...prev, item]);
   }, []);
 
-  const updateItem = useCallback((id: string, field: string, value: string) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
-    ));
-  }, []);
-
-  const deleteItem = useCallback((id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
-  }, []);
-
-  const addRow = useCallback(() => {
-    // Save undo state BEFORE the action
-    saveUserAction('Add segment');
-    
-    const newItem: RundownItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular',
-      rowNumber: '',
-      name: 'New Segment',
-      startTime: '00:00:00',
-      duration: '00:02:00',
-      endTime: '00:02:00',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    };
-    addItem(newItem);
-  }, [addItem, saveUserAction]);
-
   const addRowAtIndex = useCallback((index: number) => {
-    // Save undo state BEFORE the action
-    saveUserAction('Add segment');
-    
     const newItem: RundownItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: uuidv4(),
       type: 'regular',
       rowNumber: '',
-      name: 'New Segment',
-      startTime: '00:00:00',
+      name: '',
+      startTime: '',
       duration: '00:02:00',
-      endTime: '00:02:00',
-      elapsedTime: '00:00:00',
+      endTime: '',
+      elapsedTime: '',
       talent: '',
       script: '',
       gfx: '',
       video: '',
       notes: '',
       color: '',
-      isFloating: false,
-      customFields: {}
+      isFloating: false
     };
-    
+
     setItems(prev => {
       const newItems = [...prev];
       newItems.splice(index, 0, newItem);
       return newItems;
     });
-  }, [saveUserAction]);
-
-  const addHeader = useCallback(() => {
-    // Save undo state BEFORE the action
-    saveUserAction('Add header');
-    
-    const headerLetter = String.fromCharCode(65 + items.filter(item => item.type === 'header').length);
-    const newHeader: RundownItem = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'header',
-      rowNumber: headerLetter,
-      name: `Header ${headerLetter}`,
-      startTime: '00:00:00',
-      duration: '00:00:00',
-      endTime: '00:00:00',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      segmentName: headerLetter,
-      customFields: {}
-    };
-    addItem(newHeader);
-  }, [addItem, items, saveUserAction]);
+  }, []);
 
   const addHeaderAtIndex = useCallback((index: number) => {
-    // Save undo state BEFORE the action
-    saveUserAction('Add header');
-    
-    const headerLetter = String.fromCharCode(65 + items.filter(item => item.type === 'header').length);
-    const newHeader: RundownItem = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    const newItem: RundownItem = {
+      id: uuidv4(),
       type: 'header',
-      rowNumber: headerLetter,
-      name: `Header ${headerLetter}`,
-      startTime: '00:00:00',
-      duration: '00:00:00',
-      endTime: '00:00:00',
-      elapsedTime: '00:00:00',
+      rowNumber: 'A',
+      name: 'New Header',
+      startTime: '',
+      duration: '',
+      endTime: '',
+      elapsedTime: '',
       talent: '',
       script: '',
       gfx: '',
       video: '',
       notes: '',
       color: '',
-      isFloating: false,
-      segmentName: headerLetter,
-      customFields: {}
+      isFloating: false
     };
-    
+
     setItems(prev => {
       const newItems = [...prev];
-      newItems.splice(index, 0, newHeader);
+      newItems.splice(index, 0, newItem);
       return newItems;
     });
-  }, [items, saveUserAction]);
+  }, []);
+
+  const addRow = useCallback(() => {
+    addRowAtIndex(items.length);
+  }, [addRowAtIndex, items.length]);
+
+  const addHeader = useCallback(() => {
+    addHeaderAtIndex(items.length);
+  }, [addHeaderAtIndex, items.length]);
+
+  const deleteItem = useCallback((id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+  }, []);
 
   const deleteMultipleItems = useCallback((ids: string[]) => {
-    // Save undo state BEFORE the action
-    saveUserAction('Delete multiple rows');
     setItems(prev => prev.filter(item => !ids.includes(item.id)));
-  }, [saveUserAction]);
+  }, []);
 
   const toggleFloat = useCallback((id: string) => {
-    // Save undo state BEFORE the action
-    saveUserAction('Toggle float');
-    updateItem(id, 'isFloating', 'true');
-  }, [updateItem, saveUserAction]);
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, isFloating: !item.isFloating } : item
+    ));
+  }, []);
 
-  const addColumn = useCallback((name: string, key: string, columnType: string) => {
-    // Save undo state BEFORE the action
-    saveUserAction('Add column');
-    
+  // Column management
+  const addColumn = useCallback((name: string) => {
     const newColumn: Column = {
-      id: `col_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: uuidv4(),
       name,
-      key,
+      type: 'text',
+      width: '120px',
       isVisible: true,
-      width: '150px',
       isCustom: true,
-      isEditable: true
+      key: name.toLowerCase().replace(/\s+/g, '_')
     };
     setColumns(prev => [...prev, newColumn]);
-  }, [saveUserAction]);
+  }, []);
 
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
     setColumns(prev => prev.map(col => 
@@ -271,71 +368,21 @@ export const useSimplifiedRundownState = () => {
     ));
   }, []);
 
-  const getRowNumber = useCallback((index: number) => {
-    const item = items[index];
-    if (!item) return '';
-    
-    if (item.type === 'header') {
-      return item.segmentName || item.rowNumber || 'A';
-    }
-    
-    return (index + 1).toString();
-  }, [items]);
-
-  const getHeaderDuration = useCallback((itemId: string) => {
-    const itemIndex = items.findIndex(item => item.id === itemId);
-    if (itemIndex === -1) return '00:00:00';
-    
-    let totalDuration = 0;
-    for (let i = itemIndex + 1; i < items.length; i++) {
-      const item = items[i];
-      if (item.type === 'header') break;
-      if (item.duration) {
-        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
-        totalDuration += hours * 3600 + minutes * 60 + seconds;
-      }
-    }
-    
-    const hours = Math.floor(totalDuration / 3600);
-    const minutes = Math.floor((totalDuration % 3600) / 60);
-    const seconds = totalDuration % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [items]);
-
-  const totalRuntime = useCallback(() => {
-    let total = 0;
-    items.forEach(item => {
-      if (item.type === 'regular' && item.duration) {
-        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
-        total += hours * 3600 + minutes * 60 + seconds;
-      }
-    });
-    
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const secs = total % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, [items]);
-
-  const visibleColumns = columns.filter(col => col.isVisible);
-
-  const handleRowSelection = useCallback((rowId: string) => {
-    setSelectedRowId(prev => prev === rowId ? null : rowId);
+  // Selection management
+  const handleRowSelection = useCallback((itemId: string) => {
+    setSelectedRowId(prev => prev === itemId ? null : itemId);
   }, []);
 
   const clearRowSelection = useCallback(() => {
     setSelectedRowId(null);
   }, []);
 
-  // Playback controls
+  // Showcaller functions
   const play = useCallback((segmentId?: string) => {
+    setIsPlaying(true);
     if (segmentId) {
       setCurrentSegmentId(segmentId);
     }
-    setIsPlaying(true);
-    setIsController(true);
   }, []);
 
   const pause = useCallback(() => {
@@ -343,22 +390,26 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   const forward = useCallback(() => {
-    const currentIndex = items.findIndex(item => item.id === currentSegmentId);
-    if (currentIndex < items.length - 1) {
-      setCurrentSegmentId(items[currentIndex + 1].id);
-    }
-  }, [items, currentSegmentId]);
+    // Implementation for forward
+  }, []);
 
   const backward = useCallback(() => {
-    const currentIndex = items.findIndex(item => item.id === currentSegmentId);
-    if (currentIndex > 0) {
-      setCurrentSegmentId(items[currentIndex - 1].id);
-    }
-  }, [items, currentSegmentId]);
+    // Implementation for backward
+  }, []);
+
+  // Undo functionality
+  const handleUndo = useCallback(() => {
+    autoSaveEnabled.current = false;
+    const action = undo(setItems, setColumns, setRundownTitle);
+    setTimeout(() => {
+      autoSaveEnabled.current = true;
+    }, 1000);
+    return action;
+  }, [undo]);
 
   return {
-    // State
-    items,
+    // Core state
+    items: itemsWithCalculations,
     setItems,
     columns,
     setColumns,
@@ -369,42 +420,44 @@ export const useSimplifiedRundownState = () => {
     setStartTime: setRundownStartTime,
     timezone,
     setTimezone,
+    currentTime,
+    rundownId,
+    isLoading,
+    hasUnsavedChanges,
+    isSaving,
+    
+    // Selection state
     selectedRowId,
+    handleRowSelection,
+    clearRowSelection,
+    
+    // Showcaller state
     currentSegmentId,
     isPlaying,
     timeRemaining,
     isController,
-    rundownId,
-    isLoading: loading,
-    hasUnsavedChanges,
-    isSaving,
-    currentTime: new Date(),
     
-    // Row operations
-    addItem,
+    // Item management
     updateItem,
-    deleteItem,
+    addItem,
     addRow,
-    addRowAtIndex,
     addHeader,
+    addRowAtIndex,
     addHeaderAtIndex,
+    deleteItem,
     deleteMultipleItems,
     toggleFloat,
     
-    // Column operations
+    // Column management
     addColumn,
     updateColumnWidth,
-    
-    // Selection
-    handleRowSelection,
-    clearRowSelection,
     
     // Calculations
     getRowNumber,
     getHeaderDuration,
     totalRuntime,
     
-    // Playback
+    // Showcaller controls
     play,
     pause,
     forward,
@@ -413,7 +466,6 @@ export const useSimplifiedRundownState = () => {
     // Undo functionality
     handleUndo,
     canUndo,
-    lastAction,
-    saveUserAction // Export for other components that need to save undo states
+    lastAction
   };
 };

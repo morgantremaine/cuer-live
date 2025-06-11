@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIManager } from './useRundownUIManager';
-import { getRowStatus, calculateEndTime, calculateTotalRuntime, calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { getRowStatus } from '@/utils/rundownCalculations';
 
 export const useRundownStateCoordination = () => {
   // Add missing UI state
@@ -10,11 +10,6 @@ export const useRundownStateCoordination = () => {
   
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
-  
-  // Calculate items with timing for UI manager
-  const calculatedItems = useMemo(() => {
-    return calculateItemsWithTiming(simplifiedState.items, simplifiedState.rundownStartTime);
-  }, [simplifiedState.items, simplifiedState.rundownStartTime]);
   
   // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
@@ -26,16 +21,8 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    // Enhanced addRow that gets access to multi-selection state
-    () => {
-      // This will be enhanced by the handlers to consider multi-selection
-      simplifiedState.addRow();
-    },
-    // Enhanced addHeader that gets access to multi-selection state
-    () => {
-      // This will be enhanced by the handlers to consider multi-selection
-      simplifiedState.addHeader();
-    },
+    simplifiedState.addRow,
+    simplifiedState.addHeader,
     simplifiedState.deleteItem,
     simplifiedState.toggleFloat,
     simplifiedState.deleteMultipleItems,
@@ -54,7 +41,7 @@ export const useRundownStateCoordination = () => {
   
   // UI state management with calculated items
   const uiManager = useRundownUIManager(
-    calculatedItems,
+    simplifiedState.items,
     simplifiedState.visibleColumns,
     simplifiedState.columns,
     simplifiedState.updateItem,
@@ -165,7 +152,25 @@ export const useRundownStateCoordination = () => {
       return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
     },
     calculateTotalRuntime: () => simplifiedState.totalRuntime(),
-    calculateEndTime: (startTime: string, duration: string) => calculateEndTime(startTime, duration),
+    calculateEndTime: (startTime: string, duration: string) => {
+      // Simple end time calculation
+      const startParts = startTime.split(':').map(Number);
+      const durationParts = duration.split(':').map(Number);
+      
+      let totalSeconds = 0;
+      if (startParts.length >= 2) {
+        totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
+      }
+      if (durationParts.length >= 2) {
+        totalSeconds += durationParts[0] * 60 + durationParts[1];
+      }
+      
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    },
     
     // Showcaller controls - properly expose these with working functions
     isPlaying: simplifiedState.isPlaying,
