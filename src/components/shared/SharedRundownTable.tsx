@@ -2,7 +2,7 @@
 import React from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import { getRowStatus } from '@/utils/rundownCalculations';
+import { getRowStatus, calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -23,18 +23,23 @@ const SharedRundownTable = ({
   getRowNumber,
   getHeaderDuration
 }: SharedRundownTableProps) => {
-  const renderCellContent = (item: RundownItem, column: Column) => {
+  // Calculate items with timing data
+  const calculatedItems = React.useMemo(() => {
+    return calculateItemsWithTiming(items, '09:00:00');
+  }, [items]);
+
+  const renderCellContent = (item: any, column: Column) => {
     const fieldKey = column.key;
     
     // Handle calculated fields
     if (fieldKey === 'startTime') {
-      return (item as any).startTime || '00:00:00';
+      return item.calculatedStartTime || item.startTime || '00:00:00';
     }
     if (fieldKey === 'endTime') {
-      return (item as any).endTime || '00:00:00';
+      return item.calculatedEndTime || item.endTime || '00:00:00';
     }
     if (fieldKey === 'elapsedTime') {
-      return (item as any).elapsedTime || '00:00:00';
+      return item.calculatedElapsedTime || item.elapsedTime || '00:00:00';
     }
     
     // Handle standard fields
@@ -67,7 +72,7 @@ const SharedRundownTable = ({
           </tr>
         </thead>
         <tbody className="bg-background">
-          {items.map((item, index) => {
+          {calculatedItems.map((item, index) => {
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item, currentTime);
             const isCurrentlyPlaying = item.id === currentSegmentId;

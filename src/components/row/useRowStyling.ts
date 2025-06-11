@@ -7,6 +7,8 @@ interface UseRowStylingProps {
   isFloated?: boolean;
   color?: string;
   isHeader?: boolean;
+  status?: 'upcoming' | 'current' | 'completed';
+  item?: any; // Add item prop for compatibility
 }
 
 export const useRowStyling = ({
@@ -16,7 +18,8 @@ export const useRowStyling = ({
   isFloating = false,
   isFloated = false,
   color,
-  isHeader = false
+  isHeader = false,
+  status
 }: UseRowStylingProps) => {
   let rowClass = '';
   
@@ -38,10 +41,20 @@ export const useRowStyling = ({
     rowClass = 'bg-background hover:bg-muted/50';
   }
 
-  // Add selection styling with ring outline - this was missing!
+  // Add selection styling with ring outline
   if (isSelected) {
     rowClass += ' ring-2 ring-blue-500 ring-inset bg-blue-50 dark:bg-blue-950/20';
   }
 
-  return { rowClass };
+  // Create style object for background color
+  const rowStyle: React.CSSProperties = {};
+  if (color && color !== '#FFFFFF' && color !== '#ffffff') {
+    rowStyle.backgroundColor = `${color}20`; // Add transparency
+  }
+
+  return { 
+    getRowClasses: () => rowClass,
+    getRowStyle: () => rowStyle,
+    rowClass // Keep for backward compatibility
+  };
 };

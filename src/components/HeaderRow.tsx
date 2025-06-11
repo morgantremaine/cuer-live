@@ -73,7 +73,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     onDrop,
     onCopySelectedRows,
     onDeleteSelectedRows,
-    getColumnWidth
+    getColumnWidth,
+    status
   } = props;
 
   const {
@@ -103,14 +104,15 @@ const HeaderRow = (props: HeaderRowProps) => {
     item,
     isSelected,
     isDragging,
-    status: props.status
+    status,
+    isHeader: true,
+    color: item.color
   });
 
   return (
     <RundownContextMenu
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
-      onFloat={handleContextMenuFloat}
       onColor={handleContextMenuColor}
       onPaste={hasClipboardData ? handleContextMenuPaste : undefined}
       onClearSelection={onClearSelection}
@@ -151,7 +153,6 @@ const HeaderRow = (props: HeaderRowProps) => {
               item={item}
               column={column}
               cellRefs={cellRefs}
-              showColorPicker={showColorPicker === item.id}
               highlight={currentHighlight}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
