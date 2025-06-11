@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from './useAuth';
 import { useRundownStorage } from './useRundownStorage';
 import { RundownItem } from '@/types/rundown';
@@ -19,11 +19,15 @@ export const useSimpleAutoSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSaveDataRef = useRef<string>('');
   const isSavingRef = useRef(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isInitializedRef = useRef(false);
 
   const performSave = useCallback(async () => {
     if (!user || isSavingRef.current) return false;
 
     isSavingRef.current = true;
+    setIsSaving(true);
     console.log('💾 Auto-save triggered for rundown:', rundownId);
 
     try {
@@ -66,37 +70,50 @@ export const useSimpleAutoSave = (
         console.log('💾 Created new rundown:', newId);
       }
 
+      // Update the saved data reference and clear unsaved changes
+      const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
+      lastSaveDataRef.current = currentData;
+      setHasUnsavedChanges(false);
+
       return true;
     } catch (error) {
       console.error('❌ Auto-save failed:', error);
       return false;
     } finally {
       isSavingRef.current = false;
+      setIsSaving(false);
     }
   }, [user, rundownId, updateRundown, saveRundown, title, items, columns, timezone, startTime]);
 
-  // Auto-save effect - increased delay to reduce frequency
+  // Auto-save effect - detect changes and schedule saves
   useEffect(() => {
-    const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
-    
-    // Skip if data hasn't changed
-    if (lastSaveDataRef.current === currentData) {
+    // Skip initial effect run to avoid saving immediately on load
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      const initialData = JSON.stringify({ items, title, columns, timezone, startTime });
+      lastSaveDataRef.current = initialData;
       return;
     }
 
-    lastSaveDataRef.current = currentData;
+    const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
+    
+    // Check if data has actually changed
+    if (lastSaveDataRef.current !== currentData) {
+      console.log('📝 Changes detected, marking as unsaved');
+      setHasUnsavedChanges(true);
 
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    // Set new timeout with longer delay
-    saveTimeoutRef.current = setTimeout(() => {
-      if (!isSavingRef.current) {
-        performSave();
+      // Clear existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-    }, 5000); // Increased from 2000 to 5000ms
+
+      // Set new timeout for auto-save
+      saveTimeoutRef.current = setTimeout(() => {
+        if (!isSavingRef.current) {
+          performSave();
+        }
+      }, 3000); // 3 second delay for auto-save
+    }
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -115,7 +132,7 @@ export const useSimpleAutoSave = (
   }, []);
 
   return {
-    hasUnsavedChanges: false, // For now, we'll assume auto-save handles this
-    isSaving: isSavingRef.current
+    hasUnsavedChanges,
+    isSaving
   };
 };

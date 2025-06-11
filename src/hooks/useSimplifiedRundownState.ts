@@ -26,24 +26,26 @@ export const useSimplifiedRundownState = () => {
   // Storage and auto-save
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
   
-  // Undo functionality - don't pass updateRundown to prevent confusion
+  // Undo functionality - pass updateRundown to enable undo history saving
   const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
-    rundownId
+    rundownId,
+    updateRundown,
+    currentTitle: rundownTitle,
+    currentItems: items,
+    currentColumns: columns
   });
 
-  // Auto-save - pass saveStateOnSave for coordination but only for auto-saves
+  // Auto-save - now properly tracks changes
   const { hasUnsavedChanges, isSaving } = useSimpleAutoSave(
     rundownId,
     items,
     rundownTitle,
     columns,
     timezone,
-    rundownStartTime,
-    // Don't let auto-save create undo states - we'll handle that separately
-    undefined
+    rundownStartTime
   );
 
-  // Save undo state for user actions (not auto-save)
+  // Save undo state for user actions
   const saveUserAction = useCallback((action: string) => {
     console.log('💾 Saving user action state:', action);
     saveStateOnSave(items, columns, rundownTitle, action);
