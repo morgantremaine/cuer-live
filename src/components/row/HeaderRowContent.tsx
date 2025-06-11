@@ -36,7 +36,6 @@ const HeaderRowContent = ({
         style={{ backgroundColor }}
       >
         <div className="flex items-center space-x-1">
-          {/* Empty space instead of "H" to maintain consistent structure */}
           <span className="text-foreground font-bold"></span>
         </div>
       </td>

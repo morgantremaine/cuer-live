@@ -129,7 +129,11 @@ const HeaderRow = (props: HeaderRowProps) => {
       onColorSelect={onColorSelect}
     >
       <tr
-        className="border-b border-border bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer transition-all duration-150 ease-in-out"
+        className={`
+          border-b border-border bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 
+          cursor-pointer transition-all duration-150 ease-in-out
+          ${isSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-100 dark:bg-blue-950/20' : ''}
+        `}
         style={getRowStyle()}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
