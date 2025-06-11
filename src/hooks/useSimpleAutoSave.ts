@@ -14,12 +14,22 @@ export const useSimpleAutoSave = (
   const undoActiveRef = useRef(false);
   const lastSaveTimeRef = useRef<number>(0);
   const isInitializedRef = useRef(false);
-  const pendingSaveRef = useRef(false);
+  const typingSessionRef = useRef<string | null>(null);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
     console.log('💾 Auto-save undo coordination:', active ? 'PAUSED' : 'RESUMED');
+  };
+
+  // Set typing session to prevent auto-save during rapid typing
+  const setTypingSession = (sessionKey: string | null) => {
+    typingSessionRef.current = sessionKey;
+    if (sessionKey) {
+      console.log('💾 Auto-save paused for typing session:', sessionKey);
+    } else {
+      console.log('💾 Auto-save resumed after typing session');
+    }
   };
 
   // Initialize tracking after first render to avoid initial saves
@@ -39,8 +49,8 @@ export const useSimpleAutoSave = (
   }, [state.items, state.columns, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
-    // Don't save if not initialized, undo is active, or currently saving
-    if (!isInitializedRef.current || undoActiveRef.current || isSaving) {
+    // Don't save if not initialized, undo is active, currently saving, or in typing session
+    if (!isInitializedRef.current || undoActiveRef.current || isSaving || typingSessionRef.current) {
       return;
     }
 
@@ -63,18 +73,21 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Minimum interval between saves (2 seconds)
+    // Minimum interval between saves (3 seconds)
     const now = Date.now();
-    if (now - lastSaveTimeRef.current < 2000 && !pendingSaveRef.current) {
+    if (now - lastSaveTimeRef.current < 3000) {
       console.log('💾 Auto-save throttled - scheduling for later');
-      pendingSaveRef.current = true;
       
-      // Schedule a save for when the throttle period expires
-      const timeToWait = 2000 - (now - lastSaveTimeRef.current);
-      setTimeout(() => {
-        if (pendingSaveRef.current) {
-          pendingSaveRef.current = false;
-          // Trigger the effect again by forcing a re-evaluation
+      // Clear any existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      // Schedule save for when throttle period expires
+      const timeToWait = 3000 - (now - lastSaveTimeRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        // Only execute if conditions are still valid
+        if (!typingSessionRef.current && !undoActiveRef.current && !isSaving) {
           const newSignature = JSON.stringify({
             items: state.items,
             columns: state.columns,
@@ -98,10 +111,13 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce the save with longer delay
+    // Debounce the save with longer delay to prevent rapid firing
     saveTimeoutRef.current = setTimeout(() => {
-      executeSave(currentSignature);
-    }, 1500); // Reduced debounce slightly
+      // Double-check conditions when timeout executes
+      if (!typingSessionRef.current && !undoActiveRef.current && !isSaving) {
+        executeSave(currentSignature);
+      }
+    }, 2000);
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -111,15 +127,14 @@ export const useSimpleAutoSave = (
   }, [state.hasUnsavedChanges, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving]);
 
   const executeSave = async (currentSignature: string) => {
-    // Double-check conditions when timeout executes
-    if (isSaving || undoActiveRef.current) {
+    // Final check before saving
+    if (isSaving || undoActiveRef.current || typingSessionRef.current) {
       console.log('💾 Auto-save cancelled - conditions changed');
       return;
     }
     
     setIsSaving(true);
     lastSaveTimeRef.current = Date.now();
-    pendingSaveRef.current = false;
     console.log('💾 Executing auto-save...');
     
     try {
@@ -192,6 +207,7 @@ export const useSimpleAutoSave = (
 
   return {
     isSaving,
-    setUndoActive
+    setUndoActive,
+    setTypingSession
   };
 };
