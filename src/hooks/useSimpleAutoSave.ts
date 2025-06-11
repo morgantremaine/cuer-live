@@ -1,130 +1,132 @@
 
-import { useEffect, useRef, useState } from 'react';
-import { RundownState } from './useRundownState';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useRef, useCallback } from 'react';
+import { useAuth } from './useAuth';
+import { useRundownStorage } from './useRundownStorage';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 
 export const useSimpleAutoSave = (
-  state: RundownState,
-  rundownId: string | null,
-  onSaved: () => void
+  rundownId: string | undefined,
+  items: RundownItem[],
+  title: string,
+  columns: Column[],
+  timezone: string,
+  startTime: string,
+  saveStateOnSave?: (items: RundownItem[], columns: Column[], title: string, description: string) => void
 ) => {
-  const lastSavedRef = useRef<string>('');
+  const { user } = useAuth();
+  const { updateRundown, saveRundown } = useRundownStorage();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const [isSaving, setIsSaving] = useState(false);
+  const lastSaveDataRef = useRef<string>('');
+  const isSavingRef = useRef(false);
 
+  const performSave = useCallback(async () => {
+    if (!user || isSavingRef.current) return false;
+
+    isSavingRef.current = true;
+    console.log('💾 Auto-save triggered for rundown:', rundownId);
+
+    try {
+      if (rundownId) {
+        // Update existing rundown
+        await updateRundown(
+          rundownId,
+          title,
+          items,
+          true, // silent
+          false, // not archived
+          columns,
+          timezone,
+          startTime
+        );
+        
+        // Save undo state after successful save
+        if (saveStateOnSave) {
+          console.log('💾 Saving undo state after auto-save');
+          saveStateOnSave(items, columns, title, 'Auto-save');
+        }
+      } else {
+        // Create new rundown
+        const newRundown = {
+          id: '',
+          title,
+          items,
+          columns,
+          timezone,
+          start_time: startTime,
+          user_id: '',
+          team_id: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          archived: false,
+          icon: null,
+          visibility: 'private' as const,
+          undo_history: [],
+          teams: null,
+          creator_profile: null
+        };
+
+        const newId = await saveRundown(newRundown);
+        console.log('💾 Created new rundown:', newId);
+        
+        // Save initial undo state for new rundown
+        if (saveStateOnSave && newId) {
+          console.log('💾 Saving initial undo state for new rundown');
+          saveStateOnSave(items, columns, title, 'Initial save');
+        }
+      }
+
+      console.log('✅ Auto-save successful');
+      return true;
+    } catch (error) {
+      console.error('❌ Auto-save failed:', error);
+      return false;
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [user, rundownId, updateRundown, saveRundown, title, items, columns, timezone, startTime, saveStateOnSave]);
+
+  // Auto-save effect
   useEffect(() => {
-    // Don't save if no changes
-    if (!state.hasUnsavedChanges) {
+    const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
+    
+    // Skip if data hasn't changed
+    if (lastSaveDataRef.current === currentData) {
       return;
     }
 
-    // Create a signature of the current state
-    const currentSignature = JSON.stringify({
-      items: state.items,
-      columns: state.columns,
-      title: state.title,
-      startTime: state.startTime,
-      timezone: state.timezone
-    });
+    lastSaveDataRef.current = currentData;
 
-    // Only save if state actually changed
-    if (currentSignature === lastSavedRef.current) {
-      return;
-    }
-
-    console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW');
-
-    // Clear any existing timeout
+    // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce the save
-    saveTimeoutRef.current = setTimeout(async () => {
-      if (isSaving) return;
-      
-      setIsSaving(true);
-      console.log('💾 Executing auto-save...');
-      
-      try {
-        // For new rundowns, we need to create them first
-        if (!rundownId) {
-          console.log('💾 Creating new rundown...');
-          
-          // Get user's team ID first
-          const { data: teamData, error: teamError } = await supabase
-            .from('team_members')
-            .select('team_id')
-            .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-            .limit(1)
-            .single();
-
-          if (teamError || !teamData) {
-            console.error('❌ Could not get team for new rundown:', teamError);
-            return;
-          }
-
-          const { data: newRundown, error: createError } = await supabase
-            .from('rundowns')
-            .insert({
-              title: state.title,
-              items: state.items,
-              columns: state.columns,
-              start_time: state.startTime,
-              timezone: state.timezone,
-              team_id: teamData.team_id,
-              user_id: (await supabase.auth.getUser()).data.user?.id,
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('❌ Auto-save failed (create):', createError);
-          } else {
-            console.log('✅ New rundown created:', newRundown.id);
-            lastSavedRef.current = currentSignature;
-            onSaved();
-            // Update the URL to the new rundown ID
-            window.history.replaceState(null, '', `/rundown/${newRundown.id}`);
-          }
-        } else {
-          // Update existing rundown
-          const { error } = await supabase
-            .from('rundowns')
-            .update({
-              title: state.title,
-              items: state.items,
-              columns: state.columns,
-              start_time: state.startTime,
-              timezone: state.timezone,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', rundownId);
-
-          if (error) {
-            console.error('❌ Auto-save failed (update):', error);
-          } else {
-            console.log('✅ Auto-save successful');
-            lastSavedRef.current = currentSignature;
-            onSaved();
-          }
-        }
-      } catch (error) {
-        console.error('❌ Auto-save error:', error);
-      } finally {
-        setIsSaving(false);
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(() => {
+      if (!isSavingRef.current) {
+        performSave();
       }
-    }, 1000);
+    }, 2000);
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving]);
+  }, [items, title, columns, timezone, startTime, performSave]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
-    isSaving
+    hasUnsavedChanges: false, // For now, we'll assume auto-save handles this
+    isSaving: isSavingRef.current
   };
 };

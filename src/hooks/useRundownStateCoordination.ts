@@ -14,6 +14,7 @@ export const useRundownStateCoordination = () => {
   
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
   console.log('🔄 State coordination - selectedRowId:', simplifiedState.selectedRowId);
+  console.log('🔄 State coordination - undo available:', simplifiedState.canUndo, 'last action:', simplifiedState.lastAction);
   
   // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
@@ -37,7 +38,7 @@ export const useRundownStateCoordination = () => {
       // This will be enhanced by the handlers to consider multi-selection
       simplifiedState.addHeader();
     },
-    simplifiedState.deleteRow,
+    simplifiedState.deleteItem,
     simplifiedState.toggleFloat,
     simplifiedState.deleteMultipleItems,
     (items) => {
@@ -167,7 +168,7 @@ export const useRundownStateCoordination = () => {
     
     // Core functions
     updateItem: simplifiedState.updateItem,
-    deleteRow: simplifiedState.deleteRow,
+    deleteRow: simplifiedState.deleteItem,
     toggleFloatRow: simplifiedState.toggleFloat,
     setRundownTitle: simplifiedState.setTitle,
     getRowNumber: simplifiedState.getRowNumber,
@@ -181,7 +182,7 @@ export const useRundownStateCoordination = () => {
       const item = simplifiedState.items[index];
       return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
     },
-    calculateTotalRuntime: () => simplifiedState.totalRuntime,
+    calculateTotalRuntime: () => simplifiedState.totalRuntime(),
     calculateEndTime: (startTime: string, duration: string) => calculateEndTime(startTime, duration),
     
     // Showcaller controls - properly expose these with working functions
@@ -219,10 +220,12 @@ export const useRundownStateCoordination = () => {
     setRundownStartTime: simplifiedState.setStartTime,
     setTimezone: simplifiedState.setTimezone,
     
+    // UNDO FUNCTIONALITY - Now properly connected!
+    handleUndo: simplifiedState.handleUndo,
+    canUndo: simplifiedState.canUndo,
+    lastAction: simplifiedState.lastAction,
+    
     // Simplified no-op functions for compatibility
-    handleUndo: () => null,
-    canUndo: false,
-    lastAction: '',
     isConnected: false,
     isProcessingRealtimeUpdate: false
   }), [simplifiedState, showColumnManager, gridInteractions.selectedRows, enhancedAddRow, enhancedAddHeader]);
