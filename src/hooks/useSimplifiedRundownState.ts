@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -25,13 +26,12 @@ export const useSimplifiedRundownState = () => {
   // Storage and auto-save
   const { savedRundowns, loading, updateRundown } = useRundownStorage();
   
-  // Undo functionality - connect to the actual updateRundown function
+  // Undo functionality - don't pass updateRundown to prevent confusion
   const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
-    rundownId,
-    updateRundown
+    rundownId
   });
 
-  // Auto-save with undo integration
+  // Auto-save - pass saveStateOnSave for coordination but only for auto-saves
   const { hasUnsavedChanges, isSaving } = useSimpleAutoSave(
     rundownId,
     items,
@@ -39,8 +39,15 @@ export const useSimplifiedRundownState = () => {
     columns,
     timezone,
     rundownStartTime,
-    saveStateOnSave // Pass the undo save function to auto-save
+    // Don't let auto-save create undo states - we'll handle that separately
+    undefined
   );
+
+  // Save undo state for user actions (not auto-save)
+  const saveUserAction = useCallback((action: string) => {
+    console.log('💾 Saving user action state:', action);
+    saveStateOnSave(items, columns, rundownTitle, action);
+  }, [saveStateOnSave, items, columns, rundownTitle]);
 
   // Load rundown data
   useEffect(() => {
@@ -96,9 +103,12 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   const addRow = useCallback(() => {
+    // Save undo state BEFORE the action
+    saveUserAction('Add segment');
+    
     const newItem: RundownItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular', // FIXED: Use correct type
+      type: 'regular',
       rowNumber: '',
       name: 'New Segment',
       startTime: '00:00:00',
@@ -115,12 +125,15 @@ export const useSimplifiedRundownState = () => {
       customFields: {}
     };
     addItem(newItem);
-  }, [addItem]);
+  }, [addItem, saveUserAction]);
 
   const addRowAtIndex = useCallback((index: number) => {
+    // Save undo state BEFORE the action
+    saveUserAction('Add segment');
+    
     const newItem: RundownItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular', // FIXED: Use correct type
+      type: 'regular',
       rowNumber: '',
       name: 'New Segment',
       startTime: '00:00:00',
@@ -142,9 +155,12 @@ export const useSimplifiedRundownState = () => {
       newItems.splice(index, 0, newItem);
       return newItems;
     });
-  }, []);
+  }, [saveUserAction]);
 
   const addHeader = useCallback(() => {
+    // Save undo state BEFORE the action
+    saveUserAction('Add header');
+    
     const headerLetter = String.fromCharCode(65 + items.filter(item => item.type === 'header').length);
     const newHeader: RundownItem = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -166,9 +182,12 @@ export const useSimplifiedRundownState = () => {
       customFields: {}
     };
     addItem(newHeader);
-  }, [addItem, items]);
+  }, [addItem, items, saveUserAction]);
 
   const addHeaderAtIndex = useCallback((index: number) => {
+    // Save undo state BEFORE the action
+    saveUserAction('Add header');
+    
     const headerLetter = String.fromCharCode(65 + items.filter(item => item.type === 'header').length);
     const newHeader: RundownItem = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -195,17 +214,24 @@ export const useSimplifiedRundownState = () => {
       newItems.splice(index, 0, newHeader);
       return newItems;
     });
-  }, [items]);
+  }, [items, saveUserAction]);
 
   const deleteMultipleItems = useCallback((ids: string[]) => {
+    // Save undo state BEFORE the action
+    saveUserAction('Delete multiple rows');
     setItems(prev => prev.filter(item => !ids.includes(item.id)));
-  }, []);
+  }, [saveUserAction]);
 
   const toggleFloat = useCallback((id: string) => {
+    // Save undo state BEFORE the action
+    saveUserAction('Toggle float');
     updateItem(id, 'isFloating', 'true');
-  }, [updateItem]);
+  }, [updateItem, saveUserAction]);
 
   const addColumn = useCallback((name: string, key: string, columnType: string) => {
+    // Save undo state BEFORE the action
+    saveUserAction('Add column');
+    
     const newColumn: Column = {
       id: `col_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
@@ -216,7 +242,7 @@ export const useSimplifiedRundownState = () => {
       isEditable: true
     };
     setColumns(prev => [...prev, newColumn]);
-  }, []);
+  }, [saveUserAction]);
 
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
     setColumns(prev => prev.map(col => 
@@ -259,7 +285,7 @@ export const useSimplifiedRundownState = () => {
   const totalRuntime = useCallback(() => {
     let total = 0;
     items.forEach(item => {
-      if (item.type === 'regular' && item.duration) { // FIXED: Use correct type comparison
+      if (item.type === 'regular' && item.duration) {
         const [hours, minutes, seconds] = item.duration.split(':').map(Number);
         total += hours * 3600 + minutes * 60 + seconds;
       }
@@ -366,6 +392,7 @@ export const useSimplifiedRundownState = () => {
     // Undo functionality
     handleUndo,
     canUndo,
-    lastAction
+    lastAction,
+    saveUserAction // Export for other components that need to save undo states
   };
 };

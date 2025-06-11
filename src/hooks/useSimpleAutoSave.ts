@@ -40,11 +40,7 @@ export const useSimpleAutoSave = (
           startTime
         );
         
-        // Save undo state after successful save
-        if (saveStateOnSave) {
-          console.log('💾 Saving undo state after auto-save');
-          saveStateOnSave(items, columns, title, 'Auto-save');
-        }
+        console.log('✅ Auto-save successful');
       } else {
         // Create new rundown
         const newRundown = {
@@ -68,15 +64,8 @@ export const useSimpleAutoSave = (
 
         const newId = await saveRundown(newRundown);
         console.log('💾 Created new rundown:', newId);
-        
-        // Save initial undo state for new rundown
-        if (saveStateOnSave && newId) {
-          console.log('💾 Saving initial undo state for new rundown');
-          saveStateOnSave(items, columns, title, 'Initial save');
-        }
       }
 
-      console.log('✅ Auto-save successful');
       return true;
     } catch (error) {
       console.error('❌ Auto-save failed:', error);
@@ -84,9 +73,9 @@ export const useSimpleAutoSave = (
     } finally {
       isSavingRef.current = false;
     }
-  }, [user, rundownId, updateRundown, saveRundown, title, items, columns, timezone, startTime, saveStateOnSave]);
+  }, [user, rundownId, updateRundown, saveRundown, title, items, columns, timezone, startTime]);
 
-  // Auto-save effect
+  // Auto-save effect - increased delay to reduce frequency
   useEffect(() => {
     const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
     
@@ -102,12 +91,12 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout
+    // Set new timeout with longer delay
     saveTimeoutRef.current = setTimeout(() => {
       if (!isSavingRef.current) {
         performSave();
       }
-    }, 2000);
+    }, 5000); // Increased from 2000 to 5000ms
 
     return () => {
       if (saveTimeoutRef.current) {
