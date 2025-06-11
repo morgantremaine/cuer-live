@@ -65,25 +65,36 @@ export const useRundownClipboardOperations = ({
 
   const handlePasteRows = useCallback(() => {
     if (clipboardItems.length > 0) {
+      console.log('Pasting items, selectedRows:', Array.from(selectedRows));
+      console.log('Current items length:', items.length);
+      
       const selectedIds = Array.from(selectedRows);
       let insertIndex: number;
       
       if (selectedIds.length > 0) {
-        // Find the highest index among selected rows to insert after
+        // Find the indices of all selected rows
         const selectedIndices = selectedIds
-          .map(id => items.findIndex(item => item.id === id))
+          .map(id => {
+            const index = items.findIndex(item => item.id === id);
+            console.log(`Found item ${id} at index ${index}`);
+            return index;
+          })
           .filter(index => index !== -1);
         
         if (selectedIndices.length > 0) {
+          // Insert after the last selected item
           const highestSelectedIndex = Math.max(...selectedIndices);
           insertIndex = highestSelectedIndex + 1;
+          console.log('Inserting at index:', insertIndex, 'after selected index:', highestSelectedIndex);
         } else {
           // If no valid selection found, insert at the end
           insertIndex = items.length;
+          console.log('No valid selection, inserting at end:', insertIndex);
         }
       } else {
         // If no selection, insert at the end
         insertIndex = items.length;
+        console.log('No selection, inserting at end:', insertIndex);
       }
 
       const itemsToPaste = clipboardItems.map(item => ({
@@ -91,10 +102,14 @@ export const useRundownClipboardOperations = ({
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
       
+      console.log('About to insert', itemsToPaste.length, 'items at index:', insertIndex);
+      
       setItems(prevItems => {
         const newItems = [...prevItems];
         // Insert at the calculated position
         newItems.splice(insertIndex, 0, ...itemsToPaste);
+        
+        console.log('New items length after insert:', newItems.length);
         
         // Update header segment names for all headers in the correct order
         return updateHeaderSegmentNames(newItems);
