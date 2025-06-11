@@ -39,8 +39,6 @@ interface HeaderRowProps {
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
-  console.log(`📋 HeaderRow rendering for ${props.item.id}`);
-  
   const {
     item,
     index,

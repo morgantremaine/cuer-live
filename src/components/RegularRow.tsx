@@ -6,37 +6,35 @@ import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
-import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface RegularRowProps {
   item: RundownItem;
   index: number;
   rowNumber: string;
   status: 'upcoming' | 'current' | 'completed';
-  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
-  isSelected?: boolean;
-  isCurrentlyPlaying?: boolean;
-  isDraggingMultiple?: boolean;
   selectedRowsCount?: number;
   selectedRows?: Set<string>;
+  isSelected?: boolean;
+  isCurrentlyPlaying?: boolean;
+  showColorPicker: string | null;
   hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onToggleColorPicker: (itemId: string) => void;
-  onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
+  onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
   isDragging: boolean;
@@ -44,17 +42,18 @@ interface RegularRowProps {
 }
 
 const RegularRow = (props: RegularRowProps) => {
-  console.log(`📄 RegularRow rendering for ${props.item.id}`);
-  
   const {
     item,
     index,
+    rowNumber,
+    status,
     selectedRowsCount = 1,
     selectedRows,
     isSelected = false,
-    isDraggingMultiple = false,
+    isCurrentlyPlaying = false,
     showColorPicker,
     hasClipboardData = false,
+    onToggleFloat,
     onColorSelect,
     onClearSelection,
     onAddRow,
@@ -64,10 +63,9 @@ const RegularRow = (props: RegularRowProps) => {
 
   const { rowClass } = useRowStyling({
     isDragging,
-    isDraggingMultiple,
     isSelected,
-    isFloating: item.isFloating,
-    isFloated: item.isFloated,
+    isCurrentlyPlaying,
+    status,
     color: item.color
   });
 
@@ -76,7 +74,6 @@ const RegularRow = (props: RegularRowProps) => {
     handleContextMenu,
     handleContextMenuCopy,
     handleContextMenuDelete,
-    handleContextMenuFloat,
     handleContextMenuColor,
     handleContextMenuPaste
   } = useRowEventHandlers({
@@ -89,28 +86,21 @@ const RegularRow = (props: RegularRowProps) => {
     onDeleteSelectedRows: props.onDeleteSelectedRows,
     onCopySelectedRows: props.onCopySelectedRows,
     onToggleColorPicker: props.onToggleColorPicker,
-    onToggleFloat: props.onToggleFloat,
     selectedRows,
     onPasteRows: props.onPasteRows
   });
 
-  // Determine background color and text color
-  let backgroundColor: string | undefined;
-  let textColor = '';
+  const handleContextMenuFloat = () => {
+    onToggleFloat(item.id);
+  };
 
-  if (item.isFloating || item.isFloated) {
-    backgroundColor = '#991b1b'; // red-800
-    textColor = 'white';
-  } else if (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff') {
-    backgroundColor = item.color;
-    textColor = getContrastTextColor(item.color);
-  }
+  const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
 
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
       selectedRows={selectedRows}
-      isFloated={item.isFloating || item.isFloated}
+      isFloated={item.isFloating || false}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
@@ -126,27 +116,23 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
-        style={{ 
-          backgroundColor,
-          color: textColor
+        style={{
+          backgroundColor
         }}
         draggable
-        onClick={handleRowClick}
-        onContextMenu={handleContextMenu}
         onDragStart={(e) => props.onDragStart(e, index)}
         onDragOver={props.onDragOver}
         onDrop={(e) => props.onDrop(e, index)}
+        onClick={handleRowClick}
+        onContextMenu={handleContextMenu}
       >
         <RegularRowContent
           item={item}
-          rowNumber={props.rowNumber}
           columns={props.columns}
-          cellRefs={props.cellRefs}
-          textColor={textColor}
+          rowNumber={rowNumber}
+          status={status}
           backgroundColor={backgroundColor}
-          isCurrentlyPlaying={props.isCurrentlyPlaying}
-          isDraggingMultiple={isDraggingMultiple}
-          isSelected={isSelected}
+          cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
