@@ -84,7 +84,7 @@ const RundownContent = ({
   return (
     <div className="relative bg-background">
       <ScrollArea className="w-full h-[calc(100vh-200px)] bg-background">
-        <div className="min-w-max bg-background">
+        <div className="min-w-max bg-background overflow-visible">
           <RundownTable
             items={items}
             visibleColumns={visibleColumns}
