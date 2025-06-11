@@ -66,16 +66,23 @@ export const useRundownClipboardOperations = ({
   const handlePasteRows = useCallback(() => {
     if (clipboardItems.length > 0) {
       const selectedIds = Array.from(selectedRows);
-      let insertAfterIndex: number | undefined;
+      let insertAfterIndex: number;
       
       if (selectedIds.length > 0) {
+        // Find the highest index among selected rows
         const selectedIndices = selectedIds.map(id => 
           items.findIndex(item => item.id === id)
         ).filter(index => index !== -1);
         
         if (selectedIndices.length > 0) {
           insertAfterIndex = Math.max(...selectedIndices);
+        } else {
+          // If no valid selection, insert at the end
+          insertAfterIndex = items.length - 1;
         }
+      } else {
+        // If no selection, insert at the end
+        insertAfterIndex = items.length - 1;
       }
 
       const itemsToPaste = clipboardItems.map(item => ({
@@ -84,24 +91,19 @@ export const useRundownClipboardOperations = ({
       }));
       
       setItems(prevItems => {
-        let newItems;
-        
-        if (insertAfterIndex !== undefined) {
-          // Insert at the specified position
-          newItems = [...prevItems];
-          newItems.splice(insertAfterIndex + 1, 0, ...itemsToPaste);
-        } else {
-          // Insert at the end
-          newItems = [...prevItems, ...itemsToPaste];
-        }
+        const newItems = [...prevItems];
+        // Insert after the selected position (or at the end if no selection)
+        const insertIndex = insertAfterIndex >= 0 ? insertAfterIndex + 1 : newItems.length;
+        newItems.splice(insertIndex, 0, ...itemsToPaste);
         
         // Update header segment names for all headers in the correct order
         return updateHeaderSegmentNames(newItems);
       });
       
       markAsChanged();
+      clearSelection();
     }
-  }, [clipboardItems, selectedRows, items, setItems, markAsChanged]);
+  }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection]);
 
   return {
     handleCopySelectedRows,

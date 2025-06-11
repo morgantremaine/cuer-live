@@ -96,6 +96,7 @@ const SharedRundown = () => {
             visibleColumns={visibleColumns}
             currentSegmentId={currentSegmentId}
             isPlaying={isPlaying}
+            rundownStartTime={rundownData.startTime || '09:00:00'}
           />
         </div>
 

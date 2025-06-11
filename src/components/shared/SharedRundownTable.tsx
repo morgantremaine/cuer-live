@@ -9,31 +9,70 @@ interface SharedRundownTableProps {
   visibleColumns: any[];
   currentSegmentId: string | null;
   isPlaying?: boolean;
+  rundownStartTime?: string;
 }
 
 const SharedRundownTable = ({ 
   items, 
   visibleColumns, 
   currentSegmentId, 
-  isPlaying = false 
+  isPlaying = false,
+  rundownStartTime = '09:00:00'
 }: SharedRundownTableProps) => {
+  // Helper function to convert time string to seconds
+  const timeToSeconds = (timeStr: string): number => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+    return 0;
+  };
+
+  // Helper function to convert seconds to time string
+  const secondsToTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Calculate start times for all items based on their position and durations
+  const calculateItemTimes = () => {
+    let currentTime = rundownStartTime;
+    const itemsWithTimes: Array<{ item: RundownItem; calculatedStartTime: string }> = [];
+
+    items.forEach((item, index) => {
+      if (item.type === 'header') {
+        // Headers don't advance time
+        itemsWithTimes.push({ item, calculatedStartTime: currentTime });
+      } else {
+        // Regular items
+        itemsWithTimes.push({ item, calculatedStartTime: currentTime });
+        
+        // Only advance time if item is not floated
+        if (!item.isFloating && !item.isFloated && item.duration) {
+          const durationSeconds = timeToSeconds(item.duration);
+          const currentSeconds = timeToSeconds(currentTime);
+          currentTime = secondsToTime(currentSeconds + durationSeconds);
+        }
+      }
+    });
+
+    return itemsWithTimes;
+  };
+
+  const itemsWithTimes = calculateItemTimes();
+
   // Calculate header duration (sum of all non-floated regular items until next header)
   const calculateHeaderDuration = (headerIndex: number) => {
     if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
       return '00:00:00';
     }
-
-    const timeToSeconds = (timeStr: string) => {
-      const parts = timeStr.split(':').map(Number);
-      if (parts.length === 2) {
-        const [minutes, seconds] = parts;
-        return minutes * 60 + seconds;
-      } else if (parts.length === 3) {
-        const [hours, minutes, seconds] = parts;
-        return hours * 3600 + minutes * 60 + seconds;
-      }
-      return 0;
-    };
 
     let totalSeconds = 0;
     let i = headerIndex + 1;
@@ -46,16 +85,7 @@ const SharedRundownTable = ({
       i++;
     }
 
-    const hours = Math.floor(totalSeconds / 3600);
-    totalSeconds %= 3600;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-
-    const formattedHours = String(hours).padStart(2, '0');
-    const formattedMinutes = String(minutes).padStart(2, '0');
-    const formattedSeconds = String(seconds).padStart(2, '0');
-
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    return secondsToTime(totalSeconds);
   };
 
   return (
@@ -77,7 +107,7 @@ const SharedRundownTable = ({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
-          {items.map((item, index) => {
+          {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
             const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
             const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
             const isFloated = item.isFloating || item.isFloated;
@@ -162,8 +192,8 @@ const SharedRundownTable = ({
                       }
                     }
                     
-                    // For regular items, use the standard cell value
-                    const value = getCellValue(item, column);
+                    // For regular items, use the calculated times
+                    const value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
                     
                     return (
                       <td
