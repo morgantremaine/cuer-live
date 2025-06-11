@@ -101,8 +101,8 @@ const RundownIndexContent = () => {
     items,
     selectedRows,
     rundownId,
-    addRow: () => addRow(),
-    addHeader: () => addHeader(),
+    addRow,
+    addHeader,
     calculateEndTime,
     toggleRowSelection,
     setRundownStartTime,
@@ -116,18 +116,9 @@ const RundownIndexContent = () => {
   // Convert timeRemaining to number (assuming it's in seconds)
   const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
 
-  // Create a wrapper for handleAddColumn that takes a string
-  const handleAddColumnWrapper = (name: string) => {
-    const newColumn = {
-      id: `custom_${Date.now()}`,
-      name,
-      key: name.toLowerCase().replace(/\s+/g, '_'),
-      isVisible: true,
-      width: '150px',
-      isCustom: true,
-      isEditable: true
-    };
-    handleAddColumn(newColumn);
+  // Create a wrapper for handleAddColumn that takes the required parameters
+  const handleAddColumnWrapper = (name: string, key: string, type: string) => {
+    handleAddColumn(name, key, type);
   };
 
   // Prepare rundown data for Cuer AI

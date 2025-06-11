@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -98,13 +99,20 @@ export const useSimplifiedRundownState = () => {
   const addRow = useCallback(() => {
     const newItem: RundownItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'segment',
+      type: 'regular',
+      rowNumber: '',
       name: 'New Segment',
-      duration: '00:02:00',
       startTime: '00:00:00',
+      duration: '00:02:00',
       endTime: '00:02:00',
-      status: 'ready',
+      elapsedTime: '00:00:00',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
       notes: '',
+      color: '',
+      isFloating: false,
       customFields: {}
     };
     addItem(newItem);
@@ -113,13 +121,20 @@ export const useSimplifiedRundownState = () => {
   const addRowAtIndex = useCallback((index: number) => {
     const newItem: RundownItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'segment',
+      type: 'regular',
+      rowNumber: '',
       name: 'New Segment',
-      duration: '00:02:00',
       startTime: '00:00:00',
+      duration: '00:02:00',
       endTime: '00:02:00',
-      status: 'ready',
+      elapsedTime: '00:00:00',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
       notes: '',
+      color: '',
+      isFloating: false,
       customFields: {}
     };
     
@@ -135,9 +150,20 @@ export const useSimplifiedRundownState = () => {
     const newHeader: RundownItem = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'header',
-      name: `Header ${headerLetter}`,
-      segmentName: headerLetter,
       rowNumber: headerLetter,
+      name: `Header ${headerLetter}`,
+      startTime: '00:00:00',
+      duration: '00:00:00',
+      endTime: '00:00:00',
+      elapsedTime: '00:00:00',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
+      isFloating: false,
+      segmentName: headerLetter,
       customFields: {}
     };
     addItem(newHeader);
@@ -148,9 +174,20 @@ export const useSimplifiedRundownState = () => {
     const newHeader: RundownItem = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'header',
-      name: `Header ${headerLetter}`,
-      segmentName: headerLetter,
       rowNumber: headerLetter,
+      name: `Header ${headerLetter}`,
+      startTime: '00:00:00',
+      duration: '00:00:00',
+      endTime: '00:00:00',
+      elapsedTime: '00:00:00',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
+      isFloating: false,
+      segmentName: headerLetter,
       customFields: {}
     };
     
@@ -166,15 +203,14 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   const toggleFloat = useCallback((id: string) => {
-    updateItem(id, 'isFloated', 'true');
+    updateItem(id, 'isFloating', 'true');
   }, [updateItem]);
 
-  const addColumn = useCallback((name: string, key: string, type: string) => {
+  const addColumn = useCallback((name: string, key: string, columnType: string) => {
     const newColumn: Column = {
       id: `col_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
       key,
-      type: type as any,
       isVisible: true,
       width: '150px',
       order: columns.length
@@ -214,8 +250,8 @@ export const useSimplifiedRundownState = () => {
     }
     
     const hours = Math.floor(totalDuration / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
+    const minutes = Math.floor((totalDuration % 3600) / 60);
+    const seconds = totalDuration % 60;
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [items]);
@@ -223,7 +259,7 @@ export const useSimplifiedRundownState = () => {
   const totalRuntime = useCallback(() => {
     let total = 0;
     items.forEach(item => {
-      if (item.type === 'segment' && item.duration) {
+      if (item.type === 'regular' && item.duration) {
         const [hours, minutes, seconds] = item.duration.split(':').map(Number);
         total += hours * 3600 + minutes * 60 + seconds;
       }

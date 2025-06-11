@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIManager } from './useRundownUIManager';
-import { getRowStatus, calculateEndTime, calculateTotalRuntime } from '@/utils/rundownCalculations';
+import { getRowStatus, calculateEndTime, calculateTotalRuntime, calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
 export const useRundownStateCoordination = () => {
   // Add missing UI state
@@ -15,6 +15,11 @@ export const useRundownStateCoordination = () => {
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
   console.log('🔄 State coordination - selectedRowId:', simplifiedState.selectedRowId);
   console.log('🔄 State coordination - undo available:', simplifiedState.canUndo, 'last action:', simplifiedState.lastAction);
+  
+  // Calculate items with timing for UI manager
+  const calculatedItems = useMemo(() => {
+    return calculateItemsWithTiming(simplifiedState.items, simplifiedState.rundownStartTime);
+  }, [simplifiedState.items, simplifiedState.rundownStartTime]);
   
   // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
@@ -54,9 +59,9 @@ export const useRundownStateCoordination = () => {
     simplifiedState.setTitle
   );
   
-  // UI state management
+  // UI state management with calculated items
   const uiManager = useRundownUIManager(
-    simplifiedState.items,
+    calculatedItems,
     simplifiedState.visibleColumns,
     simplifiedState.columns,
     simplifiedState.updateItem,
