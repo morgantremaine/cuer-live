@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { useRundownGridCore } from './useRundownGridCore';
@@ -18,6 +19,17 @@ export const useRundownStateCoordination = () => {
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   const [autoSaveTrigger, setAutoSaveTrigger] = useState<(() => void) | null>(null);
   const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
+  
+  // Add current time state that updates every second
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Timer effect for current time - ensure it updates every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Storage and data loading
   const { savedRundowns, loading: storageLoading, loadRundowns } = useRundownStorage();
@@ -199,8 +211,8 @@ export const useRundownStateCoordination = () => {
 
   // Memoized state objects
   const coreState = useMemo(() => ({
-    // Time and basic info
-    currentTime: new Date(),
+    // Time and basic info - use the live updating currentTime
+    currentTime,
     timezone,
     rundownTitle,
     setRundownTitle: wrappedSetRundownTitle,
@@ -266,6 +278,7 @@ export const useRundownStateCoordination = () => {
     isConnected: isCollaborationConnected,
     isProcessingRealtimeUpdate
   }), [
+    currentTime, // Add currentTime to dependencies
     timezone, rundownTitle, rundownStartTime, rundownId, core, 
     wrappedUpdateItem, wrappedDeleteRow, wrappedToggleFloatRow, 
     wrappedAddRow, wrappedAddHeader, wrappedSetRundownTitle,
