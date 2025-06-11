@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import HighlightedText from './HighlightedText';
@@ -67,31 +68,42 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
+  // Helper function to determine which line the cursor is on
+  const getCursorLineInfo = (textarea: HTMLTextAreaElement) => {
+    const cursorPosition = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    const textAfterCursor = value.substring(cursorPosition);
+    
+    // Count newlines before cursor to determine current line (0-indexed)
+    const currentLineIndex = (textBeforeCursor.match(/\n/g) || []).length;
+    
+    // Total number of lines in the text
+    const totalLines = (value.match(/\n/g) || []).length + 1;
+    
+    // Check if cursor is at the beginning of the first line
+    const isAtFirstLine = currentLineIndex === 0;
+    
+    // Check if cursor is at the last line
+    const isAtLastLine = currentLineIndex === totalLines - 1;
+    
+    return { isAtFirstLine, isAtLastLine };
+  };
+
   // Improved key navigation for script cells
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // For Up/Down arrows, check if we're at the beginning/end of the text to allow cell navigation
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       const textarea = e.target as HTMLTextAreaElement;
-      const cursorPosition = textarea.selectionStart;
-      const textBeforeCursor = value.substring(0, cursorPosition);
-      const textAfterCursor = value.substring(cursorPosition);
+      const { isAtFirstLine, isAtLastLine } = getCursorLineInfo(textarea);
       
-      if (e.key === 'ArrowUp') {
-        // Check if we're at the first line by seeing if there are no newlines before cursor
-        const isAtFirstLine = !textBeforeCursor.includes('\n');
-        if (isAtFirstLine) {
-          // We're at the first line, allow navigation to previous cell
-          onKeyDown(e, itemId, cellRefKey);
-          return;
-        }
-      } else if (e.key === 'ArrowDown') {
-        // Check if we're at the last line by seeing if there are no newlines after cursor
-        const isAtLastLine = !textAfterCursor.includes('\n');
-        if (isAtLastLine) {
-          // We're at the last line, allow navigation to next cell
-          onKeyDown(e, itemId, cellRefKey);
-          return;
-        }
+      if (e.key === 'ArrowUp' && isAtFirstLine) {
+        // We're at the first line, allow navigation to previous cell
+        onKeyDown(e, itemId, cellRefKey);
+        return;
+      } else if (e.key === 'ArrowDown' && isAtLastLine) {
+        // We're at the last line, allow navigation to next cell
+        onKeyDown(e, itemId, cellRefKey);
+        return;
       }
       
       // Otherwise, let the textarea handle the arrow key naturally (navigate within text)
