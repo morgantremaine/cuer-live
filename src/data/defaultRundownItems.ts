@@ -18,8 +18,8 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     gfx: '',
     video: '',
     customFields: {},
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    rowNumber: '',
+    color: ''
   },
   {
     id: uuidv4(),
@@ -36,8 +36,8 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     gfx: '',
     video: '',
     customFields: {},
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    rowNumber: '',
+    color: ''
   },
   {
     id: uuidv4(),
@@ -54,7 +54,7 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     gfx: '',
     video: '',
     customFields: {},
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    rowNumber: '',
+    color: ''
   }
 ];
