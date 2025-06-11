@@ -1,133 +1,171 @@
 
 import React from 'react';
-import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
-import { getRowStatus, calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { RundownItem } from '@/types/rundown';
+import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
-  visibleColumns: Column[];
-  currentTime: Date;
-  currentSegmentId?: string | null;
-  getColumnWidth: (column: Column) => string;
-  getRowNumber: (index: number) => string;
-  getHeaderDuration: (index: number) => string;
+  visibleColumns: any[];
+  currentSegmentId: string | null;
 }
 
-const SharedRundownTable = ({
-  items,
-  visibleColumns,
-  currentTime,
-  currentSegmentId,
-  getColumnWidth,
-  getRowNumber,
-  getHeaderDuration
-}: SharedRundownTableProps) => {
-  // Calculate items with timing data
-  const calculatedItems = React.useMemo(() => {
-    return calculateItemsWithTiming(items, '09:00:00');
-  }, [items]);
+const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
+  // Calculate header duration (sum of all non-floated regular items until next header)
+  const calculateHeaderDuration = (headerIndex: number) => {
+    if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
+      return '00:00:00';
+    }
 
-  const renderCellContent = (item: any, column: Column) => {
-    const fieldKey = column.key;
-    
-    // Handle calculated fields
-    if (fieldKey === 'startTime') {
-      return item.calculatedStartTime || item.startTime || '00:00:00';
+    const timeToSeconds = (timeStr: string) => {
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return minutes * 60 + seconds;
+      } else if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return hours * 3600 + minutes * 60 + seconds;
+      }
+      return 0;
+    };
+
+    let totalSeconds = 0;
+    let i = headerIndex + 1;
+
+    while (i < items.length && items[i].type !== 'header') {
+      // Only count non-floated items in header duration
+      if (!items[i].isFloating && !items[i].isFloated) {
+        totalSeconds += timeToSeconds(items[i].duration || '00:00');
+      }
+      i++;
     }
-    if (fieldKey === 'endTime') {
-      return item.calculatedEndTime || item.endTime || '00:00:00';
-    }
-    if (fieldKey === 'elapsedTime') {
-      return item.calculatedElapsedTime || item.elapsedTime || '00:00:00';
-    }
-    
-    // Handle standard fields
-    if (fieldKey === 'segmentName') return item.name || '';
-    if (fieldKey in item) return (item as any)[fieldKey] || '';
-    
-    // Handle custom fields
-    if (item.customFields && fieldKey in item.customFields) {
-      return item.customFields[fieldKey] || '';
-    }
-    
-    return '';
+
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
   };
 
   return (
-    <div className="relative w-full overflow-auto bg-background">
-      <table className="w-full border-collapse border border-border">
-        <thead className="sticky top-0 z-10 bg-muted">
+    <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
+      <table className="w-full">
+        <thead className="bg-gray-50 print:bg-gray-100">
           <tr>
-            <th className="w-12 p-2 text-left font-medium border-b border-border bg-muted">#</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400">
+              #
+            </th>
             {visibleColumns.map((column) => (
               <th
                 key={column.id}
-                className="p-2 text-left font-medium border-b border-border bg-muted"
-                style={{ width: getColumnWidth(column) }}
+                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400"
               >
                 {column.name}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-background">
-          {calculatedItems.map((item, index) => {
-            const rowNumber = getRowNumber(index);
-            const status = getRowStatus(item, currentTime);
-            const isCurrentlyPlaying = item.id === currentSegmentId;
-            const isHeader = isHeaderItem(item);
-
+        <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
+          {items.map((item, index) => {
+            const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
+            const isFloated = item.isFloating || item.isFloated;
+            
             return (
               <React.Fragment key={item.id}>
-                {/* Show green line ABOVE the current segment */}
-                {isCurrentlyPlaying && (
-                  <tr>
+                {/* Green line above current row */}
+                {isShowcallerCurrent && (
+                  <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-green-500 w-full"></div>
+                      <div className="h-4 flex items-center">
+                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Small spacing below green line */}
+                {isShowcallerCurrent && (
+                  <tr className="print:hidden">
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1"></div>
                     </td>
                   </tr>
                 )}
                 
                 <tr
                   className={`
-                    border-b border-border hover:bg-muted/50 transition-colors
-                    ${isHeader ? 'bg-blue-50 dark:bg-blue-950' : ''}
-                    ${status === 'current' ? 'bg-green-50 dark:bg-green-950' : ''}
-                    ${status === 'completed' ? 'bg-gray-50 dark:bg-gray-900' : ''}
-                    ${isCurrentlyPlaying ? 'ring-2 ring-green-500' : ''}
+                    ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
+                    ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                    print:break-inside-avoid
                   `}
-                  style={{ backgroundColor: item.color && item.color !== '#ffffff' ? `${item.color}20` : undefined }}
+                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
                 >
-                  {/* Row number */}
-                  <td className="w-12 p-2 text-sm text-muted-foreground border-r border-border">
-                    {isHeader ? '' : rowNumber}
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                    <div className="flex items-center">
+                      {isShowcallerCurrent && (
+                        <span 
+                          className="text-blue-500 mr-2 text-xl font-bold print:hidden"
+                          style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
+                        >
+                          ▶
+                        </span>
+                      )}
+                      {isFloated && (
+                        <span className="text-yellow-400 mr-1">🛟</span>
+                      )}
+                      <span>{getRowNumber(index, items)}</span>
+                    </div>
                   </td>
                   
-                  {/* Data cells */}
-                  {visibleColumns.map((column) => (
-                    <td
-                      key={column.id}
-                      className="p-2 border-r border-border last:border-r-0"
-                      style={{ width: getColumnWidth(column) }}
-                    >
-                      <div className="text-sm">
-                        {renderCellContent(item, column)}
-                      </div>
-                    </td>
-                  ))}
+                  {visibleColumns.map((column) => {
+                    // For headers, handle special cases
+                    if (item.type === 'header') {
+                      if (column.key === 'segmentName') {
+                        // Show the header description/notes
+                        return (
+                          <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                            <div className="break-words whitespace-pre-wrap">{item.notes || item.name || ''}</div>
+                          </td>
+                        );
+                      } else if (column.key === 'duration') {
+                        // Show the calculated header duration (excluding floated items)
+                        return (
+                          <td key={column.id} className="px-3 py-2 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400">
+                            <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
+                          </td>
+                        );
+                      } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+                        // Don't show time fields for headers
+                        return (
+                          <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                            <div className="break-words whitespace-pre-wrap"></div>
+                          </td>
+                        );
+                      }
+                    }
+                    
+                    // For regular items, use the standard cell value
+                    const value = getCellValue(item, column);
+                    
+                    return (
+                      <td
+                        key={column.id}
+                        className={`px-3 py-2 text-sm border-r border-gray-200 print:border-gray-400 ${isFloated ? 'text-white' : 'text-gray-900'}`}
+                      >
+                        <div className="break-words whitespace-pre-wrap">{value}</div>
+                      </td>
+                    );
+                  })}
                 </tr>
               </React.Fragment>
             );
           })}
         </tbody>
       </table>
-      
-      {items.length === 0 && (
-        <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">
-          No items to display
-        </div>
-      )}
     </div>
   );
 };

@@ -1,42 +1,37 @@
-
 import React from 'react';
-import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
+import RundownContextMenu from './RundownContextMenu';
+import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
-import HeaderRowContent from './row/HeaderRowContent';
-import RundownContextMenu from './RundownContextMenu';
-import { SearchHighlight } from '@/types/search';
+import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface HeaderRowProps {
   item: RundownItem;
   index: number;
   rowNumber: string;
-  status: 'upcoming' | 'current' | 'completed';
-  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
-  isSelected?: boolean;
+  headerDuration: string;
   selectedRowsCount?: number;
   selectedRows?: Set<string>;
-  headerDuration?: string;
+  isSelected?: boolean;
+  showColorPicker: string | null;
   hasClipboardData?: boolean;
-  currentHighlight?: SearchHighlight | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onToggleColorPicker: (itemId: string) => void;
-  onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
-  onToggleFloat?: (id: string) => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
+  onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
   isDragging: boolean;
@@ -44,46 +39,36 @@ interface HeaderRowProps {
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
+  console.log(`📋 HeaderRow rendering for ${props.item.id}`);
+  
   const {
     item,
     index,
-    isSelected = false,
+    rowNumber,
     selectedRowsCount = 1,
     selectedRows,
+    isSelected = false,
+    showColorPicker,
     hasClipboardData = false,
-    onPasteRows,
+    onColorSelect,
     onClearSelection,
     onAddRow,
     onAddHeader,
-    isDragging,
-    columns,
-    cellRefs,
-    showColorPicker,
-    currentHighlight,
-    onUpdateItem,
-    onCellClick,
-    onKeyDown,
-    onToggleColorPicker,
-    onColorSelect,
-    onDeleteRow,
-    onToggleFloat,
-    onRowSelect,
-    onDragStart,
-    onDragOver,
-    onDrop,
-    onCopySelectedRows,
-    onDeleteSelectedRows,
-    getColumnWidth,
-    status,
-    headerDuration = ''
+    isDragging
   } = props;
+
+  const { rowClass } = useRowStyling({
+    isDragging,
+    isSelected,
+    isHeader: true,
+    color: item.color
+  });
 
   const {
     handleRowClick,
     handleContextMenu,
     handleContextMenuCopy,
     handleContextMenuDelete,
-    handleContextMenuFloat,
     handleContextMenuColor,
     handleContextMenuPaste
   } = useRowEventHandlers({
@@ -91,67 +76,62 @@ const HeaderRow = (props: HeaderRowProps) => {
     index,
     isSelected,
     selectedRowsCount,
-    onRowSelect,
-    onDeleteRow,
-    onDeleteSelectedRows,
-    onCopySelectedRows,
-    onToggleColorPicker,
-    onToggleFloat,
+    onRowSelect: props.onRowSelect,
+    onDeleteRow: props.onDeleteRow,
+    onDeleteSelectedRows: props.onDeleteSelectedRows,
+    onCopySelectedRows: props.onCopySelectedRows,
+    onToggleColorPicker: props.onToggleColorPicker,
     selectedRows,
-    onPasteRows
+    onPasteRows: props.onPasteRows
   });
 
-  const { getRowClasses, getRowStyle } = useRowStyling({
-    item,
-    isSelected,
-    isDragging,
-    status,
-    isHeader: true,
-    color: item.color
-  });
+  const handleContextMenuFloat = () => {
+    // Headers don't float, but we'll keep the interface consistent
+  };
+
+  const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
 
   return (
     <RundownContextMenu
-      onCopy={handleContextMenuCopy}
-      onDelete={handleContextMenuDelete}
-      onColorPicker={handleContextMenuColor}
-      onToggleFloat={handleContextMenuFloat}
-      onPaste={hasClipboardData ? handleContextMenuPaste : undefined}
-      onClearSelection={onClearSelection}
-      onAddRow={onAddRow}
-      onAddHeader={onAddHeader}
-      selectedCount={selectedRowsCount}
+      selectedCount={isSelected ? selectedRowsCount : 1}
+      selectedRows={selectedRows}
+      isFloated={false}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
-      isFloated={item.isFloating}
-      selectedRows={selectedRows}
+      onCopy={handleContextMenuCopy}
+      onDelete={handleContextMenuDelete}
+      onToggleFloat={handleContextMenuFloat}
+      onColorPicker={handleContextMenuColor}
       onColorSelect={onColorSelect}
+      onPaste={handleContextMenuPaste}
+      onClearSelection={onClearSelection}
+      onAddRow={onAddRow}
+      onAddHeader={onAddHeader}
     >
-      <tr
-        className={`
-          border-b border-border bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 
-          cursor-pointer transition-all duration-150 ease-in-out
-          ${isSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-100 dark:bg-blue-950/20' : ''}
-        `}
-        style={getRowStyle()}
+      <tr 
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
+        style={{
+          backgroundColor
+        }}
+        draggable
+        onDragStart={(e) => props.onDragStart(e, index)}
+        onDragOver={props.onDragOver}
+        onDrop={(e) => props.onDrop(e, index)}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
-        draggable
-        onDragStart={(e) => onDragStart(e, index)}
-        onDragOver={onDragOver}
-        onDrop={(e) => onDrop(e, index)}
       >
         <HeaderRowContent
           item={item}
-          columns={columns}
-          headerDuration={headerDuration}
-          rowNumber=""
-          cellRefs={cellRefs}
-          onUpdateItem={onUpdateItem}
-          onCellClick={onCellClick}
-          onKeyDown={onKeyDown}
-          getColumnWidth={getColumnWidth}
+          columns={props.columns}
+          headerDuration={props.headerDuration}
+          rowNumber={rowNumber}
+          backgroundColor={backgroundColor}
+          cellRefs={props.cellRefs}
+          onUpdateItem={props.onUpdateItem}
+          onCellClick={props.onCellClick}
+          onKeyDown={props.onKeyDown}
+          getColumnWidth={props.getColumnWidth}
         />
       </tr>
     </RundownContextMenu>

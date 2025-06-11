@@ -2,7 +2,6 @@
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
-import { calculateHeaderDuration } from '@/utils/rundownCalculations';
 import SharedRundownHeader from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
@@ -47,24 +46,6 @@ const SharedRundown = () => {
 
   const visibleColumns = getVisibleColumns(rundownData.columns);
 
-  // Helper functions for the table
-  const getColumnWidth = (column: any) => column.width || '150px';
-  
-  const getRowNumber = (index: number) => {
-    let rowCount = 0;
-    for (let i = 0; i <= index; i++) {
-      if (rundownData.items[i]?.type !== 'header') {
-        rowCount++;
-      }
-    }
-    return rowCount > 0 ? rowCount.toString() : '';
-  };
-
-  const getHeaderDuration = (index: number) => {
-    if (!rundownData.items || index >= rundownData.items.length) return '00:00:00';
-    return calculateHeaderDuration(rundownData.items, index);
-  };
-
   return (
     <div className="min-h-screen bg-white p-4 print:p-2">
       <SharedRundownHeader
@@ -79,11 +60,7 @@ const SharedRundown = () => {
       <SharedRundownTable
         items={rundownData.items}
         visibleColumns={visibleColumns}
-        currentTime={currentTime}
         currentSegmentId={currentSegmentId}
-        getColumnWidth={getColumnWidth}
-        getRowNumber={getRowNumber}
-        getHeaderDuration={getHeaderDuration}
       />
 
       <SharedRundownFooter />

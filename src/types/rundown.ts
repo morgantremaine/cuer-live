@@ -24,10 +24,6 @@ export interface RundownItem {
   status?: 'upcoming' | 'current' | 'completed';
 }
 
-// Add the missing type aliases for backward compatibility
-export type HeaderItem = RundownItem & { type: 'header' };
-export type SegmentItem = RundownItem & { type: 'regular' };
-
 // Helper type guards for better type safety
 export const isHeaderItem = (item: RundownItem): boolean => item.type === 'header';
 export const isRegularItem = (item: RundownItem): boolean => item.type === 'regular';
