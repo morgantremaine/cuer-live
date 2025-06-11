@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -11,6 +12,7 @@ interface RegularRowContentProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
+  status?: 'upcoming' | 'current' | 'completed';
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
@@ -27,6 +29,7 @@ const RegularRowContent = ({
   cellRefs,
   textColor,
   backgroundColor,
+  status,
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
   isSelected = false,

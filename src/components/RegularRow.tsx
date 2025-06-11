@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -18,6 +17,7 @@ interface RegularRowProps {
   selectedRows?: Set<string>;
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
+  isDraggingMultiple?: boolean;
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
@@ -51,6 +51,7 @@ const RegularRow = (props: RegularRowProps) => {
     selectedRows,
     isSelected = false,
     isCurrentlyPlaying = false,
+    isDraggingMultiple = false,
     showColorPicker,
     hasClipboardData = false,
     onToggleFloat,
@@ -63,6 +64,7 @@ const RegularRow = (props: RegularRowProps) => {
 
   const { rowClass } = useRowStyling({
     isDragging,
+    isDraggingMultiple,
     isSelected,
     isCurrentlyPlaying,
     status,
@@ -132,6 +134,9 @@ const RegularRow = (props: RegularRowProps) => {
           rowNumber={rowNumber}
           status={status}
           backgroundColor={backgroundColor}
+          isCurrentlyPlaying={isCurrentlyPlaying}
+          isDraggingMultiple={isDraggingMultiple}
+          isSelected={isSelected}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}

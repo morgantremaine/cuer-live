@@ -5,8 +5,10 @@ interface UseRowStylingProps {
   isSelected?: boolean;
   isFloating?: boolean;
   isFloated?: boolean;
+  isCurrentlyPlaying?: boolean;
   color?: string;
   isHeader?: boolean;
+  status?: 'upcoming' | 'current' | 'completed';
 }
 
 export const useRowStyling = ({
@@ -15,8 +17,10 @@ export const useRowStyling = ({
   isSelected = false,
   isFloating = false,
   isFloated = false,
+  isCurrentlyPlaying = false,
   color,
-  isHeader = false
+  isHeader = false,
+  status
 }: UseRowStylingProps) => {
   let rowClass = '';
   
@@ -40,7 +44,6 @@ export const useRowStyling = ({
 
   // Add selection styling with ring outline for both headers and regular rows
   if (isSelected) {
-    console.log(`🎨 Applying selection styling to ${isHeader ? 'header' : 'regular'} row`);
     // Use !important classes and make header selection more prominent
     rowClass += ' !ring-2 !ring-blue-500 !ring-inset';
     if (isHeader) {
