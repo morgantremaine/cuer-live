@@ -21,7 +21,6 @@ export const useSimpleAutoSave = (
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isInitializedRef = useRef(false);
-  const lastSuccessfulSaveRef = useRef<string>('');
 
   const performSave = useCallback(async () => {
     if (!user || isSavingRef.current) return false;
@@ -73,7 +72,6 @@ export const useSimpleAutoSave = (
       // Update the saved data reference and clear unsaved changes
       const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
       lastSaveDataRef.current = currentData;
-      lastSuccessfulSaveRef.current = currentData;
       setHasUnsavedChanges(false);
 
       return true;
@@ -86,7 +84,7 @@ export const useSimpleAutoSave = (
     }
   }, [user, rundownId, updateRundown, saveRundown, title, items, columns, timezone, startTime]);
 
-  // Stable data comparison with proper initialization
+  // Main auto-save effect
   useEffect(() => {
     const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
     
@@ -94,21 +92,20 @@ export const useSimpleAutoSave = (
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
       lastSaveDataRef.current = currentData;
-      lastSuccessfulSaveRef.current = currentData;
       console.log('🔄 Auto-save initialized');
       return;
     }
 
-    // Skip if we're currently saving to avoid conflicts
+    // Skip if we're currently saving
     if (isSavingRef.current) {
       return;
     }
 
-    // Only detect real changes by comparing with last successful save
-    const hasActualChanges = lastSuccessfulSaveRef.current !== currentData;
+    // Check if data has actually changed
+    const hasChanges = lastSaveDataRef.current !== currentData;
     
-    if (hasActualChanges && !hasUnsavedChanges) {
-      console.log('📝 Real changes detected, marking as unsaved');
+    if (hasChanges) {
+      console.log('📝 Changes detected, marking as unsaved');
       setHasUnsavedChanges(true);
 
       // Clear existing timeout
@@ -129,7 +126,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [items, title, columns, timezone, startTime, performSave, hasUnsavedChanges]);
+  }, [items, title, columns, timezone, startTime, performSave]);
 
   // Cleanup on unmount
   useEffect(() => {
