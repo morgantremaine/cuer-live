@@ -170,66 +170,8 @@ export const useRundownGridCore = ({
     }
   }, [setRundownTitleDirectly, markAsChanged, rundownTitle, saveUndoState]);
 
-  const addRow = useCallback((calculateEndTime?: (startTime: string, duration: string) => string) => {
-    state.setItems(prev => {
-      const newItem: RundownItem = {
-        id: crypto.randomUUID(),
-        type: 'regular',
-        rowNumber: '',
-        name: 'New Segment',
-        segmentName: 'New Segment',
-        duration: '00:00:00',
-        startTime: rundownStartTime,
-        endTime: rundownStartTime,
-        elapsedTime: '00:00:00',
-        script: '',
-        talent: '',
-        gfx: '',
-        video: '',
-        notes: '',
-        color: '',
-        isFloating: false,
-        customFields: {}
-      };
-
-      const newItems = [...prev, newItem];
-      return newItems;
-    });
-
-    if (!isProcessingRealtimeUpdate) {
-      markAsChanged();
-    }
-  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate, state.setItems]);
-
-  const addHeader = useCallback(() => {
-    state.setItems(prev => {
-      const newHeader: RundownItem = {
-        id: crypto.randomUUID(),
-        type: 'header',
-        rowNumber: '',
-        name: 'New Section',
-        segmentName: 'New Section',
-        duration: '00:00:00',
-        startTime: rundownStartTime,
-        endTime: rundownStartTime,
-        elapsedTime: '00:00:00',
-        script: '',
-        talent: '',
-        gfx: '',
-        video: '',
-        notes: '',
-        color: '#3B82F6',
-        isFloating: false,
-        customFields: {}
-      };
-
-      return [...prev, newHeader];
-    });
-
-    if (!isProcessingRealtimeUpdate) {
-      markAsChanged();
-    }
-  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate, state.setItems]);
+  // Remove the duplicate addRow and addHeader functions that were causing the issue
+  // These should use the wrapped versions from state instead
 
   // Showcaller/playback controls
   const {
