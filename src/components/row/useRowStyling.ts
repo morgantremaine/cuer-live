@@ -41,11 +41,12 @@ export const useRowStyling = ({
   // Add selection styling with ring outline for both headers and regular rows
   if (isSelected) {
     console.log(`🎨 Applying selection styling to ${isHeader ? 'header' : 'regular'} row`);
-    rowClass += ' ring-2 ring-blue-500 ring-inset';
+    // Use !important classes to ensure selection styling overrides other styles
+    rowClass += ' !ring-2 !ring-blue-500 !ring-inset';
     if (isHeader) {
-      rowClass += ' bg-blue-100 dark:bg-blue-950/30';
+      rowClass += ' !bg-blue-100 dark:!bg-blue-950/30';
     } else {
-      rowClass += ' bg-blue-50 dark:bg-blue-950/20';
+      rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
   }
 

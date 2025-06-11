@@ -80,6 +80,15 @@ const RundownTable = ({
   onAddHeader
 }: RundownTableProps) => {
 
+  console.log('🎯 RundownTable render state:', {
+    itemsCount: items.length,
+    draggedItemIndex,
+    dropTargetIndex,
+    isDraggingMultiple,
+    selectedRowsCount: selectedRows.size,
+    selectedRowId
+  });
+
   return (
     <div className="relative w-full bg-background">
       <table className="w-full border-collapse border border-border">
@@ -102,7 +111,9 @@ const RundownTable = ({
                 {dropTargetIndex === index && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-blue-500 w-full animate-pulse"></div>
+                      <div className="h-2 bg-blue-500 w-full animate-pulse shadow-lg relative z-10">
+                        <div className="absolute inset-0 bg-blue-400 opacity-50 animate-ping"></div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -156,7 +167,9 @@ const RundownTable = ({
                 {dropTargetIndex === items.length && index === items.length - 1 && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-blue-500 w-full animate-pulse"></div>
+                      <div className="h-2 bg-blue-500 w-full animate-pulse shadow-lg relative z-10">
+                        <div className="absolute inset-0 bg-blue-400 opacity-50 animate-ping"></div>
+                      </div>
                     </td>
                   </tr>
                 )}
