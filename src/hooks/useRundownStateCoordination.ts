@@ -1,8 +1,10 @@
+
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIManager } from './useRundownUIManager';
 import { getRowStatus } from '@/utils/rundownCalculations';
+import { CalculatedRundownItem } from '@/utils/rundownCalculations';
 
 export const useRundownStateCoordination = () => {
   // Add missing UI state
@@ -11,13 +13,32 @@ export const useRundownStateCoordination = () => {
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
   
+  // Map items to CalculatedRundownItem format for grid interactions
+  const calculatedItems = useMemo((): CalculatedRundownItem[] => {
+    return simplifiedState.items.map(item => ({
+      ...item,
+      calculatedStartTime: item.startTime,
+      calculatedEndTime: item.endTime,
+      calculatedElapsedTime: item.elapsedTime,
+      calculatedRowNumber: item.rowNumber
+    }));
+  }, [simplifiedState.items]);
+  
   // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
-    simplifiedState.items,
+    calculatedItems,
     (updater) => {
       if (typeof updater === 'function') {
-        const newItems = updater(simplifiedState.items);
-        simplifiedState.setItems(newItems);
+        const newItems = updater(calculatedItems);
+        // Map back to the original format
+        const mappedItems = newItems.map(item => ({
+          ...item,
+          startTime: item.calculatedStartTime,
+          endTime: item.calculatedEndTime,
+          elapsedTime: item.calculatedElapsedTime,
+          rowNumber: item.calculatedRowNumber
+        }));
+        simplifiedState.setItems(mappedItems);
       }
     },
     simplifiedState.updateItem,
@@ -41,7 +62,7 @@ export const useRundownStateCoordination = () => {
   
   // UI state management with calculated items
   const uiManager = useRundownUIManager(
-    simplifiedState.items,
+    calculatedItems,
     simplifiedState.visibleColumns,
     simplifiedState.columns,
     simplifiedState.updateItem,
