@@ -68,10 +68,13 @@ const HeaderBottomSection = ({
     }
   };
 
+  // Display calculated total runtime with proper formatting
+  const displayRuntime = totalRuntime && totalRuntime !== '00:00:00' ? totalRuntime : '00:00:00';
+
   return (
     <div className="flex justify-between items-center text-sm">
       <div className="flex items-center space-x-4">
-        <span className="opacity-75">Total Runtime: {totalRuntime}</span>
+        <span className="opacity-75">Total Runtime: {displayRuntime}</span>
         <div className="flex items-center space-x-2">
           <Clock className="h-4 w-4 opacity-75" />
           <span className="opacity-75">Start Time:</span>

@@ -131,8 +131,14 @@ export const useSimplifiedRundownState = () => {
       return [];
     }
     
-    console.log('🧮 Calculating items with timing:', state.items.length);
-    return calculateItemsWithTiming(state.items, state.startTime);
+    console.log('🧮 Calculating items with timing:', state.items.length, 'start time:', state.startTime);
+    const calculated = calculateItemsWithTiming(state.items, state.startTime);
+    console.log('🧮 Calculated items:', calculated.length, 'first item times:', calculated[0] ? {
+      start: calculated[0].calculatedStartTime,
+      end: calculated[0].calculatedEndTime,
+      rowNumber: calculated[0].calculatedRowNumber
+    } : 'no items');
+    return calculated;
   }, [state.items, state.startTime]);
 
   const totalRuntime = useMemo(() => {
@@ -194,14 +200,13 @@ export const useSimplifiedRundownState = () => {
     return visible;
   }, [state.columns]);
 
-  // Helper function to get header duration
-  const getHeaderDuration = useCallback((id: string) => {
-    const itemIndex = state.items.findIndex(item => item.id === id);
-    if (itemIndex === -1) return '00:00:00';
-    return calculateHeaderDuration(state.items, itemIndex);
+  // Helper function to get header duration using calculated items
+  const getHeaderDuration = useCallback((index: number) => {
+    if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
+    return calculateHeaderDuration(state.items, index);
   }, [state.items]);
 
-  // Helper function to get row number
+  // Helper function to get row number from calculated items
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= calculatedItems.length) return '';
     return calculatedItems[index].calculatedRowNumber;
@@ -223,6 +228,7 @@ export const useSimplifiedRundownState = () => {
     columns: state.columns?.length || 0,
     visibleColumns: visibleColumns.length,
     title: state.title,
+    startTime: state.startTime,
     isLoading,
     hasUnsavedChanges: state.hasUnsavedChanges
   });
@@ -250,7 +256,10 @@ export const useSimplifiedRundownState = () => {
     // Calculations
     totalRuntime,
     getRowNumber,
-    getHeaderDuration,
+    getHeaderDuration: (id: string) => {
+      const itemIndex = state.items.findIndex(item => item.id === id);
+      return getHeaderDuration(itemIndex);
+    },
     
     // Actions with correct signatures
     updateItem: enhancedActions.updateItem,

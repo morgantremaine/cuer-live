@@ -21,7 +21,7 @@ interface RundownTableProps {
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
-  calculateHeaderDuration: (index: number) => string;
+  getHeaderDuration: (id: string) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -58,7 +58,7 @@ const RundownTable = ({
   updateColumnWidth,
   getRowNumber,
   getRowStatus,
-  calculateHeaderDuration,
+  getHeaderDuration,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -94,15 +94,20 @@ const RundownTable = ({
           {items.map((item, index) => {
             console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
             console.log(`🔄 Row ${index} type:`, item.type);
+            console.log(`🔄 Row ${index} calculated values:`, {
+              startTime: item.calculatedStartTime,
+              endTime: item.calculatedEndTime,
+              rowNumber: item.calculatedRowNumber
+            });
             
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
-            const headerDuration = isHeaderItem(item) ? calculateHeaderDuration(index) : '';
+            const headerDuration = isHeaderItem(item) ? getHeaderDuration(item.id) : '';
             const isSelected = selectedRows.has(item.id);
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
 
-            console.log(`🎯 About to render RundownRow for ${item.id}`);
+            console.log(`🎯 About to render RundownRow for ${item.id}, rowNumber: ${rowNumber}, headerDuration: ${headerDuration}`);
 
             return (
               <React.Fragment key={item.id}>

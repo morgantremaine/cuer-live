@@ -8,7 +8,12 @@ import { Column } from '@/hooks/useColumnsManager';
 
 interface CellRendererProps {
   column: Column;
-  item: RundownItem;
+  item: RundownItem & {
+    calculatedStartTime?: string;
+    calculatedEndTime?: string;
+    calculatedElapsedTime?: string;
+    calculatedRowNumber?: string;
+  };
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
@@ -41,9 +46,11 @@ const CellRenderer = ({
       case 'duration':
         return item.duration || '';
       case 'startTime':
-        return item.startTime || '';
+        return item.calculatedStartTime || item.startTime || '';
       case 'endTime':
-        return item.endTime || '';
+        return item.calculatedEndTime || item.endTime || '';
+      case 'elapsedTime':
+        return item.calculatedElapsedTime || item.elapsedTime || '';
       case 'talent':
         return item.talent || '';
       case 'script':
