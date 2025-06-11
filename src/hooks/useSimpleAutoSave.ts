@@ -19,7 +19,11 @@ export const useSimpleAutoSave = (
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
-    console.log('💾 Auto-save undo coordination:', active ? 'PAUSED' : 'RESUMED');
+    if (active) {
+      console.log('💾 Auto-save undo coordination: PAUSED');
+    } else {
+      console.log('💾 Auto-save undo coordination: RESUMED');
+    }
   };
 
   // Set typing session to prevent auto-save during rapid typing
@@ -49,8 +53,8 @@ export const useSimpleAutoSave = (
   }, [state.items, state.columns, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
-    // Don't save if not initialized, undo is active, currently saving, or in typing session
-    if (!isInitializedRef.current || undoActiveRef.current || isSaving || typingSessionRef.current) {
+    // Don't save if not initialized or undo is active
+    if (!isInitializedRef.current || undoActiveRef.current) {
       return;
     }
 
@@ -73,11 +77,14 @@ export const useSimpleAutoSave = (
       return;
     }
 
+    // During typing session, just update the signature but don't save
+    if (typingSessionRef.current) {
+      return;
+    }
+
     // Minimum interval between saves (3 seconds)
     const now = Date.now();
     if (now - lastSaveTimeRef.current < 3000) {
-      console.log('💾 Auto-save throttled - scheduling for later');
-      
       // Clear any existing timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
@@ -96,7 +103,6 @@ export const useSimpleAutoSave = (
             timezone: state.timezone
           });
           if (newSignature !== lastSavedRef.current) {
-            console.log('💾 Executing throttled auto-save...');
             executeSave(newSignature);
           }
         }
@@ -128,8 +134,7 @@ export const useSimpleAutoSave = (
 
   const executeSave = async (currentSignature: string) => {
     // Final check before saving
-    if (isSaving || undoActiveRef.current || typingSessionRef.current) {
-      console.log('💾 Auto-save cancelled - conditions changed');
+    if (isSaving || undoActiveRef.current) {
       return;
     }
     

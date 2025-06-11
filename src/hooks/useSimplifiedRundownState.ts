@@ -32,7 +32,6 @@ export const useSimplifiedRundownState = () => {
 
   // Typing session tracking with improved logic
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const pendingTypingTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Initialize with default data
   const {
@@ -74,8 +73,6 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function that works with showcaller and saves undo state with proper typing session management
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    console.log('📺 Enhanced updateItem called:', { id, field, value });
-    
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field.startsWith('customFields.') || field === 'segmentName';
@@ -87,44 +84,41 @@ export const useSimplifiedRundownState = () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      if (pendingTypingTimeoutRef.current) {
-        clearTimeout(pendingTypingTimeoutRef.current);
-      }
       
       // Check if this is the start of a new typing session
       if (!setTypingSession || typeof setTypingSession !== 'function') {
         console.warn('setTypingSession not available');
       } else {
-        // Start/continue typing session
-        setTypingSession(sessionKey);
-        
         // Save undo state only at the start of a typing session
-        const existingTypingSession = typingTimeoutRef.current !== undefined;
+        const existingTypingSession = typingSessionRef.current !== null;
         if (!existingTypingSession) {
-          console.log('💾 Saving undo state before typing session for:', sessionKey);
           saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
         }
+        
+        // Start/continue typing session
+        setTypingSession(sessionKey);
         
         // Update the item immediately
         actuallyUpdateItem(id, field, value);
         
         // Set timeout to end typing session after user stops typing
         typingTimeoutRef.current = setTimeout(() => {
-          console.log('💾 Typing session ended for:', sessionKey);
           setTypingSession(null);
           typingTimeoutRef.current = undefined;
+          
+          // Trigger auto-save after typing session ends
+          actions.markChanged();
         }, 1500); // 1.5 seconds of inactivity ends the session
       }
     } else if (field === 'duration') {
       // For duration changes, save immediately since they're usually intentional
-      console.log('💾 Saving undo state before duration change');
       saveUndoState(state.items, state.columns, state.title, 'Edit duration');
       actuallyUpdateItem(id, field, value);
     } else {
       // For non-typing fields, update immediately
       actuallyUpdateItem(id, field, value);
     }
-  }, [state.items, state.columns, state.title, saveUndoState, setTypingSession]);
+  }, [state.items, state.columns, state.title, saveUndoState, setTypingSession, actions.markChanged]);
 
   const actuallyUpdateItem = useCallback((id: string, field: string, value: string) => {
     if (field.startsWith('customFields.')) {
@@ -260,7 +254,6 @@ export const useSimplifiedRundownState = () => {
     updateItem: enhancedUpdateItem,
 
     toggleFloatRow: useCallback((id: string) => {
-      console.log('💾 Saving undo state before toggle float');
       saveUndoState(state.items, state.columns, state.title, 'Toggle float');
       const item = state.items.find(i => i.id === id);
       if (item) {
@@ -269,26 +262,22 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
-      console.log('💾 Saving undo state before delete row');
       saveUndoState(state.items, state.columns, state.title, 'Delete row');
       actions.deleteItem(id);
     }, [actions.deleteItem, state.items, state.columns, state.title, saveUndoState]),
 
     addRow: useCallback(() => {
-      console.log('💾 Saving undo state before add row');
       saveUndoState(state.items, state.columns, state.title, 'Add segment');
       helpers.addRow();
     }, [helpers.addRow, state.items, state.columns, state.title, saveUndoState]),
 
     addHeader: useCallback(() => {
-      console.log('💾 Saving undo state before add header');
       saveUndoState(state.items, state.columns, state.title, 'Add header');
       helpers.addHeader();
     }, [helpers.addHeader, state.items, state.columns, state.title, saveUndoState]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
-        console.log('💾 Saving undo state before title change');
         saveUndoState(state.items, state.columns, state.title, 'Change title');
         actions.setTitle(newTitle);
       }
@@ -316,22 +305,17 @@ export const useSimplifiedRundownState = () => {
   }, [calculatedItems]);
 
   const handleRowSelection = useCallback((itemId: string) => {
-    console.log('🎯 Simplified state handleRowSelection called with:', itemId, 'current selected:', selectedRowId);
     setSelectedRowId(prev => {
       const newSelection = prev === itemId ? null : itemId;
-      console.log('🎯 Setting selectedRowId to:', newSelection);
       return newSelection;
     });
   }, [selectedRowId]);
 
   const clearRowSelection = useCallback(() => {
-    console.log('🎯 Simplified state clearRowSelection called');
     setSelectedRowId(null);
   }, []);
 
   const addRowAtIndex = useCallback((insertIndex: number) => {
-    console.log('🚀 Adding row at index:', insertIndex);
-    console.log('💾 Saving undo state before add row at index');
     saveUndoState(state.items, state.columns, state.title, 'Add segment');
     if (helpers.addRow && typeof helpers.addRow === 'function') {
       helpers.addRow(insertIndex);
@@ -341,8 +325,6 @@ export const useSimplifiedRundownState = () => {
   }, [helpers, state.items, state.columns, state.title, saveUndoState]);
 
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
-    console.log('🚀 Adding header at index:', insertIndex);
-    console.log('💾 Saving undo state before add header at index');
     saveUndoState(state.items, state.columns, state.title, 'Add header');
     if (helpers.addHeader && typeof helpers.addHeader === 'function') {
       helpers.addHeader(insertIndex);
@@ -356,9 +338,6 @@ export const useSimplifiedRundownState = () => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
-      }
-      if (pendingTypingTimeoutRef.current) {
-        clearTimeout(pendingTypingTimeoutRef.current);
       }
     };
   }, []);
@@ -389,19 +368,15 @@ export const useSimplifiedRundownState = () => {
     
     // Playback controls - properly expose these functions with correct signatures
     play: (selectedSegmentId?: string) => {
-      console.log('🎮 Simplified state play called with:', selectedSegmentId);
       play(selectedSegmentId);
     },
     pause: () => {
-      console.log('🎮 Simplified state pause called');
       pause();
     },
     forward: () => {
-      console.log('🎮 Simplified state forward called');
       forward();
     },
     backward: () => {
-      console.log('🎮 Simplified state backward called');
       backward();
     },
     isController,
@@ -431,7 +406,6 @@ export const useSimplifiedRundownState = () => {
     addHeaderAtIndex,
     
     addColumn: (column: Column) => {
-      console.log('💾 Saving undo state before add column');
       saveUndoState(state.items, state.columns, state.title, 'Add column');
       actions.setColumns([...(state.columns || defaultColumns), column]);
     },
