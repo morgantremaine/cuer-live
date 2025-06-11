@@ -84,11 +84,14 @@ const RundownTable = ({
   return (
     <div className="relative w-full overflow-auto bg-background">
       <table className="w-full border-collapse border border-border">
-        <RundownTableHeader 
-          visibleColumns={visibleColumns}
-          getColumnWidth={getColumnWidth}
-          updateColumnWidth={updateColumnWidth}
-        />
+        {/* Sticky header */}
+        <thead className="sticky top-0 z-10 bg-background">
+          <RundownTableHeader 
+            visibleColumns={visibleColumns}
+            getColumnWidth={getColumnWidth}
+            updateColumnWidth={updateColumnWidth}
+          />
+        </thead>
         <tbody className="bg-background">
           {items.map((item, index) => {
             const rowNumber = getRowNumber(index);
@@ -104,6 +107,15 @@ const RundownTable = ({
 
             return (
               <React.Fragment key={item.id}>
+                {/* Show drop indicator line when dragging */}
+                {dropTargetIndex === index && (isDraggingMultiple || draggedItemIndex !== null) && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1 bg-blue-500 w-full animate-pulse"></div>
+                    </td>
+                  </tr>
+                )}
+
                 {/* Show green line ABOVE the current segment */}
                 {isCurrentlyPlaying && (
                   <tr>
@@ -148,6 +160,15 @@ const RundownTable = ({
                   onAddHeader={onAddHeader}
                   getColumnWidth={getColumnWidth}
                 />
+
+                {/* Show drop indicator line after last item when dragging */}
+                {index === items.length - 1 && dropTargetIndex === items.length && (isDraggingMultiple || draggedItemIndex !== null) && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1 bg-blue-500 w-full animate-pulse"></div>
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             );
           })}

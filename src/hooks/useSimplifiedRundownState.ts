@@ -227,30 +227,39 @@ export const useSimplifiedRundownState = () => {
     setSelectedRowId(null);
   }, []);
 
-  // Define addRow and addHeader functions with proper positioning
+  // Enhanced addRow function that properly handles positioning
   const addRowFunction = useCallback((targetRowId?: string | null) => {
     const rowIdToUse = targetRowId || selectedRowId;
     
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       if (targetIndex !== -1) {
+        console.log('🚀 Adding row after index:', targetIndex);
         helpers.addRow(targetIndex + 1);
         return;
       }
     }
+    
+    // Add at the end if no selection
+    console.log('🚀 Adding row at end');
     helpers.addRow();
   }, [helpers, selectedRowId, state.items]);
 
+  // Enhanced addHeader function that properly handles positioning
   const addHeaderFunction = useCallback((targetRowId?: string | null) => {
     const rowIdToUse = targetRowId || selectedRowId;
     
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       if (targetIndex !== -1) {
+        console.log('🚀 Adding header after index:', targetIndex);
         helpers.addHeader(targetIndex + 1);
         return;
       }
     }
+    
+    // Add at the end if no selection
+    console.log('🚀 Adding header at end');
     helpers.addHeader();
   }, [helpers, selectedRowId, state.items]);
 
@@ -319,7 +328,7 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations with proper signatures
+    // Row operations with proper positioning support
     addRow: addRowFunction,
     addHeader: addHeaderFunction,
     
