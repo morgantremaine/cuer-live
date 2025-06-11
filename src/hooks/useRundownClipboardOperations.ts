@@ -66,23 +66,24 @@ export const useRundownClipboardOperations = ({
   const handlePasteRows = useCallback(() => {
     if (clipboardItems.length > 0) {
       const selectedIds = Array.from(selectedRows);
-      let insertAfterIndex: number;
+      let insertIndex: number;
       
       if (selectedIds.length > 0) {
-        // Find the highest index among selected rows
-        const selectedIndices = selectedIds.map(id => 
-          items.findIndex(item => item.id === id)
-        ).filter(index => index !== -1);
+        // Find the highest index among selected rows to insert after
+        const selectedIndices = selectedIds
+          .map(id => items.findIndex(item => item.id === id))
+          .filter(index => index !== -1);
         
         if (selectedIndices.length > 0) {
-          insertAfterIndex = Math.max(...selectedIndices);
+          const highestSelectedIndex = Math.max(...selectedIndices);
+          insertIndex = highestSelectedIndex + 1;
         } else {
-          // If no valid selection, insert at the end
-          insertAfterIndex = items.length - 1;
+          // If no valid selection found, insert at the end
+          insertIndex = items.length;
         }
       } else {
         // If no selection, insert at the end
-        insertAfterIndex = items.length - 1;
+        insertIndex = items.length;
       }
 
       const itemsToPaste = clipboardItems.map(item => ({
@@ -92,8 +93,7 @@ export const useRundownClipboardOperations = ({
       
       setItems(prevItems => {
         const newItems = [...prevItems];
-        // Insert after the selected position (or at the end if no selection)
-        const insertIndex = insertAfterIndex >= 0 ? insertAfterIndex + 1 : newItems.length;
+        // Insert at the calculated position
         newItems.splice(insertIndex, 0, ...itemsToPaste);
         
         // Update header segment names for all headers in the correct order
