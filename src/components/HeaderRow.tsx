@@ -129,12 +129,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       onColorSelect={onColorSelect}
     >
       <tr
-        className={`
-          ${getRowClasses()} 
-          bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900
-          ${isSelected ? 'ring-2 ring-blue-500 bg-blue-100 dark:bg-blue-800' : ''}
-          cursor-pointer transition-all duration-150 ease-in-out border-b border-border
-        `}
+        className="border-b border-border bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer transition-all duration-150 ease-in-out"
         style={getRowStyle()}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
@@ -147,7 +142,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           item={item}
           columns={columns}
           headerDuration={headerDuration}
-          rowNumber="H"
+          rowNumber=""
           cellRefs={cellRefs}
           onUpdateItem={onUpdateItem}
           onCellClick={onCellClick}
