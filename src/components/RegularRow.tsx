@@ -94,7 +94,17 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  const textColor = (item.isFloating || item.isFloated) ? 'white' : (item.color && item.color !== '#FFFFFF' ? getContrastTextColor(item.color) : '');
+  // Determine background color and text color
+  let backgroundColor = 'transparent';
+  let textColor = 'inherit';
+
+  if (item.isFloating || item.isFloated) {
+    backgroundColor = '#991b1b'; // red-800
+    textColor = 'white';
+  } else if (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff') {
+    backgroundColor = item.color;
+    textColor = getContrastTextColor(item.color);
+  }
 
   return (
     <RundownContextMenu
@@ -115,10 +125,10 @@ const RegularRow = (props: RegularRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
         style={{ 
-          backgroundColor: (item.isFloating || item.isFloated) ? '#991b1b' : (item.color && item.color !== '#FFFFFF' ? item.color : 'transparent'),
-          color: textColor || 'inherit'
+          backgroundColor,
+          color: textColor
         }}
         draggable
         onClick={handleRowClick}

@@ -27,17 +27,17 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-blue-100 dark:bg-blue-900 opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
-    rowClass = 'bg-gray-200 dark:bg-gray-700 border-l-4 border-gray-400 dark:border-gray-500 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600';
+    rowClass = 'bg-muted border-l-4 border-border font-semibold hover:bg-muted/80';
   } else if (isFloating || isFloated) {
     rowClass = 'bg-red-800 text-white border-l-4 border-red-600';
-  } else if (color && color !== '#FFFFFF') {
+  } else if (color && color !== '#FFFFFF' && color !== '#ffffff') {
     rowClass = 'hover:opacity-90';
   } else {
-    rowClass = 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700';
+    rowClass = 'bg-background hover:bg-muted/50';
   }
 
   if (isSelected) {
-    rowClass += ' ring-2 ring-inset ring-blue-500 border-blue-500';
+    rowClass += ' ring-2 ring-inset ring-ring border-ring';
   }
 
   return { rowClass };

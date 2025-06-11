@@ -36,11 +36,11 @@ const RegularRowContent = ({
 }: RegularRowContentProps) => {
   return (
     <>
-      <td className="px-2 py-1 text-sm font-mono align-middle border border-gray-300 bg-white w-12 min-w-12">
+      <td className="px-2 py-1 text-sm font-mono align-middle border border-border bg-background w-12 min-w-12">
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
             <Play 
-              className="h-4 w-4 text-blue-500 fill-blue-500 scale-125" 
+              className="h-4 w-4 text-green-500 fill-green-500 scale-125" 
               style={{ filter: 'drop-shadow(0 0 1px black)' }}
             />
           )}
@@ -56,7 +56,7 @@ const RegularRowContent = ({
         return (
           <td
             key={column.id}
-            className="align-middle border border-gray-300 bg-white"
+            className="align-middle border border-border bg-background"
             style={{ width: columnWidth, minWidth: columnWidth }}
           >
             <CellRenderer

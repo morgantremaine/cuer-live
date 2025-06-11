@@ -2,7 +2,7 @@ import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
-import { useRowStyling } from './row/useRowStyling';
+import { useRowStyling } from './useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -107,9 +107,9 @@ const HeaderRow = (props: HeaderRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b border-gray-300 dark:border-gray-600 ${rowClass} transition-colors cursor-pointer`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
         style={{
-          backgroundColor: '#f3f4f6',
+          backgroundColor: 'hsl(var(--muted))',
           display: 'table-row',
           visibility: 'visible',
           opacity: 1,

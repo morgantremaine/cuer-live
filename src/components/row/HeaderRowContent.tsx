@@ -28,8 +28,8 @@ const HeaderRowContent = ({
 }: HeaderRowContentProps) => {
   return (
     <>
-      <td className="px-2 py-1 text-sm text-gray-600 dark:text-gray-400 font-mono align-middle border border-gray-300 bg-gray-100 w-12 min-w-12">
-        <span className="text-lg font-bold text-gray-900 dark:text-white">{rowNumber}</span>
+      <td className="px-2 py-1 text-sm text-muted-foreground font-mono align-middle border border-border bg-muted w-12 min-w-12">
+        <span className="text-lg font-bold text-foreground">{rowNumber}</span>
       </td>
       {columns.map((column, columnIndex) => {
         const columnWidth = getColumnWidth(column);
@@ -37,7 +37,7 @@ const HeaderRowContent = ({
         return (
           <td 
             key={column.id} 
-            className="px-2 py-2 align-middle border border-gray-300 bg-gray-100" 
+            className="px-2 py-2 align-middle border border-border bg-muted" 
             style={{ width: columnWidth, minWidth: columnWidth }}
           >
             {column.key === 'segmentName' ? (
@@ -51,16 +51,16 @@ const HeaderRowContent = ({
                   onCellClick(item.id, 'name');
                 }}
                 onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
-                className="w-full border border-gray-200 bg-white text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-gray-400 rounded px-2 py-1 text-base font-bold"
+                className="w-full border border-border bg-background text-foreground placeholder-muted-foreground focus:bg-background focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded px-2 py-1 text-base font-bold"
                 placeholder="Segment Name"
               />
             ) : column.key === 'duration' ? (
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+              <span className="text-sm text-muted-foreground font-mono">
                 ({headerDuration})
               </span>
             ) : (
               // For all other columns, show empty cell for headers
-              <div className="px-1 py-0.5 text-sm text-gray-400 dark:text-gray-500">
+              <div className="px-1 py-0.5 text-sm text-muted-foreground">
                 {/* Empty cell - headers don't use these columns */}
               </div>
             )}

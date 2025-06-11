@@ -83,14 +83,14 @@ const RundownTable = ({
   console.log('🏗️ RundownTable visible columns:', visibleColumns.length);
 
   return (
-    <div className="relative w-full overflow-auto bg-white dark:bg-gray-900">
-      <table className="w-full border-collapse border border-gray-300 dark:border-gray-600">
+    <div className="relative w-full overflow-auto bg-background">
+      <table className="w-full border-collapse border border-border">
         <RundownTableHeader 
           visibleColumns={visibleColumns}
           getColumnWidth={getColumnWidth}
           updateColumnWidth={updateColumnWidth}
         />
-        <tbody className="bg-white dark:bg-gray-900">
+        <tbody className="bg-background">
           {items.map((item, index) => {
             console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
             console.log(`🔄 Row ${index} type:`, item.type);
@@ -145,7 +145,7 @@ const RundownTable = ({
                 {isCurrentlyPlaying && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-green-500 w-full"></div>
+                      <div className="h-1 bg-green-500 w-full animate-pulse"></div>
                     </td>
                   </tr>
                 )}
@@ -156,7 +156,7 @@ const RundownTable = ({
       </table>
       
       {items.length === 0 && (
-        <div className="p-4 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded">
+        <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">
           No items to display
         </div>
       )}
