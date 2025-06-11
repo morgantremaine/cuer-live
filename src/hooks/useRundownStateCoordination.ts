@@ -3,7 +3,6 @@ import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIManager } from './useRundownUIManager';
 import { getRowStatus } from '@/utils/rundownCalculations';
-import { CalculatedRundownItem } from '@/utils/rundownCalculations';
 
 export const useRundownStateCoordination = () => {
   // Add missing UI state
@@ -12,38 +11,10 @@ export const useRundownStateCoordination = () => {
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
   
-  // Map items to CalculatedRundownItem format for grid interactions
-  const calculatedItems = useMemo((): CalculatedRundownItem[] => {
-    return simplifiedState.items.map(item => ({
-      ...item,
-      calculatedStartTime: item.startTime,
-      calculatedEndTime: item.endTime,
-      calculatedElapsedTime: item.elapsedTime,
-      calculatedRowNumber: item.rowNumber
-    }));
-  }, [simplifiedState.items]);
-  
-  // Grid interactions - these functions need to properly handle both selection states
+  // Grid interactions - pass items directly without complex mapping
   const gridInteractions = useRundownGridInteractions(
-    calculatedItems,
-    (updater) => {
-      if (typeof updater === 'function') {
-        const newItems = updater(calculatedItems);
-        // Map back to the original format - newItems are CalculatedRundownItem[]
-        const mappedItems = newItems.map(item => {
-          // Remove the calculated properties and keep the rest
-          const { calculatedStartTime, calculatedEndTime, calculatedElapsedTime, calculatedRowNumber, ...baseItem } = item;
-          return {
-            ...baseItem,
-            startTime: calculatedStartTime,
-            endTime: calculatedEndTime,
-            elapsedTime: calculatedElapsedTime,
-            rowNumber: calculatedRowNumber
-          };
-        });
-        simplifiedState.setItems(mappedItems);
-      }
-    },
+    simplifiedState.items,
+    simplifiedState.setItems,
     simplifiedState.updateItem,
     simplifiedState.addRow,
     simplifiedState.addHeader,
@@ -63,9 +34,9 @@ export const useRundownStateCoordination = () => {
     simplifiedState.setTitle
   );
   
-  // UI state management with calculated items
+  // UI state management with items directly
   const uiManager = useRundownUIManager(
-    calculatedItems,
+    simplifiedState.items,
     simplifiedState.visibleColumns,
     simplifiedState.columns,
     simplifiedState.updateItem,
@@ -250,3 +221,5 @@ export const useRundownStateCoordination = () => {
     }
   };
 };
+
+</edits_to_apply>
