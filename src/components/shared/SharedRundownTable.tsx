@@ -132,10 +132,10 @@ const SharedRundownTable = ({
                     // For headers, handle special cases
                     if (item.type === 'header') {
                       if (column.key === 'segmentName') {
-                        // Show the header description/notes
+                        // Show the header name (not notes)
                         return (
                           <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                            <div className="break-words whitespace-pre-wrap">{item.notes || item.name || ''}</div>
+                            <div className="break-words whitespace-pre-wrap">{item.name || ''}</div>
                           </td>
                         );
                       } else if (column.key === 'duration') {
@@ -150,6 +150,14 @@ const SharedRundownTable = ({
                         return (
                           <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                             <div className="break-words whitespace-pre-wrap"></div>
+                          </td>
+                        );
+                      } else {
+                        // For other columns (like notes), show the actual value from getCellValue
+                        const value = getCellValue(item, column);
+                        return (
+                          <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
+                            <div className="break-words whitespace-pre-wrap">{value}</div>
                           </td>
                         );
                       }
