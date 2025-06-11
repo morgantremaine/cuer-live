@@ -78,11 +78,15 @@ const ResizableColumnHeader = ({
       // Use requestAnimationFrame for smooth updates
       animationFrameRef.current = requestAnimationFrame(() => {
         const deltaX = e.clientX - startX;
-        // Enforce minimum width constraint
-        const newWidth = Math.max(minimumWidth, initialWidthRef.current + deltaX);
+        // Strictly enforce minimum width constraint during drag
+        const calculatedWidth = initialWidthRef.current + deltaX;
+        const newWidth = Math.max(minimumWidth, calculatedWidth);
         
-        // Update the actual width during drag for real-time preview
-        onWidthChange(column.id, newWidth);
+        // Only update if the width would actually change to prevent unnecessary re-renders
+        const currentWidth = parseInt(width);
+        if (Math.abs(newWidth - currentWidth) >= 1) {
+          onWidthChange(column.id, newWidth);
+        }
       });
     };
 
@@ -96,11 +100,12 @@ const ResizableColumnHeader = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
       
-      // Calculate final width and ensure it's applied with minimum constraint
+      // Calculate final width and strictly enforce minimum constraint
       const deltaX = e.clientX - startX;
-      const finalWidth = Math.max(minimumWidth, initialWidthRef.current + deltaX);
+      const calculatedWidth = initialWidthRef.current + deltaX;
+      const finalWidth = Math.max(minimumWidth, calculatedWidth);
       
-      // Final width update to ensure state is correct
+      // Ensure final width is applied
       onWidthChange(column.id, finalWidth);
       
       // Reset global styles
@@ -121,11 +126,15 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   }, [column.id, onWidthChange, width, minimumWidth]);
 
+  // Ensure the width never goes below minimum even when passed in
+  const constrainedWidth = Math.max(minimumWidth, parseInt(width));
+  const constrainedWidthPx = `${constrainedWidth}px`;
+
   return (
     <th 
       ref={headerRef}
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500 bg-blue-600"
-      style={{ width, minWidth: width }}
+      style={{ width: constrainedWidthPx, minWidth: constrainedWidthPx }}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />

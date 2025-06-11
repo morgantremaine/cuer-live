@@ -14,8 +14,6 @@ const RundownTableHeader = ({
   getColumnWidth,
   updateColumnWidth
 }: RundownTableHeaderProps) => {
-  console.log('🏷️ Rendering table header with columns:', visibleColumns.map(c => c.name));
-  
   return (
     <thead className="bg-blue-600 dark:bg-blue-700">
       <tr>
