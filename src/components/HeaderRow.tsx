@@ -132,7 +132,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           ${getRowClasses()} 
           bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900
           ${isSelected ? 'ring-2 ring-blue-500 bg-blue-100 dark:bg-blue-800' : ''}
-          cursor-pointer transition-all duration-150 ease-in-out
+          cursor-pointer transition-all duration-150 ease-in-out border-b border-border
         `}
         style={getRowStyle()}
         onClick={handleRowClick}
@@ -142,18 +142,18 @@ const HeaderRow = (props: HeaderRowProps) => {
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
       >
-        {/* Row number column - show H for headers */}
-        <td className="px-2 py-1 text-sm font-mono align-middle border border-border w-12 min-w-12">
+        {/* Row number column - show H for headers with exact same styling as regular rows */}
+        <td className="px-2 py-1 text-sm text-muted-foreground font-mono align-middle border-r border-border w-12 min-w-12">
           <div className="flex items-center justify-center">
             <span className="text-lg font-bold text-foreground">H</span>
           </div>
         </td>
 
-        {/* Data columns */}
+        {/* Data columns - using exact same structure as regular rows */}
         {columns.map((column) => (
           <td
             key={column.id}
-            className="align-middle border border-border"
+            className="align-middle border-r border-border last:border-r-0"
             style={{ 
               width: getColumnWidth(column), 
               minWidth: getColumnWidth(column)
