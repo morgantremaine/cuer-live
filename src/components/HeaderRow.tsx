@@ -2,7 +2,7 @@ import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
-import { useRowStyling } from './useRowStyling';
+import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -60,7 +60,8 @@ const HeaderRow = (props: HeaderRowProps) => {
   const { rowClass } = useRowStyling({
     isDragging,
     isSelected,
-    isHeader: true
+    isHeader: true,
+    color: item.color
   });
 
   const {
@@ -109,13 +110,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
         style={{
-          backgroundColor: 'hsl(var(--muted))',
-          display: 'table-row',
-          visibility: 'visible',
-          opacity: 1,
-          minHeight: '40px',
-          position: 'relative',
-          zIndex: 1
+          backgroundColor: item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined
         }}
         draggable
         onDragStart={(e) => props.onDragStart(e, index)}
