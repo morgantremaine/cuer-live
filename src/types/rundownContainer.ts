@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -65,8 +66,8 @@ export interface RundownContainerProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
-  // Undo functionality
-  onUndo: () => void;
+  // Undo functionality - Fixed return type
+  onUndo: () => string | null;
   canUndo: boolean;
   lastAction: string | null;
   
