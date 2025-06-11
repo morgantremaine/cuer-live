@@ -123,7 +123,7 @@ export const useRundownStateCoordination = () => {
     core.setRundownTitle
   );
 
-  // UI state management - Fix parameter order: items, columns, updateItem, markAsChanged...
+  // UI state management - Fix parameter order: items, columns, updateItem, markAsChanged, rundownStartTime, isPlaying, currentSegmentId
   const uiState = useRundownUIState(
     core.items,
     core.visibleColumns,
