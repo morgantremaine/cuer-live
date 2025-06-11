@@ -233,6 +233,17 @@ export const useSimplifiedRundownState = () => {
     setSelectedRowId(null);
   }, []);
 
+  // Enhanced row addition functions that support insertion at specific index
+  const addRowAtIndex = useCallback((insertIndex: number) => {
+    console.log('🚀 Adding row at index:', insertIndex);
+    helpers.addRowAtIndex(insertIndex);
+  }, [helpers]);
+
+  const addHeaderAtIndex = useCallback((insertIndex: number) => {
+    console.log('🚀 Adding header at index:', insertIndex);
+    helpers.addHeaderAtIndex(insertIndex);
+  }, [helpers]);
+
   return {
     // Core state with calculated values
     items: calculatedItems,
@@ -298,9 +309,11 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations that will be enhanced in coordination
+    // Row operations - both regular and indexed versions
     addRow: helpers.addRow,
     addHeader: helpers.addHeader,
+    addRowAtIndex,
+    addHeaderAtIndex,
     
     // Column management
     addColumn: (column: Column) => {

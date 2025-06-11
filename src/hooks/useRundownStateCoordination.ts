@@ -25,14 +25,16 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    // Enhanced addRow that checks both selection states
+    // Enhanced addRow that gets access to multi-selection state
     () => {
       console.log('🚀 Grid interactions addRow called');
+      // This will be enhanced by the handlers to consider multi-selection
       simplifiedState.addRow();
     },
-    // Enhanced addHeader that checks both selection states
+    // Enhanced addHeader that gets access to multi-selection state
     () => {
       console.log('🚀 Grid interactions addHeader called');
+      // This will be enhanced by the handlers to consider multi-selection
       simplifiedState.addHeader();
     },
     simplifiedState.deleteRow,
@@ -68,6 +70,76 @@ export const useRundownStateCoordination = () => {
     return getRowStatus(item, simplifiedState.currentTime);
   };
 
+  // Enhanced addRow that considers multi-selection when available
+  const enhancedAddRow = () => {
+    console.log('🚀 Enhanced addRow called');
+    console.log('🚀 Multi-selection state - selectedRows size:', gridInteractions.selectedRows.size);
+    
+    if (gridInteractions.selectedRows.size > 0) {
+      console.log('🚀 Using multi-selection for insertion');
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(gridInteractions.selectedRows)
+        .map(id => simplifiedState.items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        console.log('🚀 Inserting after index:', insertAfterIndex);
+        simplifiedState.addRowAtIndex(insertAfterIndex + 1);
+        return;
+      }
+    }
+    
+    // Check single selection
+    if (simplifiedState.selectedRowId) {
+      console.log('🚀 Using single selection for insertion:', simplifiedState.selectedRowId);
+      const selectedIndex = simplifiedState.items.findIndex(item => item.id === simplifiedState.selectedRowId);
+      if (selectedIndex !== -1) {
+        console.log('🚀 Inserting after single selection at index:', selectedIndex);
+        simplifiedState.addRowAtIndex(selectedIndex + 1);
+        return;
+      }
+    }
+    
+    console.log('🚀 No selection, using default addRow');
+    simplifiedState.addRow();
+  };
+
+  // Enhanced addHeader that considers multi-selection when available
+  const enhancedAddHeader = () => {
+    console.log('🚀 Enhanced addHeader called');
+    console.log('🚀 Multi-selection state - selectedRows size:', gridInteractions.selectedRows.size);
+    
+    if (gridInteractions.selectedRows.size > 0) {
+      console.log('🚀 Using multi-selection for header insertion');
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(gridInteractions.selectedRows)
+        .map(id => simplifiedState.items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        console.log('🚀 Inserting header after index:', insertAfterIndex);
+        simplifiedState.addHeaderAtIndex(insertAfterIndex + 1);
+        return;
+      }
+    }
+    
+    // Check single selection
+    if (simplifiedState.selectedRowId) {
+      console.log('🚀 Using single selection for header insertion:', simplifiedState.selectedRowId);
+      const selectedIndex = simplifiedState.items.findIndex(item => item.id === simplifiedState.selectedRowId);
+      if (selectedIndex !== -1) {
+        console.log('🚀 Inserting header after single selection at index:', selectedIndex);
+        simplifiedState.addHeaderAtIndex(selectedIndex + 1);
+        return;
+      }
+    }
+    
+    console.log('🚀 No selection, using default addHeader');
+    simplifiedState.addHeader();
+  };
+
   // Create enhanced core state with all necessary properties
   const coreState = useMemo(() => ({
     // Basic state
@@ -100,15 +172,9 @@ export const useRundownStateCoordination = () => {
     setRundownTitle: simplifiedState.setTitle,
     getRowNumber: simplifiedState.getRowNumber,
     
-    // Row operations - these now use the internal state management
-    addRow: () => {
-      console.log('🚀 Core state addRow called');
-      simplifiedState.addRow();
-    },
-    addHeader: () => {
-      console.log('🚀 Core state addHeader called');
-      simplifiedState.addHeader();
-    },
+    // Enhanced row operations that consider both selection states
+    addRow: enhancedAddRow,
+    addHeader: enhancedAddHeader,
     
     // Calculations
     calculateHeaderDuration: (index: number) => {
@@ -159,7 +225,7 @@ export const useRundownStateCoordination = () => {
     lastAction: '',
     isConnected: false,
     isProcessingRealtimeUpdate: false
-  }), [simplifiedState, showColumnManager]);
+  }), [simplifiedState, showColumnManager, gridInteractions.selectedRows, enhancedAddRow, enhancedAddHeader]);
 
   return {
     coreState,
