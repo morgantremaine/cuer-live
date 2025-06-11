@@ -79,9 +79,6 @@ const RundownTable = ({
   onAddHeader
 }: RundownTableProps) => {
 
-  console.log('🏗️ RundownTable rendering with items:', items.length);
-  console.log('🏗️ RundownTable visible columns:', visibleColumns.length);
-
   return (
     <div className="relative w-full overflow-auto bg-background">
       <table className="w-full border-collapse border border-border">
@@ -92,22 +89,12 @@ const RundownTable = ({
         />
         <tbody className="bg-background">
           {items.map((item, index) => {
-            console.log(`🔄 Rendering row ${index} for item:`, item.id, item.name || item.segmentName);
-            console.log(`🔄 Row ${index} type:`, item.type);
-            console.log(`🔄 Row ${index} calculated values:`, {
-              startTime: item.calculatedStartTime,
-              endTime: item.calculatedEndTime,
-              rowNumber: item.calculatedRowNumber
-            });
-            
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
             const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
             const isMultiSelected = selectedRows.has(item.id);
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
-
-            console.log(`🎯 About to render RundownRow for ${item.id}, rowNumber: ${rowNumber}, headerDuration: ${headerDuration}, multiSelected: ${isMultiSelected}`);
 
             return (
               <React.Fragment key={item.id}>

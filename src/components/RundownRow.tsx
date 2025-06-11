@@ -44,17 +44,10 @@ interface RundownRowProps {
 }
 
 const RundownRow = (props: RundownRowProps) => {
-  console.log(`🎯 RundownRow rendering for ${props.item.id}, type: ${props.item.type}, isSelected: ${props.isSelected}`);
-  
-  // Check both multi-selection and single-selection state
-  const isMultiSelected = props.selectedRows ? props.selectedRows.has(props.item.id) : false;
-  const isSingleSelected = props.isSelected || false;
-  const isActuallySelected = isMultiSelected || isSingleSelected;
-
-  console.log(`🎯 Selection state for ${props.item.id}: multi=${isMultiSelected}, single=${isSingleSelected}, actual=${isActuallySelected}`);
+  // Only use multi-selection state for determining if selected
+  const isActuallySelected = props.isSelected || false;
 
   if (isHeaderItem(props.item)) {
-    console.log(`📋 Rendering HeaderRow for ${props.item.id}, selected: ${isActuallySelected}`);
     return (
       <HeaderRow 
         {...props} 
@@ -71,7 +64,6 @@ const RundownRow = (props: RundownRowProps) => {
     );
   }
 
-  console.log(`📄 Rendering RegularRow for ${props.item.id}, selected: ${isActuallySelected}`);
   return (
     <RegularRow 
       {...props} 

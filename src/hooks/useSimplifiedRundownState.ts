@@ -58,8 +58,6 @@ export const useSimplifiedRundownState = () => {
 
       setIsLoading(true);
       try {
-        console.log('🔄 Loading rundown from database:', rundownId);
-        
         const { data, error } = await supabase
           .from('rundowns')
           .select('*')
@@ -69,8 +67,6 @@ export const useSimplifiedRundownState = () => {
         if (error) {
           console.error('Error loading rundown:', error);
         } else if (data) {
-          console.log('📋 Loaded rundown data:', data);
-          
           // Load the data into state, ensuring we have valid items and columns
           const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
             ? data.items 
@@ -79,8 +75,6 @@ export const useSimplifiedRundownState = () => {
           const columnsToLoad = Array.isArray(data.columns) && data.columns.length > 0 
             ? data.columns 
             : defaultColumns;
-
-          console.log('📋 Loading items:', itemsToLoad.length, 'columns:', columnsToLoad.length);
 
           actions.loadState({
             items: itemsToLoad,
@@ -112,7 +106,6 @@ export const useSimplifiedRundownState = () => {
   // Initialize with defaults for new rundowns
   useEffect(() => {
     if (!rundownId && !isInitialized) {
-      console.log('🆕 Initializing new rundown with defaults');
       actions.loadState({
         items: defaultRundownItems,
         columns: defaultColumns,
@@ -128,17 +121,10 @@ export const useSimplifiedRundownState = () => {
   // Calculate all derived values using pure functions
   const calculatedItems = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) {
-      console.log('⚠️ No items available for calculation');
       return [];
     }
     
-    console.log('🧮 Calculating items with timing:', state.items.length, 'start time:', state.startTime);
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
-    console.log('🧮 Calculated items:', calculated.length, 'first item times:', calculated[0] ? {
-      start: calculated[0].calculatedStartTime,
-      end: calculated[0].calculatedEndTime,
-      rowNumber: calculated[0].calculatedRowNumber
-    } : 'no items');
     return calculated;
   }, [state.items, state.startTime]);
 
@@ -153,8 +139,6 @@ export const useSimplifiedRundownState = () => {
     ...helpers,
     
     updateItem: useCallback((id: string, field: string, value: string) => {
-      console.log('📝 Updating item:', id, field, value);
-      
       if (field.startsWith('customFields.')) {
         const customFieldKey = field.replace('customFields.', '');
         const item = state.items.find(i => i.id === id);
@@ -184,7 +168,6 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items]),
 
     deleteRow: useCallback((id: string) => {
-      console.log('🗑️ Deleting row:', id);
       actions.deleteItem(id);
     }, [actions.deleteItem])
   };
@@ -192,12 +175,10 @@ export const useSimplifiedRundownState = () => {
   // Get visible columns - ensure they actually exist and are marked visible
   const visibleColumns = useMemo(() => {
     if (!state.columns || !Array.isArray(state.columns)) {
-      console.log('⚠️ No columns available, using defaults');
       return defaultColumns.filter(col => col.isVisible !== false);
     }
     
     const visible = state.columns.filter(col => col.isVisible !== false);
-    console.log('👁️ Visible columns:', visible.length, 'of', state.columns.length);
     return visible;
   }, [state.columns]);
 
@@ -215,64 +196,37 @@ export const useSimplifiedRundownState = () => {
 
   // Define addRow and addHeader functions with proper positioning
   const addRowFunction = useCallback((targetRowId?: string) => {
-    console.log('➕ Adding new row after:', targetRowId || selectedRowId || 'end');
-    
     const rowIdToUse = targetRowId || selectedRowId;
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       if (targetIndex !== -1) {
-        console.log('🎯 Found target row at index:', targetIndex, 'inserting at:', targetIndex + 1);
         helpers.addRow(targetIndex + 1);
         return;
-      } else {
-        console.log('🎯 Target row not found, adding at end');
       }
-    } else {
-      console.log('🎯 No target row, adding at end');
     }
     helpers.addRow();
   }, [helpers, selectedRowId, state.items]);
 
   const addHeaderFunction = useCallback((targetRowId?: string) => {
-    console.log('➕ Adding new header after:', targetRowId || selectedRowId || 'end');
-    
     const rowIdToUse = targetRowId || selectedRowId;
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       if (targetIndex !== -1) {
-        console.log('🎯 Found target row at index:', targetIndex, 'inserting header at:', targetIndex + 1);
         helpers.addHeader(targetIndex + 1);
         return;
-      } else {
-        console.log('🎯 Target row not found, adding header at end');
       }
-    } else {
-      console.log('🎯 No target row, adding header at end');
     }
     helpers.addHeader();
   }, [helpers, selectedRowId, state.items]);
 
   // Row selection handlers
   const handleRowSelection = useCallback((itemId: string) => {
-    console.log('🎯 Selecting row:', itemId);
     setSelectedRowId(prev => prev === itemId ? null : itemId);
   }, []);
 
   const clearRowSelection = useCallback(() => {
-    console.log('🎯 Clearing row selection');
     setSelectedRowId(null);
   }, []);
-
-  console.log('🔄 State summary:', {
-    items: calculatedItems.length,
-    columns: state.columns?.length || 0,
-    visibleColumns: visibleColumns.length,
-    title: state.title,
-    startTime: state.startTime,
-    isLoading,
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    selectedRowId
-  });
 
   return {
     // Core state with calculated values

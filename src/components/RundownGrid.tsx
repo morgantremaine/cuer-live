@@ -60,14 +60,15 @@ const RundownGrid = () => {
 
   // Enhanced row selection that handles both single and multi-selection
   const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    console.log('🎯 Enhanced row selection called:', itemId, 'shift:', isShiftClick, 'ctrl:', isCtrlClick);
-    
     if (isShiftClick || isCtrlClick) {
       // Multi-selection mode
       handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
+      // Clear single selection when doing multi-selection
+      if (selectedRowId !== null) {
+        clearRowSelection();
+      }
     } else {
       // Single selection mode - this should update selectedRowId
-      console.log('🎯 Single row selection, updating selectedRowId to:', itemId);
       handleRowSelection(itemId);
       // Clear multi-selection if we're doing single selection
       if (selectedRows.size > 0) {
@@ -75,8 +76,6 @@ const RundownGrid = () => {
       }
     }
   };
-
-  console.log('🎯 RundownGrid rendering with selectedRowId:', selectedRowId);
 
   return (
     <RundownTable
@@ -116,11 +115,9 @@ const RundownGrid = () => {
         clearRowSelection();
       }}
       onAddRow={() => {
-        console.log('🚀 RundownGrid calling addRow with selectedRowId:', selectedRowId);
         handleAddRow(selectedRowId);
       }}
       onAddHeader={() => {
-        console.log('🚀 RundownGrid calling addHeader with selectedRowId:', selectedRowId);
         handleAddHeader(selectedRowId);
       }}
     />
