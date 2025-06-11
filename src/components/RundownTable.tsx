@@ -1,7 +1,6 @@
 
 import React from 'react';
 import RundownRow from './RundownRow';
-import RundownTableHeader from './RundownTableHeader';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -82,16 +81,7 @@ const RundownTable = ({
 }: RundownTableProps) => {
 
   return (
-    <div className="relative w-full overflow-auto bg-background">
-      <div className="sticky top-0 z-20 w-full bg-background">
-        <table className="w-full border-collapse border-0">
-          <RundownTableHeader 
-            visibleColumns={visibleColumns}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-          />
-        </table>
-      </div>
+    <div className="relative w-full bg-background">
       <table className="w-full border-collapse border border-border">
         <tbody className="bg-background">
           {items.map((item, index) => {

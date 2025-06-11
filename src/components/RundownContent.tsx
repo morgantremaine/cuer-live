@@ -1,6 +1,7 @@
 
 import React from 'react';
 import RundownTable from './RundownTable';
+import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -83,6 +84,20 @@ const RundownContent = ({
 
   return (
     <div className="relative bg-background">
+      {/* Sticky Header - Outside of ScrollArea */}
+      <div className="sticky top-0 z-20 w-full bg-background border-b border-border">
+        <div className="min-w-max">
+          <table className="w-full border-collapse">
+            <RundownTableHeader 
+              visibleColumns={visibleColumns}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+            />
+          </table>
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
       <ScrollArea className="w-full h-[calc(100vh-200px)] bg-background">
         <div className="min-w-max bg-background">
           <RundownTable
