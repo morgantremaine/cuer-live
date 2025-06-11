@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -70,22 +69,34 @@ export const useShowcallerState = ({
 
   // Helper function to get next/previous segments
   const getNextSegment = useCallback((currentId: string) => {
+    console.log('📺 getNextSegment called with:', currentId, 'from items:', items.length);
     const currentIndex = items.findIndex(item => item.id === currentId);
+    console.log('📺 Current index:', currentIndex);
+    
     for (let i = currentIndex + 1; i < items.length; i++) {
+      console.log('📺 Checking item at index', i, ':', items[i]);
       if (items[i].type === 'regular') {
+        console.log('📺 Found next segment:', items[i]);
         return items[i];
       }
     }
+    console.log('📺 No next segment found');
     return null;
   }, [items]);
 
   const getPreviousSegment = useCallback((currentId: string) => {
+    console.log('📺 getPreviousSegment called with:', currentId, 'from items:', items.length);
     const currentIndex = items.findIndex(item => item.id === currentId);
+    console.log('📺 Current index:', currentIndex);
+    
     for (let i = currentIndex - 1; i >= 0; i--) {
+      console.log('📺 Checking item at index', i, ':', items[i]);
       if (items[i].type === 'regular') {
+        console.log('📺 Found previous segment:', items[i]);
         return items[i];
       }
     }
+    console.log('📺 No previous segment found');
     return null;
   }, [items]);
 
@@ -115,19 +126,26 @@ export const useShowcallerState = ({
 
   // Clear current status from all items
   const clearCurrentStatus = useCallback(() => {
+    console.log('📺 Clearing current status from all items');
     items.forEach(item => {
       if (item.status === 'current') {
+        console.log('📺 Clearing current status from:', item.id);
         updateItem(item.id, 'status', 'completed');
       }
     });
   }, [items, updateItem]);
 
   const setCurrentSegment = useCallback((segmentId: string) => {
+    console.log('📺 setCurrentSegment called with:', segmentId);
     clearCurrentStatus();
     const segment = items.find(item => item.id === segmentId);
+    console.log('📺 Found segment:', segment);
+    
     if (segment && segment.type === 'regular') {
+      console.log('📺 Setting segment as current:', segmentId);
       updateItem(segmentId, 'status', 'current');
       const duration = timeToSeconds(segment.duration);
+      console.log('📺 Segment duration in seconds:', duration);
       
       updateShowcallerState({
         currentSegmentId: segmentId,
@@ -241,6 +259,7 @@ export const useShowcallerState = ({
     const playbackStartTime = Date.now();
     
     if (selectedSegmentId) {
+      console.log('📺 Playing specific segment:', selectedSegmentId);
       // Mark segments before selected as upcoming
       const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
       items.forEach((item, index) => {
@@ -253,6 +272,14 @@ export const useShowcallerState = ({
         }
       });
       setCurrentSegment(selectedSegmentId);
+    } else if (!showcallerState.currentSegmentId) {
+      // No current segment, find first regular item
+      console.log('📺 No current segment, finding first regular item');
+      const firstSegment = items.find(item => item.type === 'regular');
+      if (firstSegment) {
+        console.log('📺 Found first segment:', firstSegment.id);
+        setCurrentSegment(firstSegment.id);
+      }
     }
     
     // ALWAYS take control when user presses play
@@ -263,7 +290,7 @@ export const useShowcallerState = ({
     }, true);
     
     startTimer();
-  }, [items, updateItem, setCurrentSegment, updateShowcallerState, startTimer, userId]);
+  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId]);
 
   const pause = useCallback(() => {
     console.log('📺 Pause called by user:', userId);
@@ -278,10 +305,11 @@ export const useShowcallerState = ({
   }, [updateShowcallerState, stopTimer, userId]);
 
   const forward = useCallback(() => {
-    console.log('📺 Forward called by user:', userId);
+    console.log('📺 Forward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
     if (showcallerState.currentSegmentId) {
       const nextSegment = getNextSegment(showcallerState.currentSegmentId);
       if (nextSegment) {
+        console.log('📺 Moving to next segment:', nextSegment.id);
         updateItem(showcallerState.currentSegmentId, 'status', 'completed');
         
         // Take control when using forward
@@ -293,15 +321,20 @@ export const useShowcallerState = ({
         if (showcallerState.isPlaying) {
           startTimer();
         }
+      } else {
+        console.log('📺 No next segment available');
       }
+    } else {
+      console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, setCurrentSegment, startTimer, userId, updateShowcallerState]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, setCurrentSegment, userId, updateShowcallerState]);
 
   const backward = useCallback(() => {
-    console.log('📺 Backward called by user:', userId);
+    console.log('📺 Backward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
     if (showcallerState.currentSegmentId) {
       const prevSegment = getPreviousSegment(showcallerState.currentSegmentId);
       if (prevSegment) {
+        console.log('📺 Moving to previous segment:', prevSegment.id);
         updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
         
         // Take control when using backward
@@ -313,9 +346,13 @@ export const useShowcallerState = ({
         if (showcallerState.isPlaying) {
           startTimer();
         }
+      } else {
+        console.log('📺 No previous segment available');
       }
+    } else {
+      console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, startTimer, userId, updateShowcallerState]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, userId, updateShowcallerState]);
 
   // ENHANCED: External state application with better control handoff
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {

@@ -33,16 +33,30 @@ const PlaybackControls = ({
   };
 
   const handlePlayPause = () => {
+    console.log('🎮 PlaybackControls - Play/Pause clicked', { isPlaying, selectedRowId, currentSegmentId });
+    
     if (isPlaying) {
       onPause();
     } else {
       // If a row is selected, play that row, otherwise play current segment
       if (selectedRowId) {
+        console.log('🎮 Playing selected row:', selectedRowId);
         onPlay(selectedRowId);
-      } else if (currentSegmentId) {
+      } else {
+        console.log('🎮 Playing current or first segment');
         onPlay();
       }
     }
+  };
+
+  const handleForward = () => {
+    console.log('🎮 PlaybackControls - Forward clicked');
+    onForward();
+  };
+
+  const handleBackward = () => {
+    console.log('🎮 PlaybackControls - Backward clicked');
+    onBackward();
   };
 
   return (
@@ -54,7 +68,7 @@ const PlaybackControls = ({
       )}
       
       <Button
-        onClick={onBackward}
+        onClick={handleBackward}
         variant="outline"
         size={size}
         disabled={!currentSegmentId}
@@ -67,14 +81,13 @@ const PlaybackControls = ({
         onClick={handlePlayPause}
         variant="outline"
         size={size}
-        disabled={!currentSegmentId && !selectedRowId}
         title={isPlaying ? "Pause" : "Play"}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
       
       <Button
-        onClick={onForward}
+        onClick={handleForward}
         variant="outline"
         size={size}
         disabled={!currentSegmentId}

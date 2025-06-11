@@ -104,6 +104,15 @@ const RundownTable = ({
 
             return (
               <React.Fragment key={item.id}>
+                {/* Show green line ABOVE the current segment */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1 bg-green-500 w-full"></div>
+                    </td>
+                  </tr>
+                )}
+                
                 <RundownRow
                   item={item}
                   index={index}
@@ -139,14 +148,6 @@ const RundownTable = ({
                   onAddHeader={onAddHeader}
                   getColumnWidth={getColumnWidth}
                 />
-                
-                {isCurrentlyPlaying && (
-                  <tr>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-green-500 w-full animate-pulse"></div>
-                    </td>
-                  </tr>
-                )}
               </React.Fragment>
             );
           })}
