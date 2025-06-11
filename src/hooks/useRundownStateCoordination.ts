@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
@@ -123,15 +122,15 @@ export const useRundownStateCoordination = () => {
     core.setRundownTitle
   );
 
-  // UI state management - Fix parameter order: items, columns, updateItem, markAsChanged, rundownStartTime, isPlaying, currentSegmentId
+  // UI state management - Fix parameter order to match useRundownUIState signature
   const uiState = useRundownUIState(
     core.items,
     core.visibleColumns,
+    core.columns,
     core.updateItem,
-    core.markAsChanged,
-    rundownStartTime,
-    core.isPlaying,
-    core.currentSegmentId
+    core.currentSegmentId,
+    new Date(),
+    core.markAsChanged
   );
 
   // Enhanced wrapper functions that track changes for realtime
