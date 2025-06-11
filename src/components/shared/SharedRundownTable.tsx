@@ -132,7 +132,7 @@ const SharedRundownTable = ({
                     // For headers, handle special cases
                     if (item.type === 'header') {
                       if (column.key === 'segmentName') {
-                        // Show the header name (not notes)
+                        // Show the header name
                         return (
                           <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                             <div className="break-words whitespace-pre-wrap">{item.name || ''}</div>
@@ -153,11 +153,10 @@ const SharedRundownTable = ({
                           </td>
                         );
                       } else {
-                        // For other columns (like notes), show the actual value from getCellValue
-                        const value = getCellValue(item, column);
+                        // For other columns, show empty cell for headers
                         return (
                           <td key={column.id} className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
-                            <div className="break-words whitespace-pre-wrap">{value}</div>
+                            <div className="break-words whitespace-pre-wrap"></div>
                           </td>
                         );
                       }

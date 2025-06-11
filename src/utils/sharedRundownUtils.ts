@@ -1,8 +1,10 @@
+
 import { RundownItem } from '@/types/rundown';
 
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns) return [];
-  return columns.filter(col => col.isVisible !== false);
+  // Filter out notes column and only show visible columns
+  return columns.filter(col => col.isVisible !== false && col.key !== 'notes');
 };
 
 export const getRowNumber = (index: number, items: RundownItem[]) => {
@@ -39,13 +41,8 @@ export const getCellValue = (item: RundownItem, column: any) => {
   } else {
     switch (column.key) {
       case 'segmentName':
-        // For headers, show the notes (description) instead of just the letter
-        if (item.type === 'header') {
-          value = item.notes || item.name || '';
-        } else {
-          // For regular items, show the name/segmentName
-          value = item.segmentName || item.name || '';
-        }
+        // For regular items, show the name/segmentName
+        value = item.segmentName || item.name || '';
         break;
       case 'duration':
         value = item.duration || '';
@@ -56,14 +53,14 @@ export const getCellValue = (item: RundownItem, column: any) => {
       case 'endTime':
         value = item.endTime || '';
         break;
-      case 'notes':
-        value = item.notes || '';
-        break;
       case 'script':
         value = item.script || '';
         break;
       case 'talent':
         value = item.talent || '';
+        break;
+      case 'elapsedTime':
+        value = item.elapsedTime || '';
         break;
       default:
         // Handle any other fields that might exist on the item
