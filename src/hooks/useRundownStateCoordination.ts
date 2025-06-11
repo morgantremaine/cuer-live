@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+
+import { useMemo, useState, useCallback } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIManager } from './useRundownUIManager';
@@ -10,10 +11,6 @@ export const useRundownStateCoordination = () => {
   
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
-  
-  console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
-  console.log('🔄 State coordination - selectedRowId:', simplifiedState.selectedRowId);
-  console.log('🔄 State coordination - undo canUndo:', simplifiedState.canUndo, 'lastAction:', simplifiedState.lastAction);
   
   // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
@@ -64,12 +61,12 @@ export const useRundownStateCoordination = () => {
   );
 
   // Row status calculation wrapper
-  const getRowStatusForItem = (item: any) => {
+  const getRowStatusForItem = useCallback((item: any) => {
     return getRowStatus(item, simplifiedState.currentTime);
-  };
+  }, [simplifiedState.currentTime]);
 
-  // Enhanced addRow that considers multi-selection when available
-  const enhancedAddRow = () => {
+  // Enhanced addRow that considers multi-selection when available - memoized
+  const enhancedAddRow = useCallback(() => {
     if (gridInteractions.selectedRows.size > 0) {
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(gridInteractions.selectedRows)
@@ -93,10 +90,10 @@ export const useRundownStateCoordination = () => {
     }
     
     simplifiedState.addRow();
-  };
+  }, [gridInteractions.selectedRows, simplifiedState.selectedRowId, simplifiedState.items, simplifiedState.addRowAtIndex, simplifiedState.addRow]);
 
-  // Enhanced addHeader that considers multi-selection when available
-  const enhancedAddHeader = () => {
+  // Enhanced addHeader that considers multi-selection when available - memoized
+  const enhancedAddHeader = useCallback(() => {
     if (gridInteractions.selectedRows.size > 0) {
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(gridInteractions.selectedRows)
@@ -120,9 +117,9 @@ export const useRundownStateCoordination = () => {
     }
     
     simplifiedState.addHeader();
-  };
+  }, [gridInteractions.selectedRows, simplifiedState.selectedRowId, simplifiedState.items, simplifiedState.addHeaderAtIndex, simplifiedState.addHeader]);
 
-  // Create enhanced core state with all necessary properties including undo
+  // Create enhanced core state with stable dependencies
   const coreState = useMemo(() => ({
     // Basic state
     items: simplifiedState.items,
@@ -207,7 +204,47 @@ export const useRundownStateCoordination = () => {
     lastAction: simplifiedState.lastAction || '',
     isConnected: false,
     isProcessingRealtimeUpdate: false
-  }), [simplifiedState, showColumnManager, gridInteractions.selectedRows, enhancedAddRow, enhancedAddHeader]);
+  }), [
+    simplifiedState.items,
+    simplifiedState.visibleColumns,
+    simplifiedState.currentTime,
+    simplifiedState.currentSegmentId,
+    simplifiedState.rundownTitle,
+    simplifiedState.rundownStartTime,
+    simplifiedState.timezone,
+    simplifiedState.columns,
+    simplifiedState.rundownId,
+    simplifiedState.isLoading,
+    simplifiedState.hasUnsavedChanges,
+    simplifiedState.isSaving,
+    simplifiedState.selectedRowId,
+    simplifiedState.handleRowSelection,
+    simplifiedState.clearRowSelection,
+    showColumnManager,
+    setShowColumnManager,
+    simplifiedState.updateItem,
+    simplifiedState.deleteRow,
+    simplifiedState.toggleFloat,
+    simplifiedState.setTitle,
+    simplifiedState.getRowNumber,
+    enhancedAddRow,
+    enhancedAddHeader,
+    simplifiedState.totalRuntime,
+    simplifiedState.isPlaying,
+    simplifiedState.timeRemaining,
+    simplifiedState.play,
+    simplifiedState.pause,
+    simplifiedState.forward,
+    simplifiedState.backward,
+    simplifiedState.isController,
+    simplifiedState.addColumn,
+    simplifiedState.setColumns,
+    simplifiedState.setStartTime,
+    simplifiedState.setTimezone,
+    simplifiedState.undo,
+    simplifiedState.canUndo,
+    simplifiedState.lastAction
+  ]);
 
   return {
     coreState,
