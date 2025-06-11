@@ -1,10 +1,11 @@
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useStandaloneUndo } from './useStandaloneUndo';
+import { useRealtimeRundown } from './useRealtimeRundown';
+import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -29,6 +30,10 @@ export const useSimplifiedRundownState = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
+  
+  // Realtime state - these won't interfere with core functionality
+  const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
@@ -47,10 +52,10 @@ export const useSimplifiedRundownState = () => {
     timezone: 'America/New_York'
   });
 
-  // Auto-save functionality
+  // Auto-save functionality - unchanged
   const { isSaving, setUndoActive } = useSimpleAutoSave(state, rundownId, actions.markSaved);
 
-  // Standalone undo system with proper change trigger
+  // Standalone undo system with proper change trigger - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, columns, title) => {
       console.log('🔄 Applying undo state:', { itemsCount: items.length, columnsCount: columns.length, title });
@@ -75,7 +80,44 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Enhanced updateItem function that works with showcaller and saves undo state with proper timing
+  // Realtime rundown updates - new but non-disruptive
+  const realtimeRundown = useRealtimeRundown({
+    rundownId,
+    onRundownUpdated: useCallback((updatedRundown) => {
+      console.log('📡 Applying realtime rundown update:', updatedRundown.title);
+      
+      // Only update if we're not currently saving to avoid conflicts
+      if (!isSaving) {
+        actions.loadState({
+          items: updatedRundown.items || [],
+          columns: updatedRundown.columns || defaultColumns,
+          title: updatedRundown.title || 'Untitled Rundown',
+          startTime: updatedRundown.start_time || '09:00:00',
+          timezone: updatedRundown.timezone || 'America/New_York'
+        });
+      }
+    }, [actions, isSaving]),
+    hasUnsavedChanges: state.hasUnsavedChanges,
+    isProcessingUpdate: isProcessingRealtimeUpdate,
+    setIsProcessingUpdate: setIsProcessingRealtimeUpdate
+  });
+
+  // Stable realtime collaboration - new but non-disruptive
+  const stableRealtime = useStableRealtimeCollaboration({
+    rundownId,
+    onRemoteUpdate: useCallback(() => {
+      console.log('📡 Remote update detected, refreshing data...');
+      // This is just for notifications, doesn't change core functionality
+    }, []),
+    enabled: !!rundownId
+  });
+
+  // Update connection status based on realtime hooks
+  useEffect(() => {
+    setIsConnected(realtimeRundown.isConnected || stableRealtime.isConnected);
+  }, [realtimeRundown.isConnected, stableRealtime.isConnected]);
+
+  // Enhanced updateItem function that works with showcaller and saves undo state with proper timing - unchanged
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     console.log('📺 Enhanced updateItem called:', { id, field, value });
     
@@ -132,7 +174,7 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]);
 
-  // Initialize playback controls with showcaller functionality
+  // Initialize playback controls with showcaller functionality - unchanged
   const {
     isPlaying,
     currentSegmentId,
@@ -221,7 +263,7 @@ export const useSimplifiedRundownState = () => {
     }
   }, [rundownId, isInitialized, actions]);
 
-  // Calculate all derived values using pure functions
+  // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) {
       return [];
@@ -236,7 +278,7 @@ export const useSimplifiedRundownState = () => {
     return calculateTotalRuntime(state.items);
   }, [state.items]);
 
-  // Enhanced actions with undo state saving
+  // Enhanced actions with undo state saving - unchanged
   const enhancedActions = {
     ...actions,
     ...helpers,
@@ -279,7 +321,7 @@ export const useSimplifiedRundownState = () => {
     }, [actions.setTitle, state.items, state.columns, state.title, saveUndoState])
   };
 
-  // Get visible columns - ensure they actually exist and are marked visible
+  // Get visible columns - ensure they actually exist and are marked visible - unchanged
   const visibleColumns = useMemo(() => {
     if (!state.columns || !Array.isArray(state.columns)) {
       return defaultColumns.filter(col => col.isVisible !== false);
@@ -335,7 +377,7 @@ export const useSimplifiedRundownState = () => {
     }
   }, [helpers, state.items, state.columns, state.title, saveUndoState]);
 
-  // Clean up timeouts on unmount
+  // Clean up timeouts on unmount - unchanged
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
@@ -345,7 +387,7 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   return {
-    // Core state with calculated values
+    // Core state with calculated values - unchanged
     items: calculatedItems,
     setItems: actions.setItems,
     columns: state.columns || defaultColumns,
@@ -368,7 +410,11 @@ export const useSimplifiedRundownState = () => {
     isSaving,
     showcallerActivity,
     
-    // Playback controls - properly expose these functions with correct signatures
+    // NEW: Realtime connection status
+    isConnected,
+    isProcessingRealtimeUpdate,
+    
+    // Playback controls - properly expose these functions with correct signatures - unchanged
     play: (selectedSegmentId?: string) => {
       console.log('🎮 Simplified state play called with:', selectedSegmentId);
       play(selectedSegmentId);
@@ -421,7 +467,7 @@ export const useSimplifiedRundownState = () => {
       actions.updateColumn(columnId, { width });
     },
 
-    // Undo functionality - properly expose these
+    // Undo functionality - properly expose these - unchanged
     undo,
     canUndo,
     lastAction

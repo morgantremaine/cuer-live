@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useCallback } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -202,8 +201,10 @@ export const useRundownStateCoordination = () => {
     handleUndo: simplifiedState.undo,
     canUndo: simplifiedState.canUndo,
     lastAction: simplifiedState.lastAction || '',
-    isConnected: false,
-    isProcessingRealtimeUpdate: false
+    
+    // NEW: Realtime connection status from simplified state
+    isConnected: simplifiedState.isConnected,
+    isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate
   }), [
     simplifiedState.items,
     simplifiedState.visibleColumns,
@@ -243,7 +244,9 @@ export const useRundownStateCoordination = () => {
     simplifiedState.setTimezone,
     simplifiedState.undo,
     simplifiedState.canUndo,
-    simplifiedState.lastAction
+    simplifiedState.lastAction,
+    simplifiedState.isConnected,
+    simplifiedState.isProcessingRealtimeUpdate
   ]);
 
   return {
