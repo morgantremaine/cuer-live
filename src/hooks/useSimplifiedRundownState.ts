@@ -1,5 +1,6 @@
 
 
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -60,9 +61,14 @@ export const useSimplifiedRundownState = () => {
       actions.setColumns(columns);
       actions.setTitle(title);
       
-      // Trigger auto-save after undo by marking as changed
+      // Trigger auto-save after undo by updating an item to mark as changed
       setTimeout(() => {
-        actions.markChanged();
+        // Since we don't have markChanged, we'll use the fact that updating triggers the change tracking
+        const firstItem = items[0];
+        if (firstItem) {
+          // Update the item with the same value to trigger change detection
+          actions.updateItem(firstItem.id, { name: firstItem.name });
+        }
         console.log('🔄 Triggered auto-save after undo');
       }, 100);
     },
