@@ -11,14 +11,16 @@ import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 
-// Default columns configuration
+// Default columns configuration - updated to match expected order
 const defaultColumns: Column[] = [
   { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false, isEditable: true },
+  { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false, isEditable: true },
+  { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false, isEditable: true },
   { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false, isEditable: true },
   { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
   { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
-  { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false, isEditable: true },
-  { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false, isEditable: true }
+  { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
+  { id: 'notes', name: 'Notes', key: 'notes', isVisible: true, width: '300px', isCustom: false, isEditable: true }
 ];
 
 export const useSimplifiedRundownState = () => {
@@ -278,7 +280,7 @@ export const useSimplifiedRundownState = () => {
     return calculateTotalRuntime(state.items);
   }, [state.items]);
 
-  // Enhanced actions with undo state saving - unchanged
+  // Enhanced actions with undo state saving - modified to set default duration
   const enhancedActions = {
     ...actions,
     ...helpers,
