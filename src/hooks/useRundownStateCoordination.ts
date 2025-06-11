@@ -14,7 +14,7 @@ export const useRundownStateCoordination = () => {
   
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
   
-  // Grid interactions with correct function signatures
+  // Grid interactions with correct function signatures that use selectedRowId
   const gridInteractions = useRundownGridInteractions(
     simplifiedState.items,
     (updater) => {
@@ -25,11 +25,13 @@ export const useRundownStateCoordination = () => {
     },
     simplifiedState.updateItem,
     (calculateEndTime: (startTime: string, duration: string) => string) => {
-      // Use the selected row when adding
+      // Call addRow with the currently selected row ID
+      console.log('🚀 Grid interactions addRow called with selectedRowId:', simplifiedState.selectedRowId);
       simplifiedState.addRow(simplifiedState.selectedRowId);
     },
     () => {
-      // Use the selected row when adding header
+      // Call addHeader with the currently selected row ID
+      console.log('🚀 Grid interactions addHeader called with selectedRowId:', simplifiedState.selectedRowId);
       simplifiedState.addHeader(simplifiedState.selectedRowId);
     },
     simplifiedState.deleteRow,

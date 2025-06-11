@@ -223,14 +223,14 @@ export const useSimplifiedRundownState = () => {
       if (targetIndex !== -1) {
         console.log('🎯 Found target row at index:', targetIndex, 'inserting at:', targetIndex + 1);
         helpers.addRow(targetIndex + 1);
+        return;
       } else {
         console.log('🎯 Target row not found, adding at end');
-        helpers.addRow();
       }
     } else {
       console.log('🎯 No target row, adding at end');
-      helpers.addRow();
     }
+    helpers.addRow();
   }, [helpers, selectedRowId, state.items]);
 
   const addHeaderFunction = useCallback((targetRowId?: string) => {
@@ -242,14 +242,14 @@ export const useSimplifiedRundownState = () => {
       if (targetIndex !== -1) {
         console.log('🎯 Found target row at index:', targetIndex, 'inserting header at:', targetIndex + 1);
         helpers.addHeader(targetIndex + 1);
+        return;
       } else {
         console.log('🎯 Target row not found, adding header at end');
-        helpers.addHeader();
       }
     } else {
       console.log('🎯 No target row, adding header at end');
-      helpers.addHeader();
     }
+    helpers.addHeader();
   }, [helpers, selectedRowId, state.items]);
 
   // Row selection handlers
