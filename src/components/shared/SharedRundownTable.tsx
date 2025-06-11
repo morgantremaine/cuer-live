@@ -112,22 +112,11 @@ const SharedRundownTable = ({
             
             return (
               <React.Fragment key={item.id}>
-                {/* Green line above current row - always show for current segment */}
+                {/* Green line above current row - no spacing, just the line */}
                 {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-4 flex items-center">
-                        <div className="h-2 bg-green-500 rounded-sm" style={{ width: '300px', marginLeft: '8px' }}></div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                
-                {/* Small spacing below green line */}
-                {isShowcallerCurrent && (
-                  <tr className="print:hidden">
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1"></div>
+                      <div className="h-1 bg-green-500"></div>
                     </td>
                   </tr>
                 )}
@@ -143,11 +132,10 @@ const SharedRundownTable = ({
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                     <div className="flex items-center">
-                      {/* Blue play icon - always show for current segment */}
+                      {/* Blue play icon - matching main rundown styling */}
                       {isShowcallerCurrent && (
                         <Play 
-                          className="h-4 w-4 text-blue-500 fill-blue-500 mr-2 scale-125 print:hidden" 
-                          style={{ filter: 'drop-shadow(0 0 1px black)' }}
+                          className="h-3 w-3 text-blue-500 fill-blue-500 mr-2 print:hidden" 
                         />
                       )}
                       {isFloated && (
