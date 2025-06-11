@@ -105,7 +105,7 @@ const CellRenderer = ({
     );
   }
 
-  // Use ExpandableScriptCell for script and notes fields
+  // Use ExpandableScriptCell for script and notes fields (both built-in columns)
   if (column.key === 'script' || column.key === 'notes') {
     return (
       <ExpandableScriptCell
