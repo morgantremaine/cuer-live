@@ -84,11 +84,6 @@ const RundownGrid = () => {
     }
   };
 
-  // Create a wrapper for onRowSelect that provides all required arguments
-  const handleRowSelectWrapper = (itemId: string, index: number, isShiftClick: boolean = false, isCtrlClick: boolean = false) => {
-    handleEnhancedRowSelection(itemId, index, isShiftClick, isCtrlClick);
-  };
-
   return (
     <RundownTable
       items={items}
@@ -115,7 +110,7 @@ const RundownGrid = () => {
       onColorSelect={handleColorSelect}
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={handleRowSelectWrapper}
+      onRowSelect={handleEnhancedRowSelection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

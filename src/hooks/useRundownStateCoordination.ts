@@ -102,13 +102,13 @@ export const useRundownStateCoordination = () => {
     enabled: true
   });
 
-  // Interaction handlers (selection, drag/drop, clipboard) - Fix the function call
+  // Interaction handlers (selection, drag/drop, clipboard) - Fix the function calls
   const interactions = useRundownInteractionHandlers(
     core.items,
     core.setItems,
     core.updateItem,
-    () => core.addRow(calculateEndTime), // Pass wrapped function
-    () => core.addHeader(), // Pass wrapped function
+    () => core.addRow(calculateEndTime),
+    () => core.addHeader(),
     core.deleteRow,
     core.toggleFloatRow,
     core.deleteMultipleRows,
@@ -123,11 +123,11 @@ export const useRundownStateCoordination = () => {
     core.setRundownTitle
   );
 
-  // UI state management - Fix parameter order
+  // UI state management - Fix parameter order to pass columns instead of updateItem
   const uiState = useRundownUIState(
     core.items,
-    core.visibleColumns,
-    core.updateItem, // This should be the updateItem function
+    core.visibleColumns, // Pass columns array, not updateItem function
+    core.updateItem,
     core.markAsChanged,
     rundownStartTime,
     core.isPlaying,
