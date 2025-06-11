@@ -50,8 +50,17 @@ export const useDragAndDrop = (
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    if (targetIndex !== undefined) {
-      setDropTargetIndex(targetIndex);
+    if (targetIndex !== undefined && draggedItemIndex !== null) {
+      // Calculate the drop position based on mouse position relative to row
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const mouseY = e.clientY;
+      const rowMiddle = rect.top + rect.height / 2;
+      
+      // If mouse is in the top half, insert before this row
+      // If mouse is in the bottom half, insert after this row
+      const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
+      
+      setDropTargetIndex(insertIndex);
     }
   };
 

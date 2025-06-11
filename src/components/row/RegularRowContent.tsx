@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -50,9 +49,6 @@ const RegularRowContent = ({
             />
           )}
           <span style={{ color: textColor }}>{rowNumber}</span>
-          {isDraggingMultiple && isSelected && (
-            <span className="text-xs bg-blue-500 text-white px-1 rounded">M</span>
-          )}
         </div>
       </td>
       {columns.map((column) => {

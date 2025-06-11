@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -103,19 +102,8 @@ const RundownTable = ({
     e.stopPropagation();
     console.log('🚀 Row drag over for index:', targetIndex, 'current dropTargetIndex:', dropTargetIndex);
     
-    // Calculate the drop position based on mouse position relative to row
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const mouseY = e.clientY;
-    const rowMiddle = rect.top + rect.height / 2;
-    
-    // If mouse is in the top half, insert before this row
-    // If mouse is in the bottom half, insert after this row
-    const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
-    
-    console.log('🎯 Calculated insert index:', insertIndex, 'for targetIndex:', targetIndex);
-    
-    // Call the parent handler with calculated position
-    onDragOver(e);
+    // Call the parent handler with target index
+    onDragOver(e, targetIndex);
   };
 
   return (
@@ -140,11 +128,7 @@ const RundownTable = ({
                 {dropTargetIndex === index && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-blue-500 w-full relative z-50">
-                        <div className="absolute inset-0 bg-blue-500 animate-pulse"></div>
-                        <div className="absolute left-0 top-0 w-3 h-1 bg-blue-600"></div>
-                        <div className="absolute right-0 top-0 w-3 h-1 bg-blue-600"></div>
-                      </div>
+                      <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
@@ -201,11 +185,7 @@ const RundownTable = ({
                 {dropTargetIndex === items.length && index === items.length - 1 && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-blue-500 w-full relative z-50">
-                        <div className="absolute inset-0 bg-blue-500 animate-pulse"></div>
-                        <div className="absolute left-0 top-0 w-3 h-1 bg-blue-600"></div>
-                        <div className="absolute right-0 top-0 w-3 h-1 bg-blue-600"></div>
-                      </div>
+                      <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
