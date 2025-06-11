@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -30,14 +29,18 @@ export const useRundownStateCoordination = () => {
     (updater) => {
       if (typeof updater === 'function') {
         const newItems = updater(calculatedItems);
-        // Map back to the original format
-        const mappedItems = newItems.map(item => ({
-          ...item,
-          startTime: item.calculatedStartTime,
-          endTime: item.calculatedEndTime,
-          elapsedTime: item.calculatedElapsedTime,
-          rowNumber: item.calculatedRowNumber
-        }));
+        // Map back to the original format - newItems are CalculatedRundownItem[]
+        const mappedItems = newItems.map(item => {
+          // Remove the calculated properties and keep the rest
+          const { calculatedStartTime, calculatedEndTime, calculatedElapsedTime, calculatedRowNumber, ...baseItem } = item;
+          return {
+            ...baseItem,
+            startTime: calculatedStartTime,
+            endTime: calculatedEndTime,
+            elapsedTime: calculatedElapsedTime,
+            rowNumber: calculatedRowNumber
+          };
+        });
         simplifiedState.setItems(mappedItems);
       }
     },
