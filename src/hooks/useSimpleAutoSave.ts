@@ -11,10 +11,17 @@ export const useSimpleAutoSave = (
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
+  const undoActiveRef = useRef(false);
+
+  // Function to coordinate with undo operations
+  const setUndoActive = (active: boolean) => {
+    undoActiveRef.current = active;
+    console.log('💾 Auto-save undo coordination:', active ? 'PAUSED' : 'RESUMED');
+  };
 
   useEffect(() => {
-    // Don't save if no changes
-    if (!state.hasUnsavedChanges) {
+    // Don't save if no changes or if undo is active
+    if (!state.hasUnsavedChanges || undoActiveRef.current) {
       return;
     }
 
@@ -41,7 +48,8 @@ export const useSimpleAutoSave = (
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
-      if (isSaving) return;
+      // Double-check undo isn't active when timeout executes
+      if (isSaving || undoActiveRef.current) return;
       
       setIsSaving(true);
       console.log('💾 Executing auto-save...');
@@ -51,7 +59,6 @@ export const useSimpleAutoSave = (
         if (!rundownId) {
           console.log('💾 Creating new rundown...');
           
-          // Get user's team ID first
           const { data: teamData, error: teamError } = await supabase
             .from('team_members')
             .select('team_id')
@@ -85,11 +92,9 @@ export const useSimpleAutoSave = (
             console.log('✅ New rundown created:', newRundown.id);
             lastSavedRef.current = currentSignature;
             onSaved();
-            // Update the URL to the new rundown ID
             window.history.replaceState(null, '', `/rundown/${newRundown.id}`);
           }
         } else {
-          // Update existing rundown
           const { error } = await supabase
             .from('rundowns')
             .update({
@@ -125,6 +130,7 @@ export const useSimpleAutoSave = (
   }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving]);
 
   return {
-    isSaving
+    isSaving,
+    setUndoActive
   };
 };

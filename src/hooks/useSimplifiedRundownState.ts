@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { usePlaybackControls } from './usePlaybackControls';
+import { useStandaloneUndo } from './useStandaloneUndo';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
@@ -43,11 +44,27 @@ export const useSimplifiedRundownState = () => {
   });
 
   // Auto-save functionality
-  const { isSaving } = useSimpleAutoSave(state, rundownId, actions.markSaved);
+  const { isSaving, setUndoActive } = useSimpleAutoSave(state, rundownId, actions.markSaved);
 
-  // Enhanced updateItem function that works with showcaller
+  // Standalone undo system
+  const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
+    onUndo: (items, columns, title) => {
+      // Apply undo state using existing actions
+      actions.setItems(items);
+      actions.setColumns(columns);
+      actions.setTitle(title);
+    },
+    setUndoActive
+  });
+
+  // Enhanced updateItem function that works with showcaller and saves undo state
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     console.log('📺 Enhanced updateItem called:', { id, field, value });
+    
+    // Save undo state before making changes (for significant changes)
+    if (field === 'name' || field === 'duration' || field === 'script') {
+      saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
+    }
     
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
@@ -68,7 +85,7 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: value });
     }
-  }, [actions.updateItem, state.items]);
+  }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]);
 
   // Initialize playback controls with showcaller functionality
   const {
@@ -111,7 +128,6 @@ export const useSimplifiedRundownState = () => {
         if (error) {
           console.error('Error loading rundown:', error);
         } else if (data) {
-          // Load the data into state, ensuring we have valid items and columns
           const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
             ? data.items 
             : defaultRundownItems;
@@ -130,7 +146,6 @@ export const useSimplifiedRundownState = () => {
         }
       } catch (error) {
         console.error('Failed to load rundown:', error);
-        // Load defaults if there's an error
         actions.loadState({
           items: defaultRundownItems,
           columns: defaultColumns,
@@ -147,7 +162,6 @@ export const useSimplifiedRundownState = () => {
     loadRundown();
   }, [rundownId, isInitialized, actions]);
 
-  // Initialize with defaults for new rundowns
   useEffect(() => {
     if (!rundownId && !isInitialized) {
       actions.loadState({
@@ -177,7 +191,7 @@ export const useSimplifiedRundownState = () => {
     return calculateTotalRuntime(state.items);
   }, [state.items]);
 
-  // Enhanced action wrappers
+  // Enhanced actions with undo state saving
   const enhancedActions = {
     ...actions,
     ...helpers,
@@ -185,15 +199,34 @@ export const useSimplifiedRundownState = () => {
     updateItem: enhancedUpdateItem,
 
     toggleFloatRow: useCallback((id: string) => {
+      saveUndoState(state.items, state.columns, state.title, 'Toggle float');
       const item = state.items.find(i => i.id === id);
       if (item) {
         actions.updateItem(id, { isFloating: !item.isFloating });
       }
-    }, [actions.updateItem, state.items]),
+    }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
+      saveUndoState(state.items, state.columns, state.title, 'Delete row');
       actions.deleteItem(id);
-    }, [actions.deleteItem])
+    }, [actions.deleteItem, state.items, state.columns, state.title, saveUndoState]),
+
+    addRow: useCallback(() => {
+      saveUndoState(state.items, state.columns, state.title, 'Add segment');
+      helpers.addRow();
+    }, [helpers.addRow, state.items, state.columns, state.title, saveUndoState]),
+
+    addHeader: useCallback(() => {
+      saveUndoState(state.items, state.columns, state.title, 'Add header');
+      helpers.addHeader();
+    }, [helpers.addHeader, state.items, state.columns, state.title, saveUndoState]),
+
+    setTitle: useCallback((newTitle: string) => {
+      if (state.title !== newTitle) {
+        saveUndoState(state.items, state.columns, state.title, 'Change title');
+        actions.setTitle(newTitle);
+      }
+    }, [actions.setTitle, state.items, state.columns, state.title, saveUndoState])
   };
 
   // Get visible columns - ensure they actually exist and are marked visible
@@ -206,19 +239,16 @@ export const useSimplifiedRundownState = () => {
     return visible;
   }, [state.columns]);
 
-  // Helper function to get header duration using calculated items
   const getHeaderDuration = useCallback((index: number) => {
     if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
     return calculateHeaderDuration(state.items, index);
   }, [state.items]);
 
-  // Helper function to get row number from calculated items
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= calculatedItems.length) return '';
     return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
-  // Row selection handlers
   const handleRowSelection = useCallback((itemId: string) => {
     console.log('🎯 Simplified state handleRowSelection called with:', itemId, 'current selected:', selectedRowId);
     setSelectedRowId(prev => {
@@ -233,28 +263,25 @@ export const useSimplifiedRundownState = () => {
     setSelectedRowId(null);
   }, []);
 
-  // Enhanced row addition functions that support insertion at specific index
   const addRowAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding row at index:', insertIndex);
-    // Use the available addRow function with insertIndex parameter if supported
+    saveUndoState(state.items, state.columns, state.title, 'Add segment');
     if (helpers.addRow && typeof helpers.addRow === 'function') {
       helpers.addRow(insertIndex);
     } else {
-      // Fallback to regular addRow
       helpers.addRow();
     }
-  }, [helpers]);
+  }, [helpers, state.items, state.columns, state.title, saveUndoState]);
 
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding header at index:', insertIndex);
-    // Use the available addHeader function with insertIndex parameter if supported  
+    saveUndoState(state.items, state.columns, state.title, 'Add header');
     if (helpers.addHeader && typeof helpers.addHeader === 'function') {
       helpers.addHeader(insertIndex);
     } else {
-      // Fallback to regular addHeader
       helpers.addHeader();
     }
-  }, [helpers]);
+  }, [helpers, state.items, state.columns, state.title, saveUndoState]);
 
   return {
     // Core state with calculated values
@@ -269,12 +296,10 @@ export const useSimplifiedRundownState = () => {
     currentSegmentId,
     isPlaying,
     
-    // Selection state
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
     
-    // Metadata
     currentTime,
     rundownId,
     isLoading,
@@ -310,30 +335,33 @@ export const useSimplifiedRundownState = () => {
       return getHeaderDuration(itemIndex);
     },
     
-    // Actions with correct signatures
     updateItem: enhancedActions.updateItem,
     deleteItem: enhancedActions.deleteRow,
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: actions.deleteMultipleItems,
     addItem: actions.addItem,
-    setTitle: actions.setTitle,
+    setTitle: enhancedActions.setTitle,
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations - both regular and indexed versions
-    addRow: helpers.addRow,
-    addHeader: helpers.addHeader,
+    addRow: enhancedActions.addRow,
+    addHeader: enhancedActions.addHeader,
     addRowAtIndex,
     addHeaderAtIndex,
     
-    // Column management
     addColumn: (column: Column) => {
+      saveUndoState(state.items, state.columns, state.title, 'Add column');
       actions.setColumns([...(state.columns || defaultColumns), column]);
     },
     
     updateColumnWidth: (columnId: string, width: string) => {
       actions.updateColumn(columnId, { width });
-    }
+    },
+
+    // Undo functionality
+    undo,
+    canUndo,
+    lastAction
   };
 };

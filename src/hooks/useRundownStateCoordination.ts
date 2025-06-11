@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -140,7 +139,7 @@ export const useRundownStateCoordination = () => {
     simplifiedState.addHeader();
   };
 
-  // Create enhanced core state with all necessary properties
+  // Create enhanced core state with all necessary properties including undo
   const coreState = useMemo(() => ({
     // Basic state
     items: simplifiedState.items,
