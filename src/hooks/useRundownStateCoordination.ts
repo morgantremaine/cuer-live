@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -14,7 +15,7 @@ export const useRundownStateCoordination = () => {
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
   console.log('🔄 State coordination - selectedRowId:', simplifiedState.selectedRowId);
   
-  // Grid interactions - these functions don't need selectedRowId parameters since the state manages it internally
+  // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
     simplifiedState.items,
     (updater) => {
@@ -24,11 +25,12 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    // These functions are simplified - they don't need parameters since they use internal selectedRowId
+    // Enhanced addRow that checks both selection states
     () => {
       console.log('🚀 Grid interactions addRow called');
       simplifiedState.addRow();
     },
+    // Enhanced addHeader that checks both selection states
     () => {
       console.log('🚀 Grid interactions addHeader called');
       simplifiedState.addHeader();

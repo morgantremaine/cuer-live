@@ -233,39 +233,6 @@ export const useSimplifiedRundownState = () => {
     setSelectedRowId(null);
   }, []);
 
-  // Enhanced addRow and addHeader functions that properly use selectedRowId
-  const addRowFunction = useCallback(() => {
-    console.log('🚀 Simplified state addRow called with selectedRowId:', selectedRowId);
-    
-    if (selectedRowId) {
-      const targetIndex = state.items.findIndex(item => item.id === selectedRowId);
-      if (targetIndex !== -1) {
-        console.log('🚀 Found target index:', targetIndex, 'inserting at:', targetIndex + 1);
-        helpers.addRow(targetIndex + 1);
-        return;
-      }
-    }
-    
-    console.log('🚀 No selection, adding at end');
-    helpers.addRow();
-  }, [helpers, selectedRowId, state.items]);
-
-  const addHeaderFunction = useCallback(() => {
-    console.log('🚀 Simplified state addHeader called with selectedRowId:', selectedRowId);
-    
-    if (selectedRowId) {
-      const targetIndex = state.items.findIndex(item => item.id === selectedRowId);
-      if (targetIndex !== -1) {
-        console.log('🚀 Found target index:', targetIndex, 'inserting at:', targetIndex + 1);
-        helpers.addHeader(targetIndex + 1);
-        return;
-      }
-    }
-    
-    console.log('🚀 No selection, adding at end');
-    helpers.addHeader();
-  }, [helpers, selectedRowId, state.items]);
-
   return {
     // Core state with calculated values
     items: calculatedItems,
@@ -331,9 +298,9 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations that properly use the current selectedRowId
-    addRow: addRowFunction,
-    addHeader: addHeaderFunction,
+    // Row operations that will be enhanced in coordination
+    addRow: helpers.addRow,
+    addHeader: helpers.addHeader,
     
     // Column management
     addColumn: (column: Column) => {

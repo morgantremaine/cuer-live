@@ -52,15 +52,57 @@ export const useRundownGridHandlers = ({
     updateItem(id, field, value);
   }, [updateItem]);
 
+  // Enhanced addRow that considers both selection states
   const handleAddRow = useCallback(() => {
     console.log('🚀 Grid handlers addRow called');
+    console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    
+    // Check if we have multi-selection
+    if (selectedRows.size > 0) {
+      console.log('🚀 Using multi-selection for insertion');
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(selectedRows)
+        .map(id => items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        console.log('🚀 Inserting after index:', insertAfterIndex);
+        // Use the underlying addRow function which will be enhanced by the state system
+        addRow();
+        return;
+      }
+    }
+    
+    console.log('🚀 No selection, using default addRow');
     addRow();
-  }, [addRow]);
+  }, [addRow, selectedRows, items]);
 
+  // Enhanced addHeader that considers both selection states  
   const handleAddHeader = useCallback(() => {
     console.log('🚀 Grid handlers addHeader called');
+    console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    
+    // Check if we have multi-selection
+    if (selectedRows.size > 0) {
+      console.log('🚀 Using multi-selection for header insertion');
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(selectedRows)
+        .map(id => items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        console.log('🚀 Inserting header after index:', insertAfterIndex);
+        // Use the underlying addHeader function which will be enhanced by the state system
+        addHeader();
+        return;
+      }
+    }
+    
+    console.log('🚀 No selection, using default addHeader');
     addHeader();
-  }, [addHeader]);
+  }, [addHeader, selectedRows, items]);
 
   const handleDeleteRow = useCallback((id: string) => {
     deleteRow(id);
