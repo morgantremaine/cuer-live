@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -13,6 +14,7 @@ export const useRundownStateCoordination = () => {
   
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
   console.log('🔄 State coordination - selectedRowId:', simplifiedState.selectedRowId);
+  console.log('🔄 State coordination - undo canUndo:', simplifiedState.canUndo, 'lastAction:', simplifiedState.lastAction);
   
   // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
@@ -218,10 +220,10 @@ export const useRundownStateCoordination = () => {
     setRundownStartTime: simplifiedState.setStartTime,
     setTimezone: simplifiedState.setTimezone,
     
-    // Simplified no-op functions for compatibility
-    handleUndo: () => null,
-    canUndo: false,
-    lastAction: '',
+    // Properly expose undo functionality from simplified state
+    handleUndo: simplifiedState.undo,
+    canUndo: simplifiedState.canUndo,
+    lastAction: simplifiedState.lastAction || '',
     isConnected: false,
     isProcessingRealtimeUpdate: false
   }), [simplifiedState, showColumnManager, gridInteractions.selectedRows, enhancedAddRow, enhancedAddHeader]);

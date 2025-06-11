@@ -49,6 +49,7 @@ export const useSimplifiedRundownState = () => {
   // Standalone undo system
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, columns, title) => {
+      console.log('🔄 Applying undo state:', { itemsCount: items.length, columnsCount: columns.length, title });
       // Apply undo state using existing actions
       actions.setItems(items);
       actions.setColumns(columns);
@@ -63,6 +64,7 @@ export const useSimplifiedRundownState = () => {
     
     // Save undo state before making changes (for significant changes)
     if (field === 'name' || field === 'duration' || field === 'script') {
+      console.log('💾 Saving undo state before updateItem');
       saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
     }
     
@@ -199,6 +201,7 @@ export const useSimplifiedRundownState = () => {
     updateItem: enhancedUpdateItem,
 
     toggleFloatRow: useCallback((id: string) => {
+      console.log('💾 Saving undo state before toggle float');
       saveUndoState(state.items, state.columns, state.title, 'Toggle float');
       const item = state.items.find(i => i.id === id);
       if (item) {
@@ -207,22 +210,26 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
+      console.log('💾 Saving undo state before delete row');
       saveUndoState(state.items, state.columns, state.title, 'Delete row');
       actions.deleteItem(id);
     }, [actions.deleteItem, state.items, state.columns, state.title, saveUndoState]),
 
     addRow: useCallback(() => {
+      console.log('💾 Saving undo state before add row');
       saveUndoState(state.items, state.columns, state.title, 'Add segment');
       helpers.addRow();
     }, [helpers.addRow, state.items, state.columns, state.title, saveUndoState]),
 
     addHeader: useCallback(() => {
+      console.log('💾 Saving undo state before add header');
       saveUndoState(state.items, state.columns, state.title, 'Add header');
       helpers.addHeader();
     }, [helpers.addHeader, state.items, state.columns, state.title, saveUndoState]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
+        console.log('💾 Saving undo state before title change');
         saveUndoState(state.items, state.columns, state.title, 'Change title');
         actions.setTitle(newTitle);
       }
@@ -265,6 +272,7 @@ export const useSimplifiedRundownState = () => {
 
   const addRowAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding row at index:', insertIndex);
+    console.log('💾 Saving undo state before add row at index');
     saveUndoState(state.items, state.columns, state.title, 'Add segment');
     if (helpers.addRow && typeof helpers.addRow === 'function') {
       helpers.addRow(insertIndex);
@@ -275,6 +283,7 @@ export const useSimplifiedRundownState = () => {
 
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding header at index:', insertIndex);
+    console.log('💾 Saving undo state before add header at index');
     saveUndoState(state.items, state.columns, state.title, 'Add header');
     if (helpers.addHeader && typeof helpers.addHeader === 'function') {
       helpers.addHeader(insertIndex);
@@ -282,6 +291,8 @@ export const useSimplifiedRundownState = () => {
       helpers.addHeader();
     }
   }, [helpers, state.items, state.columns, state.title, saveUndoState]);
+
+  console.log('🔍 Simplified state debug - canUndo:', canUndo, 'lastAction:', lastAction);
 
   return {
     // Core state with calculated values
@@ -351,6 +362,7 @@ export const useSimplifiedRundownState = () => {
     addHeaderAtIndex,
     
     addColumn: (column: Column) => {
+      console.log('💾 Saving undo state before add column');
       saveUndoState(state.items, state.columns, state.title, 'Add column');
       actions.setColumns([...(state.columns || defaultColumns), column]);
     },
@@ -359,7 +371,7 @@ export const useSimplifiedRundownState = () => {
       actions.updateColumn(columnId, { width });
     },
 
-    // Undo functionality
+    // Undo functionality - properly expose these
     undo,
     canUndo,
     lastAction
