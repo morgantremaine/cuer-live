@@ -42,11 +42,8 @@ const PlaybackControls = ({
       if (selectedRowId) {
         console.log('🎮 Playing selected row:', selectedRowId);
         onPlay(selectedRowId);
-      } else if (currentSegmentId) {
-        console.log('🎮 Resuming current segment:', currentSegmentId);
-        onPlay(currentSegmentId);
       } else {
-        console.log('🎮 Playing first segment');
+        console.log('🎮 Playing from current state');
         onPlay();
       }
     }
@@ -64,8 +61,9 @@ const PlaybackControls = ({
 
   return (
     <div className="flex items-center space-x-2">
-      {timeRemaining > 0 && (
-        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border">
+      {/* Always show timer when there's a current segment */}
+      {currentSegmentId && (
+        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border min-w-[50px] text-center">
           {formatTime(timeRemaining)}
         </div>
       )}
@@ -86,7 +84,7 @@ const PlaybackControls = ({
         size={size}
         title={isPlaying ? "Pause" : "Play"}
       >
-        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-blue-500" />}
       </Button>
       
       <Button
