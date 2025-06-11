@@ -102,19 +102,19 @@ export const useRundownStateCoordination = () => {
     enabled: true
   });
 
-  // Interaction handlers (selection, drag/drop, clipboard) with proper calculateEndTime
+  // Interaction handlers (selection, drag/drop, clipboard) - Fix the function call
   const interactions = useRundownInteractionHandlers(
     core.items,
     core.setItems,
     core.updateItem,
-    () => core.addRow(calculateEndTime), // Fix: Pass calculateEndTime function
-    () => core.addHeader(), // Fix: Remove parameters
+    () => core.addRow(calculateEndTime), // Pass wrapped function
+    () => core.addHeader(), // Pass wrapped function
     core.deleteRow,
     core.toggleFloatRow,
     core.deleteMultipleRows,
     core.addMultipleRows,
     core.handleDeleteColumn,
-    calculateEndTime, // Add calculateEndTime
+    calculateEndTime,
     (id: string, color: string) => {
       // Implement selectColor - this was missing
       core.updateItem(id, 'color', color);
@@ -201,7 +201,7 @@ export const useRundownStateCoordination = () => {
   // Memoized state objects
   const coreState = useMemo(() => ({
     // Time and basic info
-    currentTime: new Date(), // Fix: Return Date object, not string
+    currentTime: new Date(),
     timezone,
     rundownTitle,
     setRundownTitle: wrappedSetRundownTitle,
@@ -219,7 +219,7 @@ export const useRundownStateCoordination = () => {
     getRowNumber: core.getRowNumber,
     calculateHeaderDuration: core.calculateHeaderDuration,
     calculateTotalRuntime: core.calculateTotalRuntime,
-    calculateEndTime: calculateEndTime, // Add missing calculateEndTime
+    calculateEndTime: calculateEndTime,
 
     // Operations - use wrapped versions for realtime tracking
     updateItem: wrappedUpdateItem,
@@ -251,8 +251,8 @@ export const useRundownStateCoordination = () => {
     handleLoadLayout: core.handleLoadLayout,
 
     // UI State
-    showColumnManager: false, // Add missing property
-    setShowColumnManager: () => {}, // Add missing property
+    showColumnManager: false,
+    setShowColumnManager: () => {},
 
     // State tracking
     hasUnsavedChanges: core.hasUnsavedChanges,
