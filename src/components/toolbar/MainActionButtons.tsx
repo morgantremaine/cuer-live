@@ -33,6 +33,25 @@ const MainActionButtons = ({
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const handleUndo = () => {
+    console.log('🔄 MainActionButtons handleUndo called, canUndo:', canUndo);
+    if (!canUndo) {
+      console.log('❌ Cannot undo - no states available');
+      return;
+    }
+    
+    console.log('🔄 Calling onUndo function');
+    const result = onUndo();
+    
+    if (result) {
+      toast({
+        title: `Undid: ${result}`,
+        description: "Action has been undone",
+        variant: "default"
+      });
+    }
+  };
+
   const handleShareRundown = () => {
     if (!rundownId) {
       toast({
@@ -95,7 +114,7 @@ const MainActionButtons = ({
         <span>{isMobile ? 'Header' : 'Add Header'}</span>
       </Button>
       <Button 
-        onClick={onUndo} 
+        onClick={handleUndo} 
         variant="outline" 
         size={buttonSize}
         disabled={!canUndo}

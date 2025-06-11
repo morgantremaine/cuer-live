@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -45,9 +44,11 @@ export const useSimplifiedRundownState = () => {
     rundownStartTime
   );
 
-  // Save undo state for user actions
+  // Save undo state for user actions - reduce logging
   const saveUserAction = useCallback((action: string) => {
-    console.log('💾 Saving user action state:', action);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('💾 Saving user action state:', action);
+    }
     saveStateOnSave(items, columns, rundownTitle, action);
   }, [saveStateOnSave, items, columns, rundownTitle]);
 
@@ -57,7 +58,9 @@ export const useSimplifiedRundownState = () => {
     
     const rundown = savedRundowns.find(r => r.id === rundownId);
     if (rundown) {
-      console.log('📚 Loading rundown data:', rundown.title);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📚 Loading rundown data:', rundown.title);
+      }
       setItems(rundown.items || []);
       setColumns(rundown.columns || []);
       setRundownTitle(rundown.title || 'Untitled Rundown');
@@ -66,28 +69,44 @@ export const useSimplifiedRundownState = () => {
       
       // Load undo history
       if (rundown.undo_history && Array.isArray(rundown.undo_history)) {
-        console.log('📚 Loading undo history:', rundown.undo_history.length, 'states');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📚 Loading undo history:', rundown.undo_history.length, 'states');
+        }
         loadUndoHistory(rundown.undo_history);
       }
     }
   }, [savedRundowns, loading, rundownId, loadUndoHistory]);
 
-  // Enhanced undo handler
+  // Enhanced undo handler with better logging and error handling
   const handleUndo = useCallback(() => {
     if (!canUndo) {
-      console.log('❌ Cannot undo - no states available');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('❌ Cannot undo - no states available');
+      }
       return null;
     }
 
-    console.log('🔄 Executing undo...');
-    const result = undo(
-      setItems,
-      setColumns,
-      setRundownTitle
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔄 Executing undo...');
+    }
+    
+    try {
+      const result = undo(
+        setItems,
+        setColumns,
+        setRundownTitle
+      );
 
-    console.log('✅ Undo completed:', result);
-    return result;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Undo completed:', result);
+      }
+      return result;
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Undo failed:', error);
+      }
+      return null;
+    }
   }, [undo, canUndo]);
 
   const addItem = useCallback((item: RundownItem) => {

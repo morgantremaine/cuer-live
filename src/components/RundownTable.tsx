@@ -80,20 +80,20 @@ const RundownTable = ({
   onAddHeader
 }: RundownTableProps) => {
 
-  console.log('🎯 RundownTable render state:', {
-    itemsCount: items.length,
-    draggedItemIndex,
-    dropTargetIndex,
-    isDraggingMultiple,
-    selectedRowsCount: selectedRows.size,
-    selectedRowId
-  });
+  // Reduce console logging - only log critical state changes in development
+  if (process.env.NODE_ENV === 'development' && (draggedItemIndex !== null || dropTargetIndex !== null)) {
+    console.log('🎯 RundownTable drag state:', {
+      itemsCount: items.length,
+      draggedItemIndex,
+      dropTargetIndex,
+      isDraggingMultiple
+    });
+  }
 
   // Handler for drag over events on the table container
   const handleTableDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🚀 Table container drag over, dropTargetIndex:', dropTargetIndex);
     onDragOver(e);
   };
 
@@ -101,7 +101,6 @@ const RundownTable = ({
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🚀 Row drag over for index:', targetIndex, 'current dropTargetIndex:', dropTargetIndex);
     
     // Call the parent handler with target index
     onDragOver(e, targetIndex);
@@ -120,8 +119,6 @@ const RundownTable = ({
             const isActuallySelected = isMultiSelected || isSingleSelected;
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
-
-            console.log(`🎯 Table rendering item ${item.id}: multiSelected=${isMultiSelected}, singleSelected=${isSingleSelected}, actuallySelected=${isActuallySelected}, dropTargetIndex=${dropTargetIndex}, currentIndex=${index}`);
 
             return (
               <React.Fragment key={item.id}>
@@ -170,7 +167,6 @@ const RundownTable = ({
                   onDragStart={onDragStart}
                   onDragOver={(e) => handleRowDragOver(e, index)}
                   onDrop={(e) => {
-                    console.log('🚀 Row drop for index:', index);
                     onDrop(e, index);
                   }}
                   onCopySelectedRows={onCopySelectedRows}
