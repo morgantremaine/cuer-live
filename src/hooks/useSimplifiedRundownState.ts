@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
+import { usePlaybackControls } from './usePlaybackControls';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { defaultRundownItems } from '@/data/defaultRundownItems';
@@ -26,8 +27,7 @@ export const useSimplifiedRundownState = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
-
-  console.log('🎯 useSimplifiedRundownState - selectedRowId is:', selectedRowId);
+  const [showcallerActivity, setShowcallerActivity] = useState(false);
 
   // Initialize with default data
   const {
@@ -44,6 +44,25 @@ export const useSimplifiedRundownState = () => {
 
   // Auto-save functionality
   const { isSaving } = useSimpleAutoSave(state, rundownId, actions.markSaved);
+
+  // Initialize playback controls with showcaller functionality
+  const {
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward,
+    isController
+  } = usePlaybackControls(
+    state.items,
+    (id: string, field: string, value: string) => {
+      actions.updateItem(id, { [field]: value });
+    },
+    rundownId,
+    setShowcallerActivity
+  );
 
   // Update current time every second
   useEffect(() => {
@@ -196,53 +215,39 @@ export const useSimplifiedRundownState = () => {
     return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
-  // Row selection handlers with better logging and proper state management
+  // Row selection handlers
   const handleRowSelection = useCallback((itemId: string) => {
-    console.log('🎯 handleRowSelection called with itemId:', itemId, 'current selectedRowId:', selectedRowId);
-    setSelectedRowId(prev => {
-      const newValue = prev === itemId ? null : itemId;
-      console.log('🎯 selectedRowId changing from', prev, 'to', newValue);
-      return newValue;
-    });
-  }, [selectedRowId]);
+    setSelectedRowId(prev => prev === itemId ? null : itemId);
+  }, []);
 
   const clearRowSelection = useCallback(() => {
-    console.log('🎯 clearRowSelection called, clearing selectedRowId from:', selectedRowId);
     setSelectedRowId(null);
-  }, [selectedRowId]);
+  }, []);
 
-  // Define addRow and addHeader functions with proper positioning and logging
+  // Define addRow and addHeader functions with proper positioning
   const addRowFunction = useCallback((targetRowId?: string | null) => {
     const rowIdToUse = targetRowId || selectedRowId;
-    console.log('🚀 addRowFunction called with targetRowId:', targetRowId, 'selectedRowId:', selectedRowId, 'using:', rowIdToUse);
     
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
-      console.log('🚀 Found target item at index:', targetIndex);
       if (targetIndex !== -1) {
-        console.log('🚀 Adding row after index:', targetIndex);
         helpers.addRow(targetIndex + 1);
         return;
       }
     }
-    console.log('🚀 No target found, adding at end');
     helpers.addRow();
   }, [helpers, selectedRowId, state.items]);
 
   const addHeaderFunction = useCallback((targetRowId?: string | null) => {
     const rowIdToUse = targetRowId || selectedRowId;
-    console.log('🚀 addHeaderFunction called with targetRowId:', targetRowId, 'selectedRowId:', selectedRowId, 'using:', rowIdToUse);
     
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
-      console.log('🚀 Found target item at index:', targetIndex);
       if (targetIndex !== -1) {
-        console.log('🚀 Adding header after index:', targetIndex);
         helpers.addHeader(targetIndex + 1);
         return;
       }
     }
-    console.log('🚀 No target found, adding at end');
     helpers.addHeader();
   }, [helpers, selectedRowId, state.items]);
 
@@ -256,8 +261,8 @@ export const useSimplifiedRundownState = () => {
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
     timezone: state.timezone,
-    currentSegmentId: state.currentSegmentId,
-    isPlaying: state.isPlaying,
+    currentSegmentId,
+    isPlaying,
     
     // Selection state
     selectedRowId,
@@ -270,6 +275,15 @@ export const useSimplifiedRundownState = () => {
     isLoading,
     hasUnsavedChanges: state.hasUnsavedChanges,
     isSaving,
+    showcallerActivity,
+    
+    // Playback controls
+    play,
+    pause,
+    forward,
+    backward,
+    isController,
+    timeRemaining,
     
     // Calculations
     totalRuntime,
