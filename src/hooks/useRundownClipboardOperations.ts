@@ -56,27 +56,33 @@ export const useRundownClipboardOperations = ({
   hasClipboardData
 }: UseRundownClipboardOperationsProps) => {
   const handleCopySelectedRows = useCallback(() => {
+    console.log('🔄 Copy operation started');
     const selectedItems = items.filter(item => selectedRows.has(item.id));
+    console.log('📋 Items to copy:', selectedItems.length);
     if (selectedItems.length > 0) {
       copyItems(selectedItems);
       clearSelection();
+      console.log('✅ Copy completed');
     }
   }, [items, selectedRows, copyItems, clearSelection]);
 
   const handlePasteRows = useCallback(() => {
+    console.log('🔄 Paste operation started');
+    console.log('📋 Clipboard items available:', clipboardItems.length);
+    console.log('🎯 Selected rows:', Array.from(selectedRows));
+    console.log('📊 Current items count:', items.length);
+    
     if (clipboardItems.length > 0) {
-      console.log('Pasting items, selectedRows:', Array.from(selectedRows));
-      console.log('Current items length:', items.length);
-      
       const selectedIds = Array.from(selectedRows);
       let insertIndex: number;
       
       if (selectedIds.length > 0) {
+        console.log('🎯 Finding insertion point for selected rows...');
         // Find the indices of all selected rows
         const selectedIndices = selectedIds
           .map(id => {
             const index = items.findIndex(item => item.id === id);
-            console.log(`Found item ${id} at index ${index}`);
+            console.log(`📍 Item ${id} found at index ${index}`);
             return index;
           })
           .filter(index => index !== -1);
@@ -85,16 +91,16 @@ export const useRundownClipboardOperations = ({
           // Insert after the last selected item
           const highestSelectedIndex = Math.max(...selectedIndices);
           insertIndex = highestSelectedIndex + 1;
-          console.log('Inserting at index:', insertIndex, 'after selected index:', highestSelectedIndex);
+          console.log(`✅ Will insert at index ${insertIndex} (after row ${highestSelectedIndex})`);
         } else {
           // If no valid selection found, insert at the end
           insertIndex = items.length;
-          console.log('No valid selection, inserting at end:', insertIndex);
+          console.log(`⚠️ No valid selection found, inserting at end: ${insertIndex}`);
         }
       } else {
         // If no selection, insert at the end
         insertIndex = items.length;
-        console.log('No selection, inserting at end:', insertIndex);
+        console.log(`📌 No selection, inserting at end: ${insertIndex}`);
       }
 
       const itemsToPaste = clipboardItems.map(item => ({
@@ -102,14 +108,14 @@ export const useRundownClipboardOperations = ({
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
       
-      console.log('About to insert', itemsToPaste.length, 'items at index:', insertIndex);
+      console.log(`🔄 About to insert ${itemsToPaste.length} items at index ${insertIndex}`);
       
       setItems(prevItems => {
         const newItems = [...prevItems];
         // Insert at the calculated position
         newItems.splice(insertIndex, 0, ...itemsToPaste);
         
-        console.log('New items length after insert:', newItems.length);
+        console.log(`✅ Items inserted. New total: ${newItems.length}`);
         
         // Update header segment names for all headers in the correct order
         return updateHeaderSegmentNames(newItems);
@@ -117,6 +123,9 @@ export const useRundownClipboardOperations = ({
       
       markAsChanged();
       clearSelection();
+      console.log('✅ Paste operation completed');
+    } else {
+      console.log('⚠️ No clipboard items to paste');
     }
   }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection]);
 
