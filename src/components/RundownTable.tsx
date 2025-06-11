@@ -98,6 +98,15 @@ const RundownTable = ({
 
             return (
               <React.Fragment key={item.id}>
+                {/* Show drop indicator line ABOVE this row if it's the drop target */}
+                {dropTargetIndex === index && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1 bg-blue-500 w-full animate-pulse"></div>
+                    </td>
+                  </tr>
+                )}
+                
                 {/* Show green line ABOVE the current segment */}
                 {isCurrentlyPlaying && (
                   <tr>
@@ -142,6 +151,15 @@ const RundownTable = ({
                   onAddHeader={onAddHeader}
                   getColumnWidth={getColumnWidth}
                 />
+                
+                {/* Show drop indicator line AFTER the last row if it's the drop target */}
+                {dropTargetIndex === items.length && index === items.length - 1 && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-1 bg-blue-500 w-full animate-pulse"></div>
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             );
           })}
