@@ -33,15 +33,15 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    (calculateEndTime: (startTime: string, duration: string) => string) => {
-      // Call addRow with the currently selected row ID
-      console.log('🚀 Grid interactions addRow called with selectedRowId:', simplifiedState.selectedRowId);
-      simplifiedState.addRow(simplifiedState.selectedRowId);
+    (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => {
+      // Pass the selected row ID correctly to addRow
+      console.log('🚀 Grid interactions addRow called with selectedRowId:', selectedRowId);
+      simplifiedState.addRow(selectedRowId);
     },
-    () => {
-      // Call addHeader with the currently selected row ID
-      console.log('🚀 Grid interactions addHeader called with selectedRowId:', simplifiedState.selectedRowId);
-      simplifiedState.addHeader(simplifiedState.selectedRowId);
+    (selectedRowId?: string) => {
+      // Pass the selected row ID correctly to addHeader
+      console.log('🚀 Grid interactions addHeader called with selectedRowId:', selectedRowId);
+      simplifiedState.addHeader(selectedRowId);
     },
     simplifiedState.deleteRow,
     simplifiedState.toggleFloat,
@@ -108,7 +108,7 @@ export const useRundownStateCoordination = () => {
     setRundownTitle: simplifiedState.setTitle,
     getRowNumber: simplifiedState.getRowNumber,
     
-    // Row operations - add these missing functions with proper selected row handling
+    // Row operations - fix these to properly pass selectedRowId
     addRow: () => {
       console.log('🚀 Core state addRow called with selectedRowId:', simplifiedState.selectedRowId);
       simplifiedState.addRow(simplifiedState.selectedRowId);

@@ -1,26 +1,26 @@
 import { useCallback } from 'react';
-import { useRundownHandlers } from '@/hooks/useRundownHandlers';
+import { RundownItem } from '@/types/rundown';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
-  addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => void;
+  addHeader: (selectedRowId?: string) => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
   deleteMultipleRows: (ids: string[]) => void;
-  addMultipleRows: (items: any[], calculateEndTime: (startTime: string, duration: string) => string) => void;
+  addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void;
   handleDeleteColumn: (columnId: string) => void;
-  setItems: (updater: (prev: any[]) => any[]) => void;
+  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
   selectColor: (id: string, color: string) => void;
   markAsChanged: () => void;
   selectedRows: Set<string>;
   clearSelection: () => void;
-  copyItems: (items: any[]) => void;
-  clipboardItems: any[];
+  copyItems: (items: RundownItem[]) => void;
+  clipboardItems: RundownItem[];
   hasClipboardData: () => boolean;
-  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: any[]) => void;
-  items: any[];
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[]) => void;
+  items: RundownItem[];
   setRundownTitle: (title: string) => void;
 }
 
@@ -46,50 +46,55 @@ export const useRundownGridHandlers = ({
   items,
   setRundownTitle
 }: UseRundownGridHandlersProps) => {
-  
-  const {
-    handleUpdateItem,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    handleDeleteColumnWithCleanup
-  } = useRundownHandlers({
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    toggleFloatRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    handleDeleteColumn,
-    setItems,
-    calculateEndTime,
-    selectColor: (id: string, color: string, updateItemFn: (id: string, field: string, value: string) => void) => {
-      selectColor(id, color);
-    },
-    markAsChanged
-  });
 
-  const handleAddRow = useCallback((selectedRowId?: string | null) => {
-    addRow(calculateEndTime, selectedRowId, selectedRows);
-    markAsChanged();
-  }, [addRow, calculateEndTime, selectedRows, markAsChanged]);
+  const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
+    updateItem(id, field, value);
+  }, [updateItem]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string | null) => {
-    addHeader(selectedRowId, selectedRows);
-    markAsChanged();
-  }, [addHeader, selectedRows, markAsChanged]);
+  const handleAddRow = useCallback((selectedRowId?: string) => {
+    console.log('🚀 Grid handlers addRow called with selectedRowId:', selectedRowId);
+    addRow(calculateEndTime, selectedRowId);
+  }, [addRow, calculateEndTime]);
+
+  const handleAddHeader = useCallback((selectedRowId?: string) => {
+    console.log('🚀 Grid handlers addHeader called with selectedRowId:', selectedRowId);
+    addHeader(selectedRowId);
+  }, [addHeader]);
+
+  const handleDeleteRow = useCallback((id: string) => {
+    deleteRow(id);
+  }, [deleteRow]);
+
+  const handleToggleFloat = useCallback((id: string) => {
+    toggleFloatRow(id);
+  }, [toggleFloatRow]);
+
+  const handleColorSelect = useCallback((id: string, color: string) => {
+    selectColor(id, color);
+  }, [selectColor]);
+
+  const handleDeleteSelectedRows = useCallback(() => {
+    const selectedIds = Array.from(selectedRows);
+    if (selectedIds.length > 0) {
+      deleteMultipleRows(selectedIds);
+      clearSelection();
+    }
+  }, [selectedRows, deleteMultipleRows, clearSelection]);
+
+  const handlePasteRows = useCallback(() => {
+    if (clipboardItems.length > 0) {
+      addMultipleRows(clipboardItems, calculateEndTime);
+    }
+  }, [clipboardItems, addMultipleRows, calculateEndTime]);
+
+  const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
+    handleDeleteColumn(columnId);
+  }, [handleDeleteColumn]);
 
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
-    if (selectedItems.length > 0) {
-      copyItems(selectedItems);
-      console.log('Copied items to clipboard:', selectedItems.length);
-      clearSelection();
-    }
-  }, [items, selectedRows, copyItems, clearSelection]);
+    copyItems(selectedItems);
+  }, [items, selectedRows, copyItems]);
 
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
@@ -97,26 +102,7 @@ export const useRundownGridHandlers = ({
 
   const handleTitleChange = useCallback((title: string) => {
     setRundownTitle(title);
-    markAsChanged();
-  }, [setRundownTitle, markAsChanged]);
-
-  const handlePasteRowsWithClipboard = useCallback(() => {
-    if (hasClipboardData() && clipboardItems.length > 0) {
-      console.log('Pasting items from clipboard:', clipboardItems.length);
-      addMultipleRows(clipboardItems, calculateEndTime);
-      markAsChanged();
-    } else {
-      console.log('No clipboard data to paste');
-    }
-  }, [hasClipboardData, clipboardItems, addMultipleRows, calculateEndTime, markAsChanged]);
-
-  const handleDeleteSelectedRowsWithClear = useCallback(() => {
-    const selectedIds = Array.from(selectedRows);
-    if (selectedIds.length > 0) {
-      deleteMultipleRows(selectedIds);
-      clearSelection();
-    }
-  }, [selectedRows, deleteMultipleRows, clearSelection]);
+  }, [setRundownTitle]);
 
   return {
     handleUpdateItem,
@@ -125,8 +111,8 @@ export const useRundownGridHandlers = ({
     handleDeleteRow,
     handleToggleFloat,
     handleColorSelect,
-    handleDeleteSelectedRows: handleDeleteSelectedRowsWithClear,
-    handlePasteRows: handlePasteRowsWithClipboard,
+    handleDeleteSelectedRows,
+    handlePasteRows,
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
