@@ -27,11 +27,13 @@ export const useRundownRowOperations = ({
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handleAddRow = useCallback((selectedRowId?: string | null) => {
-    addRow(calculateEndTime, selectedRowId, selectedRows);
+    // Pass both single selection and multi-selection information
+    addRow(calculateEndTime, selectedRowId, selectedRows.size > 0 ? selectedRows : undefined);
   }, [addRow, calculateEndTime, selectedRows]);
 
   const handleAddHeader = useCallback((selectedRowId?: string | null) => {
-    addHeader(selectedRowId, selectedRows);
+    // Pass both single selection and multi-selection information
+    addHeader(selectedRowId, selectedRows.size > 0 ? selectedRows : undefined);
   }, [addHeader, selectedRows]);
 
   return {

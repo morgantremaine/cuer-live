@@ -36,7 +36,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  const addRow = useCallback((calculateEndTime: any, insertAfterIndex?: number) => {
+  const addRow = useCallback((calculateEndTime: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     const newItem: RundownItem = {
       id: uuidv4(),
       type: 'regular',
@@ -56,20 +56,35 @@ export const useRundownItems = (markAsChanged: () => void) => {
     };
 
     setItems(prevItems => {
-      let newItems;
-      if (insertAfterIndex !== undefined) {
-        newItems = [...prevItems];
-        newItems.splice(insertAfterIndex + 1, 0, newItem);
-      } else {
-        newItems = [...prevItems, newItem];
+      let insertIndex = prevItems.length; // Default to end
+
+      // Determine insertion point based on selection
+      if (selectedRows && selectedRows.size > 0) {
+        // Find the highest index of selected rows
+        const selectedIndices = Array.from(selectedRows)
+          .map(id => prevItems.findIndex(item => item.id === id))
+          .filter(index => index !== -1);
+        
+        if (selectedIndices.length > 0) {
+          insertIndex = Math.max(...selectedIndices) + 1;
+        }
+      } else if (selectedRowId) {
+        // Find index of single selected row
+        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          insertIndex = selectedIndex + 1;
+        }
       }
+
+      const newItems = [...prevItems];
+      newItems.splice(insertIndex, 0, newItem);
       
       markAsChanged();
       return newItems;
     });
   }, [markAsChanged]);
 
-  const addHeader = useCallback((insertAfterIndex?: number) => {
+  const addHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     setItems(prevItems => {
       const newItem: RundownItem = {
         id: uuidv4(),
@@ -89,13 +104,28 @@ export const useRundownItems = (markAsChanged: () => void) => {
         isFloating: false
       };
 
-      let newItems;
-      if (insertAfterIndex !== undefined) {
-        newItems = [...prevItems];
-        newItems.splice(insertAfterIndex + 1, 0, newItem);
-      } else {
-        newItems = [...prevItems, newItem];
+      let insertIndex = prevItems.length; // Default to end
+
+      // Determine insertion point based on selection
+      if (selectedRows && selectedRows.size > 0) {
+        // Find the highest index of selected rows
+        const selectedIndices = Array.from(selectedRows)
+          .map(id => prevItems.findIndex(item => item.id === id))
+          .filter(index => index !== -1);
+        
+        if (selectedIndices.length > 0) {
+          insertIndex = Math.max(...selectedIndices) + 1;
+        }
+      } else if (selectedRowId) {
+        // Find index of single selected row
+        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          insertIndex = selectedIndex + 1;
+        }
       }
+
+      const newItems = [...prevItems];
+      newItems.splice(insertIndex, 0, newItem);
       
       // Renumber all headers after adding the new one
       const renumberedItems = renumberItems(newItems);
