@@ -142,14 +142,14 @@ const HeaderRow = (props: HeaderRowProps) => {
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
       >
-        {/* Row number column - use exact same structure as RegularRow */}
+        {/* Row number column - EXACT same structure as RegularRowContent */}
         <td className="px-2 py-1 text-sm font-mono align-middle border-r border-border w-12 min-w-12">
           <div className="flex items-center space-x-1">
             <span className="text-foreground font-bold">H</span>
           </div>
         </td>
 
-        {/* Data columns - use exact same structure as RegularRow */}
+        {/* Data columns - EXACT same structure as RegularRowContent */}
         {columns.map((column) => (
           <td
             key={column.id}
