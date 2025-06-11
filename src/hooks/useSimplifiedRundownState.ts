@@ -236,12 +236,24 @@ export const useSimplifiedRundownState = () => {
   // Enhanced row addition functions that support insertion at specific index
   const addRowAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding row at index:', insertIndex);
-    helpers.addRowAtIndex(insertIndex);
+    // Use the available addRow function with insertIndex parameter if supported
+    if (helpers.addRow && typeof helpers.addRow === 'function') {
+      helpers.addRow(insertIndex);
+    } else {
+      // Fallback to regular addRow
+      helpers.addRow();
+    }
   }, [helpers]);
 
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding header at index:', insertIndex);
-    helpers.addHeaderAtIndex(insertIndex);
+    // Use the available addHeader function with insertIndex parameter if supported  
+    if (helpers.addHeader && typeof helpers.addHeader === 'function') {
+      helpers.addHeader(insertIndex);
+    } else {
+      // Fallback to regular addHeader
+      helpers.addHeader();
+    }
   }, [helpers]);
 
   return {
