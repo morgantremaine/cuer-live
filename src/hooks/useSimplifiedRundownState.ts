@@ -220,16 +220,19 @@ export const useSimplifiedRundownState = () => {
 
   // Row selection handlers
   const handleRowSelection = useCallback((itemId: string) => {
+    console.log('🎯 Simplified state handleRowSelection called with:', itemId);
     setSelectedRowId(prev => prev === itemId ? null : itemId);
   }, []);
 
   const clearRowSelection = useCallback(() => {
+    console.log('🎯 Simplified state clearRowSelection called');
     setSelectedRowId(null);
   }, []);
 
-  // Define addRow and addHeader functions with proper positioning
-  const addRowFunction = useCallback((targetRowId?: string | null) => {
-    const rowIdToUse = targetRowId || selectedRowId;
+  // Define addRow and addHeader functions with proper positioning that use current selectedRowId
+  const addRowFunction = useCallback((overrideRowId?: string | null) => {
+    const rowIdToUse = overrideRowId !== undefined ? overrideRowId : selectedRowId;
+    console.log('🚀 Simplified state addRow called with rowIdToUse:', rowIdToUse, 'from selectedRowId:', selectedRowId);
     
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
@@ -241,8 +244,9 @@ export const useSimplifiedRundownState = () => {
     helpers.addRow();
   }, [helpers, selectedRowId, state.items]);
 
-  const addHeaderFunction = useCallback((targetRowId?: string | null) => {
-    const rowIdToUse = targetRowId || selectedRowId;
+  const addHeaderFunction = useCallback((overrideRowId?: string | null) => {
+    const rowIdToUse = overrideRowId !== undefined ? overrideRowId : selectedRowId;
+    console.log('🚀 Simplified state addHeader called with rowIdToUse:', rowIdToUse, 'from selectedRowId:', selectedRowId);
     
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
@@ -319,7 +323,7 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations with proper signatures
+    // Row operations with proper signatures that use the current selectedRowId
     addRow: addRowFunction,
     addHeader: addHeaderFunction,
     

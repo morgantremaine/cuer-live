@@ -34,12 +34,12 @@ export const useRundownStateCoordination = () => {
     },
     simplifiedState.updateItem,
     (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => {
-      // Pass the selected row ID correctly to addRow
+      // Use the passed selectedRowId or fall back to the current selectedRowId
       console.log('🚀 Grid interactions addRow called with selectedRowId:', selectedRowId);
       simplifiedState.addRow(selectedRowId);
     },
     (selectedRowId?: string) => {
-      // Pass the selected row ID correctly to addHeader
+      // Use the passed selectedRowId or fall back to the current selectedRowId
       console.log('🚀 Grid interactions addHeader called with selectedRowId:', selectedRowId);
       simplifiedState.addHeader(selectedRowId);
     },
@@ -108,14 +108,14 @@ export const useRundownStateCoordination = () => {
     setRundownTitle: simplifiedState.setTitle,
     getRowNumber: simplifiedState.getRowNumber,
     
-    // Row operations - fix these to properly pass selectedRowId
+    // Row operations - use the functions that automatically use selectedRowId
     addRow: () => {
       console.log('🚀 Core state addRow called with selectedRowId:', simplifiedState.selectedRowId);
-      simplifiedState.addRow(simplifiedState.selectedRowId);
+      simplifiedState.addRow();
     },
     addHeader: () => {
       console.log('🚀 Core state addHeader called with selectedRowId:', simplifiedState.selectedRowId);
-      simplifiedState.addHeader(simplifiedState.selectedRowId);
+      simplifiedState.addHeader();
     },
     
     // Calculations
