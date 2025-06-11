@@ -65,12 +65,9 @@ export const useSimplifiedRundownState = () => {
       
       // Mark as changed and trigger auto-save after undo
       setTimeout(() => {
-        // Force a change to trigger auto-save
-        actions.markSaved(); // Clear the saved state first
-        actions.setItems([...items]); // Trigger change detection
         setUndoActive(false);
-        console.log('🔄 Triggered auto-save after undo');
-      }, 100);
+        console.log('🔄 Re-enabled auto-save after undo');
+      }, 1000);
     },
     setUndoActive
   });
@@ -236,7 +233,7 @@ export const useSimplifiedRundownState = () => {
     return calculateTotalRuntime(state.items);
   }, [state.items]);
 
-  // Enhanced actions with undo state saving
+  // Enhanced actions with undo state saving - debounce multiple rapid changes
   const enhancedActions = {
     ...actions,
     ...helpers,
@@ -364,7 +361,7 @@ export const useSimplifiedRundownState = () => {
     currentTime,
     rundownId,
     isLoading,
-    hasUnsavedChanges: state.hasUnsavedChanges,
+    hasUnsavedChanges: state.hasUnsavedChanges && !isSaving,
     isSaving,
     showcallerActivity,
     
