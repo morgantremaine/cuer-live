@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -14,7 +13,7 @@ export const useRundownStateCoordination = () => {
   
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
   
-  // Grid interactions
+  // Grid interactions with correct function signatures
   const gridInteractions = useRundownGridInteractions(
     simplifiedState.items,
     (updater) => {
@@ -24,8 +23,8 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    simplifiedState.addRow,
-    simplifiedState.addHeader,
+    (calculateEndTime: (startTime: string, duration: string) => string) => simplifiedState.addRow(),
+    () => simplifiedState.addHeader(),
     simplifiedState.deleteRow,
     simplifiedState.toggleFloat,
     simplifiedState.deleteMultipleItems,
@@ -74,6 +73,11 @@ export const useRundownStateCoordination = () => {
     isLoading: simplifiedState.isLoading,
     hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
     isSaving: simplifiedState.isSaving,
+    
+    // Row selection state
+    selectedRowId: simplifiedState.selectedRowId,
+    handleRowSelection: simplifiedState.handleRowSelection,
+    clearRowSelection: simplifiedState.clearRowSelection,
     
     // UI state
     showColumnManager,

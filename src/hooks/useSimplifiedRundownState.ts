@@ -221,7 +221,7 @@ export const useSimplifiedRundownState = () => {
       const targetId = targetRowId || selectedRowId;
       const targetIndex = state.items.findIndex(item => item.id === targetId);
       if (targetIndex !== -1) {
-        helpers.addRowAfterIndex(targetIndex);
+        helpers.addRow(targetIndex + 1);
       } else {
         helpers.addRow();
       }
@@ -237,7 +237,7 @@ export const useSimplifiedRundownState = () => {
       const targetId = targetRowId || selectedRowId;
       const targetIndex = state.items.findIndex(item => item.id === targetId);
       if (targetIndex !== -1) {
-        helpers.addHeaderAfterIndex(targetIndex);
+        helpers.addHeader(targetIndex + 1);
       } else {
         helpers.addHeader();
       }
