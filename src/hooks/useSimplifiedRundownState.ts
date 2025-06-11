@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -194,39 +193,53 @@ export const useSimplifiedRundownState = () => {
     return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
-  // Define addRow and addHeader functions with proper positioning
-  const addRowFunction = useCallback((targetRowId?: string) => {
+  // Row selection handlers with better logging
+  const handleRowSelection = useCallback((itemId: string) => {
+    console.log('🎯 handleRowSelection called with itemId:', itemId, 'current selectedRowId:', selectedRowId);
+    setSelectedRowId(prev => {
+      const newValue = prev === itemId ? null : itemId;
+      console.log('🎯 selectedRowId changing from', prev, 'to', newValue);
+      return newValue;
+    });
+  }, [selectedRowId]);
+
+  const clearRowSelection = useCallback(() => {
+    console.log('🎯 clearRowSelection called, clearing selectedRowId from:', selectedRowId);
+    setSelectedRowId(null);
+  }, [selectedRowId]);
+
+  // Define addRow and addHeader functions with proper positioning and logging
+  const addRowFunction = useCallback((targetRowId?: string | null) => {
     const rowIdToUse = targetRowId || selectedRowId;
+    console.log('🚀 addRowFunction called with targetRowId:', targetRowId, 'selectedRowId:', selectedRowId, 'using:', rowIdToUse);
+    
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
+      console.log('🚀 Found target item at index:', targetIndex);
       if (targetIndex !== -1) {
         helpers.addRow(targetIndex + 1);
         return;
       }
     }
+    console.log('🚀 No target found, adding at end');
     helpers.addRow();
   }, [helpers, selectedRowId, state.items]);
 
-  const addHeaderFunction = useCallback((targetRowId?: string) => {
+  const addHeaderFunction = useCallback((targetRowId?: string | null) => {
     const rowIdToUse = targetRowId || selectedRowId;
+    console.log('🚀 addHeaderFunction called with targetRowId:', targetRowId, 'selectedRowId:', selectedRowId, 'using:', rowIdToUse);
+    
     if (rowIdToUse) {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
+      console.log('🚀 Found target item at index:', targetIndex);
       if (targetIndex !== -1) {
         helpers.addHeader(targetIndex + 1);
         return;
       }
     }
+    console.log('🚀 No target found, adding at end');
     helpers.addHeader();
   }, [helpers, selectedRowId, state.items]);
-
-  // Row selection handlers
-  const handleRowSelection = useCallback((itemId: string) => {
-    setSelectedRowId(prev => prev === itemId ? null : itemId);
-  }, []);
-
-  const clearRowSelection = useCallback(() => {
-    setSelectedRowId(null);
-  }, []);
 
   return {
     // Core state with calculated values

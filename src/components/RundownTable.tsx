@@ -17,6 +17,7 @@ interface RundownTableProps {
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
   hasClipboardData: boolean;
+  selectedRowId: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -54,6 +55,7 @@ const RundownTable = ({
   dropTargetIndex,
   currentSegmentId,
   hasClipboardData,
+  selectedRowId,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -93,8 +95,12 @@ const RundownTable = ({
             const status = getRowStatus(item);
             const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
             const isMultiSelected = selectedRows.has(item.id);
+            const isSingleSelected = selectedRowId === item.id;
+            const isActuallySelected = isMultiSelected || isSingleSelected;
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
+
+            console.log(`🎯 Table rendering item ${item.id}: multiSelected=${isMultiSelected}, singleSelected=${isSingleSelected}, actuallySelected=${isActuallySelected}`);
 
             return (
               <React.Fragment key={item.id}>
@@ -106,7 +112,7 @@ const RundownTable = ({
                   showColorPicker={showColorPicker}
                   cellRefs={cellRefs}
                   columns={visibleColumns}
-                  isSelected={isMultiSelected}
+                  isSelected={isActuallySelected}
                   isCurrentlyPlaying={isCurrentlyPlaying}
                   isDraggingMultiple={isDraggingMultiple}
                   selectedRowsCount={selectedRows.size}
