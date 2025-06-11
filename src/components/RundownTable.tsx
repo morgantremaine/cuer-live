@@ -83,12 +83,16 @@ const RundownTable = ({
 
   return (
     <div className="relative w-full overflow-auto bg-background">
+      <div className="sticky top-0 z-20 w-full bg-background">
+        <table className="w-full border-collapse border-0">
+          <RundownTableHeader 
+            visibleColumns={visibleColumns}
+            getColumnWidth={getColumnWidth}
+            updateColumnWidth={updateColumnWidth}
+          />
+        </table>
+      </div>
       <table className="w-full border-collapse border border-border">
-        <RundownTableHeader 
-          visibleColumns={visibleColumns}
-          getColumnWidth={getColumnWidth}
-          updateColumnWidth={updateColumnWidth}
-        />
         <tbody className="bg-background">
           {items.map((item, index) => {
             const rowNumber = getRowNumber(index);
