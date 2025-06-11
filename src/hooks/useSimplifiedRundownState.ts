@@ -217,15 +217,18 @@ export const useSimplifiedRundownState = () => {
   const addRowFunction = useCallback((targetRowId?: string) => {
     console.log('➕ Adding new row after:', targetRowId || selectedRowId || 'end');
     
-    if (targetRowId || selectedRowId) {
-      const targetId = targetRowId || selectedRowId;
-      const targetIndex = state.items.findIndex(item => item.id === targetId);
+    const rowIdToUse = targetRowId || selectedRowId;
+    if (rowIdToUse) {
+      const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       if (targetIndex !== -1) {
+        console.log('🎯 Found target row at index:', targetIndex, 'inserting at:', targetIndex + 1);
         helpers.addRow(targetIndex + 1);
       } else {
+        console.log('🎯 Target row not found, adding at end');
         helpers.addRow();
       }
     } else {
+      console.log('🎯 No target row, adding at end');
       helpers.addRow();
     }
   }, [helpers, selectedRowId, state.items]);
@@ -233,15 +236,18 @@ export const useSimplifiedRundownState = () => {
   const addHeaderFunction = useCallback((targetRowId?: string) => {
     console.log('➕ Adding new header after:', targetRowId || selectedRowId || 'end');
     
-    if (targetRowId || selectedRowId) {
-      const targetId = targetRowId || selectedRowId;
-      const targetIndex = state.items.findIndex(item => item.id === targetId);
+    const rowIdToUse = targetRowId || selectedRowId;
+    if (rowIdToUse) {
+      const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       if (targetIndex !== -1) {
+        console.log('🎯 Found target row at index:', targetIndex, 'inserting header at:', targetIndex + 1);
         helpers.addHeader(targetIndex + 1);
       } else {
+        console.log('🎯 Target row not found, adding header at end');
         helpers.addHeader();
       }
     } else {
+      console.log('🎯 No target row, adding header at end');
       helpers.addHeader();
     }
   }, [helpers, selectedRowId, state.items]);

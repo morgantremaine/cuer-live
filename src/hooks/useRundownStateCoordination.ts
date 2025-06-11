@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -23,8 +24,14 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    (calculateEndTime: (startTime: string, duration: string) => string) => simplifiedState.addRow(),
-    () => simplifiedState.addHeader(),
+    (calculateEndTime: (startTime: string, duration: string) => string) => {
+      // Use the selected row when adding
+      simplifiedState.addRow(simplifiedState.selectedRowId);
+    },
+    () => {
+      // Use the selected row when adding header
+      simplifiedState.addHeader(simplifiedState.selectedRowId);
+    },
     simplifiedState.deleteRow,
     simplifiedState.toggleFloat,
     simplifiedState.deleteMultipleItems,
@@ -90,9 +97,15 @@ export const useRundownStateCoordination = () => {
     setRundownTitle: simplifiedState.setTitle,
     getRowNumber: simplifiedState.getRowNumber,
     
-    // Row operations - add these missing functions
-    addRow: simplifiedState.addRow,
-    addHeader: simplifiedState.addHeader,
+    // Row operations - add these missing functions with proper selected row handling
+    addRow: () => {
+      console.log('🚀 Core state addRow called with selectedRowId:', simplifiedState.selectedRowId);
+      simplifiedState.addRow(simplifiedState.selectedRowId);
+    },
+    addHeader: () => {
+      console.log('🚀 Core state addHeader called with selectedRowId:', simplifiedState.selectedRowId);
+      simplifiedState.addHeader(simplifiedState.selectedRowId);
+    },
     
     // Calculations
     calculateHeaderDuration: (index: number) => {
