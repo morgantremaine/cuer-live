@@ -3,6 +3,7 @@ import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
 import CustomFieldCell from './cells/CustomFieldCell';
+import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -104,20 +105,18 @@ const CellRenderer = ({
     );
   }
 
-  // Use TextAreaCell for script and notes fields
+  // Use ExpandableScriptCell for script and notes fields
   if (column.key === 'script' || column.key === 'notes') {
     return (
-      <TextAreaCell
+      <ExpandableScriptCell
         value={value}
         itemId={item.id}
         cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
-        backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
         onKeyDown={onKeyDown}
       />
     );
