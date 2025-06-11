@@ -164,7 +164,7 @@ const RundownTable = ({
         <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">
           No items to display
         </div>
-      )}
+        )}
     </div>
   );
 };
