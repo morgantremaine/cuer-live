@@ -94,7 +94,7 @@ const RundownTable = ({
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
 
-            console.log(`🎯 Table rendering item ${item.id}: multiSelected=${isMultiSelected}, singleSelected=${isSingleSelected}, actuallySelected=${isActuallySelected}`);
+            console.log(`🎯 Table rendering item ${item.id}: multiSelected=${isMultiSelected}, singleSelected=${isSingleSelected}, actuallySelected=${isActuallySelected}, dropTargetIndex=${dropTargetIndex}, currentIndex=${index}`);
 
             return (
               <React.Fragment key={item.id}>

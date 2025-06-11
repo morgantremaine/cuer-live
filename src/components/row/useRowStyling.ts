@@ -40,6 +40,7 @@ export const useRowStyling = ({
 
   // Add selection styling with ring outline for both headers and regular rows
   if (isSelected) {
+    console.log(`🎨 Applying selection styling to ${isHeader ? 'header' : 'regular'} row`);
     rowClass += ' ring-2 ring-blue-500 ring-inset';
     if (isHeader) {
       rowClass += ' bg-blue-100 dark:bg-blue-950/30';
