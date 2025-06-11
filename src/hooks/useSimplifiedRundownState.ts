@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -212,8 +211,9 @@ export const useSimplifiedRundownState = () => {
       name,
       key,
       isVisible: true,
-      width: '150px'
-      // REMOVED: order property as it doesn't exist in Column type
+      width: '150px',
+      isCustom: true,
+      isEditable: true
     };
     setColumns(prev => [...prev, newColumn]);
   }, []);

@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownDataLoader } from './useRundownDataLoader';
@@ -58,7 +57,7 @@ export const useRundownGridCore = ({
   });
 
   // Undo functionality with auto-save coordination
-  const { saveState, undo, canUndo, lastAction, loadUndoHistory, setAutoSaving } = useRundownUndo({
+  const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory, setAutoSaving } = useRundownUndo({
     rundownId: getCurrentRundownId(),
     currentTitle: rundownTitle,
     currentItems: state.items,
@@ -71,11 +70,11 @@ export const useRundownGridCore = ({
       // Add a small delay to ensure state has fully updated, but coordinate with auto-save
       setTimeout(() => {
         if (!state.isSaving) { // Only save if auto-save is not active
-          saveState(state.items, state.columns, rundownTitle, action);
+          saveStateOnSave(state.items, state.columns, rundownTitle, action);
         }
       }, 150);
     }
-  }, [saveState, state.items, state.columns, rundownTitle, isProcessingRealtimeUpdate, state.isSaving]);
+  }, [saveStateOnSave, state.items, state.columns, rundownTitle, isProcessingRealtimeUpdate, state.isSaving]);
 
   // Wrap state operations to save undo states - with better action grouping
   const wrappedUpdateItem = useCallback((id: string, field: string, value: string) => {
