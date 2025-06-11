@@ -10,6 +10,7 @@ export const useSharedRundownState = () => {
   const rundownId = rawId === ':id' ? undefined : rawId;
   
   const [rundownData, setRundownData] = useState<{
+    id: string;
     title: string;
     items: RundownItem[];
     columns: any[];
@@ -58,6 +59,7 @@ export const useSharedRundownState = () => {
         setRundownData(null);
       } else if (data) {
         const newRundownData = {
+          id: data.id,
           title: data.title || 'Untitled Rundown',
           items: data.items || [],
           columns: data.columns || [],
