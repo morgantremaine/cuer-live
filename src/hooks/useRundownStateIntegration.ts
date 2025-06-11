@@ -109,29 +109,15 @@ export const useRundownStateIntegration = (
 
   // Wrapped addRow that supports insertion at specific index but compatible with expected signature
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string) => {
-    // Convert selectedRowId to insertAfterIndex if needed
-    let insertAfterIndex: number | undefined;
-    if (selectedRowId && items) {
-      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
-      if (selectedIndex !== -1) {
-        insertAfterIndex = selectedIndex;
-      }
-    }
-    originalAddRow(calculateEndTime, insertAfterIndex);
-  }, [originalAddRow, items]);
+    // Convert selectedRowId to selection information for the new signature
+    originalAddRow(calculateEndTime, selectedRowId, undefined);
+  }, [originalAddRow]);
 
   // Wrapped addHeader that supports insertion at specific index but compatible with expected signature
   const addHeader = useCallback((selectedRowId?: string) => {
-    // Convert selectedRowId to insertAfterIndex if needed
-    let insertAfterIndex: number | undefined;
-    if (selectedRowId && items) {
-      const selectedIndex = items.findIndex(item => item.id === selectedRowId);
-      if (selectedIndex !== -1) {
-        insertAfterIndex = selectedIndex;
-      }
-    }
-    originalAddHeader(insertAfterIndex);
-  }, [originalAddHeader, items]);
+    // Convert selectedRowId to selection information for the new signature
+    originalAddHeader(selectedRowId, undefined);
+  }, [originalAddHeader]);
 
   return {
     items: Array.isArray(items) ? items : [],
