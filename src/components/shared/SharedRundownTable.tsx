@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -66,9 +65,6 @@ const SharedRundownTable = ({
     return itemsWithTimes;
   };
 
-  const itemsWithTimes = calculateItemTimes();
-
-  // Calculate header duration (sum of all non-floated regular items until next header)
   const calculateHeaderDuration = (headerIndex: number) => {
     if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
       return '00:00:00';
@@ -87,6 +83,8 @@ const SharedRundownTable = ({
 
     return secondsToTime(totalSeconds);
   };
+
+  const itemsWithTimes = calculateItemTimes();
 
   return (
     <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
@@ -114,8 +112,8 @@ const SharedRundownTable = ({
             
             return (
               <React.Fragment key={item.id}>
-                {/* Green line above current row when playing */}
-                {isShowcallerCurrent && isPlaying && (
+                {/* Green line above current row - always show for current segment */}
+                {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
@@ -126,7 +124,7 @@ const SharedRundownTable = ({
                 )}
                 
                 {/* Small spacing below green line */}
-                {isShowcallerCurrent && isPlaying && (
+                {isShowcallerCurrent && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-1"></div>
@@ -138,14 +136,15 @@ const SharedRundownTable = ({
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                     ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                    ${isCurrentlyPlaying ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
+                    ${isShowcallerCurrent ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
                     print:break-inside-avoid
                   `}
-                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isCurrentlyPlaying ? item.color : undefined }}
+                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                     <div className="flex items-center">
-                      {isCurrentlyPlaying && (
+                      {/* Blue play icon - always show for current segment */}
+                      {isShowcallerCurrent && (
                         <Play 
                           className="h-4 w-4 text-blue-500 fill-blue-500 mr-2 scale-125 print:hidden" 
                           style={{ filter: 'drop-shadow(0 0 1px black)' }}
