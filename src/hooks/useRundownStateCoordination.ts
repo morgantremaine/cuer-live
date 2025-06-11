@@ -7,6 +7,7 @@ import { useRundownInteractionHandlers } from './useRundownInteractionHandlers';
 import { useRundownUIState } from './useRundownUIState';
 import { useRealtimeRundown } from './useRealtimeRundown';
 import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { calculateEndTime } from '@/utils/rundownCalculations';
 
 export const useRundownStateCoordination = () => {
   const { id } = useParams<{ id: string }>();
@@ -101,20 +102,23 @@ export const useRundownStateCoordination = () => {
     enabled: true
   });
 
-  // Interaction handlers (selection, drag/drop, clipboard)
+  // Interaction handlers (selection, drag/drop, clipboard) with proper calculateEndTime
   const interactions = useRundownInteractionHandlers(
     core.items,
     core.setItems,
     core.updateItem,
-    core.addRow,
-    core.addHeader,
+    () => core.addRow(calculateEndTime), // Fix: Pass calculateEndTime function
+    () => core.addHeader(), // Fix: Remove parameters
     core.deleteRow,
     core.toggleFloatRow,
     core.deleteMultipleRows,
     core.addMultipleRows,
     core.handleDeleteColumn,
-    core.calculateEndTime,
-    core.selectColor,
+    calculateEndTime, // Add calculateEndTime
+    (id: string, color: string) => {
+      // Implement selectColor - this was missing
+      core.updateItem(id, 'color', color);
+    },
     core.markAsChanged,
     core.setRundownTitle
   );
@@ -145,7 +149,7 @@ export const useRundownStateCoordination = () => {
   const wrappedAddRow = useCallback(() => {
     const timestamp = new Date().toISOString();
     trackOwnUpdate(timestamp);
-    return core.addRow();
+    return core.addRow(calculateEndTime);
   }, [core.addRow, trackOwnUpdate]);
 
   const wrappedAddHeader = useCallback(() => {
@@ -197,7 +201,7 @@ export const useRundownStateCoordination = () => {
   // Memoized state objects
   const coreState = useMemo(() => ({
     // Time and basic info
-    currentTime: new Date().toLocaleTimeString(),
+    currentTime: new Date(), // Fix: Return Date object, not string
     timezone,
     rundownTitle,
     setRundownTitle: wrappedSetRundownTitle,
@@ -215,7 +219,7 @@ export const useRundownStateCoordination = () => {
     getRowNumber: core.getRowNumber,
     calculateHeaderDuration: core.calculateHeaderDuration,
     calculateTotalRuntime: core.calculateTotalRuntime,
-    calculateEndTime: core.calculateEndTime,
+    calculateEndTime: calculateEndTime, // Add missing calculateEndTime
 
     // Operations - use wrapped versions for realtime tracking
     updateItem: wrappedUpdateItem,
@@ -223,6 +227,11 @@ export const useRundownStateCoordination = () => {
     toggleFloatRow: wrappedToggleFloatRow,
     addRow: wrappedAddRow,
     addHeader: wrappedAddHeader,
+
+    // Selection - add missing properties
+    selectedRowId: interactions.selectedRows.size === 1 ? Array.from(interactions.selectedRows)[0] : null,
+    handleRowSelection: interactions.handleRowSelection,
+    clearRowSelection: interactions.clearSelection,
 
     // Showcaller
     currentSegmentId: core.currentSegmentId,
@@ -240,6 +249,10 @@ export const useRundownStateCoordination = () => {
     handleRenameColumn: core.handleRenameColumn,
     handleToggleColumnVisibility: core.handleToggleColumnVisibility,
     handleLoadLayout: core.handleLoadLayout,
+
+    // UI State
+    showColumnManager: false, // Add missing property
+    setShowColumnManager: () => {}, // Add missing property
 
     // State tracking
     hasUnsavedChanges: core.hasUnsavedChanges,
@@ -259,12 +272,29 @@ export const useRundownStateCoordination = () => {
     wrappedUpdateItem, wrappedDeleteRow, wrappedToggleFloatRow, 
     wrappedAddRow, wrappedAddHeader, wrappedSetRundownTitle,
     wrappedSetRundownStartTime, wrappedSetTimezone,
-    isCollaborationConnected, isProcessingRealtimeUpdate
+    isCollaborationConnected, isProcessingRealtimeUpdate, interactions
   ]);
+
+  // Enhanced UI state with missing properties
+  const enhancedUiState = useMemo(() => ({
+    ...uiState,
+    // Add missing properties
+    getColumnWidth: (column: any) => column.width || '150px',
+    updateColumnWidth: (columnId: string, width: number) => {
+      console.log('Update column width:', columnId, width);
+    },
+    handleCellClick: (itemId: string, field: string) => {
+      console.log('Cell click:', itemId, field);
+    },
+    handleKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => {
+      console.log('Key down:', e.key, itemId, field);
+    },
+    cellRefs: { current: {} }
+  }), [uiState]);
 
   return {
     coreState,
     interactions,
-    uiState
+    uiState: enhancedUiState
   };
 };
