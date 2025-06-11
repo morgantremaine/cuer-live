@@ -84,22 +84,21 @@ const RundownContent = ({
 
   return (
     <div className="relative bg-background">
-      {/* Sticky Header - Outside of ScrollArea */}
-      <div className="sticky top-0 z-20 w-full bg-background border-b border-border">
-        <div className="min-w-max">
-          <table className="w-full border-collapse">
-            <RundownTableHeader 
-              visibleColumns={visibleColumns}
-              getColumnWidth={getColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-            />
-          </table>
-        </div>
-      </div>
-
-      {/* Scrollable Content */}
+      {/* Scrollable Content with Header Inside */}
       <ScrollArea className="w-full h-[calc(100vh-200px)] bg-background">
         <div className="min-w-max bg-background">
+          {/* Sticky Header - Inside ScrollArea */}
+          <div className="sticky top-0 z-20 bg-background border-b border-border">
+            <table className="w-full border-collapse">
+              <RundownTableHeader 
+                visibleColumns={visibleColumns}
+                getColumnWidth={getColumnWidth}
+                updateColumnWidth={updateColumnWidth}
+              />
+            </table>
+          </div>
+
+          {/* Table Content */}
           <RundownTable
             items={items}
             visibleColumns={visibleColumns}
