@@ -33,39 +33,25 @@ const PlaybackControls = ({
   };
 
   const handlePlayPause = () => {
-    console.log('🎮 PlaybackControls - Play/Pause clicked', { isPlaying, selectedRowId, currentSegmentId });
-    
     if (isPlaying) {
-      console.log('🎮 Pausing playback');
       onPause();
     } else {
       // If a row is selected, play that row, otherwise play current segment or first
       if (selectedRowId) {
-        console.log('🎮 Playing selected row:', selectedRowId);
         onPlay(selectedRowId);
       } else {
-        console.log('🎮 Playing from current state');
         onPlay();
       }
     }
   };
 
   const handleForward = () => {
-    console.log('🎮 PlaybackControls - Forward clicked');
     onForward();
   };
 
   const handleBackward = () => {
-    console.log('🎮 PlaybackControls - Backward clicked');
     onBackward();
   };
-
-  console.log('🎮 PlaybackControls render:', {
-    currentSegmentId,
-    timeRemaining,
-    isPlaying,
-    selectedRowId
-  });
 
   return (
     <div className="flex items-center space-x-2">
