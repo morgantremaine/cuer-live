@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -117,9 +116,18 @@ const RundownIndexContent = () => {
   // Convert timeRemaining to number (assuming it's in seconds)
   const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
 
-  // Create a wrapper for handleAddColumn that takes a column object
-  const handleAddColumnWrapper = (column: any) => {
-    handleAddColumn(column);
+  // Create a wrapper for handleAddColumn that takes a string
+  const handleAddColumnWrapper = (name: string) => {
+    const newColumn = {
+      id: `custom_${Date.now()}`,
+      name,
+      key: name.toLowerCase().replace(/\s+/g, '_'),
+      isVisible: true,
+      width: '150px',
+      isCustom: true,
+      isEditable: true
+    };
+    handleAddColumn(newColumn);
   };
 
   // Prepare rundown data for Cuer AI

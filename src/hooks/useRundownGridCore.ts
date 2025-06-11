@@ -6,7 +6,6 @@ import { useRundownStorage } from './useRundownStorage';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useRundownUndo } from './useRundownUndo';
 import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
-import { RundownItem } from '@/types/rundown';
 
 interface UseRundownGridCoreProps {
   markAsChanged: () => void;
@@ -169,9 +168,6 @@ export const useRundownGridCore = ({
       markAsChanged();
     }
   }, [setRundownTitleDirectly, markAsChanged, rundownTitle, saveUndoState]);
-
-  // Remove the duplicate addRow and addHeader functions that were causing the issue
-  // These should use the wrapped versions from state instead
 
   // Showcaller/playback controls
   const {
