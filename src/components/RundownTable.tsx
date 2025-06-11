@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -110,7 +111,7 @@ const RundownTable = ({
                 {dropTargetIndex === index && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
+                      <div className="h-1 bg-gray-400 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
@@ -149,7 +150,7 @@ const RundownTable = ({
                   onToggleFloat={onToggleFloat}
                   onRowSelect={onRowSelect}
                   onDragStart={onDragStart}
-                  onDragOver={(e) => onDragOver(e, index)}
+                  onDragOver={onDragOver}
                   onDrop={(e) => onDrop(e, index)}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
@@ -164,7 +165,7 @@ const RundownTable = ({
                 {dropTargetIndex === items.length && index === items.length - 1 && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
+                      <div className="h-1 bg-gray-400 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
@@ -178,7 +179,7 @@ const RundownTable = ({
         <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">
           No items to display
         </div>
-      )}
+        )}
     </div>
   );
 };
