@@ -21,7 +21,6 @@ export const useRundownStateIntegration = (
 
   // Stable markAsChanged that prevents excessive calls
   const stableMarkAsChanged = useCallback(() => {
-    console.log('🚀 Enhanced markAsChanged called in state integration');
     markAsChanged();
   }, [markAsChanged]);
 
@@ -93,7 +92,6 @@ export const useRundownStateIntegration = (
 
   // Create a stable auto-save trigger function ONCE
   const autoSaveTrigger = useCallback(() => {
-    console.log('💾 Auto-save trigger called from state integration');
     // The auto-save is handled by useAutoSave internally
     // This function just exists to satisfy the interface
   }, []);
@@ -101,7 +99,6 @@ export const useRundownStateIntegration = (
   // Connect the auto-save trigger to the basic state - ONLY ONCE
   useEffect(() => {
     if (!autoSaveTriggerSetRef.current) {
-      console.log('🔗 Setting up auto-save trigger connection (ONCE)');
       setAutoSaveTrigger(autoSaveTrigger);
       autoSaveTriggerSetRef.current = true;
     }

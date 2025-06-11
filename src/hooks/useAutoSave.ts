@@ -36,22 +36,12 @@ export const useAutoSave = (
 
   // Method to set showcaller active state
   const setShowcallerActive = useCallback((active: boolean) => {
-    const wasActive = showcallerActiveRef.current;
     showcallerActiveRef.current = active;
-    
-    if (wasActive !== active) {
-      console.log('💾 Showcaller active state changed:', active);
-    }
   }, []);
 
   // Method to coordinate with undo operations
   const setUndoActive = useCallback((active: boolean) => {
-    const wasActive = undoActiveRef.current;
     undoActiveRef.current = active;
-    
-    if (wasActive !== active) {
-      console.log('💾 Undo active state changed:', active);
-    }
   }, []);
 
   // Validate start time before saving
@@ -85,14 +75,7 @@ export const useAutoSave = (
         isSaving || 
         isProcessingRealtimeUpdate || 
         saveInProgressRef.current ||
-        undoActiveRef.current) { // Don't save during undo operations
-      console.log('💾 Save blocked:', {
-        noUser: !user,
-        isSaving,
-        isProcessingRealtimeUpdate,
-        saveInProgress: saveInProgressRef.current,
-        undoActive: undoActiveRef.current
-      });
+        undoActiveRef.current) {
       return;
     }
 
@@ -100,7 +83,6 @@ export const useAutoSave = (
     if (showcallerActiveRef.current) {
       const now = Date.now();
       if (now - lastSaveTimestampRef.current < 2000) {
-        console.log('💾 Save briefly deferred due to showcaller activity');
         return;
       }
     }
@@ -108,19 +90,11 @@ export const useAutoSave = (
     // Minimum interval between saves
     const now = Date.now();
     if (now - lastSaveTimestampRef.current < 1500) {
-      console.log('💾 Save throttled - too soon since last save');
       return;
     }
 
     // Validate the start time before saving
     const validatedStartTime = validateStartTime(startTimeToSave);
-    
-    console.log('💾 Auto-saving rundown...', { 
-      itemCount: itemsToSave.length, 
-      title: titleToSave,
-      timezone: timezoneToSave,
-      startTime: validatedStartTime 
-    });
 
     setIsLoading(true);
     saveInProgressRef.current = true;
@@ -137,10 +111,8 @@ export const useAutoSave = (
       
       if (success) {
         markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, validatedStartTime);
-        console.log('✅ Auto-save successful');
       } else {
         setHasUnsavedChanges(true);
-        console.log('❌ Auto-save failed');
       }
     } catch (error) {
       console.error('Auto-save error:', error);
@@ -180,13 +152,6 @@ export const useAutoSave = (
       return;
     }
 
-    console.log('💾 Data changed, scheduling save with current values:', {
-      timezone,
-      startTime: validatedStartTime,
-      title: rundownTitle,
-      itemCount: items.length
-    });
-
     lastSaveDataRef.current = currentDataSignature;
 
     if (debounceTimeoutRef.current) {
@@ -195,11 +160,6 @@ export const useAutoSave = (
 
     debounceTimeoutRef.current = setTimeout(() => {
       if (!isProcessingRealtimeUpdate && !saveInProgressRef.current && !undoActiveRef.current) {
-        console.log('💾 Executing save with values:', {
-          timezone,
-          startTime: validatedStartTime,
-          title: rundownTitle
-        });
         debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, validatedStartTime);
       }
       debounceTimeoutRef.current = null;

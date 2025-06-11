@@ -59,11 +59,8 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   ) => {
     // Don't save state during undo operations
     if (isUndoing.current) {
-      console.log('Skipping undo state save during undo operation');
       return;
     }
-
-    console.log('💾 Saving undo state for action:', action);
 
     const newState: UndoState = {
       items: JSON.parse(JSON.stringify(items)), // Deep clone
@@ -100,12 +97,10 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     setTitle: (title: string) => void
   ) => {
     if (undoStack.length === 0) {
-      console.log('No undo states available');
       return null;
     }
 
     const lastState = undoStack[undoStack.length - 1];
-    console.log('🔄 Undoing action:', lastState.action);
     
     // Mark that we're undoing to prevent saving this as a new state
     isUndoing.current = true;
@@ -134,7 +129,6 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     // Reset the undoing flag after a delay
     setTimeout(() => {
       isUndoing.current = false;
-      console.log('✅ Undo operation completed');
     }, 500);
 
     return lastState.action;

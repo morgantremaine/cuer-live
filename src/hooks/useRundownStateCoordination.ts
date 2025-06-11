@@ -11,18 +11,6 @@ export const useRundownStateCoordination = () => {
   // Use the simplified state system
   const simplifiedState = useSimplifiedRundownState();
   
-  // Only log critical state changes, not every render
-  if (process.env.NODE_ENV === 'development') {
-    // Only log when items count changes significantly or on errors
-    const itemsCount = simplifiedState.items.length;
-    const undoAvailable = simplifiedState.canUndo;
-    
-    // Reduced logging - only major state changes
-    if (itemsCount === 0 || itemsCount % 5 === 0 || !undoAvailable !== !simplifiedState.lastAction) {
-      console.log('🔄 State coordination - items:', itemsCount, 'undo available:', undoAvailable, 'last action:', simplifiedState.lastAction);
-    }
-  }
-  
   // Calculate items with timing for UI manager
   const calculatedItems = useMemo(() => {
     return calculateItemsWithTiming(simplifiedState.items, simplifiedState.rundownStartTime);
@@ -83,10 +71,6 @@ export const useRundownStateCoordination = () => {
 
   // Enhanced addRow that considers multi-selection when available
   const enhancedAddRow = () => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🚀 Enhanced addRow called');
-    }
-    
     if (gridInteractions.selectedRows.size > 0) {
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(gridInteractions.selectedRows)
@@ -114,10 +98,6 @@ export const useRundownStateCoordination = () => {
 
   // Enhanced addHeader that considers multi-selection when available
   const enhancedAddHeader = () => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🚀 Enhanced addHeader called');
-    }
-    
     if (gridInteractions.selectedRows.size > 0) {
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(gridInteractions.selectedRows)

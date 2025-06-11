@@ -123,9 +123,7 @@ export const useRundownGridCore = ({
 
   // Enhanced undo handler
   const handleUndo = useCallback(() => {
-    console.log('handleUndo called, canUndo:', canUndo);
     if (!canUndo) {
-      console.log('Cannot undo - no states available');
       return null;
     }
 
