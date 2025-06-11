@@ -69,6 +69,25 @@ const HeaderRowContent = ({
               <span className="text-sm text-muted-foreground font-mono">
                 ({headerDuration})
               </span>
+            ) : column.key === 'notes' ? (
+              // Add notes editing for headers
+              <textarea
+                ref={el => el && (cellRefs.current[`${item.id}-notes`] = el)}
+                value={item.notes || ''}
+                onChange={(e) => onUpdateItem(item.id, 'notes', e.target.value)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCellClick(item.id, 'notes');
+                }}
+                onKeyDown={(e) => onKeyDown(e, item.id, 'notes')}
+                className="w-full border border-border text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded px-2 py-1 text-sm resize-none"
+                style={{ 
+                  backgroundColor: backgroundColor || 'var(--background)',
+                  minHeight: '28px',
+                  height: 'auto'
+                }}
+                rows={1}
+              />
             ) : (
               // For all other columns, show empty cell for headers
               <div className="px-1 py-0.5 text-sm text-muted-foreground">
