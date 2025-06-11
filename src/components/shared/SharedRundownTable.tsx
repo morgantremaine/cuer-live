@@ -2,14 +2,21 @@
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
+import { Play } from 'lucide-react';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
   visibleColumns: any[];
   currentSegmentId: string | null;
+  isPlaying?: boolean;
 }
 
-const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedRundownTableProps) => {
+const SharedRundownTable = ({ 
+  items, 
+  visibleColumns, 
+  currentSegmentId, 
+  isPlaying = false 
+}: SharedRundownTableProps) => {
   // Calculate header duration (sum of all non-floated regular items until next header)
   const calculateHeaderDuration = (headerIndex: number) => {
     if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
@@ -72,12 +79,13 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
         <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
           {items.map((item, index) => {
             const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
+            const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
             const isFloated = item.isFloating || item.isFloated;
             
             return (
               <React.Fragment key={item.id}>
-                {/* Green line above current row */}
-                {isShowcallerCurrent && (
+                {/* Green line above current row when playing */}
+                {isShowcallerCurrent && isPlaying && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-4 flex items-center">
@@ -88,7 +96,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                 )}
                 
                 {/* Small spacing below green line */}
-                {isShowcallerCurrent && (
+                {isShowcallerCurrent && isPlaying && (
                   <tr className="print:hidden">
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-1"></div>
@@ -100,19 +108,18 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                     ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                    ${isCurrentlyPlaying ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
                     print:break-inside-avoid
                   `}
-                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated ? item.color : undefined }}
+                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isCurrentlyPlaying ? item.color : undefined }}
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400">
                     <div className="flex items-center">
-                      {isShowcallerCurrent && (
-                        <span 
-                          className="text-blue-500 mr-2 text-xl font-bold print:hidden"
-                          style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
-                        >
-                          ▶
-                        </span>
+                      {isCurrentlyPlaying && (
+                        <Play 
+                          className="h-4 w-4 text-blue-500 fill-blue-500 mr-2 scale-125 print:hidden" 
+                          style={{ filter: 'drop-shadow(0 0 1px black)' }}
+                        />
                       )}
                       {isFloated && (
                         <span className="text-yellow-400 mr-1">🛟</span>

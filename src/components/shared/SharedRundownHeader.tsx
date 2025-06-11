@@ -9,13 +9,17 @@ interface SharedRundownHeaderProps {
   currentSegmentId: string | null;
   items: RundownItem[];
   timezone?: string;
+  isPlaying?: boolean;
+  timeRemaining?: number;
 }
 
 const SharedRundownHeader = ({ 
   title, 
   currentTime, 
   startTime, 
-  timezone = 'UTC'
+  timezone = 'UTC',
+  isPlaying = false,
+  timeRemaining = 0
 }: SharedRundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -29,6 +33,13 @@ const SharedRundownHeader = ({
     }
   };
 
+  const formatTimeRemaining = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="mb-6 print:mb-4">
       {/* Mobile layout: Compact single column */}
@@ -40,6 +51,12 @@ const SharedRundownHeader = ({
           <div className="text-xs text-gray-600 space-y-0.5 print:hidden">
             <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
             <div>Start: {startTime}</div>
+            {isPlaying && (
+              <div className="flex items-center space-x-2">
+                <span className="text-blue-600 font-semibold">▶ LIVE</span>
+                <span>Time remaining: {formatTimeRemaining(timeRemaining)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -59,6 +76,12 @@ const SharedRundownHeader = ({
         <div className="text-right text-sm text-gray-600 flex-shrink-0 print:hidden">
           <div>{formatTime(currentTime, timezone)} {timezone.replace('_', ' ')}</div>
           <div>Start: {startTime}</div>
+          {isPlaying && (
+            <div className="flex items-center justify-end space-x-2 mt-1">
+              <span className="text-blue-600 font-semibold">▶ LIVE</span>
+              <span>Time remaining: {formatTimeRemaining(timeRemaining)}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

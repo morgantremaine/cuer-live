@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
+import { usePlaybackControls } from '@/hooks/usePlaybackControls';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
 import SharedRundownHeader from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
@@ -8,6 +9,16 @@ import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 
 const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error } = useSharedRundownState();
+
+  // Add showcaller controls for read-only mode
+  const {
+    isPlaying,
+    timeRemaining
+  } = usePlaybackControls(
+    rundownData?.items || [],
+    () => {}, // No-op update function for read-only
+    rundownData?.id
+  );
 
   if (loading) {
     return (
@@ -56,6 +67,8 @@ const SharedRundown = () => {
           currentSegmentId={currentSegmentId}
           items={rundownData.items}
           timezone={rundownData.timezone || 'UTC'}
+          isPlaying={isPlaying}
+          timeRemaining={timeRemaining}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)]">
@@ -63,6 +76,7 @@ const SharedRundown = () => {
             items={rundownData.items}
             visibleColumns={visibleColumns}
             currentSegmentId={currentSegmentId}
+            isPlaying={isPlaying}
           />
         </div>
 
