@@ -142,17 +142,22 @@ const HeaderRow = (props: HeaderRowProps) => {
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
       >
-        {/* Row number column - empty for headers */}
-        <td className="w-12 p-2 text-center border-r border-border">
-          <div className="text-xs text-muted-foreground font-medium">H</div>
+        {/* Row number column - show H for headers */}
+        <td className="px-2 py-1 text-sm font-mono align-middle border border-border w-12 min-w-12">
+          <div className="flex items-center justify-center">
+            <span className="text-lg font-bold text-foreground">H</span>
+          </div>
         </td>
 
         {/* Data columns */}
         {columns.map((column) => (
           <td
             key={column.id}
-            className="border-r border-border last:border-r-0 p-0"
-            style={{ width: getColumnWidth(column) }}
+            className="align-middle border border-border"
+            style={{ 
+              width: getColumnWidth(column), 
+              minWidth: getColumnWidth(column)
+            }}
           >
             <CellRenderer
               item={item}
