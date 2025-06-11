@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownDataLoader } from './useRundownDataLoader';
@@ -57,7 +58,7 @@ export const useRundownGridCore = ({
   });
 
   // Undo functionality with auto-save coordination
-  const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory, setAutoSaving } = useRundownUndo({
+  const { saveStateOnSave, undo, canUndo, lastAction, loadUndoHistory } = useRundownUndo({
     rundownId: getCurrentRundownId(),
     currentTitle: rundownTitle,
     currentItems: state.items,
@@ -67,14 +68,12 @@ export const useRundownGridCore = ({
   // Enhanced undo state saving - only save on actual user actions, not automatic time updates
   const saveUndoState = useCallback((action: string) => {
     if (!isProcessingRealtimeUpdate) {
-      // Add a small delay to ensure state has fully updated, but coordinate with auto-save
+      // Add a small delay to ensure state has fully updated
       setTimeout(() => {
-        if (!state.isSaving) { // Only save if auto-save is not active
-          saveStateOnSave(state.items, state.columns, rundownTitle, action);
-        }
+        saveStateOnSave(state.items, state.columns, rundownTitle, action);
       }, 150);
     }
-  }, [saveStateOnSave, state.items, state.columns, rundownTitle, isProcessingRealtimeUpdate, state.isSaving]);
+  }, [saveStateOnSave, state.items, state.columns, rundownTitle, isProcessingRealtimeUpdate]);
 
   // Wrap state operations to save undo states - with better action grouping
   const wrappedUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -122,16 +121,13 @@ export const useRundownGridCore = ({
     state.handleDeleteColumn(columnId);
   }, [state.handleDeleteColumn, saveUndoState]);
 
-  // Enhanced undo handler that coordinates with auto-save
+  // Enhanced undo handler
   const handleUndo = useCallback(() => {
     console.log('handleUndo called, canUndo:', canUndo);
     if (!canUndo) {
       console.log('Cannot undo - no states available');
       return null;
     }
-
-    // Notify auto-save that we're undoing
-    setAutoSaving(true);
 
     const result = undo(
       state.setItems,
@@ -151,13 +147,8 @@ export const useRundownGridCore = ({
       setRundownTitleDirectly
     );
 
-    // Reset auto-save coordination after undo completes
-    setTimeout(() => {
-      setAutoSaving(false);
-    }, 2000);
-
     return result;
-  }, [undo, canUndo, state.setItems, state.handleLoadLayout, setRundownTitleDirectly, setAutoSaving]);
+  }, [undo, canUndo, state.setItems, state.handleLoadLayout, setRundownTitleDirectly]);
 
   // Enhanced setRundownTitle that also triggers change tracking and undo state
   const setRundownTitle = useCallback((newTitle: string) => {
@@ -229,7 +220,6 @@ export const useRundownGridCore = ({
     handleUndo,
     canUndo,
     lastAction,
-    loadUndoHistory,
-    setAutoSaving // Export for coordination with auto-save
+    loadUndoHistory
   };
 };
