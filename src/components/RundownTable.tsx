@@ -89,8 +89,15 @@ const RundownTable = ({
     selectedRowId
   });
 
+  // Handler for drag over events on the table container
+  const handleTableDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    console.log('🚀 Table container drag over');
+    onDragOver(e);
+  };
+
   return (
-    <div className="relative w-full bg-background">
+    <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">
         <tbody className="bg-background">
           {items.map((item, index) => {
@@ -111,8 +118,10 @@ const RundownTable = ({
                 {dropTargetIndex === index && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-blue-500 w-full animate-pulse shadow-lg relative z-10">
+                      <div className="h-3 bg-blue-500 w-full animate-pulse shadow-lg relative z-50">
                         <div className="absolute inset-0 bg-blue-400 opacity-50 animate-ping"></div>
+                        <div className="absolute left-0 top-0 w-2 h-full bg-blue-600"></div>
+                        <div className="absolute right-0 top-0 w-2 h-full bg-blue-600"></div>
                       </div>
                     </td>
                   </tr>
@@ -152,8 +161,15 @@ const RundownTable = ({
                   onToggleFloat={onToggleFloat}
                   onRowSelect={onRowSelect}
                   onDragStart={onDragStart}
-                  onDragOver={onDragOver}
-                  onDrop={onDrop}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    console.log('🚀 Row drag over for index:', index);
+                    onDragOver(e);
+                  }}
+                  onDrop={(e) => {
+                    console.log('🚀 Row drop for index:', index);
+                    onDrop(e, index);
+                  }}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
                   onPasteRows={onPasteRows}
@@ -167,8 +183,10 @@ const RundownTable = ({
                 {dropTargetIndex === items.length && index === items.length - 1 && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-blue-500 w-full animate-pulse shadow-lg relative z-10">
+                      <div className="h-3 bg-blue-500 w-full animate-pulse shadow-lg relative z-50">
                         <div className="absolute inset-0 bg-blue-400 opacity-50 animate-ping"></div>
+                        <div className="absolute left-0 top-0 w-2 h-full bg-blue-600"></div>
+                        <div className="absolute right-0 top-0 w-2 h-full bg-blue-600"></div>
                       </div>
                     </td>
                   </tr>
