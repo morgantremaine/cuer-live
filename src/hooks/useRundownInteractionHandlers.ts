@@ -22,7 +22,15 @@ export const useRundownInteractionHandlers = (
   setRundownTitle: (title: string) => void
 ) => {
   // Multi-row selection
-  const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
+  const { selectedRows, toggleRowSelection: toggleRowSelectionBase, clearSelection } = useMultiRowSelection();
+
+  // Create a wrapper for toggleRowSelection that matches the expected interface
+  const toggleRowSelection = (id: string, isShiftClick?: boolean, isCtrlClick?: boolean) => {
+    const index = items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      toggleRowSelectionBase(id, index, isShiftClick || false, isCtrlClick || false, items);
+    }
+  };
 
   // Drag and drop - fix the function call to match expected signature
   const { 
@@ -69,7 +77,7 @@ export const useRundownInteractionHandlers = (
     clearSelection,
     copyItems,
     clipboardItems,
-    hasClipboardData,
+    hasClipboardData: hasClipboardData(), // Call the function to get the boolean value
     toggleRowSelection,
     items,
     setRundownTitle
