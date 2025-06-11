@@ -126,6 +126,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           columns={props.columns}
           headerDuration={props.headerDuration}
           rowNumber={rowNumber}
+          backgroundColor={backgroundColor}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}

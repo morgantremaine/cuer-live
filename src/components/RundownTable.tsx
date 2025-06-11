@@ -89,8 +89,37 @@ const RundownTable = ({
     selectedRowId
   });
 
+  // Handler for drag over events on the table container
+  const handleTableDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🚀 Table container drag over, dropTargetIndex:', dropTargetIndex);
+    onDragOver(e);
+  };
+
+  // Enhanced row drag over handler that calculates drop target index
+  const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🚀 Row drag over for index:', targetIndex, 'current dropTargetIndex:', dropTargetIndex);
+    
+    // Calculate the drop position based on mouse position relative to row
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const mouseY = e.clientY;
+    const rowMiddle = rect.top + rect.height / 2;
+    
+    // If mouse is in the top half, insert before this row
+    // If mouse is in the bottom half, insert after this row
+    const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
+    
+    console.log('🎯 Calculated insert index:', insertIndex, 'for targetIndex:', targetIndex);
+    
+    // Call the parent handler with calculated position
+    onDragOver(e);
+  };
+
   return (
-    <div className="relative w-full bg-background" onDragOver={onDragOver} onDragLeave={onDragLeave}>
+    <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">
         <tbody className="bg-background">
           {items.map((item, index) => {
@@ -109,9 +138,13 @@ const RundownTable = ({
               <React.Fragment key={item.id}>
                 {/* Show drop indicator line ABOVE this row if it's the drop target */}
                 {dropTargetIndex === index && (
-                  <tr data-drop-indicator>
+                  <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-500 w-full relative z-50"></div>
+                      <div className="h-1 bg-blue-500 w-full relative z-50">
+                        <div className="absolute inset-0 bg-blue-500 animate-pulse"></div>
+                        <div className="absolute left-0 top-0 w-3 h-1 bg-blue-600"></div>
+                        <div className="absolute right-0 top-0 w-3 h-1 bg-blue-600"></div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -150,8 +183,11 @@ const RundownTable = ({
                   onToggleFloat={onToggleFloat}
                   onRowSelect={onRowSelect}
                   onDragStart={onDragStart}
-                  onDragOver={onDragOver}
-                  onDrop={(e) => onDrop(e, index)}
+                  onDragOver={(e) => handleRowDragOver(e, index)}
+                  onDrop={(e) => {
+                    console.log('🚀 Row drop for index:', index);
+                    onDrop(e, index);
+                  }}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
                   onPasteRows={onPasteRows}
@@ -163,9 +199,13 @@ const RundownTable = ({
                 
                 {/* Show drop indicator line AFTER the last row if it's the drop target */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
-                  <tr data-drop-indicator>
+                  <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-500 w-full relative z-50"></div>
+                      <div className="h-1 bg-blue-500 w-full relative z-50">
+                        <div className="absolute inset-0 bg-blue-500 animate-pulse"></div>
+                        <div className="absolute left-0 top-0 w-3 h-1 bg-blue-600"></div>
+                        <div className="absolute right-0 top-0 w-3 h-1 bg-blue-600"></div>
+                      </div>
                     </td>
                   </tr>
                 )}

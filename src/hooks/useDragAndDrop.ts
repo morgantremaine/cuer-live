@@ -38,8 +38,6 @@ export const useDragAndDrop = (
     setIsDraggingMultiple(isMultipleSelection);
     e.dataTransfer.effectAllowed = 'move';
     
-    console.log('🎯 Drag start - setting draggedItemIndex:', index, 'isMultiple:', isMultipleSelection);
-    
     // Store drag data
     e.dataTransfer.setData('text/plain', JSON.stringify({
       draggedIndex: index,
@@ -48,39 +46,12 @@ export const useDragAndDrop = (
     }));
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    // Get the target row element
-    const target = e.currentTarget as HTMLElement;
-    const table = target.closest('table');
-    if (!table) return;
-    
-    const rows = Array.from(table.querySelectorAll('tbody > tr')).filter(row => 
-      !row.querySelector('[data-drop-indicator]')
-    );
-    
-    // Find which row we're over
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i] as HTMLElement;
-      const rect = row.getBoundingClientRect();
-      const mouseY = e.clientY;
-      
-      if (mouseY >= rect.top && mouseY <= rect.bottom) {
-        // Determine if we should insert before or after this row
-        const rowMiddle = rect.top + rect.height / 2;
-        const insertIndex = mouseY < rowMiddle ? i : i + 1;
-        
-        console.log('🎯 Setting dropTargetIndex to:', insertIndex, 'for row:', i, 'mouseY:', mouseY, 'rowMiddle:', rowMiddle);
-        setDropTargetIndex(insertIndex);
-        return;
-      }
-    }
-    
-    // If we're below all rows, insert at the end
-    if (rows.length > 0) {
-      setDropTargetIndex(rows.length);
+    if (targetIndex !== undefined) {
+      setDropTargetIndex(targetIndex);
     }
   };
 
@@ -91,7 +62,6 @@ export const useDragAndDrop = (
     const y = e.clientY;
     
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      console.log('🎯 Clearing dropTargetIndex - leaving table area');
       setDropTargetIndex(null);
     }
   };
@@ -99,7 +69,6 @@ export const useDragAndDrop = (
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     
-    console.log('🎯 Drop occurred - clearing drag state');
     setDropTargetIndex(null);
     
     if (draggedItemIndex === null) {
