@@ -68,30 +68,75 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Helper function to check if cursor can move up/down within the textarea
+  // Helper function to check if cursor can move up/down within the textarea using browser APIs
   const canNavigateWithinText = (textarea: HTMLTextAreaElement, direction: 'up' | 'down') => {
-    const cursorPosition = textarea.selectionStart;
-    const lines = value.split('\n');
+    const currentPosition = textarea.selectionStart;
     
-    // Find which line the cursor is on and its position within that line
-    let currentLineIndex = 0;
-    let positionInCurrentLine = cursorPosition;
+    // Create a temporary selection to test if the cursor can move in the desired direction
+    const testPosition = currentPosition;
     
-    for (let i = 0; i < lines.length; i++) {
-      const lineLength = lines[i].length + 1; // +1 for the newline character
-      if (positionInCurrentLine <= lines[i].length) {
-        currentLineIndex = i;
-        break;
-      }
-      positionInCurrentLine -= lineLength;
-    }
+    // Save current selection
+    const originalStart = textarea.selectionStart;
+    const originalEnd = textarea.selectionEnd;
     
+    // Set cursor to test position
+    textarea.setSelectionRange(testPosition, testPosition);
+    
+    // Try to move the cursor using the browser's native navigation
+    const keyEvent = new KeyboardEvent('keydown', {
+      key: direction === 'up' ? 'ArrowUp' : 'ArrowDown',
+      bubbles: true,
+      cancelable: true
+    });
+    
+    // Temporarily disable our event handler to let the browser handle it
+    let newPosition = currentPosition;
+    
+    // Use a more reliable method: check if we're at visual boundaries
     if (direction === 'up') {
-      // Can navigate up if we're not on the first line
-      return currentLineIndex > 0;
+      // For up navigation, check if we're at the visual top
+      // We can do this by temporarily moving up and seeing if position changes
+      textarea.selectionStart = currentPosition;
+      textarea.selectionEnd = currentPosition;
+      
+      // Simulate what would happen if we pressed arrow up
+      const rect = textarea.getBoundingClientRect();
+      const style = window.getComputedStyle(textarea);
+      const lineHeight = parseInt(style.lineHeight) || 20;
+      
+      // Check if cursor is in the first visual line by checking if there's room to go up
+      const textBeforeSelection = value.substring(0, currentPosition);
+      const dummyDiv = document.createElement('div');
+      dummyDiv.style.cssText = window.getComputedStyle(textarea).cssText;
+      dummyDiv.style.position = 'absolute';
+      dummyDiv.style.visibility = 'hidden';
+      dummyDiv.style.height = 'auto';
+      dummyDiv.style.width = textarea.clientWidth + 'px';
+      dummyDiv.textContent = textBeforeSelection;
+      document.body.appendChild(dummyDiv);
+      
+      const currentLineCount = Math.ceil(dummyDiv.scrollHeight / lineHeight);
+      document.body.removeChild(dummyDiv);
+      
+      // If we're in the first line (approximately), we can't go up
+      return currentLineCount > 1;
     } else {
-      // Can navigate down if we're not on the last line
-      return currentLineIndex < lines.length - 1;
+      // For down navigation, check if we're at the visual bottom
+      const textAfterSelection = value.substring(currentPosition);
+      const dummyDiv = document.createElement('div');
+      dummyDiv.style.cssText = window.getComputedStyle(textarea).cssText;
+      dummyDiv.style.position = 'absolute';
+      dummyDiv.style.visibility = 'hidden';
+      dummyDiv.style.height = 'auto';
+      dummyDiv.style.width = textarea.clientWidth + 'px';
+      dummyDiv.textContent = textAfterSelection;
+      document.body.appendChild(dummyDiv);
+      
+      const remainingHeight = dummyDiv.scrollHeight;
+      document.body.removeChild(dummyDiv);
+      
+      // If there's significant content below, we can navigate down
+      return remainingHeight > 20; // threshold for a line
     }
   };
 
@@ -101,15 +146,28 @@ const ExpandableScriptCell = ({
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       const textarea = e.target as HTMLTextAreaElement;
       
+      // Use a simpler approach: check cursor position relative to text boundaries
+      const currentPosition = textarea.selectionStart;
+      
       if (e.key === 'ArrowUp') {
-        // If we can't navigate up within the text, allow cell navigation
-        if (!canNavigateWithinText(textarea, 'up')) {
+        // Check if we're at the very beginning or if there's nowhere to go up visually
+        const lines = value.substring(0, currentPosition).split('\n');
+        const currentLine = lines[lines.length - 1];
+        const isFirstLine = lines.length === 1;
+        
+        if (isFirstLine && currentPosition <= currentLine.length) {
+          // We're in the first line, allow navigation to previous cell
           onKeyDown(e, itemId, cellRefKey);
           return;
         }
       } else if (e.key === 'ArrowDown') {
-        // If we can't navigate down within the text, allow cell navigation
-        if (!canNavigateWithinText(textarea, 'down')) {
+        // Check if we're at the very end or if there's nowhere to go down visually
+        const textAfterCursor = value.substring(currentPosition);
+        const remainingLines = textAfterCursor.split('\n');
+        const isLastLine = remainingLines.length === 1 && !textAfterCursor.includes('\n');
+        
+        if (isLastLine) {
+          // We're in the last line, allow navigation to next cell
           onKeyDown(e, itemId, cellRefKey);
           return;
         }
