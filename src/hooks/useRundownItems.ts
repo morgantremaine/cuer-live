@@ -43,7 +43,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
       rowNumber: '',
       name: '',
       startTime: '',
-      duration: '',
+      duration: '00:00:00',
       endTime: '',
       elapsedTime: '',
       talent: '',
@@ -52,7 +52,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
       video: '',
       notes: '',
       color: '',
-      isFloating: false
+      isFloating: false,
+      customFields: {}
     };
 
     setItems(prevItems => {
@@ -92,7 +93,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
         rowNumber: 'A', // Will be renumbered below
         name: 'New Header',
         startTime: '',
-        duration: '',
+        duration: '00:00:00',
         endTime: '',
         elapsedTime: '',
         talent: '',
@@ -101,7 +102,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
         video: '',
         notes: '',
         color: '',
-        isFloating: false
+        isFloating: false,
+        customFields: {}
       };
 
       let insertIndex = prevItems.length; // Default to end
