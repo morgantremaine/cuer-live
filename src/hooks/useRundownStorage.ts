@@ -11,6 +11,7 @@ export const useRundownStorage = () => {
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletedRundownIds, setDeletedRundownIds] = useState<Set<string>>(new Set());
 
   // Load rundowns from Supabase (team rundowns only, including archived ones)
   const loadRundowns = useCallback(async () => {
@@ -110,20 +111,29 @@ export const useRundownStorage = () => {
         };
       });
 
-      setSavedRundowns(rundowns);
-      console.log('Loaded rundowns from database:', rundowns.length);
+      // Filter out rundowns that we know were recently deleted in this session
+      const filteredRundowns = rundowns.filter(rundown => !deletedRundownIds.has(rundown.id));
+
+      setSavedRundowns(filteredRundowns);
+      console.log('Loaded rundowns from database:', filteredRundowns.length, 'filtered out deleted:', rundowns.length - filteredRundowns.length);
     } catch (error) {
       console.error('Error loading rundowns:', error);
       setSavedRundowns([]);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, deletedRundownIds]);
 
   // Save rundown to Supabase
   const saveRundown = useCallback(async (rundown: SavedRundown): Promise<string> => {
     if (!user || !rundown) {
       throw new Error('User not authenticated or rundown is invalid');
+    }
+
+    // Check if this rundown was recently deleted in this session
+    if (deletedRundownIds.has(rundown.id)) {
+      console.log('⚠️ Preventing save of recently deleted rundown:', rundown.id);
+      return rundown.id;
     }
 
     // Ensure rundown has a team_id - get user's first team if not provided
@@ -184,7 +194,39 @@ export const useRundownStorage = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [user]);
+  }, [user, deletedRundownIds]);
+
+  // Enhanced delete function that tracks deleted IDs
+  const enhancedDeleteRundown = useCallback(async (id: string) => {
+    console.log('🗑️ Starting deletion of rundown:', id);
+    
+    // Add to deleted set immediately to prevent resurrection
+    setDeletedRundownIds(prev => new Set([...prev, id]));
+    
+    try {
+      await operations.deleteRundown(id);
+      console.log('✅ Successfully deleted rundown:', id);
+      
+      // Clean up the deleted ID after a delay (in case other tabs need time to sync)
+      setTimeout(() => {
+        setDeletedRundownIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+      }, 30000); // Keep in deleted set for 30 seconds
+      
+    } catch (error) {
+      console.error('❌ Failed to delete rundown:', id, error);
+      // Remove from deleted set if deletion failed
+      setDeletedRundownIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+      throw error;
+    }
+  }, []);
 
   const operations = new RundownOperations(user, saveRundown, setSavedRundowns);
 
@@ -198,7 +240,7 @@ export const useRundownStorage = () => {
     isSaving,
     saveRundown,
     updateRundown: operations.updateRundown.bind(operations),
-    deleteRundown: operations.deleteRundown.bind(operations),
+    deleteRundown: enhancedDeleteRundown,
     archiveRundown: operations.archiveRundown.bind(operations),
     duplicateRundown: operations.duplicateRundown.bind(operations),
     loadRundowns

@@ -29,6 +29,12 @@ export const useAutoSaveOperations = () => {
       hasRundownId: !!rundownId 
     });
 
+    // Check if we're on dashboard - don't auto-save from there
+    if (window.location.pathname === '/' || window.location.pathname === '/dashboard') {
+      console.log('⏭️ Skipping auto-save from dashboard page');
+      return false;
+    }
+
     setIsSaving(true);
     
     try {
