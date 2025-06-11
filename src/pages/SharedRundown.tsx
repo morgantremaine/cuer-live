@@ -47,23 +47,27 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(rundownData.columns);
 
   return (
-    <div className="min-h-screen bg-white p-4 print:p-2">
-      <SharedRundownHeader
-        title={rundownData.title}
-        currentTime={currentTime}
-        startTime={rundownData.startTime || '09:00:00'}
-        currentSegmentId={currentSegmentId}
-        items={rundownData.items}
-        timezone={rundownData.timezone || 'UTC'}
-      />
+    <div className="min-h-screen flex flex-col bg-white">
+      <div className="p-4 print:p-2">
+        <SharedRundownHeader
+          title={rundownData.title}
+          currentTime={currentTime}
+          startTime={rundownData.startTime || '09:00:00'}
+          currentSegmentId={currentSegmentId}
+          items={rundownData.items}
+          timezone={rundownData.timezone || 'UTC'}
+        />
 
-      <SharedRundownTable
-        items={rundownData.items}
-        visibleColumns={visibleColumns}
-        currentSegmentId={currentSegmentId}
-      />
+        <div className="overflow-auto max-h-[calc(100vh-220px)]">
+          <SharedRundownTable
+            items={rundownData.items}
+            visibleColumns={visibleColumns}
+            currentSegmentId={currentSegmentId}
+          />
+        </div>
 
-      <SharedRundownFooter />
+        <SharedRundownFooter />
+      </div>
     </div>
   );
 };

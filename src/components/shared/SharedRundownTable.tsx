@@ -54,7 +54,7 @@ const SharedRundownTable = ({ items, visibleColumns, currentSegmentId }: SharedR
   return (
     <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
       <table className="w-full">
-        <thead className="bg-gray-50 print:bg-gray-100">
+        <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10">
           <tr>
             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400">
               #
