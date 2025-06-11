@@ -11,8 +11,7 @@ export const useSimpleAutoSave = (
   title: string,
   columns: Column[],
   timezone: string,
-  startTime: string,
-  saveStateOnSave?: (items: RundownItem[], columns: Column[], title: string, description: string) => void
+  startTime: string
 ) => {
   const { user } = useAuth();
   const { updateRundown, saveRundown } = useRundownStorage();
@@ -22,6 +21,7 @@ export const useSimpleAutoSave = (
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isInitializedRef = useRef(false);
+  const lastSuccessfulSaveRef = useRef<string>('');
 
   const performSave = useCallback(async () => {
     if (!user || isSavingRef.current) return false;
@@ -73,6 +73,7 @@ export const useSimpleAutoSave = (
       // Update the saved data reference and clear unsaved changes
       const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
       lastSaveDataRef.current = currentData;
+      lastSuccessfulSaveRef.current = currentData;
       setHasUnsavedChanges(false);
 
       return true;
@@ -85,21 +86,29 @@ export const useSimpleAutoSave = (
     }
   }, [user, rundownId, updateRundown, saveRundown, title, items, columns, timezone, startTime]);
 
-  // Auto-save effect - detect changes and schedule saves
+  // Stable data comparison with proper initialization
   useEffect(() => {
-    // Skip initial effect run to avoid saving immediately on load
+    const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
+    
+    // Initialize on first run - don't trigger save
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
-      const initialData = JSON.stringify({ items, title, columns, timezone, startTime });
-      lastSaveDataRef.current = initialData;
+      lastSaveDataRef.current = currentData;
+      lastSuccessfulSaveRef.current = currentData;
+      console.log('🔄 Auto-save initialized');
       return;
     }
 
-    const currentData = JSON.stringify({ items, title, columns, timezone, startTime });
+    // Skip if we're currently saving to avoid conflicts
+    if (isSavingRef.current) {
+      return;
+    }
+
+    // Only detect real changes by comparing with last successful save
+    const hasActualChanges = lastSuccessfulSaveRef.current !== currentData;
     
-    // Check if data has actually changed
-    if (lastSaveDataRef.current !== currentData) {
-      console.log('📝 Changes detected, marking as unsaved');
+    if (hasActualChanges && !hasUnsavedChanges) {
+      console.log('📝 Real changes detected, marking as unsaved');
       setHasUnsavedChanges(true);
 
       // Clear existing timeout
@@ -112,7 +121,7 @@ export const useSimpleAutoSave = (
         if (!isSavingRef.current) {
           performSave();
         }
-      }, 3000); // 3 second delay for auto-save
+      }, 2000); // 2 second delay for auto-save
     }
 
     return () => {
@@ -120,7 +129,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [items, title, columns, timezone, startTime, performSave]);
+  }, [items, title, columns, timezone, startTime, performSave, hasUnsavedChanges]);
 
   // Cleanup on unmount
   useEffect(() => {
