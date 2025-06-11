@@ -58,6 +58,13 @@ export const useRundownGridInteractions = (
     calculateEndTime,
     selectColor,
     markAsChanged,
+    selectedRows,
+    clearSelection,
+    copyItems,
+    clipboardItems,
+    hasClipboardData,
+    toggleRowSelection,
+    items,
     setRundownTitle
   );
 
