@@ -1,6 +1,5 @@
 
 
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -32,9 +31,9 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
 
-  // Debounce timer for typing changes
-  const typingDebounceRef = useRef<NodeJS.Timeout>();
-  const typingStateRef = useRef<{ items: any[], columns: any[], title: string } | null>(null);
+  // Typing session tracking
+  const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Initialize with default data
   const {
@@ -52,23 +51,25 @@ export const useSimplifiedRundownState = () => {
   // Auto-save functionality
   const { isSaving, setUndoActive } = useSimpleAutoSave(state, rundownId, actions.markSaved);
 
-  // Standalone undo system
+  // Standalone undo system with proper change trigger
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, columns, title) => {
       console.log('🔄 Applying undo state:', { itemsCount: items.length, columnsCount: columns.length, title });
+      
+      // Set undo active to prevent auto-save interference
+      setUndoActive(true);
+      
       // Apply undo state using existing actions
       actions.setItems(items);
       actions.setColumns(columns);
       actions.setTitle(title);
       
-      // Trigger auto-save after undo by updating an item to mark as changed
+      // Mark as changed and trigger auto-save after undo
       setTimeout(() => {
-        // Since we don't have markChanged, we'll use the fact that updating triggers the change tracking
-        const firstItem = items[0];
-        if (firstItem) {
-          // Update the item with the same value to trigger change detection
-          actions.updateItem(firstItem.id, { name: firstItem.name });
-        }
+        // Force a change to trigger auto-save
+        actions.markSaved(); // Clear the saved state first
+        actions.setItems([...items]); // Trigger change detection
+        setUndoActive(false);
         console.log('🔄 Triggered auto-save after undo');
       }, 100);
     },
@@ -79,32 +80,32 @@ export const useSimplifiedRundownState = () => {
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     console.log('📺 Enhanced updateItem called:', { id, field, value });
     
-    // For typing changes, save undo state BEFORE the first change in a typing session
+    // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
-                         field === 'gfx' || field === 'video' || field.startsWith('customFields.');
+                         field === 'gfx' || field === 'video' || field.startsWith('customFields.') || field === 'segmentName';
     
     if (isTypingField) {
-      // If this is the first change in a typing session, save the current state
-      if (!typingStateRef.current) {
-        console.log('💾 Saving undo state before typing session for field:', field);
-        typingStateRef.current = {
-          items: JSON.parse(JSON.stringify(state.items)),
-          columns: JSON.parse(JSON.stringify(state.columns)),
-          title: state.title
-        };
+      const sessionKey = `${id}-${field}`;
+      
+      // If this is the start of a new typing session, save undo state
+      if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
+        console.log('💾 Saving undo state before typing session for:', sessionKey);
         saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
+        typingSessionRef.current = {
+          fieldKey: sessionKey,
+          startTime: Date.now()
+        };
       }
       
-      // Clear existing timeout
-      if (typingDebounceRef.current) {
-        clearTimeout(typingDebounceRef.current);
+      // Clear existing timeout and set new one to end typing session
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
       
-      // Set new timeout to reset typing session after user stops typing
-      typingDebounceRef.current = setTimeout(() => {
-        console.log('💾 Typing session ended for field:', field);
-        typingStateRef.current = null;
-      }, 1000); // 1 second delay after typing stops
+      typingTimeoutRef.current = setTimeout(() => {
+        console.log('💾 Typing session ended for:', sessionKey);
+        typingSessionRef.current = null;
+      }, 1000);
     } else if (field === 'duration') {
       // For duration changes, save immediately since they're usually intentional
       console.log('💾 Saving undo state before duration change');
@@ -335,11 +336,11 @@ export const useSimplifiedRundownState = () => {
     }
   }, [helpers, state.items, state.columns, state.title, saveUndoState]);
 
-  // Clean up debounce timer on unmount
+  // Clean up timeouts on unmount
   useEffect(() => {
     return () => {
-      if (typingDebounceRef.current) {
-        clearTimeout(typingDebounceRef.current);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
     };
   }, []);
@@ -429,4 +430,3 @@ export const useSimplifiedRundownState = () => {
     lastAction
   };
 };
-
