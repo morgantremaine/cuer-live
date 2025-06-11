@@ -2,6 +2,29 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Column } from './useColumnsManager';
 
+// Define minimum widths for different column types - same as in ResizableColumnHeader
+const getMinimumWidth = (column: Column): number => {
+  switch (column.key) {
+    case 'duration':
+    case 'startTime':
+    case 'endTime':
+    case 'elapsedTime':
+      return 120; // Timing columns need at least 120px to display properly
+    case 'segmentName':
+      return 150; // Segment names need reasonable space
+    case 'talent':
+      return 100;
+    case 'script':
+    case 'notes':
+      return 200; // Text fields need more space
+    case 'gfx':
+    case 'video':
+      return 120;
+    default:
+      return 100; // Default minimum for custom columns
+  }
+};
+
 export const useSimpleColumnWidths = (
   columns: Column[], 
   onColumnWidthChange?: (columnId: string, width: number) => void,
@@ -13,62 +36,50 @@ export const useSimpleColumnWidths = (
   useEffect(() => {
     const widths: { [key: string]: number } = {};
     columns.forEach(column => {
+      const minimumWidth = getMinimumWidth(column);
+      
       if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
         const widthValue = parseInt(column.width.replace('px', ''));
         if (!isNaN(widthValue)) {
-          widths[column.id] = widthValue;
+          // Ensure the width is not below minimum
+          widths[column.id] = Math.max(minimumWidth, widthValue);
         }
       } else {
         // Set default widths if none specified
-        widths[column.id] = getDefaultWidth(column);
+        widths[column.id] = minimumWidth;
       }
     });
     setColumnWidths(widths);
   }, [columns]);
 
-  const getDefaultWidth = (column: Column): number => {
-    switch (column.key) {
-      case 'duration':
-      case 'startTime':
-      case 'endTime':
-      case 'elapsedTime':
-        return 100;
-      case 'segmentName':
-        return 200;
-      case 'talent':
-        return 120;
-      case 'gfx':
-      case 'video':
-        return 150;
-      case 'notes':
-        return 250;
-      default:
-        return 120;
-    }
-  };
-
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
+    // Find the column to get its minimum width
+    const column = columns.find(col => col.id === columnId);
+    const minimumWidth = column ? getMinimumWidth(column) : 100;
+    
     setColumnWidths(prev => {
-      const newWidths = { ...prev, [columnId]: width };
+      // Enforce minimum width constraint
+      const constrainedWidth = Math.max(minimumWidth, width);
+      const newWidths = { ...prev, [columnId]: constrainedWidth };
       
       // Call the callback for each update to trigger save mechanism
       if (onColumnWidthChange) {
         // Use setTimeout to ensure this doesn't block the UI during drag
         setTimeout(() => {
-          onColumnWidthChange(columnId, width);
+          onColumnWidthChange(columnId, constrainedWidth);
         }, 0);
       }
 
       // Also update the actual column data structure for persistence
       if (onUpdateColumnWidth) {
         setTimeout(() => {
-          onUpdateColumnWidth(columnId, width);
+          onUpdateColumnWidth(columnId, constrainedWidth);
         }, 0);
       }
       
       return newWidths;
     });
-  }, [onColumnWidthChange, onUpdateColumnWidth]);
+  }, [onColumnWidthChange, onUpdateColumnWidth, columns]);
 
   const getColumnWidth = useCallback((column: Column) => {
     const width = columnWidths[column.id];
@@ -76,9 +87,9 @@ export const useSimpleColumnWidths = (
       return `${width}px`;
     }
     
-    // Fallback to default widths
-    const defaultWidth = getDefaultWidth(column);
-    return `${defaultWidth}px`;
+    // Fallback to minimum widths
+    const minimumWidth = getMinimumWidth(column);
+    return `${minimumWidth}px`;
   }, [columnWidths]);
 
   return {

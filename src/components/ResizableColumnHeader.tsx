@@ -10,6 +10,29 @@ interface ResizableColumnHeaderProps {
   showLeftSeparator?: boolean;
 }
 
+// Define minimum widths for different column types
+const getMinimumWidth = (column: Column): number => {
+  switch (column.key) {
+    case 'duration':
+    case 'startTime':
+    case 'endTime':
+    case 'elapsedTime':
+      return 120; // Timing columns need at least 120px to display properly
+    case 'segmentName':
+      return 150; // Segment names need reasonable space
+    case 'talent':
+      return 100;
+    case 'script':
+    case 'notes':
+      return 200; // Text fields need more space
+    case 'gfx':
+    case 'video':
+      return 120;
+    default:
+      return 100; // Default minimum for custom columns
+  }
+};
+
 const ResizableColumnHeader = ({ 
   column, 
   width, 
@@ -21,6 +44,8 @@ const ResizableColumnHeader = ({
   const initialWidthRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
   const animationFrameRef = useRef<number>();
+
+  const minimumWidth = getMinimumWidth(column);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,7 +78,8 @@ const ResizableColumnHeader = ({
       // Use requestAnimationFrame for smooth updates
       animationFrameRef.current = requestAnimationFrame(() => {
         const deltaX = e.clientX - startX;
-        const newWidth = Math.max(50, initialWidthRef.current + deltaX);
+        // Enforce minimum width constraint
+        const newWidth = Math.max(minimumWidth, initialWidthRef.current + deltaX);
         
         // Update the actual width during drag for real-time preview
         onWidthChange(column.id, newWidth);
@@ -70,9 +96,9 @@ const ResizableColumnHeader = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
       
-      // Calculate final width and ensure it's applied
+      // Calculate final width and ensure it's applied with minimum constraint
       const deltaX = e.clientX - startX;
-      const finalWidth = Math.max(50, initialWidthRef.current + deltaX);
+      const finalWidth = Math.max(minimumWidth, initialWidthRef.current + deltaX);
       
       // Final width update to ensure state is correct
       onWidthChange(column.id, finalWidth);
@@ -93,7 +119,7 @@ const ResizableColumnHeader = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [column.id, onWidthChange, width]);
+  }, [column.id, onWidthChange, width, minimumWidth]);
 
   return (
     <th 
