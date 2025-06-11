@@ -103,11 +103,11 @@ const RundownTable = ({
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
             const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
-            const isSelected = selectedRows.has(item.id);
+            const isMultiSelected = selectedRows.has(item.id);
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
 
-            console.log(`🎯 About to render RundownRow for ${item.id}, rowNumber: ${rowNumber}, headerDuration: ${headerDuration}`);
+            console.log(`🎯 About to render RundownRow for ${item.id}, rowNumber: ${rowNumber}, headerDuration: ${headerDuration}, multiSelected: ${isMultiSelected}`);
 
             return (
               <React.Fragment key={item.id}>
@@ -119,7 +119,7 @@ const RundownTable = ({
                   showColorPicker={showColorPicker}
                   cellRefs={cellRefs}
                   columns={visibleColumns}
-                  isSelected={isSelected}
+                  isSelected={isMultiSelected}
                   isCurrentlyPlaying={isCurrentlyPlaying}
                   isDraggingMultiple={isDraggingMultiple}
                   selectedRowsCount={selectedRows.size}
