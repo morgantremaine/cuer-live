@@ -82,8 +82,8 @@ const RundownTable = ({
 }: RundownTableProps) => {
 
   return (
-    <div className="relative w-full h-full overflow-auto bg-background">
-      <table className="w-full border-collapse border border-border table-fixed">
+    <div className="relative w-full overflow-auto bg-background">
+      <table className="w-full border-collapse border border-border">
         <RundownTableHeader 
           visibleColumns={visibleColumns}
           getColumnWidth={getColumnWidth}
