@@ -109,9 +109,9 @@ const RundownTable = ({
               <React.Fragment key={item.id}>
                 {/* Show drop indicator line ABOVE this row if it's the drop target */}
                 {dropTargetIndex === index && (
-                  <tr>
+                  <tr data-drop-indicator>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-gray-400 w-full relative z-50"></div>
+                      <div className="h-0.5 bg-gray-500 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
@@ -163,9 +163,9 @@ const RundownTable = ({
                 
                 {/* Show drop indicator line AFTER the last row if it's the drop target */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
-                  <tr>
+                  <tr data-drop-indicator>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-gray-400 w-full relative z-50"></div>
+                      <div className="h-0.5 bg-gray-500 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
@@ -179,7 +179,7 @@ const RundownTable = ({
         <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">
           No items to display
         </div>
-        )}
+      )}
     </div>
   );
 };

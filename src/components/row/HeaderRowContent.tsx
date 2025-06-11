@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
@@ -31,7 +32,6 @@ const HeaderRowContent = ({
 }: HeaderRowContentProps) => {
   const renderCellContent = (column: Column, value: string) => {
     if (column.id === 'rowNumber') {
-      // Remove the "M" indicator - just show the header letter
       return (
         <div className="flex items-center gap-1">
           <span className="text-xs font-bold text-muted-foreground">

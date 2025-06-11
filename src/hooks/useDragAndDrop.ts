@@ -48,23 +48,39 @@ export const useDragAndDrop = (
     }));
   };
 
-  const handleDragOver = (e: React.DragEvent, targetIndex?: number) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    if (targetIndex !== undefined && draggedItemIndex !== null) {
-      // Calculate the drop position based on mouse position relative to row
-      const target = e.currentTarget as HTMLElement;
-      const rect = target.getBoundingClientRect();
+    // Get the target row element
+    const target = e.currentTarget as HTMLElement;
+    const table = target.closest('table');
+    if (!table) return;
+    
+    const rows = Array.from(table.querySelectorAll('tbody > tr')).filter(row => 
+      !row.querySelector('[data-drop-indicator]')
+    );
+    
+    // Find which row we're over
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i] as HTMLElement;
+      const rect = row.getBoundingClientRect();
       const mouseY = e.clientY;
-      const rowMiddle = rect.top + rect.height / 2;
       
-      // If mouse is in the top half, insert before this row
-      // If mouse is in the bottom half, insert after this row
-      const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
-      
-      console.log('🎯 Setting dropTargetIndex to:', insertIndex, 'for target row:', targetIndex);
-      setDropTargetIndex(insertIndex);
+      if (mouseY >= rect.top && mouseY <= rect.bottom) {
+        // Determine if we should insert before or after this row
+        const rowMiddle = rect.top + rect.height / 2;
+        const insertIndex = mouseY < rowMiddle ? i : i + 1;
+        
+        console.log('🎯 Setting dropTargetIndex to:', insertIndex, 'for row:', i, 'mouseY:', mouseY, 'rowMiddle:', rowMiddle);
+        setDropTargetIndex(insertIndex);
+        return;
+      }
+    }
+    
+    // If we're below all rows, insert at the end
+    if (rows.length > 0) {
+      setDropTargetIndex(rows.length);
     }
   };
 

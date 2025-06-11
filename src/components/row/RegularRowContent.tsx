@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -35,7 +36,6 @@ const RegularRowContent = ({
 }: RegularRowContentProps) => {
   const renderCellContent = (column: Column, value: string) => {
     if (column.id === 'rowNumber') {
-      // Remove the "M" indicator - just show the row number
       return (
         <span className="text-xs text-muted-foreground min-w-[20px] text-center">
           {rowNumber}
