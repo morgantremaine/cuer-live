@@ -70,7 +70,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     isAutoSaving.current = saving;
   }, []);
 
-  const saveState = useCallback((
+  const saveStateOnSave = useCallback((
     items: RundownItem[],
     columns: Column[],
     title: string,
@@ -202,7 +202,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   const lastAction = undoStack.length > 0 ? undoStack[undoStack.length - 1].action : null;
 
   return {
-    saveState,
+    saveStateOnSave,
     undo,
     canUndo,
     lastAction,

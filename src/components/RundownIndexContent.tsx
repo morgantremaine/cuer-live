@@ -117,8 +117,10 @@ const RundownIndexContent = () => {
   const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
 
   // Create a wrapper for handleAddColumn that takes the required parameters
-  const handleAddColumnWrapper = (name: string, key: string, type: string) => {
-    handleAddColumn(name, key, type);
+  const handleAddColumnWrapper = (name: string) => {
+    // Generate a key from the name and provide a default type
+    const key = name.toLowerCase().replace(/\s+/g, '_');
+    handleAddColumn(name, key, 'text'); // FIXED: Provide all required parameters
   };
 
   // Prepare rundown data for Cuer AI

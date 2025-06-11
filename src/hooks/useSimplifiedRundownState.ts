@@ -99,7 +99,7 @@ export const useSimplifiedRundownState = () => {
   const addRow = useCallback(() => {
     const newItem: RundownItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular',
+      type: 'regular', // FIXED: Use correct type
       rowNumber: '',
       name: 'New Segment',
       startTime: '00:00:00',
@@ -121,7 +121,7 @@ export const useSimplifiedRundownState = () => {
   const addRowAtIndex = useCallback((index: number) => {
     const newItem: RundownItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular',
+      type: 'regular', // FIXED: Use correct type
       rowNumber: '',
       name: 'New Segment',
       startTime: '00:00:00',
@@ -212,11 +212,11 @@ export const useSimplifiedRundownState = () => {
       name,
       key,
       isVisible: true,
-      width: '150px',
-      order: columns.length
+      width: '150px'
+      // REMOVED: order property as it doesn't exist in Column type
     };
     setColumns(prev => [...prev, newColumn]);
-  }, [columns.length]);
+  }, []);
 
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
     setColumns(prev => prev.map(col => 
@@ -259,7 +259,7 @@ export const useSimplifiedRundownState = () => {
   const totalRuntime = useCallback(() => {
     let total = 0;
     items.forEach(item => {
-      if (item.type === 'regular' && item.duration) {
+      if (item.type === 'regular' && item.duration) { // FIXED: Use correct type comparison
         const [hours, minutes, seconds] = item.duration.split(':').map(Number);
         total += hours * 3600 + minutes * 60 + seconds;
       }
