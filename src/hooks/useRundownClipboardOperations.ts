@@ -63,38 +63,53 @@ export const useRundownClipboardOperations = ({
     }
   }, [items, selectedRows, copyItems, clearSelection]);
 
-  const handlePasteRows = useCallback(() => {
+  const handlePasteRows = useCallback((targetRowId?: string) => {
     if (clipboardItems.length > 0) {
-      console.log('Pasting items, selectedRows:', Array.from(selectedRows));
+      console.log('Pasting items, targetRowId:', targetRowId);
       console.log('Current items length:', items.length);
       
-      const selectedIds = Array.from(selectedRows);
       let insertIndex: number;
       
-      if (selectedIds.length > 0) {
-        // Find the indices of all selected rows
-        const selectedIndices = selectedIds
-          .map(id => {
-            const index = items.findIndex(item => item.id === id);
-            console.log(`Found item ${id} at index ${index}`);
-            return index;
-          })
-          .filter(index => index !== -1);
-        
-        if (selectedIndices.length > 0) {
-          // Insert after the last selected item
-          const highestSelectedIndex = Math.max(...selectedIndices);
-          insertIndex = highestSelectedIndex + 1;
-          console.log('Inserting at index:', insertIndex, 'after selected index:', highestSelectedIndex);
+      if (targetRowId) {
+        // Find the target row and insert after it
+        const targetIndex = items.findIndex(item => item.id === targetRowId);
+        if (targetIndex !== -1) {
+          insertIndex = targetIndex + 1;
+          console.log('Inserting at index:', insertIndex, 'after target row:', targetRowId);
         } else {
-          // If no valid selection found, insert at the end
+          // If target not found, insert at the end
           insertIndex = items.length;
-          console.log('No valid selection, inserting at end:', insertIndex);
+          console.log('Target row not found, inserting at end:', insertIndex);
         }
       } else {
-        // If no selection, insert at the end
-        insertIndex = items.length;
-        console.log('No selection, inserting at end:', insertIndex);
+        // Fallback to selected rows logic if no target specified
+        const selectedIds = Array.from(selectedRows);
+        
+        if (selectedIds.length > 0) {
+          // Find the indices of all selected rows
+          const selectedIndices = selectedIds
+            .map(id => {
+              const index = items.findIndex(item => item.id === id);
+              console.log(`Found item ${id} at index ${index}`);
+              return index;
+            })
+            .filter(index => index !== -1);
+          
+          if (selectedIndices.length > 0) {
+            // Insert after the last selected item
+            const highestSelectedIndex = Math.max(...selectedIndices);
+            insertIndex = highestSelectedIndex + 1;
+            console.log('Inserting at index:', insertIndex, 'after selected index:', highestSelectedIndex);
+          } else {
+            // If no valid selection found, insert at the end
+            insertIndex = items.length;
+            console.log('No valid selection, inserting at end:', insertIndex);
+          }
+        } else {
+          // If no selection, insert at the end
+          insertIndex = items.length;
+          console.log('No selection, inserting at end:', insertIndex);
+        }
       }
 
       const itemsToPaste = clipboardItems.map(item => ({

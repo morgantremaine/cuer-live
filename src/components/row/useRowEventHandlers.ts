@@ -13,7 +13,7 @@ interface UseRowEventHandlersProps {
   onToggleColorPicker: (itemId: string) => void;
   onToggleFloat?: (id: string) => void;
   selectedRows?: Set<string>;
-  onPasteRows?: () => void;
+  onPasteRows?: (targetRowId?: string) => void;
 }
 
 export const useRowEventHandlers = ({
@@ -83,7 +83,8 @@ export const useRowEventHandlers = ({
 
   const handleContextMenuPaste = () => {
     if (onPasteRows) {
-      onPasteRows();
+      // Pass the current item's ID as the target for pasting
+      onPasteRows(item.id);
     }
   };
 

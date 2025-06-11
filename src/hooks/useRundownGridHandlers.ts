@@ -124,11 +124,35 @@ export const useRundownGridHandlers = ({
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
-  const handlePasteRows = useCallback(() => {
+  const handlePasteRows = useCallback((targetRowId?: string) => {
     if (clipboardItems.length > 0) {
-      addMultipleRows(clipboardItems, calculateEndTime);
+      console.log('Grid handlers: pasting with targetRowId:', targetRowId);
+      
+      const itemsToPaste = clipboardItems.map(item => ({
+        ...item,
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }));
+      
+      let insertIndex: number;
+      
+      if (targetRowId) {
+        // Find the target row and insert after it
+        const targetIndex = items.findIndex(item => item.id === targetRowId);
+        insertIndex = targetIndex !== -1 ? targetIndex + 1 : items.length;
+      } else {
+        // Fallback to end if no target specified
+        insertIndex = items.length;
+      }
+      
+      setItems(prevItems => {
+        const newItems = [...prevItems];
+        newItems.splice(insertIndex, 0, ...itemsToPaste);
+        return newItems;
+      });
+      
+      markAsChanged();
     }
-  }, [clipboardItems, addMultipleRows, calculateEndTime]);
+  }, [clipboardItems, items, setItems, markAsChanged]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);
