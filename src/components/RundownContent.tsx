@@ -17,6 +17,7 @@ interface RundownContentProps {
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
+  selectedRowId?: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -54,6 +55,7 @@ const RundownContent = ({
   dropTargetIndex,
   currentSegmentId,
   hasClipboardData = false,
+  selectedRowId = null,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -95,6 +97,7 @@ const RundownContent = ({
             dropTargetIndex={dropTargetIndex}
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
+            selectedRowId={selectedRowId}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
