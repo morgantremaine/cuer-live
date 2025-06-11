@@ -64,6 +64,7 @@ const RundownGrid = () => {
     
     if (isShiftClick || isCtrlClick) {
       // Multi-selection mode
+      console.log('🎯 Multi-selection mode');
       handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
       // Clear single selection when doing multi-selection
       if (selectedRowId !== null) {
@@ -71,7 +72,7 @@ const RundownGrid = () => {
       }
     } else {
       // Single selection mode
-      console.log('🎯 Setting single row selection to:', itemId);
+      console.log('🎯 Single selection mode - setting selectedRowId to:', itemId);
       handleRowSelection(itemId);
       // Clear multi-selection when doing single selection
       if (selectedRows.size > 0) {

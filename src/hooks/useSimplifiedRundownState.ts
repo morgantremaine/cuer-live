@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -25,6 +26,8 @@ export const useSimplifiedRundownState = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+
+  console.log('🎯 useSimplifiedRundownState - selectedRowId is:', selectedRowId);
 
   // Initialize with default data
   const {
@@ -193,7 +196,7 @@ export const useSimplifiedRundownState = () => {
     return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
-  // Row selection handlers with better logging
+  // Row selection handlers with better logging and proper state management
   const handleRowSelection = useCallback((itemId: string) => {
     console.log('🎯 handleRowSelection called with itemId:', itemId, 'current selectedRowId:', selectedRowId);
     setSelectedRowId(prev => {
@@ -217,6 +220,7 @@ export const useSimplifiedRundownState = () => {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       console.log('🚀 Found target item at index:', targetIndex);
       if (targetIndex !== -1) {
+        console.log('🚀 Adding row after index:', targetIndex);
         helpers.addRow(targetIndex + 1);
         return;
       }
@@ -233,6 +237,7 @@ export const useSimplifiedRundownState = () => {
       const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
       console.log('🚀 Found target item at index:', targetIndex);
       if (targetIndex !== -1) {
+        console.log('🚀 Adding header after index:', targetIndex);
         helpers.addHeader(targetIndex + 1);
         return;
       }
