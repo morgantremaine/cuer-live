@@ -67,32 +67,34 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Simple key navigation for script cells
+  // Improved key navigation for script cells
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // For Up/Down arrows, check if we're at the beginning/end of the text to allow cell navigation
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       const textarea = e.target as HTMLTextAreaElement;
-      const lines = value.split('\n');
+      const cursorPosition = textarea.selectionStart;
+      const textBeforeCursor = value.substring(0, cursorPosition);
+      const textAfterCursor = value.substring(cursorPosition);
       
-      // Calculate which line the cursor is on
-      let currentLine = 0;
-      let position = 0;
-      for (let i = 0; i < lines.length; i++) {
-        if (position + lines[i].length >= textarea.selectionStart) {
-          currentLine = i;
-          break;
+      if (e.key === 'ArrowUp') {
+        // Check if we're at the first line by seeing if there are no newlines before cursor
+        const isAtFirstLine = !textBeforeCursor.includes('\n');
+        if (isAtFirstLine) {
+          // We're at the first line, allow navigation to previous cell
+          onKeyDown(e, itemId, cellRefKey);
+          return;
         }
-        position += lines[i].length + 1;
+      } else if (e.key === 'ArrowDown') {
+        // Check if we're at the last line by seeing if there are no newlines after cursor
+        const isAtLastLine = !textAfterCursor.includes('\n');
+        if (isAtLastLine) {
+          // We're at the last line, allow navigation to next cell
+          onKeyDown(e, itemId, cellRefKey);
+          return;
+        }
       }
       
-      // If we're at the first line and pressing Up, or last line and pressing Down, allow navigation
-      if ((e.key === 'ArrowUp' && currentLine === 0) || 
-          (e.key === 'ArrowDown' && currentLine === lines.length - 1)) {
-        onKeyDown(e, itemId, cellRefKey);
-        return;
-      }
-      
-      // Otherwise, let the textarea handle the arrow key naturally
+      // Otherwise, let the textarea handle the arrow key naturally (navigate within text)
       return;
     }
     
