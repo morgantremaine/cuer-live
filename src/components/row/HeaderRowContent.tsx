@@ -1,15 +1,15 @@
-
 import React from 'react';
-import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { RundownItem } from '@/types/rundown';
 
 interface HeaderRowContentProps {
   item: RundownItem;
-  columns: Column[];
-  headerDuration: string;
   rowNumber: string;
-  backgroundColor?: string;
+  columns: Column[];
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  headerDuration: string;
+  isDraggingMultiple?: boolean;
+  isSelected?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -18,66 +18,68 @@ interface HeaderRowContentProps {
 
 const HeaderRowContent = ({
   item,
-  columns,
-  headerDuration,
   rowNumber,
-  backgroundColor,
+  columns,
   cellRefs,
+  headerDuration,
+  isDraggingMultiple,
+  isSelected,
   onUpdateItem,
   onCellClick,
   onKeyDown,
   getColumnWidth
 }: HeaderRowContentProps) => {
+  const renderCellContent = (column: Column, value: string) => {
+    if (column.id === 'rowNumber') {
+      // Remove the "M" indicator - just show the header letter
+      return (
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-bold text-muted-foreground">
+            {rowNumber}
+          </span>
+          {headerDuration && (
+            <span className="text-xs text-muted-foreground">
+              ({headerDuration})
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    const width = getColumnWidth(column);
+
+    return (
+      <div className="relative">
+        <textarea
+          ref={ref => cellRefs.current[`${item.id}-${column.id}`] = ref as HTMLTextAreaElement}
+          className="w-full h-full bg-transparent border-none outline-none resize-none py-2 px-3"
+          style={{ width: width, color: 'inherit' }}
+          value={value || ''}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCellClick(item.id, column.id);
+          }}
+          onKeyDown={(e) => onKeyDown(e, item.id, column.id)}
+          onChange={(e) => onUpdateItem(item.id, column.id, e.target.value)}
+        />
+      </div>
+    );
+  };
+
   return (
     <>
-      <td 
-        className="px-2 py-1 text-sm text-muted-foreground font-mono align-middle border border-border bg-muted w-12 min-w-12"
-        style={{ backgroundColor: backgroundColor || undefined }}
-      >
-        <span className="text-lg font-bold text-foreground">{rowNumber}</span>
-      </td>
-      {columns.map((column, columnIndex) => {
-        const columnWidth = getColumnWidth(column);
-        
-        return (
-          <td 
-            key={column.id} 
-            className="px-2 py-2 align-middle border border-border bg-muted" 
-            style={{ 
-              width: columnWidth, 
-              minWidth: columnWidth,
-              backgroundColor: backgroundColor || undefined
-            }}
-          >
-            {column.key === 'segmentName' ? (
-              <input
-                ref={el => el && (cellRefs.current[`${item.id}-segmentName`] = el)}
-                type="text"
-                value={item.name || ''}
-                onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCellClick(item.id, 'name');
-                }}
-                onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
-                className="w-full border border-border text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded px-2 py-1 text-base font-bold"
-                style={{ 
-                  backgroundColor: backgroundColor || 'var(--background)'
-                }}
-              />
-            ) : column.key === 'duration' ? (
-              <span className="text-sm text-muted-foreground font-mono">
-                ({headerDuration})
-              </span>
-            ) : (
-              // For all other columns, show empty cell for headers
-              <div className="px-1 py-0.5 text-sm text-muted-foreground">
-                {/* Empty cell - headers don't use these columns */}
-              </div>
-            )}
-          </td>
-        );
-      })}
+      {columns.map(column => (
+        <td
+          key={column.id}
+          className="p-0 align-top"
+          style={{
+            width: getColumnWidth(column),
+            minWidth: getColumnWidth(column)
+          }}
+        >
+          {renderCellContent(column, item[column.id] || '')}
+        </td>
+      ))}
     </>
   );
 };
