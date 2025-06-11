@@ -122,31 +122,23 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields
+  // Use TextAreaCell for all other editable fields to ensure consistent navigation
   return (
-    <div className="w-full h-full p-1" style={{ backgroundColor }}>
-      <input
-        ref={(el) => {
-          if (el) {
-            cellRefs.current[cellKey] = el;
-          }
-        }}
-        type="text"
-        value={value}
-        onChange={(e) => {
-          const field = column.isCustom ? `customFields.${column.key}` : column.key;
-          onUpdateItem(item.id, field, e.target.value);
-        }}
-        onClick={() => onCellClick(item.id, column.key)}
-        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full h-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm"
-        style={{ 
-          backgroundColor: 'transparent',
-          color: textColor || 'inherit',
-          minHeight: '28px'
-        }}
-      />
-    </div>
+    <TextAreaCell
+      value={value}
+      itemId={item.id}
+      cellRefKey={column.key}
+      cellRefs={cellRefs}
+      textColor={textColor}
+      backgroundColor={backgroundColor}
+      isDuration={column.key === 'duration'}
+      onUpdateValue={(newValue) => {
+        const field = column.key === 'segmentName' ? 'name' : column.key;
+        onUpdateItem(item.id, field, newValue);
+      }}
+      onCellClick={(e) => onCellClick(item.id, column.key)}
+      onKeyDown={onKeyDown}
+    />
   );
 };
 
