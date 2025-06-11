@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -32,6 +31,7 @@ export const useSimplifiedRundownState = () => {
 
   // Typing session tracking with improved logic
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingSessionRef = useRef<string | null>(null);
 
   // Initialize with default data
   const {
@@ -73,6 +73,8 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function that works with showcaller and saves undo state with proper typing session management
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    console.log('📺 Enhanced updateItem called:', { id, field, value });
+    
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field.startsWith('customFields.') || field === 'segmentName';
@@ -92,22 +94,26 @@ export const useSimplifiedRundownState = () => {
         // Save undo state only at the start of a typing session
         const existingTypingSession = typingSessionRef.current !== null;
         if (!existingTypingSession) {
+          console.log('💾 Saving undo state before typing session for:', sessionKey);
           saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
         }
         
         // Start/continue typing session
         setTypingSession(sessionKey);
+        typingSessionRef.current = sessionKey;
         
         // Update the item immediately
         actuallyUpdateItem(id, field, value);
         
         // Set timeout to end typing session after user stops typing
         typingTimeoutRef.current = setTimeout(() => {
+          console.log('💾 Typing session ended for:', sessionKey);
           setTypingSession(null);
+          typingSessionRef.current = null;
           typingTimeoutRef.current = undefined;
           
           // Trigger auto-save after typing session ends
-          actions.markChanged();
+          actions.markAsChanged();
         }, 1500); // 1.5 seconds of inactivity ends the session
       }
     } else if (field === 'duration') {
@@ -118,7 +124,7 @@ export const useSimplifiedRundownState = () => {
       // For non-typing fields, update immediately
       actuallyUpdateItem(id, field, value);
     }
-  }, [state.items, state.columns, state.title, saveUndoState, setTypingSession, actions.markChanged]);
+  }, [state.items, state.columns, state.title, saveUndoState, setTypingSession, actions.markAsChanged]);
 
   const actuallyUpdateItem = useCallback((id: string, field: string, value: string) => {
     if (field.startsWith('customFields.')) {
