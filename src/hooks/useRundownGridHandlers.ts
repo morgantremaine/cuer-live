@@ -1,7 +1,6 @@
 
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { useRundownClipboardOperations } from './useRundownClipboardOperations';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
@@ -20,8 +19,8 @@ interface UseRundownGridHandlersProps {
   clearSelection: () => void;
   copyItems: (items: RundownItem[]) => void;
   clipboardItems: RundownItem[];
-  hasClipboardData: boolean;
-  toggleRowSelection: (id: string, isShiftClick?: boolean, isCtrlClick?: boolean) => void;
+  hasClipboardData: () => boolean;
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[]) => void;
   items: RundownItem[];
   setRundownTitle: (title: string) => void;
 }
@@ -49,52 +48,75 @@ export const useRundownGridHandlers = ({
   setRundownTitle
 }: UseRundownGridHandlersProps) => {
 
-  // Use clipboard operations hook
-  const { handleCopySelectedRows, handlePasteRows } = useRundownClipboardOperations({
-    items,
-    setItems,
-    selectedRows,
-    clearSelection,
-    addMultipleRows,
-    calculateEndTime,
-    markAsChanged,
-    clipboardItems,
-    copyItems,
-    hasClipboardData
-  });
-
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
-    console.log('🔄 Updating item:', id, field, value);
     updateItem(id, field, value);
   }, [updateItem]);
 
+  // Enhanced addRow that considers both selection states
   const handleAddRow = useCallback(() => {
-    console.log('🔄 Adding new row');
+    console.log('🚀 Grid handlers addRow called');
+    console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    
+    // Check if we have multi-selection
+    if (selectedRows.size > 0) {
+      console.log('🚀 Using multi-selection for insertion');
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(selectedRows)
+        .map(id => items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        console.log('🚀 Inserting after index:', insertAfterIndex);
+        // Use the underlying addRow function which will be enhanced by the state system
+        addRow();
+        return;
+      }
+    }
+    
+    console.log('🚀 No selection, using default addRow');
     addRow();
-  }, [addRow]);
+  }, [addRow, selectedRows, items]);
 
+  // Enhanced addHeader that considers both selection states  
   const handleAddHeader = useCallback(() => {
-    console.log('🔄 Adding new header');
+    console.log('🚀 Grid handlers addHeader called');
+    console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    
+    // Check if we have multi-selection
+    if (selectedRows.size > 0) {
+      console.log('🚀 Using multi-selection for header insertion');
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(selectedRows)
+        .map(id => items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        console.log('🚀 Inserting header after index:', insertAfterIndex);
+        // Use the underlying addHeader function which will be enhanced by the state system
+        addHeader();
+        return;
+      }
+    }
+    
+    console.log('🚀 No selection, using default addHeader');
     addHeader();
-  }, [addHeader]);
+  }, [addHeader, selectedRows, items]);
 
   const handleDeleteRow = useCallback((id: string) => {
-    console.log('🔄 Deleting row:', id);
     deleteRow(id);
   }, [deleteRow]);
 
   const handleToggleFloat = useCallback((id: string) => {
-    console.log('🔄 Toggling float for row:', id);
     toggleFloatRow(id);
   }, [toggleFloatRow]);
 
   const handleColorSelect = useCallback((id: string, color: string) => {
-    console.log('🔄 Setting color for row:', id, color);
     selectColor(id, color);
   }, [selectColor]);
 
   const handleDeleteSelectedRows = useCallback(() => {
-    console.log('🔄 Deleting selected rows:', Array.from(selectedRows));
     const selectedIds = Array.from(selectedRows);
     if (selectedIds.length > 0) {
       deleteMultipleRows(selectedIds);
@@ -102,28 +124,28 @@ export const useRundownGridHandlers = ({
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
+  const handlePasteRows = useCallback(() => {
+    if (clipboardItems.length > 0) {
+      addMultipleRows(clipboardItems, calculateEndTime);
+    }
+  }, [clipboardItems, addMultipleRows, calculateEndTime]);
+
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
-    console.log('🔄 Deleting column:', columnId);
     handleDeleteColumn(columnId);
   }, [handleDeleteColumn]);
 
+  const handleCopySelectedRows = useCallback(() => {
+    const selectedItems = items.filter(item => selectedRows.has(item.id));
+    copyItems(selectedItems);
+  }, [items, selectedRows, copyItems]);
+
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    console.log('🔄 Row selection:', itemId, { isShiftClick, isCtrlClick });
-    toggleRowSelection(itemId, isShiftClick, isCtrlClick);
-  }, [toggleRowSelection]);
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
+  }, [toggleRowSelection, items]);
 
   const handleTitleChange = useCallback((title: string) => {
-    console.log('🔄 Changing title:', title);
     setRundownTitle(title);
   }, [setRundownTitle]);
-
-  // Enhanced paste handler with extra logging
-  const enhancedHandlePasteRows = useCallback(() => {
-    console.log('🎯 Enhanced paste handler called from grid handlers');
-    console.log('📋 Has clipboard data:', hasClipboardData);
-    console.log('🎯 Current selection:', Array.from(selectedRows));
-    handlePasteRows();
-  }, [handlePasteRows, hasClipboardData, selectedRows]);
 
   return {
     handleUpdateItem,
@@ -133,7 +155,7 @@ export const useRundownGridHandlers = ({
     handleToggleFloat,
     handleColorSelect,
     handleDeleteSelectedRows,
-    handlePasteRows: enhancedHandlePasteRows,
+    handlePasteRows,
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
