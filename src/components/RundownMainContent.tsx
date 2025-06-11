@@ -2,12 +2,12 @@
 import React from 'react';
 import RundownContent from './RundownContent';
 import ColumnManager from './ColumnManager';
-import { CalculatedRundownItem } from '@/utils/rundownCalculations';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownMainContentProps {
   currentTime: Date;
-  items: CalculatedRundownItem[];
+  items: RundownItem[];
   visibleColumns: Column[];
   columns: Column[];
   showColorPicker: string | null;
@@ -21,7 +21,7 @@ interface RundownMainContentProps {
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
-  getRowStatus: (item: CalculatedRundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
+  getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
