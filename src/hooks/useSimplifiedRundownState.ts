@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
@@ -30,6 +30,9 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
 
+  // Debounce timer for typing changes
+  const typingDebounceRef = useRef<NodeJS.Timeout>();
+
   // Initialize with default data
   const {
     state,
@@ -58,14 +61,29 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Enhanced updateItem function that works with showcaller and saves undo state
+  // Enhanced updateItem function that works with showcaller and saves undo state with debouncing
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     console.log('📺 Enhanced updateItem called:', { id, field, value });
     
-    // Save undo state before making changes (for significant changes)
-    if (field === 'name' || field === 'duration' || field === 'script') {
-      console.log('💾 Saving undo state before updateItem');
-      saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
+    // For typing changes, save undo state with debouncing
+    const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
+                         field === 'gfx' || field === 'video' || field.startsWith('customFields.');
+    
+    if (isTypingField) {
+      // Clear existing timeout
+      if (typingDebounceRef.current) {
+        clearTimeout(typingDebounceRef.current);
+      }
+      
+      // Set new timeout to save undo state after user stops typing
+      typingDebounceRef.current = setTimeout(() => {
+        console.log('💾 Saving undo state after typing pause for field:', field);
+        saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
+      }, 1000); // 1 second delay after typing stops
+    } else if (field === 'duration') {
+      // For duration changes, save immediately since they're usually intentional
+      console.log('💾 Saving undo state before duration change');
+      saveUndoState(state.items, state.columns, state.title, 'Edit duration');
     }
     
     if (field.startsWith('customFields.')) {
@@ -291,6 +309,15 @@ export const useSimplifiedRundownState = () => {
       helpers.addHeader();
     }
   }, [helpers, state.items, state.columns, state.title, saveUndoState]);
+
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (typingDebounceRef.current) {
+        clearTimeout(typingDebounceRef.current);
+      }
+    };
+  }, []);
 
   console.log('🔍 Simplified state debug - canUndo:', canUndo, 'lastAction:', lastAction);
 
