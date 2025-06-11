@@ -10,25 +10,25 @@ import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
 
 const DEFAULT_COLUMNS: Column[] = [
-  { id: 'source', name: 'Source', type: 'text', width: '60px', isVisible: true, isCustom: false, key: 'rowNumber' },
-  { id: 'segmentName', name: 'Segment Name', type: 'text', width: '200px', isVisible: true, isCustom: false, key: 'name' },
-  { id: 'talent', name: 'Talent', type: 'text', width: '120px', isVisible: true, isCustom: false, key: 'talent' },
-  { id: 'script', name: 'Script', type: 'text', width: '200px', isVisible: true, isCustom: false, key: 'script' },
-  { id: 'gfx', name: 'GFX', type: 'text', width: '120px', isVisible: true, isCustom: false, key: 'gfx' },
-  { id: 'video', name: 'Video', type: 'text', width: '120px', isVisible: true, isCustom: false, key: 'video' },
-  { id: 'stage', name: 'Stage', type: 'text', width: '80px', isVisible: true, isCustom: false, key: 'notes' },
-  { id: 'duration', name: 'Duration', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'duration' },
-  { id: 'startTime', name: 'Start', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'startTime' },
-  { id: 'endTime', name: 'End', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'endTime' },
-  { id: 'elapsedTime', name: 'Elapsed', type: 'time', width: '80px', isVisible: true, isCustom: false, key: 'elapsedTime' },
-  { id: 'notes', name: 'Notes', type: 'text', width: '200px', isVisible: true, isCustom: false, key: 'notes' }
+  { id: 'source', name: 'Source', width: '60px', isVisible: true, isCustom: false, key: 'rowNumber', isEditable: false },
+  { id: 'segmentName', name: 'Segment Name', width: '200px', isVisible: true, isCustom: false, key: 'name', isEditable: true },
+  { id: 'talent', name: 'Talent', width: '120px', isVisible: true, isCustom: false, key: 'talent', isEditable: true },
+  { id: 'script', name: 'Script', width: '200px', isVisible: true, isCustom: false, key: 'script', isEditable: true },
+  { id: 'gfx', name: 'GFX', width: '120px', isVisible: true, isCustom: false, key: 'gfx', isEditable: true },
+  { id: 'video', name: 'Video', width: '120px', isVisible: true, isCustom: false, key: 'video', isEditable: true },
+  { id: 'stage', name: 'Stage', width: '80px', isVisible: true, isCustom: false, key: 'notes', isEditable: true },
+  { id: 'duration', name: 'Duration', width: '80px', isVisible: true, isCustom: false, key: 'duration', isEditable: true },
+  { id: 'startTime', name: 'Start', width: '80px', isVisible: true, isCustom: false, key: 'startTime', isEditable: false },
+  { id: 'endTime', name: 'End', width: '80px', isVisible: true, isCustom: false, key: 'endTime', isEditable: false },
+  { id: 'elapsedTime', name: 'Elapsed', width: '80px', isVisible: true, isCustom: false, key: 'elapsedTime', isEditable: false },
+  { id: 'notes', name: 'Notes', width: '200px', isVisible: true, isCustom: false, key: 'notes', isEditable: true }
 ];
 
 export const useSimplifiedRundownState = () => {
   const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const rundownId = (!params.id || params.id === 'new' || params.id === ':id' || params.id.trim() === '') ? undefined : params.id;
-  const { getRundown } = useRundownStorage();
+  const { loadRundowns, savedRundowns, updateRundown } = useRundownStorage();
   
   // Core state
   const [items, setItems] = useState<RundownItem[]>([]);
@@ -204,7 +204,8 @@ export const useSimplifiedRundownState = () => {
 
     try {
       setIsLoading(true);
-      const rundown = await getRundown(rundownId);
+      await loadRundowns();
+      const rundown = savedRundowns.find(r => r.id === rundownId);
       
       if (rundown) {
         setItems(rundown.items || []);
@@ -225,7 +226,7 @@ export const useSimplifiedRundownState = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, rundownId, getRundown, loadUndoHistory]);
+  }, [user, rundownId, loadRundowns, savedRundowns, loadUndoHistory]);
 
   // Initialize data
   useEffect(() => {
@@ -353,11 +354,11 @@ export const useSimplifiedRundownState = () => {
     const newColumn: Column = {
       id: uuidv4(),
       name,
-      type: 'text',
       width: '120px',
       isVisible: true,
       isCustom: true,
-      key: name.toLowerCase().replace(/\s+/g, '_')
+      key: name.toLowerCase().replace(/\s+/g, '_'),
+      isEditable: true
     };
     setColumns(prev => [...prev, newColumn]);
   }, []);

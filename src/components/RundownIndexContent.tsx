@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -118,9 +119,7 @@ const RundownIndexContent = () => {
 
   // Create a wrapper for handleAddColumn that takes the required parameters
   const handleAddColumnWrapper = (name: string) => {
-    // Generate a key from the name and provide a default type
-    const key = name.toLowerCase().replace(/\s+/g, '_');
-    handleAddColumn(name, key, 'text'); // FIXED: Provide all required parameters
+    handleAddColumn(name);
   };
 
   // Prepare rundown data for Cuer AI
