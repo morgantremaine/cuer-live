@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Plus, Settings, Share2, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ interface MainActionButtonsProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
-  onUndo: () => string | null;
+  onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
   rundownId: string | undefined;
@@ -31,22 +32,6 @@ const MainActionButtons = ({
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const handleUndo = () => {
-    if (!canUndo) {
-      return;
-    }
-    
-    const result = onUndo();
-    
-    if (result) {
-      toast({
-        title: `Undid: ${result}`,
-        description: "Action has been undone",
-        variant: "default"
-      });
-    }
-  };
 
   const handleShareRundown = () => {
     if (!rundownId) {
@@ -110,7 +95,7 @@ const MainActionButtons = ({
         <span>{isMobile ? 'Header' : 'Add Header'}</span>
       </Button>
       <Button 
-        onClick={handleUndo} 
+        onClick={onUndo} 
         variant="outline" 
         size={buttonSize}
         disabled={!canUndo}

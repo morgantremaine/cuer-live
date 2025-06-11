@@ -21,11 +21,10 @@ interface RundownToolbarProps {
   rundownId: string | undefined;
   // Teleprompter functionality
   onOpenTeleprompter: () => void;
-  // Undo functionality - Updated to match toolbar components
-  onUndo: () => string | null;
+  // Undo functionality
+  onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  undoStack?: any[];
 }
 
 const RundownToolbar = ({
@@ -44,8 +43,7 @@ const RundownToolbar = ({
   onOpenTeleprompter,
   onUndo,
   canUndo,
-  lastAction,
-  undoStack
+  lastAction
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
 
@@ -56,7 +54,6 @@ const RundownToolbar = ({
     onUndo,
     canUndo,
     lastAction,
-    undoStack,
     rundownId,
     onOpenTeleprompter,
     selectedRowId,

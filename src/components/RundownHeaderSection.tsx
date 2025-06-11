@@ -38,7 +38,7 @@ interface RundownHeaderSectionProps {
   onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
   currentHighlight?: any;
-  onUndo: () => string | null;
+  onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
   isConnected?: boolean;

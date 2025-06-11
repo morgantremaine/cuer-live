@@ -20,6 +20,15 @@ export const useAutoSaveOperations = () => {
     startTime?: string,
     skipRealtimeUpdate: boolean = false
   ): Promise<boolean> => {
+    console.log('💾 Auto-saving rundown...', { 
+      itemCount: items.length, 
+      title,
+      timezone,
+      startTime,
+      skipRealtimeUpdate,
+      hasRundownId: !!rundownId 
+    });
+
     setIsSaving(true);
     
     try {
@@ -64,9 +73,10 @@ export const useAutoSaveOperations = () => {
         }
       }
       
+      console.log('✅ Auto-save successful');
       return true;
     } catch (error) {
-      console.error('Auto-save failed:', error);
+      console.error('❌ Auto-save failed:', error);
       return false;
     } finally {
       setIsSaving(false);

@@ -8,7 +8,7 @@ interface DesktopToolbarProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
-  onUndo: () => string | null;
+  onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
   rundownId: string | undefined;
