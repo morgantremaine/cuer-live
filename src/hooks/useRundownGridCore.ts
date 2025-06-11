@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownDataLoader } from './useRundownDataLoader';
@@ -5,6 +6,7 @@ import { useRundownStorage } from './useRundownStorage';
 import { usePlaybackControls } from './usePlaybackControls';
 import { useRundownUndo } from './useRundownUndo';
 import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { RundownItem } from '@/types/rundown';
 
 interface UseRundownGridCoreProps {
   markAsChanged: () => void;
@@ -169,17 +171,21 @@ export const useRundownGridCore = ({
   }, [setRundownTitleDirectly, markAsChanged, rundownTitle, saveUndoState]);
 
   const addRow = useCallback((calculateEndTime?: (startTime: string, duration: string) => string) => {
-    setItems(prev => {
+    state.setItems(prev => {
       const newItem: RundownItem = {
         id: crypto.randomUUID(),
         type: 'regular',
+        rowNumber: '',
+        name: 'New Segment',
         segmentName: 'New Segment',
-        duration: '00:00:00', // Default to 00:00:00 instead of empty
+        duration: '00:00:00',
         startTime: rundownStartTime,
         endTime: rundownStartTime,
         elapsedTime: '00:00:00',
         script: '',
         talent: '',
+        gfx: '',
+        video: '',
         notes: '',
         color: '',
         isFloating: false,
@@ -193,20 +199,24 @@ export const useRundownGridCore = ({
     if (!isProcessingRealtimeUpdate) {
       markAsChanged();
     }
-  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate]);
+  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate, state.setItems]);
 
   const addHeader = useCallback(() => {
-    setItems(prev => {
+    state.setItems(prev => {
       const newHeader: RundownItem = {
         id: crypto.randomUUID(),
         type: 'header',
+        rowNumber: '',
+        name: 'New Section',
         segmentName: 'New Section',
-        duration: '00:00:00', // Default to 00:00:00 instead of empty
+        duration: '00:00:00',
         startTime: rundownStartTime,
         endTime: rundownStartTime,
         elapsedTime: '00:00:00',
         script: '',
         talent: '',
+        gfx: '',
+        video: '',
         notes: '',
         color: '#3B82F6',
         isFloating: false,
@@ -219,7 +229,7 @@ export const useRundownGridCore = ({
     if (!isProcessingRealtimeUpdate) {
       markAsChanged();
     }
-  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate]);
+  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate, state.setItems]);
 
   // Showcaller/playback controls
   const {

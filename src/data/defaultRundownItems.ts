@@ -5,6 +5,8 @@ export const defaultRundownItems: RundownItem[] = [
   {
     id: '1',
     type: 'header',
+    rowNumber: '1',
+    name: 'Opening',
     segmentName: 'Opening',
     duration: '00:00:00',
     startTime: '09:00:00',
@@ -12,6 +14,8 @@ export const defaultRundownItems: RundownItem[] = [
     elapsedTime: '00:00:00',
     script: '',
     talent: '',
+    gfx: '',
+    video: '',
     notes: '',
     color: '#3B82F6',
     isFloating: false,
@@ -20,6 +24,8 @@ export const defaultRundownItems: RundownItem[] = [
   {
     id: '2',
     type: 'regular',
+    rowNumber: '2',
+    name: 'Welcome & Introductions',
     segmentName: 'Welcome & Introductions',
     duration: '00:00:00',
     startTime: '09:00:00',
@@ -27,9 +33,15 @@ export const defaultRundownItems: RundownItem[] = [
     elapsedTime: '00:00:00',
     script: '',
     talent: '',
+    gfx: '',
+    video: '',
     notes: '',
     color: '',
     isFloating: false,
     customFields: {}
   }
 ];
+
+export const createDefaultRundownItems = (): RundownItem[] => {
+  return [...defaultRundownItems];
+};
