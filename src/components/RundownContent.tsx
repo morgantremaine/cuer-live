@@ -99,7 +99,7 @@ const RundownContent = ({
             updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
             getRowStatus={(item) => getRowStatus(item, currentTime)}
-            calculateHeaderDuration={calculateHeaderDuration}
+            getHeaderDuration={calculateHeaderDuration}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}

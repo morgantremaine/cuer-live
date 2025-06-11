@@ -72,7 +72,7 @@ const RundownGrid = () => {
       updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       getRowNumber={getRowNumber}
       getRowStatus={(item) => getRowStatus(item)}
-      calculateHeaderDuration={calculateHeaderDuration}
+      getHeaderDuration={calculateHeaderDuration}
       onUpdateItem={coreState.updateItem}
       onCellClick={handleCellClick}
       onKeyDown={handleKeyDown}
