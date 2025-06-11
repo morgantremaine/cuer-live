@@ -3,11 +3,11 @@ import React from 'react';
 import RundownTable from './RundownTable';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { CalculatedRundownItem } from '@/utils/rundownCalculations';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownContentProps {
-  items: RundownItem[];
+  items: CalculatedRundownItem[];
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
@@ -22,7 +22,7 @@ interface RundownContentProps {
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
-  getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
+  getRowStatus: (item: CalculatedRundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
