@@ -30,9 +30,10 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
 
-  // Typing session tracking
-  const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
+  // Typing session tracking with improved logic
+  const typingSessionRef = useRef<{ fieldKey: string; startTime: number; lastValue: string } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastTypingChangeRef = useRef<number>(0);
 
   // Initialize with default data
   const {
@@ -72,7 +73,7 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Enhanced updateItem function that works with showcaller and saves undo state with proper timing
+  // Enhanced updateItem function that works with showcaller and saves undo state with improved typing handling
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     console.log('📺 Enhanced updateItem called:', { id, field, value });
     
@@ -82,6 +83,7 @@ export const useSimplifiedRundownState = () => {
     
     if (isTypingField) {
       const sessionKey = `${id}-${field}`;
+      const now = Date.now();
       
       // If this is the start of a new typing session, save undo state
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
@@ -89,8 +91,30 @@ export const useSimplifiedRundownState = () => {
         saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
         typingSessionRef.current = {
           fieldKey: sessionKey,
-          startTime: Date.now()
+          startTime: now,
+          lastValue: value
         };
+      } else {
+        // Update the last value in the typing session
+        typingSessionRef.current.lastValue = value;
+      }
+      
+      // Throttle the actual state updates during rapid typing
+      const timeSinceLastChange = now - lastTypingChangeRef.current;
+      if (timeSinceLastChange < 100) {
+        // For very rapid typing, debounce the state update
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        
+        typingTimeoutRef.current = setTimeout(() => {
+          actuallyUpdateItem(id, field, value);
+          lastTypingChangeRef.current = Date.now();
+        }, 150);
+      } else {
+        // Normal typing speed, update immediately
+        actuallyUpdateItem(id, field, value);
+        lastTypingChangeRef.current = now;
       }
       
       // Clear existing timeout and set new one to end typing session
@@ -106,8 +130,14 @@ export const useSimplifiedRundownState = () => {
       // For duration changes, save immediately since they're usually intentional
       console.log('💾 Saving undo state before duration change');
       saveUndoState(state.items, state.columns, state.title, 'Edit duration');
+      actuallyUpdateItem(id, field, value);
+    } else {
+      // For non-typing fields, update immediately
+      actuallyUpdateItem(id, field, value);
     }
-    
+  }, [state.items, state.columns, state.title, saveUndoState]);
+
+  const actuallyUpdateItem = useCallback((id: string, field: string, value: string) => {
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
       const item = state.items.find(i => i.id === id);
@@ -127,7 +157,7 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: value });
     }
-  }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]);
+  }, [actions.updateItem, state.items]);
 
   // Initialize playback controls with showcaller functionality
   const {
