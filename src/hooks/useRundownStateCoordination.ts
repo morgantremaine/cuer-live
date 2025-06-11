@@ -123,10 +123,10 @@ export const useRundownStateCoordination = () => {
     core.setRundownTitle
   );
 
-  // UI state management - Fix parameter order to pass columns instead of updateItem
+  // UI state management - Fix parameter order: items, columns, updateItem, markAsChanged...
   const uiState = useRundownUIState(
     core.items,
-    core.visibleColumns, // Pass columns array, not updateItem function
+    core.visibleColumns,
     core.updateItem,
     core.markAsChanged,
     rundownStartTime,
