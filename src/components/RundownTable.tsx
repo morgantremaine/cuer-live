@@ -21,7 +21,7 @@ interface RundownTableProps {
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
-  getHeaderDuration: (id: string) => string;
+  getHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -102,7 +102,7 @@ const RundownTable = ({
             
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
-            const headerDuration = isHeaderItem(item) ? getHeaderDuration(item.id) : '';
+            const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
             const isSelected = selectedRows.has(item.id);
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
