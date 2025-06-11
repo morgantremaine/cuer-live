@@ -38,12 +38,15 @@ const PlaybackControls = ({
     if (isPlaying) {
       onPause();
     } else {
-      // If a row is selected, play that row, otherwise play current segment
+      // If a row is selected, play that row, otherwise play current segment or first
       if (selectedRowId) {
         console.log('🎮 Playing selected row:', selectedRowId);
         onPlay(selectedRowId);
+      } else if (currentSegmentId) {
+        console.log('🎮 Resuming current segment:', currentSegmentId);
+        onPlay(currentSegmentId);
       } else {
-        console.log('🎮 Playing current or first segment');
+        console.log('🎮 Playing first segment');
         onPlay();
       }
     }
@@ -61,7 +64,7 @@ const PlaybackControls = ({
 
   return (
     <div className="flex items-center space-x-2">
-      {currentSegmentId && (
+      {timeRemaining > 0 && (
         <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border">
           {formatTime(timeRemaining)}
         </div>

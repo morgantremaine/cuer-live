@@ -19,7 +19,14 @@ const RundownGrid = () => {
     calculateHeaderDuration,
     selectedRowId,
     handleRowSelection,
-    clearRowSelection
+    clearRowSelection,
+    // Add playback controls from coreState
+    play,
+    pause,
+    forward,
+    backward,
+    isPlaying,
+    timeRemaining
   } = coreState;
 
   const {

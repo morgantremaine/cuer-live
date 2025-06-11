@@ -42,11 +42,6 @@ export const useShowcallerState = ({
   // Keep callback ref updated
   stateChangeCallbackRef.current = onShowcallerStateChange;
 
-  // SIMPLIFIED: Check if current user can become controller (always allow if no controller or user action)
-  const canTakeControl = useCallback(() => {
-    return !showcallerState.controllerId || showcallerState.controllerId === userId;
-  }, [showcallerState.controllerId, userId]);
-
   // Check if current user is the active controller
   const isController = useCallback(() => {
     return showcallerState.controllerId === userId;
@@ -100,7 +95,7 @@ export const useShowcallerState = ({
     return null;
   }, [items]);
 
-  // SIMPLIFIED: Update showcaller state with less restrictive sync logic
+  // Update showcaller state
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
     const updatedState = {
       ...showcallerState,
@@ -111,11 +106,9 @@ export const useShowcallerState = ({
     console.log('📺 Updating showcaller state:', updatedState);
     setShowcallerState(updatedState);
     
-    // SIMPLIFIED: Always sync if shouldSync is true and we have a callback
     if (shouldSync && stateChangeCallbackRef.current) {
       console.log('📺 Syncing state change');
       
-      // Track this update as our own
       if (trackOwnUpdate) {
         trackOwnUpdate(updatedState.lastUpdate);
       }
@@ -144,19 +137,19 @@ export const useShowcallerState = ({
     if (segment && segment.type === 'regular') {
       console.log('📺 Setting segment as current:', segmentId);
       updateItem(segmentId, 'status', 'current');
-      const duration = timeToSeconds(segment.duration);
+      const duration = timeToSeconds(segment.duration || '00:00');
       console.log('📺 Segment duration in seconds:', duration);
       
       updateShowcallerState({
         currentSegmentId: segmentId,
         timeRemaining: duration,
         playbackStartTime: Date.now(),
-        controllerId: userId // Take control when setting segment
+        controllerId: userId
       }, true);
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
 
-  // ENHANCED: Timer logic that works for both controller and display
+  // Timer logic
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -174,7 +167,7 @@ export const useShowcallerState = ({
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
             if (nextSegment) {
-              const duration = timeToSeconds(nextSegment.duration);
+              const duration = timeToSeconds(nextSegment.duration || '00:00');
               updateItem(nextSegment.id, 'status', 'current');
               
               const newState = {
@@ -185,7 +178,6 @@ export const useShowcallerState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              // Sync segment advancement immediately
               if (trackOwnUpdate) {
                 trackOwnUpdate(newState.lastUpdate);
               }
@@ -202,7 +194,7 @@ export const useShowcallerState = ({
                 currentSegmentId: null,
                 timeRemaining: 0,
                 playbackStartTime: null,
-                controllerId: null, // Release control when finished
+                controllerId: null,
                 lastUpdate: new Date().toISOString()
               };
               
@@ -216,7 +208,6 @@ export const useShowcallerState = ({
               return newState;
             }
           } else {
-            // Non-controller just stops at 0
             return {
               ...prevState,
               timeRemaining: 0,
@@ -232,7 +223,7 @@ export const useShowcallerState = ({
           lastUpdate: new Date().toISOString()
         };
         
-        // REDUCED FREQUENCY: Only sync every 30 seconds to reduce conflicts
+        // Sync every 30 seconds to reduce conflicts
         if (isActiveController && prevState.timeRemaining % 30 === 0 && stateChangeCallbackRef.current) {
           if (trackOwnUpdate) {
             trackOwnUpdate(newState.lastUpdate);
@@ -253,19 +244,19 @@ export const useShowcallerState = ({
     }
   }, []);
 
-  // SIMPLIFIED: Control functions - always allow taking control on user action
+  // Control functions
   const play = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Play called with segmentId:', selectedSegmentId, 'by user:', userId);
     const playbackStartTime = Date.now();
     
     if (selectedSegmentId) {
       console.log('📺 Playing specific segment:', selectedSegmentId);
-      // Mark segments before selected as upcoming
+      // Mark segments before selected as completed, after as upcoming
       const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
       items.forEach((item, index) => {
         if (item.type === 'regular') {
           if (index < selectedIndex) {
-            updateItem(item.id, 'status', 'upcoming');
+            updateItem(item.id, 'status', 'completed');
           } else if (index > selectedIndex) {
             updateItem(item.id, 'status', 'upcoming');
           }
@@ -280,27 +271,31 @@ export const useShowcallerState = ({
         console.log('📺 Found first segment:', firstSegment.id);
         setCurrentSegment(firstSegment.id);
       }
+    } else {
+      // Resume current segment
+      const currentSegment = items.find(item => item.id === showcallerState.currentSegmentId);
+      if (currentSegment) {
+        updateItem(currentSegment.id, 'status', 'current');
+      }
     }
     
-    // ALWAYS take control when user presses play
     updateShowcallerState({ 
       isPlaying: true,
       playbackStartTime,
-      controllerId: userId // Take control
+      controllerId: userId
     }, true);
     
     startTimer();
-  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId]);
+  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer]);
 
   const pause = useCallback(() => {
     console.log('📺 Pause called by user:', userId);
     stopTimer();
     
-    // Take control when pausing
     updateShowcallerState({ 
       isPlaying: false,
       playbackStartTime: null,
-      controllerId: userId // Take control
+      controllerId: userId
     }, true);
   }, [updateShowcallerState, stopTimer, userId]);
 
@@ -312,7 +307,6 @@ export const useShowcallerState = ({
         console.log('📺 Moving to next segment:', nextSegment.id);
         updateItem(showcallerState.currentSegmentId, 'status', 'completed');
         
-        // Take control when using forward
         updateShowcallerState({
           controllerId: userId
         }, true);
@@ -327,7 +321,7 @@ export const useShowcallerState = ({
     } else {
       console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, setCurrentSegment, userId, updateShowcallerState]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, setCurrentSegment, userId, updateShowcallerState, startTimer]);
 
   const backward = useCallback(() => {
     console.log('📺 Backward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
@@ -337,7 +331,6 @@ export const useShowcallerState = ({
         console.log('📺 Moving to previous segment:', prevSegment.id);
         updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
         
-        // Take control when using backward
         updateShowcallerState({
           controllerId: userId
         }, true);
@@ -352,26 +345,20 @@ export const useShowcallerState = ({
     } else {
       console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, userId, updateShowcallerState]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, userId, updateShowcallerState, startTimer]);
 
-  // ENHANCED: External state application with better control handoff
+  // External state application
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
-    // Prevent applying the same state multiple times
     if (lastSyncedStateRef.current === externalState.lastUpdate) {
       return;
     }
     lastSyncedStateRef.current = externalState.lastUpdate;
 
-    // SIMPLIFIED: Don't skip updates from other controllers, allow handoff
     console.log('📺 Applying external showcaller state from controller:', externalState.controllerId);
     
-    // Always stop our current timer first
     stopTimer();
-    
-    // Clear all current statuses first
     clearCurrentStatus();
     
-    // Apply the external state to items
     if (externalState.currentSegmentId) {
       const segment = items.find(item => item.id === externalState.currentSegmentId);
       if (segment) {
@@ -385,7 +372,7 @@ export const useShowcallerState = ({
     if (externalState.isPlaying && externalState.playbackStartTime && externalState.currentSegmentId) {
       const segment = items.find(item => item.id === externalState.currentSegmentId);
       if (segment) {
-        const segmentDuration = timeToSeconds(segment.duration);
+        const segmentDuration = timeToSeconds(segment.duration || '00:00');
         const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000);
         const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
         
@@ -398,10 +385,8 @@ export const useShowcallerState = ({
       }
     }
     
-    // Set the synchronized state
     setShowcallerState(synchronizedState);
     
-    // Restart timer if playing and we have time remaining
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
       console.log('📺 Restarting timer after sync');
       setTimeout(() => startTimer(), 100);
@@ -413,7 +398,7 @@ export const useShowcallerState = ({
     if (!hasInitialized.current && !showcallerState.currentSegmentId && items.length > 0) {
       const firstSegment = items.find(item => item.type === 'regular');
       if (firstSegment) {
-        const duration = timeToSeconds(firstSegment.duration);
+        const duration = timeToSeconds(firstSegment.duration || '00:00');
         console.log('📺 Initializing with first segment:', firstSegment.id);
         setShowcallerState(prev => ({
           ...prev,
@@ -434,7 +419,6 @@ export const useShowcallerState = ({
     };
   }, []);
 
-  // Memoize the return object to prevent unnecessary re-renders
   return useMemo(() => ({
     showcallerState,
     play,

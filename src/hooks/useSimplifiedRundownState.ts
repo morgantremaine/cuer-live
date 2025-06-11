@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -181,7 +180,7 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.updateItem, state.items]),
 
-    toggleFloat: useCallback((id: string) => {
+    toggleFloatRow: useCallback((id: string) => {
       const item = state.items.find(i => i.id === id);
       if (item) {
         actions.updateItem(id, { isFloating: !item.isFloating });
@@ -277,7 +276,7 @@ export const useSimplifiedRundownState = () => {
     isSaving,
     showcallerActivity,
     
-    // Playback controls
+    // Playback controls - properly expose these functions
     play,
     pause,
     forward,
@@ -297,7 +296,7 @@ export const useSimplifiedRundownState = () => {
     updateItem: enhancedActions.updateItem,
     deleteItem: enhancedActions.deleteRow,
     deleteRow: enhancedActions.deleteRow,
-    toggleFloat: enhancedActions.toggleFloat,
+    toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: actions.deleteMultipleItems,
     addItem: actions.addItem,
     setTitle: actions.setTitle,
