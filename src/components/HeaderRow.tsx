@@ -119,7 +119,6 @@ const HeaderRow = (props: HeaderRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
-      isSelected={isSelected}
       selectedCount={selectedRowsCount}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
@@ -161,8 +160,6 @@ const HeaderRow = (props: HeaderRowProps) => {
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
-              onToggleColorPicker={onToggleColorPicker}
-              onColorSelect={onColorSelect}
               isHeader={true}
             />
           </td>
