@@ -25,11 +25,8 @@ export const useRundownInteractionHandlers = (
   const { selectedRows, toggleRowSelection: toggleRowSelectionBase, clearSelection } = useMultiRowSelection();
 
   // Create a wrapper for toggleRowSelection that matches the expected interface
-  const toggleRowSelection = (id: string, isShiftClick?: boolean, isCtrlClick?: boolean) => {
-    const index = items.findIndex(item => item.id === id);
-    if (index !== -1) {
-      toggleRowSelectionBase(id, index, isShiftClick || false, isCtrlClick || false, items);
-    }
+  const toggleRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[]) => {
+    toggleRowSelectionBase(itemId, index, isShiftClick, isCtrlClick, allItems);
   };
 
   // Drag and drop - fix the function call to match expected signature
