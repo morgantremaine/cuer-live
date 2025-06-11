@@ -4,7 +4,7 @@ import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
-import CellRenderer from './CellRenderer';
+import HeaderRowContent from './row/HeaderRowContent';
 import RundownContextMenu from './RundownContextMenu';
 import { SearchHighlight } from '@/types/search';
 
@@ -74,7 +74,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     onCopySelectedRows,
     onDeleteSelectedRows,
     getColumnWidth,
-    status
+    status,
+    headerDuration = ''
   } = props;
 
   const {
@@ -142,33 +143,17 @@ const HeaderRow = (props: HeaderRowProps) => {
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, index)}
       >
-        {/* Row number column - EXACT same structure as RegularRowContent */}
-        <td className="px-2 py-1 text-sm font-mono align-middle border-r border-border w-12 min-w-12">
-          <div className="flex items-center space-x-1">
-            <span className="text-foreground font-bold">H</span>
-          </div>
-        </td>
-
-        {/* Data columns - EXACT same structure as RegularRowContent */}
-        {columns.map((column) => (
-          <td
-            key={column.id}
-            className="align-middle border-r border-border last:border-r-0"
-            style={{ 
-              width: getColumnWidth(column), 
-              minWidth: getColumnWidth(column)
-            }}
-          >
-            <CellRenderer
-              item={item}
-              column={column}
-              cellRefs={cellRefs}
-              onUpdateItem={onUpdateItem}
-              onCellClick={onCellClick}
-              onKeyDown={onKeyDown}
-            />
-          </td>
-        ))}
+        <HeaderRowContent
+          item={item}
+          columns={columns}
+          headerDuration={headerDuration}
+          rowNumber="H"
+          cellRefs={cellRefs}
+          onUpdateItem={onUpdateItem}
+          onCellClick={onCellClick}
+          onKeyDown={onKeyDown}
+          getColumnWidth={getColumnWidth}
+        />
       </tr>
     </RundownContextMenu>
   );
