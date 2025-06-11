@@ -13,6 +13,15 @@ export const useRundownStateCoordination = () => {
   const simplifiedState = useSimplifiedRundownState();
   
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
+  console.log('🔄 State coordination - showcaller functions:', {
+    play: !!simplifiedState.play,
+    pause: !!simplifiedState.pause,
+    forward: !!simplifiedState.forward,
+    backward: !!simplifiedState.backward,
+    currentSegmentId: simplifiedState.currentSegmentId,
+    isPlaying: simplifiedState.isPlaying,
+    timeRemaining: simplifiedState.timeRemaining
+  });
   
   // Grid interactions with correct function signatures that use selectedRowId
   const gridInteractions = useRundownGridInteractions(
@@ -117,13 +126,14 @@ export const useRundownStateCoordination = () => {
     calculateTotalRuntime: () => simplifiedState.totalRuntime,
     calculateEndTime: (startTime: string, duration: string) => calculateEndTime(startTime, duration),
     
-    // Playback controls (simplified)
+    // Showcaller controls - properly expose these with working functions
     isPlaying: simplifiedState.isPlaying,
-    timeRemaining: '00:00:00',
-    play: () => {},
-    pause: () => {},
-    forward: () => {},
-    backward: () => {},
+    timeRemaining: simplifiedState.timeRemaining,
+    play: simplifiedState.play,
+    pause: simplifiedState.pause,
+    forward: simplifiedState.forward,
+    backward: simplifiedState.backward,
+    isController: simplifiedState.isController,
     
     // Column management functions
     handleAddColumn: simplifiedState.addColumn,

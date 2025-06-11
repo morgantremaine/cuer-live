@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -44,6 +45,31 @@ export const useSimplifiedRundownState = () => {
   // Auto-save functionality
   const { isSaving } = useSimpleAutoSave(state, rundownId, actions.markSaved);
 
+  // Enhanced updateItem function that works with showcaller
+  const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    console.log('📺 Enhanced updateItem called:', { id, field, value });
+    
+    if (field.startsWith('customFields.')) {
+      const customFieldKey = field.replace('customFields.', '');
+      const item = state.items.find(i => i.id === id);
+      if (item) {
+        const currentCustomFields = item.customFields || {};
+        actions.updateItem(id, {
+          customFields: {
+            ...currentCustomFields,
+            [customFieldKey]: value
+          }
+        });
+      }
+    } else {
+      // Map field names to proper item properties
+      let updateField = field;
+      if (field === 'segmentName') updateField = 'name';
+      
+      actions.updateItem(id, { [updateField]: value });
+    }
+  }, [actions.updateItem, state.items]);
+
   // Initialize playback controls with showcaller functionality
   const {
     isPlaying,
@@ -56,9 +82,7 @@ export const useSimplifiedRundownState = () => {
     isController
   } = usePlaybackControls(
     state.items,
-    (id: string, field: string, value: string) => {
-      actions.updateItem(id, { [field]: value });
-    },
+    enhancedUpdateItem,
     rundownId,
     setShowcallerActivity
   );
@@ -158,27 +182,7 @@ export const useSimplifiedRundownState = () => {
     ...actions,
     ...helpers,
     
-    updateItem: useCallback((id: string, field: string, value: string) => {
-      if (field.startsWith('customFields.')) {
-        const customFieldKey = field.replace('customFields.', '');
-        const item = state.items.find(i => i.id === id);
-        if (item) {
-          const currentCustomFields = item.customFields || {};
-          actions.updateItem(id, {
-            customFields: {
-              ...currentCustomFields,
-              [customFieldKey]: value
-            }
-          });
-        }
-      } else {
-        // Map field names to proper item properties
-        let updateField = field;
-        if (field === 'segmentName') updateField = 'name';
-        
-        actions.updateItem(id, { [updateField]: value });
-      }
-    }, [actions.updateItem, state.items]),
+    updateItem: enhancedUpdateItem,
 
     toggleFloatRow: useCallback((id: string) => {
       const item = state.items.find(i => i.id === id);
@@ -276,11 +280,23 @@ export const useSimplifiedRundownState = () => {
     isSaving,
     showcallerActivity,
     
-    // Playback controls - properly expose these functions
-    play,
-    pause,
-    forward,
-    backward,
+    // Playback controls - properly expose these functions with correct signatures
+    play: (selectedSegmentId?: string) => {
+      console.log('🎮 Simplified state play called with:', selectedSegmentId);
+      play(selectedSegmentId);
+    },
+    pause: () => {
+      console.log('🎮 Simplified state pause called');
+      pause();
+    },
+    forward: () => {
+      console.log('🎮 Simplified state forward called');
+      forward();
+    },
+    backward: () => {
+      console.log('🎮 Simplified state backward called');
+      backward();
+    },
     isController,
     timeRemaining,
     

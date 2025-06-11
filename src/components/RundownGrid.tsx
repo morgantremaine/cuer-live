@@ -20,7 +20,7 @@ const RundownGrid = () => {
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
-    // Add playback controls from coreState
+    // Showcaller controls - ensure these are properly passed through
     play,
     pause,
     forward,
@@ -83,6 +83,16 @@ const RundownGrid = () => {
       }
     }
   };
+
+  console.log('🎯 RundownGrid - showcaller state:', {
+    currentSegmentId,
+    isPlaying,
+    timeRemaining,
+    hasPlayFunction: !!play,
+    hasPauseFunction: !!pause,
+    hasForwardFunction: !!forward,
+    hasBackwardFunction: !!backward
+  });
 
   return (
     <RundownTable

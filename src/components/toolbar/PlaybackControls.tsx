@@ -36,6 +36,7 @@ const PlaybackControls = ({
     console.log('🎮 PlaybackControls - Play/Pause clicked', { isPlaying, selectedRowId, currentSegmentId });
     
     if (isPlaying) {
+      console.log('🎮 Pausing playback');
       onPause();
     } else {
       // If a row is selected, play that row, otherwise play current segment or first
@@ -59,10 +60,17 @@ const PlaybackControls = ({
     onBackward();
   };
 
+  console.log('🎮 PlaybackControls render:', {
+    currentSegmentId,
+    timeRemaining,
+    isPlaying,
+    selectedRowId
+  });
+
   return (
     <div className="flex items-center space-x-2">
-      {/* Always show timer when there's a current segment */}
-      {currentSegmentId && (
+      {/* Always show timer when there's a current segment with valid time */}
+      {currentSegmentId && timeRemaining >= 0 && (
         <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border min-w-[50px] text-center">
           {formatTime(timeRemaining)}
         </div>
