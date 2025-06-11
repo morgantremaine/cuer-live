@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Plus, Settings, Share2, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ interface MainActionButtonsProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
-  onUndo: () => void;
+  onUndo: () => string | null;
   canUndo: boolean;
   lastAction: string | null;
   rundownId: string | undefined;
@@ -34,13 +33,10 @@ const MainActionButtons = ({
   const navigate = useNavigate();
 
   const handleUndo = () => {
-    console.log('🔄 MainActionButtons handleUndo called, canUndo:', canUndo);
     if (!canUndo) {
-      console.log('❌ Cannot undo - no states available');
       return;
     }
     
-    console.log('🔄 Calling onUndo function');
     const result = onUndo();
     
     if (result) {
