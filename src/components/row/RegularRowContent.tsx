@@ -41,7 +41,7 @@ const RegularRowContent = ({
   return (
     <>
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle border border-border w-12 min-w-12"
+        className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
         style={{ backgroundColor }}
       >
         <div className="flex items-center space-x-1">
