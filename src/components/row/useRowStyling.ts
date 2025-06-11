@@ -38,9 +38,9 @@ export const useRowStyling = ({
     rowClass = 'bg-background hover:bg-muted/50';
   }
 
-  // Add selection styling with ring outline
+  // Add selection styling with ring outline - this was missing!
   if (isSelected) {
-    rowClass += ' ring-2 ring-blue-500 ring-inset';
+    rowClass += ' ring-2 ring-blue-500 ring-inset bg-blue-50 dark:bg-blue-950/20';
   }
 
   return { rowClass };

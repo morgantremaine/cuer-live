@@ -25,6 +25,7 @@ export const useSimplifiedRundownState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
   // Initialize with default data
   const {
@@ -212,16 +213,49 @@ export const useSimplifiedRundownState = () => {
     return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
-  // Define addRow and addHeader functions properly
-  const addRowFunction = useCallback(() => {
-    console.log('➕ Adding new row');
-    helpers.addRow();
-  }, [helpers]);
+  // Define addRow and addHeader functions with proper positioning
+  const addRowFunction = useCallback((targetRowId?: string) => {
+    console.log('➕ Adding new row after:', targetRowId || selectedRowId || 'end');
+    
+    if (targetRowId || selectedRowId) {
+      const targetId = targetRowId || selectedRowId;
+      const targetIndex = state.items.findIndex(item => item.id === targetId);
+      if (targetIndex !== -1) {
+        helpers.addRowAfterIndex(targetIndex);
+      } else {
+        helpers.addRow();
+      }
+    } else {
+      helpers.addRow();
+    }
+  }, [helpers, selectedRowId, state.items]);
 
-  const addHeaderFunction = useCallback(() => {
-    console.log('➕ Adding new header');
-    helpers.addHeader();
-  }, [helpers]);
+  const addHeaderFunction = useCallback((targetRowId?: string) => {
+    console.log('➕ Adding new header after:', targetRowId || selectedRowId || 'end');
+    
+    if (targetRowId || selectedRowId) {
+      const targetId = targetRowId || selectedRowId;
+      const targetIndex = state.items.findIndex(item => item.id === targetId);
+      if (targetIndex !== -1) {
+        helpers.addHeaderAfterIndex(targetIndex);
+      } else {
+        helpers.addHeader();
+      }
+    } else {
+      helpers.addHeader();
+    }
+  }, [helpers, selectedRowId, state.items]);
+
+  // Row selection handlers
+  const handleRowSelection = useCallback((itemId: string) => {
+    console.log('🎯 Selecting row:', itemId);
+    setSelectedRowId(prev => prev === itemId ? null : itemId);
+  }, []);
+
+  const clearRowSelection = useCallback(() => {
+    console.log('🎯 Clearing row selection');
+    setSelectedRowId(null);
+  }, []);
 
   console.log('🔄 State summary:', {
     items: calculatedItems.length,
@@ -230,7 +264,8 @@ export const useSimplifiedRundownState = () => {
     title: state.title,
     startTime: state.startTime,
     isLoading,
-    hasUnsavedChanges: state.hasUnsavedChanges
+    hasUnsavedChanges: state.hasUnsavedChanges,
+    selectedRowId
   });
 
   return {
@@ -245,6 +280,11 @@ export const useSimplifiedRundownState = () => {
     timezone: state.timezone,
     currentSegmentId: state.currentSegmentId,
     isPlaying: state.isPlaying,
+    
+    // Selection state
+    selectedRowId,
+    handleRowSelection,
+    clearRowSelection,
     
     // Metadata
     currentTime,
@@ -272,7 +312,7 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations with proper signatures - fix these
+    // Row operations with proper signatures
     addRow: addRowFunction,
     addHeader: addHeaderFunction,
     

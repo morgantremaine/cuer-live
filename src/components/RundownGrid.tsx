@@ -16,7 +16,10 @@ const RundownGrid = () => {
     currentTime,
     currentSegmentId,
     getRowNumber,
-    calculateHeaderDuration
+    calculateHeaderDuration,
+    selectedRowId,
+    handleRowSelection,
+    clearRowSelection
   } = coreState;
 
   const {
@@ -34,7 +37,7 @@ const RundownGrid = () => {
     clearSelection,
     handleAddRow,
     handleAddHeader,
-    handleRowSelection,
+    handleRowSelection: handleMultiRowSelection,
     hasClipboardData
   } = interactions;
 
@@ -53,6 +56,21 @@ const RundownGrid = () => {
   // Create a wrapper function that matches the expected signature
   const handleColorSelect = (id: string, color: string) => {
     selectColor(id, color);
+  };
+
+  // Enhanced row selection that handles both single and multi-selection
+  const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    if (isShiftClick || isCtrlClick) {
+      // Multi-selection mode
+      handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
+    } else {
+      // Single selection mode
+      handleRowSelection(itemId);
+      // Clear multi-selection if we're doing single selection
+      if (selectedRows.size > 0) {
+        clearSelection();
+      }
+    }
   };
 
   return (
@@ -80,7 +98,7 @@ const RundownGrid = () => {
       onColorSelect={handleColorSelect}
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={handleRowSelection}
+      onRowSelect={handleEnhancedRowSelection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -88,9 +106,12 @@ const RundownGrid = () => {
       onCopySelectedRows={handleCopySelectedRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
       onPasteRows={handlePasteRows}
-      onClearSelection={clearSelection}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
+      onClearSelection={() => {
+        clearSelection();
+        clearRowSelection();
+      }}
+      onAddRow={() => handleAddRow(selectedRowId)}
+      onAddHeader={() => handleAddHeader(selectedRowId)}
     />
   );
 };
