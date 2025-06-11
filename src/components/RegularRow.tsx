@@ -143,6 +143,7 @@ const RegularRow = (props: RegularRowProps) => {
           columns={props.columns}
           cellRefs={props.cellRefs}
           textColor={textColor}
+          backgroundColor={backgroundColor}
           isCurrentlyPlaying={props.isCurrentlyPlaying}
           isDraggingMultiple={isDraggingMultiple}
           isSelected={isSelected}

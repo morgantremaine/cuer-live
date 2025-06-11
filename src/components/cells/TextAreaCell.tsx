@@ -1,3 +1,4 @@
+
 import React from 'react';
 import HighlightedText from '../HighlightedText';
 
@@ -7,8 +8,8 @@ interface TextAreaCellProps {
   cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
+  backgroundColor?: string;
   isDuration?: boolean;
-  placeholder?: string;
   highlight?: {
     startIndex: number;
     endIndex: number;
@@ -24,8 +25,8 @@ const TextAreaCell = ({
   cellRefKey,
   cellRefs,
   textColor,
+  backgroundColor,
   isDuration = false,
-  placeholder,
   highlight,
   onUpdateValue,
   onCellClick,
@@ -53,7 +54,7 @@ const TextAreaCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="relative w-full h-full min-h-[32px] p-1">
+    <div className="relative w-full h-full min-h-[32px] p-1" style={{ backgroundColor }}>
       <textarea
         ref={el => {
           if (el) {
@@ -68,16 +69,16 @@ const TextAreaCell = ({
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full h-full px-2 py-1 text-sm bg-transparent border-0 text-inherit focus:bg-transparent focus:border-0 focus:outline-none rounded-sm resize-none ${
+        className={`w-full h-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
           isDuration ? 'font-mono text-center' : ''
         }`}
         style={{ 
+          backgroundColor: 'transparent',
           color: textColor || 'inherit',
           minHeight: shouldExpandRow ? '40px' : '28px',
           lineHeight: '1.2'
         }}
         rows={shouldExpandRow ? 2 : 1}
-        placeholder={placeholder}
       />
       {highlight && (
         <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm flex items-center" style={{ color: 'transparent' }}>

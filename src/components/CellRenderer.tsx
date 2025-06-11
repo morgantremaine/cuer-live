@@ -1,3 +1,4 @@
+
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
@@ -10,6 +11,7 @@ interface CellRendererProps {
   item: RundownItem;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
+  backgroundColor?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -21,6 +23,7 @@ const CellRenderer = ({
   item,
   cellRefs,
   textColor,
+  backgroundColor,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -67,7 +70,7 @@ const CellRenderer = ({
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
-      <TimeDisplayCell value={value} />
+      <TimeDisplayCell value={value} backgroundColor={backgroundColor} />
     );
   }
 
@@ -83,6 +86,7 @@ const CellRenderer = ({
         cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
+        backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
           const field = `customFields.${column.key}`;
           onUpdateItem(item.id, field, newValue);
@@ -102,6 +106,7 @@ const CellRenderer = ({
         cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
+        backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -111,9 +116,9 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields with proper semantic theming and no borders/placeholders
+  // Default input cell for other fields
   return (
-    <div className="w-full h-full p-1">
+    <div className="w-full h-full p-1" style={{ backgroundColor }}>
       <input
         ref={(el) => {
           if (el) {
@@ -128,8 +133,9 @@ const CellRenderer = ({
         }}
         onClick={() => onCellClick(item.id, column.key)}
         onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full h-full px-2 py-1 text-sm bg-transparent border-0 text-inherit focus:bg-transparent focus:border-0 focus:outline-none rounded-sm"
+        className="w-full h-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm"
         style={{ 
+          backgroundColor: 'transparent',
           color: textColor || 'inherit',
           minHeight: '28px'
         }}

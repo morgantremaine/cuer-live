@@ -89,6 +89,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     // Headers don't float, but we'll keep the interface consistent
   };
 
+  const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
+
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -110,7 +112,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
         style={{
-          backgroundColor: item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined
+          backgroundColor
         }}
         draggable
         onDragStart={(e) => props.onDragStart(e, index)}
@@ -124,6 +126,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           columns={props.columns}
           headerDuration={props.headerDuration}
           rowNumber={rowNumber}
+          backgroundColor={backgroundColor}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}

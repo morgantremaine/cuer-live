@@ -11,6 +11,7 @@ interface RegularRowContentProps {
   columns: Column[];
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
+  backgroundColor?: string;
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
@@ -26,6 +27,7 @@ const RegularRowContent = ({
   columns,
   cellRefs,
   textColor,
+  backgroundColor,
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
   isSelected = false,
@@ -36,7 +38,10 @@ const RegularRowContent = ({
 }: RegularRowContentProps) => {
   return (
     <>
-      <td className="px-2 py-1 text-sm font-mono align-middle border border-border bg-background w-12 min-w-12">
+      <td 
+        className="px-2 py-1 text-sm font-mono align-middle border border-border w-12 min-w-12"
+        style={{ backgroundColor }}
+      >
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
             <Play 
@@ -44,7 +49,7 @@ const RegularRowContent = ({
               style={{ filter: 'drop-shadow(0 0 1px black)' }}
             />
           )}
-          <span>{rowNumber}</span>
+          <span style={{ color: textColor }}>{rowNumber}</span>
           {isDraggingMultiple && isSelected && (
             <span className="text-xs bg-blue-500 text-white px-1 rounded">M</span>
           )}
@@ -56,14 +61,19 @@ const RegularRowContent = ({
         return (
           <td
             key={column.id}
-            className="align-middle border border-border bg-background"
-            style={{ width: columnWidth, minWidth: columnWidth }}
+            className="align-middle border border-border"
+            style={{ 
+              width: columnWidth, 
+              minWidth: columnWidth,
+              backgroundColor 
+            }}
           >
             <CellRenderer
               column={column}
               item={item}
               cellRefs={cellRefs}
               textColor={textColor}
+              backgroundColor={backgroundColor}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
