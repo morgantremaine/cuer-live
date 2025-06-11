@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useRundownStateIntegration } from './useRundownStateIntegration';
 import { useRundownDataLoader } from './useRundownDataLoader';
@@ -168,6 +167,59 @@ export const useRundownGridCore = ({
       markAsChanged();
     }
   }, [setRundownTitleDirectly, markAsChanged, rundownTitle, saveUndoState]);
+
+  const addRow = useCallback((calculateEndTime?: (startTime: string, duration: string) => string) => {
+    setItems(prev => {
+      const newItem: RundownItem = {
+        id: crypto.randomUUID(),
+        type: 'regular',
+        segmentName: 'New Segment',
+        duration: '00:00:00', // Default to 00:00:00 instead of empty
+        startTime: rundownStartTime,
+        endTime: rundownStartTime,
+        elapsedTime: '00:00:00',
+        script: '',
+        talent: '',
+        notes: '',
+        color: '',
+        isFloating: false,
+        customFields: {}
+      };
+
+      const newItems = [...prev, newItem];
+      return newItems;
+    });
+
+    if (!isProcessingRealtimeUpdate) {
+      markAsChanged();
+    }
+  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate]);
+
+  const addHeader = useCallback(() => {
+    setItems(prev => {
+      const newHeader: RundownItem = {
+        id: crypto.randomUUID(),
+        type: 'header',
+        segmentName: 'New Section',
+        duration: '00:00:00', // Default to 00:00:00 instead of empty
+        startTime: rundownStartTime,
+        endTime: rundownStartTime,
+        elapsedTime: '00:00:00',
+        script: '',
+        talent: '',
+        notes: '',
+        color: '#3B82F6',
+        isFloating: false,
+        customFields: {}
+      };
+
+      return [...prev, newHeader];
+    });
+
+    if (!isProcessingRealtimeUpdate) {
+      markAsChanged();
+    }
+  }, [markAsChanged, rundownStartTime, isProcessingRealtimeUpdate]);
 
   // Showcaller/playback controls
   const {
