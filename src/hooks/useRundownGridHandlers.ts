@@ -1,10 +1,11 @@
+
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => void;
-  addHeader: (selectedRowId?: string) => void;
+  addRow: () => void;
+  addHeader: () => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
   deleteMultipleRows: (ids: string[]) => void;
@@ -51,14 +52,14 @@ export const useRundownGridHandlers = ({
     updateItem(id, field, value);
   }, [updateItem]);
 
-  const handleAddRow = useCallback((selectedRowId?: string) => {
-    console.log('🚀 Grid handlers addRow called with selectedRowId:', selectedRowId);
-    addRow(calculateEndTime, selectedRowId);
-  }, [addRow, calculateEndTime]);
+  const handleAddRow = useCallback(() => {
+    console.log('🚀 Grid handlers addRow called');
+    addRow();
+  }, [addRow]);
 
-  const handleAddHeader = useCallback((selectedRowId?: string) => {
-    console.log('🚀 Grid handlers addHeader called with selectedRowId:', selectedRowId);
-    addHeader(selectedRowId);
+  const handleAddHeader = useCallback(() => {
+    console.log('🚀 Grid handlers addHeader called');
+    addHeader();
   }, [addHeader]);
 
   const handleDeleteRow = useCallback((id: string) => {

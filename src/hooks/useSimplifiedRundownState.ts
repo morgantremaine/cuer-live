@@ -220,41 +220,49 @@ export const useSimplifiedRundownState = () => {
 
   // Row selection handlers
   const handleRowSelection = useCallback((itemId: string) => {
-    console.log('🎯 Simplified state handleRowSelection called with:', itemId);
-    setSelectedRowId(prev => prev === itemId ? null : itemId);
-  }, []);
+    console.log('🎯 Simplified state handleRowSelection called with:', itemId, 'current selected:', selectedRowId);
+    setSelectedRowId(prev => {
+      const newSelection = prev === itemId ? null : itemId;
+      console.log('🎯 Setting selectedRowId to:', newSelection);
+      return newSelection;
+    });
+  }, [selectedRowId]);
 
   const clearRowSelection = useCallback(() => {
     console.log('🎯 Simplified state clearRowSelection called');
     setSelectedRowId(null);
   }, []);
 
-  // Define addRow and addHeader functions with proper positioning that use current selectedRowId
-  const addRowFunction = useCallback((overrideRowId?: string | null) => {
-    const rowIdToUse = overrideRowId !== undefined ? overrideRowId : selectedRowId;
-    console.log('🚀 Simplified state addRow called with rowIdToUse:', rowIdToUse, 'from selectedRowId:', selectedRowId);
+  // Enhanced addRow and addHeader functions that properly use selectedRowId
+  const addRowFunction = useCallback(() => {
+    console.log('🚀 Simplified state addRow called with selectedRowId:', selectedRowId);
     
-    if (rowIdToUse) {
-      const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
+    if (selectedRowId) {
+      const targetIndex = state.items.findIndex(item => item.id === selectedRowId);
       if (targetIndex !== -1) {
+        console.log('🚀 Found target index:', targetIndex, 'inserting at:', targetIndex + 1);
         helpers.addRow(targetIndex + 1);
         return;
       }
     }
+    
+    console.log('🚀 No selection, adding at end');
     helpers.addRow();
   }, [helpers, selectedRowId, state.items]);
 
-  const addHeaderFunction = useCallback((overrideRowId?: string | null) => {
-    const rowIdToUse = overrideRowId !== undefined ? overrideRowId : selectedRowId;
-    console.log('🚀 Simplified state addHeader called with rowIdToUse:', rowIdToUse, 'from selectedRowId:', selectedRowId);
+  const addHeaderFunction = useCallback(() => {
+    console.log('🚀 Simplified state addHeader called with selectedRowId:', selectedRowId);
     
-    if (rowIdToUse) {
-      const targetIndex = state.items.findIndex(item => item.id === rowIdToUse);
+    if (selectedRowId) {
+      const targetIndex = state.items.findIndex(item => item.id === selectedRowId);
       if (targetIndex !== -1) {
+        console.log('🚀 Found target index:', targetIndex, 'inserting at:', targetIndex + 1);
         helpers.addHeader(targetIndex + 1);
         return;
       }
     }
+    
+    console.log('🚀 No selection, adding at end');
     helpers.addHeader();
   }, [helpers, selectedRowId, state.items]);
 
@@ -323,7 +331,7 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
-    // Row operations with proper signatures that use the current selectedRowId
+    // Row operations that properly use the current selectedRowId
     addRow: addRowFunction,
     addHeader: addHeaderFunction,
     

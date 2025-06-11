@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -13,17 +12,9 @@ export const useRundownStateCoordination = () => {
   const simplifiedState = useSimplifiedRundownState();
   
   console.log('🔄 State coordination - items:', simplifiedState.items.length, 'columns:', simplifiedState.visibleColumns.length);
-  console.log('🔄 State coordination - showcaller functions:', {
-    play: !!simplifiedState.play,
-    pause: !!simplifiedState.pause,
-    forward: !!simplifiedState.forward,
-    backward: !!simplifiedState.backward,
-    currentSegmentId: simplifiedState.currentSegmentId,
-    isPlaying: simplifiedState.isPlaying,
-    timeRemaining: simplifiedState.timeRemaining
-  });
+  console.log('🔄 State coordination - selectedRowId:', simplifiedState.selectedRowId);
   
-  // Grid interactions with correct function signatures that use selectedRowId
+  // Grid interactions - these functions don't need selectedRowId parameters since the state manages it internally
   const gridInteractions = useRundownGridInteractions(
     simplifiedState.items,
     (updater) => {
@@ -33,15 +24,14 @@ export const useRundownStateCoordination = () => {
       }
     },
     simplifiedState.updateItem,
-    (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string) => {
-      // Use the passed selectedRowId or fall back to the current selectedRowId
-      console.log('🚀 Grid interactions addRow called with selectedRowId:', selectedRowId);
-      simplifiedState.addRow(selectedRowId);
+    // These functions are simplified - they don't need parameters since they use internal selectedRowId
+    () => {
+      console.log('🚀 Grid interactions addRow called');
+      simplifiedState.addRow();
     },
-    (selectedRowId?: string) => {
-      // Use the passed selectedRowId or fall back to the current selectedRowId
-      console.log('🚀 Grid interactions addHeader called with selectedRowId:', selectedRowId);
-      simplifiedState.addHeader(selectedRowId);
+    () => {
+      console.log('🚀 Grid interactions addHeader called');
+      simplifiedState.addHeader();
     },
     simplifiedState.deleteRow,
     simplifiedState.toggleFloat,
@@ -108,13 +98,13 @@ export const useRundownStateCoordination = () => {
     setRundownTitle: simplifiedState.setTitle,
     getRowNumber: simplifiedState.getRowNumber,
     
-    // Row operations - use the functions that automatically use selectedRowId
+    // Row operations - these now use the internal state management
     addRow: () => {
-      console.log('🚀 Core state addRow called with selectedRowId:', simplifiedState.selectedRowId);
+      console.log('🚀 Core state addRow called');
       simplifiedState.addRow();
     },
     addHeader: () => {
-      console.log('🚀 Core state addHeader called with selectedRowId:', simplifiedState.selectedRowId);
+      console.log('🚀 Core state addHeader called');
       simplifiedState.addHeader();
     },
     

@@ -67,6 +67,8 @@ const RundownGrid = () => {
 
   // Enhanced row selection that properly handles both single and multi-selection
   const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    console.log('🎯 RundownGrid handleEnhancedRowSelection called:', { itemId, index, isShiftClick, isCtrlClick });
+    
     if (isShiftClick || isCtrlClick) {
       // Multi-selection mode
       handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
@@ -76,6 +78,7 @@ const RundownGrid = () => {
       }
     } else {
       // Single selection mode
+      console.log('🎯 Calling handleRowSelection with itemId:', itemId);
       handleRowSelection(itemId);
       // Clear multi-selection when doing single selection
       if (selectedRows.size > 0) {
@@ -84,14 +87,12 @@ const RundownGrid = () => {
     }
   };
 
-  console.log('🎯 RundownGrid - showcaller state:', {
+  console.log('🎯 RundownGrid - selection state:', {
+    selectedRowId,
+    multiSelectedCount: selectedRows.size,
     currentSegmentId,
     isPlaying,
-    timeRemaining,
-    hasPlayFunction: !!play,
-    hasPauseFunction: !!pause,
-    hasForwardFunction: !!forward,
-    hasBackwardFunction: !!backward
+    timeRemaining
   });
 
   return (
@@ -133,10 +134,12 @@ const RundownGrid = () => {
         clearRowSelection();
       }}
       onAddRow={() => {
-        handleAddRow(selectedRowId);
+        console.log('🚀 RundownGrid onAddRow called');
+        handleAddRow();
       }}
       onAddHeader={() => {
-        handleAddHeader(selectedRowId);
+        console.log('🚀 RundownGrid onAddHeader called');
+        handleAddHeader();
       }}
     />
   );
