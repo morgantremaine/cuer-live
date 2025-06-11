@@ -125,6 +125,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       itemId={item.id}
       isFloated={item.isFloating}
       selectedRows={selectedRows}
+      onColorSelect={onColorSelect}
     >
       <tr
         className={`
@@ -160,7 +161,6 @@ const HeaderRow = (props: HeaderRowProps) => {
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
-              isHeader={true}
             />
           </td>
         ))}
