@@ -95,8 +95,8 @@ const RegularRow = (props: RegularRowProps) => {
   });
 
   // Determine background color and text color
-  let backgroundColor = 'transparent';
-  let textColor = 'inherit';
+  let backgroundColor: string | undefined;
+  let textColor = '';
 
   if (item.isFloating || item.isFloated) {
     backgroundColor = '#991b1b'; // red-800

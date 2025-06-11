@@ -1,4 +1,3 @@
-
 import React from 'react';
 import HighlightedText from '../HighlightedText';
 
@@ -58,13 +57,12 @@ const CustomFieldCell = ({
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className="w-full h-full px-2 py-1 text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200 rounded-sm resize-none"
+        className="w-full h-full px-2 py-1 text-sm bg-transparent border-0 text-inherit focus:bg-transparent focus:border-0 focus:outline-none rounded-sm resize-none"
         style={{ 
-          color: textColor || '#374151',
+          color: textColor || 'inherit',
           minHeight: '28px'
         }}
         rows={1}
-        placeholder="Enter value..."
       />
     </div>
   );

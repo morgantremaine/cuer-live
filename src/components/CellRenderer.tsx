@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
@@ -103,7 +102,6 @@ const CellRenderer = ({
         cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
-        placeholder={`Enter ${column.name.toLowerCase()}...`}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -113,7 +111,7 @@ const CellRenderer = ({
     );
   }
 
-  // Default input cell for other fields with proper semantic theming
+  // Default input cell for other fields with proper semantic theming and no borders/placeholders
   return (
     <div className="w-full h-full p-1">
       <input
@@ -130,12 +128,11 @@ const CellRenderer = ({
         }}
         onClick={() => onCellClick(item.id, column.key)}
         onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className="w-full h-full px-2 py-1 text-sm bg-background border border-border text-foreground placeholder-muted-foreground focus:bg-background focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded-sm"
+        className="w-full h-full px-2 py-1 text-sm bg-transparent border-0 text-inherit focus:bg-transparent focus:border-0 focus:outline-none rounded-sm"
         style={{ 
-          color: textColor || '',
+          color: textColor || 'inherit',
           minHeight: '28px'
         }}
-        placeholder={`Enter ${column.name.toLowerCase()}...`}
       />
     </div>
   );
