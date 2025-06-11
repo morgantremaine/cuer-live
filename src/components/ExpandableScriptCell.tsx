@@ -68,42 +68,51 @@ const ExpandableScriptCell = ({
 
   const focusStyles = getFocusStyles();
 
-  // Helper function to determine which line the cursor is on
-  const getCursorLineInfo = (textarea: HTMLTextAreaElement) => {
+  // Helper function to check if cursor can move up/down within the textarea
+  const canNavigateWithinText = (textarea: HTMLTextAreaElement, direction: 'up' | 'down') => {
     const cursorPosition = textarea.selectionStart;
-    const textBeforeCursor = value.substring(0, cursorPosition);
-    const textAfterCursor = value.substring(cursorPosition);
+    const lines = value.split('\n');
     
-    // Count newlines before cursor to determine current line (0-indexed)
-    const currentLineIndex = (textBeforeCursor.match(/\n/g) || []).length;
+    // Find which line the cursor is on and its position within that line
+    let currentLineIndex = 0;
+    let positionInCurrentLine = cursorPosition;
     
-    // Total number of lines in the text
-    const totalLines = (value.match(/\n/g) || []).length + 1;
+    for (let i = 0; i < lines.length; i++) {
+      const lineLength = lines[i].length + 1; // +1 for the newline character
+      if (positionInCurrentLine <= lines[i].length) {
+        currentLineIndex = i;
+        break;
+      }
+      positionInCurrentLine -= lineLength;
+    }
     
-    // Check if cursor is at the beginning of the first line
-    const isAtFirstLine = currentLineIndex === 0;
-    
-    // Check if cursor is at the last line
-    const isAtLastLine = currentLineIndex === totalLines - 1;
-    
-    return { isAtFirstLine, isAtLastLine };
+    if (direction === 'up') {
+      // Can navigate up if we're not on the first line
+      return currentLineIndex > 0;
+    } else {
+      // Can navigate down if we're not on the last line
+      return currentLineIndex < lines.length - 1;
+    }
   };
 
   // Improved key navigation for script cells
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // For Up/Down arrows, check if we're at the beginning/end of the text to allow cell navigation
+    // For Up/Down arrows, check if we can still navigate within the text
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       const textarea = e.target as HTMLTextAreaElement;
-      const { isAtFirstLine, isAtLastLine } = getCursorLineInfo(textarea);
       
-      if (e.key === 'ArrowUp' && isAtFirstLine) {
-        // We're at the first line, allow navigation to previous cell
-        onKeyDown(e, itemId, cellRefKey);
-        return;
-      } else if (e.key === 'ArrowDown' && isAtLastLine) {
-        // We're at the last line, allow navigation to next cell
-        onKeyDown(e, itemId, cellRefKey);
-        return;
+      if (e.key === 'ArrowUp') {
+        // If we can't navigate up within the text, allow cell navigation
+        if (!canNavigateWithinText(textarea, 'up')) {
+          onKeyDown(e, itemId, cellRefKey);
+          return;
+        }
+      } else if (e.key === 'ArrowDown') {
+        // If we can't navigate down within the text, allow cell navigation
+        if (!canNavigateWithinText(textarea, 'down')) {
+          onKeyDown(e, itemId, cellRefKey);
+          return;
+        }
       }
       
       // Otherwise, let the textarea handle the arrow key naturally (navigate within text)
