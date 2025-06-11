@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -8,7 +7,7 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
-import { defaultRundownItems } from '@/data/defaultRundownItems';
+import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 
 // Default columns configuration
@@ -176,7 +175,7 @@ export const useSimplifiedRundownState = () => {
         } else if (data) {
           const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
             ? data.items 
-            : defaultRundownItems;
+            : createDefaultRundownItems();
           
           const columnsToLoad = Array.isArray(data.columns) && data.columns.length > 0 
             ? data.columns 
@@ -193,7 +192,7 @@ export const useSimplifiedRundownState = () => {
       } catch (error) {
         console.error('Failed to load rundown:', error);
         actions.loadState({
-          items: defaultRundownItems,
+          items: createDefaultRundownItems(),
           columns: defaultColumns,
           title: 'Untitled Rundown',
           startTime: '09:00:00',
@@ -211,7 +210,7 @@ export const useSimplifiedRundownState = () => {
   useEffect(() => {
     if (!rundownId && !isInitialized) {
       actions.loadState({
-        items: defaultRundownItems,
+        items: createDefaultRundownItems(),
         columns: defaultColumns,
         title: 'Untitled Rundown',
         startTime: '09:00:00',
@@ -344,8 +343,6 @@ export const useSimplifiedRundownState = () => {
       }
     };
   }, []);
-
-  console.log('🔍 Simplified state debug - canUndo:', canUndo, 'lastAction:', lastAction);
 
   return {
     // Core state with calculated values
