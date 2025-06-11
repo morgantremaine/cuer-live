@@ -112,8 +112,7 @@ export const useSimplifiedRundownState = () => {
           typingSessionRef.current = null;
           typingTimeoutRef.current = undefined;
           
-          // Trigger auto-save after typing session ends
-          actions.markAsChanged();
+          // The auto-save will be triggered automatically by the state change
         }, 1500); // 1.5 seconds of inactivity ends the session
       }
     } else if (field === 'duration') {
@@ -124,7 +123,7 @@ export const useSimplifiedRundownState = () => {
       // For non-typing fields, update immediately
       actuallyUpdateItem(id, field, value);
     }
-  }, [state.items, state.columns, state.title, saveUndoState, setTypingSession, actions.markAsChanged]);
+  }, [state.items, state.columns, state.title, saveUndoState, setTypingSession]);
 
   const actuallyUpdateItem = useCallback((id: string, field: string, value: string) => {
     if (field.startsWith('customFields.')) {
