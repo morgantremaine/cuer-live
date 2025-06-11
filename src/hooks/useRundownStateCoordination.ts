@@ -230,7 +230,6 @@ export const useRundownStateCoordination = () => {
 
     // Selection - add missing properties
     selectedRowId: interactions.selectedRows.size === 1 ? Array.from(interactions.selectedRows)[0] : null,
-    handleRowSelection: interactions.handleRowSelection,
     clearRowSelection: interactions.clearSelection,
 
     // Showcaller

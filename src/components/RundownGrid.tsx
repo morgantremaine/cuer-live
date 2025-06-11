@@ -18,7 +18,6 @@ const RundownGrid = () => {
     getRowNumber,
     calculateHeaderDuration,
     selectedRowId,
-    handleRowSelection,
     clearRowSelection,
     // Showcaller controls - ensure these are properly passed through
     play,
@@ -75,8 +74,8 @@ const RundownGrid = () => {
         clearRowSelection();
       }
     } else {
-      // Single selection mode
-      handleRowSelection(itemId);
+      // Single selection mode - fix: provide all 4 required arguments
+      handleMultiRowSelection(itemId, index, false, false);
       // Clear multi-selection when doing single selection
       if (selectedRows.size > 0) {
         clearSelection();
