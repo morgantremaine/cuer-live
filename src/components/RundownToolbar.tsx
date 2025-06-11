@@ -21,8 +21,8 @@ interface RundownToolbarProps {
   rundownId: string | undefined;
   // Teleprompter functionality
   onOpenTeleprompter: () => void;
-  // Undo functionality
-  onUndo: () => void;
+  // Undo functionality - Updated to match toolbar components
+  onUndo: () => string | null;
   canUndo: boolean;
   lastAction: string | null;
   undoStack?: any[];
