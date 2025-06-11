@@ -9,7 +9,7 @@ export const useRundownInteractionHandlers = (
   items: RundownItem[],
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
   updateItem: (id: string, field: string, value: string) => void,
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string) => void,
+  addRow: () => void,
   addHeader: () => void,
   deleteRow: (id: string) => void,
   toggleFloatRow: (id: string) => void,
