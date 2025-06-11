@@ -19,6 +19,7 @@ export const useRundownStateCoordination = () => {
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
   const [autoSaveTrigger, setAutoSaveTrigger] = useState<(() => void) | null>(null);
   const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
   
   // Add current time state that updates every second
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -260,9 +261,9 @@ export const useRundownStateCoordination = () => {
     handleToggleColumnVisibility: core.handleToggleColumnVisibility,
     handleLoadLayout: core.handleLoadLayout,
 
-    // UI State
-    showColumnManager: false,
-    setShowColumnManager: () => {},
+    // UI State - Connect the actual showColumnManager state
+    showColumnManager,
+    setShowColumnManager,
 
     // State tracking
     hasUnsavedChanges: core.hasUnsavedChanges,
@@ -283,7 +284,8 @@ export const useRundownStateCoordination = () => {
     wrappedUpdateItem, wrappedDeleteRow, wrappedToggleFloatRow, 
     wrappedAddRow, wrappedAddHeader, wrappedSetRundownTitle,
     wrappedSetRundownStartTime, wrappedSetTimezone,
-    isCollaborationConnected, isProcessingRealtimeUpdate, interactions
+    isCollaborationConnected, isProcessingRealtimeUpdate, interactions,
+    showColumnManager, setShowColumnManager
   ]);
 
   // Enhanced UI state with missing properties
