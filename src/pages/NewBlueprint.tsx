@@ -51,13 +51,6 @@ const NewBlueprint = () => {
   // Crew drag and drop
   const crewDragDrop = useCrewRowDragDrop(crewList.reorderMembers);
 
-  // Initialize minimum crew members if needed
-  useEffect(() => {
-    if (blueprintState.isInitialized && blueprintState.crewData.length === 0) {
-      crewList.ensureMinimumCrewMembers();
-    }
-  }, [blueprintState.isInitialized, blueprintState.crewData.length, crewList.ensureMinimumCrewMembers]);
-
   // Set up realtime collaboration
   useBlueprintRealtimeCollaboration({
     rundownId: id || null,

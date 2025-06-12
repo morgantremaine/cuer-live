@@ -22,6 +22,7 @@ export const useNewBlueprintState = (
     manager.addList(name, sourceColumn, listItems);
   };
 
+  // Manual refresh function (not automatic)
   const refreshAllLists = () => {
     const updatedLists = manager.data.lists.map(list => ({
       ...list,

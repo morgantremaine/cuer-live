@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -189,6 +190,20 @@ export const useBlueprintDataManager = (
       
       if (loadedData) {
         setData(loadedData);
+      } else {
+        // Initialize with default crew members if no data exists
+        const defaultCrewMembers = Array.from({ length: 5 }, (_, index) => ({
+          id: `crew-${index + 1}`,
+          role: '',
+          name: '',
+          phone: '',
+          email: ''
+        }));
+        
+        setData(prev => ({
+          ...prev,
+          crewData: defaultCrewMembers
+        }));
       }
       
       setIsInitialized(true);
@@ -215,7 +230,9 @@ export const useBlueprintDataManager = (
       return;
     }
 
-    setIsSaving(true);
+    if (!silent) {
+      setIsSaving(true);
+    }
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
@@ -228,9 +245,11 @@ export const useBlueprintDataManager = (
       } catch (error) {
         console.error('Failed to save blueprint:', error);
       } finally {
-        setIsSaving(false);
+        if (!silent) {
+          setIsSaving(false);
+        }
       }
-    }, silent ? 500 : 1000);
+    }, silent ? 300 : 1000);
   }, [data, isInitialized, saveBlueprintData]);
 
   // Auto-save when data changes

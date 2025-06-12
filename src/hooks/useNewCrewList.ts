@@ -51,7 +51,7 @@ export const useNewCrewList = ({ crewMembers, updateCrewData }: UseNewCrewListPr
     updateCrewData(newMembers);
   }, [crewMembers, updateCrewData]);
 
-  // Initialize with default crew members if empty
+  // Initialize with default crew members if empty (only when explicitly called)
   const ensureMinimumCrewMembers = useCallback(() => {
     if (crewMembers.length === 0) {
       updateCrewData(createDefaultCrewMembers());
