@@ -20,10 +20,7 @@ export const useSimpleAutoSave = (
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
-    // Only log state changes, not every coordination call
-    if (active) {
-      console.log('💾 Auto-save paused for undo operation');
-    }
+    // Minimal logging for undo coordination
   };
 
   useEffect(() => {
@@ -46,25 +43,13 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Throttle console logging - only log every 2 seconds to reduce noise
-    const now = Date.now();
-    const timeSinceLastTrigger = now - lastTriggerTimeRef.current;
-    const shouldLog = timeSinceLastTrigger > 2000;
-    
-    if (shouldLog) {
-      lastTriggerTimeRef.current = now;
-    }
-
     // Rate limiting: don't save more than once every 2 seconds for efficiency
+    const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
     const minSaveInterval = 2000; // 2 seconds minimum between saves
     
     // If we just saved recently, extend the debounce time
     const debounceTime = timeSinceLastSave < minSaveInterval ? 3000 : 1000;
-
-    if (shouldLog) {
-      console.log('💾 Auto-save scheduled for rundown:', rundownId || 'NEW');
-    }
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
@@ -91,7 +76,6 @@ export const useSimpleAutoSave = (
       
       setIsSaving(true);
       lastSaveTimeRef.current = Date.now();
-      console.log('💾 Saving rundown...');
       
       try {
         // For new rundowns, we need to create them first
@@ -126,7 +110,6 @@ export const useSimpleAutoSave = (
           if (createError) {
             console.error('❌ Save failed:', createError);
           } else {
-            console.log('✅ New rundown created:', newRundown.id);
             lastSavedRef.current = finalSignature;
             onSaved();
             
@@ -149,7 +132,6 @@ export const useSimpleAutoSave = (
           if (error) {
             console.error('❌ Save failed:', error);
           } else {
-            console.log('✅ Rundown saved');
             lastSavedRef.current = finalSignature;
             onSaved();
           }
