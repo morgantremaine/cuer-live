@@ -14,6 +14,7 @@ export const useSimpleAutoSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
+  const lastSaveTimeRef = useRef<number>(0);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -41,19 +42,42 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW');
+    // Rate limiting: don't save more than once every 2 seconds for efficiency
+    const now = Date.now();
+    const timeSinceLastSave = now - lastSaveTimeRef.current;
+    const minSaveInterval = 2000; // 2 seconds minimum between saves
+    
+    // If we just saved recently, extend the debounce time
+    const debounceTime = timeSinceLastSave < minSaveInterval ? 3000 : 1000;
+
+    console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW', `(debounce: ${debounceTime}ms)`);
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce the save
+    // Debounce the save with dynamic timing
     saveTimeoutRef.current = setTimeout(async () => {
       // Double-check undo isn't active when timeout executes
       if (isSaving || undoActiveRef.current) return;
       
+      // Check if state changed again during debounce
+      const finalSignature = JSON.stringify({
+        items: state.items,
+        columns: state.columns,
+        title: state.title,
+        startTime: state.startTime,
+        timezone: state.timezone
+      });
+      
+      if (finalSignature === lastSavedRef.current) {
+        console.log('💾 Skipping save - no changes detected after debounce');
+        return;
+      }
+      
       setIsSaving(true);
+      lastSaveTimeRef.current = Date.now();
       console.log('💾 Executing auto-save...');
       
       try {
@@ -92,7 +116,7 @@ export const useSimpleAutoSave = (
             console.error('❌ Auto-save failed (create):', createError);
           } else {
             console.log('✅ New rundown created:', newRundown.id);
-            lastSavedRef.current = currentSignature;
+            lastSavedRef.current = finalSignature;
             onSaved();
             
             // Update the URL to reflect the new rundown ID
@@ -116,7 +140,7 @@ export const useSimpleAutoSave = (
             console.error('❌ Auto-save failed (update):', error);
           } else {
             console.log('✅ Auto-save successful');
-            lastSavedRef.current = currentSignature;
+            lastSavedRef.current = finalSignature;
             onSaved();
           }
         }
@@ -125,7 +149,7 @@ export const useSimpleAutoSave = (
       } finally {
         setIsSaving(false);
       }
-    }, 1000);
+    }, debounceTime);
 
     return () => {
       if (saveTimeoutRef.current) {
