@@ -22,6 +22,14 @@ export const useSimpleAutoSave = (
     console.log('💾 Auto-save undo coordination:', active ? 'PAUSED' : 'RESUMED');
   };
 
+  // Get the effective rundown ID (either the passed ID or the one we created)
+  const getEffectiveRundownId = () => {
+    if (rundownId && rundownId !== 'new' && rundownId !== 'NEW') {
+      return rundownId;
+    }
+    return createdRundownIdRef.current;
+  };
+
   useEffect(() => {
     // Don't save if no changes or if undo is active
     if (!state.hasUnsavedChanges || undoActiveRef.current) {
@@ -42,7 +50,8 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW');
+    const effectiveRundownId = getEffectiveRundownId();
+    console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW', 'effective ID:', effectiveRundownId);
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
@@ -71,14 +80,18 @@ export const useSimpleAutoSave = (
       console.log('💾 Executing auto-save...');
       
       try {
-        // Check if we have a valid rundown ID (either passed in or created)
-        const currentRundownId = rundownId && rundownId !== 'new' ? rundownId : createdRundownIdRef.current;
+        const currentEffectiveId = getEffectiveRundownId();
         
-        if (!currentRundownId) {
+        if (!currentEffectiveId) {
           // Create new rundown
           console.log('💾 Creating new rundown...');
           
           // Prevent multiple creation attempts
+          if (creationInProgressRef.current) {
+            console.log('⏭️ Creation already in progress, skipping');
+            return;
+          }
+          
           creationInProgressRef.current = true;
           
           const { data: teamData, error: teamError } = await supabase
@@ -116,18 +129,20 @@ export const useSimpleAutoSave = (
             console.log('✅ New rundown created:', newRundown.id);
             createdRundownIdRef.current = newRundown.id;
             lastSavedRef.current = currentSignature;
-            onSaved();
             
-            // Update URL immediately to prevent duplicate creations
+            // Update URL immediately to reflect the new rundown
             const newUrl = `/rundown/${newRundown.id}`;
             window.history.replaceState(null, '', newUrl);
             console.log('🔄 Updated URL to:', newUrl);
+            
+            // Call onSaved to notify the parent component
+            onSaved();
             
             creationInProgressRef.current = false;
           }
         } else {
           // Update existing rundown
-          console.log('💾 Updating existing rundown:', currentRundownId);
+          console.log('💾 Updating existing rundown:', currentEffectiveId);
           
           const { error } = await supabase
             .from('rundowns')
@@ -139,7 +154,7 @@ export const useSimpleAutoSave = (
               timezone: state.timezone,
               updated_at: new Date().toISOString()
             })
-            .eq('id', currentRundownId);
+            .eq('id', currentEffectiveId);
 
           if (error) {
             console.error('❌ Auto-save failed (update):', error);
@@ -151,7 +166,7 @@ export const useSimpleAutoSave = (
         }
       } catch (error) {
         console.error('❌ Auto-save error:', error);
-        if (!rundownId || rundownId === 'new') {
+        if (!getEffectiveRundownId()) {
           creationInProgressRef.current = false;
         }
       } finally {
@@ -173,15 +188,21 @@ export const useSimpleAutoSave = (
 
   // Reset creation tracking when rundown ID changes to a real ID
   useEffect(() => {
-    if (rundownId && rundownId !== 'new' && createdRundownIdRef.current) {
-      console.log('🔄 Rundown ID updated, resetting creation tracking');
-      createdRundownIdRef.current = null;
+    if (rundownId && rundownId !== 'new' && rundownId !== 'NEW') {
+      if (createdRundownIdRef.current && createdRundownIdRef.current !== rundownId) {
+        console.log('🔄 Rundown ID updated from', createdRundownIdRef.current, 'to', rundownId);
+        createdRundownIdRef.current = rundownId; // Sync the created ID
+      }
       creationInProgressRef.current = false;
     }
   }, [rundownId]);
 
+  // Export the effective rundown ID for other components to use
+  const effectiveRundownId = getEffectiveRundownId();
+
   return {
     isSaving,
-    setUndoActive
+    setUndoActive,
+    effectiveRundownId // Export this so other components can use the real ID
   };
 };
