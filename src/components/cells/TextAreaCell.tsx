@@ -54,7 +54,7 @@ const TextAreaCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="relative w-full h-full min-h-[32px] p-1" style={{ backgroundColor }}>
+    <div className="relative w-full h-full min-h-[32px] flex items-center" style={{ backgroundColor }}>
       <textarea
         ref={el => {
           if (el) {
@@ -69,7 +69,7 @@ const TextAreaCell = ({
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full h-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
+        className={`w-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
           isDuration ? 'font-mono text-center' : ''
         }`}
         style={{ 
