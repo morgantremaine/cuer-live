@@ -15,6 +15,7 @@ export const useSimpleAutoSave = (
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
   const lastSaveTimeRef = useRef<number>(0);
+  const lastTriggerTimeRef = useRef<number>(0);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -42,15 +43,25 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Rate limiting: don't save more than once every 2 seconds for efficiency
+    // Throttle console logging - only log every 500ms
     const now = Date.now();
+    const timeSinceLastTrigger = now - lastTriggerTimeRef.current;
+    const shouldLog = timeSinceLastTrigger > 500;
+    
+    if (shouldLog) {
+      lastTriggerTimeRef.current = now;
+    }
+
+    // Rate limiting: don't save more than once every 2 seconds for efficiency
     const timeSinceLastSave = now - lastSaveTimeRef.current;
     const minSaveInterval = 2000; // 2 seconds minimum between saves
     
     // If we just saved recently, extend the debounce time
     const debounceTime = timeSinceLastSave < minSaveInterval ? 3000 : 1000;
 
-    console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW', `(debounce: ${debounceTime}ms)`);
+    if (shouldLog) {
+      console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW', `(debounce: ${debounceTime}ms)`);
+    }
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
