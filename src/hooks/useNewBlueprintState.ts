@@ -10,24 +10,37 @@ export const useNewBlueprintState = (
   rundownTitle: string, 
   items: RundownItem[]
 ) => {
+  console.log('🔵 useNewBlueprintState called for rundown:', rundownId);
+  
   // Core data manager
   const manager = useBlueprintDataManager(rundownId, rundownTitle);
   
   // Available columns from rundown items
-  const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
+  const availableColumns = useMemo(() => {
+    const columns = getAvailableColumns(items);
+    console.log('📊 Available columns:', columns.map(c => c.name));
+    return columns;
+  }, [items]);
 
   // Enhanced list operations that refresh from rundown data
   const addNewList = (name: string, sourceColumn: string) => {
+    console.log('➕ Adding new list:', name, 'from column:', sourceColumn);
     const listItems = generateListFromColumn(items, sourceColumn);
+    console.log('📝 Generated', listItems.length, 'items for new list');
     manager.addList(name, sourceColumn, listItems);
   };
 
   // Manual refresh function (not automatic)
   const refreshAllLists = () => {
-    const updatedLists = manager.data.lists.map(list => ({
-      ...list,
-      items: generateListFromColumn(items, list.sourceColumn)
-    }));
+    console.log('🔄 Refreshing all lists from rundown data');
+    const updatedLists = manager.data.lists.map(list => {
+      const refreshedItems = generateListFromColumn(items, list.sourceColumn);
+      console.log('🔄 Refreshed list', list.name, ':', refreshedItems.length, 'items');
+      return {
+        ...list,
+        items: refreshedItems
+      };
+    });
     manager.updateLists(updatedLists);
   };
 
@@ -51,9 +64,18 @@ export const useNewBlueprintState = (
 
   // Update component order when it changes
   const handleComponentOrderChange = (newOrder: string[]) => {
+    console.log('🔄 Component order change:', newOrder);
     updateComponentOrder(newOrder);
     manager.updateComponentOrder(newOrder);
   };
+
+  console.log('📊 Blueprint state summary:', {
+    isLoading: manager.isLoading,
+    isInitialized: manager.isInitialized,
+    listsCount: manager.data.lists.length,
+    crewMembersCount: manager.data.crewData.length,
+    notesLength: manager.data.notes.length
+  });
 
   return {
     // Core state
