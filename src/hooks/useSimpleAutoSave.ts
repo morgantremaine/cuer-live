@@ -28,17 +28,6 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // If we're not on a new rundown and have a valid ID, don't create a new one
-    if (rundownId && rundownId !== 'new') {
-      return;
-    }
-
-    // If we already created a rundown, don't create another one
-    if (createdRundownIdRef.current) {
-      console.log('⏭️ Skipping creation - already created rundown:', createdRundownIdRef.current);
-      return;
-    }
-
     // Create a signature of the current state
     const currentSignature = JSON.stringify({
       items: state.items,
@@ -70,12 +59,10 @@ export const useSimpleAutoSave = (
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
       // Double-check conditions when timeout executes
-      if (isSaving || undoActiveRef.current || creationInProgressRef.current || createdRundownIdRef.current) {
+      if (isSaving || undoActiveRef.current) {
         console.log('⏭️ Skipping save - conditions changed:', {
           isSaving,
-          undoActive: undoActiveRef.current,
-          creationInProgress: creationInProgressRef.current,
-          alreadyCreated: !!createdRundownIdRef.current
+          undoActive: undoActiveRef.current
         });
         return;
       }
@@ -84,8 +71,11 @@ export const useSimpleAutoSave = (
       console.log('💾 Executing auto-save...');
       
       try {
-        // For new rundowns, we need to create them first
-        if (!rundownId || rundownId === 'new') {
+        // Check if we have a valid rundown ID (either passed in or created)
+        const currentRundownId = rundownId && rundownId !== 'new' ? rundownId : createdRundownIdRef.current;
+        
+        if (!currentRundownId) {
+          // Create new rundown
           console.log('💾 Creating new rundown...');
           
           // Prevent multiple creation attempts
@@ -137,6 +127,8 @@ export const useSimpleAutoSave = (
           }
         } else {
           // Update existing rundown
+          console.log('💾 Updating existing rundown:', currentRundownId);
+          
           const { error } = await supabase
             .from('rundowns')
             .update({
@@ -147,12 +139,12 @@ export const useSimpleAutoSave = (
               timezone: state.timezone,
               updated_at: new Date().toISOString()
             })
-            .eq('id', rundownId);
+            .eq('id', currentRundownId);
 
           if (error) {
             console.error('❌ Auto-save failed (update):', error);
           } else {
-            console.log('✅ Auto-save successful');
+            console.log('✅ Auto-save successful (update)');
             lastSavedRef.current = currentSignature;
             onSaved();
           }
