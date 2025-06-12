@@ -7,7 +7,7 @@ import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 
 const SharedRundown = () => {
-  const { rundownData, currentTime, currentSegmentId, loading, error } = useSharedRundownState();
+  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
 
   if (loading) {
     return (
@@ -46,35 +46,9 @@ const SharedRundown = () => {
 
   const visibleColumns = getVisibleColumns(rundownData.columns);
 
-  // Determine if showcaller is playing and calculate time remaining
+  // Determine if showcaller is playing and use the real-time calculated time remaining
   const showcallerState = rundownData.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
-  
-  // Calculate time remaining for current segment
-  let timeRemaining = 0;
-  if (currentSegmentId && isPlaying) {
-    const currentItem = rundownData.items.find(item => item.id === currentSegmentId);
-    if (currentItem && currentItem.duration) {
-      // Parse duration (e.g., "02:30" or "02:30:00") and calculate remaining time
-      const durationParts = currentItem.duration.split(':').map(Number);
-      let totalSeconds = 0;
-      
-      if (durationParts.length === 2) {
-        totalSeconds = durationParts[0] * 60 + durationParts[1];
-      } else if (durationParts.length === 3) {
-        totalSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
-      }
-      
-      // Calculate elapsed time based on when the segment started
-      const segmentStartTime = showcallerState?.segmentStartTime;
-      if (segmentStartTime) {
-        const elapsed = Math.floor((Date.now() - segmentStartTime) / 1000);
-        timeRemaining = Math.max(0, totalSeconds - elapsed);
-      } else {
-        timeRemaining = totalSeconds;
-      }
-    }
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

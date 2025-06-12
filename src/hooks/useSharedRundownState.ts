@@ -22,6 +22,7 @@ export const useSharedRundownState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [calculatedTimeRemaining, setCalculatedTimeRemaining] = useState(0);
 
   // Update current time every second
   useEffect(() => {
@@ -30,6 +31,38 @@ export const useSharedRundownState = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Calculate real-time countdown when showcaller is playing
+  useEffect(() => {
+    if (!rundownData?.showcallerState?.isPlaying || !rundownData.showcallerState.currentSegmentId) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const showcallerState = rundownData.showcallerState;
+      const currentItem = rundownData.items.find(item => item.id === showcallerState.currentSegmentId);
+      
+      if (currentItem && currentItem.duration && showcallerState.playbackStartTime) {
+        // Parse duration (e.g., "02:30" or "02:30:00") and calculate remaining time
+        const durationParts = currentItem.duration.split(':').map(Number);
+        let totalSeconds = 0;
+        
+        if (durationParts.length === 2) {
+          totalSeconds = durationParts[0] * 60 + durationParts[1];
+        } else if (durationParts.length === 3) {
+          totalSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
+        }
+        
+        // Calculate elapsed time since playback started
+        const elapsed = Math.floor((Date.now() - showcallerState.playbackStartTime) / 1000);
+        const remaining = Math.max(0, totalSeconds - elapsed);
+        
+        setCalculatedTimeRemaining(remaining);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [rundownData?.showcallerState?.isPlaying, rundownData?.showcallerState?.currentSegmentId, rundownData?.showcallerState?.playbackStartTime, rundownData?.items]);
 
   // Load rundown data with showcaller state
   const loadRundownData = async () => {
@@ -94,18 +127,19 @@ export const useSharedRundownState = () => {
     loadRundownData();
   }, [rundownId]);
 
-  // Set up polling for updates (check every 2 seconds for showcaller updates)
+  // Set up more frequent polling for showcaller updates (every 500ms when playing, 2 seconds when not)
   useEffect(() => {
     if (!rundownId || loading) return;
     
+    const isPlaying = rundownData?.showcallerState?.isPlaying;
     const pollInterval = setInterval(() => {
       loadRundownData();
-    }, 2000);
+    }, isPlaying ? 500 : 2000);
 
     return () => {
       clearInterval(pollInterval);
     };
-  }, [rundownId, loading]);
+  }, [rundownId, loading, rundownData?.showcallerState?.isPlaying]);
 
   // Find the showcaller segment from showcaller_state or fallback to item status
   const currentSegmentId = rundownData?.showcallerState?.currentSegmentId || 
@@ -118,6 +152,7 @@ export const useSharedRundownState = () => {
     currentTime,
     currentSegmentId,
     loading,
-    error
+    error,
+    timeRemaining: calculatedTimeRemaining
   };
 };
