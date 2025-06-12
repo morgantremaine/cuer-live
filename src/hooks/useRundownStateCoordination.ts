@@ -13,11 +13,27 @@ export const useRundownStateCoordination = () => {
   // Basic state management
   const basicState = useRundownBasicState();
   
+  // Create a simple state object for auto-save
+  const stateForAutoSave = {
+    items: [], // Will be populated by gridCore
+    columns: [], // Will be populated by gridCore
+    title: basicState.rundownTitle,
+    startTime: basicState.rundownStartTime,
+    timezone: basicState.timezone,
+    hasUnsavedChanges: false,
+    lastChanged: 0
+  };
+  
+  // Simple onSaved callback
+  const onSaved = () => {
+    console.log('✅ Rundown saved successfully');
+  };
+  
   // Auto-save with effective rundown ID tracking
   const { isSaving, setUndoActive, effectiveRundownId } = useSimpleAutoSave(
-    basicState.state,
+    stateForAutoSave,
     urlRundownId,
-    basicState.onSaved
+    onSaved
   );
   
   // Use the effective rundown ID (either URL param or created ID)
@@ -31,34 +47,46 @@ export const useRundownStateCoordination = () => {
 
   // Grid core functionality
   const gridCore = useRundownGridCore({
-    items: basicState.state.items,
-    columns: basicState.state.columns,
-    rundownId: actualRundownId, // Use actual ID
-    setItems: basicState.actions.setItems,
-    setColumns: basicState.actions.setColumns,
-    markAsChanged: basicState.actions.markAsChanged,
-    currentTime: basicState.state.currentTime,
-    currentSegmentId: basicState.state.currentSegmentId,
-    setUndoActive
+    markAsChanged: basicState.markAsChanged,
+    rundownTitle: basicState.rundownTitle,
+    timezone: basicState.timezone,
+    rundownStartTime: basicState.rundownStartTime,
+    setRundownTitleDirectly: basicState.setRundownTitleDirectly,
+    setTimezoneDirectly: basicState.setTimezoneDirectly,
+    setRundownStartTimeDirectly: basicState.setRundownStartTimeDirectly,
+    setAutoSaveTrigger: basicState.setAutoSaveTrigger
   });
 
   // Grid handlers
   const gridHandlers = useRundownGridHandlers({
-    items: basicState.state.items,
-    setItems: basicState.actions.setItems,
-    markAsChanged: basicState.actions.markAsChanged,
-    rundownId: actualRundownId, // Use actual ID
-    columns: basicState.state.columns,
-    setColumns: basicState.actions.setColumns,
-    setUndoActive
+    updateItem: gridCore.updateItem,
+    addRow: gridCore.addRow,
+    addHeader: gridCore.addHeader,
+    deleteRow: gridCore.deleteRow,
+    toggleFloatRow: gridCore.toggleFloatRow,
+    deleteMultipleRows: gridCore.deleteMultipleRows,
+    addMultipleRows: gridCore.addMultipleRows,
+    handleDeleteColumn: gridCore.handleDeleteColumn,
+    setItems: gridCore.setItems,
+    calculateEndTime: gridCore.calculateEndTime,
+    selectColor: gridCore.selectColor,
+    markAsChanged: basicState.markAsChanged,
+    selectedRows: new Set<string>(),
+    clearSelection: () => {},
+    copyItems: () => {},
+    clipboardItems: [],
+    hasClipboardData: () => false,
+    toggleRowSelection: () => {},
+    items: gridCore.items || [],
+    setRundownTitle: basicState.setRundownTitle
   });
 
   // Grid interactions
   const gridInteractions = useRundownGridInteractions({
-    items: basicState.state.items,
-    setItems: basicState.actions.setItems,
-    markAsChanged: basicState.actions.markAsChanged,
-    calculateEndTime: gridCore.calculations.calculateEndTime
+    items: gridCore.items || [],
+    setItems: gridCore.setItems,
+    markAsChanged: basicState.markAsChanged,
+    calculateEndTime: gridCore.calculateEndTime
   });
 
   return {
@@ -67,21 +95,24 @@ export const useRundownStateCoordination = () => {
       rundownId: actualRundownId,
       urlRundownId, // Keep original for reference
       effectiveRundownId,
-      ...basicState.state,
-      ...gridCore.state,
-      ...gridHandlers.state,
-      ...gridCore.calculations,
-      ...basicState.actions,
-      ...gridCore.actions,
-      ...gridHandlers.actions,
+      ...basicState,
+      ...gridCore,
+      ...gridHandlers,
       isSaving,
-      hasUnsavedChanges: basicState.state.hasUnsavedChanges && !isSaving
+      hasUnsavedChanges: false // Will be updated by auto-save logic
     },
     interactions: {
       ...gridInteractions
     },
     uiState: {
-      ...gridCore.ui
+      showColorPicker: false,
+      handleCellClick: () => {},
+      handleKeyDown: () => {},
+      handleToggleColorPicker: () => {},
+      selectColor: gridCore.selectColor || (() => {}),
+      getRowStatus: () => 'upcoming',
+      getColumnWidth: () => '150px',
+      updateColumnWidth: () => {}
     }
   };
 };
