@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RundownState } from './useRundownState';
 import { supabase } from '@/lib/supabase';
 
@@ -8,6 +9,7 @@ export const useSimpleAutoSave = (
   rundownId: string | null,
   onSaved: () => void
 ) => {
+  const navigate = useNavigate();
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
@@ -92,7 +94,10 @@ export const useSimpleAutoSave = (
             console.log('✅ New rundown created:', newRundown.id);
             lastSavedRef.current = currentSignature;
             onSaved();
-            window.history.replaceState(null, '', `/rundown/${newRundown.id}`);
+            
+            // Update the URL to reflect the new rundown ID
+            console.log('🔄 Updating URL to reflect new rundown ID:', newRundown.id);
+            navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
         } else {
           const { error } = await supabase
@@ -127,7 +132,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving, navigate]);
 
   return {
     isSaving,
