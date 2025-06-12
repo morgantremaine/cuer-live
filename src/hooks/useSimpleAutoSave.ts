@@ -20,7 +20,10 @@ export const useSimpleAutoSave = (
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
-    console.log('💾 Auto-save undo coordination:', active ? 'PAUSED' : 'RESUMED');
+    // Only log state changes, not every coordination call
+    if (active) {
+      console.log('💾 Auto-save paused for undo operation');
+    }
   };
 
   useEffect(() => {
@@ -43,10 +46,10 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Throttle console logging - only log every 500ms
+    // Throttle console logging - only log every 2 seconds to reduce noise
     const now = Date.now();
     const timeSinceLastTrigger = now - lastTriggerTimeRef.current;
-    const shouldLog = timeSinceLastTrigger > 500;
+    const shouldLog = timeSinceLastTrigger > 2000;
     
     if (shouldLog) {
       lastTriggerTimeRef.current = now;
@@ -60,7 +63,7 @@ export const useSimpleAutoSave = (
     const debounceTime = timeSinceLastSave < minSaveInterval ? 3000 : 1000;
 
     if (shouldLog) {
-      console.log('💾 Auto-save triggered for rundown:', rundownId || 'NEW', `(debounce: ${debounceTime}ms)`);
+      console.log('💾 Auto-save scheduled for rundown:', rundownId || 'NEW');
     }
 
     // Clear any existing timeout
@@ -83,19 +86,16 @@ export const useSimpleAutoSave = (
       });
       
       if (finalSignature === lastSavedRef.current) {
-        console.log('💾 Skipping save - no changes detected after debounce');
         return;
       }
       
       setIsSaving(true);
       lastSaveTimeRef.current = Date.now();
-      console.log('💾 Executing auto-save...');
+      console.log('💾 Saving rundown...');
       
       try {
         // For new rundowns, we need to create them first
         if (!rundownId) {
-          console.log('💾 Creating new rundown...');
-          
           const { data: teamData, error: teamError } = await supabase
             .from('team_members')
             .select('team_id')
@@ -124,14 +124,13 @@ export const useSimpleAutoSave = (
             .single();
 
           if (createError) {
-            console.error('❌ Auto-save failed (create):', createError);
+            console.error('❌ Save failed:', createError);
           } else {
             console.log('✅ New rundown created:', newRundown.id);
             lastSavedRef.current = finalSignature;
             onSaved();
             
             // Update the URL to reflect the new rundown ID
-            console.log('🔄 Updating URL to reflect new rundown ID:', newRundown.id);
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
         } else {
@@ -148,15 +147,15 @@ export const useSimpleAutoSave = (
             .eq('id', rundownId);
 
           if (error) {
-            console.error('❌ Auto-save failed (update):', error);
+            console.error('❌ Save failed:', error);
           } else {
-            console.log('✅ Auto-save successful');
+            console.log('✅ Rundown saved');
             lastSavedRef.current = finalSignature;
             onSaved();
           }
         }
       } catch (error) {
-        console.error('❌ Auto-save error:', error);
+        console.error('❌ Save error:', error);
       } finally {
         setIsSaving(false);
       }
