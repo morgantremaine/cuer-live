@@ -21,7 +21,9 @@ export const useRundownStateCoordination = () => {
     startTime: basicState.rundownStartTime,
     timezone: basicState.timezone,
     hasUnsavedChanges: false,
-    lastChanged: 0
+    lastChanged: 0,
+    currentSegmentId: null,
+    isPlaying: false
   };
   
   // Simple onSaved callback
@@ -82,12 +84,22 @@ export const useRundownStateCoordination = () => {
   });
 
   // Grid interactions
-  const gridInteractions = useRundownGridInteractions({
-    items: gridCore.items || [],
-    setItems: gridCore.setItems,
-    markAsChanged: basicState.markAsChanged,
-    calculateEndTime: gridCore.calculateEndTime
-  });
+  const gridInteractions = useRundownGridInteractions(
+    gridCore.items || [],
+    gridCore.setItems,
+    gridCore.updateItem,
+    gridCore.addRow,
+    gridCore.addHeader,
+    gridCore.deleteRow,
+    gridCore.toggleFloatRow,
+    gridCore.deleteMultipleRows,
+    gridCore.addMultipleRows,
+    gridCore.handleDeleteColumn,
+    gridCore.calculateEndTime,
+    gridCore.selectColor,
+    basicState.markAsChanged,
+    basicState.setRundownTitle
+  );
 
   return {
     coreState: {
