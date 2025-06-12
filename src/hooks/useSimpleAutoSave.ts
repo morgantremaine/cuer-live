@@ -12,7 +12,8 @@ export const useSimpleAutoSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
-  const creationInProgressRef = useRef(false); // Track if creation is in progress
+  const creationInProgressRef = useRef(false);
+  const createdRundownIdRef = useRef<string | null>(null); // Track the ID we created
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -23,6 +24,17 @@ export const useSimpleAutoSave = (
   useEffect(() => {
     // Don't save if no changes or if undo is active
     if (!state.hasUnsavedChanges || undoActiveRef.current) {
+      return;
+    }
+
+    // If we're not on a new rundown and have a valid ID, don't create a new one
+    if (rundownId && rundownId !== 'new') {
+      return;
+    }
+
+    // If we already created a rundown, don't create another one
+    if (createdRundownIdRef.current) {
+      console.log('⏭️ Skipping creation - already created rundown:', createdRundownIdRef.current);
       return;
     }
 
@@ -49,23 +61,26 @@ export const useSimpleAutoSave = (
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
-      // Double-check undo isn't active when timeout executes
-      if (isSaving || undoActiveRef.current || creationInProgressRef.current) return;
+      // Double-check conditions when timeout executes
+      if (isSaving || undoActiveRef.current || creationInProgressRef.current || createdRundownIdRef.current) {
+        console.log('⏭️ Skipping save - conditions changed:', {
+          isSaving,
+          undoActive: undoActiveRef.current,
+          creationInProgress: creationInProgressRef.current,
+          alreadyCreated: !!createdRundownIdRef.current
+        });
+        return;
+      }
       
       setIsSaving(true);
       console.log('💾 Executing auto-save...');
       
       try {
         // For new rundowns, we need to create them first
-        if (!rundownId) {
+        if (!rundownId || rundownId === 'new') {
           console.log('💾 Creating new rundown...');
           
           // Prevent multiple creation attempts
-          if (creationInProgressRef.current) {
-            console.log('⏭️ Creation already in progress, skipping');
-            return;
-          }
-          
           creationInProgressRef.current = true;
           
           const { data: teamData, error: teamError } = await supabase
@@ -101,12 +116,19 @@ export const useSimpleAutoSave = (
             creationInProgressRef.current = false;
           } else {
             console.log('✅ New rundown created:', newRundown.id);
+            createdRundownIdRef.current = newRundown.id;
             lastSavedRef.current = currentSignature;
             onSaved();
-            window.history.replaceState(null, '', `/rundown/${newRundown.id}`);
+            
+            // Update URL immediately to prevent duplicate creations
+            const newUrl = `/rundown/${newRundown.id}`;
+            window.history.replaceState(null, '', newUrl);
+            console.log('🔄 Updated URL to:', newUrl);
+            
             creationInProgressRef.current = false;
           }
         } else {
+          // Update existing rundown
           const { error } = await supabase
             .from('rundowns')
             .update({
@@ -129,7 +151,7 @@ export const useSimpleAutoSave = (
         }
       } catch (error) {
         console.error('❌ Auto-save error:', error);
-        if (!rundownId) {
+        if (!rundownId || rundownId === 'new') {
           creationInProgressRef.current = false;
         }
       } finally {
@@ -143,6 +165,15 @@ export const useSimpleAutoSave = (
       }
     };
   }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving]);
+
+  // Reset creation tracking when rundown ID changes to a real ID
+  useEffect(() => {
+    if (rundownId && rundownId !== 'new' && createdRundownIdRef.current) {
+      console.log('🔄 Rundown ID updated, resetting creation tracking');
+      createdRundownIdRef.current = null;
+      creationInProgressRef.current = false;
+    }
+  }, [rundownId]);
 
   return {
     isSaving,
