@@ -12,6 +12,7 @@ export const useRundownStorage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [deletedRundownIds, setDeletedRundownIds] = useState<Set<string>>(new Set());
+  const savingInProgressRef = useRef<Set<string>>(new Set()); // Track saves in progress
 
   // Load rundowns from Supabase (team rundowns only, including archived ones)
   const loadRundowns = useCallback(async () => {
@@ -124,7 +125,7 @@ export const useRundownStorage = () => {
     }
   }, [user, deletedRundownIds]);
 
-  // Save rundown to Supabase
+  // Save rundown to Supabase with duplicate prevention
   const saveRundown = useCallback(async (rundown: SavedRundown): Promise<string> => {
     if (!user || !rundown) {
       throw new Error('User not authenticated or rundown is invalid');
@@ -136,6 +137,18 @@ export const useRundownStorage = () => {
       return rundown.id;
     }
 
+    // Create a unique key for this save operation to prevent duplicates
+    const saveKey = rundown.id || `new-${rundown.title}-${Date.now()}`;
+    
+    // Check if this exact save is already in progress
+    if (savingInProgressRef.current.has(saveKey)) {
+      console.log('⚠️ Save already in progress for:', saveKey);
+      return rundown.id || '';
+    }
+
+    // Mark this save as in progress
+    savingInProgressRef.current.add(saveKey);
+
     // Ensure rundown has a team_id - get user's first team if not provided
     if (!rundown.team_id) {
       const { data: teamMemberships } = await supabase
@@ -145,6 +158,7 @@ export const useRundownStorage = () => {
         .limit(1);
 
       if (!teamMemberships || teamMemberships.length === 0) {
+        savingInProgressRef.current.delete(saveKey);
         throw new Error('User is not a member of any team. Cannot create rundown.');
       }
 
@@ -187,12 +201,14 @@ export const useRundownStorage = () => {
         }
       });
 
+      console.log('✅ Rundown saved successfully:', savedRundown.id);
       return savedRundown.id;
     } catch (error) {
       console.error('Error saving rundown:', error);
       throw error;
     } finally {
       setIsSaving(false);
+      savingInProgressRef.current.delete(saveKey);
     }
   }, [user, deletedRundownIds]);
 

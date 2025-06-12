@@ -12,6 +12,7 @@ export const useSimpleAutoSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
+  const creationInProgressRef = useRef(false); // Track if creation is in progress
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -49,7 +50,7 @@ export const useSimpleAutoSave = (
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
       // Double-check undo isn't active when timeout executes
-      if (isSaving || undoActiveRef.current) return;
+      if (isSaving || undoActiveRef.current || creationInProgressRef.current) return;
       
       setIsSaving(true);
       console.log('💾 Executing auto-save...');
@@ -58,6 +59,14 @@ export const useSimpleAutoSave = (
         // For new rundowns, we need to create them first
         if (!rundownId) {
           console.log('💾 Creating new rundown...');
+          
+          // Prevent multiple creation attempts
+          if (creationInProgressRef.current) {
+            console.log('⏭️ Creation already in progress, skipping');
+            return;
+          }
+          
+          creationInProgressRef.current = true;
           
           const { data: teamData, error: teamError } = await supabase
             .from('team_members')
@@ -68,6 +77,7 @@ export const useSimpleAutoSave = (
 
           if (teamError || !teamData) {
             console.error('❌ Could not get team for new rundown:', teamError);
+            creationInProgressRef.current = false;
             return;
           }
 
@@ -88,11 +98,13 @@ export const useSimpleAutoSave = (
 
           if (createError) {
             console.error('❌ Auto-save failed (create):', createError);
+            creationInProgressRef.current = false;
           } else {
             console.log('✅ New rundown created:', newRundown.id);
             lastSavedRef.current = currentSignature;
             onSaved();
             window.history.replaceState(null, '', `/rundown/${newRundown.id}`);
+            creationInProgressRef.current = false;
           }
         } else {
           const { error } = await supabase
@@ -117,6 +129,9 @@ export const useSimpleAutoSave = (
         }
       } catch (error) {
         console.error('❌ Auto-save error:', error);
+        if (!rundownId) {
+          creationInProgressRef.current = false;
+        }
       } finally {
         setIsSaving(false);
       }
