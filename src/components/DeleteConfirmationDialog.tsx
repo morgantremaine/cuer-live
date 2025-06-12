@@ -44,17 +44,17 @@ const DeleteConfirmationDialog = ({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="bg-gray-800 border-gray-600 text-white">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Rundown</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-4">
+          <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
+          <AlertDialogDescription className="space-y-4 text-gray-300">
             <div>
-              Are you sure you want to permanently delete "<strong>{rundownTitle}</strong>"? 
+              Are you sure you want to permanently delete "<strong className="text-white">{rundownTitle}</strong>"? 
               This action cannot be undone.
             </div>
             <div>
-              <Label htmlFor="confirm-delete" className="text-sm font-medium">
-                Type <strong>delete</strong> to confirm:
+              <Label htmlFor="confirm-delete" className="text-sm font-medium text-gray-300">
+                Type <strong className="text-white">delete</strong> to confirm:
               </Label>
               <Input
                 id="confirm-delete"
@@ -62,18 +62,23 @@ const DeleteConfirmationDialog = ({
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="Type 'delete' here"
-                className="mt-2"
+                className="mt-2 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gray-500"
                 autoComplete="off"
               />
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel 
+            onClick={handleCancel}
+            className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500"
+          >
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleConfirm}
             disabled={!isDeleteConfirmed}
-            className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="bg-red-600 hover:bg-red-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white"
           >
             Delete Permanently
           </AlertDialogAction>
