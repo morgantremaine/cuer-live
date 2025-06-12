@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { generateListFromColumn, getAvailableColumns } from '@/utils/blueprintUtils';
@@ -17,8 +18,8 @@ export const useNewBlueprintState = (
 
   // Enhanced list operations that refresh from rundown data
   const addNewList = (name: string, sourceColumn: string) => {
-    const items = generateListFromColumn(items, sourceColumn);
-    manager.addList(name, sourceColumn, items);
+    const listItems = generateListFromColumn(items, sourceColumn);
+    manager.addList(name, sourceColumn, listItems);
   };
 
   const refreshAllLists = () => {
