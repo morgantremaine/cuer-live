@@ -13,7 +13,8 @@ export const useSimpleAutoSave = (
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
   const creationInProgressRef = useRef(false);
-  const createdRundownIdRef = useRef<string | null>(null); // Track the ID we created
+  const createdRundownIdRef = useRef<string | null>(null);
+  const lastTitleChangeRef = useRef<number>(0);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -58,6 +59,13 @@ export const useSimpleAutoSave = (
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
+
+    // For title changes, use longer debounce to avoid excessive saves
+    const now = Date.now();
+    const isRecentTitleChange = now - lastTitleChangeRef.current < 2000;
+    const debounceTime = isRecentTitleChange ? 3000 : 1000;
+
+    console.log('💾 Scheduling save with debounce:', debounceTime + 'ms');
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
@@ -157,7 +165,7 @@ export const useSimpleAutoSave = (
       } finally {
         setIsSaving(false);
       }
-    }, 1000);
+    }, debounceTime);
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -165,6 +173,11 @@ export const useSimpleAutoSave = (
       }
     };
   }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving]);
+
+  // Track title changes for debouncing
+  useEffect(() => {
+    lastTitleChangeRef.current = Date.now();
+  }, [state.title]);
 
   // Reset creation tracking when rundown ID changes to a real ID
   useEffect(() => {
