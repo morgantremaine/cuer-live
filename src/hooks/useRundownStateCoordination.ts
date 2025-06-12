@@ -1,130 +1,260 @@
-
-import { useParams } from 'react-router-dom';
-import { useRundownBasicState } from './useRundownBasicState';
-import { useRundownGridCore } from './useRundownGridCore';
-import { useRundownGridHandlers } from './useRundownGridHandlers';
+import { useMemo, useState, useCallback } from 'react';
+import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
-import { useSimpleAutoSave } from './useSimpleAutoSave';
+import { useRundownUIManager } from './useRundownUIManager';
+import { getRowStatus, calculateEndTime, calculateTotalRuntime } from '@/utils/rundownCalculations';
 
 export const useRundownStateCoordination = () => {
-  const params = useParams<{ id: string }>();
-  const urlRundownId = (!params.id || params.id === 'new' || params.id === ':id' || params.id.trim() === '') ? null : params.id;
+  // Add missing UI state
+  const [showColumnManager, setShowColumnManager] = useState(false);
   
-  // Basic state management
-  const basicState = useRundownBasicState();
+  // Use the simplified state system
+  const simplifiedState = useSimplifiedRundownState();
   
-  // Create a simple state object for auto-save
-  const stateForAutoSave = {
-    items: [], // Will be populated by gridCore
-    columns: [], // Will be populated by gridCore
-    title: basicState.rundownTitle,
-    startTime: basicState.rundownStartTime,
-    timezone: basicState.timezone,
-    hasUnsavedChanges: false,
-    lastChanged: 0,
-    currentSegmentId: null,
-    isPlaying: false
-  };
-  
-  // Simple onSaved callback
-  const onSaved = () => {
-    console.log('✅ Rundown saved successfully');
-  };
-  
-  // Auto-save with effective rundown ID tracking
-  const { isSaving, setUndoActive, effectiveRundownId } = useSimpleAutoSave(
-    stateForAutoSave,
-    urlRundownId,
-    onSaved
-  );
-  
-  // Use the effective rundown ID (either URL param or created ID)
-  const actualRundownId = effectiveRundownId || urlRundownId;
-  
-  console.log('🔍 Rundown ID coordination:', {
-    urlParam: urlRundownId,
-    effective: effectiveRundownId,
-    actual: actualRundownId
-  });
-
-  // Grid core functionality
-  const gridCore = useRundownGridCore({
-    markAsChanged: basicState.markAsChanged,
-    rundownTitle: basicState.rundownTitle,
-    timezone: basicState.timezone,
-    rundownStartTime: basicState.rundownStartTime,
-    setRundownTitleDirectly: basicState.setRundownTitleDirectly,
-    setTimezoneDirectly: basicState.setTimezoneDirectly,
-    setRundownStartTimeDirectly: basicState.setRundownStartTimeDirectly,
-    setAutoSaveTrigger: basicState.setAutoSaveTrigger
-  });
-
-  // Grid handlers
-  const gridHandlers = useRundownGridHandlers({
-    updateItem: gridCore.updateItem,
-    addRow: gridCore.addRow,
-    addHeader: gridCore.addHeader,
-    deleteRow: gridCore.deleteRow,
-    toggleFloatRow: gridCore.toggleFloatRow,
-    deleteMultipleRows: gridCore.deleteMultipleRows,
-    addMultipleRows: gridCore.addMultipleRows,
-    handleDeleteColumn: gridCore.handleDeleteColumn,
-    setItems: gridCore.setItems,
-    calculateEndTime: gridCore.calculateEndTime,
-    selectColor: gridCore.selectColor,
-    markAsChanged: basicState.markAsChanged,
-    selectedRows: new Set<string>(),
-    clearSelection: () => {},
-    copyItems: () => {},
-    clipboardItems: [],
-    hasClipboardData: () => false,
-    toggleRowSelection: () => {},
-    items: gridCore.items || [],
-    setRundownTitle: basicState.setRundownTitle
-  });
-
-  // Grid interactions
+  // Grid interactions - these functions need to properly handle both selection states
   const gridInteractions = useRundownGridInteractions(
-    gridCore.items || [],
-    gridCore.setItems,
-    gridCore.updateItem,
-    gridCore.addRow,
-    gridCore.addHeader,
-    gridCore.deleteRow,
-    gridCore.toggleFloatRow,
-    gridCore.deleteMultipleRows,
-    gridCore.addMultipleRows,
-    gridCore.handleDeleteColumn,
-    gridCore.calculateEndTime,
-    gridCore.selectColor,
-    basicState.markAsChanged,
-    basicState.setRundownTitle
+    simplifiedState.items,
+    (updater) => {
+      if (typeof updater === 'function') {
+        const newItems = updater(simplifiedState.items);
+        simplifiedState.setItems(newItems);
+      }
+    },
+    simplifiedState.updateItem,
+    // Enhanced addRow that gets access to multi-selection state
+    () => {
+      // This will be enhanced by the handlers to consider multi-selection
+      simplifiedState.addRow();
+    },
+    // Enhanced addHeader that gets access to multi-selection state
+    () => {
+      // This will be enhanced by the handlers to consider multi-selection
+      simplifiedState.addHeader();
+    },
+    simplifiedState.deleteRow,
+    simplifiedState.toggleFloat,
+    simplifiedState.deleteMultipleItems,
+    (items) => {
+      items.forEach(item => simplifiedState.addItem(item));
+    },
+    (columnId) => {
+      const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
+      simplifiedState.setColumns(newColumns);
+    },
+    () => '00:00:00',
+    (id, color) => simplifiedState.updateItem(id, 'color', color),
+    () => {},
+    simplifiedState.setTitle
   );
+  
+  // UI state management
+  const uiManager = useRundownUIManager(
+    simplifiedState.items,
+    simplifiedState.visibleColumns,
+    simplifiedState.columns,
+    simplifiedState.updateItem,
+    () => {}, // markAsChanged - no-op for now
+    (columnId: string, width: number) => {
+      simplifiedState.updateColumnWidth(columnId, `${width}px`);
+    }
+  );
+
+  // Row status calculation wrapper
+  const getRowStatusForItem = useCallback((item: any) => {
+    return getRowStatus(item, simplifiedState.currentTime);
+  }, [simplifiedState.currentTime]);
+
+  // Enhanced addRow that considers multi-selection when available - memoized
+  const enhancedAddRow = useCallback(() => {
+    if (gridInteractions.selectedRows.size > 0) {
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(gridInteractions.selectedRows)
+        .map(id => simplifiedState.items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        simplifiedState.addRowAtIndex(insertAfterIndex + 1);
+        return;
+      }
+    }
+    
+    // Check single selection
+    if (simplifiedState.selectedRowId) {
+      const selectedIndex = simplifiedState.items.findIndex(item => item.id === simplifiedState.selectedRowId);
+      if (selectedIndex !== -1) {
+        simplifiedState.addRowAtIndex(selectedIndex + 1);
+        return;
+      }
+    }
+    
+    simplifiedState.addRow();
+  }, [gridInteractions.selectedRows, simplifiedState.selectedRowId, simplifiedState.items, simplifiedState.addRowAtIndex, simplifiedState.addRow]);
+
+  // Enhanced addHeader that considers multi-selection when available - memoized
+  const enhancedAddHeader = useCallback(() => {
+    if (gridInteractions.selectedRows.size > 0) {
+      // Find the highest index among selected rows and insert after it
+      const selectedIndices = Array.from(gridInteractions.selectedRows)
+        .map(id => simplifiedState.items.findIndex(item => item.id === id))
+        .filter(index => index !== -1);
+      
+      if (selectedIndices.length > 0) {
+        const insertAfterIndex = Math.max(...selectedIndices);
+        simplifiedState.addHeaderAtIndex(insertAfterIndex + 1);
+        return;
+      }
+    }
+    
+    // Check single selection
+    if (simplifiedState.selectedRowId) {
+      const selectedIndex = simplifiedState.items.findIndex(item => item.id === simplifiedState.selectedRowId);
+      if (selectedIndex !== -1) {
+        simplifiedState.addHeaderAtIndex(selectedIndex + 1);
+        return;
+      }
+    }
+    
+    simplifiedState.addHeader();
+  }, [gridInteractions.selectedRows, simplifiedState.selectedRowId, simplifiedState.items, simplifiedState.addHeaderAtIndex, simplifiedState.addHeader]);
+
+  // Create enhanced core state with stable dependencies
+  const coreState = useMemo(() => ({
+    // Basic state
+    items: simplifiedState.items,
+    visibleColumns: simplifiedState.visibleColumns,
+    currentTime: simplifiedState.currentTime,
+    currentSegmentId: simplifiedState.currentSegmentId,
+    rundownTitle: simplifiedState.rundownTitle,
+    rundownStartTime: simplifiedState.rundownStartTime,
+    timezone: simplifiedState.timezone,
+    columns: simplifiedState.columns,
+    rundownId: simplifiedState.rundownId,
+    isLoading: simplifiedState.isLoading,
+    hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
+    isSaving: simplifiedState.isSaving,
+    
+    // Row selection state
+    selectedRowId: simplifiedState.selectedRowId,
+    handleRowSelection: simplifiedState.handleRowSelection,
+    clearRowSelection: simplifiedState.clearRowSelection,
+    
+    // UI state
+    showColumnManager,
+    setShowColumnManager,
+    
+    // Core functions
+    updateItem: simplifiedState.updateItem,
+    deleteRow: simplifiedState.deleteRow,
+    toggleFloatRow: simplifiedState.toggleFloat,
+    setRundownTitle: simplifiedState.setTitle,
+    getRowNumber: simplifiedState.getRowNumber,
+    
+    // Enhanced row operations that consider both selection states
+    addRow: enhancedAddRow,
+    addHeader: enhancedAddHeader,
+    
+    // Calculations
+    calculateHeaderDuration: (index: number) => {
+      const item = simplifiedState.items[index];
+      return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
+    },
+    calculateTotalRuntime: () => simplifiedState.totalRuntime,
+    calculateEndTime: (startTime: string, duration: string) => calculateEndTime(startTime, duration),
+    
+    // Showcaller controls - properly expose these with working functions
+    isPlaying: simplifiedState.isPlaying,
+    timeRemaining: simplifiedState.timeRemaining,
+    play: simplifiedState.play,
+    pause: simplifiedState.pause,
+    forward: simplifiedState.forward,
+    backward: simplifiedState.backward,
+    isController: simplifiedState.isController,
+    
+    // Column management functions
+    handleAddColumn: simplifiedState.addColumn,
+    handleReorderColumns: (columns: any[]) => simplifiedState.setColumns(columns),
+    handleDeleteColumn: (columnId: string) => {
+      const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
+      simplifiedState.setColumns(newColumns);
+    },
+    handleRenameColumn: (columnId: string, newName: string) => {
+      const newColumns = simplifiedState.columns.map(col =>
+        col.id === columnId ? { ...col, name: newName } : col
+      );
+      simplifiedState.setColumns(newColumns);
+    },
+    handleToggleColumnVisibility: (columnId: string) => {
+      const newColumns = simplifiedState.columns.map(col =>
+        col.id === columnId ? { ...col, isVisible: !col.isVisible } : col
+      );
+      simplifiedState.setColumns(newColumns);
+    },
+    handleLoadLayout: (columns: any[]) => simplifiedState.setColumns(columns),
+    
+    // Other missing functions
+    markAsChanged: () => {},
+    setRundownStartTime: simplifiedState.setStartTime,
+    setTimezone: simplifiedState.setTimezone,
+    
+    // Properly expose undo functionality from simplified state
+    handleUndo: simplifiedState.undo,
+    canUndo: simplifiedState.canUndo,
+    lastAction: simplifiedState.lastAction || '',
+    
+    // NEW: Realtime connection status from simplified state
+    isConnected: simplifiedState.isConnected,
+    isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate
+  }), [
+    simplifiedState.items,
+    simplifiedState.visibleColumns,
+    simplifiedState.currentTime,
+    simplifiedState.currentSegmentId,
+    simplifiedState.rundownTitle,
+    simplifiedState.rundownStartTime,
+    simplifiedState.timezone,
+    simplifiedState.columns,
+    simplifiedState.rundownId,
+    simplifiedState.isLoading,
+    simplifiedState.hasUnsavedChanges,
+    simplifiedState.isSaving,
+    simplifiedState.selectedRowId,
+    simplifiedState.handleRowSelection,
+    simplifiedState.clearRowSelection,
+    showColumnManager,
+    setShowColumnManager,
+    simplifiedState.updateItem,
+    simplifiedState.deleteRow,
+    simplifiedState.toggleFloat,
+    simplifiedState.setTitle,
+    simplifiedState.getRowNumber,
+    enhancedAddRow,
+    enhancedAddHeader,
+    simplifiedState.totalRuntime,
+    simplifiedState.isPlaying,
+    simplifiedState.timeRemaining,
+    simplifiedState.play,
+    simplifiedState.pause,
+    simplifiedState.forward,
+    simplifiedState.backward,
+    simplifiedState.isController,
+    simplifiedState.addColumn,
+    simplifiedState.setColumns,
+    simplifiedState.setStartTime,
+    simplifiedState.setTimezone,
+    simplifiedState.undo,
+    simplifiedState.canUndo,
+    simplifiedState.lastAction,
+    simplifiedState.isConnected,
+    simplifiedState.isProcessingRealtimeUpdate
+  ]);
 
   return {
-    coreState: {
-      // Pass the actual rundown ID to all components
-      rundownId: actualRundownId,
-      urlRundownId, // Keep original for reference
-      effectiveRundownId,
-      ...basicState,
-      ...gridCore,
-      ...gridHandlers,
-      isSaving,
-      hasUnsavedChanges: false // Will be updated by auto-save logic
-    },
-    interactions: {
-      ...gridInteractions
-    },
+    coreState,
+    interactions: gridInteractions,
     uiState: {
-      showColorPicker: false,
-      handleCellClick: () => {},
-      handleKeyDown: () => {},
-      handleToggleColorPicker: () => {},
-      selectColor: gridCore.selectColor || (() => {}),
-      getRowStatus: () => 'upcoming',
-      getColumnWidth: () => '150px',
-      updateColumnWidth: () => {}
+      ...uiManager,
+      getRowStatus: getRowStatusForItem
     }
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -15,7 +14,6 @@ const RundownIndexContent = () => {
     uiState
   } = useRundownStateCoordination();
   
-  // Use the actual rundown ID instead of just the URL parameter
   const {
     currentTime,
     timezone,
@@ -24,9 +22,7 @@ const RundownIndexContent = () => {
     rundownTitle,
     setRundownTitle,
     rundownStartTime,
-    rundownId, // This is now the actual/effective rundown ID
-    urlRundownId, // Original URL parameter
-    effectiveRundownId,
+    rundownId,
     items,
     visibleColumns,
     columns,
@@ -93,7 +89,7 @@ const RundownIndexContent = () => {
     updateColumnWidth
   } = uiState;
 
-  // Use actual rundown ID for handlers
+  // Fix useIndexHandlers to match expected signature
   const {
     handleRundownStartTimeChange,
     handleTimezoneChange,
@@ -104,7 +100,7 @@ const RundownIndexContent = () => {
   } = useIndexHandlers({
     items,
     selectedRows,
-    rundownId, // Use actual rundown ID
+    rundownId,
     addRow: () => addRow(),
     addHeader: () => addHeader(),
     calculateEndTime,
@@ -134,9 +130,9 @@ const RundownIndexContent = () => {
     handleAddColumn(newColumn);
   };
 
-  // Prepare rundown data for Cuer AI - use actual rundown ID
+  // Prepare rundown data for Cuer AI
   const rundownData = {
-    id: rundownId, // Use actual rundown ID
+    id: rundownId,
     title: rundownTitle,
     startTime: rundownStartTime,
     timezone: timezone,
@@ -144,13 +140,6 @@ const RundownIndexContent = () => {
     columns: columns,
     totalRuntime: calculateTotalRuntime()
   };
-
-  console.log('🔍 RundownIndexContent IDs:', {
-    urlParam: urlRundownId,
-    effective: effectiveRundownId,
-    actual: rundownId,
-    hasUnsaved: hasUnsavedChanges
-  });
 
   return (
     <RealtimeConnectionProvider
@@ -218,7 +207,7 @@ const RundownIndexContent = () => {
         onTitleChange={setRundownTitle}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={handleRundownStartTimeChange}
-        rundownId={rundownId} // Use actual rundown ID
+        rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={handleUndo}
         canUndo={canUndo}
