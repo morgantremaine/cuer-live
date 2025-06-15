@@ -1,9 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
-import { useBlueprintState } from '@/hooks/useBlueprintState';
-import { useBlueprintRealtimeCollaboration } from '@/hooks/blueprint/useBlueprintRealtimeCollaboration';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -13,8 +11,10 @@ import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import CrewList from '@/components/blueprint/CrewList';
 import CameraPlot from '@/components/blueprint/CameraPlot';
+import { BlueprintProvider } from '@/contexts/BlueprintContext';
+import { useUnifiedBlueprintState } from '@/hooks/blueprint/useUnifiedBlueprintState';
 
-const Blueprint = () => {
+const BlueprintContent = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -41,24 +41,14 @@ const Blueprint = () => {
     handleDragLeave,
     handleDrop,
     handleDragEnd,
-    savedBlueprint
-  } = useBlueprintState(
-    id || '',
-    rundown?.title || 'Unknown Rundown',
+    updateComponentOrder,
+    initialized,
+    loading: blueprintLoading,
+    error
+  } = useUnifiedBlueprintState(
     rundown?.items || [],
     rundown?.start_time
   );
-
-  // Set up realtime collaboration for blueprints
-  useBlueprintRealtimeCollaboration({
-    rundownId: id || null,
-    onBlueprintUpdated: (blueprintData) => {
-      console.log('Received blueprint update from teammate:', blueprintData);
-      // Force a page refresh to get the latest blueprint data
-      window.location.reload();
-    },
-    enabled: true
-  });
 
   const handleSignOut = async () => {
     try {
@@ -73,7 +63,7 @@ const Blueprint = () => {
     navigate('/dashboard');
   };
 
-  if (loading) {
+  if (loading || blueprintLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -95,6 +85,28 @@ const Blueprint = () => {
             <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
             <Button onClick={() => navigate('/dashboard')}>
               Return to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <DashboardHeader 
+          userEmail={user?.email} 
+          onSignOut={handleSignOut} 
+          showBackButton={true}
+          onBack={handleBack}
+        />
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-400 mb-4">Error Loading Blueprint</h1>
+            <p className="text-gray-400 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Retry
             </Button>
           </div>
         </div>
@@ -163,10 +175,6 @@ const Blueprint = () => {
         <BlueprintScratchpad
           rundownId={id || ''}
           rundownTitle={rundown?.title || 'Unknown Rundown'}
-          initialNotes={savedBlueprint?.notes || ''}
-          onNotesChange={(notes) => {
-            // Notes are automatically handled by the component
-          }}
         />
       </div>
     )
@@ -237,6 +245,25 @@ const Blueprint = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Blueprint = () => {
+  const { id } = useParams<{ id: string }>();
+  const { savedRundowns } = useRundownStorage();
+  const rundown = savedRundowns.find(r => r.id === id);
+
+  if (!rundown) {
+    return <BlueprintContent />;
+  }
+
+  return (
+    <BlueprintProvider 
+      rundownId={id || ''} 
+      rundownTitle={rundown.title || 'Unknown Rundown'}
+    >
+      <BlueprintContent />
+    </BlueprintProvider>
   );
 };
 

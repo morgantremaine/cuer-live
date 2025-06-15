@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical } from 'lucide-react';
-import { useScratchpadEditor } from '@/hooks/useScratchpadEditor';
+import { useUnifiedScratchpad } from '@/hooks/blueprint/useUnifiedScratchpad';
 import ScratchpadToolbar from './scratchpad/ScratchpadToolbar';
 import ScratchpadContent from './scratchpad/ScratchpadContent';
 import SaveStatus from './scratchpad/SaveStatus';
@@ -10,23 +10,32 @@ import SaveStatus from './scratchpad/SaveStatus';
 interface BlueprintScratchpadProps {
   rundownId: string;
   rundownTitle: string;
-  initialNotes?: string;
-  onNotesChange?: (notes: string) => void;
 }
 
-const BlueprintScratchpad = ({ rundownId, rundownTitle, initialNotes = '', onNotesChange }: BlueprintScratchpadProps) => {
+const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  
   const {
     notes,
-    isEditing,
     saveStatus,
     textareaRef,
-    setIsEditing,
     handleNotesChange,
     handleBold,
     handleItalic,
     handleUnderline,
-    handleBulletList
-  } = useScratchpadEditor(rundownId, rundownTitle, initialNotes, onNotesChange);
+    handleBulletList,
+    isLoading
+  } = useUnifiedScratchpad();
+
+  if (isLoading) {
+    return (
+      <Card className="w-full mt-8 bg-gray-800 border-gray-700">
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full mt-8 bg-gray-800 border-gray-700">

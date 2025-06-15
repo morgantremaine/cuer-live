@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, GripVertical } from 'lucide-react';
 import { CrewListProps } from '@/types/crew';
-import { useCrewList } from '@/hooks/useCrewList';
 import { useCrewRowDragDrop } from '@/hooks/useCrewRowDragDrop';
+import { useUnifiedCrewList } from '@/hooks/blueprint/useUnifiedCrewList';
 import CrewTable from './crew/CrewTable';
 
 const CrewList = ({ 
@@ -21,8 +21,9 @@ const CrewList = ({
     addRow,
     deleteRow,
     updateMember,
-    reorderMembers
-  } = useCrewList(rundownId, rundownTitle);
+    reorderMembers,
+    isLoading
+  } = useUnifiedCrewList();
 
   const {
     draggedRowId,
@@ -32,6 +33,16 @@ const CrewList = ({
     handleRowDrop,
     handleRowDragEnd
   } = useCrewRowDragDrop(reorderMembers);
+
+  if (isLoading) {
+    return (
+      <Card className="w-full mt-8 bg-gray-800 border-gray-700">
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card 
