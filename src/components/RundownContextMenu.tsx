@@ -48,6 +48,7 @@ const RundownContextMenu = memo(({
   onAddHeader
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
+  const [isContextMenuOpen, setIsContextMenuOpen] = React.useState(false);
 
   // Handle color selection for multiple rows and close context menu
   const handleColorSelect = (id: string, color: string) => {
@@ -61,8 +62,9 @@ const RundownContextMenu = memo(({
       onColorSelect(id, color);
     }
     
-    // Close the color picker after selection
+    // Close the color picker and context menu after selection
     onColorPicker();
+    setIsContextMenuOpen(false);
   };
 
   // Handle float toggle for multiple rows
@@ -80,7 +82,7 @@ const RundownContextMenu = memo(({
 
   return (
     <>
-      <ContextMenu>
+      <ContextMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
