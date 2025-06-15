@@ -64,8 +64,6 @@ export const useSimplifiedRundownState = () => {
   // Standalone undo system with proper change trigger - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, _, title) => { // Note: columns parameter ignored since they're user-specific
-      console.log('🔄 Applying undo state:', { itemsCount: items.length, title });
-      
       // Set undo active to prevent auto-save interference
       setUndoActive(true);
       
@@ -79,7 +77,6 @@ export const useSimplifiedRundownState = () => {
         actions.markSaved(); // Clear the saved state first
         actions.setItems([...items]); // Trigger change detection
         setUndoActive(false);
-        console.log('🔄 Triggered auto-save after undo');
       }, 100);
     },
     setUndoActive
@@ -89,8 +86,6 @@ export const useSimplifiedRundownState = () => {
   const realtimeRundown = useRealtimeRundown({
     rundownId,
     onRundownUpdated: useCallback((updatedRundown) => {
-      console.log('📡 Applying realtime rundown update:', updatedRundown.title);
-      
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
         // Load state WITHOUT columns (they're user-specific)
@@ -112,7 +107,6 @@ export const useSimplifiedRundownState = () => {
   const stableRealtime = useStableRealtimeCollaboration({
     rundownId,
     onRemoteUpdate: useCallback(() => {
-      console.log('📡 Remote update detected, refreshing data...');
       // This is just for notifications, doesn't change core functionality
     }, []),
     enabled: !!rundownId
@@ -125,8 +119,6 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function - save undo state with content only (not columns)
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    console.log('📺 Enhanced updateItem called:', { id, field, value });
-    
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field.startsWith('customFields.') || field === 'segmentName';
@@ -136,7 +128,6 @@ export const useSimplifiedRundownState = () => {
       
       // If this is the start of a new typing session, save undo state
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        console.log('💾 Saving undo state before typing session for:', sessionKey);
         // Save undo with content only (no columns)
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
@@ -151,12 +142,10 @@ export const useSimplifiedRundownState = () => {
       }
       
       typingTimeoutRef.current = setTimeout(() => {
-        console.log('💾 Typing session ended for:', sessionKey);
         typingSessionRef.current = null;
       }, 1000);
     } else if (field === 'duration') {
       // For duration changes, save immediately since they're usually intentional
-      console.log('💾 Saving undo state before duration change');
       saveUndoState(state.items, [], state.title, 'Edit duration');
     }
     
@@ -290,7 +279,6 @@ export const useSimplifiedRundownState = () => {
     updateItem: enhancedUpdateItem,
 
     toggleFloatRow: useCallback((id: string) => {
-      console.log('💾 Saving undo state before toggle float');
       saveUndoState(state.items, [], state.title, 'Toggle float');
       const item = state.items.find(i => i.id === id);
       if (item) {
@@ -299,26 +287,22 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
-      console.log('💾 Saving undo state before delete row');
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
     }, [actions.deleteItem, state.items, state.title, saveUndoState]),
 
     addRow: useCallback(() => {
-      console.log('💾 Saving undo state before add row');
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
     }, [helpers.addRow, state.items, state.title, saveUndoState]),
 
     addHeader: useCallback(() => {
-      console.log('💾 Saving undo state before add header');
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
     }, [helpers.addHeader, state.items, state.title, saveUndoState]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
-        console.log('💾 Saving undo state before title change');
         saveUndoState(state.items, [], state.title, 'Change title');
         actions.setTitle(newTitle);
       }
@@ -346,22 +330,17 @@ export const useSimplifiedRundownState = () => {
   }, [calculatedItems]);
 
   const handleRowSelection = useCallback((itemId: string) => {
-    console.log('🎯 Simplified state handleRowSelection called with:', itemId, 'current selected:', selectedRowId);
     setSelectedRowId(prev => {
       const newSelection = prev === itemId ? null : itemId;
-      console.log('🎯 Setting selectedRowId to:', newSelection);
       return newSelection;
     });
   }, [selectedRowId]);
 
   const clearRowSelection = useCallback(() => {
-    console.log('🎯 Simplified state clearRowSelection called');
     setSelectedRowId(null);
   }, []);
 
   const addRowAtIndex = useCallback((insertIndex: number) => {
-    console.log('🚀 Adding row at index:', insertIndex);
-    console.log('💾 Saving undo state before add row at index');
     saveUndoState(state.items, [], state.title, 'Add segment');
     if (helpers.addRow && typeof helpers.addRow === 'function') {
       helpers.addRow(insertIndex);
@@ -371,8 +350,6 @@ export const useSimplifiedRundownState = () => {
   }, [helpers, state.items, state.title, saveUndoState]);
 
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
-    console.log('🚀 Adding header at index:', insertIndex);
-    console.log('💾 Saving undo state before add header at index');
     saveUndoState(state.items, [], state.title, 'Add header');
     if (helpers.addHeader && typeof helpers.addHeader === 'function') {
       helpers.addHeader(insertIndex);
@@ -420,19 +397,15 @@ export const useSimplifiedRundownState = () => {
     
     // Playback controls - properly expose these functions with correct signatures
     play: (selectedSegmentId?: string) => {
-      console.log('🎮 Simplified state play called with:', selectedSegmentId);
       play(selectedSegmentId);
     },
     pause: () => {
-      console.log('🎮 Simplified state pause called');
       pause();
     },
     forward: () => {
-      console.log('🎮 Simplified state forward called');
       forward();
     },
     backward: () => {
-      console.log('🎮 Simplified state backward called');
       backward();
     },
     isController,
@@ -462,7 +435,6 @@ export const useSimplifiedRundownState = () => {
     addHeaderAtIndex,
     
     addColumn: (column: Column) => {
-      console.log('💾 Saving undo state before add column');
       saveUndoState(state.items, [], state.title, 'Add column');
       setColumns([...columns, column]);
     },

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -48,7 +49,6 @@ const Teleprompter = () => {
       return;
     }
 
-    console.log('Loading teleprompter rundown with ID:', rundownId);
     setError(null);
 
     try {
@@ -58,8 +58,6 @@ const Teleprompter = () => {
         .select('id, title, items, columns, created_at, updated_at')
         .eq('id', rundownId)
         .single();
-
-      console.log('Supabase query result:', { data, error: queryError });
 
       if (queryError) {
         // Handle different types of errors
@@ -72,14 +70,12 @@ const Teleprompter = () => {
         }
         setRundownData(null);
       } else if (data) {
-        console.log('Successfully loaded teleprompter rundown data:', data);
         setRundownData({
           title: data.title || 'Untitled Rundown',
           items: data.items || []
         });
         setError(null);
       } else {
-        console.log('No rundown found with ID:', rundownId);
         setError('Rundown not found');
         setRundownData(null);
       }
@@ -100,16 +96,12 @@ const Teleprompter = () => {
   // Set up polling for updates (check every 5 seconds, same as SharedRundown)
   useEffect(() => {
     if (!rundownId || loading) return;
-
-    console.log('Setting up polling for teleprompter updates:', rundownId);
     
     const pollInterval = setInterval(() => {
-      console.log('Polling for teleprompter updates...');
       loadRundownData();
     }, 5000); // Poll every 5 seconds
 
     return () => {
-      console.log('Cleaning up polling interval');
       clearInterval(pollInterval);
     };
   }, [rundownId, loading]);
@@ -217,3 +209,4 @@ const Teleprompter = () => {
 };
 
 export default Teleprompter;
+

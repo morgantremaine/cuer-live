@@ -38,186 +38,95 @@ export const useAutoSave = (
   const setShowcallerActive = useCallback((active: boolean) => {
     const wasActive = showcallerActiveRef.current;
     showcallerActiveRef.current = active;
-    
-    if (wasActive !== active) {
-      console.log('💾 Showcaller active state changed:', active);
-    }
   }, []);
 
-  // Method to coordinate with undo operations
+  // Method to set undo active state
   const setUndoActive = useCallback((active: boolean) => {
     const wasActive = undoActiveRef.current;
     undoActiveRef.current = active;
-    
-    if (wasActive !== active) {
-      console.log('💾 Undo active state changed:', active);
-    }
   }, []);
 
-  // Validate start time before saving
-  const validateStartTime = useCallback((timeString?: string): string => {
-    if (!timeString) return '09:00:00';
-    
-    // Remove any non-time characters
-    let cleanTime = timeString.replace(/[^0-9:]/g, '');
-    
-    // Ensure proper format HH:MM:SS
-    const timeParts = cleanTime.split(':');
-    if (timeParts.length === 3) {
-      const hours = Math.min(23, Math.max(0, parseInt(timeParts[0]) || 0)).toString().padStart(2, '0');
-      const minutes = Math.min(59, Math.max(0, parseInt(timeParts[1]) || 0)).toString().padStart(2, '0');
-      const seconds = Math.min(59, Math.max(0, parseInt(timeParts[2]) || 0)).toString().padStart(2, '0');
-      return `${hours}:${minutes}:${seconds}`;
-    }
-    
-    return '09:00:00';
-  }, []);
-
-  // Create a debounced save function with undo coordination
-  const debouncedSave = useCallback(async (
-    itemsToSave: RundownItem[], 
-    titleToSave: string, 
-    columnsToSave?: Column[], 
-    timezoneToSave?: string, 
-    startTimeToSave?: string
-  ) => {
+  // Debounced save function with multiple layers of protection
+  const debouncedSave = useCallback(async () => {
+    // Multiple checks to prevent unnecessary saves
     if (!user || 
-        isSaving || 
-        isProcessingRealtimeUpdate || 
-        saveInProgressRef.current ||
-        undoActiveRef.current) { // Don't save during undo operations
-      console.log('💾 Save blocked:', {
-        noUser: !user,
-        isSaving,
-        isProcessingRealtimeUpdate,
-        saveInProgress: saveInProgressRef.current,
-        undoActive: undoActiveRef.current
-      });
+        !isInitialized || 
+        saveInProgressRef.current || 
+        showcallerActiveRef.current ||
+        undoActiveRef.current ||
+        isProcessingRealtimeUpdate) {
       return;
     }
 
-    // Brief showcaller activity blocking
-    if (showcallerActiveRef.current) {
-      const now = Date.now();
-      if (now - lastSaveTimestampRef.current < 2000) {
-        console.log('💾 Save briefly deferred due to showcaller activity');
-        return;
-      }
-    }
-
-    // Minimum interval between saves
-    const now = Date.now();
-    if (now - lastSaveTimestampRef.current < 1500) {
-      console.log('💾 Save throttled - too soon since last save');
-      return;
-    }
-
-    // Validate the start time before saving
-    const validatedStartTime = validateStartTime(startTimeToSave);
-    
-    console.log('💾 Auto-saving rundown...', { 
-      itemCount: itemsToSave.length, 
-      title: titleToSave,
-      timezone: timezoneToSave,
-      startTime: validatedStartTime 
+    const currentDataSignature = JSON.stringify({
+      items: items || [],
+      title: rundownTitle || '',
+      columns: columns || [],
+      timezone: timezone || '',
+      startTime: startTime || ''
     });
 
-    setIsLoading(true);
+    // Skip if data hasn't actually changed
+    if (currentDataSignature === lastSaveDataRef.current) {
+      return;
+    }
+
+    // Prevent rapid successive saves
+    const now = Date.now();
+    if (now - lastSaveTimestampRef.current < 1000) {
+      return;
+    }
+
     saveInProgressRef.current = true;
     lastSaveTimestampRef.current = now;
 
     try {
-      const success = await performSave(
-        itemsToSave, 
-        titleToSave, 
-        columnsToSave, 
-        timezoneToSave, 
-        validatedStartTime
+      const saveSuccess = await performSave(
+        items || [], 
+        rundownTitle || '', 
+        columns, 
+        timezone, 
+        startTime
       );
       
-      if (success) {
-        markAsSaved(itemsToSave, titleToSave, columnsToSave, timezoneToSave, validatedStartTime);
-        console.log('✅ Auto-save successful');
-      } else {
-        setHasUnsavedChanges(true);
-        console.log('❌ Auto-save failed');
+      if (saveSuccess) {
+        lastSaveDataRef.current = currentDataSignature;
+        markAsSaved(items || [], rundownTitle || '', columns, timezone, startTime);
       }
     } catch (error) {
-      console.error('Auto-save error:', error);
-      setHasUnsavedChanges(true);
+      console.error('Auto-save failed:', error);
     } finally {
-      setIsLoading(false);
       saveInProgressRef.current = false;
     }
-  }, [user, isSaving, isProcessingRealtimeUpdate, performSave, markAsSaved, setHasUnsavedChanges, setIsLoading, validateStartTime]);
+  }, [user, items, rundownTitle, columns, timezone, startTime, performSave, markAsSaved, isInitialized, isProcessingRealtimeUpdate]);
 
-  // Main effect for auto-save with undo coordination
+  // Auto-save effect with intelligent debouncing
   useEffect(() => {
-    if (isProcessingRealtimeUpdate || saveInProgressRef.current || undoActiveRef.current) {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-        debounceTimeoutRef.current = null;
-      }
+    if (!hasUnsavedChanges || 
+        !isInitialized || 
+        showcallerActiveRef.current || 
+        undoActiveRef.current ||
+        isProcessingRealtimeUpdate) {
       return;
     }
 
-    if (!hasUnsavedChanges || !isInitialized || !user) {
-      return;
-    }
-
-    // Validate start time in the signature
-    const validatedStartTime = validateStartTime(startTime);
-    
-    const currentDataSignature = JSON.stringify({ 
-      items, 
-      title: rundownTitle, 
-      columns, 
-      timezone, 
-      startTime: validatedStartTime 
-    });
-    
-    if (lastSaveDataRef.current === currentDataSignature) {
-      return;
-    }
-
-    console.log('💾 Data changed, scheduling save with current values:', {
-      timezone,
-      startTime: validatedStartTime,
-      title: rundownTitle,
-      itemCount: items.length
-    });
-
-    lastSaveDataRef.current = currentDataSignature;
-
+    // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
+    // Set new timeout with smart delay
+    const delay = saveInProgressRef.current ? 3000 : 1500;
     debounceTimeoutRef.current = setTimeout(() => {
-      if (!isProcessingRealtimeUpdate && !saveInProgressRef.current && !undoActiveRef.current) {
-        console.log('💾 Executing save with values:', {
-          timezone,
-          startTime: validatedStartTime,
-          title: rundownTitle
-        });
-        debouncedSave([...items], rundownTitle, columns ? [...columns] : undefined, timezone, validatedStartTime);
-      }
-      debounceTimeoutRef.current = null;
-    }, 1500);
+      debouncedSave();
+    }, delay);
 
-  }, [
-    hasUnsavedChanges, 
-    isInitialized, 
-    user, 
-    items, 
-    rundownTitle, 
-    columns, 
-    timezone, 
-    startTime, 
-    debouncedSave, 
-    isProcessingRealtimeUpdate,
-    validateStartTime
-  ]);
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [hasUnsavedChanges, debouncedSave, isInitialized, isProcessingRealtimeUpdate]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -228,19 +137,17 @@ export const useAutoSave = (
     };
   }, []);
 
-  const markAsChangedCallback = () => {
-    if (!isProcessingRealtimeUpdate && !saveInProgressRef.current && !undoActiveRef.current) {
-      markAsChanged();
-    }
-  };
-
   return {
-    hasUnsavedChanges: hasUnsavedChanges && !isProcessingRealtimeUpdate,
-    isSaving: isSaving || saveInProgressRef.current,
-    markAsChanged: markAsChangedCallback,
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+    markAsSaved,
+    markAsChanged,
+    isSaving,
+    setIsLoading,
     setApplyingRemoteUpdate,
     updateSavedSignature,
     setShowcallerActive,
-    setUndoActive // Export for undo coordination
+    setUndoActive
   };
 };
+
