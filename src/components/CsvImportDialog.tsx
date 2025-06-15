@@ -29,6 +29,7 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   const [csvData, setCsvData] = useState<string[][] | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewData, setPreviewData] = useState<{ items: any[], columns: any[] } | null>(null);
 
   const handleFileSelect = async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.csv')) {
@@ -56,7 +57,13 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
         return;
       }
 
+      console.log('Parsed CSV data:', parsed);
       setCsvData(parsed);
+
+      // Generate preview
+      const { items, columns } = mapCSVToRundownItems(parsed);
+      setPreviewData({ items, columns });
+      console.log('Preview data generated:', { items: items.length, columns: columns.length });
     } catch (error) {
       console.error('Error parsing CSV:', error);
       toast({
@@ -98,27 +105,39 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   };
 
   const handleImport = () => {
-    if (!csvData) return;
+    if (!csvData || !previewData) return;
 
-    const { items, columns } = mapCSVToRundownItems(csvData);
     const title = fileName.replace('.csv', '') || 'Imported Rundown';
 
-    onImport({ items, columns, title });
+    console.log('Importing CSV data:', {
+      title,
+      items: previewData.items.length,
+      columns: previewData.columns.length,
+      customColumns: previewData.columns.filter(c => c.isCustom).length
+    });
+
+    onImport({ 
+      items: previewData.items, 
+      columns: previewData.columns, 
+      title 
+    });
     
     // Reset state
     setCsvData(null);
     setFileName('');
+    setPreviewData(null);
     onOpenChange(false);
 
     toast({
-      title: 'Import successful',
-      description: `Created rundown "${title}" with ${items.length} items`,
+      title: 'Import started',
+      description: `Processing "${title}" with ${previewData.items.length} items and ${previewData.columns.filter(c => c.isCustom).length} custom columns`,
     });
   };
 
   const resetImport = () => {
     setCsvData(null);
     setFileName('');
+    setPreviewData(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -183,9 +202,27 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
                 </Button>
               </div>
 
+              {previewData && (
+                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                    Import Preview:
+                  </p>
+                  <ul className="text-xs space-y-1 text-blue-700 dark:text-blue-300">
+                    <li>• {previewData.items.length} segments will be created</li>
+                    <li>• {previewData.columns.filter(c => !c.isCustom).length} standard columns</li>
+                    <li>• {previewData.columns.filter(c => c.isCustom).length} custom columns will be added</li>
+                    {previewData.columns.filter(c => c.isCustom).length > 0 && (
+                      <li className="ml-2">
+                        Custom: {previewData.columns.filter(c => c.isCustom).map(c => c.name).join(', ')}
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Preview ({csvData.length - 1} rows):
+                  Data Preview ({csvData.length - 1} rows):
                 </p>
                 <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
                   <div className="font-medium">
@@ -211,7 +248,7 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          {csvData && (
+          {csvData && previewData && (
             <Button onClick={handleImport}>
               <Check className="h-4 w-4 mr-2" />
               Import Rundown

@@ -1,9 +1,12 @@
+
 import React from 'react';
 import { Plus, Settings, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
@@ -17,7 +20,11 @@ interface MainActionButtonsProps {
   selectedRowId?: string | null;
   isMobile?: boolean;
   rundownTitle?: string;
-  rundownData?: any;
+  rundownData?: {
+    items: RundownItem[];
+    columns: Column[];
+    title: string;
+  };
 }
 
 const MainActionButtons = ({

@@ -28,13 +28,20 @@ export const useCsvImport = () => {
     }
 
     try {
+      console.log('Creating rundown from CSV with:', {
+        itemCount: data.items.length,
+        columnCount: data.columns.length,
+        customColumns: data.columns.filter(c => c.isCustom).length,
+        title: data.title
+      });
+
       // Create new rundown object with both items and columns
       const newRundown = {
         id: '',
         user_id: user.id,
         title: data.title,
         items: data.items,
-        columns: data.columns, // Include the imported columns
+        columns: data.columns, // This is crucial - include the imported columns
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         start_time: '00:00:00',
         icon: '📋',
@@ -47,6 +54,8 @@ export const useCsvImport = () => {
         teams: null,
         creator_profile: null
       };
+
+      console.log('Saving rundown with columns:', newRundown.columns.map(c => ({ id: c.id, name: c.name, key: c.key, isCustom: c.isCustom })));
 
       // Save the rundown with both items and columns
       const rundownId = await saveRundown(newRundown);

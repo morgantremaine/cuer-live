@@ -3,6 +3,8 @@ import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -25,8 +27,10 @@ interface RundownToolbarProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  // Rundown title for sharing
+  // Rundown title and data for sharing
   rundownTitle?: string;
+  rundownItems?: RundownItem[];
+  rundownColumns?: Column[];
 }
 
 const RundownToolbar = ({
@@ -46,9 +50,17 @@ const RundownToolbar = ({
   onUndo,
   canUndo,
   lastAction,
-  rundownTitle
+  rundownTitle,
+  rundownItems,
+  rundownColumns
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
+
+  const rundownData = rundownItems && rundownColumns ? {
+    items: rundownItems,
+    columns: rundownColumns,
+    title: rundownTitle || 'Untitled Rundown'
+  } : undefined;
 
   const commonProps = {
     onAddRow,
@@ -67,7 +79,8 @@ const RundownToolbar = ({
     onPause,
     onForward,
     onBackward,
-    rundownTitle
+    rundownTitle,
+    rundownData
   };
 
   if (isMobile) {
