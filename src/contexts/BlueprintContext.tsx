@@ -84,6 +84,19 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
       return { ...state, componentOrder: action.payload };
     case 'MERGE_REMOTE_STATE':
       console.log('📋 Merging remote state in reducer:', Object.keys(action.payload));
+      console.log('📋 DETAILED MERGE - Current lists count:', state.lists.length);
+      console.log('📋 DETAILED MERGE - Incoming lists count:', action.payload.lists?.length || 0);
+      console.log('📋 DETAILED MERGE - Current component order:', state.componentOrder);
+      console.log('📋 DETAILED MERGE - Incoming component order:', action.payload.componentOrder);
+      
+      // Log detailed list information for debugging
+      if (action.payload.lists) {
+        action.payload.lists.forEach((list, index) => {
+          console.log(`📋 DETAILED MERGE - List ${index}: ${list.name} (${list.id}) - ${Object.keys(list.checkedItems || {}).length} checked items`);
+          console.log(`📋 DETAILED MERGE - List ${index} checked items:`, list.checkedItems);
+        });
+      }
+      
       return {
         ...state,
         ...action.payload,
@@ -182,6 +195,16 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
             componentOrder: blueprintData.component_order
           });
           
+          // Enhanced logging for debugging checkbox and order issues
+          console.log('📋 INITIALIZATION - Raw blueprint data from DB:', blueprintData);
+          console.log('📋 INITIALIZATION - Lists data:', blueprintData.lists);
+          if (blueprintData.lists) {
+            blueprintData.lists.forEach((list: any, index: number) => {
+              console.log(`📋 INITIALIZATION - List ${index}: ${list.name} - checkedItems:`, list.checkedItems);
+            });
+          }
+          console.log('📋 INITIALIZATION - Component order:', blueprintData.component_order);
+          
           dispatch({ type: 'MERGE_REMOTE_STATE', payload: {
             lists: blueprintData.lists || [],
             showDate: blueprintData.show_date || '',
@@ -229,6 +252,15 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
           componentOrder: state.componentOrder
         });
         
+        // Enhanced logging for save operation
+        console.log('📋 SAVE OPERATION - Full lists data being saved:');
+        state.lists.forEach((list, index) => {
+          console.log(`📋 SAVE OPERATION - List ${index}: ${list.name} (${list.id})`);
+          console.log(`📋 SAVE OPERATION - List ${index} checkedItems:`, list.checkedItems);
+          console.log(`📋 SAVE OPERATION - List ${index} items count:`, list.items.length);
+        });
+        console.log('📋 SAVE OPERATION - Component order being saved:', state.componentOrder);
+        
         dispatch({ type: 'SET_SAVING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
         
@@ -257,12 +289,17 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   // Action creators with enhanced logging and immediate save triggers
   const updateLists = React.useCallback((lists: BlueprintList[]) => {
     console.log('📋 Context updateLists called with:', lists.length, 'lists');
+    console.log('📋 Context updateLists - detailed data:');
+    lists.forEach((list, index) => {
+      console.log(`📋 Context updateLists - List ${index}: ${list.name} - checkedItems:`, list.checkedItems);
+    });
     dispatch({ type: 'UPDATE_LISTS', payload: lists });
     debouncedSave();
   }, [debouncedSave]);
 
   const addList = React.useCallback((list: BlueprintList) => {
     console.log('📋 Context addList called with:', list.name);
+    console.log('📋 Context addList - checkedItems:', list.checkedItems);
     const newLists = [...state.lists, list];
     dispatch({ type: 'UPDATE_LISTS', payload: newLists });
     debouncedSave();
@@ -286,9 +323,11 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
 
   const updateCheckedItems = React.useCallback((listId: string, checkedItems: Record<string, boolean>) => {
     console.log('📋 Context updateCheckedItems called for:', listId, 'with', Object.keys(checkedItems).length, 'items');
+    console.log('📋 Context updateCheckedItems - detailed checkedItems:', checkedItems);
     const updatedLists = state.lists.map(list => 
       list.id === listId ? { ...list, checkedItems } : list
     );
+    console.log('📋 Context updateCheckedItems - updated list:', updatedLists.find(l => l.id === listId));
     dispatch({ type: 'UPDATE_LISTS', payload: updatedLists });
     debouncedSave();
   }, [state.lists, debouncedSave]);
@@ -335,6 +374,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
       const blueprintData = await loadBlueprint();
       
       if (blueprintData) {
+        console.log('📋 REFRESH - Raw blueprint data from DB:', blueprintData);
         dispatch({ type: 'MERGE_REMOTE_STATE', payload: {
           lists: blueprintData.lists || [],
           showDate: blueprintData.show_date || '',

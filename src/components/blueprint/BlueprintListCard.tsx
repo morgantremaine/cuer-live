@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { BlueprintList } from '@/types/blueprint';
@@ -34,14 +35,16 @@ const BlueprintListCard = ({
   const { toast } = useToast();
 
   const handleCheckboxChange = (itemIndex: number, checked: boolean) => {
-    console.log('BlueprintListCard: checkbox change for item', itemIndex, 'checked:', checked);
+    console.log('📋 BlueprintListCard: checkbox change for item', itemIndex, 'checked:', checked);
+    console.log('📋 BlueprintListCard: current list checkedItems before update:', list.checkedItems);
     
     const updatedCheckedItems = {
       ...list.checkedItems,
       [itemIndex]: checked
     };
     
-    console.log('BlueprintListCard: calling onUpdateCheckedItems with:', updatedCheckedItems);
+    console.log('📋 BlueprintListCard: calling onUpdateCheckedItems with:', updatedCheckedItems);
+    console.log('📋 BlueprintListCard: list ID:', list.id);
     onUpdateCheckedItems(list.id, updatedCheckedItems);
   };
 
@@ -85,6 +88,9 @@ const BlueprintListCard = ({
     return headerItem?.startTime || null;
   };
 
+  // Enhanced logging for debugging checkbox state
+  console.log('📋 BlueprintListCard: rendering list', list.name, 'with checkedItems:', list.checkedItems);
+
   return (
     <Card 
       className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 ${
@@ -113,6 +119,8 @@ const BlueprintListCard = ({
             list.items.map((item, itemIndex) => {
               const startTime = getHeaderStartTime(item);
               const isChecked = list.checkedItems?.[itemIndex] || false;
+              
+              console.log(`📋 BlueprintListCard: item ${itemIndex} "${item}" isChecked:`, isChecked);
               
               return (
                 <BlueprintListItem

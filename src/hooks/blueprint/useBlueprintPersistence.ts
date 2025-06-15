@@ -54,6 +54,11 @@ export const useBlueprintPersistence = (
         }
         
         console.log('📋 Loaded personal blueprint:', data ? 'found' : 'not found');
+        if (data) {
+          console.log('📋 LOAD DEBUG - Personal blueprint raw data:', data);
+          console.log('📋 LOAD DEBUG - Personal blueprint lists:', data.lists);
+          console.log('📋 LOAD DEBUG - Personal blueprint component_order:', data.component_order);
+        }
         return data;
       }
 
@@ -123,6 +128,21 @@ export const useBlueprintPersistence = (
             console.error('📋 Failed to convert to team blueprint:', createError);
             data = personalData; // Fallback to personal blueprint
           }
+        }
+      }
+
+      if (data) {
+        console.log('📋 LOAD DEBUG - Team blueprint raw data:', data);
+        console.log('📋 LOAD DEBUG - Team blueprint lists:', data.lists);
+        console.log('📋 LOAD DEBUG - Team blueprint component_order:', data.component_order);
+        
+        // Enhanced debugging for lists data
+        if (data.lists && Array.isArray(data.lists)) {
+          data.lists.forEach((list: any, index: number) => {
+            console.log(`📋 LOAD DEBUG - List ${index}: ${list.name} (${list.id})`);
+            console.log(`📋 LOAD DEBUG - List ${index} checkedItems:`, list.checkedItems);
+            console.log(`📋 LOAD DEBUG - List ${index} items:`, list.items);
+          });
         }
       }
 
@@ -224,6 +244,16 @@ export const useBlueprintPersistence = (
         componentOrder: blueprintData.component_order
       });
 
+      // Enhanced debugging for save operation
+      console.log('📋 SAVE DEBUG - Full blueprint data being saved:', blueprintData);
+      console.log('📋 SAVE DEBUG - Lists being saved:');
+      blueprintData.lists.forEach((list: BlueprintList, index: number) => {
+        console.log(`📋 SAVE DEBUG - List ${index}: ${list.name} (${list.id})`);
+        console.log(`📋 SAVE DEBUG - List ${index} checkedItems:`, list.checkedItems);
+        console.log(`📋 SAVE DEBUG - List ${index} items count:`, list.items?.length || 0);
+      });
+      console.log('📋 SAVE DEBUG - Component order being saved:', blueprintData.component_order);
+
       // Check if blueprint already exists
       const { data: existingBlueprint, error: existingError } = await supabase
         .from('blueprints')
@@ -264,6 +294,7 @@ export const useBlueprintPersistence = (
       }
 
       console.log('📋 Blueprint saved successfully:', data.id);
+      console.log('📋 SAVE RESULT DEBUG - Saved data verification:', data);
       setSavedBlueprint(data);
     } catch (error) {
       console.error('📋 Error saving blueprint:', error);
