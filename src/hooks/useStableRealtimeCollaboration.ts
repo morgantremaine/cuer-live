@@ -39,7 +39,7 @@ export const useStableRealtimeCollaboration = ({
   // Create stable cleanup function that never changes
   const cleanup = useCallback(() => {
     if (subscriptionRef.current) {
-      console.log('🧹 Cleaning up realtime subscription');
+      console.log('🧹 Cleaning up stable realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
       isConnectedRef.current = false;
@@ -49,7 +49,7 @@ export const useStableRealtimeCollaboration = ({
 
   // Create stable handler that never changes
   const handleRealtimeUpdate = useCallback((payload: any) => {
-    console.log('📡 Raw realtime update received:', {
+    console.log('📡 Stable realtime update received:', {
       event: payload.eventType,
       rundownId: payload.new?.id,
       updatedByUserId: payload.new?.user_id,
@@ -59,94 +59,29 @@ export const useStableRealtimeCollaboration = ({
 
     // Only process updates for the current rundown
     if (!currentRundownIdRef.current || payload.new?.id !== currentRundownIdRef.current) {
-      console.log('⏭️ Ignoring - wrong rundown');
+      console.log('⏭️ Stable - ignoring wrong rundown');
       return;
     }
 
     // Don't process our own updates
     if (payload.new?.user_id === userIdRef.current) {
-      console.log('⏭️ Ignoring - our own update');
+      console.log('⏭️ Stable - ignoring own update');
       return;
     }
 
-    console.log('✅ Processing remote update from teammate');
+    console.log('✅ Stable - processing remote update from teammate');
     
-    // First refresh the rundowns list
+    // Trigger remote update callback immediately
     onRemoteUpdateRef.current();
     
-    // Then reload the current rundown data to show the actual changes
+    // Reload current rundown data after a short delay to show changes
     if (onReloadCurrentRundownRef.current) {
       setTimeout(() => {
-        console.log('🔄 Reloading current rundown data after remote update');
+        console.log('🔄 Stable - reloading current rundown data');
         onReloadCurrentRundownRef.current?.();
-      }, 100);
+      }, 50); // Reduced delay for faster sync
     }
   }, []);
-
-  // ONE stable effect that only runs when absolutely necessary
-  useEffect(() => {
-    const setupSubscription = () => {
-      // Get current values from refs
-      const currentEnabled = enabledRef.current;
-      const currentUserId = userIdRef.current;
-      const currentRundownId = currentRundownIdRef.current;
-
-      // Skip if not ready
-      if (!currentEnabled || !currentUserId || !currentRundownId) {
-        cleanup();
-        return;
-      }
-
-      // Skip if we already have a subscription for this exact rundown
-      if (subscriptionRef.current && lastSetupRundownId.current === currentRundownId) {
-        console.log('📋 Already subscribed to this rundown, skipping setup');
-        return;
-      }
-
-      // Cleanup any existing subscription
-      cleanup();
-
-      console.log('✅ Setting up realtime subscription for rundown:', currentRundownId);
-      
-      // Mark that we're setting up for this rundown
-      lastSetupRundownId.current = currentRundownId;
-      
-      // Create unique channel ID
-      const channelId = `rundown-collaboration-${currentRundownId}`;
-      
-      // Create new subscription
-      const channel = supabase
-        .channel(channelId)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'rundowns',
-            filter: `id=eq.${currentRundownId}`
-          },
-          handleRealtimeUpdate
-        )
-        .subscribe((status) => {
-          console.log('📡 Subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log('✅ Successfully subscribed to realtime updates');
-            isConnectedRef.current = true;
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Failed to subscribe to realtime updates');
-            cleanup();
-          }
-        });
-
-      subscriptionRef.current = channel;
-    };
-
-    // Run setup
-    setupSubscription();
-
-    // Cleanup on unmount only
-    return cleanup;
-  }, []); // NO DEPENDENCIES - this effect only runs once
 
   // Separate effect to handle rundown changes
   useEffect(() => {
@@ -158,13 +93,13 @@ export const useStableRealtimeCollaboration = ({
     if (currentEnabled && currentUserId && currentRundownId && 
         lastSetupRundownId.current !== currentRundownId) {
       
-      console.log('🔄 Rundown changed, setting up new subscription');
+      console.log('🔄 Stable - setting up new subscription for rundown:', currentRundownId);
       
       // Cleanup existing
       cleanup();
       
       // Setup new subscription
-      const channelId = `rundown-collaboration-${currentRundownId}`;
+      const channelId = `stable-collaboration-${currentRundownId}`;
       
       const channel = supabase
         .channel(channelId)
@@ -179,10 +114,13 @@ export const useStableRealtimeCollaboration = ({
           handleRealtimeUpdate
         )
         .subscribe((status) => {
-          console.log('📡 Subscription status:', status);
+          console.log('📡 Stable subscription status:', status);
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Successfully subscribed to realtime updates');
+            console.log('✅ Stable - successfully subscribed to realtime updates');
             isConnectedRef.current = true;
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Stable - failed to subscribe to realtime updates');
+            cleanup();
           }
         });
 
@@ -191,6 +129,8 @@ export const useStableRealtimeCollaboration = ({
     } else if (!currentEnabled || !currentUserId || !currentRundownId) {
       cleanup();
     }
+
+    return cleanup;
   }, [user?.id, rundownId, enabled, handleRealtimeUpdate, cleanup]);
 
   return {

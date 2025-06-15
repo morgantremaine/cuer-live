@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,10 +50,10 @@ export const useRealtimeRundown = ({
     lastOwnUpdateRef.current = timestamp;
     ownUpdateTrackingRef.current.add(timestamp);
     
-    // Clean up old tracked updates after 30 seconds
+    // Clean up old tracked updates after 10 seconds (reduced from 30)
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
-    }, 30000);
+    }, 10000);
   }, []);
 
   // Set editing state
@@ -74,45 +75,56 @@ export const useRealtimeRundown = ({
   }, []);
 
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
-    // Enhanced checks to skip our own updates
     const updateTimestamp = payload.new?.updated_at;
+    const userIdFromUpdate = payload.new?.user_id;
+    
+    console.log('📡 Realtime update received:', {
+      timestamp: updateTimestamp,
+      fromUserId: userIdFromUpdate,
+      currentUserId: user?.id,
+      rundownId: payload.new?.id,
+      isOwnUpdate: userIdFromUpdate === user?.id
+    });
     
     // Skip if this is our own tracked update
     if (updateTimestamp && (
         updateTimestamp === lastOwnUpdateRef.current ||
         ownUpdateTrackingRef.current.has(updateTimestamp)
     )) {
+      console.log('⏭️ Skipping - tracked as own update');
       return;
     }
     
     // Skip if the user_id matches (if available)
-    if (payload.new?.user_id === user?.id) {
+    if (userIdFromUpdate === user?.id) {
+      console.log('⏭️ Skipping - user ID matches');
       return;
     }
 
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
+      console.log('⏭️ Skipping - different rundown');
       return;
     }
 
     // Prevent processing duplicate updates
     if (updateTimestamp && updateTimestamp === lastUpdateTimestampRef.current) {
+      console.log('⏭️ Skipping - duplicate timestamp');
       return;
     }
 
-    // RELAXED: Check if this is only a showcaller state update
+    // Check if this is only a showcaller state update
     const currentContentHash = createContentHash(payload.new);
     const isShowcallerOnlyUpdate = currentContentHash === lastContentHashRef.current;
 
-    console.log('📡 Realtime update analysis:', {
+    console.log('📡 Update analysis:', {
       isShowcallerOnly: isShowcallerOnlyUpdate,
       isEditing: isEditingRef.current,
       hasUnsavedChanges,
-      isProcessing: isProcessingUpdate,
-      fromUser: payload.new?.user_id
+      isProcessing: isProcessingUpdate
     });
 
-    // RELAXED: Allow more showcaller updates through, only skip if actively editing
+    // Allow showcaller updates through unless actively editing
     if (isShowcallerOnlyUpdate && isEditingRef.current) {
       console.log('📺 Skipping showcaller-only update due to active editing');
       lastUpdateTimestampRef.current = updateTimestamp;
@@ -128,16 +140,17 @@ export const useRealtimeRundown = ({
     lastUpdateTimestampRef.current = updateTimestamp;
     lastContentHashRef.current = currentContentHash;
 
-    // CRITICAL: Set all processing flags FIRST
+    console.log('🔄 Processing remote update');
+
+    // Set processing flags
     stableSetIsProcessingUpdateRef.current(true);
     if (stableSetApplyingRemoteUpdateRef.current) {
       stableSetApplyingRemoteUpdateRef.current(true);
     }
 
     try {
-      // SIMPLIFIED: Only show conflict dialog for content changes when user has unsaved changes
+      // Handle conflicts only for content changes when user has unsaved changes
       if (hasUnsavedChanges && !isShowcallerOnlyUpdate) {
-        // Use a more user-friendly approach - don't block the tab
         const shouldAcceptRemoteChanges = confirm(
           `Another team member updated this rundown.\n\n` +
           `You have unsaved changes that will be lost if you accept their update.\n\n` +
@@ -154,7 +167,7 @@ export const useRealtimeRundown = ({
         }
       }
 
-      console.log('🔄 Applying realtime rundown update');
+      console.log('🔄 Fetching updated rundown data');
 
       // Fetch the complete updated rundown data
       const { data, error } = await supabase
@@ -173,6 +186,8 @@ export const useRealtimeRundown = ({
         console.error('Error fetching updated rundown:', error);
         throw error;
       }
+
+      console.log('📦 Fetched rundown data:', data);
 
       // Transform the data to match our expected format
       const updatedRundown: SavedRundown = {
@@ -194,6 +209,8 @@ export const useRealtimeRundown = ({
         undo_history: data.undo_history
       };
 
+      console.log('🔄 Applying rundown update to state');
+
       // Pre-update signature sync
       if (stableUpdateSavedSignatureRef.current) {
         stableUpdateSavedSignatureRef.current(
@@ -205,23 +222,23 @@ export const useRealtimeRundown = ({
         );
       }
 
-      // Apply the rundown update
+      // Apply the rundown update - this should trigger UI refresh
       stableOnRundownUpdatedRef.current(updatedRundown);
 
-      // Post-application signature sync
-      if (stableUpdateSavedSignatureRef.current) {
-        setTimeout(() => {
-          stableUpdateSavedSignatureRef.current?.(
+      console.log('✅ Successfully applied realtime rundown update');
+
+      // Force a small delay to ensure state has propagated
+      setTimeout(() => {
+        if (stableUpdateSavedSignatureRef.current) {
+          stableUpdateSavedSignatureRef.current(
             updatedRundown.items, 
             updatedRundown.title, 
             updatedRundown.columns, 
             updatedRundown.timezone, 
             updatedRundown.start_time
           );
-        }, 100);
-      }
-
-      console.log('✅ Successfully applied realtime rundown update');
+        }
+      }, 100);
 
     } catch (error) {
       console.error('Error processing realtime update:', error);
@@ -233,27 +250,31 @@ export const useRealtimeRundown = ({
         duration: 5000,
       });
     } finally {
-      // Quick recovery for better responsiveness
+      // Clear processing flags quickly for responsiveness
       setTimeout(() => {
         if (stableSetApplyingRemoteUpdateRef.current) {
           stableSetApplyingRemoteUpdateRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 200);
+      }, 150);
     }
   }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast, createContentHash]);
 
   useEffect(() => {
     // Clear any existing subscription
     if (subscriptionRef.current) {
+      console.log('🧹 Cleaning up existing realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
     }
 
     // Only set up subscription if we have the required data
     if (!rundownId || !user) {
+      console.log('⏸️ Skipping realtime setup - missing rundown ID or user');
       return;
     }
+
+    console.log('✅ Setting up realtime subscription for rundown:', rundownId);
 
     const channel = supabase
       .channel(`rundown-content-${rundownId}`)
@@ -268,6 +289,7 @@ export const useRealtimeRundown = ({
         handleRealtimeUpdate
       )
       .subscribe((status) => {
+        console.log('📡 Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to rundown content updates');
         } else if (status === 'CHANNEL_ERROR') {
@@ -279,6 +301,7 @@ export const useRealtimeRundown = ({
 
     return () => {
       if (subscriptionRef.current) {
+        console.log('🧹 Cleaning up realtime subscription on unmount');
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
