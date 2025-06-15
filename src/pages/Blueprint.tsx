@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -13,6 +12,7 @@ import CrewList from '@/components/blueprint/CrewList';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import { BlueprintProvider } from '@/contexts/BlueprintContext';
 import { useUnifiedBlueprintState } from '@/hooks/blueprint/useUnifiedBlueprintState';
+import { useBlueprintDragDrop } from '@/hooks/blueprint/useBlueprintDragDrop';
 
 const BlueprintContent = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,23 +32,48 @@ const BlueprintContent = () => {
     renameList,
     updateCheckedItems,
     refreshAllLists,
+    updateComponentOrder,
+    componentOrder,
+    initialized,
+    loading: blueprintLoading,
+    error,
+    saveBlueprint,
+    updateLists
+  } = useUnifiedBlueprintState(
+    rundown?.items || [],
+    rundown?.start_time
+  );
+
+  // Initialize drag and drop with proper handlers
+  const {
     draggedListId,
     insertionIndex,
-    componentOrder,
+    componentOrder: dragComponentOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
     handleDragEnd,
-    updateComponentOrder,
-    initialized,
-    loading: blueprintLoading,
-    error
-  } = useUnifiedBlueprintState(
-    rundown?.items || [],
-    rundown?.start_time
+    updateComponentOrder: updateDragComponentOrder
+  } = useBlueprintDragDrop(
+    lists,
+    updateLists,
+    saveBlueprint,
+    componentOrder
   );
+
+  // Update component order when it changes from the unified state
+  React.useEffect(() => {
+    updateDragComponentOrder(componentOrder);
+  }, [componentOrder, updateDragComponentOrder]);
+
+  // Update the unified state when drag component order changes
+  React.useEffect(() => {
+    if (JSON.stringify(dragComponentOrder) !== JSON.stringify(componentOrder)) {
+      updateComponentOrder(dragComponentOrder);
+    }
+  }, [dragComponentOrder, componentOrder, updateComponentOrder]);
 
   const handleSignOut = async () => {
     try {
@@ -121,10 +146,11 @@ const BlueprintContent = () => {
         key="crew-list"
         className={`${draggedListId === 'crew-list' ? 'opacity-50' : ''}`}
         draggable
-        onDragStart={(e) => handleDragStart()}
+        onDragStart={(e) => handleDragStart(e, 'crew-list')}
         onDragEnter={(e) => {
           e.preventDefault();
-          handleDragEnterContainer();
+          const componentIndex = lists.length + dragComponentOrder.indexOf('crew-list');
+          handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
       >
@@ -143,10 +169,11 @@ const BlueprintContent = () => {
         key="camera-plot"
         className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
         draggable
-        onDragStart={(e) => handleDragStart()}
+        onDragStart={(e) => handleDragStart(e, 'camera-plot')}
         onDragEnter={(e) => {
           e.preventDefault();
-          handleDragEnterContainer();
+          const componentIndex = lists.length + dragComponentOrder.indexOf('camera-plot');
+          handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
       >
@@ -165,10 +192,11 @@ const BlueprintContent = () => {
         key="scratchpad"
         className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
         draggable
-        onDragStart={(e) => handleDragStart()}
+        onDragStart={(e) => handleDragStart(e, 'scratchpad')}
         onDragEnter={(e) => {
           e.preventDefault();
-          handleDragEnterContainer();
+          const componentIndex = lists.length + dragComponentOrder.indexOf('scratchpad');
+          handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
       >
@@ -228,19 +256,22 @@ const BlueprintContent = () => {
           )}
 
           {/* Render components in the specified order with insertion lines */}
-          {componentOrder.map((componentId, index) => (
-            <React.Fragment key={componentId}>
-              {/* Insertion line before component */}
-              {insertionIndex === lists.length + 1 + index && (
-                <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
-              )}
-              {componentMap[componentId as keyof typeof componentMap]}
-            </React.Fragment>
-          ))}
+          {dragComponentOrder.map((componentId, index) => {
+            const componentIndex = lists.length + index;
+            return (
+              <React.Fragment key={componentId}>
+                {/* Insertion line before component */}
+                {insertionIndex === componentIndex && (
+                  <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
+                )}
+                {componentMap[componentId as keyof typeof componentMap]}
+              </React.Fragment>
+            );
+          })}
 
           {/* Final insertion line */}
-          {insertionIndex === lists.length + 1 + componentOrder.length && (
-            <div className="h-1 bg-blue-500 rounded-full mb-4 animate-pulse" />
+          {insertionIndex === lists.length + dragComponentOrder.length && (
+            <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
           )}
         </div>
       </div>

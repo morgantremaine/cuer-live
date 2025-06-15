@@ -13,6 +13,7 @@ export const useBlueprintDragDrop = (
   const [componentOrder, setComponentOrder] = useState<string[]>(initialComponentOrder);
 
   const handleDragStart = useCallback((e: React.DragEvent, listId: string) => {
+    console.log('📋 Drag start:', listId);
     setDraggedListId(listId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', listId);
@@ -26,12 +27,17 @@ export const useBlueprintDragDrop = (
   const handleDragEnterContainer = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedListId) {
-      // For larger components, handle their reordering
+      console.log('📋 Drag enter container at index:', index, 'for item:', draggedListId);
+      
+      // For component items (crew-list, camera-plot, scratchpad)
       if (draggedListId === 'crew-list' || draggedListId === 'camera-plot' || draggedListId === 'scratchpad') {
+        const componentIndex = index - lists.length;
+        console.log('📋 Component drag - component index:', componentIndex);
         setInsertionIndex(index);
         return;
       }
 
+      // For list items
       const draggedIndex = lists.findIndex(list => list.id === draggedListId);
       
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -47,6 +53,7 @@ export const useBlueprintDragDrop = (
         targetIndex -= 1;
       }
       
+      console.log('📋 List drag - target index:', targetIndex);
       setInsertionIndex(targetIndex);
     }
   }, [draggedListId, lists]);
@@ -62,6 +69,8 @@ export const useBlueprintDragDrop = (
     e.preventDefault();
     
     const draggedId = e.dataTransfer.getData('text/plain');
+    console.log('📋 Drop event:', { draggedId, insertionIndex });
+    
     if (!draggedId || insertionIndex === null) {
       setDraggedListId(null);
       setInsertionIndex(null);
@@ -78,7 +87,7 @@ export const useBlueprintDragDrop = (
         newOrder.splice(draggedIndex, 1);
         
         // Calculate insertion position relative to component order
-        let targetPosition = insertionIndex - lists.length - 1;
+        let targetPosition = insertionIndex - lists.length;
         if (targetPosition < 0) targetPosition = 0;
         if (targetPosition > newOrder.length) targetPosition = newOrder.length;
         
@@ -87,7 +96,7 @@ export const useBlueprintDragDrop = (
         setComponentOrder(newOrder);
         
         // Save the new component order immediately
-        console.log('Saving component order:', newOrder);
+        console.log('📋 Saving component order:', newOrder);
         saveBlueprint(lists, true, undefined, undefined, undefined, undefined, newOrder);
       }
       
@@ -96,6 +105,7 @@ export const useBlueprintDragDrop = (
       return;
     }
 
+    // Handle list reordering
     const draggedIndex = lists.findIndex(list => list.id === draggedId);
     if (draggedIndex === -1) {
       setDraggedListId(null);
@@ -106,6 +116,8 @@ export const useBlueprintDragDrop = (
     const newLists = [...lists];
     const [draggedList] = newLists.splice(draggedIndex, 1);
     newLists.splice(insertionIndex, 0, draggedList);
+    
+    console.log('📋 Reordered lists:', newLists.map(l => l.name));
     setLists(newLists);
     saveBlueprint(newLists, true, undefined, undefined, undefined, undefined, componentOrder);
 
@@ -114,12 +126,14 @@ export const useBlueprintDragDrop = (
   }, [lists, insertionIndex, setLists, saveBlueprint, componentOrder]);
 
   const handleDragEnd = useCallback(() => {
+    console.log('📋 Drag end');
     setDraggedListId(null);
     setInsertionIndex(null);
   }, []);
 
   // Function to update component order from external source (like loaded blueprint)
   const updateComponentOrder = useCallback((newOrder: string[]) => {
+    console.log('📋 Updating component order:', newOrder);
     setComponentOrder(newOrder);
   }, []);
 
