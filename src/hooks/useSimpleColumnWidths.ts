@@ -10,7 +10,7 @@ const getMinimumWidth = (column: Column): number => {
     case 'startTime':
     case 'endTime':
     case 'elapsedTime':
-      return 90; // Consistent 90px for all time columns to match actual time cell content width (HH:MM:SS + padding)
+      return 110; // Increased to 110px to match actual rendered time cell width including padding and styling
     case 'segmentName':
       return 100; // Reduced from 150px to 100px
     case 'talent':
