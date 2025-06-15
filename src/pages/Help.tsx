@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor } from 'lucide-react';
+import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor, Upload, Share2 } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -79,6 +80,47 @@ const Help = () => {
               </div>
             </section>
 
+            {/* CSV Import */}
+            <section className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+                <Upload className="h-6 w-6 mr-2 text-blue-600" />
+                Importing CSV Files
+              </h2>
+              <div className="space-y-4 text-gray-700">
+                <p>You can import rundown data from CSV files to quickly populate your rundowns:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li><strong>Prepare your CSV:</strong> Ensure your CSV has headers that match rundown fields (Name, Duration, Script, etc.)</li>
+                  <li><strong>Import process:</strong> Use the Import button in the rundown toolbar to upload your CSV file</li>
+                  <li><strong>Column mapping:</strong> Map your CSV columns to the appropriate rundown fields during import</li>
+                  <li><strong>Custom layouts:</strong> For best results, create and save a custom column layout that matches your CSV structure before importing</li>
+                </ul>
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mt-4">
+                  <p className="text-sm"><strong>Tip:</strong> If your CSV has custom columns, set up a saved layout with matching custom columns first. This ensures your imported data displays correctly and maintains your preferred column organization.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* Shared Read-Only Rundowns */}
+            <section className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+                <Share2 className="h-6 w-6 mr-2 text-indigo-600" />
+                Shared Read-Only Rundowns
+              </h2>
+              <div className="space-y-4 text-gray-700">
+                <p>Share your rundowns with external stakeholders or display them publicly:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li><strong>Create share link:</strong> Use the Share button to generate a public, read-only link</li>
+                  <li><strong>Custom layouts:</strong> Choose which saved column layout to use for the shared view</li>
+                  <li><strong>Layout control:</strong> The shared rundown will display exactly as configured in your chosen layout</li>
+                  <li><strong>Real-time updates:</strong> Shared rundowns reflect changes made to the original rundown in real-time</li>
+                  <li><strong>No login required:</strong> Recipients can view the rundown without needing a Cuer account</li>
+                </ul>
+                <div className="bg-blue-50 border border-blue-200 rounded p-4 mt-4">
+                  <p className="text-sm"><strong>Note:</strong> You can update which layout is used for sharing at any time. This allows you to customize what information external viewers see without affecting your team's working view.</p>
+                </div>
+              </div>
+            </section>
+
             {/* Time Management */}
             <section className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -139,7 +181,11 @@ const Help = () => {
                   <li><strong>Team Management:</strong> Invite team members from account settings</li>
                   <li><strong>Shared Access:</strong> All team members can edit the same rundown</li>
                   <li><strong>Auto-save:</strong> Changes are saved automatically to prevent data loss</li>
+                  <li><strong>Individual Layouts:</strong> Each team member can use their own custom column layout while working on the same rundown - your layout preferences don't affect what others see</li>
                 </ul>
+                <div className="bg-green-50 border border-green-200 rounded p-4 mt-4">
+                  <p className="text-sm"><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown.</p>
+                </div>
               </div>
             </section>
 
@@ -177,12 +223,11 @@ const Help = () => {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Actions</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">Teleprompter</h3>
                   <ul className="space-y-1 text-gray-700 text-sm">
-                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Ctrl + Z</kbd> - Undo</li>
-                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Ctrl + C</kbd> - Copy</li>
-                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Ctrl + V</kbd> - Paste</li>
-                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Delete</kbd> - Delete row</li>
+                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Arrow Keys</kbd> - Adjust scroll speed</li>
+                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Space</kbd> - Pause/Resume scroll</li>
+                    <li><kbd className="bg-gray-100 px-2 py-1 rounded">Esc</kbd> - Exit fullscreen</li>
                   </ul>
                 </div>
               </div>
@@ -211,7 +256,7 @@ const Help = () => {
             <section className="bg-blue-50 rounded-lg p-6 border border-blue-200">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Need More Help?</h2>
               <p className="text-gray-700 mb-4">
-                If you need additional assistance or have questions about specific features, don't hesitate to reach out to your system administrator or check for updates in your account settings.
+                If you need additional assistance or have questions about specific features, you can reach out to our support team at <a href="mailto:help@cuer.live" className="text-blue-600 hover:text-blue-800 underline">help@cuer.live</a> or contact your system administrator.
               </p>
               <p className="text-sm text-gray-600">
                 This guide covers the core functionality of Cuer. Features may vary based on your access level and configuration.
