@@ -35,12 +35,14 @@ const HeaderRowContent = ({
 
   return (
     <>
+      {/* Row number column - must match the header structure exactly */}
       <td 
         className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
         style={{ backgroundColor }}
       >
         <span style={{ color: textColor }}>{rowNumber}</span>
       </td>
+      {/* Dynamic columns */}
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
         
@@ -68,12 +70,6 @@ const HeaderRowContent = ({
           </td>
         );
       })}
-      <td 
-        className="px-2 py-1 text-sm font-mono text-center align-middle border border-border w-20 min-w-20"
-        style={{ backgroundColor }}
-      >
-        <span style={{ color: textColor }}>{headerDuration}</span>
-      </td>
     </>
   );
 };

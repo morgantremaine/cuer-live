@@ -43,6 +43,7 @@ const RegularRowContent = ({
 
   return (
     <>
+      {/* Row number column - must match the header structure exactly */}
       <td 
         className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
         style={{ backgroundColor }}
@@ -57,6 +58,7 @@ const RegularRowContent = ({
           <span style={{ color: textColor }}>{rowNumber}</span>
         </div>
       </td>
+      {/* Dynamic columns */}
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
         
