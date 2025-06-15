@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,9 +8,10 @@ import { Plus, Upload, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { Column } from '@/hooks/useColumnsManager';
+import { transformCSVData, CSVImportResult } from '@/utils/csvImport';
 
 interface CSVImportDialogProps {
-  onImport: (data: any[], columnMappings: ColumnMapping[]) => void;
+  onImport: (result: CSVImportResult) => void;
   existingColumns: Column[];
   children: React.ReactNode;
 }
@@ -68,7 +68,10 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
 
     Papa.parse(uploadedFile, {
       complete: (results) => {
+        console.log('Papa parse results:', results);
+        
         if (results.errors.length > 0) {
+          console.error('CSV parsing errors:', results.errors);
           toast({
             title: 'Error parsing CSV',
             description: 'There was an error reading the CSV file.',
@@ -80,6 +83,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
         const headers = results.data[0] as string[];
         const rows = results.data.slice(1) as any[][];
         
+        console.log('Parsed CSV data:', { headers, rows });
         setCsvData({ headers, rows });
         
         // Initialize column mappings
@@ -143,7 +147,12 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
   };
 
   const handleImport = () => {
-    if (!csvData) return;
+    if (!csvData) {
+      console.error('No CSV data available');
+      return;
+    }
+
+    console.log('Starting import with:', { csvData, columnMappings, newColumns });
 
     // Filter out skipped columns and only validate non-skipped ones
     const nonSkippedMappings = columnMappings.filter(mapping => !mapping.isSkipped);
@@ -187,7 +196,14 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
       return mapping;
     });
 
-    onImport(csvData.rows, finalMappings);
+    console.log('Final mappings:', finalMappings);
+
+    // Transform the data
+    const result = transformCSVData(csvData.rows, finalMappings, csvData.headers);
+    console.log('Transform result:', result);
+
+    // Call the onImport callback with the result
+    onImport(result);
     
     // Reset state
     setFile(null);
@@ -195,6 +211,11 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
     setColumnMappings([]);
     setNewColumns([]);
     setIsOpen(false);
+
+    toast({
+      title: 'Import successful',
+      description: `Imported ${result.items.length} items with ${result.newColumns.length} new columns.`,
+    });
   };
 
   const reset = () => {
