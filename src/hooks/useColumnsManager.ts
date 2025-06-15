@@ -13,14 +13,12 @@ export interface Column {
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>([
     { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
     { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
@@ -143,17 +141,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return layoutColumns; // Return the layout columns as fallback
       }
 
-      // Define essential built-in columns that should always be preserved - ensure 'gfx' consistency
+      // Define essential built-in columns that should always be preserved
       const essentialBuiltInColumns = [
         { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
         { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-        { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
@@ -164,13 +160,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
       // Update column names and keys for backward compatibility with old saved layouts
       const updatedLayoutColumns = filteredLayoutColumns.map(col => {
-        // Normalize graphics/gfx columns to use consistent 'gfx' key
-        if ((col.id === 'graphics' || col.key === 'graphics') && col.name === 'GFX') {
-          console.log('🔧 Normalizing graphics column to gfx');
-          return { ...col, id: 'gfx', key: 'gfx' };
-        }
-        
-        // Update other legacy column names
+        // Update legacy column names
         if (col.id === 'startTime' && col.name === 'Start Time') {
           return { ...col, name: 'Start' };
         }

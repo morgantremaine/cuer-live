@@ -44,7 +44,7 @@ const CellRenderer = ({
     }
     
     switch (column.key) {
-      case 'segmentName':
+      case 'name':
         // For segment name column, always use item.name (the actual segment description)
         return item.name || '';
       case 'duration':
@@ -61,11 +61,6 @@ const CellRenderer = ({
         return item.script || '';
       case 'notes':
         return item.notes || '';
-      case 'gfx':
-        console.log(`🎨 CellRenderer: Getting built-in GFX value for item ${item.id}: "${item.gfx}" (column.key: ${column.key})`);
-        return item.gfx || '';
-      case 'video':
-        return item.video || '';
       default:
         console.log(`🎨 CellRenderer: Unknown column key "${column.key}" for item ${item.id}`);
         return (item as any)[column.key] || '';
@@ -144,10 +139,8 @@ const CellRenderer = ({
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
-        // For segmentName column, always update the 'name' field
-        const field = column.key === 'segmentName' ? 'name' : column.key;
-        console.log(`🎨 CellRenderer: Updating ${field} for item ${item.id} to: "${newValue}"`);
-        onUpdateItem(item.id, field, newValue);
+        console.log(`🎨 CellRenderer: Updating ${column.key} for item ${item.id} to: "${newValue}"`);
+        onUpdateItem(item.id, column.key, newValue);
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}

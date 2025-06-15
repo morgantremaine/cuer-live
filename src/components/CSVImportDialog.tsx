@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -28,17 +27,15 @@ interface CSVPreviewData {
   rows: any[][];
 }
 
-// Default columns that exactly match useColumnsManager - using consistent field names
+// Default columns that exactly match useColumnsManager - only the actual built-in columns
 const DEFAULT_RUNDOWN_COLUMNS = [
   { key: 'name', name: 'Segment Name' },
+  { key: 'talent', name: 'Talent' },
   { key: 'script', name: 'Script' },
-  { key: 'gfx', name: 'GFX' }, // Keep as 'gfx' to match RundownItem
-  { key: 'video', name: 'Video' },
   { key: 'duration', name: 'Duration' },
   { key: 'startTime', name: 'Start' },
   { key: 'endTime', name: 'End' },
   { key: 'elapsedTime', name: 'Elapsed' },
-  { key: 'talent', name: 'Talent' },
   { key: 'notes', name: 'Notes' }
 ];
 

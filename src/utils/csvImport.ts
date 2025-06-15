@@ -46,10 +46,9 @@ export const transformCSVData = (
         const value = row[csvColumnIndex];
         console.log(`🔧 Mapping CSV column "${mapping.csvColumn}" (index ${csvColumnIndex}, value: "${value}") to rundown column "${mapping.rundownColumn}"`);
         
-        // Handle field mappings - ensure all mapped fields go to the correct RundownItem properties
+        // Handle field mappings - only built-in fields go to RundownItem properties
         switch (mapping.rundownColumn) {
           case 'name':
-          case 'segmentName': // Legacy support
             const nameValue = String(value || '').trim();
             if (nameValue) {
               item.name = nameValue;
@@ -85,15 +84,6 @@ export const transformCSVData = (
             item.talent = String(value || '');
             console.log(`✅ Set item.talent to: "${item.talent}"`);
             break;
-          case 'gfx':
-            const gfxValue = String(value || '');
-            item.gfx = gfxValue;
-            console.log(`✅ Set item.gfx to: "${gfxValue}"`);
-            break;
-          case 'video':
-            item.video = String(value || '');
-            console.log(`✅ Set item.video to: "${item.video}"`);
-            break;
           case 'startTime':
             item.startTime = String(value || '');
             console.log(`✅ Set item.startTime to: "${item.startTime}"`);
@@ -107,7 +97,7 @@ export const transformCSVData = (
             console.log(`✅ Set item.color to: "${item.color}"`);
             break;
           default:
-            // Handle custom fields - this includes "graphics" when it's mapped as a custom field
+            // Handle custom fields - ALL graphics fields and other custom columns go here
             console.log(`🔧 Handling custom field "${mapping.rundownColumn}" with value "${value}"`);
             if (!item.customFields) {
               item.customFields = {};
@@ -137,14 +127,11 @@ export const transformCSVData = (
     item.script = item.script || '';
     item.notes = item.notes || '';
     item.talent = item.talent || '';
-    item.gfx = item.gfx || '';
-    item.video = item.video || '';
     item.color = item.color || '';
 
     console.log(`✅ Final item ${rowIndex}:`, {
       id: item.id,
       name: item.name,
-      gfx: item.gfx,
       script: item.script,
       duration: item.duration,
       talent: item.talent,
@@ -158,7 +145,6 @@ export const transformCSVData = (
     itemCount: items.length,
     sampleItems: items.slice(0, 3).map(item => ({ 
       name: item.name, 
-      gfx: item.gfx,
       customFields: item.customFields 
     }))
   });
