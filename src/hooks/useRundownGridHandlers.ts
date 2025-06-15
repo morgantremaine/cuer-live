@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -23,6 +22,8 @@ interface UseRundownGridHandlersProps {
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[]) => void;
   items: RundownItem[];
   setRundownTitle: (title: string) => void;
+  addRowAtIndex: (insertIndex: number) => void;
+  addHeaderAtIndex: (insertIndex: number) => void;
 }
 
 export const useRundownGridHandlers = ({
@@ -45,21 +46,23 @@ export const useRundownGridHandlers = ({
   hasClipboardData,
   toggleRowSelection,
   items,
-  setRundownTitle
+  setRundownTitle,
+  addRowAtIndex,
+  addHeaderAtIndex
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
     updateItem(id, field, value);
   }, [updateItem]);
 
-  // Enhanced addRow that considers both selection states
+  // Enhanced addRow that considers selection state and inserts after selected rows
   const handleAddRow = useCallback(() => {
     console.log('🚀 Grid handlers addRow called');
     console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
     
-    // Check if we have multi-selection
+    // Check if we have any selection
     if (selectedRows.size > 0) {
-      console.log('🚀 Using multi-selection for insertion');
+      console.log('🚀 Using selection for insertion');
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(selectedRows)
         .map(id => items.findIndex(item => item.id === id))
@@ -67,25 +70,25 @@ export const useRundownGridHandlers = ({
       
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
-        console.log('🚀 Inserting after index:', insertAfterIndex);
-        // Use the underlying addRow function which will be enhanced by the state system
-        addRow();
+        const insertIndex = insertAfterIndex + 1;
+        console.log('🚀 Inserting row at index:', insertIndex);
+        addRowAtIndex(insertIndex);
         return;
       }
     }
     
     console.log('🚀 No selection, using default addRow');
     addRow();
-  }, [addRow, selectedRows, items]);
+  }, [addRowAtIndex, addRow, selectedRows, items]);
 
-  // Enhanced addHeader that considers both selection states  
+  // Enhanced addHeader that considers selection state and inserts after selected rows  
   const handleAddHeader = useCallback(() => {
     console.log('🚀 Grid handlers addHeader called');
     console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
     
-    // Check if we have multi-selection
+    // Check if we have any selection
     if (selectedRows.size > 0) {
-      console.log('🚀 Using multi-selection for header insertion');
+      console.log('🚀 Using selection for header insertion');
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(selectedRows)
         .map(id => items.findIndex(item => item.id === id))
@@ -93,16 +96,16 @@ export const useRundownGridHandlers = ({
       
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
-        console.log('🚀 Inserting header after index:', insertAfterIndex);
-        // Use the underlying addHeader function which will be enhanced by the state system
-        addHeader();
+        const insertIndex = insertAfterIndex + 1;
+        console.log('🚀 Inserting header at index:', insertIndex);
+        addHeaderAtIndex(insertIndex);
         return;
       }
     }
     
     console.log('🚀 No selection, using default addHeader');
     addHeader();
-  }, [addHeader, selectedRows, items]);
+  }, [addHeaderAtIndex, addHeader, selectedRows, items]);
 
   const handleDeleteRow = useCallback((id: string) => {
     deleteRow(id);

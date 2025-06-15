@@ -1,10 +1,9 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { UnifiedRundownState } from '@/types/interfaces';
 
-export const useRundownStateCoordination = (): UnifiedRundownState => {
+export const useRundownStateCoordination = () => {
   // Single source of truth for all rundown state
   const simplifiedState = useSimplifiedRundownState();
 
@@ -74,7 +73,7 @@ export const useRundownStateCoordination = (): UnifiedRundownState => {
     simplifiedState.setTitle
   );
 
-  // UI state management
+  // Get UI state with enhanced navigation
   const uiState = useRundownUIState(
     simplifiedState.items,
     simplifiedState.visibleColumns,

@@ -43,7 +43,9 @@ export const useRundownGridInteractions = (
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange
+    handleTitleChange,
+    addRowAtIndex,
+    addHeaderAtIndex
   } = useRundownInteractionHandlers(
     items,
     setItems,
@@ -86,6 +88,8 @@ export const useRundownGridInteractions = (
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange
+    handleTitleChange,
+    addRowAtIndex,
+    addHeaderAtIndex
   };
 };
