@@ -21,26 +21,46 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
 
   // Available columns for creating new lists - dynamically generated from rundown data
   const availableColumns = useMemo(() => {
-    return getAvailableColumns(items);
+    const columns = getAvailableColumns(items);
+    console.log('📋 Available columns for blueprint:', columns);
+    return columns;
   }, [items]);
 
   // Auto-create default lists if none exist and we have rundown items
   useEffect(() => {
+    console.log('📋 Checking default list creation conditions:', {
+      isInitialized: state.isInitialized,
+      listsLength: state.lists.length,
+      itemsLength: items.length,
+      availableColumnsLength: availableColumns.length,
+      items: items.slice(0, 2), // Log first 2 items for debugging
+      availableColumns
+    });
+
     if (state.isInitialized && 
         state.lists.length === 0 && 
         items.length > 0 && 
         availableColumns.length > 0) {
-      console.log('📋 No lists found, creating default blueprint');
       
-      // Extract rundownId from the context or generate one
+      console.log('📋 Conditions met, creating default blueprint');
+      
+      // Extract rundownId from the first item or generate one
       const rundownId = items[0]?.id?.split('-')[0] || 'default';
       const rundownTitle = 'Rundown Blueprint';
       
+      console.log('📋 Generating default blueprint with:', { rundownId, rundownTitle, itemsCount: items.length });
+      
       const defaultLists = generateDefaultBlueprint(rundownId, rundownTitle, items);
+      console.log('📋 Generated default lists:', defaultLists);
+      
       if (defaultLists.length > 0) {
-        console.log('📋 Creating default lists:', defaultLists);
+        console.log('📋 Updating lists with default blueprint:', defaultLists);
         updateLists(defaultLists);
+      } else {
+        console.log('📋 No default lists generated - this might be an issue');
       }
+    } else {
+      console.log('📋 Default list creation skipped - conditions not met');
     }
   }, [state.isInitialized, state.lists.length, items, availableColumns, updateLists]);
 
