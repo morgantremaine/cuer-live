@@ -33,7 +33,7 @@ serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') || 'https://cuer.live'
     const inviteUrl = `${siteUrl}/join-team/${token}`
 
-    // Send email using Resend - using cuer.live domain
+    // Send email using Resend - using cuer.live domain with improved styling
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
@@ -43,15 +43,139 @@ serve(async (req) => {
         <html>
           <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Team Invitation - Cuer</title>
             <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { text-align: center; margin-bottom: 30px; }
-              .logo { font-size: 24px; font-weight: bold; color: #3b82f6; }
-              .content { background: #f9fafb; padding: 30px; border-radius: 8px; margin: 20px 0; }
-              .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+              /* Reset styles */
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              
+              /* Force dark mode compatibility */
+              body, table, td, p, a, li, blockquote {
+                -webkit-text-size-adjust: 100%; 
+                -ms-text-size-adjust: 100%;
+                color: #333333 !important;
+              }
+              
+              /* Dark mode overrides */
+              @media (prefers-color-scheme: dark) {
+                body, .container, .content { 
+                  background-color: #ffffff !important; 
+                  color: #333333 !important;
+                }
+                .logo { color: #3b82f6 !important; }
+                .footer { color: #666666 !important; }
+              }
+              
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                line-height: 1.6; 
+                color: #333333 !important;
+                background-color: #ffffff !important;
+                margin: 0;
+                padding: 0;
+              }
+              
+              .container { 
+                max-width: 600px; 
+                margin: 0 auto; 
+                padding: 20px;
+                background-color: #ffffff !important;
+              }
+              
+              .header { 
+                text-align: center; 
+                margin-bottom: 30px; 
+              }
+              
+              .logo { 
+                font-size: 28px; 
+                font-weight: bold; 
+                color: #3b82f6 !important;
+                text-decoration: none;
+                display: inline-block;
+                margin-bottom: 10px;
+              }
+              
+              h1 {
+                color: #333333 !important;
+                font-size: 24px;
+                font-weight: 600;
+                margin: 0;
+              }
+              
+              .content { 
+                background-color: #f8fafc !important;
+                padding: 30px; 
+                border-radius: 8px; 
+                margin: 20px 0;
+                border: 1px solid #e2e8f0;
+              }
+              
+              p { 
+                color: #333333 !important;
+                margin: 16px 0;
+                font-size: 16px;
+                line-height: 1.5;
+              }
+              
+              .highlight {
+                font-weight: 600;
+                color: #1e40af !important;
+              }
+              
+              .button-container {
+                text-align: center;
+                margin: 30px 0;
+              }
+              
+              .button { 
+                display: inline-block; 
+                background-color: #3b82f6 !important;
+                color: #ffffff !important; 
+                padding: 16px 32px; 
+                text-decoration: none; 
+                border-radius: 8px; 
+                font-weight: 600;
+                font-size: 16px;
+                border: none;
+                box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+              }
+              
+              .button:hover {
+                background-color: #2563eb !important;
+              }
+              
+              .link-fallback {
+                font-size: 14px;
+                color: #6b7280 !important;
+                margin-top: 20px;
+                word-break: break-all;
+                background-color: #f1f5f9;
+                padding: 12px;
+                border-radius: 4px;
+                border: 1px solid #e2e8f0;
+              }
+              
+              .footer { 
+                text-align: center; 
+                margin-top: 40px; 
+                color: #6b7280 !important;
+                font-size: 14px;
+                line-height: 1.4;
+              }
+              
+              /* Ensure links are visible */
+              a {
+                color: #3b82f6 !important;
+                text-decoration: none;
+              }
+              
+              /* Force text color in various email clients */
+              .content p,
+              .content span,
+              .content div {
+                color: #333333 !important;
+              }
             </style>
           </head>
           <body>
@@ -64,21 +188,32 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi there!</p>
                 
-                <p><strong>${inviterName}</strong> has invited you to join their team "<strong>${teamName}</strong>" on Cuer.</p>
+                <p><span class="highlight">${inviterName}</span> has invited you to join their team "<span class="highlight">${teamName}</span>" on Cuer.</p>
                 
                 <p>Cuer is a powerful AI-powered rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
                 
                 <p>Click the button below to accept the invitation and create your account:</p>
                 
-                <div style="text-align: center;">
+                <div class="button-container">
                   <a href="${inviteUrl}" class="button">Accept Invitation</a>
                 </div>
                 
-                <p><small>This invitation will expire in 7 days. If you're having trouble clicking the button, you can copy and paste this link into your browser: ${inviteUrl}</small></p>
+                <div class="link-fallback">
+                  <strong>Having trouble with the button?</strong><br>
+                  Copy and paste this link into your browser:<br>
+                  ${inviteUrl}
+                </div>
+                
+                <p style="font-size: 14px; color: #6b7280 !important; margin-top: 20px;">
+                  This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
+                </p>
               </div>
               
               <div class="footer">
                 <p>This email was sent by Cuer. If you didn't expect this invitation, you can safely ignore this email.</p>
+                <p style="margin-top: 10px;">
+                  <a href="https://cuer.live" style="color: #3b82f6 !important;">Visit Cuer</a>
+                </p>
               </div>
             </div>
           </body>
