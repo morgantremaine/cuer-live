@@ -7,14 +7,15 @@ import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useParams } from 'react-router-dom';
 
 const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
-  const { rundownId } = useParams();
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
+
+  // Get rundownId from the rundownData instead of useParams
+  const rundownId = rundownData?.id;
 
   // Load the shared layout for this rundown
   useEffect(() => {
