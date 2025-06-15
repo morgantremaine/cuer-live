@@ -11,18 +11,20 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 
 interface ShareRundownMenuProps {
   rundownId: string;
   rundownTitle: string;
+  rundownData?: any; // Add rundown data for print functionality
 }
 
 export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   rundownId,
-  rundownTitle
+  rundownTitle,
+  rundownData
 }) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -49,6 +51,25 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       toast({
         title: 'Failed to copy',
         description: 'Please copy the link manually',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handlePrint = () => {
+    // Open the shared rundown in a new window for printing
+    const printWindow = window.open(permanentUrl, '_blank');
+    if (printWindow) {
+      // Wait for the page to load, then trigger print
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 1000); // Give it a moment to fully render
+      };
+    } else {
+      toast({
+        title: 'Print failed',
+        description: 'Please allow popups and try again',
         variant: 'destructive',
       });
     }
@@ -86,6 +107,11 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           <Copy className="h-4 w-4 mr-2" />
           Copy Share Link
           {copied && <Check className="h-4 w-4 ml-auto text-green-600" />}
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handlePrint}>
+          <Printer className="h-4 w-4 mr-2" />
+          Print View
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
