@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -49,14 +48,12 @@ const BlueprintContent = () => {
   const {
     draggedListId,
     insertionIndex,
-    componentOrder: dragComponentOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
-    handleDragEnd,
-    updateComponentOrder: updateDragComponentOrder
+    handleDragEnd
   } = useBlueprintDragDrop(
     lists,
     updateLists,
@@ -67,7 +64,7 @@ const BlueprintContent = () => {
       }
       return saveBlueprint();
     },
-    componentOrder
+    () => componentOrder // Pass a function that returns the current component order
   );
 
   const handleSignOut = async () => {

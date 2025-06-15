@@ -6,13 +6,10 @@ export const useBlueprintDragDrop = (
   lists: BlueprintList[],
   setLists: (lists: BlueprintList[]) => void,
   saveBlueprint: (lists: BlueprintList[], silent?: boolean, showDateOverride?: string, notesOverride?: string, crewDataOverride?: any, cameraPlots?: any, componentOrder?: string[]) => Promise<void>,
-  initialComponentOrder: string[] = ['crew-list', 'camera-plot', 'scratchpad']
+  getCurrentComponentOrder: () => string[] // Changed to a function to get fresh component order
 ) => {
   const [draggedListId, setDraggedListId] = useState<string | null>(null);
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
-
-  // Use the component order from the unified state instead of local state
-  console.log('📋 Drag and drop using component order:', initialComponentOrder);
 
   const handleDragStart = useCallback((e: React.DragEvent, listId: string) => {
     console.log('📋 Drag start:', listId);
@@ -84,7 +81,8 @@ export const useBlueprintDragDrop = (
 
     // Handle special components reordering
     if (draggedId === 'crew-list' || draggedId === 'camera-plot' || draggedId === 'scratchpad') {
-      const newOrder = [...initialComponentOrder];
+      const currentComponentOrder = getCurrentComponentOrder(); // Get fresh component order
+      const newOrder = [...currentComponentOrder];
       const draggedIndex = newOrder.indexOf(draggedId);
       
       if (draggedIndex !== -1) {
@@ -129,14 +127,15 @@ export const useBlueprintDragDrop = (
     setLists(newLists);
     
     try {
-      await saveBlueprint(newLists, true, undefined, undefined, undefined, undefined, initialComponentOrder);
+      const currentComponentOrder = getCurrentComponentOrder(); // Get fresh component order
+      await saveBlueprint(newLists, true, undefined, undefined, undefined, undefined, currentComponentOrder);
     } catch (error) {
       console.error('📋 Failed to save reordered lists:', error);
     }
 
     setDraggedListId(null);
     setInsertionIndex(null);
-  }, [lists, insertionIndex, setLists, saveBlueprint, initialComponentOrder]);
+  }, [lists, insertionIndex, setLists, saveBlueprint, getCurrentComponentOrder]);
 
   const handleDragEnd = useCallback(() => {
     console.log('📋 Drag end');
@@ -152,13 +151,11 @@ export const useBlueprintDragDrop = (
   return {
     draggedListId,
     insertionIndex,
-    componentOrder: initialComponentOrder, // Return the component order from props
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
-    handleDragEnd,
-    updateComponentOrder: () => {} // No-op since order is managed by the unified state
+    handleDragEnd
   };
 };

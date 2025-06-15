@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -39,19 +38,17 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
   const {
     draggedListId,
     insertionIndex,
-    componentOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
     handleDragLeave,
     handleDrop,
-    handleDragEnd,
-    updateComponentOrder
+    handleDragEnd
   } = useBlueprintDragDrop(
     lists, 
     setLists, 
     saveBlueprint,
-    savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad']
+    () => savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'] // Return current component order as function
   );
 
   useBlueprintInitialization(
@@ -170,7 +167,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     refreshAllLists,
     draggedListId,
     insertionIndex,
-    componentOrder,
+    componentOrder: savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'],
     handleDragStart,
     handleDragOver,
     handleDragEnterContainer,
