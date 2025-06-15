@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
@@ -144,10 +145,7 @@ export const transformCSVData = (
     item.script = item.script || '';
     item.notes = item.notes || '';
     item.talent = item.talent || '';
-    // Don't override gfx if it was already set from mapping
-    if (!item.gfx) {
-      item.gfx = '';
-    }
+    item.gfx = item.gfx || '';
     item.video = item.video || '';
     item.color = item.color || '';
 

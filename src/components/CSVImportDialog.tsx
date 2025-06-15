@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -153,19 +154,12 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
         };
         console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" marked as SKIP`);
       } else if (field === 'rundownColumn' && value !== 'SKIP') {
-        // Special handling for GFX column mapping - ensure it maps to 'gfx'
-        let mappedValue = value;
-        if (updated[index].csvColumn.toLowerCase().includes('gfx') || updated[index].csvColumn.toLowerCase().includes('graphics')) {
-          mappedValue = 'gfx';
-          console.log(`🔧 CSV Import Dialog: GFX-related column "${updated[index].csvColumn}" auto-mapped to "gfx"`);
-        }
-        
         updated[index] = { 
           ...updated[index], 
-          [field]: mappedValue,
+          [field]: value,
           isSkipped: false
         };
-        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" mapped to "${mappedValue}"`);
+        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" mapped to "${value}"`);
       } else {
         updated[index] = { ...updated[index], [field]: value };
       }
@@ -363,7 +357,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                           </SelectItem>
                           {availableColumns.map((col) => (
                             <SelectItem key={col.key} value={col.key} className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white">
-                              {col.name} ({col.key})
+                              {col.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
