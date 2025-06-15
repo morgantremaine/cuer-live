@@ -141,6 +141,8 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
   };
 
   const updateColumnMapping = (index: number, field: keyof ColumnMapping, value: any) => {
+    console.log(`🔧 CSV Import Dialog: Updating mapping[${index}].${field} to "${value}"`);
+    
     setColumnMappings(prev => {
       const updated = [...prev];
       if (field === 'rundownColumn' && value === 'SKIP') {
@@ -149,15 +151,25 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
           rundownColumn: '', 
           isSkipped: true 
         };
+        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" marked as SKIP`);
       } else if (field === 'rundownColumn' && value !== 'SKIP') {
         updated[index] = { 
           ...updated[index], 
           [field]: value,
           isSkipped: false
         };
+        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" mapped to "${value}"`);
       } else {
         updated[index] = { ...updated[index], [field]: value };
       }
+      
+      // Log the final mapping for this column
+      console.log(`🔧 CSV Import Dialog: Final mapping for column ${index}:`, {
+        csvColumn: updated[index].csvColumn,
+        rundownColumn: updated[index].rundownColumn,
+        isSkipped: updated[index].isSkipped
+      });
+      
       return updated;
     });
   };
@@ -183,7 +195,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
       return;
     }
 
-    console.log('✅ CSV Import: Final mappings:', nonSkippedMappings.map(m => `${m.csvColumn} -> ${m.rundownColumn}`));
+    console.log('✅ CSV Import: Final mappings before transform:', nonSkippedMappings.map(m => `"${m.csvColumn}" -> "${m.rundownColumn}"`));
 
     // Transform the data
     const result = transformCSVData(csvData.rows, nonSkippedMappings, csvData.headers);
@@ -331,7 +343,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                       <Select
                         value={mapping.isSkipped ? 'SKIP' : mapping.rundownColumn}
                         onValueChange={(value) => {
-                          console.log(`🔧 CSV Import: Mapping "${mapping.csvColumn}" to "${value}"`);
+                          console.log(`🔧 CSV Import Dialog: User selected "${value}" for CSV column "${mapping.csvColumn}"`);
                           updateColumnMapping(index, 'rundownColumn', value);
                         }}
                       >

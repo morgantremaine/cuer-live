@@ -21,6 +21,7 @@ export const transformCSVData = (
   const items: RundownItem[] = [];
 
   console.log('🔧 CSV Transform - Input data:', { csvRows: csvRows.length, columnMappings, csvHeaders });
+  console.log('🔧 CSV Transform - Column mappings detail:', columnMappings.map(m => `"${m.csvColumn}" -> "${m.rundownColumn}"`));
 
   // Transform CSV rows to rundown items
   csvRows.forEach((row, rowIndex) => {
@@ -85,10 +86,14 @@ export const transformCSVData = (
             console.log(`✅ Set item.talent to: "${item.talent}"`);
             break;
           case 'gfx':
-          case 'graphics': // Handle both graphics and gfx mappings - always map to gfx field
             const gfxValue = String(value || '');
             item.gfx = gfxValue;
-            console.log(`✅ Set item.gfx to: "${gfxValue}" (from mapping: ${mapping.rundownColumn})`);
+            console.log(`✅ [GFX CASE] Set item.gfx to: "${gfxValue}" (from mapping: ${mapping.rundownColumn})`);
+            break;
+          case 'graphics': // Handle both graphics and gfx mappings - always map to gfx field
+            const graphicsValue = String(value || '');
+            item.gfx = graphicsValue;
+            console.log(`✅ [GRAPHICS CASE] Set item.gfx to: "${graphicsValue}" (from mapping: ${mapping.rundownColumn})`);
             break;
           case 'video':
             item.video = String(value || '');
@@ -108,6 +113,7 @@ export const transformCSVData = (
             break;
           default:
             // Handle custom fields - but check if it might be a legacy graphics mapping
+            console.log(`⚠️ [DEFAULT CASE] Handling unmapped field "${mapping.rundownColumn}" with value "${value}"`);
             if (mapping.rundownColumn === 'graphics') {
               // This is a fallback in case the above case doesn't catch it
               const gfxValue = String(value || '');
