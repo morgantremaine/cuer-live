@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -122,7 +123,7 @@ export const useSimplifiedRundownState = () => {
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
-                         field === 'gfx' || field === 'video' || field.startsWith('customFields.') || field === 'segmentName';
+                         field === 'gfx' || field === 'video' || field.startsWith('customFields.') || field === 'segmentName' || field === 'graphics';
     
     if (isTypingField) {
       const sessionKey = `${id}-${field}`;
@@ -357,6 +358,7 @@ export const useSimplifiedRundownState = () => {
       elapsedTime: '00:00',
       talent: '',
       script: '',
+      graphics: '',
       gfx: '',
       video: '',
       notes: '',
@@ -390,6 +392,7 @@ export const useSimplifiedRundownState = () => {
       elapsedTime: '',
       talent: '',
       script: '',
+      graphics: '',
       gfx: '',
       video: '',
       notes: '',
