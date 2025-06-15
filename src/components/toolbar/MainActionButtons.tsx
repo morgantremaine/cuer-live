@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
+import CSVActions from './CSVActions';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
@@ -18,6 +21,10 @@ interface MainActionButtonsProps {
   selectedRowId?: string | null;
   isMobile?: boolean;
   rundownTitle?: string;
+  // New props for CSV functionality
+  items?: RundownItem[];
+  columns?: Column[];
+  onImportItems?: (items: RundownItem[], newColumns: Column[]) => void;
 }
 
 const MainActionButtons = ({
@@ -31,7 +38,10 @@ const MainActionButtons = ({
   onOpenTeleprompter,
   selectedRowId,
   isMobile = false,
-  rundownTitle = 'Untitled Rundown'
+  rundownTitle = 'Untitled Rundown',
+  items = [],
+  columns = [],
+  onImportItems
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -92,6 +102,17 @@ const MainActionButtons = ({
         <Settings className="h-4 w-4" />
         <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
       </Button>
+      
+      {/* CSV Actions */}
+      {onImportItems && (
+        <CSVActions
+          items={items}
+          columns={columns}
+          onImportItems={onImportItems}
+          rundownTitle={rundownTitle}
+          isMobile={isMobile}
+        />
+      )}
       
       {rundownId && (
         <ShareRundownMenu 

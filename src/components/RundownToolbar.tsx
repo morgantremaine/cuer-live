@@ -3,6 +3,8 @@ import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -27,6 +29,10 @@ interface RundownToolbarProps {
   lastAction: string | null;
   // Rundown title for sharing
   rundownTitle?: string;
+  // CSV functionality
+  items?: RundownItem[];
+  columns?: Column[];
+  onImportItems?: (items: RundownItem[], newColumns: Column[]) => void;
 }
 
 const RundownToolbar = ({
@@ -46,7 +52,10 @@ const RundownToolbar = ({
   onUndo,
   canUndo,
   lastAction,
-  rundownTitle
+  rundownTitle,
+  items,
+  columns,
+  onImportItems
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
 
@@ -67,7 +76,10 @@ const RundownToolbar = ({
     onPause,
     onForward,
     onBackward,
-    rundownTitle
+    rundownTitle,
+    items,
+    columns,
+    onImportItems
   };
 
   if (isMobile) {
