@@ -53,6 +53,11 @@ const TextAreaCell = ({
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
 
+  // Check if this is a header row based on itemId
+  const isHeaderRow = itemId.includes('header');
+  const fontSize = isHeaderRow ? 'text-base' : 'text-sm';
+  const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-semibold' : '';
+
   return (
     <div className="relative w-full h-full min-h-[32px] flex items-center" style={{ backgroundColor }}>
       <textarea
@@ -69,19 +74,19 @@ const TextAreaCell = ({
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
+        className={`w-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
           isDuration ? 'font-mono text-center' : ''
         }`}
         style={{ 
           backgroundColor: 'transparent',
           color: textColor || 'inherit',
-          minHeight: shouldExpandRow ? '40px' : '28px',
-          lineHeight: '1.2'
+          minHeight: shouldExpandRow ? '48px' : '36px',
+          lineHeight: '1.3'
         }}
         rows={shouldExpandRow ? 2 : 1}
       />
       {highlight && (
-        <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm flex items-center" style={{ color: 'transparent' }}>
+        <div className="absolute inset-0 pointer-events-none px-3 py-2 text-sm flex items-center" style={{ color: 'transparent' }}>
           <HighlightedText text={value} highlight={highlight} />
         </div>
       )}

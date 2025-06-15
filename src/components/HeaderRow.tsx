@@ -108,7 +108,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
         style={{
           backgroundColor
         }}

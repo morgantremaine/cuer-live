@@ -37,7 +37,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-2 text-sm font-mono align-middle border border-border w-16 min-w-16 min-h-[40px]"
+        className="px-3 py-3 text-base font-mono font-semibold align-middle border border-border w-16 min-w-16 min-h-[56px]"
         style={{ backgroundColor }}
       >
         <span style={{ color: textColor }}>{rowNumber}</span>
@@ -52,7 +52,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[40px]"
+              className="align-middle border border-border min-h-[56px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -77,14 +77,14 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border px-2 py-2 min-h-[40px]"
+              className="align-middle border border-border px-3 py-3 min-h-[56px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
                 backgroundColor 
               }}
             >
-              <div className="break-words whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300" style={{ color: textColor }}>
+              <div className="break-words whitespace-pre-wrap text-base font-semibold text-gray-600 dark:text-gray-300" style={{ color: textColor }}>
                 ({headerDuration})
               </div>
             </td>
@@ -94,14 +94,14 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[40px]"
+              className="align-middle border border-border min-h-[56px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-2"></div>
+              <div className="px-3 py-3"></div>
             </td>
           );
         } else {
@@ -109,14 +109,14 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[40px]"
+              className="align-middle border border-border min-h-[56px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-2"></div>
+              <div className="px-3 py-3"></div>
             </td>
           );
         }
