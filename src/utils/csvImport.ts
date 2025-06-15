@@ -85,7 +85,7 @@ export const transformCSVData = (
             console.log(`✅ Set item.talent to: "${item.talent}"`);
             break;
           case 'gfx':
-          case 'graphics': // Handle both for backward compatibility - but always map to 'gfx'
+          case 'graphics': // Handle both graphics and gfx mappings - always map to gfx field
             const gfxValue = String(value || '');
             item.gfx = gfxValue;
             console.log(`✅ Set item.gfx to: "${gfxValue}" (from mapping: ${mapping.rundownColumn})`);
@@ -107,12 +107,20 @@ export const transformCSVData = (
             console.log(`✅ Set item.color to: "${item.color}"`);
             break;
           default:
-            // Handle custom fields
-            if (!item.customFields) {
-              item.customFields = {};
+            // Handle custom fields - but check if it might be a legacy graphics mapping
+            if (mapping.rundownColumn === 'graphics') {
+              // This is a fallback in case the above case doesn't catch it
+              const gfxValue = String(value || '');
+              item.gfx = gfxValue;
+              console.log(`✅ [FALLBACK] Set item.gfx to: "${gfxValue}" (from graphics mapping)`);
+            } else {
+              // Handle other custom fields
+              if (!item.customFields) {
+                item.customFields = {};
+              }
+              item.customFields[mapping.rundownColumn] = String(value || '');
+              console.log(`✅ Set custom field "${mapping.rundownColumn}" to: "${item.customFields[mapping.rundownColumn]}"`);
             }
-            item.customFields[mapping.rundownColumn] = String(value || '');
-            console.log(`✅ Set custom field "${mapping.rundownColumn}" to: "${item.customFields[mapping.rundownColumn]}"`);
             break;
         }
       } else if (csvColumnIndex === -1) {
