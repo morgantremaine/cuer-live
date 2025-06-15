@@ -11,14 +11,15 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check, Printer } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
+import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
 
 interface ShareRundownMenuProps {
   rundownId: string;
   rundownTitle: string;
-  rundownData?: any; // Add rundown data for print functionality
+  rundownData?: CSVExportData;
 }
 
 export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
@@ -75,6 +76,29 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     }
   };
 
+  const handleExportCSV = () => {
+    try {
+      if (!rundownData) {
+        throw new Error('No rundown data available for export');
+      }
+      
+      const sanitizedTitle = rundownTitle.replace(/[^a-zA-Z0-9]/g, '_');
+      exportRundownAsCSV(rundownData, sanitizedTitle);
+      
+      toast({
+        title: 'Export successful!',
+        description: `${rundownTitle} exported as CSV`,
+      });
+    } catch (error) {
+      console.error('CSV export error:', error);
+      toast({
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'Failed to export rundown',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSetSharedLayout = async (layoutId: string | null, layoutName: string) => {
     await updateSharedLayout(layoutId);
     toast({
@@ -107,6 +131,11 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           <Copy className="h-4 w-4 mr-2" />
           Copy Read-Only Link
           {copied && <Check className="h-4 w-4 ml-auto text-green-600" />}
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handleExportCSV}>
+          <Download className="h-4 w-4 mr-2" />
+          Export as CSV
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={handlePrint}>

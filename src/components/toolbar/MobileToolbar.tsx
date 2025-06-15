@@ -10,6 +10,7 @@ import {
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
+import { CSVExportData } from '@/utils/csvExport';
 
 interface MobileToolbarProps {
   onAddRow: () => void;
@@ -29,6 +30,7 @@ interface MobileToolbarProps {
   onForward: () => void;
   onBackward: () => void;
   rundownTitle?: string;
+  rundownData?: CSVExportData;
 }
 
 const MobileToolbar = ({
@@ -48,7 +50,8 @@ const MobileToolbar = ({
   onPause,
   onForward,
   onBackward,
-  rundownTitle
+  rundownTitle,
+  rundownData
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -79,6 +82,7 @@ const MobileToolbar = ({
               selectedRowId={selectedRowId}
               isMobile={true}
               rundownTitle={rundownTitle}
+              rundownData={rundownData}
             />
           </DropdownMenuContent>
         </DropdownMenu>

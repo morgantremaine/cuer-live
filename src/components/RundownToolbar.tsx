@@ -3,6 +3,7 @@ import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
+import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -27,6 +28,8 @@ interface RundownToolbarProps {
   lastAction: string | null;
   // Rundown title for sharing
   rundownTitle?: string;
+  // Rundown data for CSV export
+  rundownData?: CSVExportData;
 }
 
 const RundownToolbar = ({
@@ -46,7 +49,8 @@ const RundownToolbar = ({
   onUndo,
   canUndo,
   lastAction,
-  rundownTitle
+  rundownTitle,
+  rundownData
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
 
@@ -67,7 +71,8 @@ const RundownToolbar = ({
     onPause,
     onForward,
     onBackward,
-    rundownTitle
+    rundownTitle,
+    rundownData
   };
 
   if (isMobile) {

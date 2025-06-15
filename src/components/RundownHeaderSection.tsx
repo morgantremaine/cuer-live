@@ -2,6 +2,7 @@
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
+import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownHeaderSectionProps {
   currentTime: Date;
@@ -43,6 +44,7 @@ interface RundownHeaderSectionProps {
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
+  rundownData?: CSVExportData;
 }
 
 const RundownHeaderSection = ({
@@ -84,7 +86,8 @@ const RundownHeaderSection = ({
   canUndo,
   lastAction,
   isConnected,
-  isProcessingRealtimeUpdate
+  isProcessingRealtimeUpdate,
+  rundownData
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -127,6 +130,8 @@ const RundownHeaderSection = ({
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
+        rundownTitle={rundownTitle}
+        rundownData={rundownData}
       />
     </div>
   );

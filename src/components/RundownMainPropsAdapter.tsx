@@ -4,6 +4,7 @@ import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
 import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import { RundownContainerProps } from '@/types/rundownContainer';
+import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownMainPropsAdapterProps {
   props: RundownContainerProps;
@@ -79,6 +80,12 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     handleLoadLayout,
   } = props;
 
+  // Create rundown data for CSV export
+  const rundownData: CSVExportData = {
+    items: items || [],
+    visibleColumns: visibleColumns || []
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar Section */}
@@ -119,6 +126,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         lastAction={lastAction}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        rundownData={rundownData}
       />
 
       {/* Main Content */}
