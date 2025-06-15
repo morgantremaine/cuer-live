@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   DropdownMenu,
@@ -105,7 +104,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={copyToClipboard}>
           <Copy className="h-4 w-4 mr-2" />
-          Copy Share Link
+          Copy Read-Only Rundown Link
           {copied && <Check className="h-4 w-4 ml-auto text-green-600" />}
         </DropdownMenuItem>
         
@@ -119,7 +118,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Layout className="h-4 w-4 mr-2" />
-            Set Shared Layout...
+            Set Read-Only Layout...
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
             <div className="px-2 py-1.5 text-sm text-muted-foreground">
