@@ -1,5 +1,5 @@
 
-import React, { memo, useRef } from 'react';
+import React, { memo, useRef, useState } from 'react';
 import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
   ContextMenu,
@@ -48,7 +48,7 @@ const RundownContextMenu = memo(({
   onAddHeader
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
-  const contextMenuContentRef = useRef<HTMLDivElement>(null);
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
 
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
@@ -65,17 +65,8 @@ const RundownContextMenu = memo(({
     // Close the color picker after selection
     onColorPicker();
     
-    // Close the context menu by simulating escape key
-    if (contextMenuContentRef.current) {
-      const escapeEvent = new KeyboardEvent('keydown', {
-        key: 'Escape',
-        code: 'Escape',
-        keyCode: 27,
-        which: 27,
-        bubbles: true
-      });
-      contextMenuContentRef.current.dispatchEvent(escapeEvent);
-    }
+    // Close the context menu
+    setIsContextMenuOpen(false);
   };
 
   // Handle float toggle for multiple rows
@@ -98,14 +89,11 @@ const RundownContextMenu = memo(({
 
   return (
     <>
-      <ContextMenu>
+      <ContextMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
-        <ContextMenuContent 
-          ref={contextMenuContentRef}
-          className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg"
-        >
+        <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
           {onAddRow && (
             <ContextMenuItem 
               onClick={onAddRow} 
