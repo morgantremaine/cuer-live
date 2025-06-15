@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -347,14 +348,19 @@ export const useSimplifiedRundownState = () => {
     
     const newItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'regular' as const,
+      rowNumber: '',
       name: 'New Segment',
-      duration: '00:30',
-      type: 'segment' as const,
       startTime: '00:00:00',
+      duration: '00:30',
       endTime: '00:30:00',
-      notes: '',
-      script: '',
+      elapsedTime: '00:00',
       talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
       isFloating: false,
       customFields: {}
     };
@@ -375,8 +381,19 @@ export const useSimplifiedRundownState = () => {
     
     const newHeader = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: 'New Header',
       type: 'header' as const,
+      rowNumber: 'A',
+      name: 'New Header',
+      startTime: '',
+      duration: '',
+      endTime: '',
+      elapsedTime: '',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      notes: '',
+      color: '',
       isFloating: false,
       customFields: {}
     };
