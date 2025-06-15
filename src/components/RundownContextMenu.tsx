@@ -1,5 +1,5 @@
 
-import React, { memo, useRef, useState } from 'react';
+import React, { memo } from 'react';
 import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
   ContextMenu,
@@ -60,9 +60,6 @@ const RundownContextMenu = memo(({
       // Apply color to single row
       onColorSelect(id, color);
     }
-    
-    // Close the color picker after selection
-    onColorPicker();
   };
 
   // Handle float toggle for multiple rows
@@ -76,11 +73,6 @@ const RundownContextMenu = memo(({
       // Toggle float for single row
       onToggleFloat();
     }
-  };
-
-  // Handle color picker with context menu closure
-  const handleColorPickerClick = () => {
-    onColorPicker();
   };
 
   return (
@@ -144,7 +136,7 @@ const RundownContextMenu = memo(({
           </ContextMenuItem>
           
           <ContextMenuItem 
-            onClick={handleColorPickerClick} 
+            onClick={onColorPicker} 
             className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <Palette className="mr-2 h-4 w-4" />
@@ -184,7 +176,10 @@ const RundownContextMenu = memo(({
             itemId={itemId}
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
-            onColorSelect={handleColorSelect}
+            onColorSelect={(id, color) => {
+              handleColorSelect(id, color);
+              onColorPicker(); // Close the color picker after selection
+            }}
           />
         </div>
       )}
