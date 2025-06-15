@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -156,9 +155,9 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
-      // Filter out the "Element" column and "talent" column from layout columns
+      // Filter out the "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
-        col.id !== 'element' && col.key !== 'element' && col.id !== 'talent' && col.key !== 'talent'
+        col.id !== 'element' && col.key !== 'element'
       );
 
       // Update column names for backward compatibility with old saved layouts
