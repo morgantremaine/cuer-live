@@ -70,20 +70,6 @@ const BlueprintContent = () => {
     componentOrder
   );
 
-  // Update component order when it changes from the unified state
-  React.useEffect(() => {
-    if (JSON.stringify(dragComponentOrder) !== JSON.stringify(componentOrder)) {
-      updateDragComponentOrder(componentOrder);
-    }
-  }, [componentOrder, updateDragComponentOrder]);
-
-  // Update the unified state when drag component order changes
-  React.useEffect(() => {
-    if (JSON.stringify(dragComponentOrder) !== JSON.stringify(componentOrder)) {
-      updateComponentOrder(dragComponentOrder);
-    }
-  }, [dragComponentOrder, componentOrder, updateComponentOrder]);
-
   const handleSignOut = async () => {
     try {
       await signOut()
@@ -158,7 +144,7 @@ const BlueprintContent = () => {
         onDragStart={(e) => handleDragStart(e, 'crew-list')}
         onDragEnter={(e) => {
           e.preventDefault();
-          const componentIndex = lists.length + dragComponentOrder.indexOf('crew-list');
+          const componentIndex = lists.length + componentOrder.indexOf('crew-list');
           handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
@@ -181,7 +167,7 @@ const BlueprintContent = () => {
         onDragStart={(e) => handleDragStart(e, 'camera-plot')}
         onDragEnter={(e) => {
           e.preventDefault();
-          const componentIndex = lists.length + dragComponentOrder.indexOf('camera-plot');
+          const componentIndex = lists.length + componentOrder.indexOf('camera-plot');
           handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
@@ -204,7 +190,7 @@ const BlueprintContent = () => {
         onDragStart={(e) => handleDragStart(e, 'scratchpad')}
         onDragEnter={(e) => {
           e.preventDefault();
-          const componentIndex = lists.length + dragComponentOrder.indexOf('scratchpad');
+          const componentIndex = lists.length + componentOrder.indexOf('scratchpad');
           handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
@@ -265,7 +251,7 @@ const BlueprintContent = () => {
           )}
 
           {/* Render components in the specified order with insertion lines */}
-          {dragComponentOrder.map((componentId, index) => {
+          {componentOrder.map((componentId, index) => {
             const componentIndex = lists.length + index;
             return (
               <React.Fragment key={componentId}>
@@ -279,7 +265,7 @@ const BlueprintContent = () => {
           })}
 
           {/* Final insertion line */}
-          {insertionIndex === lists.length + dragComponentOrder.length && (
+          {insertionIndex === lists.length + componentOrder.length && (
             <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
           )}
         </div>
