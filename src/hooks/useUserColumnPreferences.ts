@@ -15,10 +15,9 @@ interface UserColumnPreferences {
 
 // Default columns configuration
 const defaultColumns: Column[] = [
-  { id: 'segmentName', name: 'Segment', key: 'name', isVisible: true, width: '200px', isCustom: false, isEditable: true },
+  { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false, isEditable: true },
+  { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false, isEditable: true },
   { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false, isEditable: true },
-  { id: 'gfx', name: 'GFX', key: 'gfx', isVisible: true, width: '150px', isCustom: false, isEditable: true },
-  { id: 'video', name: 'Video', key: 'video', isVisible: true, width: '150px', isCustom: false, isEditable: true },
   { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false, isEditable: true },
   { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
   { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
@@ -26,7 +25,7 @@ const defaultColumns: Column[] = [
   { id: 'notes', name: 'Notes', key: 'notes', isVisible: true, width: '300px', isCustom: false, isEditable: true }
 ];
 
-export const useUserColumnPreferences = (rundownId: string | null, rundownColumns?: Column[]) => {
+export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,9 +37,7 @@ export const useUserColumnPreferences = (rundownId: string | null, rundownColumn
   // Load user's column preferences for this rundown
   const loadColumnPreferences = useCallback(async () => {
     if (!user?.id || !rundownId || isLoadingRef.current) {
-      // If we have rundown columns, use those, otherwise use defaults
-      const initialColumns = rundownColumns && rundownColumns.length > 0 ? rundownColumns : defaultColumns;
-      setColumns(initialColumns);
+      setColumns(defaultColumns);
       setIsLoading(false);
       return;
     }
@@ -58,35 +55,25 @@ export const useUserColumnPreferences = (rundownId: string | null, rundownColumn
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading column preferences:', error);
-        // Use rundown columns if available, otherwise defaults
-        const fallbackColumns = rundownColumns && rundownColumns.length > 0 ? rundownColumns : defaultColumns;
-        setColumns(fallbackColumns);
+        setColumns(defaultColumns);
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
         console.log('✅ Loaded user column preferences:', loadedColumns.length, 'columns');
         setColumns(loadedColumns);
         lastSavedRef.current = JSON.stringify(loadedColumns);
       } else {
-        // No saved preferences - use rundown columns if available, otherwise defaults
-        const initialColumns = rundownColumns && rundownColumns.length > 0 ? rundownColumns : defaultColumns;
-        console.log('📋 No saved preferences, using', rundownColumns ? 'rundown' : 'default', 'columns');
-        setColumns(initialColumns);
-        lastSavedRef.current = JSON.stringify(initialColumns);
-        
-        // If we have rundown columns, save them as user preferences
-        if (rundownColumns && rundownColumns.length > 0) {
-          await saveColumnPreferences(rundownColumns, true);
-        }
+        console.log('📋 No saved preferences, using defaults');
+        setColumns(defaultColumns);
+        lastSavedRef.current = JSON.stringify(defaultColumns);
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
-      const fallbackColumns = rundownColumns && rundownColumns.length > 0 ? rundownColumns : defaultColumns;
-      setColumns(fallbackColumns);
+      setColumns(defaultColumns);
     } finally {
       setIsLoading(false);
       isLoadingRef.current = false;
     }
-  }, [user?.id, rundownId, rundownColumns]);
+  }, [user?.id, rundownId]);
 
   // Save column preferences with proper debouncing
   const saveColumnPreferences = useCallback(async (columnsToSave: Column[], isImmediate = false) => {

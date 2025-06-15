@@ -25,7 +25,6 @@ const RundownIndexContent = () => {
     rundownStartTime,
     rundownId,
     items,
-    columns: coreColumns,
     currentSegmentId,
     getRowNumber,
     calculateHeaderDuration,
@@ -53,14 +52,14 @@ const RundownIndexContent = () => {
     isProcessingRealtimeUpdate
   } = coreState;
 
-  // Use user column preferences for persistent column management with rundown columns as base
+  // Use user column preferences for persistent column management
   const { 
     columns: userColumns, 
     setColumns: setUserColumns, 
     updateColumnWidth: updateUserColumnWidth,
     isLoading: isLoadingPreferences,
     isSaving: isSavingPreferences 
-  } = useUserColumnPreferences(rundownId, coreColumns);
+  } = useUserColumnPreferences(rundownId);
 
   // Use columns manager for operations
   const {
@@ -262,7 +261,7 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Prepare rundown data for export and Cuer AI
+  // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
     title: rundownTitle,
@@ -363,7 +362,6 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        rundownData={rundownData}
       />
       
       <CuerChatButton rundownData={rundownData} />

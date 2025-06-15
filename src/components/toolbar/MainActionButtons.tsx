@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
-import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
@@ -20,11 +18,6 @@ interface MainActionButtonsProps {
   selectedRowId?: string | null;
   isMobile?: boolean;
   rundownTitle?: string;
-  rundownData?: {
-    items: RundownItem[];
-    columns: Column[];
-    title: string;
-  };
 }
 
 const MainActionButtons = ({
@@ -38,8 +31,7 @@ const MainActionButtons = ({
   onOpenTeleprompter,
   selectedRowId,
   isMobile = false,
-  rundownTitle = 'Untitled Rundown',
-  rundownData
+  rundownTitle = 'Untitled Rundown'
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -105,7 +97,6 @@ const MainActionButtons = ({
         <ShareRundownMenu 
           rundownId={rundownId} 
           rundownTitle={rundownTitle}
-          rundownData={rundownData}
         />
       )}
       

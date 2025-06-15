@@ -11,19 +11,14 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
-import { exportRundownToCSV, downloadCSV } from '@/utils/csvUtils';
 
 interface ShareRundownMenuProps {
   rundownId: string;
   rundownTitle: string;
-  rundownData?: {
-    items: any[];
-    columns: any[];
-    title: string;
-  };
+  rundownData?: any; // Add rundown data for print functionality
 }
 
 export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
@@ -80,36 +75,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     }
   };
 
-  const handleExportCSV = () => {
-    if (!rundownData?.items || !rundownData?.columns) {
-      toast({
-        title: 'Export failed',
-        description: 'No rundown data available to export',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      const csvContent = exportRundownToCSV(rundownData.items, rundownData.columns);
-      const filename = `${(rundownData.title || rundownTitle).replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
-      
-      downloadCSV(csvContent, filename);
-      
-      toast({
-        title: 'Export successful',
-        description: `Rundown exported as ${filename}`,
-      });
-    } catch (error) {
-      console.error('Error exporting CSV:', error);
-      toast({
-        title: 'Export failed',
-        description: 'Failed to export rundown as CSV',
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleSetSharedLayout = async (layoutId: string | null, layoutName: string) => {
     await updateSharedLayout(layoutId);
     toast({
@@ -147,11 +112,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         <DropdownMenuItem onClick={handlePrint}>
           <Printer className="h-4 w-4 mr-2" />
           Print View
-        </DropdownMenuItem>
-
-        <DropdownMenuItem onClick={handleExportCSV}>
-          <Download className="h-4 w-4 mr-2" />
-          Export as CSV
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
