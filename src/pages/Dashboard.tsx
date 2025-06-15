@@ -1,20 +1,25 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import CSVImportDialog from '@/components/CSVImportDialog';
+import { CSVImportResult, validateCSVData } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useToast } from '@/hooks/use-toast';
+import { useColumnsManager } from '@/hooks/useColumnsManager';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading, deleteRundown, updateRundown } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown } = useRundownStorage();
   const { toast } = useToast();
+  const { columns, handleAddColumn } = useColumnsManager();
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
@@ -95,6 +100,49 @@ const Dashboard = () => {
     });
   };
 
+  const handleCSVImport = async (result: CSVImportResult) => {
+    try {
+      console.log('Dashboard handling CSV import:', result);
+
+      if (!result.items || result.items.length === 0) {
+        toast({
+          title: 'No data to import',
+          description: 'The CSV file does not contain any valid rundown data.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Add any new columns to the column manager first
+      if (result.newColumns && result.newColumns.length > 0) {
+        console.log('Adding new columns to column manager:', result.newColumns);
+        result.newColumns.forEach(newColumn => {
+          handleAddColumn(newColumn.name);
+        });
+      }
+
+      // Create a new rundown with the imported data
+      const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;
+      const rundownId = await createRundown(rundownTitle, result.items);
+      
+      toast({
+        title: 'Import successful',
+        description: `Imported ${result.items.length} items into a new rundown${result.newColumns?.length ? ` with ${result.newColumns.length} new columns` : ''}.`,
+      });
+
+      // Navigate to the new rundown
+      navigate(`/rundown/${rundownId}`);
+      
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      toast({
+        title: 'Import failed',
+        description: 'There was an error importing the CSV file. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Filter rundowns - now show ALL team rundowns regardless of who created them
   const activeRundowns = savedRundowns.filter(rundown => !rundown.archived);
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
@@ -107,9 +155,19 @@ const Dashboard = () => {
       />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-12">
-          {/* Create New Button */}
-          <div className="flex items-center">
+          {/* Create New and Import Buttons - Fixed alignment */}
+          <div className="flex items-center space-x-4">
             <CreateNewButton onClick={handleCreateNew} />
+            <CSVImportDialog onImport={handleCSVImport} existingColumns={columns}>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Import CSV
+              </Button>
+            </CSVImportDialog>
           </div>
           
           {/* Active Rundowns Section */}

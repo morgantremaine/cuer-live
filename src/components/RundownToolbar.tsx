@@ -4,8 +4,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
 import { CSVExportData } from '@/utils/csvExport';
-import { CSVImportResult } from '@/utils/csvImport';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -32,9 +30,6 @@ interface RundownToolbarProps {
   rundownTitle?: string;
   // Rundown data for CSV export
   rundownData?: CSVExportData;
-  // CSV import functionality
-  onCSVImport?: (result: CSVImportResult) => void;
-  existingColumns?: Column[];
 }
 
 const RundownToolbar = ({
@@ -55,9 +50,7 @@ const RundownToolbar = ({
   canUndo,
   lastAction,
   rundownTitle,
-  rundownData,
-  onCSVImport,
-  existingColumns
+  rundownData
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
 
@@ -79,9 +72,7 @@ const RundownToolbar = ({
     onForward,
     onBackward,
     rundownTitle,
-    rundownData,
-    onCSVImport,
-    existingColumns
+    rundownData
   };
 
   if (isMobile) {

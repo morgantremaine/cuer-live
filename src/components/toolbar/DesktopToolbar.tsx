@@ -4,8 +4,6 @@ import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
-import { CSVImportResult } from '@/utils/csvImport';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface DesktopToolbarProps {
   onAddRow: () => void;
@@ -26,8 +24,6 @@ interface DesktopToolbarProps {
   onBackward: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
-  onCSVImport?: (result: CSVImportResult) => void;
-  existingColumns?: Column[];
 }
 
 const DesktopToolbar = ({
@@ -48,9 +44,7 @@ const DesktopToolbar = ({
   onForward,
   onBackward,
   rundownTitle,
-  rundownData,
-  onCSVImport,
-  existingColumns
+  rundownData
 }: DesktopToolbarProps) => {
   return (
     <div className="p-3 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -68,8 +62,6 @@ const DesktopToolbar = ({
           isMobile={false}
           rundownTitle={rundownTitle}
           rundownData={rundownData}
-          onCSVImport={onCSVImport}
-          existingColumns={existingColumns}
         />
       </div>
 

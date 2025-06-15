@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload } from 'lucide-react';
+import { Plus, Upload, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { Column } from '@/hooks/useColumnsManager';
@@ -20,6 +20,8 @@ interface CSVImportDialogProps {
 interface ColumnMapping {
   csvColumn: string;
   rundownColumn: string;
+  isNewColumn: boolean;
+  newColumnName?: string;
   isSkipped?: boolean;
 }
 
@@ -28,11 +30,26 @@ interface CSVPreviewData {
   rows: any[][];
 }
 
+// Default columns that exactly match useColumnsManager
+const DEFAULT_RUNDOWN_COLUMNS = [
+  { key: 'name', name: 'Segment Name' },
+  { key: 'script', name: 'Script' },
+  { key: 'gfx', name: 'GFX' },
+  { key: 'video', name: 'Video' },
+  { key: 'duration', name: 'Duration' },
+  { key: 'startTime', name: 'Start' },
+  { key: 'endTime', name: 'End' },
+  { key: 'elapsedTime', name: 'Elapsed' },
+  { key: 'talent', name: 'Talent' },
+  { key: 'notes', name: 'Notes' }
+];
+
 const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<CSVPreviewData | null>(null);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
+  const [newColumns, setNewColumns] = useState<{ id: string; name: string }[]>([]);
   const { toast } = useToast();
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +91,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
         const initialMappings: ColumnMapping[] = headers.map(header => ({
           csvColumn: header,
           rundownColumn: '',
+          isNewColumn: false,
           isSkipped: false,
         }));
         setColumnMappings(initialMappings);
@@ -83,24 +101,50 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
     });
   }, [toast]);
 
-  const updateColumnMapping = (index: number, value: string) => {
+  const updateColumnMapping = (index: number, field: keyof ColumnMapping, value: any) => {
     setColumnMappings(prev => {
       const updated = [...prev];
-      if (value === 'SKIP') {
+      if (field === 'rundownColumn' && value === 'SKIP') {
         updated[index] = { 
           ...updated[index], 
           rundownColumn: '', 
+          isNewColumn: false, 
           isSkipped: true 
         };
-      } else {
+      } else if (field === 'rundownColumn' && value !== 'SKIP') {
+        const isNewColumn = newColumns.some(col => col.id === value);
         updated[index] = { 
           ...updated[index], 
-          rundownColumn: value,
+          [field]: value,
+          isNewColumn,
           isSkipped: false
         };
+      } else {
+        updated[index] = { ...updated[index], [field]: value };
       }
       return updated;
     });
+  };
+
+  const addNewColumn = () => {
+    const newId = `new_${Date.now()}`;
+    setNewColumns(prev => [...prev, { id: newId, name: '' }]);
+  };
+
+  const updateNewColumn = (id: string, name: string) => {
+    setNewColumns(prev => prev.map(col => 
+      col.id === id ? { ...col, name } : col
+    ));
+  };
+
+  const removeNewColumn = (id: string) => {
+    setNewColumns(prev => prev.filter(col => col.id !== id));
+    // Also update any mappings that were using this new column
+    setColumnMappings(prev => prev.map(mapping => 
+      mapping.rundownColumn === id 
+        ? { ...mapping, rundownColumn: '', isNewColumn: false, isSkipped: false }
+        : mapping
+    ));
   };
 
   const handleImport = () => {
@@ -109,7 +153,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
       return;
     }
 
-    console.log('Starting import with:', { csvData, columnMappings });
+    console.log('Starting import with:', { csvData, columnMappings, newColumns });
 
     // Filter out skipped columns and only validate non-skipped ones
     const nonSkippedMappings = columnMappings.filter(mapping => !mapping.isSkipped);
@@ -124,10 +168,39 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
       return;
     }
 
-    console.log('Final mappings:', nonSkippedMappings);
+    // Validate new column names for non-skipped columns
+    const newColumnsWithNames = newColumns.filter(col => col.name.trim());
+    const invalidNewColumns = nonSkippedMappings.filter(mapping => 
+      mapping.isNewColumn && 
+      mapping.rundownColumn && 
+      !newColumnsWithNames.find(col => col.id === mapping.rundownColumn)
+    );
+
+    if (invalidNewColumns.length > 0) {
+      toast({
+        title: 'Invalid new columns',
+        description: 'Please provide names for all new columns.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Prepare final column mappings with new column names, excluding skipped columns
+    const finalMappings = nonSkippedMappings.map(mapping => {
+      if (mapping.isNewColumn && mapping.rundownColumn) {
+        const newCol = newColumnsWithNames.find(col => col.id === mapping.rundownColumn);
+        return {
+          ...mapping,
+          newColumnName: newCol?.name
+        };
+      }
+      return mapping;
+    });
+
+    console.log('Final mappings:', finalMappings);
 
     // Transform the data
-    const result = transformCSVData(csvData.rows, nonSkippedMappings, csvData.headers);
+    const result = transformCSVData(csvData.rows, finalMappings, csvData.headers);
     console.log('Transform result:', result);
 
     // Call the onImport callback with the result
@@ -137,11 +210,12 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
     setFile(null);
     setCsvData(null);
     setColumnMappings([]);
+    setNewColumns([]);
     setIsOpen(false);
 
     toast({
       title: 'Import successful',
-      description: `Imported ${result.items.length} items into this rundown.`,
+      description: `Imported ${result.items.length} items with ${result.newColumns.length} new columns.`,
     });
   };
 
@@ -149,6 +223,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
     setFile(null);
     setCsvData(null);
     setColumnMappings([]);
+    setNewColumns([]);
   };
 
   return (
@@ -161,32 +236,24 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-700">
         <DialogHeader>
-          <DialogTitle className="text-white">Import CSV Data</DialogTitle>
+          <DialogTitle className="text-white">Import CSV Rundown</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           {!file && (
-            <div className="space-y-4">
-              <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center bg-gray-700">
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <Label htmlFor="csv-upload" className="cursor-pointer">
-                  <span className="text-lg font-medium text-gray-200">Choose CSV file</span>
-                  <Input
-                    id="csv-upload"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </Label>
-                <p className="text-gray-400 mt-2">Select a CSV file to import into this rundown</p>
-              </div>
-              <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4">
-                <p className="text-blue-300 text-sm">
-                  <strong>Note:</strong> Make sure to add any custom columns you need to your rundown first using the "Manage Columns" button. 
-                  This import will only map to existing columns in your rundown.
-                </p>
-              </div>
+            <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center bg-gray-700">
+              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <Label htmlFor="csv-upload" className="cursor-pointer">
+                <span className="text-lg font-medium text-gray-200">Choose CSV file</span>
+                <Input
+                  id="csv-upload"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </Label>
+              <p className="text-gray-400 mt-2">Select a CSV file to import as a new rundown</p>
             </div>
           )}
 
@@ -194,7 +261,35 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-white">Map CSV Columns to Rundown Columns</h3>
+                <Button onClick={addNewColumn} variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Column
+                </Button>
               </div>
+
+              {newColumns.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-300">New Columns</Label>
+                  {newColumns.map((newCol) => (
+                    <div key={newCol.id} className="flex items-center space-x-2">
+                      <Input
+                        placeholder="Enter column name"
+                        value={newCol.name}
+                        onChange={(e) => updateNewColumn(newCol.id, e.target.value)}
+                        className="flex-1 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      />
+                      <Button
+                        onClick={() => removeNewColumn(newCol.id)}
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-4">
                 {columnMappings.map((mapping, index) => (
@@ -213,7 +308,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                       <Select
                         value={mapping.isSkipped ? 'SKIP' : mapping.rundownColumn}
                         onValueChange={(value) => {
-                          updateColumnMapping(index, value);
+                          updateColumnMapping(index, 'rundownColumn', value);
                         }}
                       >
                         <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
@@ -223,9 +318,14 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                           <SelectItem value="SKIP" className="text-orange-400 focus:bg-gray-600 focus:text-orange-300">
                             Skip this column
                           </SelectItem>
-                          {existingColumns.filter(col => col.isVisible !== false).map((col) => (
-                            <SelectItem key={col.id} value={col.key} className="text-gray-200 focus:bg-gray-600">
+                          {DEFAULT_RUNDOWN_COLUMNS.map((col) => (
+                            <SelectItem key={col.key} value={col.key} className="text-gray-200 focus:bg-gray-600">
                               {col.name}
+                            </SelectItem>
+                          ))}
+                          {newColumns.map((newCol) => (
+                            <SelectItem key={newCol.id} value={newCol.id} className="text-gray-200 focus:bg-gray-600">
+                              {newCol.name || 'Unnamed new column'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -287,7 +387,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                   Cancel
                 </Button>
                 <Button onClick={handleImport} className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Import Data
+                  Import Rundown
                 </Button>
               </div>
             </div>

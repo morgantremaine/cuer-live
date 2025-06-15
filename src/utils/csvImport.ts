@@ -1,15 +1,19 @@
 
 import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ColumnMapping {
   csvColumn: string;
   rundownColumn: string;
+  isNewColumn: boolean;
+  newColumnName?: string;
   isSkipped?: boolean;
 }
 
 export interface CSVImportResult {
   items: RundownItem[];
+  newColumns: Column[];
 }
 
 export const transformCSVData = (
@@ -17,9 +21,27 @@ export const transformCSVData = (
   columnMappings: ColumnMapping[],
   csvHeaders: string[]
 ): CSVImportResult => {
+  const newColumns: Column[] = [];
   const items: RundownItem[] = [];
 
   console.log('CSV Transform - Input data:', { csvRows, columnMappings, csvHeaders });
+
+  // Create new columns from mappings (excluding skipped columns)
+  columnMappings.forEach((mapping) => {
+    if (mapping.isNewColumn && mapping.newColumnName && !mapping.isSkipped) {
+      newColumns.push({
+        id: mapping.rundownColumn,
+        key: mapping.rundownColumn,
+        name: mapping.newColumnName,
+        width: '150px',
+        isCustom: true,
+        isEditable: true,
+        isVisible: true,
+      });
+    }
+  });
+
+  console.log('New columns created:', newColumns);
 
   // Transform CSV rows to rundown items
   csvRows.forEach((row, rowIndex) => {
@@ -107,8 +129,8 @@ export const transformCSVData = (
     items.push(item as RundownItem);
   });
 
-  console.log('CSV Transform - Final result:', { items });
-  return { items };
+  console.log('CSV Transform - Final result:', { items, newColumns });
+  return { items, newColumns };
 };
 
 export const validateCSVData = (csvRows: any[][]): boolean => {

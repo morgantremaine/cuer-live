@@ -11,8 +11,6 @@ import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
-import { CSVImportResult } from '@/utils/csvImport';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface MobileToolbarProps {
   onAddRow: () => void;
@@ -33,8 +31,6 @@ interface MobileToolbarProps {
   onBackward: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
-  onCSVImport?: (result: CSVImportResult) => void;
-  existingColumns?: Column[];
 }
 
 const MobileToolbar = ({
@@ -55,9 +51,7 @@ const MobileToolbar = ({
   onForward,
   onBackward,
   rundownTitle,
-  rundownData,
-  onCSVImport,
-  existingColumns
+  rundownData
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -89,8 +83,6 @@ const MobileToolbar = ({
               isMobile={true}
               rundownTitle={rundownTitle}
               rundownData={rundownData}
-              onCSVImport={onCSVImport}
-              existingColumns={existingColumns}
             />
           </DropdownMenuContent>
         </DropdownMenu>
