@@ -1,4 +1,3 @@
-
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -44,12 +43,14 @@ export const useRowStyling = ({
 
   // Add selection styling with ring outline for both headers and regular rows
   if (isSelected) {
-    // Use !important classes and make header selection more prominent
+    // Use ring outline for selection indication
     rowClass += ' !ring-2 !ring-blue-500 !ring-inset';
+    
     if (isHeader) {
-      // Make header selection much more visible
-      rowClass += ' !bg-blue-200 !dark:bg-blue-800 !border-blue-500';
+      // For headers, only add the ring - don't change background color
+      // The header keeps its original bg-muted styling
     } else {
+      // For regular rows, add subtle background highlight
       rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
   }
