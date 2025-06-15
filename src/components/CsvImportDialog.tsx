@@ -145,10 +145,10 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-background border border-border">
         <DialogHeader>
-          <DialogTitle>Import CSV</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-foreground">Import CSV</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Upload a CSV file to create a new rundown. The columns will be automatically mapped to rundown fields.
           </DialogDescription>
         </DialogHeader>
@@ -158,16 +158,16 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                 dragActive 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
-                  : 'border-gray-300 dark:border-gray-600'
+                  ? 'border-primary bg-primary/5' 
+                  : 'border-border'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
             >
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-sm text-muted-foreground mb-2">
                 {isProcessing ? 'Processing file...' : 'Drag and drop your CSV file here, or'}
               </p>
               <Button
@@ -187,24 +187,24 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center space-x-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                <FileText className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-green-800 dark:text-green-200">
+              <div className="flex items-center space-x-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-200 flex-1">
                   {fileName}
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={resetImport}
-                  className="ml-auto"
+                  className="h-auto p-1 hover:bg-green-500/10"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
 
               {previewData && (
-                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3">
-                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-2 font-medium">
                     Import Preview:
                   </p>
                   <ul className="text-xs space-y-1 text-blue-700 dark:text-blue-300">
@@ -220,21 +220,21 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
                 </div>
               )}
 
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <div className="bg-muted/50 border border-border rounded-lg p-3">
+                <p className="text-sm text-muted-foreground mb-2 font-medium">
                   Data Preview ({csvData.length - 1} rows):
                 </p>
                 <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
-                  <div className="font-medium">
+                  <div className="font-medium text-foreground">
                     {csvData[0]?.join(' | ')}
                   </div>
                   {csvData.slice(1, 4).map((row, index) => (
-                    <div key={index} className="text-gray-500">
+                    <div key={index} className="text-muted-foreground">
                       {row.join(' | ')}
                     </div>
                   ))}
                   {csvData.length > 4 && (
-                    <div className="text-gray-400">
+                    <div className="text-muted-foreground/70">
                       ... and {csvData.length - 4} more rows
                     </div>
                   )}
@@ -244,7 +244,7 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
           )}
         </div>
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-end space-x-2 pt-4 border-t border-border">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

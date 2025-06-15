@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload } from 'lucide-react';
@@ -6,6 +7,7 @@ import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import { CsvImportDialog } from '@/components/CsvImportDialog';
+import { Button } from '@/components/ui/button';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -128,13 +130,14 @@ const Dashboard = () => {
           {/* Create New and Import Buttons */}
           <div className="flex gap-4">
             <CreateNewButton onClick={handleCreateNew} />
-            <button
+            <Button
               onClick={handleCsvImport}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              size="lg"
+              className="bg-green-600 hover:bg-green-700 text-white border-0"
             >
-              <Upload className="h-5 w-5" />
+              <Upload className="h-5 w-5 mr-2" />
               Import CSV
-            </button>
+            </Button>
           </div>
           
           {/* Active Rundowns Section */}
