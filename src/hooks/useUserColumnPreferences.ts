@@ -32,14 +32,17 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
+  const isLoadingRef = useRef(false);
 
   // Load user's column preferences for this rundown
   const loadColumnPreferences = useCallback(async () => {
-    if (!user?.id || !rundownId) {
+    if (!user?.id || !rundownId || isLoadingRef.current) {
       setColumns(defaultColumns);
       setIsLoading(false);
       return;
     }
+
+    isLoadingRef.current = true;
 
     try {
       const { data, error } = await supabase
@@ -53,8 +56,10 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         console.error('Error loading column preferences:', error);
         setColumns(defaultColumns);
       } else if (data?.column_layout) {
-        setColumns(Array.isArray(data.column_layout) ? data.column_layout : defaultColumns);
-        lastSavedRef.current = JSON.stringify(data.column_layout);
+        const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
+        setColumns(loadedColumns);
+        lastSavedRef.current = JSON.stringify(loadedColumns);
+        console.log('✅ Loaded user column preferences:', loadedColumns.length, 'columns');
       } else {
         setColumns(defaultColumns);
         lastSavedRef.current = JSON.stringify(defaultColumns);
@@ -64,6 +69,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       setColumns(defaultColumns);
     } finally {
       setIsLoading(false);
+      isLoadingRef.current = false;
     }
   }, [user?.id, rundownId]);
 
@@ -108,10 +114,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }, 1000);
   }, [user?.id, rundownId]);
 
-  // Update columns and trigger save
+  // Update columns and trigger save - with immediate state update
   const updateColumns = useCallback((newColumns: Column[]) => {
+    console.log('🔄 Updating columns immediately:', newColumns.length);
     setColumns(newColumns);
-    saveColumnPreferences(newColumns);
+    // Only save if we're not currently loading
+    if (!isLoadingRef.current) {
+      saveColumnPreferences(newColumns);
+    }
   }, [saveColumnPreferences]);
 
   // Load preferences when rundown or user changes

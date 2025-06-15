@@ -12,7 +12,7 @@ interface LayoutManagerProps {
   onUpdateLayout: (layoutId: string, layoutName: string, columns: Column[]) => Promise<void>;
   onRenameLayout: (layoutId: string, newName: string) => Promise<void>;
   onDeleteLayout: (layoutId: string) => Promise<void>;
-  onLoadLayout: (layout: any) => void;
+  onLoadLayout: (columns: Column[]) => void;
 }
 
 const LayoutManager = ({
@@ -64,9 +64,17 @@ const LayoutManager = ({
   };
 
   const handleLoadLayout = (layout: any) => {
-    // CRITICAL FIX: Pass only the columns array, not the entire layout object
-    console.log('Loading layout with columns:', layout.columns);
-    onLoadLayout(layout.columns);
+    // CRITICAL FIX: Ensure we pass only the columns array, and validate it's an array
+    if (layout && Array.isArray(layout.columns)) {
+      console.log('Loading layout with columns:', layout.columns);
+      onLoadLayout(layout.columns);
+    } else if (Array.isArray(layout)) {
+      // Handle case where layout is already the columns array
+      console.log('Loading columns array directly:', layout);
+      onLoadLayout(layout);
+    } else {
+      console.error('Invalid layout format:', layout);
+    }
     setShowLoadLayout(false);
   };
 

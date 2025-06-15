@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -43,6 +44,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       if (!Array.isArray(prev)) return [newColumn];
       const newColumns = [...prev];
       newColumns.splice(1, 0, newColumn);
+      console.log('🔄 Adding new column:', newColumn.name, 'New total:', newColumns.length);
       return newColumns;
     });
     
@@ -54,6 +56,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
     if (!Array.isArray(newColumns)) return;
+    console.log('🔄 Reordering columns to:', newColumns.length, 'columns');
     setColumns(newColumns);
     if (markAsChanged) {
       markAsChanged();
@@ -64,6 +67,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     setColumns(prev => {
       if (!Array.isArray(prev)) return [];
       const filtered = prev.filter(col => col.id !== columnId);
+      console.log('🗑️ Deleting column:', columnId, 'Remaining:', filtered.length);
       return filtered;
     });
     if (markAsChanged) {
@@ -80,6 +84,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
         return col;
       });
+      console.log('✏️ Renaming column:', columnId, 'to:', newName);
       return updated;
     });
     if (markAsChanged) {
@@ -97,6 +102,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
         return col;
       });
+      console.log('👁️ Toggling visibility for column:', columnId);
       return updated;
     });
     if (markAsChanged) {
@@ -105,7 +111,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   }, [markAsChanged]);
 
   const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
-    console.log('🔄 handleUpdateColumnWidth called:', { columnId, width });
     setColumns(prev => {
       if (!Array.isArray(prev)) return [];
       const updated = prev.map(col => {
@@ -119,7 +124,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     
     // Immediately mark as changed for column width updates
     if (markAsChanged) {
-      console.log('🚀 Calling markAsChanged for column width update');
       markAsChanged();
     }
   }, [markAsChanged]);
@@ -130,6 +134,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       console.error('handleLoadLayout: layoutColumns is not an array', layoutColumns);
       return;
     }
+
+    console.log('📥 Loading layout with', layoutColumns.length, 'columns');
 
     setColumns(prevColumns => {
       // Ensure prevColumns is an array
@@ -171,7 +177,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return col;
       });
 
-      // Merge updated layout columns with essential built-in columns
+      // Use the layout columns directly, ensuring essential columns are included
       const mergedColumns: Column[] = [];
       const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
 
@@ -187,18 +193,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
       });
 
-      // Only mark as changed if columns are actually different
-      const isSame = prevColumns.length === mergedColumns.length && 
-        prevColumns.every((col, index) => 
-          col.id === mergedColumns[index]?.id && 
-          col.name === mergedColumns[index]?.name &&
-          col.isVisible === mergedColumns[index]?.isVisible &&
-          col.width === mergedColumns[index]?.width
-        );
-      
-      if (isSame) {
-        return prevColumns; // Don't update if columns are the same
-      }
+      console.log('✅ Layout loaded with', mergedColumns.length, 'columns');
       
       if (markAsChanged) {
         markAsChanged();
