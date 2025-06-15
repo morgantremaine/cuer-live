@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { CrewMember } from '@/types/crew';
@@ -50,7 +49,9 @@ const initialState: BlueprintState = {
 };
 
 function blueprintReducer(state: BlueprintState, action: BlueprintAction): BlueprintState {
-  console.log('📋 Blueprint reducer action:', action.type, action.payload);
+  // Safe logging that handles actions with and without payload
+  const logMessage = 'payload' in action ? action.payload : 'no payload';
+  console.log('📋 Blueprint reducer action:', action.type, logMessage);
   
   switch (action.type) {
     case 'SET_LOADING':
