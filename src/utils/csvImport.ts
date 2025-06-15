@@ -48,7 +48,6 @@ export const transformCSVData = (
         // Handle special fields - fix the name mapping issue
         switch (mapping.rundownColumn) {
           case 'name':
-          case 'segmentName':
             item.name = String(value || '');
             break;
           case 'duration':
@@ -95,8 +94,10 @@ export const transformCSVData = (
       }
     });
 
-    // Ensure required fields have defaults - but don't override if already set
-    item.name = item.name || `Imported Item ${rowIndex + 1}`;
+    // Set defaults only if the fields weren't set from CSV mapping
+    if (!item.name) {
+      item.name = `Imported Item ${rowIndex + 1}`;
+    }
     item.duration = item.duration || "00:30";
     item.script = item.script || '';
     item.notes = item.notes || '';
