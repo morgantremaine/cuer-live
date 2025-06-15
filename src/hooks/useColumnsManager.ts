@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -14,7 +13,6 @@ export interface Column {
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>([
     { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
@@ -144,10 +142,9 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return layoutColumns; // Return the layout columns as fallback
       }
 
-      // Define essential built-in columns that should always be preserved
+      // Define essential built-in columns that should always be preserved (removed talent)
       const essentialBuiltInColumns = [
         { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
