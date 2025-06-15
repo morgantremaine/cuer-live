@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +31,8 @@ export const useRealtimeRundown = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const isEditingRef = useRef(false);
   const lastContentHashRef = useRef<string>('');
+  const currentRundownIdRef = useRef<string | null>(null);
+  const currentUserIdRef = useRef<string | null>(null);
 
   // Stable refs to prevent infinite loops
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
@@ -45,20 +46,27 @@ export const useRealtimeRundown = ({
   stableUpdateSavedSignatureRef.current = updateSavedSignature;
   stableSetApplyingRemoteUpdateRef.current = setApplyingRemoteUpdate;
 
+  // Keep current values in refs
+  currentRundownIdRef.current = rundownId;
+  currentUserIdRef.current = user?.id || null;
+
   // Enhanced tracking of our own updates
   const trackOwnUpdate = useCallback((timestamp: string) => {
+    console.log('🏷️ Tracking own update:', timestamp);
     lastOwnUpdateRef.current = timestamp;
     ownUpdateTrackingRef.current.add(timestamp);
     
-    // Clean up old tracked updates after 10 seconds (reduced from 30)
+    // Clean up old tracked updates after 15 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
-    }, 10000);
+      console.log('🧹 Cleaned up tracked update:', timestamp);
+    }, 15000);
   }, []);
 
   // Set editing state
   const setEditingState = useCallback((editing: boolean) => {
     isEditingRef.current = editing;
+    console.log('✏️ Editing state changed:', editing);
   }, []);
 
   // Create content hash to detect actual content changes
@@ -77,13 +85,17 @@ export const useRealtimeRundown = ({
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     const updateTimestamp = payload.new?.updated_at;
     const userIdFromUpdate = payload.new?.user_id;
+    const currentUserId = currentUserIdRef.current;
+    const currentRundownId = currentRundownIdRef.current;
     
     console.log('📡 Realtime update received:', {
       timestamp: updateTimestamp,
       fromUserId: userIdFromUpdate,
-      currentUserId: user?.id,
+      currentUserId: currentUserId,
       rundownId: payload.new?.id,
-      isOwnUpdate: userIdFromUpdate === user?.id
+      currentRundownId: currentRundownId,
+      isOwnUpdate: userIdFromUpdate === currentUserId,
+      isTrackedUpdate: ownUpdateTrackingRef.current.has(updateTimestamp)
     });
     
     // Skip if this is our own tracked update
@@ -96,13 +108,13 @@ export const useRealtimeRundown = ({
     }
     
     // Skip if the user_id matches (if available)
-    if (userIdFromUpdate === user?.id) {
+    if (userIdFromUpdate && userIdFromUpdate === currentUserId) {
       console.log('⏭️ Skipping - user ID matches');
       return;
     }
 
     // Skip if not for the current rundown
-    if (payload.new?.id !== rundownId) {
+    if (payload.new?.id !== currentRundownId) {
       console.log('⏭️ Skipping - different rundown');
       return;
     }
@@ -121,7 +133,8 @@ export const useRealtimeRundown = ({
       isShowcallerOnly: isShowcallerOnlyUpdate,
       isEditing: isEditingRef.current,
       hasUnsavedChanges,
-      isProcessing: isProcessingUpdate
+      isProcessing: isProcessingUpdate,
+      contentHash: currentContentHash.substring(0, 50) + '...'
     });
 
     // Allow showcaller updates through unless actively editing
@@ -140,7 +153,7 @@ export const useRealtimeRundown = ({
     lastUpdateTimestampRef.current = updateTimestamp;
     lastContentHashRef.current = currentContentHash;
 
-    console.log('🔄 Processing remote update');
+    console.log('🔄 Processing remote update from teammate');
 
     // Set processing flags
     stableSetIsProcessingUpdateRef.current(true);
@@ -179,7 +192,7 @@ export const useRealtimeRundown = ({
             name
           )
         `)
-        .eq('id', rundownId)
+        .eq('id', currentRundownId)
         .single();
 
       if (error) {
@@ -258,26 +271,21 @@ export const useRealtimeRundown = ({
         stableSetIsProcessingUpdateRef.current(false);
       }, 150);
     }
-  }, [rundownId, user?.id, hasUnsavedChanges, isProcessingUpdate, toast, createContentHash]);
+  }, [hasUnsavedChanges, isProcessingUpdate, toast, createContentHash]);
 
   useEffect(() => {
-    // Clear any existing subscription
-    if (subscriptionRef.current) {
-      console.log('🧹 Cleaning up existing realtime subscription');
-      supabase.removeChannel(subscriptionRef.current);
-      subscriptionRef.current = null;
-    }
-
-    // Only set up subscription if we have the required data
-    if (!rundownId || !user) {
-      console.log('⏸️ Skipping realtime setup - missing rundown ID or user');
+    // Only set up subscription if we have the required data and it's different
+    if (!rundownId || !user || subscriptionRef.current) {
+      if (!rundownId || !user) {
+        console.log('⏸️ Skipping realtime setup - missing rundown ID or user');
+      }
       return;
     }
 
     console.log('✅ Setting up realtime subscription for rundown:', rundownId);
 
     const channel = supabase
-      .channel(`rundown-content-${rundownId}`)
+      .channel(`rundown-content-${rundownId}-${user.id}`) // Include user ID to make channel unique per user
       .on(
         'postgres_changes',
         {
@@ -289,7 +297,7 @@ export const useRealtimeRundown = ({
         handleRealtimeUpdate
       )
       .subscribe((status) => {
-        console.log('📡 Realtime subscription status:', status);
+        console.log('📡 Realtime subscription status:', status, 'for rundown:', rundownId);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to rundown content updates');
         } else if (status === 'CHANNEL_ERROR') {
@@ -306,7 +314,7 @@ export const useRealtimeRundown = ({
         subscriptionRef.current = null;
       }
     };
-  }, [rundownId, user, handleRealtimeUpdate]);
+  }, [rundownId, user?.id, handleRealtimeUpdate]);
 
   return {
     isConnected: !!subscriptionRef.current,
