@@ -2,6 +2,7 @@
 import Papa from 'papaparse';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { isHeaderItem } from '@/types/rundown';
 
 export interface CSVExportData {
   items: RundownItem[];
@@ -9,22 +10,51 @@ export interface CSVExportData {
 }
 
 const getRowNumber = (index: number, items: RundownItem[]): string => {
-  let regularRowCount = 0;
-  let headerCount = 0;
+  if (index < 0 || index >= items.length) return '';
   
+  const item = items[index];
+  if (!item) return '';
+  
+  // Calculate row numbers based purely on position and type, matching rundown display
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  
+  // For headers, count how many headers we've seen so far
+  if (isHeaderItem(item)) {
+    let headerCount = 0;
+    for (let i = 0; i <= index; i++) {
+      if (items[i] && isHeaderItem(items[i])) {
+        headerCount++;
+      }
+    }
+    return letters[headerCount - 1] || 'A';
+  }
+  
+  // For regular items, find which segment they belong to and count within that segment
+  let currentSegmentLetter = 'A';
+  let itemCountInSegment = 0;
+  
+  // Go through items up to current index
   for (let i = 0; i <= index; i++) {
-    if (items[i].type === 'header') {
-      headerCount++;
+    const currentItem = items[i];
+    if (!currentItem) continue;
+    
+    if (isHeaderItem(currentItem)) {
+      // Update which segment we're in based on header count
+      let headerCount = 0;
+      for (let j = 0; j <= i; j++) {
+        if (items[j] && isHeaderItem(items[j])) {
+          headerCount++;
+        }
+      }
+      currentSegmentLetter = letters[headerCount - 1] || 'A';
+      itemCountInSegment = 0; // Reset count for new segment
     } else {
-      regularRowCount++;
+      // This is a regular item
+      itemCountInSegment++;
     }
   }
   
-  if (items[index].type === 'header') {
-    return String.fromCharCode(65 + headerCount - 1); // A, B, C, etc.
-  } else {
-    return String(regularRowCount);
-  }
+  return `${currentSegmentLetter}${itemCountInSegment}`;
 };
 
 export const exportRundownAsCSV = (data: CSVExportData, filename: string = 'rundown'): void => {
@@ -43,13 +73,13 @@ export const exportRundownAsCSV = (data: CSVExportData, filename: string = 'rund
   const csvData = data.items.map((item, index) => {
     const row: any = {};
     
-    // Add the row number as the first column
+    // Add the row number as the first column using proper numbering logic
     row['#'] = getRowNumber(index, data.items);
     
     // Add data for each visible column
     data.visibleColumns.forEach(column => {
       // For headers, handle special cases
-      if (item.type === 'header') {
+      if (isHeaderItem(item)) {
         if (column.key === 'name' || column.key === 'segmentName') {
           // Show the header name/description instead of just the letter
           row[column.name] = item.name || '';
