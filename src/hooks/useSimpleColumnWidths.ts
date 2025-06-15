@@ -1,15 +1,14 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Column } from './useColumnsManager';
 
-// Define minimum widths for different column types - reduced for more flexibility
+// Define minimum widths for different column types - optimized for content
 const getMinimumWidth = (column: Column): number => {
   switch (column.key) {
     case 'duration':
     case 'startTime':
     case 'endTime':
     case 'elapsedTime':
-      return 80; // Reduced from 120px to 80px for timing columns
+      return 70; // Reduced to 70px to match time format content (HH:MM:SS)
     case 'segmentName':
       return 100; // Reduced from 150px to 100px
     case 'talent':
