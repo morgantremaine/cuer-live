@@ -1,13 +1,14 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { RundownItem } from '@/types/rundown';
+import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 export const createDefaultRundownItems = (): RundownItem[] => [
   {
     id: uuidv4(),
-    name: 'Segment A',
+    name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
     type: 'header',
-    duration: '00:00:00',
+    duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
     startTime: '',
     endTime: '',
     elapsedTime: '',
@@ -23,9 +24,9 @@ export const createDefaultRundownItems = (): RundownItem[] => [
   },
   {
     id: uuidv4(),
-    name: '',
+    name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
     type: 'regular',
-    duration: '00:00:00',
+    duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
     startTime: '',
     endTime: '',
     elapsedTime: '',
@@ -41,9 +42,9 @@ export const createDefaultRundownItems = (): RundownItem[] => [
   },
   {
     id: uuidv4(),
-    name: '',
+    name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
     type: 'regular',
-    duration: '00:00:00',
+    duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
     startTime: '',
     endTime: '',
     elapsedTime: '',
@@ -59,9 +60,9 @@ export const createDefaultRundownItems = (): RundownItem[] => [
   },
   {
     id: uuidv4(),
-    name: '',
+    name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
     type: 'regular',
-    duration: '00:00:00',
+    duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
     startTime: '',
     endTime: '',
     elapsedTime: '',
@@ -77,9 +78,9 @@ export const createDefaultRundownItems = (): RundownItem[] => [
   },
   {
     id: uuidv4(),
-    name: '',
+    name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
     type: 'regular',
-    duration: '00:00:00',
+    duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
     startTime: '',
     endTime: '',
     elapsedTime: '',
