@@ -159,8 +159,8 @@ const Dashboard = () => {
       />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-12">
-          {/* Create New and Import Buttons */}
-          <div className="mb-8 flex items-center space-x-4">
+          {/* Create New and Import Buttons - Fixed alignment */}
+          <div className="flex items-center space-x-4">
             <CreateNewButton onClick={handleCreateNew} />
             <CSVImportDialog onImport={handleCSVImport} existingColumns={columns}>
               <Button 

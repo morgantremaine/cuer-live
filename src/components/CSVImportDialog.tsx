@@ -28,6 +28,18 @@ interface CSVPreviewData {
   rows: any[][];
 }
 
+// Default columns that match the actual rundown columns from useColumnsManager
+const DEFAULT_RUNDOWN_COLUMNS = [
+  { key: 'name', name: 'Segment Name' },
+  { key: 'script', name: 'Script' },
+  { key: 'duration', name: 'Duration' },
+  { key: 'startTime', name: 'Start' },
+  { key: 'endTime', name: 'End' },
+  { key: 'elapsedTime', name: 'Elapsed' },
+  { key: 'notes', name: 'Notes' },
+  { key: 'type', name: 'Type' }
+];
+
 const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -256,7 +268,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                           <SelectValue placeholder="Select column..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {existingColumns.map((col) => (
+                          {DEFAULT_RUNDOWN_COLUMNS.map((col) => (
                             <SelectItem key={col.key} value={col.key}>
                               {col.name}
                             </SelectItem>

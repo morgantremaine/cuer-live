@@ -41,7 +41,7 @@ export const transformCSVData = (
     const item: Partial<RundownItem> = {
       id: uuidv4(),
       type: 'regular', // Default to regular
-      rowNumber: String(index + 1),
+      rowNumber: String(index + 1), // Fix: Convert to string
       startTime: '',
       endTime: '',
       elapsedTime: '00:00',
