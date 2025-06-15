@@ -23,7 +23,7 @@ const SharedRundown = () => {
       
       setLayoutLoading(true);
       try {
-        // First, get the shared layout configuration
+        // Get the shared layout configuration
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
           .select('layout_id')
@@ -37,7 +37,7 @@ const SharedRundown = () => {
         }
 
         // If there's a specific layout set, load it
-        if (sharedLayoutData?.layout_id) {
+        if (sharedLayoutData && sharedLayoutData.layout_id) {
           const { data: layoutData, error: layoutError } = await supabase
             .from('column_layouts')
             .select('columns, name')
@@ -46,9 +46,16 @@ const SharedRundown = () => {
 
           if (layoutError) {
             console.error('Error loading layout:', layoutError);
-          } else if (layoutData?.columns) {
+            // Fallback to default
+            setLayoutColumns(null);
+            setLayoutName('Default Layout');
+          } else if (layoutData) {
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
+          } else {
+            // Layout not found, fallback to default
+            setLayoutColumns(null);
+            setLayoutName('Default Layout');
           }
         } else {
           // No specific layout set, use default
@@ -57,6 +64,9 @@ const SharedRundown = () => {
         }
       } catch (error) {
         console.error('Failed to load shared layout:', error);
+        // Fallback to default
+        setLayoutColumns(null);
+        setLayoutName('Default Layout');
       } finally {
         setLayoutLoading(false);
       }

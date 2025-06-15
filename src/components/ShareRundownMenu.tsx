@@ -29,7 +29,8 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   const {
     sharedLayout,
     availableLayouts,
-    updateSharedLayout
+    updateSharedLayout,
+    isLoading
   } = useSharedRundownLayout(rundownId);
 
   // Always use the same permanent URL
@@ -62,9 +63,14 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   };
 
   const getCurrentLayoutName = () => {
-    if (!sharedLayout?.layout_id) return 'Default Layout';
+    if (!sharedLayout || !sharedLayout.layout_id) return 'Default Layout';
     const layout = availableLayouts.find(l => l.id === sharedLayout.layout_id);
     return layout?.name || 'Unknown Layout';
+  };
+
+  const isCurrentLayout = (layoutId: string | null) => {
+    if (!layoutId && !sharedLayout?.layout_id) return true;
+    return sharedLayout?.layout_id === layoutId;
   };
 
   return (
@@ -98,7 +104,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
             <DropdownMenuItem onClick={() => handleSetSharedLayout(null, 'Default Layout')}>
               <span className="mr-2">📋</span>
               Default Layout
-              {!sharedLayout?.layout_id && <Check className="h-4 w-4 ml-auto text-green-600" />}
+              {isCurrentLayout(null) && <Check className="h-4 w-4 ml-auto text-green-600" />}
             </DropdownMenuItem>
             
             {availableLayouts.map((layout) => (
@@ -108,7 +114,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
               >
                 <span className="mr-2">💾</span>
                 {layout.name}
-                {sharedLayout?.layout_id === layout.id && <Check className="h-4 w-4 ml-auto text-green-600" />}
+                {isCurrentLayout(layout.id) && <Check className="h-4 w-4 ml-auto text-green-600" />}
               </DropdownMenuItem>
             ))}
             
