@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,13 +24,13 @@ export const transformCSVData = (
   const items: RundownItem[] = [];
 
   // Create new columns from mappings
-  columnMappings.forEach((mapping) => {
+  columnMappings.forEach((mapping, index) => {
     if (mapping.isNewColumn && mapping.newColumnName) {
       newColumns.push({
         key: mapping.rundownColumn,
         name: mapping.newColumnName,
         visible: true,
-        order: String(newColumns.length), // Fix: Convert number to string
+        order: String(index), // Fix: Use index and convert to string
         width: 150,
       });
     }
