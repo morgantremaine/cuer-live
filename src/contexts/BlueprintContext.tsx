@@ -3,6 +3,7 @@ import { BlueprintList } from '@/types/blueprint';
 import { CrewMember } from '@/types/crew';
 import { CameraPlotScene } from '@/hooks/cameraPlot/core/useCameraPlotData';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
+import { useBlueprintPartialSave } from '@/hooks/blueprint/useBlueprintPartialSave';
 import { useBlueprintRealtimeSync } from '@/hooks/blueprint/useBlueprintRealtimeSync';
 
 export interface BlueprintState {
@@ -153,7 +154,23 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const initializationRef = useRef(false);
 
-  const { loadBlueprint, saveBlueprint: persistBlueprint } = useBlueprintPersistence(
+  const { loadBlueprint } = useBlueprintPersistence(
+    rundownId,
+    rundownTitle,
+    state.showDate,
+    savedBlueprint,
+    setSavedBlueprint
+  );
+
+  // Use partial save hooks for different components
+  const {
+    saveListsOnly,
+    saveNotesOnly,
+    saveCrewDataOnly,
+    saveCameraPlotsOnly,
+    saveComponentOrderOnly,
+    saveShowDateOnly
+  } = useBlueprintPartialSave(
     rundownId,
     rundownTitle,
     state.showDate,
@@ -230,63 +247,39 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     initializeBlueprint();
   }, [rundownId, loadBlueprint, state.isInitialized]);
 
-  // Enhanced debounced save function with comprehensive logging
-  const debouncedSave = React.useCallback(async () => {
-    if (!state.isInitialized) {
-      console.log('📋 Save skipped - not initialized yet');
-      return;
-    }
-    
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        console.log('📋 Starting save operation with data:', {
-          lists: state.lists.length,
-          showDate: state.showDate,
-          notes: state.notes.length,
-          crewData: state.crewData.length,
-          cameraPlots: state.cameraPlots.length,
-          componentOrder: state.componentOrder
-        });
-        
-        // Enhanced logging for save operation
-        console.log('📋 SAVE OPERATION - Full lists data being saved:');
-        state.lists.forEach((list, index) => {
-          console.log(`📋 SAVE OPERATION - List ${index}: ${list.name} (${list.id})`);
-          console.log(`📋 SAVE OPERATION - List ${index} checkedItems:`, list.checkedItems);
-          console.log(`📋 SAVE OPERATION - List ${index} items count:`, list.items.length);
-        });
-        console.log('📋 SAVE OPERATION - Component order being saved:', state.componentOrder);
-        
-        dispatch({ type: 'SET_SAVING', payload: true });
-        dispatch({ type: 'SET_ERROR', payload: null });
-        
-        await persistBlueprint(
-          state.lists,
-          true, // silent save
-          state.showDate,
-          state.notes,
-          state.crewData,
-          state.cameraPlots,
-          state.componentOrder
-        );
-        
-        const timestamp = new Date().toISOString();
-        dispatch({ type: 'SET_LAST_SAVED', payload: timestamp });
-        console.log('📋 Blueprint saved successfully at', timestamp);
-      } catch (error) {
-        console.error('📋 Failed to save blueprint:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Failed to save blueprint' });
-      } finally {
-        dispatch({ type: 'SET_SAVING', payload: false });
+  // Enhanced debounced save function with partial saves
+  const createDebouncedSave = React.useCallback((saveFunction: () => Promise<void>, delay: number = 1000) => {
+    return () => {
+      if (!state.isInitialized) {
+        console.log('📋 Save skipped - not initialized yet');
+        return;
       }
-    }, 1000);
-  }, [state, persistBlueprint]);
+      
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      saveTimeoutRef.current = setTimeout(async () => {
+        try {
+          dispatch({ type: 'SET_SAVING', payload: true });
+          dispatch({ type: 'SET_ERROR', payload: null });
+          
+          await saveFunction();
+          
+          const timestamp = new Date().toISOString();
+          dispatch({ type: 'SET_LAST_SAVED', payload: timestamp });
+          console.log('📋 Blueprint component saved successfully at', timestamp);
+        } catch (error) {
+          console.error('📋 Failed to save blueprint component:', error);
+          dispatch({ type: 'SET_ERROR', payload: 'Failed to save blueprint' });
+        } finally {
+          dispatch({ type: 'SET_SAVING', payload: false });
+        }
+      }, delay);
+    };
+  }, [state.isInitialized]);
 
-  // Action creators with enhanced logging and immediate save triggers
+  // Action creators with component-specific partial saves
   const updateLists = React.useCallback((lists: BlueprintList[]) => {
     console.log('📋 Context updateLists called with:', lists.length, 'lists');
     console.log('📋 Context updateLists - detailed data:');
@@ -294,23 +287,29 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
       console.log(`📋 Context updateLists - List ${index}: ${list.name} - checkedItems:`, list.checkedItems);
     });
     dispatch({ type: 'UPDATE_LISTS', payload: lists });
+    
+    const debouncedSave = createDebouncedSave(() => saveListsOnly(lists));
     debouncedSave();
-  }, [debouncedSave]);
+  }, [createDebouncedSave, saveListsOnly]);
 
   const addList = React.useCallback((list: BlueprintList) => {
     console.log('📋 Context addList called with:', list.name);
     console.log('📋 Context addList - checkedItems:', list.checkedItems);
     const newLists = [...state.lists, list];
     dispatch({ type: 'UPDATE_LISTS', payload: newLists });
+    
+    const debouncedSave = createDebouncedSave(() => saveListsOnly(newLists));
     debouncedSave();
-  }, [state.lists, debouncedSave]);
+  }, [state.lists, createDebouncedSave, saveListsOnly]);
 
   const deleteList = React.useCallback((listId: string) => {
     console.log('📋 Context deleteList called for:', listId);
     const newLists = state.lists.filter(list => list.id !== listId);
     dispatch({ type: 'UPDATE_LISTS', payload: newLists });
+    
+    const debouncedSave = createDebouncedSave(() => saveListsOnly(newLists));
     debouncedSave();
-  }, [state.lists, debouncedSave]);
+  }, [state.lists, createDebouncedSave, saveListsOnly]);
 
   const renameList = React.useCallback((listId: string, newName: string) => {
     console.log('📋 Context renameList called:', listId, 'to:', newName);
@@ -318,8 +317,10 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
       list.id === listId ? { ...list, name: newName } : list
     );
     dispatch({ type: 'UPDATE_LISTS', payload: updatedLists });
+    
+    const debouncedSave = createDebouncedSave(() => saveListsOnly(updatedLists));
     debouncedSave();
-  }, [state.lists, debouncedSave]);
+  }, [state.lists, createDebouncedSave, saveListsOnly]);
 
   const updateCheckedItems = React.useCallback((listId: string, checkedItems: Record<string, boolean>) => {
     console.log('📋 Context updateCheckedItems called for:', listId, 'with', Object.keys(checkedItems).length, 'items');
@@ -329,43 +330,54 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     );
     console.log('📋 Context updateCheckedItems - updated list:', updatedLists.find(l => l.id === listId));
     dispatch({ type: 'UPDATE_LISTS', payload: updatedLists });
+    
+    const debouncedSave = createDebouncedSave(() => saveListsOnly(updatedLists));
     debouncedSave();
-  }, [state.lists, debouncedSave]);
+  }, [state.lists, createDebouncedSave, saveListsOnly]);
 
   const updateShowDate = React.useCallback((date: string) => {
     console.log('📋 Context updateShowDate called with:', date);
     dispatch({ type: 'UPDATE_SHOW_DATE', payload: date });
+    
+    const debouncedSave = createDebouncedSave(() => saveShowDateOnly(date));
     debouncedSave();
-  }, [debouncedSave]);
+  }, [createDebouncedSave, saveShowDateOnly]);
 
   const updateNotes = React.useCallback((notes: string) => {
     console.log('📋 Context updateNotes called with', notes.length, 'characters');
     dispatch({ type: 'UPDATE_NOTES', payload: notes });
+    
+    const debouncedSave = createDebouncedSave(() => saveNotesOnly(notes));
     debouncedSave();
-  }, [debouncedSave]);
+  }, [createDebouncedSave, saveNotesOnly]);
 
   const updateCrewData = React.useCallback((crewData: CrewMember[]) => {
     console.log('📋 Context updateCrewData called with', crewData.length, 'members');
     dispatch({ type: 'UPDATE_CREW_DATA', payload: crewData });
+    
+    const debouncedSave = createDebouncedSave(() => saveCrewDataOnly(crewData));
     debouncedSave();
-  }, [debouncedSave]);
+  }, [createDebouncedSave, saveCrewDataOnly]);
 
   const updateCameraPlots = React.useCallback((plots: CameraPlotScene[]) => {
     console.log('📋 Context updateCameraPlots called with', plots.length, 'plots');
     dispatch({ type: 'UPDATE_CAMERA_PLOTS', payload: plots });
+    
+    const debouncedSave = createDebouncedSave(() => saveCameraPlotsOnly(plots));
     debouncedSave();
-  }, [debouncedSave]);
+  }, [createDebouncedSave, saveCameraPlotsOnly]);
 
   const updateComponentOrder = React.useCallback((order: string[]) => {
     console.log('📋 Context updateComponentOrder called with:', order);
     dispatch({ type: 'UPDATE_COMPONENT_ORDER', payload: order });
+    
+    const debouncedSave = createDebouncedSave(() => saveComponentOrderOnly(order));
     debouncedSave();
-  }, [debouncedSave]);
+  }, [createDebouncedSave, saveComponentOrderOnly]);
 
   const saveBlueprint = React.useCallback(async () => {
-    console.log('📋 Manual save triggered');
-    await debouncedSave();
-  }, [debouncedSave]);
+    console.log('📋 Manual save triggered - this will now be handled by partial saves automatically');
+  }, []);
 
   const refreshBlueprint = React.useCallback(async () => {
     console.log('📋 Manual refresh triggered');

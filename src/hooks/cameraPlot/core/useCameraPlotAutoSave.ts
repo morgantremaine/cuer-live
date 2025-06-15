@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CameraPlotScene } from './useCameraPlotData';
-import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
+import { useBlueprintPartialSave } from '@/hooks/blueprint/useBlueprintPartialSave';
 
 export const useCameraPlotAutoSave = (
   plots: CameraPlotScene[],
@@ -15,21 +15,14 @@ export const useCameraPlotAutoSave = (
   const isSavingRef = useRef(false);
   const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
 
-  // Get blueprint persistence functions
-  const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
+  // Get partial save function for camera plots only
+  const { saveCameraPlotsOnly } = useBlueprintPartialSave(
     rundownId,
     rundownTitle,
     '', // showDate not needed for camera plots
     savedBlueprint,
     setSavedBlueprint
   );
-
-  // Load existing blueprint data on initialization
-  useEffect(() => {
-    if (rundownId && !savedBlueprint) {
-      loadBlueprint();
-    }
-  }, [rundownId, loadBlueprint, savedBlueprint]);
 
   useEffect(() => {
     if (!isInitialized || readOnly || isSavingRef.current) {
@@ -53,17 +46,11 @@ export const useCameraPlotAutoSave = (
           isSavingRef.current = true;
           
           try {
-            // Use correct parameter order for saveBlueprint
-            await saveBlueprint(
-              savedBlueprint?.lists || [], // updatedLists
-              true, // silent save
-              savedBlueprint?.show_date || null, // showDateOverride
-              savedBlueprint?.notes, // notes
-              savedBlueprint?.crew_data, // crewData
-              plots // cameraPlots
-            );
+            console.log('📷 Auto-saving camera plots only:', plots.length);
+            // Use partial save to only update camera plots
+            await saveCameraPlotsOnly(plots);
           } catch (error) {
-            console.error('Error auto-saving camera plots:', error);
+            console.error('📷 Error auto-saving camera plots:', error);
           } finally {
             isSavingRef.current = false;
           }
@@ -76,5 +63,5 @@ export const useCameraPlotAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, savedBlueprint, saveBlueprint]);
+  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, saveCameraPlotsOnly]);
 };

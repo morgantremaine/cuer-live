@@ -3,6 +3,15 @@ import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BlueprintList } from '@/types/blueprint';
 
+interface PartialBlueprintUpdate {
+  lists?: BlueprintList[];
+  showDate?: string;
+  notes?: string;
+  crewData?: any[];
+  cameraPlots?: any[];
+  componentOrder?: string[];
+}
+
 export const useBlueprintPersistence = (
   rundownId: string,
   rundownTitle: string,
@@ -161,7 +170,7 @@ export const useBlueprintPersistence = (
     }
   }, [rundownId]);
 
-  // Save blueprint to database - always save as team blueprint for collaboration
+  // Save blueprint to database - supports both full and partial updates
   const saveBlueprint = useCallback(async (
     lists: BlueprintList[],
     silent = false,
@@ -214,7 +223,7 @@ export const useBlueprintPersistence = (
         rundown_id: rundownId,
         rundown_title: rundownTitle || 'Untitled Rundown',
         user_id: user.id,
-        team_id: rundownData.team_id, // Always save as team blueprint
+        team_id: rundownData.team_id,
         lists: Array.isArray(lists) ? lists : [],
         show_date: safeDateValue(showDateOverride !== undefined ? showDateOverride : showDate),
         notes: notesOverride !== undefined ? notesOverride : (savedBlueprint?.notes || null),
@@ -302,8 +311,134 @@ export const useBlueprintPersistence = (
     }
   }, [rundownId, rundownTitle, showDate, savedBlueprint, setSavedBlueprint]);
 
+  // New partial save function - only updates specific fields
+  const savePartialBlueprint = useCallback(async (partialUpdate: PartialBlueprintUpdate, silent = true) => {
+    if (!rundownId) {
+      console.log('📋 Partial save skipped - no rundownId');
+      return;
+    }
+
+    try {
+      console.log('📋 Starting partial save operation for rundown:', rundownId, 'updating:', Object.keys(partialUpdate));
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('📋 Partial save skipped - no authenticated user');
+        return;
+      }
+
+      // Get the rundown to determine the team_id
+      const { data: rundownData, error: rundownError } = await supabase
+        .from('rundowns')
+        .select('team_id')
+        .eq('id', rundownId)
+        .single();
+
+      if (rundownError) {
+        console.error('📋 Error fetching rundown for partial save:', rundownError);
+        return;
+      }
+
+      if (!rundownData?.team_id) {
+        console.error('📋 Cannot partial save blueprint: no team_id found for rundown');
+        return;
+      }
+
+      // Get existing blueprint first
+      const { data: existingBlueprint, error: existingError } = await supabase
+        .from('blueprints')
+        .select('*')
+        .eq('rundown_id', rundownId)
+        .eq('team_id', rundownData.team_id)
+        .maybeSingle();
+
+      if (existingError && existingError.code !== 'PGRST116') {
+        console.error('📋 Error fetching existing blueprint for partial save:', existingError);
+        return;
+      }
+
+      // Create update object with only the fields that should be updated
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      // Only add fields that are explicitly provided in the partial update
+      if (partialUpdate.lists !== undefined) {
+        updateData.lists = partialUpdate.lists;
+        console.log('📋 PARTIAL SAVE - Updating lists:', partialUpdate.lists.length);
+      }
+      if (partialUpdate.showDate !== undefined) {
+        updateData.show_date = partialUpdate.showDate || null;
+        console.log('📋 PARTIAL SAVE - Updating show_date:', partialUpdate.showDate);
+      }
+      if (partialUpdate.notes !== undefined) {
+        updateData.notes = partialUpdate.notes || null;
+        console.log('📋 PARTIAL SAVE - Updating notes:', partialUpdate.notes?.length || 0, 'characters');
+      }
+      if (partialUpdate.crewData !== undefined) {
+        updateData.crew_data = partialUpdate.crewData;
+        console.log('📋 PARTIAL SAVE - Updating crew_data:', partialUpdate.crewData.length);
+      }
+      if (partialUpdate.cameraPlots !== undefined) {
+        updateData.camera_plots = partialUpdate.cameraPlots;
+        console.log('📋 PARTIAL SAVE - Updating camera_plots:', partialUpdate.cameraPlots.length);
+      }
+      if (partialUpdate.componentOrder !== undefined) {
+        updateData.component_order = partialUpdate.componentOrder;
+        console.log('📋 PARTIAL SAVE - Updating component_order:', partialUpdate.componentOrder);
+      }
+
+      let data, error;
+
+      if (existingBlueprint) {
+        console.log('📋 Partially updating existing blueprint:', existingBlueprint.id);
+        // Update existing blueprint with only the changed fields
+        ({ data, error } = await supabase
+          .from('blueprints')
+          .update(updateData)
+          .eq('id', existingBlueprint.id)
+          .select()
+          .single());
+      } else {
+        console.log('📋 Creating new blueprint with partial data');
+        // Create new blueprint with provided data and defaults
+        const newBlueprintData = {
+          rundown_id: rundownId,
+          rundown_title: rundownTitle || 'Untitled Rundown',
+          user_id: user.id,
+          team_id: rundownData.team_id,
+          lists: partialUpdate.lists || [],
+          show_date: partialUpdate.showDate || null,
+          notes: partialUpdate.notes || null,
+          crew_data: partialUpdate.crewData || [],
+          camera_plots: partialUpdate.cameraPlots || [],
+          component_order: partialUpdate.componentOrder || ['crew-list', 'camera-plot', 'scratchpad'],
+          updated_at: new Date().toISOString()
+        };
+
+        ({ data, error } = await supabase
+          .from('blueprints')
+          .insert(newBlueprintData)
+          .select()
+          .single());
+      }
+
+      if (error) {
+        console.error('📋 Database error in partial save:', error);
+        throw error;
+      }
+
+      console.log('📋 Partial blueprint save successful:', data.id);
+      console.log('📋 PARTIAL SAVE RESULT - Updated fields:', Object.keys(updateData));
+      setSavedBlueprint(data);
+    } catch (error) {
+      console.error('📋 Error in partial save:', error);
+      // Silent error handling - don't throw to prevent disrupting the UI
+    }
+  }, [rundownId, rundownTitle, setSavedBlueprint]);
+
   return {
     loadBlueprint,
-    saveBlueprint
+    saveBlueprint,
+    savePartialBlueprint
   };
 };
