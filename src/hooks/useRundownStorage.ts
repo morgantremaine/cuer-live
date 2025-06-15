@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { mapDatabaseToRundown, mapRundownToDatabase, mapRundownsFromDatabase } from './useRundownStorage/dataMapper';
 import { SavedRundown } from './useRundownStorage/types';
 import { RundownOperations } from './useRundownStorage/operations';
@@ -190,20 +192,35 @@ export const useRundownStorage = () => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      // Get user's first team
+      const { data: teamMemberships } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (!teamMemberships || teamMemberships.length === 0) {
+        throw new Error('User is not a member of any team. Cannot create rundown.');
+      }
+
       const rundownId = uuidv4();
-      const rundownData = {
+      const now = new Date().toISOString();
+      
+      const rundownData: SavedRundown = {
         id: rundownId,
+        user_id: user.id,
         title,
         items,
         start_time: new Date().toISOString().split('T')[1].substring(0, 5),
-        created_by: user.id,
-        updated_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
         archived: false,
+        team_id: teamMemberships[0].team_id
       };
 
       const { error } = await supabase
         .from('rundowns')
-        .insert([rundownData]);
+        .insert([mapRundownToDatabase(rundownData, user.id)]);
 
       if (error) throw error;
 

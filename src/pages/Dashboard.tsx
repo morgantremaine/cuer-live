@@ -11,8 +11,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
-import { Button } from '@chakra-ui/react';
-import { Plus } from 'react-feather';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();

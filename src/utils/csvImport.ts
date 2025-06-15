@@ -40,9 +40,11 @@ export const transformCSVData = (
   csvRows.forEach((row, index) => {
     const item: Partial<RundownItem> = {
       id: uuidv4(),
-      type: 'segment', // Default to segment
-      order: index,
-      selected: false,
+      type: 'regular', // Default to regular
+      rowNumber: String(index + 1),
+      startTime: '',
+      endTime: '',
+      elapsedTime: '00:00',
       isFloating: false,
     };
 
@@ -57,9 +59,9 @@ export const transformCSVData = (
             item.name = String(value || '');
             break;
           case 'duration':
-            // Try to parse duration, default to 30 if invalid
+            // Try to parse duration, default to "00:30" if invalid
             const parsedDuration = parseInt(String(value));
-            item.duration = isNaN(parsedDuration) ? 30 : parsedDuration;
+            item.duration = isNaN(parsedDuration) ? "00:30" : String(parsedDuration).padStart(2, '0') + ':00';
             break;
           case 'script':
             item.script = String(value || '');
@@ -68,9 +70,9 @@ export const transformCSVData = (
             item.notes = String(value || '');
             break;
           case 'type':
-            // Validate type, default to 'segment'
+            // Validate type, default to 'regular'
             const typeValue = String(value).toLowerCase();
-            item.type = (typeValue === 'header' || typeValue === 'segment') ? typeValue as 'header' | 'segment' : 'segment';
+            item.type = (typeValue === 'header' || typeValue === 'regular') ? typeValue as 'header' | 'regular' : 'regular';
             break;
           default:
             // Handle custom fields
@@ -85,9 +87,13 @@ export const transformCSVData = (
 
     // Ensure required fields have defaults
     item.name = item.name || `Imported Item ${index + 1}`;
-    item.duration = item.duration || 30;
+    item.duration = item.duration || "00:30";
     item.script = item.script || '';
     item.notes = item.notes || '';
+    item.talent = item.talent || '';
+    item.gfx = item.gfx || '';
+    item.video = item.video || '';
+    item.color = item.color || '';
 
     items.push(item as RundownItem);
   });
