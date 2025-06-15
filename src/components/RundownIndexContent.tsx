@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -55,6 +56,7 @@ const RundownIndexContent = () => {
   const { 
     columns: userColumns, 
     setColumns: setUserColumns, 
+    updateColumnWidth: updateUserColumnWidth,
     isLoading: isLoadingPreferences,
     isSaving: isSavingPreferences 
   } = useUserColumnPreferences(rundownId);
@@ -190,18 +192,18 @@ const RundownIndexContent = () => {
     // Add to existing columns and update user preferences
     const updatedColumns = [...userColumns];
     updatedColumns.splice(1, 0, newColumn); // Insert after segment name
-    setUserColumns(updatedColumns);
+    setUserColumns(updatedColumns, true); // Immediate save for structural changes
   };
 
   const handleReorderColumnsWrapper = (reorderedColumns: any[]) => {
     console.log('🔄 Reordering columns to:', reorderedColumns.length, 'columns');
-    setUserColumns(reorderedColumns);
+    setUserColumns(reorderedColumns, true); // Immediate save for reordering
   };
 
   const handleDeleteColumnWrapper = (columnId: string) => {
     console.log('🗑️ Deleting column:', columnId);
     const filteredColumns = userColumns.filter(col => col.id !== columnId);
-    setUserColumns(filteredColumns);
+    setUserColumns(filteredColumns, true); // Immediate save for deletion
   };
 
   const handleRenameColumnWrapper = (columnId: string, newName: string) => {
@@ -212,7 +214,7 @@ const RundownIndexContent = () => {
       }
       return col;
     });
-    setUserColumns(updatedColumns);
+    setUserColumns(updatedColumns, true); // Immediate save for renaming
   };
 
   const handleToggleColumnVisibilityWrapper = (columnId: string) => {
@@ -224,7 +226,7 @@ const RundownIndexContent = () => {
       }
       return col;
     });
-    setUserColumns(updatedColumns);
+    setUserColumns(updatedColumns, true); // Immediate save for visibility changes
   };
 
   const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
@@ -250,19 +252,14 @@ const RundownIndexContent = () => {
     }
 
     console.log('✅ Loading', validColumns.length, 'valid columns');
-    setUserColumns(validColumns);
+    setUserColumns(validColumns, true); // Immediate save for layout loading
   };
 
   const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
     // Use the specialized updateColumnWidth method from useUserColumnPreferences
     // which handles proper debouncing during resize operations
-    if (userColumns.find(col => col.id === columnId)) {
-      setUserColumns(prevColumns => {
-        return prevColumns.map(col => 
-          col.id === columnId ? { ...col, width: `${width}px` } : col
-        );
-      }, false); // Don't trigger immediate save during resize
-    }
+    console.log('📏 Updating column width:', columnId, 'to:', width);
+    updateUserColumnWidth(columnId, `${width}px`);
   };
 
   // Prepare rundown data for Cuer AI
