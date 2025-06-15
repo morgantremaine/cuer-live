@@ -94,6 +94,15 @@ const OptimizedRundownIndexContent = React.memo(() => {
     return status;
   }, [handlers.getRowStatus]);
 
+  // Fix getRowNumber to expect index instead of id
+  const getRowNumberWrapper = useCallback((index: number): string => {
+    if (index < state.items.length) {
+      const item = state.items[index];
+      return state.getRowNumber(item.id);
+    }
+    return '';
+  }, [state.getRowNumber, state.items]);
+
   // Use simplified handlers for common operations
   const {
     handleRundownStartTimeChange,
@@ -160,7 +169,7 @@ const OptimizedRundownIndexContent = React.memo(() => {
         currentSegmentId={state.currentSegmentId}
         getColumnWidth={handlers.getColumnWidth}
         updateColumnWidth={(columnId: string, width: number) => state.updateColumnWidth(columnId, `${width}px`)}
-        getRowNumber={state.getRowNumber}
+        getRowNumber={getRowNumberWrapper}
         getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={state.getHeaderDuration}
         onUpdateItem={state.updateItem}
