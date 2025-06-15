@@ -55,6 +55,7 @@ export interface CoreRundownState {
   // Column management
   addColumn: (column: Column) => void;
   updateColumnWidth: (columnId: string, width: string) => void;
+  setColumns: (columns: Column[]) => void;
   
   // Playbook controls
   play: (selectedSegmentId?: string) => void;
@@ -66,6 +67,11 @@ export interface CoreRundownState {
   undo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  
+  // Additional functionality needed by other hooks
+  calculateEndTime: (startTime: string, duration: string) => string;
+  markAsChanged: () => void;
+  addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void;
 }
 
 export interface RundownInteractions {
@@ -93,7 +99,7 @@ export interface RundownUIState {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   handleToggleColorPicker: (itemId: string | null) => void;
   selectColor: (id: string, color: string) => void;
-  getRowStatus: (item: RundownItem) => string;
+  getRowStatus: (item: RundownItem) => 'upcoming' | 'current' | 'completed' | 'header';
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   handleCellClick: (itemId: string, field: string, event: React.MouseEvent) => void;
@@ -105,4 +111,3 @@ export interface UnifiedRundownState {
   interactions: RundownInteractions;
   uiState: RundownUIState;
 }
-

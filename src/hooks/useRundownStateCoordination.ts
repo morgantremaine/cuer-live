@@ -8,41 +8,63 @@ export const useRundownStateCoordination = (): UnifiedRundownState => {
   // Single source of truth for all rundown state
   const simplifiedState = useSimplifiedRundownState();
 
+  // Helper function to calculate end time
+  const calculateEndTime = (startTime: string, duration: string) => {
+    const startParts = startTime.split(':').map(Number);
+    const durationParts = duration.split(':').map(Number);
+    
+    let totalSeconds = 0;
+    if (startParts.length >= 2) {
+      totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
+    }
+    if (durationParts.length >= 2) {
+      totalSeconds += durationParts[0] * 60 + durationParts[1];
+    }
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Add the missing addMultipleRows function
+  const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
+    // Convert to proper RundownItem format and add them
+    const itemsToAdd = newItems.map(item => ({
+      ...item,
+      id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
+    }));
+    
+    // Use setItems with updater function
+    simplifiedState.setItems(itemsToAdd);
+  };
+
   // UI interactions that depend on the core state
   const interactions = useRundownGridInteractions(
     simplifiedState.items,
-    simplifiedState.setItems,
+    (updater) => {
+      // Handle both direct items and updater functions
+      if (typeof updater === 'function') {
+        simplifiedState.setItems(updater(simplifiedState.items));
+      } else {
+        simplifiedState.setItems(updater);
+      }
+    },
     simplifiedState.updateItem,
     simplifiedState.addRow,
     simplifiedState.addHeader,
     simplifiedState.deleteRow,
     simplifiedState.toggleFloat,
     simplifiedState.deleteMultipleItems,
-    simplifiedState.addMultipleRows,
+    addMultipleRows,
     (columnId: string) => {
       // Handle delete column - remove from columns
       const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
       simplifiedState.setColumns(newColumns);
     },
-    (startTime: string, duration: string) => {
-      // Calculate end time helper
-      const startParts = startTime.split(':').map(Number);
-      const durationParts = duration.split(':').map(Number);
-      
-      let totalSeconds = 0;
-      if (startParts.length >= 2) {
-        totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
-      }
-      if (durationParts.length >= 2) {
-        totalSeconds += durationParts[0] * 60 + durationParts[1];
-      }
-      
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    },
+    calculateEndTime,
     (id: string, color: string) => {
       simplifiedState.updateItem(id, 'color', color);
     },
@@ -118,6 +140,7 @@ export const useRundownStateCoordination = (): UnifiedRundownState => {
       // Column management
       addColumn: simplifiedState.addColumn,
       updateColumnWidth: simplifiedState.updateColumnWidth,
+      setColumns: simplifiedState.setColumns,
       
       // Playback controls
       play: simplifiedState.play,
@@ -128,10 +151,16 @@ export const useRundownStateCoordination = (): UnifiedRundownState => {
       // Undo functionality
       undo: simplifiedState.undo,
       canUndo: simplifiedState.canUndo,
-      lastAction: simplifiedState.lastAction
+      lastAction: simplifiedState.lastAction,
+      
+      // Additional functionality
+      calculateEndTime,
+      markAsChanged: () => {
+        // Handled internally by simplified state
+      },
+      addMultipleRows
     },
     interactions,
     uiState
   };
 };
-

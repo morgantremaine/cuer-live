@@ -22,8 +22,13 @@ export const useRundownUIState = (
     setShowColorPicker(null);
   }, [updateItem]);
 
-  const getRowStatus = useCallback((item: RundownItem) => {
-    if (item.status) return item.status;
+  const getRowStatus = useCallback((item: RundownItem): 'upcoming' | 'current' | 'completed' | 'header' => {
+    if (item.status) {
+      // Ensure the status is one of the allowed values
+      if (['upcoming', 'current', 'completed'].includes(item.status)) {
+        return item.status as 'upcoming' | 'current' | 'completed';
+      }
+    }
     if (item.type === 'header') return 'header';
     return 'upcoming';
   }, []);
@@ -124,4 +129,3 @@ export const useRundownUIState = (
     handleKeyDown
   };
 };
-

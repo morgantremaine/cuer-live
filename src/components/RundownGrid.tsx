@@ -60,6 +60,37 @@ const RundownGrid = () => {
     cellRefs
   } = uiState;
 
+  // Create wrapper functions to match the expected drag handler signatures
+  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
+    const item = items[index];
+    if (item) {
+      handleDragStart(index, item.id);
+    }
+  };
+
+  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
+    if (typeof targetIndex === 'number') {
+      handleDragOver(targetIndex);
+    }
+  };
+
+  const handleDropWrapper = (e: React.DragEvent, index: number) => {
+    handleDrop(index);
+  };
+
+  // Create wrapper for cell click to match signature
+  const handleCellClickWrapper = (itemId: string, field: string) => {
+    // Create a mock event since the original expects an event parameter
+    const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
+    handleCellClick(itemId, field, mockEvent);
+  };
+
+  // Create wrapper for key down to match signature
+  const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    const itemIndex = items.findIndex(item => item.id === itemId);
+    handleKeyDown(e, itemId, field, itemIndex);
+  };
+
   // Create a wrapper function that matches the expected signature
   const handleColorSelect = (id: string, color: string) => {
     selectColor(id, color);
@@ -104,17 +135,17 @@ const RundownGrid = () => {
       getRowStatus={(item) => getRowStatus(item)}
       getHeaderDuration={calculateHeaderDuration}
       onUpdateItem={coreState.updateItem}
-      onCellClick={handleCellClick}
-      onKeyDown={handleKeyDown}
+      onCellClick={handleCellClickWrapper}
+      onKeyDown={handleKeyDownWrapper}
       onToggleColorPicker={handleToggleColorPicker}
       onColorSelect={handleColorSelect}
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
       onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
+      onDragStart={handleDragStartWrapper}
+      onDragOver={handleDragOverWrapper}
       onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDrop={handleDropWrapper}
       onCopySelectedRows={handleCopySelectedRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
       onPasteRows={handlePasteRows}
@@ -129,4 +160,3 @@ const RundownGrid = () => {
 };
 
 export default RundownGrid;
-
