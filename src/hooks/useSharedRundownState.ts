@@ -6,8 +6,9 @@ import { RundownItem } from '@/types/rundown';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
-  const rawId = params.id;
-  const rundownId = rawId === ':id' ? undefined : rawId;
+  const rundownId = params.id; // Remove the problematic check
+  
+  console.log('🔍 useSharedRundownState - rundownId from params:', rundownId);
   
   const [rundownData, setRundownData] = useState<{
     id: string;
@@ -72,6 +73,7 @@ export const useSharedRundownState = () => {
       return;
     }
 
+    console.log('📊 Loading rundown data for ID:', rundownId);
     setError(null);
 
     try {
@@ -102,6 +104,8 @@ export const useSharedRundownState = () => {
           showcallerState: data.showcaller_state
         };
         
+        console.log('✅ Successfully loaded rundown data:', newRundownData.title);
+        
         // Only update if data has actually changed
         setRundownData(prev => {
           if (!prev || prev.lastUpdated !== newRundownData.lastUpdated) {
@@ -115,6 +119,7 @@ export const useSharedRundownState = () => {
         setRundownData(null);
       }
     } catch (error) {
+      console.error('💥 Network error loading rundown:', error);
       setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setRundownData(null);
     }
