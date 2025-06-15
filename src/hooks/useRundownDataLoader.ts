@@ -46,7 +46,7 @@ export const useRundownDataLoader = ({
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
-    console.log('🔄 Loading rundown data:', rundown.title, 'with timezone:', rundown.timezone, 'start_time:', rundown.start_time);
+    console.log('🔄 Loading rundown data:', rundown.title, 'with timezone:', rundown.timezone, 'start_time:', rundown.start_time, 'columns:', rundown.columns);
     
     // Mark as loading and loaded to prevent loops
     isLoadingRef.current = true;
@@ -65,7 +65,9 @@ export const useRundownDataLoader = ({
     console.log('⏰ Loading start time directly:', startTimeToLoad);
     setRundownStartTimeDirectly(startTimeToLoad);
     
-    if (rundown.columns) {
+    // Load columns FIRST if they exist - this is critical for imported rundowns
+    if (rundown.columns && Array.isArray(rundown.columns) && rundown.columns.length > 0) {
+      console.log('📊 Loading saved column layout with', rundown.columns.length, 'columns');
       handleLoadLayout(rundown.columns);
     }
 
