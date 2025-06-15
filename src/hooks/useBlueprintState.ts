@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -81,6 +82,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       
       // Save with the correct parameter order including component order
       setTimeout(() => {
+        const currentComponentOrder = savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'];
         saveBlueprint(
           updatedLists, // updatedLists
           true, // silent
@@ -88,13 +90,13 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
           undefined, // notes (keep existing)
           undefined, // crewData (keep existing)
           undefined, // cameraPlots (keep existing)
-          componentOrder // componentOrder
+          currentComponentOrder // componentOrder
         );
       }, 500);
       
       return updatedLists;
     });
-  }, [saveBlueprint, componentOrder]);
+  }, [saveBlueprint, savedBlueprint]);
 
   // Add new list
   const addNewList = useCallback((name: string, sourceColumn: string) => {
@@ -108,19 +110,21 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     
     setLists(currentLists => {
       const updatedLists = [...currentLists, newList];
-      saveBlueprint(updatedLists, false, undefined, undefined, undefined, undefined, componentOrder);
+      const currentComponentOrder = savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'];
+      saveBlueprint(updatedLists, false, undefined, undefined, undefined, undefined, currentComponentOrder);
       return updatedLists;
     });
-  }, [items, generateListId, saveBlueprint, componentOrder]);
+  }, [items, generateListId, saveBlueprint, savedBlueprint]);
 
   // Delete list
   const deleteList = useCallback((listId: string) => {
     setLists(currentLists => {
       const updatedLists = currentLists.filter(list => list.id !== listId);
-      saveBlueprint(updatedLists, false, undefined, undefined, undefined, undefined, componentOrder);
+      const currentComponentOrder = savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'];
+      saveBlueprint(updatedLists, false, undefined, undefined, undefined, undefined, currentComponentOrder);
       return updatedLists;
     });
-  }, [saveBlueprint, componentOrder]);
+  }, [saveBlueprint, savedBlueprint]);
 
   // Rename list
   const renameList = useCallback((listId: string, newName: string) => {
@@ -128,10 +132,11 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       const updatedLists = currentLists.map(list => 
         list.id === listId ? { ...list, name: newName } : list
       );
-      saveBlueprint(updatedLists, true, undefined, undefined, undefined, undefined, componentOrder);
+      const currentComponentOrder = savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'];
+      saveBlueprint(updatedLists, true, undefined, undefined, undefined, undefined, currentComponentOrder);
       return updatedLists;
     });
-  }, [saveBlueprint, componentOrder]);
+  }, [saveBlueprint, savedBlueprint]);
 
   // Refresh all lists
   const refreshAllLists = useCallback(() => {
@@ -140,18 +145,20 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
         ...list,
         items: generateListFromColumn(items, list.sourceColumn)
       }));
-      saveBlueprint(refreshedLists, true, undefined, undefined, undefined, undefined, componentOrder);
+      const currentComponentOrder = savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'];
+      saveBlueprint(refreshedLists, true, undefined, undefined, undefined, undefined, currentComponentOrder);
       return refreshedLists;
     });
-  }, [items, saveBlueprint, componentOrder]);
+  }, [items, saveBlueprint, savedBlueprint]);
 
   // Update show date
   const updateShowDate = useCallback((newDate: string) => {
     setShowDate(newDate);
     setTimeout(() => {
-      saveBlueprint(lists, true, newDate, undefined, undefined, undefined, componentOrder);
+      const currentComponentOrder = savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'];
+      saveBlueprint(lists, true, newDate, undefined, undefined, undefined, currentComponentOrder);
     }, 100);
-  }, [lists, saveBlueprint, componentOrder]);
+  }, [lists, saveBlueprint, savedBlueprint]);
 
   return {
     lists,
