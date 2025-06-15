@@ -1,3 +1,4 @@
+
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,14 +24,16 @@ export const transformCSVData = (
   const items: RundownItem[] = [];
 
   // Create new columns from mappings
-  columnMappings.forEach((mapping, index) => {
+  columnMappings.forEach((mapping) => {
     if (mapping.isNewColumn && mapping.newColumnName) {
       newColumns.push({
+        id: mapping.rundownColumn,
         key: mapping.rundownColumn,
         name: mapping.newColumnName,
-        visible: true,
-        order: String(newColumns.length), // Fix: Convert to string
-        width: 150,
+        width: '150px',
+        isCustom: true,
+        isEditable: true,
+        isVisible: true,
       });
     }
   });
@@ -40,7 +43,7 @@ export const transformCSVData = (
     const item: Partial<RundownItem> = {
       id: uuidv4(),
       type: 'regular', // Default to regular
-      rowNumber: String(index + 1), // Fix: Convert to string
+      rowNumber: String(index + 1),
       startTime: '',
       endTime: '',
       elapsedTime: '00:00',
