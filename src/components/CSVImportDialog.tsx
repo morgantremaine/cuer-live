@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -29,18 +30,18 @@ interface CSVPreviewData {
   rows: any[][];
 }
 
-// Updated default columns - removed 'type' and 'segmentName' which were causing confusion
+// Default columns that exactly match useColumnsManager
 const DEFAULT_RUNDOWN_COLUMNS = [
   { key: 'name', name: 'Segment Name' },
   { key: 'script', name: 'Script' },
+  { key: 'gfx', name: 'GFX' },
+  { key: 'video', name: 'Video' },
   { key: 'duration', name: 'Duration' },
   { key: 'startTime', name: 'Start' },
   { key: 'endTime', name: 'End' },
   { key: 'elapsedTime', name: 'Elapsed' },
-  { key: 'notes', name: 'Notes' },
   { key: 'talent', name: 'Talent' },
-  { key: 'gfx', name: 'GFX' },
-  { key: 'video', name: 'Video' }
+  { key: 'notes', name: 'Notes' }
 ];
 
 const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialogProps) => {

@@ -19,7 +19,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown } = useRundownStorage();
   const { toast } = useToast();
-  const { columns } = useColumnsManager();
+  const { columns, handleAddColumn } = useColumnsManager();
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
@@ -113,13 +113,21 @@ const Dashboard = () => {
         return;
       }
 
+      // Add any new columns to the column manager first
+      if (result.newColumns && result.newColumns.length > 0) {
+        console.log('Adding new columns to column manager:', result.newColumns);
+        result.newColumns.forEach(newColumn => {
+          handleAddColumn(newColumn.name);
+        });
+      }
+
       // Create a new rundown with the imported data
       const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;
       const rundownId = await createRundown(rundownTitle, result.items);
       
       toast({
         title: 'Import successful',
-        description: `Imported ${result.items.length} items into a new rundown.`,
+        description: `Imported ${result.items.length} items into a new rundown${result.newColumns?.length ? ` with ${result.newColumns.length} new columns` : ''}.`,
       });
 
       // Navigate to the new rundown
