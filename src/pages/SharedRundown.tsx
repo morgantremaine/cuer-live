@@ -169,6 +169,7 @@ const SharedRundown = () => {
             currentSegmentId={currentSegmentId}
             isPlaying={isPlaying}
             rundownStartTime={rundownData.startTime || '09:00:00'}
+            timeRemaining={timeRemaining}
           />
         </div>
 

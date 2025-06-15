@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
-import { Play } from 'lucide-react';
+import { Play, Timer } from 'lucide-react';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -9,6 +10,7 @@ interface SharedRundownTableProps {
   currentSegmentId: string | null;
   isPlaying?: boolean;
   rundownStartTime?: string;
+  timeRemaining?: number;
 }
 
 const SharedRundownTable = ({ 
@@ -16,7 +18,8 @@ const SharedRundownTable = ({
   visibleColumns, 
   currentSegmentId, 
   isPlaying = false,
-  rundownStartTime = '09:00:00'
+  rundownStartTime = '09:00:00',
+  timeRemaining = 0
 }: SharedRundownTableProps) => {
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
@@ -38,6 +41,13 @@ const SharedRundownTable = ({
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Format countdown timer
+  const formatCountdown = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Calculate start times for all items based on their position and durations
@@ -88,6 +98,16 @@ const SharedRundownTable = ({
 
   return (
     <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
+      {/* Showcaller Timer - Fixed position at top */}
+      {currentSegmentId && isPlaying && timeRemaining >= 0 && (
+        <div className="bg-gray-800 text-white px-4 py-2 text-center font-mono text-lg border-b border-gray-200 print:hidden">
+          <div className="flex items-center justify-center space-x-2">
+            <Timer className="h-5 w-5" />
+            <span>Time Remaining: {formatCountdown(timeRemaining)}</span>
+          </div>
+        </div>
+      )}
+      
       <table className="w-full">
         <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10">
           <tr>
