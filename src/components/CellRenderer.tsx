@@ -1,3 +1,4 @@
+
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
@@ -59,6 +60,7 @@ const CellRenderer = ({
       case 'notes':
         return item.notes || '';
       case 'gfx':
+        console.log(`🎨 CellRenderer: Getting GFX value for item ${item.id}: "${item.gfx}"`);
         return item.gfx || '';
       case 'video':
         return item.video || '';
@@ -139,6 +141,7 @@ const CellRenderer = ({
       onUpdateValue={(newValue) => {
         // For segmentName column, always update the 'name' field
         const field = column.key === 'segmentName' ? 'name' : column.key;
+        console.log(`🎨 CellRenderer: Updating ${field} for item ${item.id} to: "${newValue}"`);
         onUpdateItem(item.id, field, newValue);
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
