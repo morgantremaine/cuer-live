@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -62,13 +63,15 @@ const RegularRow = (props: RegularRowProps) => {
     isDragging
   } = props;
 
-  const { rowClass } = useRowStyling({
+  const { rowClass, backgroundColorOverride } = useRowStyling({
     isDragging,
     isDraggingMultiple,
     isSelected,
     isCurrentlyPlaying,
     status,
-    color: item.color
+    color: item.color,
+    isFloating: item.isFloating,
+    isFloated: item.isFloated
   });
 
   const {
@@ -96,7 +99,9 @@ const RegularRow = (props: RegularRowProps) => {
     onToggleFloat(item.id);
   };
 
-  const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
+  // Use backgroundColorOverride for floated rows, otherwise use item color
+  const backgroundColor = backgroundColorOverride || 
+    (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
 
   return (
     <RundownContextMenu

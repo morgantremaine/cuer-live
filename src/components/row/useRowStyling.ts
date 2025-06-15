@@ -1,3 +1,4 @@
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -22,6 +23,7 @@ export const useRowStyling = ({
   status
 }: UseRowStylingProps) => {
   let rowClass = '';
+  let backgroundColorOverride: string | undefined = undefined;
   
   if (isDragging) {
     if (isDraggingMultiple && isSelected) {
@@ -32,8 +34,9 @@ export const useRowStyling = ({
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold hover:bg-muted/80';
   } else if (isFloating || isFloated) {
-    // Don't add background classes here - they'll be set via style prop
+    // Apply red background for floated rows
     rowClass = 'border-l-4 border-red-600';
+    backgroundColorOverride = '#fef2f2'; // Very light red background
   } else if (color && color !== '#FFFFFF' && color !== '#ffffff') {
     // Don't add background classes here - they'll be set via style prop  
     rowClass = 'hover:opacity-90';
@@ -55,5 +58,5 @@ export const useRowStyling = ({
     }
   }
 
-  return { rowClass };
+  return { rowClass, backgroundColorOverride };
 };
