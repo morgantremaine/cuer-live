@@ -29,7 +29,7 @@ interface CSVPreviewData {
   rows: any[][];
 }
 
-// Default columns that match the actual rundown columns from useColumnsManager
+// Updated default columns - removed 'type' and 'segmentName' which were causing confusion
 const DEFAULT_RUNDOWN_COLUMNS = [
   { key: 'name', name: 'Segment Name' },
   { key: 'script', name: 'Script' },

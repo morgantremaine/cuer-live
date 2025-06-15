@@ -57,16 +57,18 @@ export const transformCSVData = (
       isFloating: false,
     };
 
-    // Map each CSV cell to the corresponding rundown field
-    columnMappings.forEach((mapping, mappingIndex) => {
-      if (mapping.rundownColumn && !mapping.isSkipped && row[mappingIndex] !== undefined) {
-        const value = row[mappingIndex];
-        console.log(`Mapping CSV column "${mapping.csvColumn}" (value: "${value}") to rundown column "${mapping.rundownColumn}"`);
+    // Map each CSV cell to the corresponding rundown field using correct CSV column index
+    columnMappings.forEach((mapping) => {
+      const csvColumnIndex = csvHeaders.indexOf(mapping.csvColumn);
+      console.log(`Looking for CSV column "${mapping.csvColumn}" at index ${csvColumnIndex}`);
+      
+      if (mapping.rundownColumn && !mapping.isSkipped && csvColumnIndex !== -1 && row[csvColumnIndex] !== undefined) {
+        const value = row[csvColumnIndex];
+        console.log(`Mapping CSV column "${mapping.csvColumn}" (index ${csvColumnIndex}, value: "${value}") to rundown column "${mapping.rundownColumn}"`);
         
         // Handle special fields
         switch (mapping.rundownColumn) {
           case 'name':
-          case 'segmentName':
             item.name = String(value || '');
             break;
           case 'duration':
@@ -100,11 +102,6 @@ export const transformCSVData = (
           case 'video':
             item.video = String(value || '');
             break;
-          case 'type':
-            // Validate type, default to 'regular'
-            const typeValue = String(value).toLowerCase();
-            item.type = (typeValue === 'header' || typeValue === 'regular') ? typeValue as 'header' | 'regular' : 'regular';
-            break;
           default:
             // Handle custom fields
             if (!item.customFields) {
@@ -113,6 +110,8 @@ export const transformCSVData = (
             item.customFields[mapping.rundownColumn] = String(value || '');
             break;
         }
+      } else if (csvColumnIndex === -1) {
+        console.warn(`CSV column "${mapping.csvColumn}" not found in headers:`, csvHeaders);
       }
     });
 
