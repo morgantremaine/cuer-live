@@ -56,30 +56,35 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
           Add New List
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="bg-gray-800 border-gray-600 text-white">
         <DialogHeader>
-          <DialogTitle>Create New Asset List</DialogTitle>
+          <DialogTitle className="text-white">Create New Asset List</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="list-name">List Name</Label>
+            <Label htmlFor="list-name" className="text-gray-300">List Name</Label>
             <Input
               id="list-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Props List"
+              className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gray-500"
               required
             />
           </div>
           <div>
-            <Label htmlFor="source-column">Source Column</Label>
+            <Label htmlFor="source-column" className="text-gray-300">Source Column</Label>
             <Select value={sourceColumn} onValueChange={setSourceColumn} required>
-              <SelectTrigger>
+              <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:border-gray-500">
                 <SelectValue placeholder="Select a column" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-800 border-gray-600">
                 {meaningfulColumns.map((column) => (
-                  <SelectItem key={column.key} value={column.key}>
+                  <SelectItem 
+                    key={column.key} 
+                    value={column.key}
+                    className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                  >
                     {column.name}
                   </SelectItem>
                 ))}
@@ -87,10 +92,19 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
             </Select>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+              className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={!name.trim() || !sourceColumn}>
+            <Button 
+              type="submit" 
+              disabled={!name.trim() || !sourceColumn}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white"
+            >
               Create List
             </Button>
           </div>

@@ -81,7 +81,7 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
     
     switch (column) {
       case 'headers':
-        displayName = 'Blocks';
+        displayName = 'Headers';
         break;
       case 'gfx':
         displayName = 'Graphics';
