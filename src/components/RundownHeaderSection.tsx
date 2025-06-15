@@ -2,6 +2,8 @@
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownHeaderSectionProps {
   currentTime: Date;
@@ -43,6 +45,10 @@ interface RundownHeaderSectionProps {
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
+  rundownData?: {
+    items: RundownItem[];
+    columns: Column[];
+  };
 }
 
 const RundownHeaderSection = ({
@@ -84,7 +90,8 @@ const RundownHeaderSection = ({
   canUndo,
   lastAction,
   isConnected,
-  isProcessingRealtimeUpdate
+  isProcessingRealtimeUpdate,
+  rundownData
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -127,6 +134,9 @@ const RundownHeaderSection = ({
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
+        rundownTitle={rundownTitle}
+        items={rundownData?.items}
+        columns={rundownData?.columns}
       />
     </div>
   );
