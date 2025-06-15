@@ -46,29 +46,80 @@ const HeaderRowContent = ({
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
         
-        return (
-          <td
-            key={column.id}
-            className="align-middle border border-border"
-            style={{ 
-              width: columnWidth, 
-              minWidth: columnWidth,
-              backgroundColor 
-            }}
-          >
-            <CellRenderer
-              column={column}
-              item={item}
-              cellRefs={cellRefs}
-              textColor={textColor}
-              backgroundColor={backgroundColor}
-              onUpdateItem={onUpdateItem}
-              onCellClick={onCellClick}
-              onKeyDown={onKeyDown}
-              width={columnWidth}
-            />
-          </td>
-        );
+        // Special handling for headers - only show specific fields
+        if (column.key === 'segmentName' || column.key === 'name') {
+          // Show the header name
+          return (
+            <td
+              key={column.id}
+              className="align-middle border border-border"
+              style={{ 
+                width: columnWidth, 
+                minWidth: columnWidth,
+                backgroundColor 
+              }}
+            >
+              <CellRenderer
+                column={column}
+                item={item}
+                cellRefs={cellRefs}
+                textColor={textColor}
+                backgroundColor={backgroundColor}
+                onUpdateItem={onUpdateItem}
+                onCellClick={onCellClick}
+                onKeyDown={onKeyDown}
+                width={columnWidth}
+              />
+            </td>
+          );
+        } else if (column.key === 'duration') {
+          // Show the calculated header duration in parentheses
+          return (
+            <td
+              key={column.id}
+              className="align-middle border border-border px-2 py-1"
+              style={{ 
+                width: columnWidth, 
+                minWidth: columnWidth,
+                backgroundColor 
+              }}
+            >
+              <div className="break-words whitespace-pre-wrap text-sm text-gray-600" style={{ color: textColor }}>
+                ({headerDuration})
+              </div>
+            </td>
+          );
+        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+          // Don't show time fields for headers - empty cell
+          return (
+            <td
+              key={column.id}
+              className="align-middle border border-border"
+              style={{ 
+                width: columnWidth, 
+                minWidth: columnWidth,
+                backgroundColor 
+              }}
+            >
+              <div className="px-2 py-1"></div>
+            </td>
+          );
+        } else {
+          // For other columns, show empty cell for headers
+          return (
+            <td
+              key={column.id}
+              className="align-middle border border-border"
+              style={{ 
+                width: columnWidth, 
+                minWidth: columnWidth,
+                backgroundColor 
+              }}
+            >
+              <div className="px-2 py-1"></div>
+            </td>
+          );
+        }
       })}
     </>
   );
