@@ -69,7 +69,7 @@ export const useRundownItemActions = (
         rowNumber: newRowNumber,
         name: 'New Segment',
         startTime: newStartTime,
-        duration: '00:00:00',
+        duration: '00:00:00', // Fixed to always be 00:00:00 for new rows
         endTime: calculateEndTime(newStartTime, '00:00:00'),
         elapsedTime: '00:00:00',
         talent: '',
