@@ -1,5 +1,4 @@
 
-
 import React, { useRef, useCallback } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -45,6 +44,8 @@ const ResizableColumnHeader = ({
   const initialWidthRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
   const animationFrameRef = useRef<number>();
+  const lastUpdateRef = useRef<number>(0);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
   const minimumWidth = getMinimumWidth(column);
 
@@ -57,6 +58,7 @@ const ResizableColumnHeader = ({
     const startWidth = parseInt(width);
     initialWidthRef.current = startWidth;
     isDraggingRef.current = true;
+    lastUpdateRef.current = 0;
 
     // Set cursor and disable text selection globally
     document.body.style.cursor = 'col-resize';
@@ -83,10 +85,11 @@ const ResizableColumnHeader = ({
         const calculatedWidth = initialWidthRef.current + deltaX;
         const newWidth = Math.max(minimumWidth, calculatedWidth);
         
-        // Only update if the width would actually change to prevent unnecessary re-renders
+        // Only update if the width changed by at least 3px to reduce update frequency
         const currentWidth = parseInt(width);
-        if (Math.abs(newWidth - currentWidth) >= 1) {
+        if (Math.abs(newWidth - currentWidth) >= 3 || Math.abs(newWidth - lastUpdateRef.current) >= 5) {
           onWidthChange(column.id, newWidth);
+          lastUpdateRef.current = newWidth;
         }
       });
     };
@@ -106,15 +109,21 @@ const ResizableColumnHeader = ({
       const calculatedWidth = initialWidthRef.current + deltaX;
       const finalWidth = Math.max(minimumWidth, calculatedWidth);
       
-      // Ensure final width is applied
-      onWidthChange(column.id, finalWidth);
+      // Debounce the final update to avoid rapid saves
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      
+      debounceTimeoutRef.current = setTimeout(() => {
+        onWidthChange(column.id, finalWidth);
+      }, 100);
       
       // Reset global styles
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       
       // Reset resize handle
-      const resizeHandle = headerRef.current.querySelector('.resize-handle') as HTMLElement;
+      const resizeHandle = headerRef.current?.querySelector('.resize-handle') as HTMLElement;
       if (resizeHandle) {
         resizeHandle.style.backgroundColor = '';
       }
@@ -126,6 +135,15 @@ const ResizableColumnHeader = ({
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   }, [column.id, onWidthChange, width, minimumWidth]);
+
+  // Cleanup debounce timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Ensure the width never goes below minimum even when passed in
   const constrainedWidth = Math.max(minimumWidth, parseInt(width));

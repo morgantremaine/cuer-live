@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -258,7 +257,6 @@ const RundownIndexContent = () => {
   const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
     // Use the specialized updateColumnWidth method from useUserColumnPreferences
     // which handles proper debouncing during resize operations
-    console.log('📏 Updating column width:', columnId, 'to:', width);
     updateUserColumnWidth(columnId, `${width}px`);
   };
 

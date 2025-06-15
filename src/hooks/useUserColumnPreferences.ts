@@ -33,7 +33,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
   const isLoadingRef = useRef(false);
-  const isResizingRef = useRef(false);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Load user's column preferences for this rundown
   const loadColumnPreferences = useCallback(async () => {
@@ -92,12 +92,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // For immediate saves (non-resize operations) or when not resizing
-    const saveDelay = isImmediate || !isResizingRef.current ? 100 : 2000;
-
-    if (!isResizingRef.current) {
-      console.log('💾 Preparing to save column preferences:', columnsToSave.length, 'columns');
-    }
+    // Longer debounce for resize operations, immediate for structural changes
+    const saveDelay = isImmediate ? 100 : 1500;
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
@@ -139,25 +135,25 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Special handler for column width updates during resize
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
-    isResizingRef.current = true;
-    
     setColumns(prevColumns => {
       const updatedColumns = prevColumns.map(col => 
         col.id === columnId ? { ...col, width } : col
       );
       
-      // Save with longer debounce during resize
-      if (!isLoadingRef.current) {
-        saveColumnPreferences(updatedColumns, false);
+      // Clear existing resize timeout
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
       }
+      
+      // Debounce save during resize with longer delay
+      resizeTimeoutRef.current = setTimeout(() => {
+        if (!isLoadingRef.current) {
+          saveColumnPreferences(updatedColumns, false);
+        }
+      }, 2000); // 2 second delay for resize operations
       
       return updatedColumns;
     });
-
-    // Clear resize flag after a delay
-    setTimeout(() => {
-      isResizingRef.current = false;
-    }, 3000);
   }, [saveColumnPreferences]);
 
   // Load preferences when rundown or user changes
@@ -165,11 +161,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     loadColumnPreferences();
   }, [loadColumnPreferences]);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+      }
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
       }
     };
   }, []);
