@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -19,44 +18,51 @@ export const useRundownCalculations = (items: RundownItem[]) => {
   }, []);
 
   const getRowNumber = useCallback((index: number) => {
+    if (index < 0 || index >= items.length) return '';
+    
     const item = items[index];
-    if (!item) return '1';
+    if (!item) return '';
     
-    // For headers, return their segment name (A, B, C, etc.)
+    // Calculate row numbers based purely on position and type, not stored values
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    // For headers, count how many headers we've seen so far
     if (isHeaderItem(item)) {
-      return item.segmentName || item.rowNumber || 'A';
-    }
-    
-    // For regular items, find the current segment and count within that segment
-    let currentSegment = 'A';
-    let regularCountInSegment = 0;
-    
-    // Go backwards to find the most recent header
-    for (let i = index - 1; i >= 0; i--) {
-      if (isHeaderItem(items[i])) {
-        currentSegment = items[i].segmentName || items[i].rowNumber || 'A';
-        break;
-      }
-    }
-    
-    // Count regular items in the current segment up to this index
-    let segmentStartIndex = 0;
-    for (let i = 0; i < items.length; i++) {
-      if (isHeaderItem(items[i])) {
-        if ((items[i].segmentName || items[i].rowNumber) === currentSegment) {
-          segmentStartIndex = i + 1;
-          break;
+      let headerCount = 0;
+      for (let i = 0; i <= index; i++) {
+        if (items[i] && isHeaderItem(items[i])) {
+          headerCount++;
         }
       }
+      return letters[headerCount - 1] || 'A';
     }
     
-    for (let i = segmentStartIndex; i < index; i++) {
-      if (!isHeaderItem(items[i])) {
-        regularCountInSegment++;
+    // For regular items, find which segment they belong to and count within that segment
+    let currentSegmentLetter = 'A';
+    let itemCountInSegment = 0;
+    
+    // Go through items up to current index
+    for (let i = 0; i <= index; i++) {
+      const currentItem = items[i];
+      if (!currentItem) continue;
+      
+      if (isHeaderItem(currentItem)) {
+        // Update which segment we're in based on header count
+        let headerCount = 0;
+        for (let j = 0; j <= i; j++) {
+          if (items[j] && isHeaderItem(items[j])) {
+            headerCount++;
+          }
+        }
+        currentSegmentLetter = letters[headerCount - 1] || 'A';
+        itemCountInSegment = 0; // Reset count for new segment
+      } else {
+        // This is a regular item
+        itemCountInSegment++;
       }
     }
     
-    return `${currentSegment}${regularCountInSegment + 1}`;
+    return `${currentSegmentLetter}${itemCountInSegment}`;
   }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {

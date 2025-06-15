@@ -43,7 +43,8 @@ const CellRenderer = ({
     
     switch (column.key) {
       case 'segmentName':
-        return item.segmentName || item.name || '';
+        // For segment name column, always use item.name (the actual segment description)
+        return item.name || '';
       case 'duration':
         return item.duration || '';
       case 'startTime':
@@ -133,6 +134,7 @@ const CellRenderer = ({
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
+        // For segmentName column, always update the 'name' field
         const field = column.key === 'segmentName' ? 'name' : column.key;
         onUpdateItem(item.id, field, newValue);
       }}
