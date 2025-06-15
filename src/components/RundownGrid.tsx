@@ -60,24 +60,6 @@ const RundownGrid = () => {
     cellRefs
   } = uiState;
 
-  // Create wrapper functions to match the expected drag handler signatures
-  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
-    const item = items[index];
-    if (item) {
-      handleDragStart(index, item.id);
-    }
-  };
-
-  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
-    if (typeof targetIndex === 'number') {
-      handleDragOver(targetIndex);
-    }
-  };
-
-  const handleDropWrapper = (e: React.DragEvent, index: number) => {
-    handleDrop(index);
-  };
-
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
     // Create a mock event since the original expects an event parameter
@@ -94,6 +76,15 @@ const RundownGrid = () => {
   // Create a wrapper function that matches the expected signature
   const handleColorSelect = (id: string, color: string) => {
     selectColor(id, color);
+  };
+
+  // Create wrapper for getRowStatus that filters out "header" for components that don't expect it
+  const getRowStatusForTable = (item: any): 'upcoming' | 'current' | 'completed' => {
+    const status = getRowStatus(item);
+    if (status === 'header') {
+      return 'upcoming'; // Default fallback for headers
+    }
+    return status;
   };
 
   // Enhanced row selection that properly handles both single and multi-selection
@@ -132,7 +123,7 @@ const RundownGrid = () => {
       getColumnWidth={getColumnWidth}
       updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       getRowNumber={getRowNumber}
-      getRowStatus={(item) => getRowStatus(item)}
+      getRowStatus={getRowStatusForTable}
       getHeaderDuration={calculateHeaderDuration}
       onUpdateItem={coreState.updateItem}
       onCellClick={handleCellClickWrapper}
@@ -142,10 +133,10 @@ const RundownGrid = () => {
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
       onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStartWrapper}
-      onDragOver={handleDragOverWrapper}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      onDrop={handleDropWrapper}
+      onDrop={handleDrop}
       onCopySelectedRows={handleCopySelectedRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
       onPasteRows={handlePasteRows}

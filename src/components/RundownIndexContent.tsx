@@ -106,25 +106,6 @@ const RundownIndexContent = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Create wrapper functions to match expected signatures
-  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
-    const item = items[index];
-    if (item) {
-      handleDragStart(index, item.id);
-    }
-  };
-
-  const handleDragOverWrapper = (e: React.DragEvent) => {
-    // Find the target index based on the drag event
-    const target = e.currentTarget as HTMLElement;
-    const index = parseInt(target.dataset.index || '0', 10);
-    handleDragOver(index);
-  };
-
-  const handleDropWrapper = (e: React.DragEvent, index: number) => {
-    handleDrop(index);
-  };
-
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
     const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
@@ -135,6 +116,15 @@ const RundownIndexContent = () => {
   const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
     const itemIndex = items.findIndex(item => item.id === itemId);
     handleKeyDown(e, itemId, field, itemIndex);
+  };
+
+  // Create wrapper for getRowStatus that filters out "header" for components that don't expect it
+  const getRowStatusForContainer = (item: any): 'upcoming' | 'current' | 'completed' => {
+    const status = getRowStatus(item);
+    if (status === 'header') {
+      return 'upcoming'; // Default fallback for headers
+    }
+    return status;
   };
 
   // Use simplified handlers for common operations
@@ -214,7 +204,7 @@ const RundownIndexContent = () => {
         getColumnWidth={getColumnWidth}
         updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, `${width}px`)}
         getRowNumber={getRowNumber}
-        getRowStatus={(item) => getRowStatus(item)}
+        getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={updateItem}
         onCellClick={handleCellClickWrapper}
@@ -224,10 +214,10 @@ const RundownIndexContent = () => {
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
         onRowSelect={handleRowSelect}
-        onDragStart={handleDragStartWrapper}
-        onDragOver={handleDragOverWrapper}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onDrop={handleDropWrapper}
+        onDrop={handleDrop}
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}

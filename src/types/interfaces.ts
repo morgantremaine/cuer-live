@@ -79,10 +79,10 @@ export interface RundownInteractions {
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
   dropTargetIndex: number | null;
-  handleDragStart: (index: number, itemId: string) => void;
-  handleDragOver: (index: number) => void;
+  handleDragStart: (e: React.DragEvent, index: number) => void;
+  handleDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   handleDragLeave: () => void;
-  handleDrop: (targetIndex: number) => void;
+  handleDrop: (e: React.DragEvent, targetIndex: number) => void;
   hasClipboardData: () => boolean;
   handleCopySelectedRows: () => void;
   handlePasteRows: () => void;
