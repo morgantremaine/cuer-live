@@ -81,7 +81,7 @@ export interface RundownInteractions {
   dropTargetIndex: number | null;
   handleDragStart: (e: React.DragEvent, index: number) => void;
   handleDragOver: (e: React.DragEvent, targetIndex?: number) => void;
-  handleDragLeave: () => void;
+  handleDragLeave: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent, targetIndex: number) => void;
   hasClipboardData: () => boolean;
   handleCopySelectedRows: () => void;

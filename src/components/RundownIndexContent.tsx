@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -179,6 +178,23 @@ const RundownIndexContent = () => {
     totalRuntime: totalRuntime
   };
 
+  // Create wrapper functions that match the expected signatures for drag operations
+  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
+    handleDragStart(e, index);
+  };
+
+  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
+    handleDragOver(e, targetIndex);
+  };
+
+  const handleDragLeaveWrapper = (e: React.DragEvent) => {
+    handleDragLeave(e);
+  };
+
+  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
+    handleDrop(e, targetIndex);
+  };
+
   return (
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
@@ -214,10 +230,10 @@ const RundownIndexContent = () => {
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
         onRowSelect={handleRowSelect}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}

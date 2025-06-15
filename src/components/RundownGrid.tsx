@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -106,6 +105,23 @@ const RundownGrid = () => {
     }
   };
 
+  // Create wrapper functions that match the expected signatures
+  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
+    interactions.handleDragStart(e, index);
+  };
+
+  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
+    interactions.handleDragOver(e, targetIndex);
+  };
+
+  const handleDragLeaveWrapper = (e: React.DragEvent) => {
+    interactions.handleDragLeave(e);
+  };
+
+  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
+    interactions.handleDrop(e, targetIndex);
+  };
+
   return (
     <RundownTable
       items={items}
@@ -133,10 +149,10 @@ const RundownGrid = () => {
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
       onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDragStart={handleDragStartWrapper}
+      onDragOver={handleDragOverWrapper}
+      onDragLeave={handleDragLeaveWrapper}
+      onDrop={handleDropWrapper}
       onCopySelectedRows={handleCopySelectedRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
       onPasteRows={handlePasteRows}
