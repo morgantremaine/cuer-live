@@ -37,7 +37,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
+        className="px-2 py-2 text-sm font-mono align-middle border border-border w-16 min-w-16 min-h-[40px]"
         style={{ backgroundColor }}
       >
         <span style={{ color: textColor }}>{rowNumber}</span>
@@ -52,7 +52,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border"
+              className="align-middle border border-border min-h-[40px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -77,7 +77,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border px-2 py-1"
+              className="align-middle border border-border px-2 py-2 min-h-[40px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -94,14 +94,14 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border"
+              className="align-middle border border-border min-h-[40px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-1"></div>
+              <div className="px-2 py-2"></div>
             </td>
           );
         } else {
@@ -109,14 +109,14 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border"
+              className="align-middle border border-border min-h-[40px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-1"></div>
+              <div className="px-2 py-2"></div>
             </td>
           );
         }
