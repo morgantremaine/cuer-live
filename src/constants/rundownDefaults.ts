@@ -2,7 +2,7 @@
 // Default values for rundown items to ensure consistency across the application
 export const RUNDOWN_DEFAULTS = {
   // Duration defaults
-  NEW_ROW_DURATION: '00:00:00',
+  NEW_ROW_DURATION: '00:00',
   NEW_HEADER_DURATION: '',
   
   // Time defaults

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -12,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
+import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -350,9 +350,9 @@ export const useSimplifiedRundownState = () => {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'regular' as const,
       rowNumber: '',
-      name: 'New Segment',
+      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
       startTime: '00:00:00',
-      duration: '00:30',
+      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
       endTime: '00:30:00',
       elapsedTime: '00:00',
       talent: '',
@@ -383,9 +383,9 @@ export const useSimplifiedRundownState = () => {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'header' as const,
       rowNumber: 'A',
-      name: 'New Header',
+      name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
       startTime: '',
-      duration: '',
+      duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
       endTime: '',
       elapsedTime: '',
       talent: '',
