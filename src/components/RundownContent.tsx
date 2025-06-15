@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import RundownTableHeader from './RundownTableHeader';
@@ -136,9 +137,8 @@ const RundownContent = ({
             onAddHeader={onAddHeader || (() => {})}
           />
         </div>
-        {/* Keep scrollbars normal size but hide the vertical one to target the grey bottom element */}
         <ScrollBar orientation="horizontal" />
-        <ScrollBar orientation="vertical" className="opacity-0" />
+        <ScrollBar orientation="vertical" />
       </ScrollArea>
     </div>
   );
