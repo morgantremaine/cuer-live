@@ -5,7 +5,7 @@ import { BlueprintList } from '@/types/blueprint';
 export const useBlueprintDragDrop = (
   lists: BlueprintList[],
   setLists: (lists: BlueprintList[]) => void,
-  saveBlueprint: (lists: BlueprintList[], silent?: boolean, showDateOverride?: string, notesOverride?: string, crewDataOverride?: any, cameraPlots?: any, componentOrder?: string[]) => void,
+  saveBlueprint: (lists: BlueprintList[], silent?: boolean, showDateOverride?: string, notesOverride?: string, crewDataOverride?: any, cameraPlots?: any, componentOrder?: string[]) => Promise<void>,
   initialComponentOrder: string[] = ['crew-list', 'camera-plot', 'scratchpad']
 ) => {
   const [draggedListId, setDraggedListId] = useState<string | null>(null);
@@ -17,6 +17,9 @@ export const useBlueprintDragDrop = (
     setDraggedListId(listId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', listId);
+    
+    // Add visual feedback
+    e.currentTarget.classList.add('opacity-50');
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -65,7 +68,7 @@ export const useBlueprintDragDrop = (
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     
     const draggedId = e.dataTransfer.getData('text/plain');
@@ -97,7 +100,11 @@ export const useBlueprintDragDrop = (
         
         // Save the new component order immediately
         console.log('📋 Saving component order:', newOrder);
-        saveBlueprint(lists, true, undefined, undefined, undefined, undefined, newOrder);
+        try {
+          await saveBlueprint(lists, true, undefined, undefined, undefined, undefined, newOrder);
+        } catch (error) {
+          console.error('📋 Failed to save component order:', error);
+        }
       }
       
       setDraggedListId(null);
@@ -119,7 +126,12 @@ export const useBlueprintDragDrop = (
     
     console.log('📋 Reordered lists:', newLists.map(l => l.name));
     setLists(newLists);
-    saveBlueprint(newLists, true, undefined, undefined, undefined, undefined, componentOrder);
+    
+    try {
+      await saveBlueprint(newLists, true, undefined, undefined, undefined, undefined, componentOrder);
+    } catch (error) {
+      console.error('📋 Failed to save reordered lists:', error);
+    }
 
     setDraggedListId(null);
     setInsertionIndex(null);
@@ -129,6 +141,11 @@ export const useBlueprintDragDrop = (
     console.log('📋 Drag end');
     setDraggedListId(null);
     setInsertionIndex(null);
+    
+    // Remove visual feedback
+    document.querySelectorAll('.opacity-50').forEach(el => {
+      el.classList.remove('opacity-50');
+    });
   }, []);
 
   // Function to update component order from external source (like loaded blueprint)

@@ -47,7 +47,7 @@ const BlueprintListsGrid = ({
         <React.Fragment key={list.id}>
           {/* Insertion line at the top */}
           {insertionIndex === index && (
-            <div className="h-1 bg-blue-500 rounded-full mb-4 break-inside-avoid animate-pulse" />
+            <div className="h-1 bg-gray-400 rounded-full mb-4 break-inside-avoid animate-pulse" />
           )}
           
           <div className="break-inside-avoid mb-6">
@@ -64,13 +64,13 @@ const BlueprintListsGrid = ({
               onDragEnd={onDragEnd}
             />
           </div>
-          
-          {/* Insertion line at the bottom if it's the last item */}
-          {insertionIndex === lists.length && index === lists.length - 1 && (
-            <div className="h-1 bg-blue-500 rounded-full mt-4 break-inside-avoid animate-pulse" />
-          )}
         </React.Fragment>
       ))}
+      
+      {/* Final insertion line */}
+      {insertionIndex === lists.length && (
+        <div className="h-1 bg-gray-400 rounded-full mt-4 break-inside-avoid animate-pulse" />
+      )}
     </div>
   );
 };

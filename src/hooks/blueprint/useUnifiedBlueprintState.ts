@@ -95,18 +95,6 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
     updateLists(refreshedLists);
   };
 
-  // Drag and drop state - simplified for now
-  const draggedListId = null;
-  const insertionIndex = null;
-
-  // Simplified drag handlers - to be implemented if needed
-  const handleDragStart = () => {};
-  const handleDragOver = () => {};
-  const handleDragEnterContainer = () => {};
-  const handleDragLeave = () => {};
-  const handleDrop = () => {};
-  const handleDragEnd = () => {};
-
   return {
     // State
     lists: state.lists,
@@ -127,16 +115,7 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
     refreshAllLists,
     saveBlueprint,
     refreshBlueprint,
-    
-    // Drag and drop (simplified)
-    draggedListId,
-    insertionIndex,
-    handleDragStart,
-    handleDragOver,
-    handleDragEnterContainer,
-    handleDragLeave,
-    handleDrop,
-    handleDragEnd,
-    updateComponentOrder
+    updateComponentOrder,
+    updateLists // Expose this for drag and drop
   };
 };

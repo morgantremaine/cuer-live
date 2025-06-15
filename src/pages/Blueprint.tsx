@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -59,13 +60,21 @@ const BlueprintContent = () => {
   } = useBlueprintDragDrop(
     lists,
     updateLists,
-    saveBlueprint,
+    (lists, silent, showDate, notes, crewData, cameraPlots, componentOrder) => {
+      // Custom save function that updates component order in the unified state
+      if (componentOrder) {
+        updateComponentOrder(componentOrder);
+      }
+      return saveBlueprint();
+    },
     componentOrder
   );
 
   // Update component order when it changes from the unified state
   React.useEffect(() => {
-    updateDragComponentOrder(componentOrder);
+    if (JSON.stringify(dragComponentOrder) !== JSON.stringify(componentOrder)) {
+      updateDragComponentOrder(componentOrder);
+    }
   }, [componentOrder, updateDragComponentOrder]);
 
   // Update the unified state when drag component order changes
