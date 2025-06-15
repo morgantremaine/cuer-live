@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -43,7 +44,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
       rowNumber: '',
       name: '',
       startTime: '',
-      duration: '00:00:00',
+      duration: '00:00:00', // Fixed to always be 00:00:00 for new rows
       endTime: '',
       elapsedTime: '',
       talent: '',
