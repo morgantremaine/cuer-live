@@ -2,26 +2,26 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Column } from './useColumnsManager';
 
-// Define minimum widths for different column types - same as in ResizableColumnHeader
+// Define minimum widths for different column types - reduced for more flexibility
 const getMinimumWidth = (column: Column): number => {
   switch (column.key) {
     case 'duration':
     case 'startTime':
     case 'endTime':
     case 'elapsedTime':
-      return 120; // Timing columns need at least 120px to display properly
+      return 80; // Reduced from 120px to 80px for timing columns
     case 'segmentName':
-      return 150; // Segment names need reasonable space
+      return 100; // Reduced from 150px to 100px
     case 'talent':
-      return 100;
+      return 60; // Reduced from 100px to 60px
     case 'script':
     case 'notes':
-      return 200; // Text fields need more space
+      return 120; // Reduced from 200px to 120px for text fields
     case 'gfx':
     case 'video':
-      return 120;
+      return 80; // Reduced from 120px to 80px
     default:
-      return 100; // Default minimum for custom columns
+      return 50; // Reduced from 100px to 50px for custom columns
   }
 };
 
