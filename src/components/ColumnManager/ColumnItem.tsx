@@ -75,10 +75,9 @@ const ColumnItem = ({
       onDragEnd={onDragEnd}
     >
       <div className="flex items-center flex-1 min-w-0">
-        <GripVertical 
-          className="h-4 w-4 text-gray-400 mr-2 cursor-grab active:cursor-grabbing" 
-          title="Drag to reorder"
-        />
+        <div title="Drag to reorder">
+          <GripVertical className="h-4 w-4 text-gray-400 mr-2 cursor-grab active:cursor-grabbing" />
+        </div>
         
         {isEditing ? (
           <div className="flex items-center flex-1 space-x-2">
