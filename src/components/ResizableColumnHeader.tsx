@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useCallback } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -17,7 +18,7 @@ const getMinimumWidth = (column: Column): number => {
     case 'startTime':
     case 'endTime':
     case 'elapsedTime':
-      return 90; // Increased to 90px to match actual time cell content width (HH:MM:SS + padding)
+      return 90; // Consistent 90px for all time columns to match actual time cell content width (HH:MM:SS + padding)
     case 'segmentName':
       return 100; // Reduced from 150px to 100px
     case 'talent':
