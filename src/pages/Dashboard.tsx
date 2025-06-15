@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -5,12 +6,12 @@ import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import CSVImportDialog from '@/components/CSVImportDialog';
-import { CSVImportResult, validateCSVData } from '@/utils/csvImport';
+import { CSVImportResult } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useToast } from '@/hooks/use-toast';
-import { useColumnsManager } from '@/hooks/useColumnsManager';
+import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -19,7 +20,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown } = useRundownStorage();
   const { toast } = useToast();
-  const { columns, handleAddColumn } = useColumnsManager();
+  const { setColumns } = useColumnsManager();
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
@@ -100,9 +101,9 @@ const Dashboard = () => {
     });
   };
 
-  const handleCSVImport = async (result: CSVImportResult) => {
+  const handleCSVImport = async (result: CSVImportResult, layoutColumns: Column[]) => {
     try {
-      console.log('Dashboard handling CSV import:', result);
+      console.log('Dashboard handling CSV import:', { result, layoutColumns });
 
       if (!result.items || result.items.length === 0) {
         toast({
@@ -113,12 +114,10 @@ const Dashboard = () => {
         return;
       }
 
-      // Add any new columns to the column manager first
-      if (result.newColumns && result.newColumns.length > 0) {
-        console.log('Adding new columns to column manager:', result.newColumns);
-        result.newColumns.forEach(newColumn => {
-          handleAddColumn(newColumn.name);
-        });
+      // Set the columns from the selected layout
+      if (layoutColumns && layoutColumns.length > 0) {
+        console.log('Setting columns from layout:', layoutColumns);
+        setColumns(layoutColumns);
       }
 
       // Create a new rundown with the imported data
@@ -127,7 +126,7 @@ const Dashboard = () => {
       
       toast({
         title: 'Import successful',
-        description: `Imported ${result.items.length} items into a new rundown${result.newColumns?.length ? ` with ${result.newColumns.length} new columns` : ''}.`,
+        description: `Imported ${result.items.length} items into a new rundown.`,
       });
 
       // Navigate to the new rundown
@@ -158,7 +157,7 @@ const Dashboard = () => {
           {/* Create New and Import Buttons - Fixed alignment */}
           <div className="flex items-center space-x-4">
             <CreateNewButton onClick={handleCreateNew} />
-            <CSVImportDialog onImport={handleCSVImport} existingColumns={columns}>
+            <CSVImportDialog onImport={handleCSVImport}>
               <Button 
                 size="lg" 
                 variant="outline"

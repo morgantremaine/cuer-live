@@ -5,23 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2 } from 'lucide-react';
+import { Upload, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { Column } from '@/hooks/useColumnsManager';
 import { transformCSVData, CSVImportResult } from '@/utils/csvImport';
+import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
 interface CSVImportDialogProps {
-  onImport: (result: CSVImportResult) => void;
-  existingColumns: Column[];
+  onImport: (result: CSVImportResult, layoutColumns: Column[]) => void;
   children: React.ReactNode;
 }
 
 interface ColumnMapping {
   csvColumn: string;
   rundownColumn: string;
-  isNewColumn: boolean;
-  newColumnName?: string;
   isSkipped?: boolean;
 }
 
@@ -44,12 +42,15 @@ const DEFAULT_RUNDOWN_COLUMNS = [
   { key: 'notes', name: 'Notes' }
 ];
 
-const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialogProps) => {
+const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<'upload' | 'layout' | 'mapping'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<CSVPreviewData | null>(null);
+  const [selectedLayout, setSelectedLayout] = useState<any>(null);
+  const [availableColumns, setAvailableColumns] = useState<Column[]>([]);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
-  const [newColumns, setNewColumns] = useState<{ id: string; name: string }[]>([]);
+  const { savedLayouts, loading } = useColumnLayoutStorage();
   const { toast } = useToast();
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,20 +87,57 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
         
         console.log('Parsed CSV data:', { headers, rows });
         setCsvData({ headers, rows });
-        
-        // Initialize column mappings
-        const initialMappings: ColumnMapping[] = headers.map(header => ({
-          csvColumn: header,
-          rundownColumn: '',
-          isNewColumn: false,
-          isSkipped: false,
-        }));
-        setColumnMappings(initialMappings);
+        setStep('layout');
       },
       header: false,
       skipEmptyLines: true,
     });
   }, [toast]);
+
+  const handleLayoutSelection = (layout: any) => {
+    console.log('Selected layout:', layout);
+    setSelectedLayout(layout);
+    
+    // Set available columns from the selected layout
+    const layoutColumns = Array.isArray(layout.columns) ? layout.columns : [];
+    setAvailableColumns(layoutColumns);
+    
+    // Initialize column mappings
+    if (csvData) {
+      const initialMappings: ColumnMapping[] = csvData.headers.map(header => ({
+        csvColumn: header,
+        rundownColumn: '',
+        isSkipped: false,
+      }));
+      setColumnMappings(initialMappings);
+      setStep('mapping');
+    }
+  };
+
+  const handleUseDefaultLayout = () => {
+    const defaultColumns: Column[] = DEFAULT_RUNDOWN_COLUMNS.map((col, index) => ({
+      id: col.key,
+      key: col.key,
+      name: col.name,
+      width: '150px',
+      isCustom: false,
+      isEditable: true,
+      isVisible: true,
+    }));
+    
+    setSelectedLayout({ name: 'Default Layout', columns: defaultColumns });
+    setAvailableColumns(defaultColumns);
+    
+    if (csvData) {
+      const initialMappings: ColumnMapping[] = csvData.headers.map(header => ({
+        csvColumn: header,
+        rundownColumn: '',
+        isSkipped: false,
+      }));
+      setColumnMappings(initialMappings);
+      setStep('mapping');
+    }
+  };
 
   const updateColumnMapping = (index: number, field: keyof ColumnMapping, value: any) => {
     setColumnMappings(prev => {
@@ -108,15 +146,12 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
         updated[index] = { 
           ...updated[index], 
           rundownColumn: '', 
-          isNewColumn: false, 
           isSkipped: true 
         };
       } else if (field === 'rundownColumn' && value !== 'SKIP') {
-        const isNewColumn = newColumns.some(col => col.id === value);
         updated[index] = { 
           ...updated[index], 
           [field]: value,
-          isNewColumn,
           isSkipped: false
         };
       } else {
@@ -126,34 +161,13 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
     });
   };
 
-  const addNewColumn = () => {
-    const newId = `new_${Date.now()}`;
-    setNewColumns(prev => [...prev, { id: newId, name: '' }]);
-  };
-
-  const updateNewColumn = (id: string, name: string) => {
-    setNewColumns(prev => prev.map(col => 
-      col.id === id ? { ...col, name } : col
-    ));
-  };
-
-  const removeNewColumn = (id: string) => {
-    setNewColumns(prev => prev.filter(col => col.id !== id));
-    // Also update any mappings that were using this new column
-    setColumnMappings(prev => prev.map(mapping => 
-      mapping.rundownColumn === id 
-        ? { ...mapping, rundownColumn: '', isNewColumn: false, isSkipped: false }
-        : mapping
-    ));
-  };
-
   const handleImport = () => {
-    if (!csvData) {
-      console.error('No CSV data available');
+    if (!csvData || !selectedLayout) {
+      console.error('No CSV data or layout selected');
       return;
     }
 
-    console.log('Starting import with:', { csvData, columnMappings, newColumns });
+    console.log('Starting import with:', { csvData, columnMappings, selectedLayout });
 
     // Filter out skipped columns and only validate non-skipped ones
     const nonSkippedMappings = columnMappings.filter(mapping => !mapping.isSkipped);
@@ -168,62 +182,40 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
       return;
     }
 
-    // Validate new column names for non-skipped columns
-    const newColumnsWithNames = newColumns.filter(col => col.name.trim());
-    const invalidNewColumns = nonSkippedMappings.filter(mapping => 
-      mapping.isNewColumn && 
-      mapping.rundownColumn && 
-      !newColumnsWithNames.find(col => col.id === mapping.rundownColumn)
-    );
-
-    if (invalidNewColumns.length > 0) {
-      toast({
-        title: 'Invalid new columns',
-        description: 'Please provide names for all new columns.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Prepare final column mappings with new column names, excluding skipped columns
-    const finalMappings = nonSkippedMappings.map(mapping => {
-      if (mapping.isNewColumn && mapping.rundownColumn) {
-        const newCol = newColumnsWithNames.find(col => col.id === mapping.rundownColumn);
-        return {
-          ...mapping,
-          newColumnName: newCol?.name
-        };
-      }
-      return mapping;
-    });
-
-    console.log('Final mappings:', finalMappings);
+    console.log('Final mappings:', nonSkippedMappings);
 
     // Transform the data
-    const result = transformCSVData(csvData.rows, finalMappings, csvData.headers);
+    const result = transformCSVData(csvData.rows, nonSkippedMappings, csvData.headers);
     console.log('Transform result:', result);
 
-    // Call the onImport callback with the result
-    onImport(result);
+    // Call the onImport callback with the result and layout columns
+    onImport(result, selectedLayout.columns);
     
     // Reset state
-    setFile(null);
-    setCsvData(null);
-    setColumnMappings([]);
-    setNewColumns([]);
+    reset();
     setIsOpen(false);
 
     toast({
       title: 'Import successful',
-      description: `Imported ${result.items.length} items with ${result.newColumns.length} new columns.`,
+      description: `Imported ${result.items.length} items using "${selectedLayout.name}" layout.`,
     });
   };
 
   const reset = () => {
     setFile(null);
     setCsvData(null);
+    setSelectedLayout(null);
+    setAvailableColumns([]);
     setColumnMappings([]);
-    setNewColumns([]);
+    setStep('upload');
+  };
+
+  const goBack = () => {
+    if (step === 'mapping') {
+      setStep('layout');
+    } else if (step === 'layout') {
+      setStep('upload');
+    }
   };
 
   return (
@@ -240,7 +232,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
         </DialogHeader>
         
         <div className="space-y-6">
-          {!file && (
+          {step === 'upload' && (
             <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center bg-gray-700">
               <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <Label htmlFor="csv-upload" className="cursor-pointer">
@@ -257,39 +249,69 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
             </div>
           )}
 
-          {csvData && (
+          {step === 'layout' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white">Map CSV Columns to Rundown Columns</h3>
-                <Button onClick={addNewColumn} variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Column
-                </Button>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-white mb-2">Select Column Layout</h3>
+                <p className="text-gray-400">Choose which column layout to use for importing your CSV data</p>
               </div>
 
-              {newColumns.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-300">New Columns</Label>
-                  {newColumns.map((newCol) => (
-                    <div key={newCol.id} className="flex items-center space-x-2">
-                      <Input
-                        placeholder="Enter column name"
-                        value={newCol.name}
-                        onChange={(e) => updateNewColumn(newCol.id, e.target.value)}
-                        className="flex-1 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      />
+              {loading ? (
+                <div className="text-center text-gray-400">Loading your saved layouts...</div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button
+                      onClick={handleUseDefaultLayout}
+                      variant="outline"
+                      className="p-4 h-auto border-gray-600 text-gray-300 hover:bg-gray-700 text-left"
+                    >
+                      <div className="w-full">
+                        <div className="font-medium">Default Layout</div>
+                        <div className="text-sm text-gray-400">Standard rundown columns (Name, Script, Duration, etc.)</div>
+                      </div>
+                    </Button>
+
+                    {savedLayouts.map((layout) => (
                       <Button
-                        onClick={() => removeNewColumn(newCol.id)}
+                        key={layout.id}
+                        onClick={() => handleLayoutSelection(layout)}
                         variant="outline"
-                        size="sm"
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        className="p-4 h-auto border-gray-600 text-gray-300 hover:bg-gray-700 text-left"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <div className="w-full">
+                          <div className="font-medium">{layout.name}</div>
+                          <div className="text-sm text-gray-400">
+                            {Array.isArray(layout.columns) ? layout.columns.length : 0} columns
+                          </div>
+                        </div>
                       </Button>
+                    ))}
+                  </div>
+
+                  {savedLayouts.length === 0 && (
+                    <div className="text-center text-gray-400 p-4 border border-gray-600 rounded-lg bg-gray-700">
+                      <FolderOpen className="mx-auto h-8 w-8 mb-2" />
+                      <p>No saved layouts found. Use the default layout or create a custom layout in the Column Manager first.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
+
+              <div className="flex justify-between">
+                <Button onClick={goBack} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                  Back
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 'mapping' && csvData && selectedLayout && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-white mb-2">Map CSV Columns</h3>
+                <p className="text-gray-400">Using layout: <span className="text-white font-medium">{selectedLayout.name}</span></p>
+              </div>
 
               <div className="space-y-4">
                 {columnMappings.map((mapping, index) => (
@@ -302,7 +324,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                     </div>
                     <div>
                       <Label className="text-sm text-gray-300">
-                        Map to Rundown Column 
+                        Map to Column 
                         {mapping.isSkipped && <span className="text-orange-400 ml-2">(Skipped)</span>}
                       </Label>
                       <Select
@@ -318,14 +340,9 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                           <SelectItem value="SKIP" className="text-orange-400 focus:bg-gray-600 focus:text-orange-300">
                             Skip this column
                           </SelectItem>
-                          {DEFAULT_RUNDOWN_COLUMNS.map((col) => (
+                          {availableColumns.map((col) => (
                             <SelectItem key={col.key} value={col.key} className="text-gray-200 focus:bg-gray-600">
                               {col.name}
-                            </SelectItem>
-                          ))}
-                          {newColumns.map((newCol) => (
-                            <SelectItem key={newCol.id} value={newCol.id} className="text-gray-200 focus:bg-gray-600">
-                              {newCol.name || 'Unnamed new column'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -382,9 +399,9 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                 </div>
               )}
 
-              <div className="flex justify-end space-x-2">
-                <Button onClick={reset} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                  Cancel
+              <div className="flex justify-between">
+                <Button onClick={goBack} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                  Back
                 </Button>
                 <Button onClick={handleImport} className="bg-blue-600 hover:bg-blue-700 text-white">
                   Import Rundown
