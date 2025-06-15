@@ -45,9 +45,10 @@ export const transformCSVData = (
         const value = row[csvColumnIndex];
         console.log(`Mapping CSV column "${mapping.csvColumn}" (index ${csvColumnIndex}, value: "${value}") to rundown column "${mapping.rundownColumn}"`);
         
-        // Handle special fields - ensure name mapping works correctly
+        // Handle special fields - fix the segmentName mapping
         switch (mapping.rundownColumn) {
           case 'name':
+          case 'segmentName': // Add segmentName case to handle both
             const nameValue = String(value || '').trim();
             if (nameValue) {
               item.name = nameValue;
@@ -80,6 +81,7 @@ export const transformCSVData = (
             item.talent = String(value || '');
             break;
           case 'gfx':
+          case 'graphics': // Handle both gfx and graphics mappings
             item.gfx = String(value || '');
             break;
           case 'video':
