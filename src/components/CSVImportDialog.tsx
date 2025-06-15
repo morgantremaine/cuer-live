@@ -38,7 +38,9 @@ const DEFAULT_RUNDOWN_COLUMNS = [
   { key: 'endTime', name: 'End' },
   { key: 'elapsedTime', name: 'Elapsed' },
   { key: 'notes', name: 'Notes' },
-  { key: 'type', name: 'Type' }
+  { key: 'talent', name: 'Talent' },
+  { key: 'gfx', name: 'GFX' },
+  { key: 'video', name: 'Video' }
 ];
 
 const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialogProps) => {
