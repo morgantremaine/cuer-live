@@ -1,69 +1,90 @@
 
 import React from 'react';
-import ExpandableScriptCell from '../ExpandableScriptCell';
-import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useColumnsManager';
+import HighlightedText from '../HighlightedText';
 
 interface TextAreaCellProps {
-  column: Column;
-  item: RundownItem;
+  value: string;
+  itemId: string;
+  cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
-  onUpdateItem: (id: string, field: string, value: string) => void;
-  onCellClick: (itemId: string, field: string) => void;
+  isDuration?: boolean;
+  highlight?: {
+    startIndex: number;
+    endIndex: number;
+  } | null;
+  onUpdateValue: (value: string) => void;
+  onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  width: string;
-  className?: string;
 }
 
 const TextAreaCell = ({
-  column,
-  item,
+  value,
+  itemId,
+  cellRefKey,
   cellRefs,
   textColor,
   backgroundColor,
-  onUpdateItem,
+  isDuration = false,
+  highlight,
+  onUpdateValue,
   onCellClick,
-  onKeyDown,
-  width,
-  className
+  onKeyDown
 }: TextAreaCellProps) => {
-  const cellKey = `${item.id}-${column.key}`;
-  const value = (item as any)[column.key] || '';
+  // Helper function to determine if content needs two lines
+  const needsTwoLines = (text: string) => {
+    return text.length > 40 || text.includes('\n');
+  };
 
-  // Use expandable script cell for script column
-  if (column.key === 'script') {
-    return (
-      <ExpandableScriptCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={textColor}
-        onUpdateValue={(newValue) => onUpdateItem(item.id, column.key, newValue)}
-        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-      />
-    );
-  }
+  const shouldExpandRow = needsTwoLines(value);
+
+  // Simple key navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // For Enter key and arrow keys, navigate to next/previous cell
+    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      onKeyDown(e, itemId, cellRefKey);
+      return;
+    }
+    
+    // Allow other keys to work normally
+  };
+
+  // Create the proper cell ref key
+  const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="px-2 py-1" style={{ width }}>
+    <div className="relative w-full h-full min-h-[32px] flex items-center" style={{ backgroundColor }}>
       <textarea
-        ref={(el) => {
-          if (el) cellRefs.current[cellKey] = el;
+        ref={el => {
+          if (el) {
+            cellRefs.current[cellKey] = el;
+          } else {
+            delete cellRefs.current[cellKey];
+          }
         }}
         value={value}
-        onChange={(e) => onUpdateItem(item.id, column.key, e.target.value)}
-        onClick={() => onCellClick(item.id, column.key)}
-        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-        className={`w-full bg-transparent border-none outline-none resize-none text-sm ${className || ''}`}
+        onChange={(e) => onUpdateValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onClick={onCellClick}
+        data-cell-id={cellKey}
+        data-cell-ref={cellKey}
+        className={`w-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
+          isDuration ? 'font-mono text-center' : ''
+        }`}
         style={{ 
-          color: textColor,
-          minHeight: '1.5rem'
+          backgroundColor: 'transparent',
+          color: textColor || 'inherit',
+          minHeight: shouldExpandRow ? '40px' : '28px',
+          lineHeight: '1.2'
         }}
-        rows={1}
+        rows={shouldExpandRow ? 2 : 1}
       />
+      {highlight && (
+        <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm flex items-center" style={{ color: 'transparent' }}>
+          <HighlightedText text={value} highlight={highlight} />
+        </div>
+      )}
     </div>
   );
 };

@@ -3,19 +3,25 @@ import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
 import CustomFieldCell from './cells/CustomFieldCell';
+import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface CellRendererProps {
   column: Column;
-  item: RundownItem;
+  item: RundownItem & {
+    calculatedStartTime?: string;
+    calculatedEndTime?: string;
+    calculatedElapsedTime?: string;
+    calculatedRowNumber?: string;
+  };
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  width: string;
+  width?: string;
 }
 
 const CellRenderer = ({
@@ -29,57 +35,111 @@ const CellRenderer = ({
   onKeyDown,
   width
 }: CellRendererProps) => {
-  const cellKey = `${item.id}-${column.key}`;
-  const isHeader = item.type === 'header';
-  
-  // For header name/segmentName cells, use larger text
-  const isHeaderNameCell = isHeader && (column.key === 'segmentName' || column.key === 'name');
+  // Get the current value for this cell
+  const getCellValue = () => {
+    if (column.isCustom) {
+      return item.customFields?.[column.key] || '';
+    }
+    
+    switch (column.key) {
+      case 'segmentName':
+        // For segment name column, always use item.name (the actual segment description)
+        return item.name || '';
+      case 'duration':
+        return item.duration || '';
+      case 'startTime':
+        return item.calculatedStartTime || item.startTime || '';
+      case 'endTime':
+        return item.calculatedEndTime || item.endTime || '';
+      case 'elapsedTime':
+        return item.calculatedElapsedTime || item.elapsedTime || '';
+      case 'talent':
+        return item.talent || '';
+      case 'script':
+        return item.script || '';
+      case 'notes':
+        return item.notes || '';
+      case 'gfx':
+        return item.gfx || '';
+      case 'video':
+        return item.video || '';
+      default:
+        return (item as any)[column.key] || '';
+    }
+  };
 
-  // Handle time-related columns
-  if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+  const value = getCellValue();
+
+  // Determine if this is a read-only field
+  const isReadOnly = !column.isEditable || 
+    column.key === 'startTime' || 
+    column.key === 'endTime' || 
+    column.key === 'elapsedTime';
+
+  // Use TimeDisplayCell for calculated time fields
+  if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
-      <TimeDisplayCell
-        value={(item as any)[column.key] || ''}
-        textColor={textColor}
-        backgroundColor={backgroundColor}
-        width={width}
-      />
+      <TimeDisplayCell value={value} backgroundColor={backgroundColor} />
     );
   }
 
-  // Handle multi-line fields
-  if (column.key === 'script' || column.key === 'notes' || column.key === 'description') {
+  // Create cell key for referencing
+  const cellKey = `${item.id}-${column.key}`;
+
+  // Use CustomFieldCell for custom fields
+  if (column.isCustom) {
     return (
-      <TextAreaCell
-        key={cellKey}
-        column={column}
-        item={item}
+      <CustomFieldCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
         backgroundColor={backgroundColor}
-        onUpdateItem={onUpdateItem}
-        onCellClick={onCellClick}
+        onUpdateValue={(newValue) => {
+          const field = `customFields.${column.key}`;
+          onUpdateItem(item.id, field, newValue);
+        }}
+        onCellClick={(e) => onCellClick(item.id, column.key)}
         onKeyDown={onKeyDown}
-        width={width}
-        className={isHeaderNameCell ? "text-xl font-bold" : undefined}
       />
     );
   }
 
-  // Handle all other fields
+  // Use ExpandableScriptCell for script and notes fields (both built-in columns)
+  if (column.key === 'script' || column.key === 'notes') {
+    return (
+      <ExpandableScriptCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        onUpdateValue={(newValue) => {
+          onUpdateItem(item.id, column.key, newValue);
+        }}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  // Use TextAreaCell for all other editable fields to ensure consistent navigation
   return (
-    <CustomFieldCell
-      key={cellKey}
-      column={column}
-      item={item}
+    <TextAreaCell
+      value={value}
+      itemId={item.id}
+      cellRefKey={column.key}
       cellRefs={cellRefs}
       textColor={textColor}
       backgroundColor={backgroundColor}
-      onUpdateItem={onUpdateItem}
-      onCellClick={onCellClick}
+      isDuration={column.key === 'duration'}
+      onUpdateValue={(newValue) => {
+        // For segmentName column, always update the 'name' field
+        const field = column.key === 'segmentName' ? 'name' : column.key;
+        onUpdateItem(item.id, field, newValue);
+      }}
+      onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}
-      width={width}
-      className={isHeaderNameCell ? "text-xl font-bold" : undefined}
     />
   );
 };
