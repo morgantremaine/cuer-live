@@ -84,7 +84,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="break-words whitespace-pre-wrap text-sm text-gray-600" style={{ color: textColor }}>
+              <div className="break-words whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300" style={{ color: textColor }}>
                 ({headerDuration})
               </div>
             </td>
