@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { CrewMember } from '@/types/crew';
@@ -71,8 +72,10 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
     case 'UPDATE_CAMERA_PLOTS':
       return { ...state, cameraPlots: action.payload };
     case 'UPDATE_COMPONENT_ORDER':
+      console.log('📋 Reducer updating component order:', action.payload);
       return { ...state, componentOrder: action.payload };
     case 'MERGE_REMOTE_STATE':
+      console.log('📋 Merging remote state, component order:', action.payload.componentOrder);
       return {
         ...state,
         ...action.payload,
@@ -162,6 +165,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
         
         if (blueprintData) {
           console.log('📋 Loaded existing blueprint data:', blueprintData);
+          console.log('📋 Component order from database:', blueprintData.component_order);
+          
           dispatch({ type: 'MERGE_REMOTE_STATE', payload: {
             lists: blueprintData.lists || [],
             showDate: blueprintData.show_date || '',
@@ -201,7 +206,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
         dispatch({ type: 'SET_SAVING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
         
-        console.log('📋 Saving blueprint with lists:', state.lists);
+        console.log('📋 Saving blueprint with component order:', state.componentOrder);
         await persistBlueprint(
           state.lists,
           true, // silent save
@@ -213,7 +218,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
         );
         
         dispatch({ type: 'SET_LAST_SAVED', payload: new Date().toISOString() });
-        console.log('📋 Blueprint saved successfully');
+        console.log('📋 Blueprint saved successfully with component order:', state.componentOrder);
       } catch (error) {
         console.error('📋 Failed to save blueprint:', error);
         dispatch({ type: 'SET_ERROR', payload: 'Failed to save blueprint' });
@@ -283,6 +288,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   }, [debouncedSave]);
 
   const updateComponentOrder = React.useCallback((order: string[]) => {
+    console.log('📋 Context updateComponentOrder called with:', order);
     dispatch({ type: 'UPDATE_COMPONENT_ORDER', payload: order });
     debouncedSave();
   }, [debouncedSave]);
