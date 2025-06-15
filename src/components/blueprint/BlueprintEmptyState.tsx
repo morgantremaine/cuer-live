@@ -3,7 +3,7 @@ import React from 'react';
 import AddListDialog from './AddListDialog';
 
 interface BlueprintEmptyStateProps {
-  availableColumns: { key: string; name: string }[];
+  availableColumns: { name: string; value: string }[];
   onAddList: (name: string, sourceColumn: string) => void;
 }
 

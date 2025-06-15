@@ -13,7 +13,7 @@ interface BlueprintHeaderProps {
     startTime?: string;
   };
   showDate: string;
-  availableColumns: { key: string; name: string }[];
+  availableColumns: { name: string; value: string }[];
   onShowDateUpdate: (date: string) => void;
   onAddList: (name: string, sourceColumn: string) => void;
   onRefreshAll: () => void;
