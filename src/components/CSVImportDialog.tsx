@@ -226,17 +226,17 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-700">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-background border">
         <DialogHeader>
-          <DialogTitle className="text-white">Import CSV Rundown</DialogTitle>
+          <DialogTitle className="text-foreground">Import CSV Rundown</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           {step === 'upload' && (
-            <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center bg-gray-700">
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center bg-muted/50">
+              <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <Label htmlFor="csv-upload" className="cursor-pointer">
-                <span className="text-lg font-medium text-gray-200">Choose CSV file</span>
+                <span className="text-lg font-medium text-foreground">Choose CSV file</span>
                 <Input
                   id="csv-upload"
                   type="file"
@@ -245,30 +245,30 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                   className="hidden"
                 />
               </Label>
-              <p className="text-gray-400 mt-2">Select a CSV file to import as a new rundown</p>
+              <p className="text-muted-foreground mt-2">Select a CSV file to import as a new rundown</p>
             </div>
           )}
 
           {step === 'layout' && (
             <div className="space-y-6">
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-white mb-2">Select Column Layout</h3>
-                <p className="text-gray-400">Choose which column layout to use for importing your CSV data</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Select Column Layout</h3>
+                <p className="text-muted-foreground">Choose which column layout to use for importing your CSV data</p>
               </div>
 
               {loading ? (
-                <div className="text-center text-gray-400">Loading your saved layouts...</div>
+                <div className="text-center text-muted-foreground">Loading your saved layouts...</div>
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3">
                     <Button
                       onClick={handleUseDefaultLayout}
                       variant="outline"
-                      className="p-4 h-auto border-gray-600 text-gray-300 hover:bg-gray-700 text-left"
+                      className="p-4 h-auto border text-left hover:bg-muted"
                     >
                       <div className="w-full">
-                        <div className="font-medium">Default Layout</div>
-                        <div className="text-sm text-gray-400">Standard rundown columns (Name, Script, Duration, etc.)</div>
+                        <div className="font-medium text-foreground">Default Layout</div>
+                        <div className="text-sm text-muted-foreground">Standard rundown columns (Name, Script, Duration, etc.)</div>
                       </div>
                     </Button>
 
@@ -277,11 +277,11 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                         key={layout.id}
                         onClick={() => handleLayoutSelection(layout)}
                         variant="outline"
-                        className="p-4 h-auto border-gray-600 text-gray-300 hover:bg-gray-700 text-left"
+                        className="p-4 h-auto border text-left hover:bg-muted"
                       >
                         <div className="w-full">
-                          <div className="font-medium">{layout.name}</div>
-                          <div className="text-sm text-gray-400">
+                          <div className="font-medium text-foreground">{layout.name}</div>
+                          <div className="text-sm text-muted-foreground">
                             {Array.isArray(layout.columns) ? layout.columns.length : 0} columns
                           </div>
                         </div>
@@ -290,7 +290,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                   </div>
 
                   {savedLayouts.length === 0 && (
-                    <div className="text-center text-gray-400 p-4 border border-gray-600 rounded-lg bg-gray-700">
+                    <div className="text-center text-muted-foreground p-4 border rounded-lg bg-muted/50">
                       <FolderOpen className="mx-auto h-8 w-8 mb-2" />
                       <p>No saved layouts found. Use the default layout or create a custom layout in the Column Manager first.</p>
                     </div>
@@ -299,7 +299,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
               )}
 
               <div className="flex justify-between">
-                <Button onClick={goBack} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                <Button onClick={goBack} variant="outline">
                   Back
                 </Button>
               </div>
@@ -309,23 +309,23 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
           {step === 'mapping' && csvData && selectedLayout && (
             <div className="space-y-6">
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-white mb-2">Map CSV Columns</h3>
-                <p className="text-gray-400">Using layout: <span className="text-white font-medium">{selectedLayout.name}</span></p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Map CSV Columns</h3>
+                <p className="text-muted-foreground">Using layout: <span className="text-foreground font-medium">{selectedLayout.name}</span></p>
               </div>
 
               <div className="space-y-4">
                 {columnMappings.map((mapping, index) => (
                   <div key={index} className="grid grid-cols-2 gap-4 items-center">
                     <div>
-                      <Label className="text-sm text-gray-300">CSV Column</Label>
-                      <div className="p-2 bg-gray-700 rounded border border-gray-600 text-gray-200">
+                      <Label className="text-sm text-foreground">CSV Column</Label>
+                      <div className="p-2 bg-muted rounded border text-foreground">
                         {mapping.csvColumn}
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm text-gray-300">
+                      <Label className="text-sm text-foreground">
                         Map to Column 
-                        {mapping.isSkipped && <span className="text-orange-400 ml-2">(Skipped)</span>}
+                        {mapping.isSkipped && <span className="text-orange-600 dark:text-orange-400 ml-2">(Skipped)</span>}
                       </Label>
                       <Select
                         value={mapping.isSkipped ? 'SKIP' : mapping.rundownColumn}
@@ -333,15 +333,15 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                           updateColumnMapping(index, 'rundownColumn', value);
                         }}
                       >
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                        <SelectTrigger className="bg-background border">
                           <SelectValue placeholder="Select column or skip..." />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-700 border-gray-600">
-                          <SelectItem value="SKIP" className="text-orange-400 focus:bg-gray-600 focus:text-orange-300">
+                        <SelectContent className="bg-background border z-50">
+                          <SelectItem value="SKIP" className="text-orange-600 dark:text-orange-400">
                             Skip this column
                           </SelectItem>
                           {availableColumns.map((col) => (
-                            <SelectItem key={col.key} value={col.key} className="text-gray-200 focus:bg-gray-600">
+                            <SelectItem key={col.key} value={col.key} className="text-foreground">
                               {col.name}
                             </SelectItem>
                           ))}
@@ -354,18 +354,18 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
 
               {csvData.rows.length > 0 && (
                 <div>
-                  <Label className="text-sm font-medium text-gray-300">Preview (first 3 rows)</Label>
-                  <div className="mt-2 border border-gray-600 rounded-lg overflow-hidden bg-gray-700">
+                  <Label className="text-sm font-medium text-foreground">Preview (first 3 rows)</Label>
+                  <div className="mt-2 border rounded-lg overflow-hidden bg-background">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-600">
+                      <thead className="bg-muted">
                         <tr>
                           {csvData.headers.map((header, index) => {
                             const mapping = columnMappings[index];
                             return (
                               <th 
                                 key={index} 
-                                className={`px-3 py-2 text-left font-medium text-gray-200 ${
-                                  mapping?.isSkipped ? 'bg-orange-800 text-orange-200' : ''
+                                className={`px-3 py-2 text-left font-medium text-foreground ${
+                                  mapping?.isSkipped ? 'bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200' : ''
                                 }`}
                               >
                                 {header}
@@ -377,14 +377,14 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                       </thead>
                       <tbody>
                         {csvData.rows.slice(0, 3).map((row, rowIndex) => (
-                          <tr key={rowIndex} className="border-t border-gray-600">
+                          <tr key={rowIndex} className="border-t">
                             {row.map((cell, cellIndex) => {
                               const mapping = columnMappings[cellIndex];
                               return (
                                 <td 
                                   key={cellIndex} 
-                                  className={`px-3 py-2 text-gray-200 ${
-                                    mapping?.isSkipped ? 'bg-orange-900 text-gray-400' : ''
+                                  className={`px-3 py-2 text-foreground ${
+                                    mapping?.isSkipped ? 'bg-orange-100 dark:bg-orange-900 text-muted-foreground' : ''
                                   }`}
                                 >
                                   {cell}
@@ -400,10 +400,10 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
               )}
 
               <div className="flex justify-between">
-                <Button onClick={goBack} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                <Button onClick={goBack} variant="outline">
                   Back
                 </Button>
-                <Button onClick={handleImport} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button onClick={handleImport} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   Import Rundown
                 </Button>
               </div>
