@@ -33,7 +33,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
   const isLoadingRef = useRef(false);
-  const resizeTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Load user's column preferences for this rundown
   const loadColumnPreferences = useCallback(async () => {
@@ -92,8 +91,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Longer debounce for resize operations, immediate for structural changes
-    const saveDelay = isImmediate ? 100 : 1500;
+    // Use shorter debounce for resize operations, immediate for structural changes
+    const saveDelay = isImmediate ? 100 : 800;
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
@@ -140,17 +139,10 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         col.id === columnId ? { ...col, width } : col
       );
       
-      // Clear existing resize timeout
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
+      // Save with debounce for resize operations
+      if (!isLoadingRef.current) {
+        saveColumnPreferences(updatedColumns, false);
       }
-      
-      // Debounce save during resize with longer delay
-      resizeTimeoutRef.current = setTimeout(() => {
-        if (!isLoadingRef.current) {
-          saveColumnPreferences(updatedColumns, false);
-        }
-      }, 2000); // 2 second delay for resize operations
       
       return updatedColumns;
     });
@@ -166,9 +158,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
-      }
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
       }
     };
   }, []);
