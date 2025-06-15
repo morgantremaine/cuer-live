@@ -1,4 +1,3 @@
-
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,7 +29,7 @@ export const transformCSVData = (
         key: mapping.rundownColumn,
         name: mapping.newColumnName,
         visible: true,
-        order: newColumns.length,
+        order: String(newColumns.length), // Fix: Convert number to string
         width: 150,
       });
     }
