@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { Plus, Settings, Share2, Monitor, FileText, Undo } from 'lucide-react';
+import { Plus, Settings, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { ShareRundownMenu } from '@/components/ShareRundownMenu';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
@@ -16,6 +17,7 @@ interface MainActionButtonsProps {
   onOpenTeleprompter: () => void;
   selectedRowId?: string | null;
   isMobile?: boolean;
+  rundownTitle?: string;
 }
 
 const MainActionButtons = ({
@@ -28,30 +30,11 @@ const MainActionButtons = ({
   rundownId,
   onOpenTeleprompter,
   selectedRowId,
-  isMobile = false
+  isMobile = false,
+  rundownTitle = 'Untitled Rundown'
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const handleShareRundown = () => {
-    if (!rundownId) {
-      toast({
-        title: "Cannot share rundown",
-        description: "Save this rundown first before sharing.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const shareUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      toast({
-        title: "Share link copied!",
-        description: "Read-only rundown URL has been copied to clipboard",
-        variant: "default"
-      });
-    });
-  };
 
   const handleOpenBlueprint = () => {
     if (!rundownId) {
@@ -109,10 +92,14 @@ const MainActionButtons = ({
         <Settings className="h-4 w-4" />
         <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
       </Button>
-      <Button onClick={handleShareRundown} variant="outline" size={buttonSize} className={buttonClass}>
-        <Share2 className="h-4 w-4" />
-        <span>{isMobile ? 'Share' : 'Share Rundown'}</span>
-      </Button>
+      
+      {rundownId && (
+        <ShareRundownMenu 
+          rundownId={rundownId} 
+          rundownTitle={rundownTitle}
+        />
+      )}
+      
       <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
         <Monitor className="h-4 w-4" />
         <span>Teleprompter</span>

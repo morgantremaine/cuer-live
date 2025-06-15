@@ -21,6 +21,7 @@ interface DesktopToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  rundownTitle?: string;
 }
 
 const DesktopToolbar = ({
@@ -39,7 +40,8 @@ const DesktopToolbar = ({
   onPlay,
   onPause,
   onForward,
-  onBackward
+  onBackward,
+  rundownTitle
 }: DesktopToolbarProps) => {
   return (
     <div className="p-3 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -55,6 +57,7 @@ const DesktopToolbar = ({
           onOpenTeleprompter={onOpenTeleprompter}
           selectedRowId={selectedRowId}
           isMobile={false}
+          rundownTitle={rundownTitle}
         />
       </div>
 

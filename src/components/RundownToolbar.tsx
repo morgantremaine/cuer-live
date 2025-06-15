@@ -25,6 +25,8 @@ interface RundownToolbarProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  // Rundown title for sharing
+  rundownTitle?: string;
 }
 
 const RundownToolbar = ({
@@ -43,7 +45,8 @@ const RundownToolbar = ({
   onOpenTeleprompter,
   onUndo,
   canUndo,
-  lastAction
+  lastAction,
+  rundownTitle
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
 
@@ -63,7 +66,8 @@ const RundownToolbar = ({
     onPlay,
     onPause,
     onForward,
-    onBackward
+    onBackward,
+    rundownTitle
   };
 
   if (isMobile) {

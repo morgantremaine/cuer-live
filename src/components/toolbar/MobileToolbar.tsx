@@ -28,6 +28,7 @@ interface MobileToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  rundownTitle?: string;
 }
 
 const MobileToolbar = ({
@@ -46,7 +47,8 @@ const MobileToolbar = ({
   onPlay,
   onPause,
   onForward,
-  onBackward
+  onBackward,
+  rundownTitle
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -76,6 +78,7 @@ const MobileToolbar = ({
               onOpenTeleprompter={onOpenTeleprompter}
               selectedRowId={selectedRowId}
               isMobile={true}
+              rundownTitle={rundownTitle}
             />
           </DropdownMenuContent>
         </DropdownMenu>
