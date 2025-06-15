@@ -153,12 +153,19 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
         };
         console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" marked as SKIP`);
       } else if (field === 'rundownColumn' && value !== 'SKIP') {
+        // Special handling for GFX column mapping - ensure it maps to 'gfx'
+        let mappedValue = value;
+        if (updated[index].csvColumn.toLowerCase().includes('gfx') || updated[index].csvColumn.toLowerCase().includes('graphics')) {
+          mappedValue = 'gfx';
+          console.log(`🔧 CSV Import Dialog: GFX-related column "${updated[index].csvColumn}" auto-mapped to "gfx"`);
+        }
+        
         updated[index] = { 
           ...updated[index], 
-          [field]: value,
+          [field]: mappedValue,
           isSkipped: false
         };
-        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" mapped to "${value}"`);
+        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" mapped to "${mappedValue}"`);
       } else {
         updated[index] = { ...updated[index], [field]: value };
       }

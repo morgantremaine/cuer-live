@@ -1,4 +1,3 @@
-
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
@@ -90,11 +89,6 @@ export const transformCSVData = (
             item.gfx = gfxValue;
             console.log(`✅ [GFX CASE] Set item.gfx to: "${gfxValue}" (from mapping: ${mapping.rundownColumn})`);
             break;
-          case 'graphics': // Handle both graphics and gfx mappings - always map to gfx field
-            const graphicsValue = String(value || '');
-            item.gfx = graphicsValue;
-            console.log(`✅ [GRAPHICS CASE] Set item.gfx to: "${graphicsValue}" (from mapping: ${mapping.rundownColumn})`);
-            break;
           case 'video':
             item.video = String(value || '');
             console.log(`✅ Set item.video to: "${item.video}"`);
@@ -112,13 +106,13 @@ export const transformCSVData = (
             console.log(`✅ Set item.color to: "${item.color}"`);
             break;
           default:
-            // Handle custom fields - but check if it might be a legacy graphics mapping
-            console.log(`⚠️ [DEFAULT CASE] Handling unmapped field "${mapping.rundownColumn}" with value "${value}"`);
+            // Handle custom fields and legacy mappings
+            console.log(`⚠️ [DEFAULT CASE] Handling field "${mapping.rundownColumn}" with value "${value}"`);
             if (mapping.rundownColumn === 'graphics') {
-              // This is a fallback in case the above case doesn't catch it
+              // Legacy fallback for old saved layouts that might still use 'graphics'
               const gfxValue = String(value || '');
               item.gfx = gfxValue;
-              console.log(`✅ [FALLBACK] Set item.gfx to: "${gfxValue}" (from graphics mapping)`);
+              console.log(`✅ [LEGACY GRAPHICS] Set item.gfx to: "${gfxValue}" (from graphics mapping)`);
             } else {
               // Handle other custom fields
               if (!item.customFields) {
@@ -150,7 +144,10 @@ export const transformCSVData = (
     item.script = item.script || '';
     item.notes = item.notes || '';
     item.talent = item.talent || '';
-    item.gfx = item.gfx || '';
+    // Don't override gfx if it was already set from mapping
+    if (!item.gfx) {
+      item.gfx = '';
+    }
     item.video = item.video || '';
     item.color = item.color || '';
 
@@ -169,7 +166,7 @@ export const transformCSVData = (
 
   console.log('✅ CSV Transform - Final result:', { 
     itemCount: items.length,
-    sampleItems: items.slice(0, 3).map(item => ({ name: item.name, gfx: item.gfx }))
+    sampleGfxValues: items.slice(0, 10).map(item => ({ name: item.name, gfx: item.gfx }))
   });
   
   return { items };
