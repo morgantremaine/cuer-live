@@ -48,9 +48,8 @@ const RundownContextMenu = memo(({
   onAddHeader
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
-  const [isContextMenuOpen, setIsContextMenuOpen] = React.useState(false);
 
-  // Handle color selection for multiple rows and close context menu
+  // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
     if (isMultipleSelection && selectedRows) {
       // Apply color to all selected rows
@@ -62,9 +61,8 @@ const RundownContextMenu = memo(({
       onColorSelect(id, color);
     }
     
-    // Close the color picker and context menu after selection
+    // Close the color picker after selection
     onColorPicker();
-    setIsContextMenuOpen(false);
   };
 
   // Handle float toggle for multiple rows
@@ -80,9 +78,18 @@ const RundownContextMenu = memo(({
     }
   };
 
+  // Handle color picker with context menu closure
+  const handleColorPickerClick = () => {
+    onColorPicker();
+    // Force close context menu by triggering a click outside
+    setTimeout(() => {
+      document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }, 0);
+  };
+
   return (
     <>
-      <ContextMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
+      <ContextMenu>
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
@@ -141,7 +148,7 @@ const RundownContextMenu = memo(({
           </ContextMenuItem>
           
           <ContextMenuItem 
-            onClick={onColorPicker} 
+            onClick={handleColorPickerClick} 
             className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <Palette className="mr-2 h-4 w-4" />
