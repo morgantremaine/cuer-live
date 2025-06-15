@@ -16,7 +16,7 @@ const TimeDisplayCell = ({ value, backgroundColor, textColor, highlight }: TimeD
   return (
     <div className="w-full h-full p-1" style={{ backgroundColor }}>
       <span 
-        className="inline-block w-full text-sm font-mono px-2 py-1 rounded-sm text-center border-0"
+        className="inline-block w-full text-sm font-mono px-1 py-1 rounded-sm text-center border-0"
         style={{ color: textColor || 'inherit' }}
       >
         {highlight ? (
