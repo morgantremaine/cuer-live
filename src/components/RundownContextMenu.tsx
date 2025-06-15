@@ -49,7 +49,7 @@ const RundownContextMenu = memo(({
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
-  // Handle color selection for multiple rows
+  // Handle color selection for multiple rows and close context menu
   const handleColorSelect = (id: string, color: string) => {
     if (isMultipleSelection && selectedRows) {
       // Apply color to all selected rows
@@ -60,6 +60,9 @@ const RundownContextMenu = memo(({
       // Apply color to single row
       onColorSelect(id, color);
     }
+    
+    // Close the color picker after selection
+    onColorPicker();
   };
 
   // Handle float toggle for multiple rows
@@ -176,10 +179,7 @@ const RundownContextMenu = memo(({
             itemId={itemId}
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
-            onColorSelect={(id, color) => {
-              handleColorSelect(id, color);
-              onColorPicker(); // Close the color picker after selection
-            }}
+            onColorSelect={handleColorSelect}
           />
         </div>
       )}
