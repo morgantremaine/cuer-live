@@ -38,7 +38,9 @@ const CellRenderer = ({
   // Get the current value for this cell
   const getCellValue = () => {
     if (column.isCustom) {
-      return item.customFields?.[column.key] || '';
+      const value = item.customFields?.[column.key] || '';
+      console.log(`🎨 CellRenderer: Getting custom field value for "${column.key}": "${value}"`);
+      return value;
     }
     
     switch (column.key) {
@@ -60,11 +62,12 @@ const CellRenderer = ({
       case 'notes':
         return item.notes || '';
       case 'gfx':
-        console.log(`🎨 CellRenderer: Getting GFX value for item ${item.id}: "${item.gfx}"`);
+        console.log(`🎨 CellRenderer: Getting GFX value for item ${item.id}: "${item.gfx}" (column.key: ${column.key})`);
         return item.gfx || '';
       case 'video':
         return item.video || '';
       default:
+        console.log(`🎨 CellRenderer: Unknown column key "${column.key}" for item ${item.id}`);
         return (item as any)[column.key] || '';
     }
   };
@@ -103,6 +106,7 @@ const CellRenderer = ({
         backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
           const field = `customFields.${column.key}`;
+          console.log(`🎨 CellRenderer: Updating custom field "${field}" for item ${item.id} to: "${newValue}"`);
           onUpdateItem(item.id, field, newValue);
         }}
         onCellClick={(e) => onCellClick(item.id, column.key)}
@@ -121,6 +125,7 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={textColor}
         onUpdateValue={(newValue) => {
+          console.log(`🎨 CellRenderer: Updating ${column.key} for item ${item.id} to: "${newValue}"`);
           onUpdateItem(item.id, column.key, newValue);
         }}
         onKeyDown={onKeyDown}
