@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem } from '@/types/rundown';
@@ -67,10 +68,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     setShowDate,
     async () => {
       const blueprint = await loadBlueprint();
-      // Update component order when blueprint is loaded
-      if (blueprint?.component_order) {
-        updateComponentOrder(blueprint.component_order);
-      }
+      // Component order is now managed by the unified state, no need to update it here
       return blueprint;
     },
     saveBlueprint, // Pass the full saveBlueprint function with all parameters
