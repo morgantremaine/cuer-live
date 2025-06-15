@@ -83,7 +83,7 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
                   <SelectItem 
                     key={column.key} 
                     value={column.key}
-                    className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                    className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white"
                   >
                     {column.name}
                   </SelectItem>
