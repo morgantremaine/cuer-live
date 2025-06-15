@@ -45,10 +45,14 @@ export const transformCSVData = (
         const value = row[csvColumnIndex];
         console.log(`Mapping CSV column "${mapping.csvColumn}" (index ${csvColumnIndex}, value: "${value}") to rundown column "${mapping.rundownColumn}"`);
         
-        // Handle special fields - fix the name mapping issue
+        // Handle special fields - ensure name mapping works correctly
         switch (mapping.rundownColumn) {
           case 'name':
-            item.name = String(value || '');
+            const nameValue = String(value || '').trim();
+            if (nameValue) {
+              item.name = nameValue;
+              console.log(`Set item.name to: "${nameValue}"`);
+            }
             break;
           case 'duration':
             // Parse duration - handle various formats
@@ -91,13 +95,21 @@ export const transformCSVData = (
         }
       } else if (csvColumnIndex === -1) {
         console.warn(`CSV column "${mapping.csvColumn}" not found in headers:`, csvHeaders);
+      } else if (!mapping.rundownColumn) {
+        console.log(`Skipping CSV column "${mapping.csvColumn}" - no rundown column mapped`);
+      } else if (mapping.isSkipped) {
+        console.log(`Skipping CSV column "${mapping.csvColumn}" - marked as skipped`);
       }
     });
 
     // Set defaults only if the fields weren't set from CSV mapping
     if (!item.name) {
       item.name = `Imported Item ${rowIndex + 1}`;
+      console.log(`No name found in CSV mapping, using default: "${item.name}"`);
+    } else {
+      console.log(`Using CSV mapped name: "${item.name}"`);
     }
+    
     item.duration = item.duration || "00:30";
     item.script = item.script || '';
     item.notes = item.notes || '';
