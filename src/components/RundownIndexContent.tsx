@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -91,7 +92,9 @@ const RundownIndexContent = () => {
     handleCopySelectedRows,
     handlePasteRows,
     handleDeleteSelectedRows,
-    handleRowSelection
+    handleRowSelection,
+    handleAddRow,
+    handleAddHeader
   } = interactions;
 
   const { 
@@ -148,14 +151,12 @@ const RundownIndexContent = () => {
     return status;
   };
 
-  // Use simplified handlers for common operations
+  // Use simplified handlers for common operations (but NOT add operations)
   const {
     handleRundownStartTimeChange,
     handleTimezoneChange,
     handleOpenTeleprompter,
-    handleRowSelect,
-    handleAddRow,
-    handleAddHeader
+    handleRowSelect
   } = useIndexHandlers({
     items,
     selectedRows,
