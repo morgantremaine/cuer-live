@@ -38,7 +38,7 @@ const LayoutManager = ({
         setLayoutName('');
         setShowSaveLayout(false);
       } catch (error) {
-        // Error handled by the hook
+        console.error('Error saving layout:', error);
       }
     }
   };
@@ -47,7 +47,7 @@ const LayoutManager = ({
     try {
       await onUpdateLayout(layoutId, layoutNameToUpdate, columns);
     } catch (error) {
-      // Error handled by the hook
+      console.error('Error updating layout:', error);
     }
   };
 
@@ -58,23 +58,47 @@ const LayoutManager = ({
         setEditingLayoutId(null);
         setEditingLayoutName('');
       } catch (error) {
-        // Error handled by the hook
+        console.error('Error renaming layout:', error);
       }
     }
   };
 
   const handleLoadLayout = (layout: any) => {
-    // CRITICAL FIX: Ensure we pass only the columns array, and validate it's an array
-    if (layout && Array.isArray(layout.columns)) {
-      console.log('Loading layout with columns:', layout.columns);
-      onLoadLayout(layout.columns);
+    console.log('🔄 Loading layout:', layout);
+    
+    // Extract columns from the layout object - handle both formats
+    let columnsToLoad: Column[] = [];
+    
+    if (Array.isArray(layout.columns)) {
+      columnsToLoad = layout.columns;
     } else if (Array.isArray(layout)) {
       // Handle case where layout is already the columns array
-      console.log('Loading columns array directly:', layout);
-      onLoadLayout(layout);
+      columnsToLoad = layout;
     } else {
-      console.error('Invalid layout format:', layout);
+      console.error('❌ Invalid layout format:', layout);
+      return;
     }
+
+    // Validate that all items in the array are valid columns
+    const validColumns = columnsToLoad.filter(col => 
+      col && 
+      typeof col === 'object' && 
+      col.id && 
+      col.name && 
+      col.key
+    );
+
+    if (validColumns.length !== columnsToLoad.length) {
+      console.warn('⚠️ Some columns were invalid and filtered out');
+    }
+
+    if (validColumns.length === 0) {
+      console.error('❌ No valid columns found in layout');
+      return;
+    }
+
+    console.log('✅ Loading', validColumns.length, 'valid columns:', validColumns);
+    onLoadLayout(validColumns);
     setShowLoadLayout(false);
   };
 
@@ -131,9 +155,9 @@ const LayoutManager = ({
       {showLoadLayout && (
         <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
           {loading ? (
-            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading...</div>
+            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading layouts...</div>
           ) : savedLayouts.length === 0 ? (
-            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No saved layouts</div>
+            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No saved layouts found</div>
           ) : (
             savedLayouts.map((layout) => (
               <div
@@ -177,9 +201,13 @@ const LayoutManager = ({
                   <>
                     <button
                       onClick={() => handleLoadLayout(layout)}
-                      className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                      className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
+                      title={`Load layout with ${Array.isArray(layout.columns) ? layout.columns.length : 0} columns`}
                     >
-                      {layout.name}
+                      <div className="font-medium">{layout.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {Array.isArray(layout.columns) ? layout.columns.length : 0} columns
+                      </div>
                     </button>
                     <div className="flex items-center space-x-1">
                       <Button

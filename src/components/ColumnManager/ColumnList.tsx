@@ -21,8 +21,10 @@ const ColumnList = ({
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
+    console.log('🔄 Starting drag for column at index:', index);
     setDraggedColumnIndex(index);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -34,23 +36,40 @@ const ColumnList = ({
     e.preventDefault();
     
     if (draggedColumnIndex === null || draggedColumnIndex === dropIndex) {
+      console.log('🚫 Invalid drop - same position or no drag in progress');
       setDraggedColumnIndex(null);
       return;
     }
 
+    console.log('📦 Dropping column from index', draggedColumnIndex, 'to index', dropIndex);
+
+    // Create a new array with the reordered columns
     const newColumns = [...columns];
     const draggedColumn = newColumns[draggedColumnIndex];
     
+    // Remove the dragged column from its original position
     newColumns.splice(draggedColumnIndex, 1);
+    
+    // Insert it at the new position
     newColumns.splice(dropIndex, 0, draggedColumn);
     
+    console.log('✅ New column order:', newColumns.map(col => col.name));
+    
+    // Call the reorder handler
     onReorderColumns(newColumns);
+    setDraggedColumnIndex(null);
+  };
+
+  const handleDragEnd = () => {
     setDraggedColumnIndex(null);
   };
 
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Order & Visibility</h3>
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+        Drag columns to reorder them. Use the eye icon to hide/show columns.
+      </div>
       <div className="space-y-1 max-h-64 overflow-y-auto">
         {columns.map((column, index) => (
           <ColumnItem
@@ -61,12 +80,18 @@ const ColumnList = ({
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
             onToggleVisibility={onToggleColumnVisibility}
             onDeleteColumn={onDeleteColumn}
             onRenameColumn={onRenameColumn}
           />
         ))}
       </div>
+      {columns.length === 0 && (
+        <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+          No columns available
+        </div>
+      )}
     </div>
   );
 };

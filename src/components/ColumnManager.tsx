@@ -40,6 +40,41 @@ const ColumnManager = ({
 }: ColumnManagerProps) => {
   const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout } = useColumnLayoutStorage();
 
+  // Enhanced load layout handler with better validation
+  const handleLoadLayout = (layoutColumns: Column[]) => {
+    console.log('🔄 ColumnManager: Loading layout with columns:', layoutColumns);
+    
+    if (!Array.isArray(layoutColumns)) {
+      console.error('❌ Invalid layout columns - not an array:', layoutColumns);
+      return;
+    }
+
+    if (layoutColumns.length === 0) {
+      console.warn('⚠️ Layout has no columns');
+      return;
+    }
+
+    // Validate column structure
+    const validColumns = layoutColumns.filter(col => 
+      col && 
+      typeof col === 'object' && 
+      col.id && 
+      col.name && 
+      col.key
+    );
+
+    if (validColumns.length !== layoutColumns.length) {
+      console.warn('⚠️ Some columns were invalid:', {
+        total: layoutColumns.length,
+        valid: validColumns.length,
+        invalid: layoutColumns.filter(col => !col || !col.id || !col.name || !col.key)
+      });
+    }
+
+    console.log('✅ Loading', validColumns.length, 'valid columns');
+    onLoadLayout(validColumns);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -50,7 +85,7 @@ const ColumnManager = ({
           </Button>
         </div>
         
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-6">
           <LayoutManager
             columns={columns}
             savedLayouts={savedLayouts}
@@ -59,7 +94,7 @@ const ColumnManager = ({
             onUpdateLayout={updateLayout}
             onRenameLayout={renameLayout}
             onDeleteLayout={deleteLayout}
-            onLoadLayout={onLoadLayout}
+            onLoadLayout={handleLoadLayout}
           />
 
           <ColumnEditor onAddColumn={onAddColumn} />
