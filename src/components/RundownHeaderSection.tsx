@@ -3,6 +3,8 @@ import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
 import { CSVExportData } from '@/utils/csvExport';
+import { CSVImportResult } from '@/utils/csvImport';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownHeaderSectionProps {
   currentTime: Date;
@@ -45,6 +47,8 @@ interface RundownHeaderSectionProps {
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
   rundownData?: CSVExportData;
+  onCSVImport?: (result: CSVImportResult) => void;
+  existingColumns?: Column[];
 }
 
 const RundownHeaderSection = ({
@@ -87,7 +91,9 @@ const RundownHeaderSection = ({
   lastAction,
   isConnected,
   isProcessingRealtimeUpdate,
-  rundownData
+  rundownData,
+  onCSVImport,
+  existingColumns
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -132,6 +138,8 @@ const RundownHeaderSection = ({
         lastAction={lastAction}
         rundownTitle={rundownTitle}
         rundownData={rundownData}
+        onCSVImport={onCSVImport}
+        existingColumns={existingColumns}
       />
     </div>
   );
