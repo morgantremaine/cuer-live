@@ -1,20 +1,23 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Upload } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import { CsvImportDialog } from '@/components/CsvImportDialog';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useToast } from '@/hooks/use-toast';
+import { useCsvImport } from '@/hooks/useCsvImport';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { savedRundowns, loading, deleteRundown, updateRundown } = useRundownStorage();
   const { toast } = useToast();
+  const { createRundownFromCsv } = useCsvImport();
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
@@ -22,6 +25,9 @@ const Dashboard = () => {
     rundownId: '',
     title: ''
   });
+
+  // State for CSV import dialog
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
   
   // Handle any pending team invitations after login
   useInvitationHandler();
@@ -37,6 +43,18 @@ const Dashboard = () => {
 
   const handleCreateNew = () => {
     navigate('/rundown/new');
+  };
+
+  const handleCsvImport = () => {
+    setCsvImportOpen(true);
+  };
+
+  const handleCsvImportData = async (data: { items: any[], columns: any[], title: string }) => {
+    try {
+      await createRundownFromCsv(data);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
   const handleDeleteRundown = async (rundownId: string, title: string, e: React.MouseEvent) => {
@@ -107,8 +125,17 @@ const Dashboard = () => {
       />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-12">
-          {/* Create New Button */}
-          <CreateNewButton onClick={handleCreateNew} />
+          {/* Create New and Import Buttons */}
+          <div className="flex gap-4">
+            <CreateNewButton onClick={handleCreateNew} />
+            <button
+              onClick={handleCsvImport}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+            >
+              <Upload className="h-5 w-5" />
+              Import CSV
+            </button>
+          </div>
           
           {/* Active Rundowns Section */}
           <DashboardRundownGrid 
@@ -147,6 +174,13 @@ const Dashboard = () => {
         onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
         rundownTitle={deleteDialog.title}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* CSV Import Dialog */}
+      <CsvImportDialog
+        open={csvImportOpen}
+        onOpenChange={setCsvImportOpen}
+        onImport={handleCsvImportData}
       />
     </div>
   );

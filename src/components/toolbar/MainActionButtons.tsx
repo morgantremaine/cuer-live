@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Plus, Settings, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ interface MainActionButtonsProps {
   selectedRowId?: string | null;
   isMobile?: boolean;
   rundownTitle?: string;
+  rundownData?: any;
 }
 
 const MainActionButtons = ({
@@ -31,7 +31,8 @@ const MainActionButtons = ({
   onOpenTeleprompter,
   selectedRowId,
   isMobile = false,
-  rundownTitle = 'Untitled Rundown'
+  rundownTitle = 'Untitled Rundown',
+  rundownData
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -97,6 +98,7 @@ const MainActionButtons = ({
         <ShareRundownMenu 
           rundownId={rundownId} 
           rundownTitle={rundownTitle}
+          rundownData={rundownData}
         />
       )}
       
