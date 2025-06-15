@@ -250,13 +250,57 @@ const BlueprintContent = () => {
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
-  const { savedRundowns } = useRundownStorage();
+  const { savedRundowns, loading } = useRundownStorage();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
   const rundown = savedRundowns.find(r => r.id === id);
 
-  if (!rundown) {
-    return <BlueprintContent />;
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      navigate('/login')
+    } catch (error) {
+      navigate('/login')
+    }
   }
 
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
+
+  // Show loading state while fetching rundowns
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show error state if rundown not found - but don't wrap in provider
+  if (!rundown) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <DashboardHeader 
+          userEmail={user?.email} 
+          onSignOut={handleSignOut} 
+          showBackButton={true}
+          onBack={handleBack}
+        />
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
+            <Button onClick={() => navigate('/dashboard')}>
+              Return to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Only wrap in provider when we have a valid rundown
   return (
     <BlueprintProvider 
       rundownId={id || ''} 
