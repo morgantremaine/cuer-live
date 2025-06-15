@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -49,7 +50,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
       elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
       talent: '',
       script: '',
-      graphics: '',
       gfx: '',
       video: '',
       notes: '',
@@ -100,7 +100,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
         elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
-        graphics: '',
         gfx: '',
         video: '',
         notes: '',
@@ -315,3 +314,4 @@ export const useRundownItems = (markAsChanged: () => void) => {
     calculateHeaderDuration
   };
 };
+

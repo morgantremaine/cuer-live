@@ -1,4 +1,3 @@
-
 import { useReducer, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -321,7 +320,6 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
         elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
-        graphics: '',
         gfx: '',
         video: '',
         notes: '',
@@ -343,7 +341,6 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
         elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
-        graphics: '',
         gfx: '',
         video: '',
         notes: '',

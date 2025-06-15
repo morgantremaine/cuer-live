@@ -10,7 +10,6 @@ export interface RundownItem {
   elapsedTime: string;
   talent: string;
   script: string;
-  graphics: string;
   gfx: string;
   video: string;
   notes: string;
