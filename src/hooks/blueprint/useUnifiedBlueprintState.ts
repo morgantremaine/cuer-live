@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { useBlueprintContext } from '@/contexts/BlueprintContext';
-import { generateListFromColumn } from '@/utils/blueprintUtils';
+import { generateListFromColumn, getAvailableColumns } from '@/utils/blueprintUtils';
 import { RundownItem } from '@/types/rundown';
 import { BlueprintList } from '@/types/blueprint';
 
@@ -19,16 +19,10 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
     refreshBlueprint
   } = useBlueprintContext();
 
-  // Available columns for creating new lists - using 'name' instead of 'label'
-  const availableColumns = useMemo(() => [
-    { key: 'name', name: 'Segment Names' },
-    { key: 'talent', name: 'Talent' },
-    { key: 'gfx', name: 'Graphics' },
-    { key: 'video', name: 'Video' },
-    { key: 'notes', name: 'Notes' },
-    { key: 'script', name: 'Script' },
-    { key: 'headers', name: 'Headers' }
-  ], []);
+  // Available columns for creating new lists - dynamically generated from rundown data
+  const availableColumns = useMemo(() => {
+    return getAvailableColumns(items);
+  }, [items]);
 
   // Generate list ID
   const generateListId = (sourceColumn: string) => {

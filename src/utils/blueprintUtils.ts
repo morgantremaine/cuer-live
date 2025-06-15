@@ -48,20 +48,23 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
 export const getAvailableColumns = (items: RundownItem[]): { key: string; name: string; }[] => {
   const columns = new Set<string>();
   
-  // Always include headers
+  // Always include headers if they exist
   if (items.some(item => item.type === 'header')) {
     columns.add('headers');
   }
   
-  // Check standard fields
-  const standardFields = ['video', 'gfx', 'talent', 'audio', 'script'];
+  // Check standard fields that exist in RundownItem
+  const standardFields = ['talent', 'script', 'gfx', 'video', 'notes'];
   standardFields.forEach(field => {
-    if (items.some(item => item[field as keyof RundownItem] && item[field as keyof RundownItem] !== '')) {
+    if (items.some(item => {
+      const value = item[field as keyof RundownItem];
+      return value && value !== '';
+    })) {
       columns.add(field);
     }
   });
   
-  // Check custom fields
+  // Check custom fields from all items
   items.forEach(item => {
     if (item.customFields) {
       Object.keys(item.customFields).forEach(key => {
@@ -72,9 +75,37 @@ export const getAvailableColumns = (items: RundownItem[]): { key: string; name: 
     }
   });
   
-  // Convert to the expected format with key and name - change Headers to Blocks
-  return Array.from(columns).map(column => ({
-    key: column,
-    name: column === 'headers' ? 'Blocks' : column.charAt(0).toUpperCase() + column.slice(1)
-  }));
+  // Convert to the expected format with key and name
+  return Array.from(columns).map(column => {
+    let displayName: string;
+    
+    switch (column) {
+      case 'headers':
+        displayName = 'Blocks';
+        break;
+      case 'gfx':
+        displayName = 'Graphics';
+        break;
+      case 'video':
+        displayName = 'Video';
+        break;
+      case 'talent':
+        displayName = 'Talent';
+        break;
+      case 'script':
+        displayName = 'Script';
+        break;
+      case 'notes':
+        displayName = 'Notes';
+        break;
+      default:
+        // For custom fields, capitalize first letter
+        displayName = column.charAt(0).toUpperCase() + column.slice(1);
+    }
+    
+    return {
+      key: column,
+      name: displayName
+    };
+  });
 };
