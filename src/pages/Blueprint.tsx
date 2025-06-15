@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +12,7 @@ import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import CrewList from '@/components/blueprint/CrewList';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
-import { useUnifiedBlueprintState } from '@/hooks/blueprint/useUnifiedBlueprintState';
+import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
 
 const BlueprintContent = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,28 +22,59 @@ const BlueprintContent = () => {
   
   const rundown = savedRundowns.find(r => r.id === id);
   
-  // Use the unified blueprint state system
+  // Use BlueprintContext directly - single source of truth
   const {
-    lists,
-    availableColumns,
-    showDate,
-    initialized,
-    loading: blueprintLoading,
-    componentOrder,
-    updateShowDate,
-    addNewList,
+    state,
+    updateLists,
+    addList,
     deleteList,
     renameList,
     updateCheckedItems,
-    refreshAllLists,
-    updateComponentOrder,
-    updateLists
-  } = useUnifiedBlueprintState(rundown?.items || []);
+    updateShowDate,
+    updateComponentOrder
+  } = useBlueprintContext();
 
-  const [draggedListId, setDraggedListId] = useState<string | null>(null);
-  const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
+  // Get available columns from rundown items
+  const availableColumns = React.useMemo(() => {
+    if (!rundown?.items) return [];
+    return getAvailableColumns(rundown.items);
+  }, [rundown?.items]);
 
-  // Simple drag handlers for lists and components
+  // Add new list
+  const addNewList = React.useCallback((name: string, sourceColumn: string) => {
+    console.log('📋 Adding new list:', name, 'from column:', sourceColumn);
+    
+    if (!rundown?.items) return;
+    
+    const newList = {
+      id: `${sourceColumn}_${Date.now()}`,
+      name,
+      sourceColumn,
+      items: generateListFromColumn(rundown.items, sourceColumn),
+      checkedItems: {}
+    };
+    
+    console.log('📋 Generated new list:', newList);
+    addList(newList);
+  }, [rundown?.items, addList]);
+
+  // Refresh all lists
+  const refreshAllLists = React.useCallback(() => {
+    console.log('📋 Refreshing all lists with current rundown data');
+    if (!rundown?.items) return;
+    
+    const refreshedLists = state.lists.map(list => ({
+      ...list,
+      items: generateListFromColumn(rundown.items, list.sourceColumn)
+    }));
+    updateLists(refreshedLists);
+  }, [rundown?.items, state.lists, updateLists]);
+
+  // Drag and drop state for lists and components
+  const [draggedListId, setDraggedListId] = React.useState<string | null>(null);
+  const [insertionIndex, setInsertionIndex] = React.useState<number | null>(null);
+
+  // Drag handlers
   const handleDragStart = (e: React.DragEvent, itemId: string) => {
     console.log('📋 Drag start:', itemId);
     setDraggedListId(itemId);
@@ -61,31 +92,7 @@ const BlueprintContent = () => {
     e.preventDefault();
     if (draggedListId) {
       console.log('📋 Drag enter container at index:', index, 'for item:', draggedListId);
-      
-      // For component items (crew-list, camera-plot, scratchpad)
-      if (draggedListId === 'crew-list' || draggedListId === 'camera-plot' || draggedListId === 'scratchpad') {
-        setInsertionIndex(index);
-        return;
-      }
-
-      // For list items
-      const draggedIndex = lists.findIndex(list => list.id === draggedListId);
-      
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      const mouseY = e.clientY;
-      const elementCenter = rect.top + rect.height / 2;
-      
-      let targetIndex = index;
-      if (mouseY > elementCenter) {
-        targetIndex = index + 1;
-      }
-      
-      if (draggedIndex !== -1 && draggedIndex < targetIndex) {
-        targetIndex -= 1;
-      }
-      
-      console.log('📋 List drag - target index:', targetIndex);
-      setInsertionIndex(targetIndex);
+      setInsertionIndex(index);
     }
   };
 
@@ -110,7 +117,7 @@ const BlueprintContent = () => {
 
     // Handle special components reordering
     if (draggedId === 'crew-list' || draggedId === 'camera-plot' || draggedId === 'scratchpad') {
-      const currentComponentOrder = [...componentOrder];
+      const currentComponentOrder = [...state.componentOrder];
       const draggedIndex = currentComponentOrder.indexOf(draggedId);
       
       if (draggedIndex !== -1) {
@@ -118,14 +125,14 @@ const BlueprintContent = () => {
         currentComponentOrder.splice(draggedIndex, 1);
         
         // Calculate insertion position relative to component order
-        let targetPosition = insertionIndex - lists.length;
+        let targetPosition = insertionIndex - state.lists.length;
         if (targetPosition < 0) targetPosition = 0;
         if (targetPosition > currentComponentOrder.length) targetPosition = currentComponentOrder.length;
         
         // Insert at new position
         currentComponentOrder.splice(targetPosition, 0, draggedId);
         
-        // Update the component order in the unified state
+        // Update the component order
         console.log('📋 Updating component order:', currentComponentOrder);
         updateComponentOrder(currentComponentOrder);
       }
@@ -136,14 +143,14 @@ const BlueprintContent = () => {
     }
 
     // Handle list reordering
-    const draggedIndex = lists.findIndex(list => list.id === draggedId);
+    const draggedIndex = state.lists.findIndex(list => list.id === draggedId);
     if (draggedIndex === -1) {
       setDraggedListId(null);
       setInsertionIndex(null);
       return;
     }
 
-    const newLists = [...lists];
+    const newLists = [...state.lists];
     const [draggedList] = newLists.splice(draggedIndex, 1);
     newLists.splice(insertionIndex, 0, draggedList);
     
@@ -178,7 +185,7 @@ const BlueprintContent = () => {
     navigate('/dashboard');
   };
 
-  if (loading || blueprintLoading) {
+  if (loading || state.isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -217,7 +224,7 @@ const BlueprintContent = () => {
         onDragStart={(e) => handleDragStart(e, 'crew-list')}
         onDragEnter={(e) => {
           e.preventDefault();
-          const componentIndex = lists.length + componentOrder.indexOf('crew-list');
+          const componentIndex = state.lists.length + state.componentOrder.indexOf('crew-list');
           handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
@@ -240,7 +247,7 @@ const BlueprintContent = () => {
         onDragStart={(e) => handleDragStart(e, 'camera-plot')}
         onDragEnter={(e) => {
           e.preventDefault();
-          const componentIndex = lists.length + componentOrder.indexOf('camera-plot');
+          const componentIndex = state.lists.length + state.componentOrder.indexOf('camera-plot');
           handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
@@ -263,7 +270,7 @@ const BlueprintContent = () => {
         onDragStart={(e) => handleDragStart(e, 'scratchpad')}
         onDragEnter={(e) => {
           e.preventDefault();
-          const componentIndex = lists.length + componentOrder.indexOf('scratchpad');
+          const componentIndex = state.lists.length + state.componentOrder.indexOf('scratchpad');
           handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
@@ -287,7 +294,7 @@ const BlueprintContent = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
           rundown={rundown}
-          showDate={showDate}
+          showDate={state.showDate}
           availableColumns={availableColumns}
           onShowDateUpdate={updateShowDate}
           onAddList={addNewList}
@@ -300,14 +307,14 @@ const BlueprintContent = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {lists.length === 0 ? (
+          {state.lists.length === 0 ? (
             <BlueprintEmptyState
               availableColumns={availableColumns}
               onAddList={addNewList}
             />
           ) : (
             <BlueprintListsGrid
-              lists={lists}
+              lists={state.lists}
               rundownItems={rundown?.items || []}
               draggedListId={draggedListId}
               insertionIndex={insertionIndex}
@@ -324,8 +331,8 @@ const BlueprintContent = () => {
           )}
 
           {/* Render components in the specified order with insertion lines */}
-          {componentOrder.map((componentId, index) => {
-            const componentIndex = lists.length + index;
+          {state.componentOrder.map((componentId, index) => {
+            const componentIndex = state.lists.length + index;
             return (
               <React.Fragment key={componentId}>
                 {/* Insertion line before component */}
@@ -338,7 +345,7 @@ const BlueprintContent = () => {
           })}
 
           {/* Final insertion line */}
-          {insertionIndex === lists.length + componentOrder.length && (
+          {insertionIndex === state.lists.length + state.componentOrder.length && (
             <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
           )}
         </div>

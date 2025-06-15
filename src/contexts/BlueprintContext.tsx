@@ -50,6 +50,8 @@ const initialState: BlueprintState = {
 };
 
 function blueprintReducer(state: BlueprintState, action: BlueprintAction): BlueprintState {
+  console.log('📋 Blueprint reducer action:', action.type, action.payload);
+  
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
@@ -62,20 +64,25 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
     case 'SET_LAST_SAVED':
       return { ...state, lastSaved: action.payload };
     case 'UPDATE_LISTS':
+      console.log('📋 Updating lists in reducer:', action.payload);
       return { ...state, lists: action.payload };
     case 'UPDATE_SHOW_DATE':
+      console.log('📋 Updating show date in reducer:', action.payload);
       return { ...state, showDate: action.payload };
     case 'UPDATE_NOTES':
+      console.log('📋 Updating notes in reducer:', action.payload.length, 'characters');
       return { ...state, notes: action.payload };
     case 'UPDATE_CREW_DATA':
+      console.log('📋 Updating crew data in reducer:', action.payload.length, 'members');
       return { ...state, crewData: action.payload };
     case 'UPDATE_CAMERA_PLOTS':
+      console.log('📋 Updating camera plots in reducer:', action.payload.length, 'plots');
       return { ...state, cameraPlots: action.payload };
     case 'UPDATE_COMPONENT_ORDER':
-      console.log('📋 Reducer updating component order:', action.payload);
+      console.log('📋 Updating component order in reducer:', action.payload);
       return { ...state, componentOrder: action.payload };
     case 'MERGE_REMOTE_STATE':
-      console.log('📋 Merging remote state, component order:', action.payload.componentOrder);
+      console.log('📋 Merging remote state in reducer:', Object.keys(action.payload));
       return {
         ...state,
         ...action.payload,
@@ -84,6 +91,7 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
         isSaving: state.isSaving
       };
     case 'RESET_STATE':
+      console.log('📋 Resetting blueprint state');
       return { ...initialState };
     default:
       return state;
@@ -143,7 +151,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   useBlueprintRealtimeSync({
     rundownId,
     onRemoteUpdate: (remoteState) => {
-      console.log('📋 Merging remote blueprint state:', remoteState);
+      console.log('📋 Received remote blueprint update:', remoteState);
       dispatch({ type: 'MERGE_REMOTE_STATE', payload: remoteState });
     },
     enabled: state.isInitialized
@@ -157,15 +165,21 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     
     const initializeBlueprint = async () => {
       try {
+        console.log('📋 Initializing blueprint for rundown:', rundownId);
         dispatch({ type: 'SET_LOADING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
         
-        console.log('📋 Loading blueprint for rundown:', rundownId);
         const blueprintData = await loadBlueprint();
         
         if (blueprintData) {
-          console.log('📋 Loaded existing blueprint data:', blueprintData);
-          console.log('📋 Component order from database:', blueprintData.component_order);
+          console.log('📋 Loaded existing blueprint data:', {
+            lists: blueprintData.lists?.length || 0,
+            showDate: blueprintData.show_date,
+            notes: blueprintData.notes?.length || 0,
+            crewData: blueprintData.crew_data?.length || 0,
+            cameraPlots: blueprintData.camera_plots?.length || 0,
+            componentOrder: blueprintData.component_order
+          });
           
           dispatch({ type: 'MERGE_REMOTE_STATE', payload: {
             lists: blueprintData.lists || [],
@@ -176,8 +190,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
             componentOrder: blueprintData.component_order || ['crew-list', 'camera-plot', 'scratchpad']
           }});
         } else {
-          console.log('📋 No existing blueprint found, will create default lists when rundown items are available');
-          // Don't create default lists here - they will be created when items are available
+          console.log('📋 No existing blueprint found, starting with empty state');
         }
         
         dispatch({ type: 'SET_INITIALIZED', payload: true });
@@ -193,9 +206,12 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     initializeBlueprint();
   }, [rundownId, loadBlueprint, state.isInitialized]);
 
-  // Debounced save function with improved error handling
+  // Enhanced debounced save function with comprehensive logging
   const debouncedSave = React.useCallback(async () => {
-    if (!state.isInitialized) return;
+    if (!state.isInitialized) {
+      console.log('📋 Save skipped - not initialized yet');
+      return;
+    }
     
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -203,10 +219,18 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        console.log('📋 Starting save operation with data:', {
+          lists: state.lists.length,
+          showDate: state.showDate,
+          notes: state.notes.length,
+          crewData: state.crewData.length,
+          cameraPlots: state.cameraPlots.length,
+          componentOrder: state.componentOrder
+        });
+        
         dispatch({ type: 'SET_SAVING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
         
-        console.log('📋 Saving blueprint with component order:', state.componentOrder);
         await persistBlueprint(
           state.lists,
           true, // silent save
@@ -217,8 +241,9 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
           state.componentOrder
         );
         
-        dispatch({ type: 'SET_LAST_SAVED', payload: new Date().toISOString() });
-        console.log('📋 Blueprint saved successfully with component order:', state.componentOrder);
+        const timestamp = new Date().toISOString();
+        dispatch({ type: 'SET_LAST_SAVED', payload: timestamp });
+        console.log('📋 Blueprint saved successfully at', timestamp);
       } catch (error) {
         console.error('📋 Failed to save blueprint:', error);
         dispatch({ type: 'SET_ERROR', payload: 'Failed to save blueprint' });
@@ -228,29 +253,29 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     }, 1000);
   }, [state, persistBlueprint]);
 
-  // Action creators with improved logging
+  // Action creators with enhanced logging and immediate save triggers
   const updateLists = React.useCallback((lists: BlueprintList[]) => {
-    console.log('📋 Updating lists:', lists);
+    console.log('📋 Context updateLists called with:', lists.length, 'lists');
     dispatch({ type: 'UPDATE_LISTS', payload: lists });
     debouncedSave();
   }, [debouncedSave]);
 
   const addList = React.useCallback((list: BlueprintList) => {
-    console.log('📋 Adding new list:', list);
+    console.log('📋 Context addList called with:', list.name);
     const newLists = [...state.lists, list];
     dispatch({ type: 'UPDATE_LISTS', payload: newLists });
     debouncedSave();
   }, [state.lists, debouncedSave]);
 
   const deleteList = React.useCallback((listId: string) => {
-    console.log('📋 Deleting list:', listId);
+    console.log('📋 Context deleteList called for:', listId);
     const newLists = state.lists.filter(list => list.id !== listId);
     dispatch({ type: 'UPDATE_LISTS', payload: newLists });
     debouncedSave();
   }, [state.lists, debouncedSave]);
 
   const renameList = React.useCallback((listId: string, newName: string) => {
-    console.log('📋 Renaming list:', listId, 'to:', newName);
+    console.log('📋 Context renameList called:', listId, 'to:', newName);
     const updatedLists = state.lists.map(list => 
       list.id === listId ? { ...list, name: newName } : list
     );
@@ -259,7 +284,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   }, [state.lists, debouncedSave]);
 
   const updateCheckedItems = React.useCallback((listId: string, checkedItems: Record<string, boolean>) => {
-    console.log('📋 Updating checked items for list:', listId, checkedItems);
+    console.log('📋 Context updateCheckedItems called for:', listId, 'with', Object.keys(checkedItems).length, 'items');
     const updatedLists = state.lists.map(list => 
       list.id === listId ? { ...list, checkedItems } : list
     );
@@ -268,21 +293,25 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   }, [state.lists, debouncedSave]);
 
   const updateShowDate = React.useCallback((date: string) => {
+    console.log('📋 Context updateShowDate called with:', date);
     dispatch({ type: 'UPDATE_SHOW_DATE', payload: date });
     debouncedSave();
   }, [debouncedSave]);
 
   const updateNotes = React.useCallback((notes: string) => {
+    console.log('📋 Context updateNotes called with', notes.length, 'characters');
     dispatch({ type: 'UPDATE_NOTES', payload: notes });
     debouncedSave();
   }, [debouncedSave]);
 
   const updateCrewData = React.useCallback((crewData: CrewMember[]) => {
+    console.log('📋 Context updateCrewData called with', crewData.length, 'members');
     dispatch({ type: 'UPDATE_CREW_DATA', payload: crewData });
     debouncedSave();
   }, [debouncedSave]);
 
   const updateCameraPlots = React.useCallback((plots: CameraPlotScene[]) => {
+    console.log('📋 Context updateCameraPlots called with', plots.length, 'plots');
     dispatch({ type: 'UPDATE_CAMERA_PLOTS', payload: plots });
     debouncedSave();
   }, [debouncedSave]);
@@ -294,10 +323,12 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   }, [debouncedSave]);
 
   const saveBlueprint = React.useCallback(async () => {
+    console.log('📋 Manual save triggered');
     await debouncedSave();
   }, [debouncedSave]);
 
   const refreshBlueprint = React.useCallback(async () => {
+    console.log('📋 Manual refresh triggered');
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       const blueprintData = await loadBlueprint();
