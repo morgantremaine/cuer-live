@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -160,6 +159,9 @@ const SharedRundown = () => {
           startTime={rundownData.startTime || '09:00:00'}
           timezone={rundownData.timezone || 'UTC'}
           layoutName={layoutName}
+          currentSegmentId={currentSegmentId}
+          isPlaying={isPlaying}
+          timeRemaining={timeRemaining}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)]">
@@ -169,7 +171,6 @@ const SharedRundown = () => {
             currentSegmentId={currentSegmentId}
             isPlaying={isPlaying}
             rundownStartTime={rundownData.startTime || '09:00:00'}
-            timeRemaining={timeRemaining}
           />
         </div>
 
