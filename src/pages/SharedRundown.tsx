@@ -23,6 +23,8 @@ const SharedRundown = () => {
       
       setLayoutLoading(true);
       try {
+        console.log('Loading shared layout for rundown:', rundownId);
+        
         // Get the shared layout configuration
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
@@ -30,19 +32,27 @@ const SharedRundown = () => {
           .eq('rundown_id', rundownId)
           .maybeSingle();
 
+        console.log('Shared layout data:', sharedLayoutData, 'Error:', sharedError);
+
         if (sharedError && sharedError.code !== 'PGRST116') {
           console.error('Error loading shared layout config:', sharedError);
+          setLayoutColumns(null);
+          setLayoutName('Default Layout');
           setLayoutLoading(false);
           return;
         }
 
         // If there's a specific layout set, load it
         if (sharedLayoutData && sharedLayoutData.layout_id) {
+          console.log('Loading layout with ID:', sharedLayoutData.layout_id);
+          
           const { data: layoutData, error: layoutError } = await supabase
             .from('column_layouts')
             .select('columns, name')
             .eq('id', sharedLayoutData.layout_id)
             .maybeSingle();
+
+          console.log('Layout data:', layoutData, 'Error:', layoutError);
 
           if (layoutError) {
             console.error('Error loading layout:', layoutError);
@@ -50,15 +60,18 @@ const SharedRundown = () => {
             setLayoutColumns(null);
             setLayoutName('Default Layout');
           } else if (layoutData) {
+            console.log('Setting layout columns:', layoutData.columns);
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
           } else {
             // Layout not found, fallback to default
+            console.log('Layout not found, using default');
             setLayoutColumns(null);
             setLayoutName('Default Layout');
           }
         } else {
           // No specific layout set, use default
+          console.log('No shared layout set, using default');
           setLayoutColumns(null);
           setLayoutName('Default Layout');
         }
@@ -113,6 +126,9 @@ const SharedRundown = () => {
   // Use layout columns if available, otherwise fall back to rundown's default columns
   const columnsToUse = layoutColumns || rundownData.columns;
   const visibleColumns = getVisibleColumns(columnsToUse);
+
+  console.log('Final columns to use:', columnsToUse);
+  console.log('Layout name:', layoutName);
 
   // Determine if showcaller is playing and use the real-time calculated time remaining
   const showcallerState = rundownData.showcallerState;
