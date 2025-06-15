@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from './useAuth';
@@ -30,29 +29,26 @@ export const useSimplifiedRundownState = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
-  // Auto-save state - simplified to match hook signature
+  // Auto-save state - fix to match useAutoSave signature
   const {
     hasUnsavedChanges,
     isSaving,
     markAsChanged
-  } = useAutoSave({
+  } = useAutoSave(
     items,
     rundownTitle,
     columns,
-    timezone: timezoneState,
-    rundownStartTime,
-    rundownId: rundownId || '',
-    saveRundown
-  });
+    timezoneState,
+    rundownStartTime
+  );
 
-  // Realtime state - fix parameter order
+  // Realtime state - fix to match useRealtimeRundown signature
   const { 
     isConnected,
     trackOwnUpdate,
     setEditingState
   } = useRealtimeRundown({
     rundownId: rundownId || '',
-    items,
     setItems,
     setColumns,
     setRundownTitle,
@@ -61,7 +57,7 @@ export const useSimplifiedRundownState = () => {
     userId: user?.id || ''
   });
 
-  // Playback controls - simplified to match hook signature
+  // Playback controls - fix to match usePlaybackControls signature
   const {
     currentSegmentId,
     isPlaying,
@@ -71,10 +67,10 @@ export const useSimplifiedRundownState = () => {
     pause,
     forward,
     backward
-  } = usePlaybackControls({
-    rundownId: rundownId || '',
+  } = usePlaybackControls(
+    rundownId || '',
     items
-  });
+  );
 
   // Calculations - provide required items parameter
   const {
@@ -83,13 +79,13 @@ export const useSimplifiedRundownState = () => {
     calculateHeaderDuration
   } = useRundownCalculations(items);
 
-  // Undo functionality
+  // Undo functionality - fix to match useStandaloneUndo signature
   const {
     undo,
     canUndo,
     lastAction,
     saveState
-  } = useStandaloneUndo();
+  } = useStandaloneUndo(items);
 
   // Load rundown data
   useEffect(() => {
