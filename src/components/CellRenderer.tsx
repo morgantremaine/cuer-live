@@ -62,7 +62,7 @@ const CellRenderer = ({
       case 'notes':
         return item.notes || '';
       case 'gfx':
-        console.log(`🎨 CellRenderer: Getting GFX value for item ${item.id}: "${item.gfx}" (column.key: ${column.key})`);
+        console.log(`🎨 CellRenderer: Getting built-in GFX value for item ${item.id}: "${item.gfx}" (column.key: ${column.key})`);
         return item.gfx || '';
       case 'video':
         return item.video || '';

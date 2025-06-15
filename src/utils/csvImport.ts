@@ -88,7 +88,7 @@ export const transformCSVData = (
           case 'gfx':
             const gfxValue = String(value || '');
             item.gfx = gfxValue;
-            console.log(`✅ [GFX CASE] Set item.gfx to: "${gfxValue}" (from mapping: ${mapping.rundownColumn})`);
+            console.log(`✅ Set item.gfx to: "${gfxValue}"`);
             break;
           case 'video':
             item.video = String(value || '');
@@ -107,21 +107,13 @@ export const transformCSVData = (
             console.log(`✅ Set item.color to: "${item.color}"`);
             break;
           default:
-            // Handle custom fields and legacy mappings
-            console.log(`⚠️ [DEFAULT CASE] Handling field "${mapping.rundownColumn}" with value "${value}"`);
-            if (mapping.rundownColumn === 'graphics') {
-              // Legacy fallback for old saved layouts that might still use 'graphics'
-              const gfxValue = String(value || '');
-              item.gfx = gfxValue;
-              console.log(`✅ [LEGACY GRAPHICS] Set item.gfx to: "${gfxValue}" (from graphics mapping)`);
-            } else {
-              // Handle other custom fields
-              if (!item.customFields) {
-                item.customFields = {};
-              }
-              item.customFields[mapping.rundownColumn] = String(value || '');
-              console.log(`✅ Set custom field "${mapping.rundownColumn}" to: "${item.customFields[mapping.rundownColumn]}"`);
+            // Handle custom fields - this includes "graphics" when it's mapped as a custom field
+            console.log(`🔧 Handling custom field "${mapping.rundownColumn}" with value "${value}"`);
+            if (!item.customFields) {
+              item.customFields = {};
             }
+            item.customFields[mapping.rundownColumn] = String(value || '');
+            console.log(`✅ Set custom field "${mapping.rundownColumn}" to: "${item.customFields[mapping.rundownColumn]}"`);
             break;
         }
       } else if (csvColumnIndex === -1) {
@@ -164,7 +156,11 @@ export const transformCSVData = (
 
   console.log('✅ CSV Transform - Final result:', { 
     itemCount: items.length,
-    sampleGfxValues: items.slice(0, 10).map(item => ({ name: item.name, gfx: item.gfx }))
+    sampleItems: items.slice(0, 3).map(item => ({ 
+      name: item.name, 
+      gfx: item.gfx,
+      customFields: item.customFields 
+    }))
   });
   
   return { items };
