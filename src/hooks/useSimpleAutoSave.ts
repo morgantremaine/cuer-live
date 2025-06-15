@@ -15,12 +15,16 @@ export const useSimpleAutoSave = (
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
   const lastSaveTimeRef = useRef<number>(0);
-  const lastTriggerTimeRef = useRef<number>(0);
+  const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
-    // Minimal logging for undo coordination
+  };
+
+  // Function to set the own update tracker from realtime hook
+  const setTrackOwnUpdate = (tracker: (timestamp: string) => void) => {
+    trackOwnUpdateRef.current = tracker;
   };
 
   useEffect(() => {
@@ -78,6 +82,13 @@ export const useSimpleAutoSave = (
       lastSaveTimeRef.current = Date.now();
       
       try {
+        const updateTimestamp = new Date().toISOString();
+
+        // Track this as our own update BEFORE saving
+        if (trackOwnUpdateRef.current) {
+          trackOwnUpdateRef.current(updateTimestamp);
+        }
+
         // For new rundowns, we need to create them first
         if (!rundownId) {
           const { data: teamData, error: teamError } = await supabase
@@ -102,7 +113,7 @@ export const useSimpleAutoSave = (
               timezone: state.timezone,
               team_id: teamData.team_id,
               user_id: (await supabase.auth.getUser()).data.user?.id,
-              updated_at: new Date().toISOString()
+              updated_at: updateTimestamp
             })
             .select()
             .single();
@@ -125,7 +136,7 @@ export const useSimpleAutoSave = (
               columns: state.columns,
               start_time: state.startTime,
               timezone: state.timezone,
-              updated_at: new Date().toISOString()
+              updated_at: updateTimestamp
             })
             .eq('id', rundownId);
 
@@ -152,6 +163,7 @@ export const useSimpleAutoSave = (
 
   return {
     isSaving,
-    setUndoActive
+    setUndoActive,
+    setTrackOwnUpdate
   };
 };

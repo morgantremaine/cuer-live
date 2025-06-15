@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +33,7 @@ export const useRealtimeRundown = ({
   const lastContentHashRef = useRef<string>('');
   const currentRundownIdRef = useRef<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
+  const isInitializedRef = useRef(false);
 
   // Stable refs to prevent infinite loops
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
@@ -148,23 +150,8 @@ export const useRealtimeRundown = ({
     }
 
     try {
-      // Handle conflicts only for content changes when user has unsaved changes
-      if (hasUnsavedChanges && !isShowcallerOnlyUpdate) {
-        const shouldAcceptRemoteChanges = confirm(
-          `Another team member updated this rundown.\n\n` +
-          `You have unsaved changes that will be lost if you accept their update.\n\n` +
-          `Accept their changes? (Your changes will be lost)`
-        );
-        
-        if (!shouldAcceptRemoteChanges) {
-          toast({
-            title: 'Update Skipped',
-            description: 'Your changes are preserved. Save soon to avoid conflicts.',
-            duration: 3000,
-          });
-          return;
-        }
-      }
+      // REMOVED: Manual save conflict dialogs since we have auto-save
+      // No conflict resolution needed for auto-saved content
 
       console.log('🔄 Fetching updated rundown data');
 
@@ -259,35 +246,53 @@ export const useRealtimeRundown = ({
     }
   }, [hasUnsavedChanges, isProcessingUpdate, toast, createContentHash]);
 
+  // STABLE subscription management - avoid excessive cleanup/recreation
   useEffect(() => {
-    // Only set up subscription if we have the required data and it's different
-    if (!rundownId || !user || subscriptionRef.current) {
-      if (!rundownId || !user) {
-        console.log('⏸️ Skipping realtime setup - missing rundown ID or user');
-      }
+    const currentUserId = user?.id;
+    const currentRundownId = rundownId;
+
+    // Only set up subscription if we have required data and it's different from current
+    if (!currentUserId || !currentRundownId) {
+      console.log('⏸️ Skipping realtime setup - missing rundown ID or user');
       return;
     }
 
-    console.log('✅ Setting up realtime subscription for rundown:', rundownId);
+    // Don't recreate subscription if it's already for the same rundown
+    if (subscriptionRef.current && isInitializedRef.current && 
+        currentRundownIdRef.current === currentRundownId) {
+      console.log('♻️ Keeping existing subscription for rundown:', currentRundownId);
+      return;
+    }
+
+    // Clean up existing subscription only when necessary
+    if (subscriptionRef.current) {
+      console.log('🧹 Cleaning up realtime subscription on rundown change');
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+
+    console.log('✅ Setting up realtime subscription for rundown:', currentRundownId);
 
     const channel = supabase
-      .channel(`rundown-content-${rundownId}-${user.id}`) // Include user ID to make channel unique per user
+      .channel(`rundown-content-${currentRundownId}-${currentUserId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'rundowns',
-          filter: `id=eq.${rundownId}`
+          filter: `id=eq.${currentRundownId}`
         },
         handleRealtimeUpdate
       )
       .subscribe((status) => {
-        console.log('📡 Realtime subscription status:', status, 'for rundown:', rundownId);
+        console.log('📡 Realtime subscription status:', status, 'for rundown:', currentRundownId);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to rundown content updates');
+          isInitializedRef.current = true;
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Failed to subscribe to rundown content updates');
+          isInitializedRef.current = false;
         }
       });
 
@@ -298,9 +303,10 @@ export const useRealtimeRundown = ({
         console.log('🧹 Cleaning up realtime subscription on unmount');
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
+        isInitializedRef.current = false;
       }
     };
-  }, [rundownId, user?.id, handleRealtimeUpdate]);
+  }, [rundownId, user?.id]); // Minimal dependencies to avoid excessive re-creation
 
   return {
     isConnected: !!subscriptionRef.current,
