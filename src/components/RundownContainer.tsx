@@ -7,10 +7,7 @@ import { RundownContainerProps } from '@/types/rundownContainer';
 const RundownContainer = (props: RundownContainerProps) => {
   return (
     <RundownLayoutWrapper>
-      <RundownMainPropsAdapter 
-        props={props}
-        rundownData={{ items: props.items || [], columns: props.columns || [] }}
-      />
+      <RundownMainPropsAdapter props={props} />
     </RundownLayoutWrapper>
   );
 };

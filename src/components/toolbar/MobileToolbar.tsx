@@ -10,8 +10,6 @@ import {
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
-import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface MobileToolbarProps {
   onAddRow: () => void;
@@ -31,9 +29,6 @@ interface MobileToolbarProps {
   onForward: () => void;
   onBackward: () => void;
   rundownTitle?: string;
-  items?: RundownItem[];
-  columns?: Column[];
-  onImportItems?: (items: RundownItem[], newColumns: Column[]) => void;
 }
 
 const MobileToolbar = ({
@@ -53,10 +48,7 @@ const MobileToolbar = ({
   onPause,
   onForward,
   onBackward,
-  rundownTitle,
-  items,
-  columns,
-  onImportItems
+  rundownTitle
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -87,9 +79,6 @@ const MobileToolbar = ({
               selectedRowId={selectedRowId}
               isMobile={true}
               rundownTitle={rundownTitle}
-              items={items}
-              columns={columns}
-              onImportItems={onImportItems}
             />
           </DropdownMenuContent>
         </DropdownMenu>

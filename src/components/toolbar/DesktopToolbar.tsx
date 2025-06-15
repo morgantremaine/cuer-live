@@ -3,8 +3,6 @@ import React from 'react';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
-import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface DesktopToolbarProps {
   onAddRow: () => void;
@@ -24,9 +22,6 @@ interface DesktopToolbarProps {
   onForward: () => void;
   onBackward: () => void;
   rundownTitle?: string;
-  items?: RundownItem[];
-  columns?: Column[];
-  onImportItems?: (items: RundownItem[], newColumns: Column[]) => void;
 }
 
 const DesktopToolbar = ({
@@ -46,10 +41,7 @@ const DesktopToolbar = ({
   onPause,
   onForward,
   onBackward,
-  rundownTitle,
-  items,
-  columns,
-  onImportItems
+  rundownTitle
 }: DesktopToolbarProps) => {
   return (
     <div className="p-3 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -66,9 +58,6 @@ const DesktopToolbar = ({
           selectedRowId={selectedRowId}
           isMobile={false}
           rundownTitle={rundownTitle}
-          items={items}
-          columns={columns}
-          onImportItems={onImportItems}
         />
       </div>
 

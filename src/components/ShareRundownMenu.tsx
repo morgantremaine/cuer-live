@@ -11,20 +11,14 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
-import { exportToCSV, downloadCSV } from '@/utils/csvUtils';
-import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface ShareRundownMenuProps {
   rundownId: string;
   rundownTitle: string;
-  rundownData?: {
-    items: RundownItem[];
-    columns: Column[];
-  };
+  rundownData?: any; // Add rundown data for print functionality
 }
 
 export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
@@ -58,36 +52,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         title: 'Failed to copy',
         description: 'Please copy the link manually',
         variant: 'destructive',
-      });
-    }
-  };
-
-  const handleExportCSV = () => {
-    try {
-      if (!rundownData?.items || rundownData.items.length === 0) {
-        toast({
-          title: 'Export failed',
-          description: 'No data to export. Add some segments first.',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      const csvContent = exportToCSV(rundownData.items, rundownData.columns || []);
-      const filename = `${rundownTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
-      
-      downloadCSV(csvContent, filename);
-      
-      toast({
-        title: 'Export successful',
-        description: `Exported ${rundownData.items.length} items to ${filename}`
-      });
-    } catch (error) {
-      console.error('Export error:', error);
-      toast({
-        title: 'Export failed',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive'
       });
     }
   };
@@ -143,11 +107,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           <Copy className="h-4 w-4 mr-2" />
           Copy Read-Only Link
           {copied && <Check className="h-4 w-4 ml-auto text-green-600" />}
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleExportCSV}>
-          <Download className="h-4 w-4 mr-2" />
-          Export as CSV
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={handlePrint}>
