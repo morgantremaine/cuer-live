@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -20,7 +19,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown } = useRundownStorage();
   const { toast } = useToast();
-  const { setColumns } = useColumnsManager();
+  const { handleLoadLayout } = useColumnsManager();
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
@@ -117,7 +116,7 @@ const Dashboard = () => {
       // Set the columns from the selected layout
       if (layoutColumns && layoutColumns.length > 0) {
         console.log('Setting columns from layout:', layoutColumns);
-        setColumns(layoutColumns);
+        handleLoadLayout(layoutColumns);
       }
 
       // Create a new rundown with the imported data
