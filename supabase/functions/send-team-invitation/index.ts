@@ -188,9 +188,9 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi there!</p>
                 
-                <p><span class="highlight">${inviterName}</span> has invited you to join their team "<span class="highlight">${teamName}</span>" on Cuer.</p>
+                <p><span class="highlight">${inviterName}</span> has invited you to join their team on Cuer.</p>
                 
-                <p>Cuer is a powerful AI-powered rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
+                <p>Cuer is a powerful rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
                 
                 <p>Click the button below to accept the invitation and create your account:</p>
                 
