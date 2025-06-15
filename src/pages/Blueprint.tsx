@@ -121,10 +121,10 @@ const BlueprintContent = () => {
         key="crew-list"
         className={`${draggedListId === 'crew-list' ? 'opacity-50' : ''}`}
         draggable
-        onDragStart={(e) => handleDragStart(e, 'crew-list')}
+        onDragStart={(e) => handleDragStart()}
         onDragEnter={(e) => {
           e.preventDefault();
-          handleDragEnterContainer(e, lists.length + 1 + componentOrder.indexOf('crew-list'));
+          handleDragEnterContainer();
         }}
         onDragEnd={handleDragEnd}
       >
@@ -143,10 +143,10 @@ const BlueprintContent = () => {
         key="camera-plot"
         className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
         draggable
-        onDragStart={(e) => handleDragStart(e, 'camera-plot')}
+        onDragStart={(e) => handleDragStart()}
         onDragEnter={(e) => {
           e.preventDefault();
-          handleDragEnterContainer(e, lists.length + 1 + componentOrder.indexOf('camera-plot'));
+          handleDragEnterContainer();
         }}
         onDragEnd={handleDragEnd}
       >
@@ -165,10 +165,10 @@ const BlueprintContent = () => {
         key="scratchpad"
         className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
         draggable
-        onDragStart={(e) => handleDragStart(e, 'scratchpad')}
+        onDragStart={(e) => handleDragStart()}
         onDragEnter={(e) => {
           e.preventDefault();
-          handleDragEnterContainer(e, lists.length + 1 + componentOrder.indexOf('scratchpad'));
+          handleDragEnterContainer();
         }}
         onDragEnd={handleDragEnd}
       >

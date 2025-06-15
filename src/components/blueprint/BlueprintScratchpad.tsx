@@ -37,6 +37,12 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
     );
   }
 
+  // Ensure saveStatus is one of the allowed types
+  const validSaveStatus: "error" | "saving" | "saved" = 
+    saveStatus === 'error' || saveStatus === 'saving' || saveStatus === 'saved' 
+      ? saveStatus 
+      : 'saved';
+
   return (
     <Card className="w-full mt-8 bg-gray-800 border-gray-700">
       <CardHeader className="pb-4">
@@ -44,7 +50,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
           <div className="flex items-center gap-2">
             <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
             <CardTitle className="text-xl text-white">Show Scratchpad</CardTitle>
-            <SaveStatus status={saveStatus} />
+            <SaveStatus status={validSaveStatus} />
           </div>
           <ScratchpadToolbar
             isEditing={isEditing}

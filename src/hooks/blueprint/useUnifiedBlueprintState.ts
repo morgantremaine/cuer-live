@@ -19,15 +19,15 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
     refreshBlueprint
   } = useBlueprintContext();
 
-  // Available columns for creating new lists
+  // Available columns for creating new lists - using 'name' instead of 'label'
   const availableColumns = useMemo(() => [
-    { key: 'name', label: 'Segment Names' },
-    { key: 'talent', label: 'Talent' },
-    { key: 'gfx', label: 'Graphics' },
-    { key: 'video', label: 'Video' },
-    { key: 'notes', label: 'Notes' },
-    { key: 'script', label: 'Script' },
-    { key: 'headers', label: 'Headers' }
+    { key: 'name', name: 'Segment Names' },
+    { key: 'talent', name: 'Talent' },
+    { key: 'gfx', name: 'Graphics' },
+    { key: 'video', name: 'Video' },
+    { key: 'notes', name: 'Notes' },
+    { key: 'script', name: 'Script' },
+    { key: 'headers', name: 'Headers' }
   ], []);
 
   // Generate list ID
