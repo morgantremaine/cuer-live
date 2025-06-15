@@ -5,7 +5,7 @@ import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import CSVImportDialog from '@/components/CSVImportDialog';
-import { transformCSVData, validateCSVData } from '@/utils/csvImport';
+import { CSVImportResult, validateCSVData } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -100,23 +100,11 @@ const Dashboard = () => {
     });
   };
 
-  const handleCSVImport = async (csvRows: any[][], columnMappings: any[]) => {
+  const handleCSVImport = async (result: CSVImportResult) => {
     try {
-      if (!validateCSVData(csvRows)) {
-        toast({
-          title: 'Invalid CSV data',
-          description: 'The CSV file contains invalid data.',
-          variant: 'destructive',
-        });
-        return;
-      }
+      console.log('Dashboard handling CSV import:', result);
 
-      // Get CSV headers from the first mapping (they should all have the same structure)
-      const csvHeaders = columnMappings.map(mapping => mapping.csvColumn);
-      
-      const { items, newColumns } = transformCSVData(csvRows, columnMappings, csvHeaders);
-      
-      if (items.length === 0) {
+      if (!result.items || result.items.length === 0) {
         toast({
           title: 'No data to import',
           description: 'The CSV file does not contain any valid rundown data.',
@@ -127,11 +115,11 @@ const Dashboard = () => {
 
       // Create a new rundown with the imported data
       const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;
-      const rundownId = await createRundown(rundownTitle, items);
+      const rundownId = await createRundown(rundownTitle, result.items);
       
       toast({
         title: 'Import successful',
-        description: `Imported ${items.length} items into a new rundown.`,
+        description: `Imported ${result.items.length} items into a new rundown.`,
       });
 
       // Navigate to the new rundown
