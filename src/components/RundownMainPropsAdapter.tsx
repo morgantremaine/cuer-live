@@ -1,15 +1,20 @@
-
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
 import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import { RundownContainerProps } from '@/types/rundownContainer';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownMainPropsAdapterProps {
   props: RundownContainerProps;
+  rundownData?: {
+    items: RundownItem[];
+    columns: Column[];
+  };
 }
 
-const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
+const RundownMainPropsAdapter = ({ props, rundownData }: RundownMainPropsAdapterProps) => {
   const {
     currentTime,
     timezone,
@@ -119,6 +124,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         lastAction={lastAction}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        rundownData={rundownData}
       />
 
       {/* Main Content */}

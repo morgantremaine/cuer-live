@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -16,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, saveRundown } = useRundownStorage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -89,7 +90,27 @@ const Dashboard = () => {
           const rundownTitle = `Imported: ${filename}`;
           const rundownId = uuidv4();
           
-          await createRundown(rundownId, rundownTitle, importedItems);
+          // Use saveRundown instead of createRundown
+          const newRundown = {
+            id: rundownId,
+            user_id: user?.id || '',
+            title: rundownTitle,
+            items: importedItems,
+            columns: newColumns,
+            timezone: 'America/New_York',
+            start_time: new Date().toISOString(),
+            icon: '📋',
+            archived: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            undo_history: [],
+            team_id: '',
+            visibility: 'team' as const,
+            teams: null,
+            creator_profile: null
+          };
+          
+          await saveRundown(newRundown);
           
           toast({
             title: 'Import successful',
