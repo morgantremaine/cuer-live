@@ -16,7 +16,9 @@ export const useRundownGridInteractions = (
   calculateEndTime: (startTime: string, duration: string) => string,
   selectColor: (id: string, color: string) => void,
   markAsChanged: () => void,
-  setRundownTitle: (title: string) => void
+  setRundownTitle: (title: string) => void,
+  addRowAtIndex: (insertIndex: number) => void,
+  addHeaderAtIndex: (insertIndex: number) => void
 ) => {
   const {
     selectedRows,
@@ -43,9 +45,7 @@ export const useRundownGridInteractions = (
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange,
-    addRowAtIndex,
-    addHeaderAtIndex
+    handleTitleChange
   } = useRundownInteractionHandlers(
     items,
     setItems,
@@ -60,7 +60,9 @@ export const useRundownGridInteractions = (
     calculateEndTime,
     selectColor,
     markAsChanged,
-    setRundownTitle
+    setRundownTitle,
+    addRowAtIndex,
+    addHeaderAtIndex
   );
 
   return {

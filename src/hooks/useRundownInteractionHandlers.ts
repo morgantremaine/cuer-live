@@ -19,7 +19,9 @@ export const useRundownInteractionHandlers = (
   calculateEndTime: (startTime: string, duration: string) => string,
   selectColor: (id: string, color: string) => void,
   markAsChanged: () => void,
-  setRundownTitle: (title: string) => void
+  setRundownTitle: (title: string) => void,
+  addRowAtIndex: (insertIndex: number) => void,
+  addHeaderAtIndex: (insertIndex: number) => void
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
@@ -72,7 +74,9 @@ export const useRundownInteractionHandlers = (
     hasClipboardData,
     toggleRowSelection,
     items,
-    setRundownTitle
+    setRundownTitle,
+    addRowAtIndex,
+    addHeaderAtIndex
   });
 
   return {
