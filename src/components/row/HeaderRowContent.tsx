@@ -37,14 +37,20 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-3 py-3 text-base font-mono font-semibold align-middle border border-border w-16 min-w-16 min-h-[56px]"
-        style={{ backgroundColor }}
+        className="px-3 py-3 text-base font-mono font-semibold align-middle border border-border min-h-[56px]"
+        style={{ 
+          backgroundColor,
+          width: '64px',
+          minWidth: '64px', 
+          maxWidth: '64px' // Ensure exact width matching
+        }}
       >
         <span style={{ color: textColor }}>{rowNumber}</span>
       </td>
       {/* Dynamic columns */}
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
+        const widthValue = parseInt(columnWidth.replace('px', ''));
         
         // Special handling for headers - only show specific fields
         if (column.key === 'segmentName') {
@@ -56,6 +62,7 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
+                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor 
               }}
             >
@@ -77,14 +84,15 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border px-3 py-3 min-h-[56px]"
+              className="align-middle border border-border px-3 py-3 min-h-[56px] overflow-hidden"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
+                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor 
               }}
             >
-              <div className="break-words whitespace-pre-wrap text-sm font-medium text-gray-600 dark:text-gray-300" style={{ color: textColor }}>
+              <div className="truncate text-sm font-medium text-gray-600 dark:text-gray-300" style={{ color: textColor }}>
                 ({headerDuration})
               </div>
             </td>
@@ -98,6 +106,7 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
+                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor 
               }}
             >
@@ -113,6 +122,7 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
+                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor 
               }}
             >

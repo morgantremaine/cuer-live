@@ -17,8 +17,15 @@ const RundownTableHeader = ({
   return (
     <thead className="bg-blue-600 dark:bg-blue-700">
       <tr>
-        {/* Row number column - matches the structure in RundownTable */}
-        <th className="px-2 py-3 text-left text-sm font-semibold text-white border-r border-blue-500 bg-blue-600 w-16 min-w-16">
+        {/* Row number column - matches the structure in RundownTable exactly */}
+        <th 
+          className="px-2 py-3 text-left text-sm font-semibold text-white border-r border-blue-500 bg-blue-600"
+          style={{ 
+            width: '64px', 
+            minWidth: '64px',
+            maxWidth: '64px' // Ensure exact width matching
+          }}
+        >
           #
         </th>
         {/* Dynamic columns */}

@@ -134,13 +134,17 @@ const ResizableColumnHeader = ({
     <th 
       ref={headerRef}
       className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500 bg-blue-600"
-      style={{ width: constrainedWidthPx, minWidth: constrainedWidthPx }}
+      style={{ 
+        width: constrainedWidthPx, 
+        minWidth: constrainedWidthPx,
+        maxWidth: constrainedWidthPx // Ensure exact width matching
+      }}
     >
       {showLeftSeparator && (
         <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-500" />
       )}
       
-      <div className="truncate pr-2">
+      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap">
         {children}
       </div>
       
