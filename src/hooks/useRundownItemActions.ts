@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 export const useRundownItemActions = (
   setItems: React.Dispatch<React.SetStateAction<RundownItem[]>>
@@ -60,7 +61,7 @@ export const useRundownItemActions = (
       } else {
         // Insert at the end (default behavior)
         const lastItem = prevItems[prevItems.length - 1];
-        newStartTime = lastItem ? calculateEndTime(lastItem.startTime, lastItem.duration) : '00:00:00';
+        newStartTime = lastItem ? calculateEndTime(lastItem.startTime, lastItem.duration) : RUNDOWN_DEFAULTS.DEFAULT_START_TIME;
       }
 
       const newItem: RundownItem = {
@@ -69,9 +70,9 @@ export const useRundownItemActions = (
         rowNumber: newRowNumber,
         name: 'New Segment',
         startTime: newStartTime,
-        duration: '00:00:00', // Fixed to always be 00:00:00 for new rows
-        endTime: calculateEndTime(newStartTime, '00:00:00'),
-        elapsedTime: '00:00:00',
+        duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION, // Using constant
+        endTime: calculateEndTime(newStartTime, RUNDOWN_DEFAULTS.NEW_ROW_DURATION),
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
         gfx: '',
@@ -108,18 +109,18 @@ export const useRundownItemActions = (
       } else {
         // Insert at the end (default behavior)
         const lastItem = prevItems[prevItems.length - 1];
-        newStartTime = lastItem ? lastItem.endTime : '00:00:00';
+        newStartTime = lastItem ? lastItem.endTime : RUNDOWN_DEFAULTS.DEFAULT_START_TIME;
       }
 
       const newHeader: RundownItem = {
         id: String(Date.now()),
         type: 'header',
         rowNumber: newHeaderNumber,
-        name: 'New Header',
+        name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
         startTime: newStartTime,
-        duration: '00:00:00',
+        duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
         endTime: newStartTime,
-        elapsedTime: '00:00:00',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
         gfx: '',
@@ -179,14 +180,14 @@ export const useRundownItemActions = (
   const addMultipleRows = useCallback((items: any[], calculateEndTime: (startTime: string, duration: string) => string) => {
     setItems(prevItems => {
       const lastItem = prevItems[prevItems.length - 1];
-      const newStartTime = lastItem ? lastItem.endTime : '00:00:00';
+      const newStartTime = lastItem ? lastItem.endTime : RUNDOWN_DEFAULTS.DEFAULT_START_TIME;
       
       const newItems = items.map((item, index) => ({
         ...item,
         id: String(Date.now() + index),
         startTime: calculateEndTime(newStartTime, item.duration),
         endTime: calculateEndTime(calculateEndTime(newStartTime, item.duration), item.duration),
-        elapsedTime: '00:00:00',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         isHeader: item.type === 'header',
         isFloated: item.isFloated || false,
         segmentName: item.segmentName || item.rowNumber,

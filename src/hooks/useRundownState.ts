@@ -1,8 +1,8 @@
-
 import { useReducer, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
+import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 export interface RundownState {
   items: RundownItem[];
@@ -36,9 +36,9 @@ type RundownAction =
 const initialState: RundownState = {
   items: [],
   columns: [],
-  title: 'Untitled Rundown',
-  startTime: '09:00:00',
-  timezone: 'UTC',
+  title: RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_TITLE,
+  startTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
+  timezone: RUNDOWN_DEFAULTS.DEFAULT_TIMEZONE,
   currentSegmentId: null,
   isPlaying: false,
   hasUnsavedChanges: false,
@@ -313,17 +313,17 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
         id: uuidv4(),
         type: 'regular',
         rowNumber: '',
-        name: '',
+        name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
         startTime: '',
-        duration: '00:02:00',
+        duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION, // Using constant
         endTime: '',
-        elapsedTime: '',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
         gfx: '',
         video: '',
         notes: '',
-        color: '',
+        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
         isFloating: false
       };
       actions.addItem(newItem, insertIndex);
@@ -334,17 +334,17 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
         id: uuidv4(),
         type: 'header',
         rowNumber: 'A',
-        name: 'New Header',
+        name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
         startTime: '',
-        duration: '',
+        duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
         endTime: '',
-        elapsedTime: '',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
         gfx: '',
         video: '',
         notes: '',
-        color: '',
+        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
         isFloating: false
       };
       actions.addItem(newItem, insertIndex);

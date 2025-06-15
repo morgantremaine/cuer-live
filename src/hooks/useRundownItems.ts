@@ -1,7 +1,7 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
+import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 export type { RundownItem } from '@/types/rundown';
 
@@ -42,17 +42,17 @@ export const useRundownItems = (markAsChanged: () => void) => {
       id: uuidv4(),
       type: 'regular',
       rowNumber: '',
-      name: '',
+      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
       startTime: '',
-      duration: '00:00:00', // Fixed to always be 00:00:00 for new rows
+      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
       endTime: '',
-      elapsedTime: '',
+      elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
       talent: '',
       script: '',
       gfx: '',
       video: '',
       notes: '',
-      color: '',
+      color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
       isFloating: false,
       customFields: {}
     };
@@ -92,17 +92,17 @@ export const useRundownItems = (markAsChanged: () => void) => {
         id: uuidv4(),
         type: 'header',
         rowNumber: 'A', // Will be renumbered below
-        name: 'New Header',
+        name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
         startTime: '',
-        duration: '00:00:00',
+        duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
         endTime: '',
-        elapsedTime: '',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
         talent: '',
         script: '',
         gfx: '',
         video: '',
         notes: '',
-        color: '',
+        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
         isFloating: false,
         customFields: {}
       };
