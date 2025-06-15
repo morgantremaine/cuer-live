@@ -5,45 +5,65 @@ import { getVisibleColumns } from '@/utils/sharedRundownUtils';
 import { SharedRundownHeader } from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
-import { useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useParams } from 'react-router-dom';
 
 const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
-  const [searchParams] = useSearchParams();
+  const { rundownId } = useParams();
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
-  
-  const layoutId = searchParams.get('layout');
+  const [layoutName, setLayoutName] = useState('Default Layout');
 
-  // Load specific layout if layout parameter is provided
+  // Load the shared layout for this rundown
   useEffect(() => {
-    const loadLayout = async () => {
-      if (!layoutId || !rundownData) return;
+    const loadSharedLayout = async () => {
+      if (!rundownId || !rundownData) return;
       
       setLayoutLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('column_layouts')
-          .select('columns')
-          .eq('id', layoutId)
+        // First, get the shared layout configuration
+        const { data: sharedLayoutData, error: sharedError } = await supabase
+          .from('shared_rundown_layouts')
+          .select('layout_id')
+          .eq('rundown_id', rundownId)
           .maybeSingle();
 
-        if (error) {
-          console.error('Error loading layout:', error);
-        } else if (data?.columns) {
-          setLayoutColumns(data.columns);
+        if (sharedError && sharedError.code !== 'PGRST116') {
+          console.error('Error loading shared layout config:', sharedError);
+          setLayoutLoading(false);
+          return;
+        }
+
+        // If there's a specific layout set, load it
+        if (sharedLayoutData?.layout_id) {
+          const { data: layoutData, error: layoutError } = await supabase
+            .from('column_layouts')
+            .select('columns, name')
+            .eq('id', sharedLayoutData.layout_id)
+            .maybeSingle();
+
+          if (layoutError) {
+            console.error('Error loading layout:', layoutError);
+          } else if (layoutData?.columns) {
+            setLayoutColumns(layoutData.columns);
+            setLayoutName(layoutData.name || 'Custom Layout');
+          }
+        } else {
+          // No specific layout set, use default
+          setLayoutColumns(null);
+          setLayoutName('Default Layout');
         }
       } catch (error) {
-        console.error('Failed to load layout:', error);
+        console.error('Failed to load shared layout:', error);
       } finally {
         setLayoutLoading(false);
       }
     };
 
-    loadLayout();
-  }, [layoutId, rundownData]);
+    loadSharedLayout();
+  }, [rundownId, rundownData]);
 
   if (loading) {
     return (
@@ -103,6 +123,7 @@ const SharedRundown = () => {
           title={rundownData.title}
           startTime={rundownData.startTime || '09:00:00'}
           timezone={rundownData.timezone || 'UTC'}
+          layoutName={layoutName}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)]">

@@ -25,24 +25,25 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   rundownTitle
 }) => {
   const { toast } = useToast();
-  const [copied, setCopied] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const {
     sharedLayout,
     availableLayouts,
     updateSharedLayout
   } = useSharedRundownLayout(rundownId);
 
-  const baseUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
+  // Always use the same permanent URL
+  const permanentUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
 
-  const copyToClipboard = async (url: string, type: string) => {
+  const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(type);
+      await navigator.clipboard.writeText(permanentUrl);
+      setCopied(true);
       toast({
         title: 'Link copied!',
         description: `Shared rundown link copied to clipboard`,
       });
-      setTimeout(() => setCopied(null), 2000);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast({
         title: 'Failed to copy',
@@ -52,17 +53,12 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     }
   };
 
-  const handleShareCurrentView = () => {
-    const url = sharedLayout?.layout_id 
-      ? `${baseUrl}?layout=${sharedLayout.layout_id}`
-      : baseUrl;
-    copyToClipboard(url, 'current');
-  };
-
-  const handleShareWithLayout = async (layoutId: string | null, layoutName: string) => {
+  const handleSetSharedLayout = async (layoutId: string | null, layoutName: string) => {
     await updateSharedLayout(layoutId);
-    const url = layoutId ? `${baseUrl}?layout=${layoutId}` : baseUrl;
-    copyToClipboard(url, `layout-${layoutId}`);
+    toast({
+      title: 'Shared layout updated!',
+      description: `Shared rundown will now display: ${layoutName}`,
+    });
   };
 
   const getCurrentLayoutName = () => {
@@ -80,10 +76,10 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={handleShareCurrentView}>
+        <DropdownMenuItem onClick={copyToClipboard}>
           <Copy className="h-4 w-4 mr-2" />
-          Share Current View
-          {copied === 'current' && <Check className="h-4 w-4 ml-auto text-green-600" />}
+          Copy Share Link
+          {copied && <Check className="h-4 w-4 ml-auto text-green-600" />}
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
@@ -91,7 +87,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Layout className="h-4 w-4 mr-2" />
-            Share with Layout...
+            Set Shared Layout...
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
             <div className="px-2 py-1.5 text-sm text-muted-foreground">
@@ -99,20 +95,20 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
             </div>
             <DropdownMenuSeparator />
             
-            <DropdownMenuItem onClick={() => handleShareWithLayout(null, 'Default Layout')}>
+            <DropdownMenuItem onClick={() => handleSetSharedLayout(null, 'Default Layout')}>
               <span className="mr-2">📋</span>
               Default Layout
-              {copied === 'layout-null' && <Check className="h-4 w-4 ml-auto text-green-600" />}
+              {!sharedLayout?.layout_id && <Check className="h-4 w-4 ml-auto text-green-600" />}
             </DropdownMenuItem>
             
             {availableLayouts.map((layout) => (
               <DropdownMenuItem
                 key={layout.id}
-                onClick={() => handleShareWithLayout(layout.id, layout.name)}
+                onClick={() => handleSetSharedLayout(layout.id, layout.name)}
               >
                 <span className="mr-2">💾</span>
                 {layout.name}
-                {copied === `layout-${layout.id}` && <Check className="h-4 w-4 ml-auto text-green-600" />}
+                {sharedLayout?.layout_id === layout.id && <Check className="h-4 w-4 ml-auto text-green-600" />}
               </DropdownMenuItem>
             ))}
             
