@@ -64,22 +64,21 @@ const LayoutManager = ({
   };
 
   const handleLoadLayout = (layout: any) => {
-    console.log('🔄 Loading layout:', layout);
+    console.log('🔄 LayoutManager: Loading layout:', layout);
     
-    // Extract columns from the layout object - handle both formats
     let columnsToLoad: Column[] = [];
     
+    // Handle different layout data formats
     if (Array.isArray(layout.columns)) {
       columnsToLoad = layout.columns;
     } else if (Array.isArray(layout)) {
-      // Handle case where layout is already the columns array
       columnsToLoad = layout;
     } else {
       console.error('❌ Invalid layout format:', layout);
       return;
     }
 
-    // Validate that all items in the array are valid columns
+    // Validate column structure
     const validColumns = columnsToLoad.filter(col => 
       col && 
       typeof col === 'object' && 
@@ -88,16 +87,12 @@ const LayoutManager = ({
       col.key
     );
 
-    if (validColumns.length !== columnsToLoad.length) {
-      console.warn('⚠️ Some columns were invalid and filtered out');
-    }
-
     if (validColumns.length === 0) {
       console.error('❌ No valid columns found in layout');
       return;
     }
 
-    console.log('✅ Loading', validColumns.length, 'valid columns:', validColumns);
+    console.log('✅ LayoutManager: Loading', validColumns.length, 'valid columns');
     onLoadLayout(validColumns);
     setShowLoadLayout(false);
   };

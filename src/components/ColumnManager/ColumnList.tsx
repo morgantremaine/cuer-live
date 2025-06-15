@@ -21,7 +21,7 @@ const ColumnList = ({
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    console.log('🔄 Starting drag for column at index:', index);
+    console.log('🔄 ColumnList: Starting drag for column at index:', index, columns[index]?.name);
     setDraggedColumnIndex(index);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', index.toString());
@@ -41,7 +41,7 @@ const ColumnList = ({
       return;
     }
 
-    console.log('📦 Dropping column from index', draggedColumnIndex, 'to index', dropIndex);
+    console.log('📦 ColumnList: Dropping column from index', draggedColumnIndex, 'to index', dropIndex);
 
     // Create a new array with the reordered columns
     const newColumns = [...columns];
@@ -53,7 +53,7 @@ const ColumnList = ({
     // Insert it at the new position
     newColumns.splice(dropIndex, 0, draggedColumn);
     
-    console.log('✅ New column order:', newColumns.map(col => col.name));
+    console.log('✅ ColumnList: New column order:', newColumns.map(col => col.name));
     
     // Call the reorder handler
     onReorderColumns(newColumns);
@@ -62,6 +62,23 @@ const ColumnList = ({
 
   const handleDragEnd = () => {
     setDraggedColumnIndex(null);
+  };
+
+  const handleToggleVisibility = (columnId: string) => {
+    console.log('👁️ ColumnList: Toggling visibility for column:', columnId);
+    onToggleColumnVisibility(columnId);
+  };
+
+  const handleDeleteColumn = (columnId: string) => {
+    console.log('🗑️ ColumnList: Deleting column:', columnId);
+    onDeleteColumn(columnId);
+  };
+
+  const handleRenameColumn = (columnId: string, newName: string) => {
+    console.log('✏️ ColumnList: Renaming column:', columnId, 'to:', newName);
+    if (onRenameColumn) {
+      onRenameColumn(columnId, newName);
+    }
   };
 
   return (
@@ -81,9 +98,9 @@ const ColumnList = ({
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onDragEnd={handleDragEnd}
-            onToggleVisibility={onToggleColumnVisibility}
-            onDeleteColumn={onDeleteColumn}
-            onRenameColumn={onRenameColumn}
+            onToggleVisibility={handleToggleVisibility}
+            onDeleteColumn={handleDeleteColumn}
+            onRenameColumn={handleRenameColumn}
           />
         ))}
       </div>

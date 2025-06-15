@@ -43,6 +43,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
 
     isLoadingRef.current = true;
+    console.log('🔄 Loading column preferences for rundown:', rundownId);
 
     try {
       const { data, error } = await supabase
@@ -57,10 +58,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         setColumns(defaultColumns);
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
+        console.log('✅ Loaded user column preferences:', loadedColumns.length, 'columns');
         setColumns(loadedColumns);
         lastSavedRef.current = JSON.stringify(loadedColumns);
-        console.log('✅ Loaded user column preferences:', loadedColumns.length, 'columns');
       } else {
+        console.log('📋 No saved preferences, using defaults');
         setColumns(defaultColumns);
         lastSavedRef.current = JSON.stringify(defaultColumns);
       }
@@ -75,10 +77,18 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Save column preferences with debouncing
   const saveColumnPreferences = useCallback(async (columnsToSave: Column[]) => {
-    if (!user?.id || !rundownId) return;
+    if (!user?.id || !rundownId) {
+      console.log('⚠️ Cannot save: missing user or rundown ID');
+      return;
+    }
 
     const currentSignature = JSON.stringify(columnsToSave);
-    if (currentSignature === lastSavedRef.current) return;
+    if (currentSignature === lastSavedRef.current) {
+      console.log('⚠️ No changes to save');
+      return;
+    }
+
+    console.log('💾 Preparing to save column preferences:', columnsToSave.length, 'columns');
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {

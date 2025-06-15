@@ -1,9 +1,12 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
+import { useColumnsManager } from '@/hooks/useColumnsManager';
+import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -22,8 +25,6 @@ const RundownIndexContent = () => {
     rundownStartTime,
     rundownId,
     items,
-    visibleColumns,
-    columns,
     currentSegmentId,
     getRowNumber,
     calculateHeaderDuration,
@@ -48,11 +49,32 @@ const RundownIndexContent = () => {
     canUndo,
     lastAction,
     isConnected,
-    isProcessingRealtimeUpdate,
-    addColumn,
-    updateColumnWidth,
-    setColumns
+    isProcessingRealtimeUpdate
   } = coreState;
+
+  // Use user column preferences for persistent column management
+  const { 
+    columns: userColumns, 
+    setColumns: setUserColumns, 
+    isLoading: isLoadingPreferences,
+    isSaving: isSavingPreferences 
+  } = useUserColumnPreferences(rundownId);
+
+  // Use columns manager for operations
+  const {
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumn,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    handleUpdateColumnWidth
+  } = useColumnsManager(() => {
+    // Mark as changed - handled by auto-save
+  });
+
+  // Filter visible columns
+  const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
 
   const {
     selectedRows,
@@ -153,8 +175,9 @@ const RundownIndexContent = () => {
   // Convert timeRemaining to number (assuming it's in seconds)
   const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
 
-  // Create a wrapper for handleAddColumn that takes a string
+  // Enhanced column management handlers that integrate with user preferences
   const handleAddColumnWrapper = (name: string) => {
+    console.log('🔄 Adding new column:', name);
     const newColumn = {
       id: `custom_${Date.now()}`,
       name,
@@ -164,7 +187,82 @@ const RundownIndexContent = () => {
       isCustom: true,
       isEditable: true
     };
-    addColumn(newColumn);
+    
+    // Add to existing columns and update user preferences
+    const updatedColumns = [...userColumns];
+    updatedColumns.splice(1, 0, newColumn); // Insert after segment name
+    setUserColumns(updatedColumns);
+  };
+
+  const handleReorderColumnsWrapper = (reorderedColumns: any[]) => {
+    console.log('🔄 Reordering columns to:', reorderedColumns.length, 'columns');
+    setUserColumns(reorderedColumns);
+  };
+
+  const handleDeleteColumnWrapper = (columnId: string) => {
+    console.log('🗑️ Deleting column:', columnId);
+    const filteredColumns = userColumns.filter(col => col.id !== columnId);
+    setUserColumns(filteredColumns);
+  };
+
+  const handleRenameColumnWrapper = (columnId: string, newName: string) => {
+    console.log('✏️ Renaming column:', columnId, 'to:', newName);
+    const updatedColumns = userColumns.map(col => {
+      if (col.id === columnId) {
+        return { ...col, name: newName };
+      }
+      return col;
+    });
+    setUserColumns(updatedColumns);
+  };
+
+  const handleToggleColumnVisibilityWrapper = (columnId: string) => {
+    console.log('👁️ Toggling visibility for column:', columnId);
+    const updatedColumns = userColumns.map(col => {
+      if (col.id === columnId) {
+        const newVisibility = col.isVisible !== false ? false : true;
+        return { ...col, isVisible: newVisibility };
+      }
+      return col;
+    });
+    setUserColumns(updatedColumns);
+  };
+
+  const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
+    console.log('📥 Loading layout with', layoutColumns.length, 'columns');
+    
+    if (!Array.isArray(layoutColumns)) {
+      console.error('❌ Invalid layout columns - not an array:', layoutColumns);
+      return;
+    }
+
+    // Validate and clean the layout columns
+    const validColumns = layoutColumns.filter(col => 
+      col && 
+      typeof col === 'object' && 
+      col.id && 
+      col.name && 
+      col.key
+    );
+
+    if (validColumns.length === 0) {
+      console.error('❌ No valid columns found in layout');
+      return;
+    }
+
+    console.log('✅ Loading', validColumns.length, 'valid columns');
+    setUserColumns(validColumns);
+  };
+
+  const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
+    console.log('📏 Updating column width:', columnId, 'to:', width);
+    const updatedColumns = userColumns.map(col => {
+      if (col.id === columnId) {
+        return { ...col, width: `${width}px` };
+      }
+      return col;
+    });
+    setUserColumns(updatedColumns);
   };
 
   // Prepare rundown data for Cuer AI
@@ -174,7 +272,7 @@ const RundownIndexContent = () => {
     startTime: rundownStartTime,
     timezone: timezone,
     items: items,
-    columns: columns,
+    columns: userColumns,
     totalRuntime: totalRuntime
   };
 
@@ -209,7 +307,7 @@ const RundownIndexContent = () => {
         setShowColumnManager={setShowColumnManager}
         items={items}
         visibleColumns={visibleColumns}
-        columns={columns}
+        columns={userColumns}
         showColorPicker={showColorPicker}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
@@ -218,7 +316,7 @@ const RundownIndexContent = () => {
         dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
         getColumnWidth={getColumnWidth}
-        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, `${width}px`)}
+        updateColumnWidth={handleUpdateColumnWidthWrapper}
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
@@ -250,16 +348,13 @@ const RundownIndexContent = () => {
         onForward={forward}
         onBackward={backward}
         handleAddColumn={handleAddColumnWrapper}
-        handleReorderColumns={() => {}} // TODO: Implement if needed
-        handleDeleteColumnWithCleanup={(columnId) => {
-          const newColumns = columns.filter(col => col.id !== columnId);
-          setColumns(newColumns);
-        }}
-        handleRenameColumn={() => {}} // TODO: Implement if needed
-        handleToggleColumnVisibility={() => {}} // TODO: Implement if needed
-        handleLoadLayout={() => {}} // TODO: Implement if needed
+        handleReorderColumns={handleReorderColumnsWrapper}
+        handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}
+        handleRenameColumn={handleRenameColumnWrapper}
+        handleToggleColumnVisibility={handleToggleColumnVisibilityWrapper}
+        handleLoadLayout={handleLoadLayoutWrapper}
         hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
+        isSaving={isSaving || isSavingPreferences}
         rundownTitle={rundownTitle}
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}
