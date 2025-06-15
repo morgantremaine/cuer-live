@@ -134,7 +134,7 @@ const ResizableColumnHeader = ({
   return (
     <th 
       ref={headerRef}
-      className="px-1 py-2 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500 bg-blue-600"
+      className="px-1 py-1 text-left text-sm font-semibold text-white relative select-none border-r border-blue-500 bg-blue-600"
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
