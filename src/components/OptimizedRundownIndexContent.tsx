@@ -94,9 +94,9 @@ const OptimizedRundownIndexContent = React.memo(() => {
     return status;
   }, [handlers.getRowStatus]);
 
-  // Fix getRowNumber to expect index instead of id
+  // Fix getRowNumber to work with index-based interface
   const getRowNumberWrapper = useCallback((index: number): string => {
-    if (index < state.items.length) {
+    if (index >= 0 && index < state.items.length) {
       const item = state.items[index];
       return state.getRowNumber(item.id);
     }

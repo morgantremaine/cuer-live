@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,17 @@ import Blueprint from '@/pages/Blueprint';
 import CameraPlotEditor from '@/pages/CameraPlotEditor';
 import SharedRundown from '@/pages/SharedRundown';
 import OptimizedRundownIndexContent from '@/components/OptimizedRundownIndexContent';
+
+// Wrapper component to extract params for BlueprintProvider
+const BlueprintWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  
+  return (
+    <BlueprintProvider rundownId={id || ''} rundownTitle="Blueprint">
+      <Blueprint />
+    </BlueprintProvider>
+  );
+};
 
 function App() {
   return (
@@ -33,9 +44,7 @@ function App() {
               path="/blueprint/:id"
               element={
                 <ProtectedRoute>
-                  <BlueprintProvider>
-                    <Blueprint />
-                  </BlueprintProvider>
+                  <BlueprintWrapper />
                 </ProtectedRoute>
               }
             />
