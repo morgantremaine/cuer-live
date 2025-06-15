@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -38,6 +39,7 @@ export const useShowcallerState = ({
   const stateChangeCallbackRef = useRef(onShowcallerStateChange);
   const hasInitialized = useRef(false);
   const lastSyncedStateRef = useRef<string | null>(null);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Keep callback ref updated
   stateChangeCallbackRef.current = onShowcallerStateChange;
@@ -95,6 +97,23 @@ export const useShowcallerState = ({
     return null;
   }, [items]);
 
+  // ENHANCED: Debounced sync function to prevent rapid fire updates
+  const debouncedSync = useCallback((newState: ShowcallerState) => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    
+    syncTimeoutRef.current = setTimeout(() => {
+      console.log('📺 Debounced sync executing for state:', newState);
+      if (trackOwnUpdate) {
+        trackOwnUpdate(newState.lastUpdate);
+      }
+      if (stateChangeCallbackRef.current) {
+        stateChangeCallbackRef.current(newState);
+      }
+    }, 150); // 150ms debounce to group rapid updates
+  }, [trackOwnUpdate]);
+
   // Update showcaller state
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
     const updatedState = {
@@ -107,15 +126,10 @@ export const useShowcallerState = ({
     setShowcallerState(updatedState);
     
     if (shouldSync && stateChangeCallbackRef.current) {
-      console.log('📺 Syncing state change');
-      
-      if (trackOwnUpdate) {
-        trackOwnUpdate(updatedState.lastUpdate);
-      }
-      
-      stateChangeCallbackRef.current(updatedState);
+      console.log('📺 Syncing state change (debounced)');
+      debouncedSync(updatedState);
     }
-  }, [showcallerState, trackOwnUpdate]);
+  }, [showcallerState, debouncedSync]);
 
   // Clear current status from all items
   const clearCurrentStatus = useCallback(() => {
@@ -299,19 +313,28 @@ export const useShowcallerState = ({
     }, true);
   }, [updateShowcallerState, stopTimer, userId]);
 
+  // ENHANCED: Improved forward/backward with better coordination
   const forward = useCallback(() => {
     console.log('📺 Forward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
     if (showcallerState.currentSegmentId) {
       const nextSegment = getNextSegment(showcallerState.currentSegmentId);
       if (nextSegment) {
         console.log('📺 Moving to next segment:', nextSegment.id);
-        updateItem(showcallerState.currentSegmentId, 'status', 'completed');
         
+        // BATCH the operations to reduce conflicts
+        updateItem(showcallerState.currentSegmentId, 'status', 'completed');
+        updateItem(nextSegment.id, 'status', 'current');
+        
+        const duration = timeToSeconds(nextSegment.duration || '00:00');
+        
+        // Single coordinated state update
         updateShowcallerState({
+          currentSegmentId: nextSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
           controllerId: userId
         }, true);
         
-        setCurrentSegment(nextSegment.id);
         if (showcallerState.isPlaying) {
           startTimer();
         }
@@ -321,7 +344,7 @@ export const useShowcallerState = ({
     } else {
       console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, setCurrentSegment, userId, updateShowcallerState, startTimer]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer]);
 
   const backward = useCallback(() => {
     console.log('📺 Backward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
@@ -329,13 +352,21 @@ export const useShowcallerState = ({
       const prevSegment = getPreviousSegment(showcallerState.currentSegmentId);
       if (prevSegment) {
         console.log('📺 Moving to previous segment:', prevSegment.id);
-        updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
         
+        // BATCH the operations to reduce conflicts
+        updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
+        updateItem(prevSegment.id, 'status', 'current');
+        
+        const duration = timeToSeconds(prevSegment.duration || '00:00');
+        
+        // Single coordinated state update
         updateShowcallerState({
+          currentSegmentId: prevSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
           controllerId: userId
         }, true);
         
-        setCurrentSegment(prevSegment.id);
         if (showcallerState.isPlaying) {
           startTimer();
         }
@@ -345,7 +376,7 @@ export const useShowcallerState = ({
     } else {
       console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, setCurrentSegment, userId, updateShowcallerState, startTimer]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer]);
 
   // External state application
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
@@ -410,11 +441,14 @@ export const useShowcallerState = ({
     }
   }, [items.length, showcallerState.currentSegmentId, timeToSeconds]);
 
-  // Cleanup timer on unmount
+  // Cleanup timer and sync timeout on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
       }
     };
   }, []);

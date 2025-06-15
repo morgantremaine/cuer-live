@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ export const useShowcallerRealtime = ({
   const onShowcallerActivityRef = useRef(onShowcallerActivity);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Keep callback ref updated
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
@@ -47,6 +49,7 @@ export const useShowcallerRealtime = ({
     }
   }, []);
 
+  // ENHANCED: Debounced update handler to prevent rapid-fire processing
   const handleShowcallerUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -62,46 +65,59 @@ export const useShowcallerRealtime = ({
     
     // Prevent processing duplicate updates based on lastUpdate timestamp
     if (showcallerState.lastUpdate && showcallerState.lastUpdate === lastProcessedUpdateRef.current) {
+      console.log('📺 Skipping duplicate update:', showcallerState.lastUpdate);
       return;
     }
 
-    // SIMPLIFIED: Skip if this update originated from this user with shorter tracking
+    // Skip if this update originated from this user
     if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
       console.log('📺 Skipping own update:', showcallerState.lastUpdate);
       return;
     }
 
-    lastProcessedUpdateRef.current = showcallerState.lastUpdate;
-    
-    console.log('📺 Processing showcaller state update:', {
-      controllerId: showcallerState.controllerId,
-      isPlaying: showcallerState.isPlaying,
-      currentSegment: showcallerState.currentSegmentId,
-      fromUser: showcallerState.controllerId
-    });
-
-    // Signal showcaller activity
-    signalActivity();
-    
-    try {
-      // Apply state immediately for better sync
-      onShowcallerStateReceivedRef.current(showcallerState);
-    } catch (error) {
-      console.error('Error processing showcaller realtime update:', error);
+    // ENHANCED: Debounce rapid updates to prevent conflicts
+    if (processingTimeoutRef.current) {
+      clearTimeout(processingTimeoutRef.current);
     }
+
+    processingTimeoutRef.current = setTimeout(() => {
+      lastProcessedUpdateRef.current = showcallerState.lastUpdate;
+      
+      console.log('📺 Processing showcaller state update:', {
+        controllerId: showcallerState.controllerId,
+        isPlaying: showcallerState.isPlaying,
+        currentSegment: showcallerState.currentSegmentId,
+        fromUser: showcallerState.controllerId,
+        timestamp: showcallerState.lastUpdate
+      });
+
+      // Signal showcaller activity
+      signalActivity();
+      
+      try {
+        // Apply state for better sync
+        onShowcallerStateReceivedRef.current(showcallerState);
+      } catch (error) {
+        console.error('Error processing showcaller realtime update:', error);
+      }
+    }, 100); // 100ms debounce for rapid updates
+    
   }, [rundownId, signalActivity]);
 
-  // Function to track our own updates with shorter tracking time
+  // Function to track our own updates
   const trackOwnUpdate = useCallback((lastUpdate: string) => {
     ownUpdateTrackingRef.current.add(lastUpdate);
     
     // Signal our own activity
     signalActivity();
     
-    // SHORTER CLEANUP: Clean up old tracked updates after 10 seconds
+    console.log('📺 Tracking own update:', lastUpdate, 'total tracked:', ownUpdateTrackingRef.current.size);
+    
+    // Clean up old tracked updates after 8 seconds (shorter window)
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(lastUpdate);
-    }, 10000);
+      console.log('📺 Cleaned up tracked update:', lastUpdate);
+    }, 8000);
   }, [signalActivity]);
 
   useEffect(() => {
@@ -143,6 +159,9 @@ export const useShowcallerRealtime = ({
       }
       if (activityTimeoutRef.current) {
         clearTimeout(activityTimeoutRef.current);
+      }
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
       }
     };
   }, [rundownId, user, enabled, handleShowcallerUpdate]);
