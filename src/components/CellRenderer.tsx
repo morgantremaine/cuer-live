@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
@@ -79,7 +78,11 @@ const CellRenderer = ({
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
-      <TimeDisplayCell value={value} backgroundColor={backgroundColor} />
+      <TimeDisplayCell 
+        value={value} 
+        backgroundColor={backgroundColor} 
+        textColor={textColor}
+      />
     );
   }
 
