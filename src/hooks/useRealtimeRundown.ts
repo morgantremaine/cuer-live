@@ -27,7 +27,6 @@ export const useRealtimeRundown = ({
   const { toast } = useToast();
   const subscriptionRef = useRef<any>(null);
   const lastUpdateTimestampRef = useRef<string | null>(null);
-  const lastOwnUpdateRef = useRef<string | null>(null);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const isEditingRef = useRef(false);
   const lastContentHashRef = useRef<string>('');
@@ -50,17 +49,16 @@ export const useRealtimeRundown = ({
   currentRundownIdRef.current = rundownId;
   currentUserIdRef.current = user?.id || null;
 
-  // Enhanced tracking of our own updates
+  // Enhanced tracking of our own updates with timestamp-based detection
   const trackOwnUpdate = useCallback((timestamp: string) => {
-    console.log('🏷️ Tracking own update:', timestamp);
-    lastOwnUpdateRef.current = timestamp;
+    console.log('🏷️ Tracking own update with timestamp:', timestamp);
     ownUpdateTrackingRef.current.add(timestamp);
     
-    // Clean up old tracked updates after 15 seconds
+    // Clean up old tracked updates after 10 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
       console.log('🧹 Cleaned up tracked update:', timestamp);
-    }, 15000);
+    }, 10000);
   }, []);
 
   // Set editing state
@@ -84,38 +82,26 @@ export const useRealtimeRundown = ({
 
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     const updateTimestamp = payload.new?.updated_at;
-    const userIdFromUpdate = payload.new?.user_id;
     const currentUserId = currentUserIdRef.current;
     const currentRundownId = currentRundownIdRef.current;
     
     console.log('📡 Realtime update received:', {
       timestamp: updateTimestamp,
-      fromUserId: userIdFromUpdate,
-      currentUserId: currentUserId,
       rundownId: payload.new?.id,
       currentRundownId: currentRundownId,
-      isOwnUpdate: userIdFromUpdate === currentUserId,
-      isTrackedUpdate: ownUpdateTrackingRef.current.has(updateTimestamp)
+      currentUserId: currentUserId,
+      trackedUpdates: Array.from(ownUpdateTrackingRef.current)
     });
     
-    // Skip if this is our own tracked update
-    if (updateTimestamp && (
-        updateTimestamp === lastOwnUpdateRef.current ||
-        ownUpdateTrackingRef.current.has(updateTimestamp)
-    )) {
-      console.log('⏭️ Skipping - tracked as own update');
-      return;
-    }
-    
-    // Skip if the user_id matches (if available)
-    if (userIdFromUpdate && userIdFromUpdate === currentUserId) {
-      console.log('⏭️ Skipping - user ID matches');
-      return;
-    }
-
     // Skip if not for the current rundown
     if (payload.new?.id !== currentRundownId) {
       console.log('⏭️ Skipping - different rundown');
+      return;
+    }
+
+    // ONLY skip if this update timestamp is in our tracked updates (our own updates)
+    if (updateTimestamp && ownUpdateTrackingRef.current.has(updateTimestamp)) {
+      console.log('⏭️ Skipping - tracked as own update');
       return;
     }
 
@@ -134,7 +120,7 @@ export const useRealtimeRundown = ({
       isEditing: isEditingRef.current,
       hasUnsavedChanges,
       isProcessing: isProcessingUpdate,
-      contentHash: currentContentHash.substring(0, 50) + '...'
+      contentHashMatch: currentContentHash === lastContentHashRef.current
     });
 
     // Allow showcaller updates through unless actively editing

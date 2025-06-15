@@ -29,6 +29,7 @@ export const useStableRealtimeCollaboration = ({
   const enabledRef = useRef(enabled);
   const lastSetupRundownId = useRef<string | null>(null);
   const lastSetupUserId = useRef<string | null>(null);
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   
   // Keep refs updated but NEVER trigger effects
   currentRundownIdRef.current = rundownId;
@@ -36,6 +37,18 @@ export const useStableRealtimeCollaboration = ({
   onRemoteUpdateRef.current = onRemoteUpdate;
   onReloadCurrentRundownRef.current = onReloadCurrentRundown;
   enabledRef.current = enabled;
+
+  // Track our own updates to avoid processing them
+  const trackOwnUpdate = useCallback((timestamp: string) => {
+    console.log('🏷️ Stable - tracking own update:', timestamp);
+    ownUpdateTrackingRef.current.add(timestamp);
+    
+    // Clean up old tracked updates after 10 seconds
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(timestamp);
+      console.log('🧹 Stable - cleaned up tracked update:', timestamp);
+    }, 10000);
+  }, []);
 
   // Create stable cleanup function that never changes
   const cleanup = useCallback(() => {
@@ -53,15 +66,14 @@ export const useStableRealtimeCollaboration = ({
   const handleRealtimeUpdate = useCallback((payload: any) => {
     const currentUserId = userIdRef.current;
     const currentRundownId = currentRundownIdRef.current;
-    const updateUserId = payload.new?.user_id;
+    const updateTimestamp = payload.new?.updated_at;
     
     console.log('📡 Stable realtime update received:', {
       event: payload.eventType,
       rundownId: payload.new?.id,
-      updatedByUserId: updateUserId,
+      timestamp: updateTimestamp,
       currentUserId: currentUserId,
-      timestamp: payload.commit_timestamp,
-      isOwnUpdate: updateUserId === currentUserId
+      trackedUpdates: Array.from(ownUpdateTrackingRef.current)
     });
 
     // Only process updates for the current rundown
@@ -70,9 +82,9 @@ export const useStableRealtimeCollaboration = ({
       return;
     }
 
-    // Don't process our own updates - improved detection
-    if (updateUserId && updateUserId === currentUserId) {
-      console.log('⏭️ Stable - ignoring own update (user ID match)');
+    // ONLY skip if this update timestamp is in our tracked updates (our own updates)
+    if (updateTimestamp && ownUpdateTrackingRef.current.has(updateTimestamp)) {
+      console.log('⏭️ Stable - ignoring own update (timestamp match)');
       return;
     }
 
@@ -94,7 +106,7 @@ export const useStableRealtimeCollaboration = ({
         } catch (error) {
           console.error('Error in onReloadCurrentRundown callback:', error);
         }
-      }, 100); // Slightly increased delay for better reliability
+      }, 100);
     }
   }, []);
 
@@ -150,6 +162,7 @@ export const useStableRealtimeCollaboration = ({
   }, [user?.id, rundownId, enabled, handleRealtimeUpdate, cleanup]);
 
   return {
-    isConnected: isConnectedRef.current
+    isConnected: isConnectedRef.current,
+    trackOwnUpdate
   };
 };
