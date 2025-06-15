@@ -212,17 +212,17 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-700">
         <DialogHeader>
-          <DialogTitle>Import CSV Rundown</DialogTitle>
+          <DialogTitle className="text-white">Import CSV Rundown</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           {!file && (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center bg-gray-700">
               <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <Label htmlFor="csv-upload" className="cursor-pointer">
-                <span className="text-lg font-medium">Choose CSV file</span>
+                <span className="text-lg font-medium text-gray-200">Choose CSV file</span>
                 <Input
                   id="csv-upload"
                   type="file"
@@ -231,15 +231,15 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                   className="hidden"
                 />
               </Label>
-              <p className="text-gray-500 mt-2">Select a CSV file to import as a new rundown</p>
+              <p className="text-gray-400 mt-2">Select a CSV file to import as a new rundown</p>
             </div>
           )}
 
           {csvData && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Map CSV Columns to Rundown Columns</h3>
-                <Button onClick={addNewColumn} variant="outline" size="sm">
+                <h3 className="text-lg font-semibold text-white">Map CSV Columns to Rundown Columns</h3>
+                <Button onClick={addNewColumn} variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Column
                 </Button>
@@ -247,19 +247,20 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
 
               {newColumns.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">New Columns</Label>
+                  <Label className="text-sm font-medium text-gray-300">New Columns</Label>
                   {newColumns.map((newCol) => (
                     <div key={newCol.id} className="flex items-center space-x-2">
                       <Input
                         placeholder="Enter column name"
                         value={newCol.name}
                         onChange={(e) => updateNewColumn(newCol.id, e.target.value)}
-                        className="flex-1"
+                        className="flex-1 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                       />
                       <Button
                         onClick={() => removeNewColumn(newCol.id)}
                         variant="outline"
                         size="sm"
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -272,15 +273,15 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                 {columnMappings.map((mapping, index) => (
                   <div key={index} className="grid grid-cols-2 gap-4 items-center">
                     <div>
-                      <Label className="text-sm">CSV Column</Label>
-                      <div className="p-2 bg-gray-100 rounded border">
+                      <Label className="text-sm text-gray-300">CSV Column</Label>
+                      <div className="p-2 bg-gray-700 rounded border border-gray-600 text-gray-200">
                         {mapping.csvColumn}
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm">
+                      <Label className="text-sm text-gray-300">
                         Map to Rundown Column 
-                        {mapping.isSkipped && <span className="text-orange-600 ml-2">(Skipped)</span>}
+                        {mapping.isSkipped && <span className="text-orange-400 ml-2">(Skipped)</span>}
                       </Label>
                       <Select
                         value={mapping.isSkipped ? 'SKIP' : mapping.rundownColumn}
@@ -288,20 +289,20 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                           updateColumnMapping(index, 'rundownColumn', value);
                         }}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                           <SelectValue placeholder="Select column or skip..." />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SKIP" className="text-orange-600">
+                        <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectItem value="SKIP" className="text-orange-400 focus:bg-gray-600 focus:text-orange-300">
                             Skip this column
                           </SelectItem>
                           {DEFAULT_RUNDOWN_COLUMNS.map((col) => (
-                            <SelectItem key={col.key} value={col.key}>
+                            <SelectItem key={col.key} value={col.key} className="text-gray-200 focus:bg-gray-600">
                               {col.name}
                             </SelectItem>
                           ))}
                           {newColumns.map((newCol) => (
-                            <SelectItem key={newCol.id} value={newCol.id}>
+                            <SelectItem key={newCol.id} value={newCol.id} className="text-gray-200 focus:bg-gray-600">
                               {newCol.name || 'Unnamed new column'}
                             </SelectItem>
                           ))}
@@ -314,18 +315,18 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
 
               {csvData.rows.length > 0 && (
                 <div>
-                  <Label className="text-sm font-medium">Preview (first 3 rows)</Label>
-                  <div className="mt-2 border rounded-lg overflow-hidden">
+                  <Label className="text-sm font-medium text-gray-300">Preview (first 3 rows)</Label>
+                  <div className="mt-2 border border-gray-600 rounded-lg overflow-hidden bg-gray-700">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gray-600">
                         <tr>
                           {csvData.headers.map((header, index) => {
                             const mapping = columnMappings[index];
                             return (
                               <th 
                                 key={index} 
-                                className={`px-3 py-2 text-left font-medium ${
-                                  mapping?.isSkipped ? 'bg-orange-100 text-orange-700' : ''
+                                className={`px-3 py-2 text-left font-medium text-gray-200 ${
+                                  mapping?.isSkipped ? 'bg-orange-800 text-orange-200' : ''
                                 }`}
                               >
                                 {header}
@@ -337,14 +338,14 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                       </thead>
                       <tbody>
                         {csvData.rows.slice(0, 3).map((row, rowIndex) => (
-                          <tr key={rowIndex} className="border-t">
+                          <tr key={rowIndex} className="border-t border-gray-600">
                             {row.map((cell, cellIndex) => {
                               const mapping = columnMappings[cellIndex];
                               return (
                                 <td 
                                   key={cellIndex} 
-                                  className={`px-3 py-2 ${
-                                    mapping?.isSkipped ? 'bg-orange-50 text-gray-500' : ''
+                                  className={`px-3 py-2 text-gray-200 ${
+                                    mapping?.isSkipped ? 'bg-orange-900 text-gray-400' : ''
                                   }`}
                                 >
                                   {cell}
@@ -360,10 +361,10 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
               )}
 
               <div className="flex justify-end space-x-2">
-                <Button onClick={reset} variant="outline">
+                <Button onClick={reset} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
                   Cancel
                 </Button>
-                <Button onClick={handleImport}>
+                <Button onClick={handleImport} className="bg-blue-600 hover:bg-blue-700 text-white">
                   Import Rundown
                 </Button>
               </div>
