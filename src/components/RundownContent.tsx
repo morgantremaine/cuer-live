@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import RundownTableHeader from './RundownTableHeader';
@@ -82,9 +83,9 @@ const RundownContent = ({
 }: RundownContentProps) => {
 
   return (
-    <div className="relative bg-background">
+    <div className="relative bg-background h-full">
       {/* Scrollable Content with Header Inside */}
-      <ScrollArea className="w-full h-[calc(100vh-200px)] bg-background">
+      <ScrollArea className="w-full h-full bg-background">
         <div className="min-w-max bg-background">
           {/* Sticky Header - Inside ScrollArea */}
           <div className="sticky top-0 z-20 bg-background border-b border-border">
