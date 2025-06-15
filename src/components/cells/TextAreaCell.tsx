@@ -55,8 +55,8 @@ const TextAreaCell = ({
 
   // Check if this is a header row based on itemId
   const isHeaderRow = itemId.includes('header');
-  const fontSize = isHeaderRow ? 'text-base' : 'text-sm';
-  const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-semibold' : '';
+  const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
+  const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
   return (
     <div className="relative w-full h-full min-h-[32px] flex items-center" style={{ backgroundColor }}>
