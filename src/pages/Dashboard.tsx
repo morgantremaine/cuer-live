@@ -1,20 +1,25 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import CSVImportDialog from '@/components/CSVImportDialog';
+import { transformCSVData, validateCSVData } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useToast } from '@/hooks/use-toast';
+import { useColumnsManager } from '@/hooks/useColumnsManager';
+import { Button } from '@chakra-ui/react';
+import { Plus } from 'react-feather';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading, deleteRundown, updateRundown } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown } = useRundownStorage();
   const { toast } = useToast();
+  const { columns } = useColumnsManager();
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
@@ -95,6 +100,53 @@ const Dashboard = () => {
     });
   };
 
+  const handleCSVImport = async (csvRows: any[][], columnMappings: any[]) => {
+    try {
+      if (!validateCSVData(csvRows)) {
+        toast({
+          title: 'Invalid CSV data',
+          description: 'The CSV file contains invalid data.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Get CSV headers from the first mapping (they should all have the same structure)
+      const csvHeaders = columnMappings.map(mapping => mapping.csvColumn);
+      
+      const { items, newColumns } = transformCSVData(csvRows, columnMappings, csvHeaders);
+      
+      if (items.length === 0) {
+        toast({
+          title: 'No data to import',
+          description: 'The CSV file does not contain any valid rundown data.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Create a new rundown with the imported data
+      const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;
+      const rundownId = await createRundown(rundownTitle, items);
+      
+      toast({
+        title: 'Import successful',
+        description: `Imported ${items.length} items into a new rundown.`,
+      });
+
+      // Navigate to the new rundown
+      navigate(`/rundown/${rundownId}`);
+      
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      toast({
+        title: 'Import failed',
+        description: 'There was an error importing the CSV file. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Filter rundowns - now show ALL team rundowns regardless of who created them
   const activeRundowns = savedRundowns.filter(rundown => !rundown.archived);
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
@@ -107,8 +159,20 @@ const Dashboard = () => {
       />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-12">
-          {/* Create New Button */}
-          <CreateNewButton onClick={handleCreateNew} />
+          {/* Create New and Import Buttons */}
+          <div className="mb-8 flex items-center space-x-4">
+            <CreateNewButton onClick={handleCreateNew} />
+            <CSVImportDialog onImport={handleCSVImport} existingColumns={columns}>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Import CSV
+              </Button>
+            </CSVImportDialog>
+          </div>
           
           {/* Active Rundowns Section */}
           <DashboardRundownGrid 

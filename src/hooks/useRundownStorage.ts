@@ -1,10 +1,10 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { mapDatabaseToRundown, mapRundownToDatabase, mapRundownsFromDatabase } from './useRundownStorage/dataMapper';
 import { SavedRundown } from './useRundownStorage/types';
 import { RundownOperations } from './useRundownStorage/operations';
+import { v4 as uuidv4 } from 'uuid';
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
@@ -186,6 +186,37 @@ export const useRundownStorage = () => {
     }
   }, [user]);
 
+  const createRundown = async (title: string, items: RundownItem[] = []) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      const rundownId = uuidv4();
+      const rundownData = {
+        id: rundownId,
+        title,
+        items,
+        start_time: new Date().toISOString().split('T')[1].substring(0, 5),
+        created_by: user.id,
+        updated_at: new Date().toISOString(),
+        archived: false,
+      };
+
+      const { error } = await supabase
+        .from('rundowns')
+        .insert([rundownData]);
+
+      if (error) throw error;
+
+      // Update local state
+      setSavedRundowns(prev => [rundownData, ...prev]);
+
+      return rundownId;
+    } catch (error) {
+      console.error('Error creating rundown:', error);
+      throw error;
+    }
+  };
+
   const operations = new RundownOperations(user, saveRundown, setSavedRundowns);
 
   useEffect(() => {
@@ -201,6 +232,7 @@ export const useRundownStorage = () => {
     deleteRundown: operations.deleteRundown.bind(operations),
     archiveRundown: operations.archiveRundown.bind(operations),
     duplicateRundown: operations.duplicateRundown.bind(operations),
-    loadRundowns
+    loadRundowns,
+    createRundown
   };
 };
