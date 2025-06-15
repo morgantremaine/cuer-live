@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from './useAuth';
@@ -49,12 +50,16 @@ export const useSimplifiedRundownState = () => {
     setEditingState
   } = useRealtimeRundown({
     rundownId: rundownId || '',
-    setItems,
-    setColumns,
-    setRundownTitle,
-    setRundownStartTime,
-    setTimezoneState,
-    userId: user?.id || ''
+    onRundownUpdated: (rundown) => {
+      setItems(rundown.items || []);
+      setColumns(rundown.columns || []);
+      setRundownTitle(rundown.title || 'Untitled Rundown');
+      setRundownStartTime(rundown.start_time || '00:00:00');
+      setTimezoneState(rundown.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+    },
+    hasUnsavedChanges,
+    isProcessingUpdate: false,
+    setIsProcessingUpdate: () => {}
   });
 
   // Playback controls - fix to match usePlaybackControls signature
@@ -62,14 +67,19 @@ export const useSimplifiedRundownState = () => {
     currentSegmentId,
     isPlaying,
     timeRemaining,
-    isController,
     play,
     pause,
     forward,
-    backward
+    backward,
+    isController
   } = usePlaybackControls(
-    rundownId || '',
-    items
+    items,
+    (id: string, field: string, value: string) => {
+      setItems(prev => prev.map(item => 
+        item.id === id ? { ...item, [field]: value } : item
+      ));
+    },
+    rundownId
   );
 
   // Calculations - provide required items parameter
@@ -85,7 +95,13 @@ export const useSimplifiedRundownState = () => {
     canUndo,
     lastAction,
     saveState
-  } = useStandaloneUndo(items);
+  } = useStandaloneUndo({
+    onUndo: (items: RundownItem[], columns: Column[], title: string) => {
+      setItems(items);
+      setColumns(columns);
+      setRundownTitle(title);
+    }
+  });
 
   // Load rundown data
   useEffect(() => {
