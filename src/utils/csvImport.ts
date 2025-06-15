@@ -8,6 +8,7 @@ interface ColumnMapping {
   rundownColumn: string;
   isNewColumn: boolean;
   newColumnName?: string;
+  isSkipped?: boolean;
 }
 
 export interface CSVImportResult {
