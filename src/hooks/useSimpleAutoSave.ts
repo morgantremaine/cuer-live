@@ -33,10 +33,10 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Create a signature of the current state
+    // Create a signature of the current state - EXCLUDE columns from sync
     const currentSignature = JSON.stringify({
       items: state.items,
-      columns: state.columns,
+      // columns: state.columns, // REMOVED - columns are now user-specific
       title: state.title,
       startTime: state.startTime,
       timezone: state.timezone
@@ -65,10 +65,10 @@ export const useSimpleAutoSave = (
       // Double-check undo isn't active when timeout executes
       if (isSaving || undoActiveRef.current) return;
       
-      // Check if state changed again during debounce
+      // Check if state changed again during debounce - EXCLUDE columns
       const finalSignature = JSON.stringify({
         items: state.items,
-        columns: state.columns,
+        // columns: state.columns, // REMOVED - columns are now user-specific
         title: state.title,
         startTime: state.startTime,
         timezone: state.timezone
@@ -108,7 +108,7 @@ export const useSimpleAutoSave = (
             .insert({
               title: state.title,
               items: state.items,
-              columns: state.columns,
+              // columns: state.columns, // REMOVED - columns are now user-specific
               start_time: state.startTime,
               timezone: state.timezone,
               team_id: teamData.team_id,
@@ -133,7 +133,7 @@ export const useSimpleAutoSave = (
             .update({
               title: state.title,
               items: state.items,
-              columns: state.columns,
+              // columns: state.columns, // REMOVED - columns are now user-specific
               start_time: state.startTime,
               timezone: state.timezone,
               updated_at: updateTimestamp
@@ -159,7 +159,8 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.columns, state.title, state.startTime, state.timezone, isSaving, navigate]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.title, state.startTime, state.timezone, isSaving, navigate]);
+  // REMOVED: state.columns from dependencies
 
   return {
     isSaving,

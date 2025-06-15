@@ -208,6 +208,48 @@ export type Database = {
           },
         ]
       }
+      shared_rundown_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          layout_id: string | null
+          rundown_id: string
+          shared_by: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          layout_id?: string | null
+          rundown_id: string
+          shared_by: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          layout_id?: string | null
+          rundown_id?: string
+          shared_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_rundown_layouts_layout_id_fkey"
+            columns: ["layout_id"]
+            isOneToOne: false
+            referencedRelation: "column_layouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_rundown_layouts_rundown_id_fkey"
+            columns: ["rundown_id"]
+            isOneToOne: true
+            referencedRelation: "rundowns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_conversations: {
         Row: {
           assistant_response: string
@@ -331,6 +373,41 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      user_column_preferences: {
+        Row: {
+          column_layout: Json
+          created_at: string
+          id: string
+          rundown_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          column_layout?: Json
+          created_at?: string
+          id?: string
+          rundown_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          column_layout?: Json
+          created_at?: string
+          id?: string
+          rundown_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_column_preferences_rundown_id_fkey"
+            columns: ["rundown_id"]
+            isOneToOne: false
+            referencedRelation: "rundowns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

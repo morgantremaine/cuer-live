@@ -6,22 +6,11 @@ import { usePlaybackControls } from './usePlaybackControls';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useRealtimeRundown } from './useRealtimeRundown';
 import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
-
-// Default columns configuration - updated to match expected order
-const defaultColumns: Column[] = [
-  { id: 'segmentName', name: 'Segment', key: 'segmentName', isVisible: true, width: '200px', isCustom: false, isEditable: true },
-  { id: 'talent', name: 'Talent', key: 'talent', isVisible: true, width: '150px', isCustom: false, isEditable: true },
-  { id: 'script', name: 'Script', key: 'script', isVisible: true, width: '300px', isCustom: false, isEditable: true },
-  { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px', isCustom: false, isEditable: true },
-  { id: 'startTime', name: 'Start', key: 'startTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
-  { id: 'endTime', name: 'End', key: 'endTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
-  { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', isVisible: true, width: '100px', isCustom: false, isEditable: false },
-  { id: 'notes', name: 'Notes', key: 'notes', isVisible: true, width: '300px', isCustom: false, isEditable: true }
-];
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -41,33 +30,47 @@ export const useSimplifiedRundownState = () => {
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Initialize with default data
+  // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
     state,
     actions,
     helpers
   } = useRundownState({
     items: [],
-    columns: defaultColumns,
+    columns: [], // Empty - will be managed separately
     title: 'Untitled Rundown',
     startTime: '09:00:00',
     timezone: 'America/New_York'
   });
 
-  // Auto-save functionality - unchanged
-  const { isSaving, setUndoActive } = useSimpleAutoSave(state, rundownId, actions.markSaved);
+  // User-specific column preferences (separate from team sync)
+  const {
+    columns,
+    setColumns,
+    isLoading: isLoadingColumns,
+    isSaving: isSavingColumns
+  } = useUserColumnPreferences(rundownId);
+
+  // Auto-save functionality - now EXCLUDES columns from sync
+  const { isSaving, setUndoActive } = useSimpleAutoSave(
+    {
+      ...state,
+      columns: [] // Remove columns from team sync
+    }, 
+    rundownId, 
+    actions.markSaved
+  );
 
   // Standalone undo system with proper change trigger - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
-    onUndo: (items, columns, title) => {
-      console.log('🔄 Applying undo state:', { itemsCount: items.length, columnsCount: columns.length, title });
+    onUndo: (items, _, title) => { // Note: columns parameter ignored since they're user-specific
+      console.log('🔄 Applying undo state:', { itemsCount: items.length, title });
       
       // Set undo active to prevent auto-save interference
       setUndoActive(true);
       
-      // Apply undo state using existing actions
+      // Apply undo state using existing actions (items and title only)
       actions.setItems(items);
-      actions.setColumns(columns);
       actions.setTitle(title);
       
       // Mark as changed and trigger auto-save after undo
@@ -82,7 +85,7 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Realtime rundown updates - new but non-disruptive
+  // Realtime rundown updates - now EXCLUDES columns from sync
   const realtimeRundown = useRealtimeRundown({
     rundownId,
     onRundownUpdated: useCallback((updatedRundown) => {
@@ -90,9 +93,10 @@ export const useSimplifiedRundownState = () => {
       
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
+        // Load state WITHOUT columns (they're user-specific)
         actions.loadState({
           items: updatedRundown.items || [],
-          columns: updatedRundown.columns || defaultColumns,
+          columns: [], // Don't sync columns
           title: updatedRundown.title || 'Untitled Rundown',
           startTime: updatedRundown.start_time || '09:00:00',
           timezone: updatedRundown.timezone || 'America/New_York'
@@ -104,7 +108,7 @@ export const useSimplifiedRundownState = () => {
     setIsProcessingUpdate: setIsProcessingRealtimeUpdate
   });
 
-  // Stable realtime collaboration - new but non-disruptive
+  // Stable realtime collaboration - unchanged
   const stableRealtime = useStableRealtimeCollaboration({
     rundownId,
     onRemoteUpdate: useCallback(() => {
@@ -119,7 +123,7 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeRundown.isConnected || stableRealtime.isConnected);
   }, [realtimeRundown.isConnected, stableRealtime.isConnected]);
 
-  // Enhanced updateItem function that works with showcaller and saves undo state with proper timing - unchanged
+  // Enhanced updateItem function - save undo state with content only (not columns)
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     console.log('📺 Enhanced updateItem called:', { id, field, value });
     
@@ -133,7 +137,8 @@ export const useSimplifiedRundownState = () => {
       // If this is the start of a new typing session, save undo state
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         console.log('💾 Saving undo state before typing session for:', sessionKey);
-        saveUndoState(state.items, state.columns, state.title, `Edit ${field}`);
+        // Save undo with content only (no columns)
+        saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
           fieldKey: sessionKey,
           startTime: Date.now()
@@ -152,7 +157,7 @@ export const useSimplifiedRundownState = () => {
     } else if (field === 'duration') {
       // For duration changes, save immediately since they're usually intentional
       console.log('💾 Saving undo state before duration change');
-      saveUndoState(state.items, state.columns, state.title, 'Edit duration');
+      saveUndoState(state.items, [], state.title, 'Edit duration');
     }
     
     if (field.startsWith('customFields.')) {
@@ -174,7 +179,7 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: value });
     }
-  }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]);
+  }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
   // Initialize playback controls with showcaller functionality - unchanged
   const {
@@ -201,7 +206,7 @@ export const useSimplifiedRundownState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Load rundown data if we have an ID
+  // Load rundown data if we have an ID (content only, columns loaded separately)
   useEffect(() => {
     const loadRundown = async () => {
       if (!rundownId || isInitialized) return;
@@ -220,14 +225,11 @@ export const useSimplifiedRundownState = () => {
           const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
             ? data.items 
             : createDefaultRundownItems();
-          
-          const columnsToLoad = Array.isArray(data.columns) && data.columns.length > 0 
-            ? data.columns 
-            : defaultColumns;
 
+          // Load content only (columns loaded separately by useUserColumnPreferences)
           actions.loadState({
             items: itemsToLoad,
-            columns: columnsToLoad,
+            columns: [], // Don't load columns from rundown
             title: data.title || 'Untitled Rundown',
             startTime: data.start_time || '09:00:00',
             timezone: data.timezone || 'America/New_York'
@@ -237,7 +239,7 @@ export const useSimplifiedRundownState = () => {
         console.error('Failed to load rundown:', error);
         actions.loadState({
           items: createDefaultRundownItems(),
-          columns: defaultColumns,
+          columns: [], // Don't load columns from rundown
           title: 'Untitled Rundown',
           startTime: '09:00:00',
           timezone: 'America/New_York'
@@ -255,7 +257,7 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId && !isInitialized) {
       actions.loadState({
         items: createDefaultRundownItems(),
-        columns: defaultColumns,
+        columns: [], // Don't load columns from rundown
         title: 'Untitled Rundown',
         startTime: '09:00:00',
         timezone: 'America/New_York'
@@ -280,7 +282,7 @@ export const useSimplifiedRundownState = () => {
     return calculateTotalRuntime(state.items);
   }, [state.items]);
 
-  // Enhanced actions with undo state saving - modified to set default duration
+  // Enhanced actions with undo state saving (content only)
   const enhancedActions = {
     ...actions,
     ...helpers,
@@ -289,49 +291,49 @@ export const useSimplifiedRundownState = () => {
 
     toggleFloatRow: useCallback((id: string) => {
       console.log('💾 Saving undo state before toggle float');
-      saveUndoState(state.items, state.columns, state.title, 'Toggle float');
+      saveUndoState(state.items, [], state.title, 'Toggle float');
       const item = state.items.find(i => i.id === id);
       if (item) {
         actions.updateItem(id, { isFloating: !item.isFloating });
       }
-    }, [actions.updateItem, state.items, state.columns, state.title, saveUndoState]),
+    }, [actions.updateItem, state.items, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
       console.log('💾 Saving undo state before delete row');
-      saveUndoState(state.items, state.columns, state.title, 'Delete row');
+      saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
-    }, [actions.deleteItem, state.items, state.columns, state.title, saveUndoState]),
+    }, [actions.deleteItem, state.items, state.title, saveUndoState]),
 
     addRow: useCallback(() => {
       console.log('💾 Saving undo state before add row');
-      saveUndoState(state.items, state.columns, state.title, 'Add segment');
+      saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
-    }, [helpers.addRow, state.items, state.columns, state.title, saveUndoState]),
+    }, [helpers.addRow, state.items, state.title, saveUndoState]),
 
     addHeader: useCallback(() => {
       console.log('💾 Saving undo state before add header');
-      saveUndoState(state.items, state.columns, state.title, 'Add header');
+      saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
-    }, [helpers.addHeader, state.items, state.columns, state.title, saveUndoState]),
+    }, [helpers.addHeader, state.items, state.title, saveUndoState]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
         console.log('💾 Saving undo state before title change');
-        saveUndoState(state.items, state.columns, state.title, 'Change title');
+        saveUndoState(state.items, [], state.title, 'Change title');
         actions.setTitle(newTitle);
       }
-    }, [actions.setTitle, state.items, state.columns, state.title, saveUndoState])
+    }, [actions.setTitle, state.items, state.title, saveUndoState])
   };
 
-  // Get visible columns - ensure they actually exist and are marked visible - unchanged
+  // Get visible columns from user preferences
   const visibleColumns = useMemo(() => {
-    if (!state.columns || !Array.isArray(state.columns)) {
-      return defaultColumns.filter(col => col.isVisible !== false);
+    if (!columns || !Array.isArray(columns)) {
+      return [];
     }
     
-    const visible = state.columns.filter(col => col.isVisible !== false);
+    const visible = columns.filter(col => col.isVisible !== false);
     return visible;
-  }, [state.columns]);
+  }, [columns]);
 
   const getHeaderDuration = useCallback((index: number) => {
     if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
@@ -360,24 +362,24 @@ export const useSimplifiedRundownState = () => {
   const addRowAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding row at index:', insertIndex);
     console.log('💾 Saving undo state before add row at index');
-    saveUndoState(state.items, state.columns, state.title, 'Add segment');
+    saveUndoState(state.items, [], state.title, 'Add segment');
     if (helpers.addRow && typeof helpers.addRow === 'function') {
       helpers.addRow(insertIndex);
     } else {
       helpers.addRow();
     }
-  }, [helpers, state.items, state.columns, state.title, saveUndoState]);
+  }, [helpers, state.items, state.title, saveUndoState]);
 
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     console.log('🚀 Adding header at index:', insertIndex);
     console.log('💾 Saving undo state before add header at index');
-    saveUndoState(state.items, state.columns, state.title, 'Add header');
+    saveUndoState(state.items, [], state.title, 'Add header');
     if (helpers.addHeader && typeof helpers.addHeader === 'function') {
       helpers.addHeader(insertIndex);
     } else {
       helpers.addHeader();
     }
-  }, [helpers, state.items, state.columns, state.title, saveUndoState]);
+  }, [helpers, state.items, state.title, saveUndoState]);
 
   // Clean up timeouts on unmount - unchanged
   useEffect(() => {
@@ -389,11 +391,11 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   return {
-    // Core state with calculated values - unchanged
+    // Core state with calculated values
     items: calculatedItems,
     setItems: actions.setItems,
-    columns: state.columns || defaultColumns,
-    setColumns: actions.setColumns,
+    columns, // Now from user preferences
+    setColumns, // Now saves to user preferences
     visibleColumns,
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
@@ -407,16 +409,16 @@ export const useSimplifiedRundownState = () => {
     
     currentTime,
     rundownId,
-    isLoading,
+    isLoading: isLoading || isLoadingColumns,
     hasUnsavedChanges: state.hasUnsavedChanges,
-    isSaving,
+    isSaving: isSaving || isSavingColumns,
     showcallerActivity,
     
-    // NEW: Realtime connection status
+    // Realtime connection status
     isConnected,
     isProcessingRealtimeUpdate,
     
-    // Playback controls - properly expose these functions with correct signatures - unchanged
+    // Playback controls - properly expose these functions with correct signatures
     play: (selectedSegmentId?: string) => {
       console.log('🎮 Simplified state play called with:', selectedSegmentId);
       play(selectedSegmentId);
@@ -461,15 +463,18 @@ export const useSimplifiedRundownState = () => {
     
     addColumn: (column: Column) => {
       console.log('💾 Saving undo state before add column');
-      saveUndoState(state.items, state.columns, state.title, 'Add column');
-      actions.setColumns([...(state.columns || defaultColumns), column]);
+      saveUndoState(state.items, [], state.title, 'Add column');
+      setColumns([...columns, column]);
     },
     
     updateColumnWidth: (columnId: string, width: string) => {
-      actions.updateColumn(columnId, { width });
+      const newColumns = columns.map(col =>
+        col.id === columnId ? { ...col, width } : col
+      );
+      setColumns(newColumns);
     },
 
-    // Undo functionality - properly expose these - unchanged
+    // Undo functionality - properly expose these
     undo,
     canUndo,
     lastAction
