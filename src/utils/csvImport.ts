@@ -23,9 +23,9 @@ export const transformCSVData = (
   const newColumns: Column[] = [];
   const items: RundownItem[] = [];
 
-  // Create new columns from mappings
+  // Create new columns from mappings (excluding skipped columns)
   columnMappings.forEach((mapping) => {
-    if (mapping.isNewColumn && mapping.newColumnName) {
+    if (mapping.isNewColumn && mapping.newColumnName && !mapping.isSkipped) {
       newColumns.push({
         id: mapping.rundownColumn,
         key: mapping.rundownColumn,
@@ -50,9 +50,9 @@ export const transformCSVData = (
       isFloating: false,
     };
 
-    // Map each CSV cell to the corresponding rundown field
+    // Map each CSV cell to the corresponding rundown field (skip columns marked as skipped)
     columnMappings.forEach((mapping, mappingIndex) => {
-      if (mapping.rundownColumn && row[mappingIndex] !== undefined) {
+      if (mapping.rundownColumn && !mapping.isSkipped && row[mappingIndex] !== undefined) {
         const value = row[mappingIndex];
         
         // Handle special fields

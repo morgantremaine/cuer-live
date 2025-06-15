@@ -21,6 +21,7 @@ interface ColumnMapping {
   rundownColumn: string;
   isNewColumn: boolean;
   newColumnName?: string;
+  isSkipped?: boolean;
 }
 
 interface CSVPreviewData {
@@ -84,6 +85,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
           csvColumn: header,
           rundownColumn: '',
           isNewColumn: false,
+          isSkipped: false,
         }));
         setColumnMappings(initialMappings);
       },
@@ -95,7 +97,24 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
   const updateColumnMapping = (index: number, field: keyof ColumnMapping, value: any) => {
     setColumnMappings(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      if (field === 'rundownColumn' && value === 'SKIP') {
+        updated[index] = { 
+          ...updated[index], 
+          rundownColumn: '', 
+          isNewColumn: false, 
+          isSkipped: true 
+        };
+      } else if (field === 'rundownColumn' && value !== 'SKIP') {
+        const isNewColumn = newColumns.some(col => col.id === value);
+        updated[index] = { 
+          ...updated[index], 
+          [field]: value,
+          isNewColumn,
+          isSkipped: false
+        };
+      } else {
+        updated[index] = { ...updated[index], [field]: value };
+      }
       return updated;
     });
   };
@@ -116,7 +135,7 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
     // Also update any mappings that were using this new column
     setColumnMappings(prev => prev.map(mapping => 
       mapping.rundownColumn === id 
-        ? { ...mapping, rundownColumn: '', isNewColumn: false }
+        ? { ...mapping, rundownColumn: '', isNewColumn: false, isSkipped: false }
         : mapping
     ));
   };
@@ -124,20 +143,22 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
   const handleImport = () => {
     if (!csvData) return;
 
-    // Validate that all CSV columns are mapped
-    const unmappedColumns = columnMappings.filter(mapping => !mapping.rundownColumn);
+    // Filter out skipped columns and only validate non-skipped ones
+    const nonSkippedMappings = columnMappings.filter(mapping => !mapping.isSkipped);
+    const unmappedColumns = nonSkippedMappings.filter(mapping => !mapping.rundownColumn);
+    
     if (unmappedColumns.length > 0) {
       toast({
         title: 'Incomplete mapping',
-        description: 'Please map all CSV columns or remove unmapped ones.',
+        description: 'Please map all non-skipped CSV columns or mark them as skipped.',
         variant: 'destructive',
       });
       return;
     }
 
-    // Validate new column names
+    // Validate new column names for non-skipped columns
     const newColumnsWithNames = newColumns.filter(col => col.name.trim());
-    const invalidNewColumns = columnMappings.filter(mapping => 
+    const invalidNewColumns = nonSkippedMappings.filter(mapping => 
       mapping.isNewColumn && 
       mapping.rundownColumn && 
       !newColumnsWithNames.find(col => col.id === mapping.rundownColumn)
@@ -152,8 +173,8 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
       return;
     }
 
-    // Prepare final column mappings with new column names
-    const finalMappings = columnMappings.map(mapping => {
+    // Prepare final column mappings with new column names, excluding skipped columns
+    const finalMappings = nonSkippedMappings.map(mapping => {
       if (mapping.isNewColumn && mapping.rundownColumn) {
         const newCol = newColumnsWithNames.find(col => col.id === mapping.rundownColumn);
         return {
@@ -255,19 +276,23 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm">Map to Rundown Column</Label>
+                      <Label className="text-sm">
+                        Map to Rundown Column 
+                        {mapping.isSkipped && <span className="text-orange-600 ml-2">(Skipped)</span>}
+                      </Label>
                       <Select
-                        value={mapping.rundownColumn}
+                        value={mapping.isSkipped ? 'SKIP' : mapping.rundownColumn}
                         onValueChange={(value) => {
-                          const isNewColumn = newColumns.some(col => col.id === value);
                           updateColumnMapping(index, 'rundownColumn', value);
-                          updateColumnMapping(index, 'isNewColumn', isNewColumn);
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select column..." />
+                          <SelectValue placeholder="Select column or skip..." />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="SKIP" className="text-orange-600">
+                            Skip this column
+                          </SelectItem>
                           {DEFAULT_RUNDOWN_COLUMNS.map((col) => (
                             <SelectItem key={col.key} value={col.key}>
                               {col.name}
@@ -292,21 +317,38 @@ const CSVImportDialog = ({ onImport, existingColumns, children }: CSVImportDialo
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
                         <tr>
-                          {csvData.headers.map((header, index) => (
-                            <th key={index} className="px-3 py-2 text-left font-medium">
-                              {header}
-                            </th>
-                          ))}
+                          {csvData.headers.map((header, index) => {
+                            const mapping = columnMappings[index];
+                            return (
+                              <th 
+                                key={index} 
+                                className={`px-3 py-2 text-left font-medium ${
+                                  mapping?.isSkipped ? 'bg-orange-100 text-orange-700' : ''
+                                }`}
+                              >
+                                {header}
+                                {mapping?.isSkipped && <span className="block text-xs">(Skipped)</span>}
+                              </th>
+                            );
+                          })}
                         </tr>
                       </thead>
                       <tbody>
                         {csvData.rows.slice(0, 3).map((row, rowIndex) => (
                           <tr key={rowIndex} className="border-t">
-                            {row.map((cell, cellIndex) => (
-                              <td key={cellIndex} className="px-3 py-2">
-                                {cell}
-                              </td>
-                            ))}
+                            {row.map((cell, cellIndex) => {
+                              const mapping = columnMappings[cellIndex];
+                              return (
+                                <td 
+                                  key={cellIndex} 
+                                  className={`px-3 py-2 ${
+                                    mapping?.isSkipped ? 'bg-orange-50 text-gray-500' : ''
+                                  }`}
+                                >
+                                  {cell}
+                                </td>
+                              );
+                            })}
                           </tr>
                         ))}
                       </tbody>
