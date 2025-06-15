@@ -137,8 +137,9 @@ const RundownContent = ({
             onAddHeader={onAddHeader || (() => {})}
           />
         </div>
-        <ScrollBar orientation="horizontal" />
-        <ScrollBar orientation="vertical" />
+        {/* Custom styled scrollbars - much smaller */}
+        <ScrollBar orientation="horizontal" className="h-1" />
+        <ScrollBar orientation="vertical" className="w-1" />
       </ScrollArea>
     </div>
   );
