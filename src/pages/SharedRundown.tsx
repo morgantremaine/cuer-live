@@ -2,7 +2,7 @@
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
-import SharedRundownHeader from '@/components/shared/SharedRundownHeader';
+import { SharedRundownHeader } from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 
