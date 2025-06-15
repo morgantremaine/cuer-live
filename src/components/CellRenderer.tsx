@@ -39,8 +39,7 @@ const CellRenderer = ({
   if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
     return (
       <TimeDisplayCell
-        column={column}
-        item={item}
+        value={(item as any)[column.key] || ''}
         textColor={textColor}
         backgroundColor={backgroundColor}
         width={width}
@@ -49,7 +48,7 @@ const CellRenderer = ({
   }
 
   // Handle multi-line fields
-  if (column.type === 'textarea' || column.key === 'script' || column.key === 'notes' || column.key === 'description') {
+  if (column.key === 'script' || column.key === 'notes' || column.key === 'description') {
     return (
       <TextAreaCell
         key={cellKey}
@@ -62,7 +61,7 @@ const CellRenderer = ({
         onCellClick={onCellClick}
         onKeyDown={onKeyDown}
         width={width}
-        className={isHeaderNameCell ? "text-lg font-semibold" : undefined}
+        className={isHeaderNameCell ? "text-xl font-bold" : undefined}
       />
     );
   }
@@ -80,7 +79,7 @@ const CellRenderer = ({
       onCellClick={onCellClick}
       onKeyDown={onKeyDown}
       width={width}
-      className={isHeaderNameCell ? "text-lg font-semibold" : undefined}
+      className={isHeaderNameCell ? "text-xl font-bold" : undefined}
     />
   );
 };

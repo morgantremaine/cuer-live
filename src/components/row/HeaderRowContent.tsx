@@ -35,9 +35,9 @@ const HeaderRowContent = ({
 
   return (
     <>
-      {/* Row number column - must match the header structure exactly */}
+      {/* Row number column - increased height for headers */}
       <td 
-        className="px-2 py-3 text-base font-mono align-middle border border-border w-16 min-w-16"
+        className="px-2 py-4 text-base font-mono align-middle border border-border w-16 min-w-16"
         style={{ backgroundColor }}
       >
         <span style={{ color: textColor }}>{rowNumber}</span>
@@ -52,7 +52,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border py-3"
+              className="align-middle border border-border py-4"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -77,7 +77,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border px-2 py-3"
+              className="align-middle border border-border px-2 py-4"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -94,7 +94,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border py-3"
+              className="align-middle border border-border py-4"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -109,7 +109,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border py-3"
+              className="align-middle border border-border py-4"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,

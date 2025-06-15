@@ -37,13 +37,12 @@ const TextAreaCell = ({
     return (
       <ExpandableScriptCell
         value={value}
-        onChange={(newValue) => onUpdateItem(item.id, column.key, newValue)}
-        onClick={() => onCellClick(item.id, column.key)}
-        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
         textColor={textColor}
-        backgroundColor={backgroundColor}
-        width={width}
-        className={className}
+        onUpdateValue={(newValue) => onUpdateItem(item.id, column.key, newValue)}
+        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
       />
     );
   }
