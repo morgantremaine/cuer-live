@@ -35,14 +35,36 @@ const generateConsistentListId = (sourceColumn: string, rundownId: string) => {
 
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
   const availableColumns = getAvailableColumns(items);
+  console.log('📋 Generating default blueprint with available columns:', availableColumns);
   
-  return availableColumns.slice(0, 3).map((column) => ({
-    id: generateConsistentListId(column.key, rundownId),
-    name: column.name,
-    sourceColumn: column.key,
-    items: generateListFromColumn(items, column.key),
-    checkedItems: {}
-  }));
+  // Always start with headers if they exist, then add other meaningful columns
+  const defaultColumns = [];
+  
+  // Add headers first if available
+  if (availableColumns.some(col => col.key === 'headers')) {
+    defaultColumns.push(availableColumns.find(col => col.key === 'headers'));
+  }
+  
+  // Add other meaningful columns up to 3 total
+  const otherColumns = availableColumns.filter(col => col.key !== 'headers');
+  const remainingSlots = 3 - defaultColumns.length;
+  defaultColumns.push(...otherColumns.slice(0, remainingSlots));
+  
+  const defaultLists = defaultColumns.filter(Boolean).map((column) => {
+    const listItems = generateListFromColumn(items, column.key);
+    console.log(`📋 Generated list for ${column.key}:`, listItems);
+    
+    return {
+      id: generateConsistentListId(column.key, rundownId),
+      name: column.name,
+      sourceColumn: column.key,
+      items: listItems,
+      checkedItems: {}
+    };
+  });
+  
+  console.log('📋 Generated default blueprint lists:', defaultLists);
+  return defaultLists;
 };
 
 export const getAvailableColumns = (items: RundownItem[]): { key: string; name: string; }[] => {

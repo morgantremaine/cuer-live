@@ -161,7 +161,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
         const blueprintData = await loadBlueprint();
         
         if (blueprintData) {
-          console.log('📋 Loaded blueprint data:', blueprintData);
+          console.log('📋 Loaded existing blueprint data:', blueprintData);
           dispatch({ type: 'MERGE_REMOTE_STATE', payload: {
             lists: blueprintData.lists || [],
             showDate: blueprintData.show_date || '',
@@ -170,6 +170,9 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
             cameraPlots: blueprintData.camera_plots || [],
             componentOrder: blueprintData.component_order || ['crew-list', 'camera-plot', 'scratchpad']
           }});
+        } else {
+          console.log('📋 No existing blueprint found, will create default lists when rundown items are available');
+          // Don't create default lists here - they will be created when items are available
         }
         
         dispatch({ type: 'SET_INITIALIZED', payload: true });
@@ -185,7 +188,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     initializeBlueprint();
   }, [rundownId, loadBlueprint, state.isInitialized]);
 
-  // Debounced save function
+  // Debounced save function with improved error handling
   const debouncedSave = React.useCallback(async () => {
     if (!state.isInitialized) return;
     
@@ -198,6 +201,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
         dispatch({ type: 'SET_SAVING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
         
+        console.log('📋 Saving blueprint with lists:', state.lists);
         await persistBlueprint(
           state.lists,
           true, // silent save
@@ -219,23 +223,29 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     }, 1000);
   }, [state, persistBlueprint]);
 
-  // Action creators
+  // Action creators with improved logging
   const updateLists = React.useCallback((lists: BlueprintList[]) => {
+    console.log('📋 Updating lists:', lists);
     dispatch({ type: 'UPDATE_LISTS', payload: lists });
     debouncedSave();
   }, [debouncedSave]);
 
   const addList = React.useCallback((list: BlueprintList) => {
-    dispatch({ type: 'UPDATE_LISTS', payload: [...state.lists, list] });
+    console.log('📋 Adding new list:', list);
+    const newLists = [...state.lists, list];
+    dispatch({ type: 'UPDATE_LISTS', payload: newLists });
     debouncedSave();
   }, [state.lists, debouncedSave]);
 
   const deleteList = React.useCallback((listId: string) => {
-    dispatch({ type: 'UPDATE_LISTS', payload: state.lists.filter(list => list.id !== listId) });
+    console.log('📋 Deleting list:', listId);
+    const newLists = state.lists.filter(list => list.id !== listId);
+    dispatch({ type: 'UPDATE_LISTS', payload: newLists });
     debouncedSave();
   }, [state.lists, debouncedSave]);
 
   const renameList = React.useCallback((listId: string, newName: string) => {
+    console.log('📋 Renaming list:', listId, 'to:', newName);
     const updatedLists = state.lists.map(list => 
       list.id === listId ? { ...list, name: newName } : list
     );
@@ -244,6 +254,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   }, [state.lists, debouncedSave]);
 
   const updateCheckedItems = React.useCallback((listId: string, checkedItems: Record<string, boolean>) => {
+    console.log('📋 Updating checked items for list:', listId, checkedItems);
     const updatedLists = state.lists.map(list => 
       list.id === listId ? { ...list, checkedItems } : list
     );

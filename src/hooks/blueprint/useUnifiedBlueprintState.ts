@@ -1,7 +1,7 @@
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useBlueprintContext } from '@/contexts/BlueprintContext';
-import { generateListFromColumn, getAvailableColumns } from '@/utils/blueprintUtils';
+import { generateListFromColumn, getAvailableColumns, generateDefaultBlueprint } from '@/utils/blueprintUtils';
 import { RundownItem } from '@/types/rundown';
 import { BlueprintList } from '@/types/blueprint';
 
@@ -24,6 +24,26 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
     return getAvailableColumns(items);
   }, [items]);
 
+  // Auto-create default lists if none exist and we have rundown items
+  useEffect(() => {
+    if (state.isInitialized && 
+        state.lists.length === 0 && 
+        items.length > 0 && 
+        availableColumns.length > 0) {
+      console.log('📋 No lists found, creating default blueprint');
+      
+      // Extract rundownId from the context or generate one
+      const rundownId = items[0]?.id?.split('-')[0] || 'default';
+      const rundownTitle = 'Rundown Blueprint';
+      
+      const defaultLists = generateDefaultBlueprint(rundownId, rundownTitle, items);
+      if (defaultLists.length > 0) {
+        console.log('📋 Creating default lists:', defaultLists);
+        updateLists(defaultLists);
+      }
+    }
+  }, [state.isInitialized, state.lists.length, items, availableColumns, updateLists]);
+
   // Generate list ID
   const generateListId = (sourceColumn: string) => {
     return `${sourceColumn}_${Date.now()}`;
@@ -31,6 +51,8 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
 
   // Add new list with items from column
   const addNewList = (name: string, sourceColumn: string) => {
+    console.log('📋 Adding new list:', name, 'from column:', sourceColumn);
+    
     const newList: BlueprintList = {
       id: generateListId(sourceColumn),
       name,
@@ -39,11 +61,13 @@ export const useUnifiedBlueprintState = (items: RundownItem[], rundownStartTime?
       checkedItems: {}
     };
     
+    console.log('📋 Generated new list:', newList);
     addList(newList);
   };
 
   // Refresh all lists with current rundown data
   const refreshAllLists = () => {
+    console.log('📋 Refreshing all lists with current rundown data');
     const refreshedLists = state.lists.map(list => ({
       ...list,
       items: generateListFromColumn(items, list.sourceColumn)
