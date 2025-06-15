@@ -29,7 +29,7 @@ export const transformCSVData = (
         key: mapping.rundownColumn,
         name: mapping.newColumnName,
         visible: true,
-        order: String(index), // Fix: Use index and convert to string
+        order: String(newColumns.length), // Fix: Convert to string
         width: 150,
       });
     }
