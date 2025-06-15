@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
@@ -38,13 +37,11 @@ const CellRenderer = ({
   // Get the current value for this cell
   const getCellValue = () => {
     if (column.isCustom) {
-      const value = item.customFields?.[column.key] || '';
-      console.log(`🎨 CellRenderer: Getting custom field value for "${column.key}": "${value}"`);
-      return value;
+      return item.customFields?.[column.key] || '';
     }
     
     switch (column.key) {
-      case 'name':
+      case 'segmentName':
         // For segment name column, always use item.name (the actual segment description)
         return item.name || '';
       case 'duration':
@@ -61,8 +58,11 @@ const CellRenderer = ({
         return item.script || '';
       case 'notes':
         return item.notes || '';
+      case 'gfx':
+        return item.gfx || '';
+      case 'video':
+        return item.video || '';
       default:
-        console.log(`🎨 CellRenderer: Unknown column key "${column.key}" for item ${item.id}`);
         return (item as any)[column.key] || '';
     }
   };
@@ -101,7 +101,6 @@ const CellRenderer = ({
         backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
           const field = `customFields.${column.key}`;
-          console.log(`🎨 CellRenderer: Updating custom field "${field}" for item ${item.id} to: "${newValue}"`);
           onUpdateItem(item.id, field, newValue);
         }}
         onCellClick={(e) => onCellClick(item.id, column.key)}
@@ -120,7 +119,6 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={textColor}
         onUpdateValue={(newValue) => {
-          console.log(`🎨 CellRenderer: Updating ${column.key} for item ${item.id} to: "${newValue}"`);
           onUpdateItem(item.id, column.key, newValue);
         }}
         onKeyDown={onKeyDown}
@@ -139,8 +137,9 @@ const CellRenderer = ({
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
-        console.log(`🎨 CellRenderer: Updating ${column.key} for item ${item.id} to: "${newValue}"`);
-        onUpdateItem(item.id, column.key, newValue);
+        // For segmentName column, always update the 'name' field
+        const field = column.key === 'segmentName' ? 'name' : column.key;
+        onUpdateItem(item.id, field, newValue);
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}

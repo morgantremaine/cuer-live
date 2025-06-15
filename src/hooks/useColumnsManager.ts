@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export interface Column {
@@ -13,12 +14,14 @@ export interface Column {
 export const useColumnsManager = (markAsChanged?: () => void) => {
   const [columns, setColumns] = useState<Column[]>([
     { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
     { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
   ]);
 
@@ -141,11 +144,12 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return layoutColumns; // Return the layout columns as fallback
       }
 
-      // Define essential built-in columns that should always be preserved
+      // Define essential built-in columns that should always be preserved (removed talent)
       const essentialBuiltInColumns = [
-        { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+        { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
         { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
@@ -153,14 +157,13 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
       ];
 
-      // Filter out any problematic columns and normalize legacy column names
+      // Filter out the "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
         col.id !== 'element' && col.key !== 'element'
       );
 
-      // Update column names and keys for backward compatibility with old saved layouts
+      // Update column names for backward compatibility with old saved layouts
       const updatedLayoutColumns = filteredLayoutColumns.map(col => {
-        // Update legacy column names
         if (col.id === 'startTime' && col.name === 'Start Time') {
           return { ...col, name: 'Start' };
         }
@@ -170,10 +173,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         if (col.id === 'elapsedTime' && col.name === 'Elapsed Time') {
           return { ...col, name: 'Elapsed' };
         }
-        if (col.id === 'segmentName' || col.key === 'segmentName') {
-          return { ...col, id: 'name', key: 'name', name: 'Segment Name' };
-        }
-        
         return col;
       });
 
@@ -193,7 +192,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
       });
 
-      console.log('✅ Layout loaded with', mergedColumns.length, 'columns:', mergedColumns.map(c => `${c.id}:${c.name}`));
+      console.log('✅ Layout loaded with', mergedColumns.length, 'columns');
       
       if (markAsChanged) {
         markAsChanged();

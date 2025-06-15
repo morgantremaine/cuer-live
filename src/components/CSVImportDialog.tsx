@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -27,15 +28,17 @@ interface CSVPreviewData {
   rows: any[][];
 }
 
-// Default columns that exactly match useColumnsManager - only the actual built-in columns
+// Default columns that exactly match useColumnsManager
 const DEFAULT_RUNDOWN_COLUMNS = [
   { key: 'name', name: 'Segment Name' },
-  { key: 'talent', name: 'Talent' },
   { key: 'script', name: 'Script' },
+  { key: 'gfx', name: 'GFX' },
+  { key: 'video', name: 'Video' },
   { key: 'duration', name: 'Duration' },
   { key: 'startTime', name: 'Start' },
   { key: 'endTime', name: 'End' },
   { key: 'elapsedTime', name: 'Elapsed' },
+  { key: 'talent', name: 'Talent' },
   { key: 'notes', name: 'Notes' }
 ];
 
@@ -122,8 +125,6 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
       isVisible: true,
     }));
     
-    console.log('🔧 CSV Import: Using default layout with columns:', defaultColumns.map(c => `${c.key}:${c.name}`));
-    
     setSelectedLayout({ name: 'Default Layout', columns: defaultColumns });
     setAvailableColumns(defaultColumns);
     
@@ -139,8 +140,6 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
   };
 
   const updateColumnMapping = (index: number, field: keyof ColumnMapping, value: any) => {
-    console.log(`🔧 CSV Import Dialog: Updating mapping[${index}].${field} to "${value}"`);
-    
     setColumnMappings(prev => {
       const updated = [...prev];
       if (field === 'rundownColumn' && value === 'SKIP') {
@@ -149,25 +148,15 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
           rundownColumn: '', 
           isSkipped: true 
         };
-        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" marked as SKIP`);
       } else if (field === 'rundownColumn' && value !== 'SKIP') {
         updated[index] = { 
           ...updated[index], 
           [field]: value,
           isSkipped: false
         };
-        console.log(`🔧 CSV Import Dialog: Column "${updated[index].csvColumn}" mapped to "${value}"`);
       } else {
         updated[index] = { ...updated[index], [field]: value };
       }
-      
-      // Log the final mapping for this column
-      console.log(`🔧 CSV Import Dialog: Final mapping for column ${index}:`, {
-        csvColumn: updated[index].csvColumn,
-        rundownColumn: updated[index].rundownColumn,
-        isSkipped: updated[index].isSkipped
-      });
-      
       return updated;
     });
   };
@@ -178,7 +167,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
       return;
     }
 
-    console.log('🚀 CSV Import: Starting import with:', { csvData, columnMappings, selectedLayout });
+    console.log('Starting import with:', { csvData, columnMappings, selectedLayout });
 
     // Filter out skipped columns and only validate non-skipped ones
     const nonSkippedMappings = columnMappings.filter(mapping => !mapping.isSkipped);
@@ -193,11 +182,11 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
       return;
     }
 
-    console.log('✅ CSV Import: Final mappings before transform:', nonSkippedMappings.map(m => `"${m.csvColumn}" -> "${m.rundownColumn}"`));
+    console.log('Final mappings:', nonSkippedMappings);
 
     // Transform the data
     const result = transformCSVData(csvData.rows, nonSkippedMappings, csvData.headers);
-    console.log('✅ CSV Import: Transform result:', result);
+    console.log('Transform result:', result);
 
     // Call the onImport callback with the result and layout columns
     onImport(result, selectedLayout.columns);
@@ -341,7 +330,6 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                       <Select
                         value={mapping.isSkipped ? 'SKIP' : mapping.rundownColumn}
                         onValueChange={(value) => {
-                          console.log(`🔧 CSV Import Dialog: User selected "${value}" for CSV column "${mapping.csvColumn}"`);
                           updateColumnMapping(index, 'rundownColumn', value);
                         }}
                       >
@@ -382,9 +370,6 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
                               >
                                 {header}
                                 {mapping?.isSkipped && <span className="block text-xs">(Skipped)</span>}
-                                {mapping?.rundownColumn && !mapping?.isSkipped && (
-                                  <span className="block text-xs text-green-300">→ {mapping.rundownColumn}</span>
-                                )}
                               </th>
                             );
                           })}
