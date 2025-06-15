@@ -4,6 +4,7 @@ import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface RegularRowContentProps {
   item: RundownItem;
@@ -27,7 +28,6 @@ const RegularRowContent = ({
   rowNumber,
   columns,
   cellRefs,
-  textColor,
   backgroundColor,
   status,
   isCurrentlyPlaying = false,
@@ -38,6 +38,9 @@ const RegularRowContent = ({
   onKeyDown,
   getColumnWidth
 }: RegularRowContentProps) => {
+  // Calculate text color based on background color
+  const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
+
   return (
     <>
       <td 
