@@ -1,11 +1,14 @@
 
 import React from 'react';
-import { Plus, Settings, Monitor, FileText, Undo } from 'lucide-react';
+import { Plus, Settings, Monitor, FileText, Undo, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
 import { CSVExportData } from '@/utils/csvExport';
+import CSVImportDialog from '@/components/CSVImportDialog';
+import { CSVImportResult } from '@/utils/csvImport';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
@@ -20,6 +23,8 @@ interface MainActionButtonsProps {
   isMobile?: boolean;
   rundownTitle?: string;
   rundownData?: CSVExportData;
+  onCSVImport?: (result: CSVImportResult) => void;
+  existingColumns?: Column[];
 }
 
 const MainActionButtons = ({
@@ -34,7 +39,9 @@ const MainActionButtons = ({
   selectedRowId,
   isMobile = false,
   rundownTitle = 'Untitled Rundown',
-  rundownData
+  rundownData,
+  onCSVImport,
+  existingColumns = []
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -95,6 +102,15 @@ const MainActionButtons = ({
         <Settings className="h-4 w-4" />
         <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
       </Button>
+      
+      {onCSVImport && (
+        <CSVImportDialog onImport={onCSVImport} existingColumns={existingColumns}>
+          <Button variant="outline" size={buttonSize} className={buttonClass}>
+            <Upload className="h-4 w-4" />
+            <span>{isMobile ? 'Import' : 'Import CSV'}</span>
+          </Button>
+        </CSVImportDialog>
+      )}
       
       {rundownId && (
         <ShareRundownMenu 
