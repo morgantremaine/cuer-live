@@ -181,6 +181,14 @@ export const useBlueprintPersistence = (
         return;
       }
 
+      // Helper function to safely handle date conversion
+      const safeDateValue = (dateString: string | undefined) => {
+        if (!dateString || dateString.trim() === '') {
+          return null;
+        }
+        return dateString;
+      };
+
       // Prepare the blueprint data with proper validation
       const blueprintData = {
         rundown_id: rundownId,
@@ -188,7 +196,7 @@ export const useBlueprintPersistence = (
         user_id: user.id,
         team_id: rundownData.team_id, // Always save as team blueprint
         lists: Array.isArray(lists) ? lists : [],
-        show_date: showDateOverride !== undefined ? showDateOverride : (showDate || null),
+        show_date: safeDateValue(showDateOverride !== undefined ? showDateOverride : showDate),
         notes: notesOverride !== undefined ? notesOverride : (savedBlueprint?.notes || null),
         crew_data: crewDataOverride !== undefined ? crewDataOverride : (savedBlueprint?.crew_data || []),
         camera_plots: cameraPlots !== undefined ? cameraPlots : (savedBlueprint?.camera_plots || []),
