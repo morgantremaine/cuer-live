@@ -30,35 +30,38 @@ export const useSimplifiedRundownState = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
-  // Auto-save state
+  // Auto-save state - simplified to match hook signature
   const {
     hasUnsavedChanges,
     isSaving,
     markAsChanged
-  } = useAutoSave(
+  } = useAutoSave({
     items,
     rundownTitle,
     columns,
-    timezoneState,
-    rundownStartTime
-  );
+    timezone: timezoneState,
+    rundownStartTime,
+    rundownId: rundownId || '',
+    saveRundown
+  });
 
-  // Realtime state
+  // Realtime state - fix parameter order
   const { 
     isConnected,
     trackOwnUpdate,
     setEditingState
-  } = useRealtimeRundown(
-    rundownId || '',
+  } = useRealtimeRundown({
+    rundownId: rundownId || '',
+    items,
     setItems,
     setColumns,
     setRundownTitle,
     setRundownStartTime,
     setTimezoneState,
-    user?.id || ''
-  );
+    userId: user?.id || ''
+  });
 
-  // Playback controls
+  // Playback controls - simplified to match hook signature
   const {
     currentSegmentId,
     isPlaying,
@@ -68,14 +71,17 @@ export const useSimplifiedRundownState = () => {
     pause,
     forward,
     backward
-  } = usePlaybackControls(rundownId || '', items);
+  } = usePlaybackControls({
+    rundownId: rundownId || '',
+    items
+  });
 
-  // Calculations
+  // Calculations - provide required items parameter
   const {
     getRowNumber,
     calculateTotalRuntime,
     calculateHeaderDuration
-  } = useRundownCalculations(items, rundownStartTime, timezoneState);
+  } = useRundownCalculations(items);
 
   // Undo functionality
   const {
