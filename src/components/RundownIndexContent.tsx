@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -255,14 +254,15 @@ const RundownIndexContent = () => {
   };
 
   const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
-    console.log('📏 Updating column width:', columnId, 'to:', width);
-    const updatedColumns = userColumns.map(col => {
-      if (col.id === columnId) {
-        return { ...col, width: `${width}px` };
-      }
-      return col;
-    });
-    setUserColumns(updatedColumns);
+    // Use the specialized updateColumnWidth method from useUserColumnPreferences
+    // which handles proper debouncing during resize operations
+    if (userColumns.find(col => col.id === columnId)) {
+      setUserColumns(prevColumns => {
+        return prevColumns.map(col => 
+          col.id === columnId ? { ...col, width: `${width}px` } : col
+        );
+      }, false); // Don't trigger immediate save during resize
+    }
   };
 
   // Prepare rundown data for Cuer AI

@@ -33,6 +33,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
   const isLoadingRef = useRef(false);
+  const isResizingRef = useRef(false);
 
   // Load user's column preferences for this rundown
   const loadColumnPreferences = useCallback(async () => {
@@ -75,24 +76,27 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
   }, [user?.id, rundownId]);
 
-  // Save column preferences with debouncing
-  const saveColumnPreferences = useCallback(async (columnsToSave: Column[]) => {
+  // Save column preferences with proper debouncing
+  const saveColumnPreferences = useCallback(async (columnsToSave: Column[], isImmediate = false) => {
     if (!user?.id || !rundownId) {
-      console.log('⚠️ Cannot save: missing user or rundown ID');
       return;
     }
 
     const currentSignature = JSON.stringify(columnsToSave);
     if (currentSignature === lastSavedRef.current) {
-      console.log('⚠️ No changes to save');
       return;
     }
-
-    console.log('💾 Preparing to save column preferences:', columnsToSave.length, 'columns');
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
+    }
+
+    // For immediate saves (non-resize operations) or when not resizing
+    const saveDelay = isImmediate || !isResizingRef.current ? 100 : 2000;
+
+    if (!isResizingRef.current) {
+      console.log('💾 Preparing to save column preferences:', columnsToSave.length, 'columns');
     }
 
     // Debounce the save
@@ -121,17 +125,39 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       } finally {
         setIsSaving(false);
       }
-    }, 1000);
+    }, saveDelay);
   }, [user?.id, rundownId]);
 
   // Update columns and trigger save - with immediate state update
-  const updateColumns = useCallback((newColumns: Column[]) => {
-    console.log('🔄 Updating columns immediately:', newColumns.length);
+  const updateColumns = useCallback((newColumns: Column[], isImmediate = false) => {
     setColumns(newColumns);
     // Only save if we're not currently loading
     if (!isLoadingRef.current) {
-      saveColumnPreferences(newColumns);
+      saveColumnPreferences(newColumns, isImmediate);
     }
+  }, [saveColumnPreferences]);
+
+  // Special handler for column width updates during resize
+  const updateColumnWidth = useCallback((columnId: string, width: string) => {
+    isResizingRef.current = true;
+    
+    setColumns(prevColumns => {
+      const updatedColumns = prevColumns.map(col => 
+        col.id === columnId ? { ...col, width } : col
+      );
+      
+      // Save with longer debounce during resize
+      if (!isLoadingRef.current) {
+        saveColumnPreferences(updatedColumns, false);
+      }
+      
+      return updatedColumns;
+    });
+
+    // Clear resize flag after a delay
+    setTimeout(() => {
+      isResizingRef.current = false;
+    }, 3000);
   }, [saveColumnPreferences]);
 
   // Load preferences when rundown or user changes
@@ -151,6 +177,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   return {
     columns,
     setColumns: updateColumns,
+    updateColumnWidth,
     isLoading,
     isSaving,
     reloadPreferences: loadColumnPreferences

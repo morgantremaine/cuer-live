@@ -1,5 +1,4 @@
 
-
 import { useState, useCallback, useEffect } from 'react';
 import { Column } from './useColumnsManager';
 
@@ -32,6 +31,7 @@ export const useSimpleColumnWidths = (
   onUpdateColumnWidth?: (columnId: string, width: number) => void
 ) => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
+  const [isResizing, setIsResizing] = useState(false);
 
   // Initialize from columns with better defaults
   useEffect(() => {
@@ -63,6 +63,12 @@ export const useSimpleColumnWidths = (
       const constrainedWidth = Math.max(minimumWidth, width);
       const newWidths = { ...prev, [columnId]: constrainedWidth };
       
+      // Only log during the start and end of resize operations
+      if (!isResizing) {
+        setIsResizing(true);
+        setTimeout(() => setIsResizing(false), 1000);
+      }
+
       // Call the callback for each update to trigger save mechanism
       if (onColumnWidthChange) {
         // Use setTimeout to ensure this doesn't block the UI during drag
@@ -80,7 +86,7 @@ export const useSimpleColumnWidths = (
       
       return newWidths;
     });
-  }, [onColumnWidthChange, onUpdateColumnWidth, columns]);
+  }, [onColumnWidthChange, onUpdateColumnWidth, columns, isResizing]);
 
   const getColumnWidth = useCallback((column: Column) => {
     const width = columnWidths[column.id];
