@@ -26,7 +26,7 @@ export const useSimplifiedRundownState = () => {
   const [columns, setColumns] = useState<Column[]>([]);
   const [rundownTitle, setRundownTitle] = useState('Untitled Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('00:00:00');
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [timezoneState, setTimezoneState] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
@@ -34,29 +34,27 @@ export const useSimplifiedRundownState = () => {
   const {
     hasUnsavedChanges,
     isSaving,
-    isConnected,
-    markAsChanged,
-    autoSaveEnabled
-  } = useAutoSave({
-    rundownId: rundownId || '',
+    markAsChanged
+  } = useAutoSave(
     items,
-    columns,
     rundownTitle,
-    rundownStartTime,
-    timezone,
-    saveRundown,
-    updateRundown,
-    user
-  });
+    columns,
+    timezoneState,
+    rundownStartTime
+  );
 
   // Realtime state
-  const { isProcessingRealtimeUpdate } = useRealtimeRundown(
+  const { 
+    isConnected,
+    trackOwnUpdate,
+    setEditingState
+  } = useRealtimeRundown(
     rundownId || '',
     setItems,
     setColumns,
     setRundownTitle,
     setRundownStartTime,
-    setTimezone,
+    setTimezoneState,
     user?.id || ''
   );
 
@@ -66,7 +64,6 @@ export const useSimplifiedRundownState = () => {
     isPlaying,
     timeRemaining,
     isController,
-    showcallerActivity,
     play,
     pause,
     forward,
@@ -75,18 +72,17 @@ export const useSimplifiedRundownState = () => {
 
   // Calculations
   const {
-    totalRuntime,
-    currentTime,
     getRowNumber,
-    getHeaderDuration
-  } = useRundownCalculations(items, rundownStartTime, timezone);
+    calculateTotalRuntime,
+    calculateHeaderDuration
+  } = useRundownCalculations(items, rundownStartTime, timezoneState);
 
   // Undo functionality
   const {
     undo,
     canUndo,
     lastAction,
-    pushToHistory
+    saveState
   } = useStandaloneUndo();
 
   // Load rundown data
@@ -106,7 +102,7 @@ export const useSimplifiedRundownState = () => {
           setColumns(rundown.columns || []);
           setRundownTitle(rundown.title || 'Untitled Rundown');
           setRundownStartTime(rundown.start_time || '00:00:00');
-          setTimezone(rundown.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+          setTimezoneState(rundown.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
         }
       } catch (error) {
         console.error('Error loading rundown:', error);
@@ -126,34 +122,34 @@ export const useSimplifiedRundownState = () => {
       item.id === id ? { ...item, [field]: value } : item
     ));
     markAsChanged();
-    pushToHistory(`Update ${field}`);
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, `Update ${field}`);
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const addItem = useCallback((newItem: RundownItem) => {
     setItems(prev => [...prev, newItem]);
     markAsChanged();
-    pushToHistory('Add item');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Add item');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const deleteRow = useCallback((id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
     markAsChanged();
-    pushToHistory('Delete row');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Delete row');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const toggleFloat = useCallback((id: string) => {
     setItems(prev => prev.map(item => 
       item.id === id ? { ...item, isFloating: !item.isFloating } : item
     ));
     markAsChanged();
-    pushToHistory('Toggle float');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Toggle float');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const deleteMultipleItems = useCallback((ids: string[]) => {
     setItems(prev => prev.filter(item => !ids.includes(item.id)));
     markAsChanged();
-    pushToHistory(`Delete ${ids.length} items`);
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, `Delete ${ids.length} items`);
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const addRow = useCallback(() => {
     const newItem: RundownItem = {
@@ -176,8 +172,8 @@ export const useSimplifiedRundownState = () => {
     };
     setItems(prev => [...prev, newItem]);
     markAsChanged();
-    pushToHistory('Add row');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Add row');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const addHeader = useCallback(() => {
     const newHeader: RundownItem = {
@@ -200,8 +196,8 @@ export const useSimplifiedRundownState = () => {
     };
     setItems(prev => [...prev, newHeader]);
     markAsChanged();
-    pushToHistory('Add header');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Add header');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const addRowAtIndex = useCallback((insertIndex: number) => {
     const newItem: RundownItem = {
@@ -228,8 +224,8 @@ export const useSimplifiedRundownState = () => {
       return newItems;
     });
     markAsChanged();
-    pushToHistory('Add row at index');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Add row at index');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     const newHeader: RundownItem = {
@@ -256,8 +252,8 @@ export const useSimplifiedRundownState = () => {
       return newItems;
     });
     markAsChanged();
-    pushToHistory('Add header at index');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Add header at index');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   // Column operations
   const addColumn = useCallback((name: string) => {
@@ -276,8 +272,8 @@ export const useSimplifiedRundownState = () => {
       return newColumns;
     });
     markAsChanged();
-    pushToHistory('Add column');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Add column');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
     setColumns(prev => prev.map(col => 
@@ -299,23 +295,27 @@ export const useSimplifiedRundownState = () => {
   const setTitle = useCallback((title: string) => {
     setRundownTitle(title);
     markAsChanged();
-    pushToHistory('Update title');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, title, 'Update title');
+  }, [markAsChanged, saveState, items, columns]);
 
   const setStartTime = useCallback((time: string) => {
     setRundownStartTime(time);
     markAsChanged();
-    pushToHistory('Update start time');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Update start time');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   const setTimezone = useCallback((tz: string) => {
-    setTimezone(tz);
+    setTimezoneState(tz);
     markAsChanged();
-    pushToHistory('Update timezone');
-  }, [markAsChanged, pushToHistory]);
+    saveState(items, columns, rundownTitle, 'Update timezone');
+  }, [markAsChanged, saveState, items, columns, rundownTitle]);
 
   // Get visible columns
   const visibleColumns = columns.filter(col => col.isVisible !== false);
+
+  // Calculate current time and total runtime
+  const currentTime = new Date();
+  const totalRuntime = calculateTotalRuntime();
 
   return {
     // Core data
@@ -324,7 +324,7 @@ export const useSimplifiedRundownState = () => {
     visibleColumns,
     rundownTitle,
     rundownStartTime,
-    timezone,
+    timezone: timezoneState,
     currentTime,
     rundownId,
     
@@ -333,14 +333,14 @@ export const useSimplifiedRundownState = () => {
     hasUnsavedChanges,
     isSaving,
     isConnected,
-    isProcessingRealtimeUpdate,
+    isProcessingRealtimeUpdate: false, // Default value since not available from realtime hook
     
     // Playback state
     currentSegmentId,
     isPlaying,
     timeRemaining,
     isController,
-    showcallerActivity,
+    showcallerActivity: false, // Default value since not available from playback hook
     
     // Selection state
     selectedRowId,
@@ -350,7 +350,10 @@ export const useSimplifiedRundownState = () => {
     // Calculations
     totalRuntime,
     getRowNumber,
-    getHeaderDuration,
+    getHeaderDuration: (id: string) => {
+      const index = items.findIndex(item => item.id === id);
+      return index >= 0 ? calculateHeaderDuration(index) : '00:00:00';
+    },
     
     // Core actions
     setItems,
