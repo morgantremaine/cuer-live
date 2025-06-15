@@ -19,11 +19,16 @@ const SharedRundown = () => {
   // Load the shared layout for this rundown
   useEffect(() => {
     const loadSharedLayout = async () => {
-      if (!rundownId || !rundownData) return;
+      console.log('🔍 loadSharedLayout called with:', { rundownId, rundownData: !!rundownData });
+      
+      if (!rundownId || !rundownData) {
+        console.log('❌ Missing rundownId or rundownData, skipping layout load');
+        return;
+      }
       
       setLayoutLoading(true);
       try {
-        console.log('Loading shared layout for rundown:', rundownId);
+        console.log('🔄 Loading shared layout for rundown:', rundownId);
         
         // Get the shared layout configuration
         const { data: sharedLayoutData, error: sharedError } = await supabase
@@ -32,10 +37,10 @@ const SharedRundown = () => {
           .eq('rundown_id', rundownId)
           .maybeSingle();
 
-        console.log('Shared layout data:', sharedLayoutData, 'Error:', sharedError);
+        console.log('📊 Shared layout query result:', { sharedLayoutData, sharedError });
 
         if (sharedError && sharedError.code !== 'PGRST116') {
-          console.error('Error loading shared layout config:', sharedError);
+          console.error('❌ Error loading shared layout config:', sharedError);
           setLayoutColumns(null);
           setLayoutName('Default Layout');
           setLayoutLoading(false);
@@ -44,7 +49,7 @@ const SharedRundown = () => {
 
         // If there's a specific layout set, load it
         if (sharedLayoutData && sharedLayoutData.layout_id) {
-          console.log('Loading layout with ID:', sharedLayoutData.layout_id);
+          console.log('🎯 Found shared layout ID:', sharedLayoutData.layout_id);
           
           const { data: layoutData, error: layoutError } = await supabase
             .from('column_layouts')
@@ -52,31 +57,31 @@ const SharedRundown = () => {
             .eq('id', sharedLayoutData.layout_id)
             .maybeSingle();
 
-          console.log('Layout data:', layoutData, 'Error:', layoutError);
+          console.log('📋 Layout query result:', { layoutData, layoutError });
 
           if (layoutError) {
-            console.error('Error loading layout:', layoutError);
+            console.error('❌ Error loading layout:', layoutError);
             // Fallback to default
             setLayoutColumns(null);
             setLayoutName('Default Layout');
           } else if (layoutData) {
-            console.log('Setting layout columns:', layoutData.columns);
+            console.log('✅ Successfully loaded layout:', layoutData.name, 'Columns:', layoutData.columns);
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
           } else {
             // Layout not found, fallback to default
-            console.log('Layout not found, using default');
+            console.log('⚠️ Layout not found, using default');
             setLayoutColumns(null);
             setLayoutName('Default Layout');
           }
         } else {
           // No specific layout set, use default
-          console.log('No shared layout set, using default');
+          console.log('🎨 No shared layout configured, using default');
           setLayoutColumns(null);
           setLayoutName('Default Layout');
         }
       } catch (error) {
-        console.error('Failed to load shared layout:', error);
+        console.error('💥 Failed to load shared layout:', error);
         // Fallback to default
         setLayoutColumns(null);
         setLayoutName('Default Layout');
@@ -127,8 +132,12 @@ const SharedRundown = () => {
   const columnsToUse = layoutColumns || rundownData.columns;
   const visibleColumns = getVisibleColumns(columnsToUse);
 
-  console.log('Final columns to use:', columnsToUse);
-  console.log('Layout name:', layoutName);
+  console.log('🎯 Final state:', {
+    layoutColumns: layoutColumns ? 'loaded' : 'null',
+    columnsToUse: columnsToUse?.length || 0,
+    layoutName,
+    rundownColumns: rundownData.columns?.length || 0
+  });
 
   // Determine if showcaller is playing and use the real-time calculated time remaining
   const showcallerState = rundownData.showcallerState;
