@@ -20,7 +20,7 @@ import {
 import { Plus } from 'lucide-react';
 
 interface AddListDialogProps {
-  availableColumns: { key: string; name: string }[];
+  availableColumns: { name: string; value: string }[];
   onAddList: (name: string, sourceColumn: string) => void;
 }
 
@@ -41,8 +41,9 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
 
   // Filter out custom columns and show meaningful column names
   const meaningfulColumns = availableColumns.filter(column => 
-    !column.key.startsWith('custom_') && 
-    ['headers', 'gfx', 'video', 'talent', 'script', 'notes'].includes(column.key)
+    column.value && 
+    !column.value.startsWith('custom_') && 
+    ['headers', 'gfx', 'video', 'talent', 'script', 'notes'].includes(column.value)
   );
 
   return (
@@ -81,8 +82,8 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
               <SelectContent className="bg-gray-800 border-gray-600">
                 {meaningfulColumns.map((column) => (
                   <SelectItem 
-                    key={column.key} 
-                    value={column.key}
+                    key={column.value} 
+                    value={column.value}
                     className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white"
                   >
                     {column.name}
