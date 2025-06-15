@@ -11,21 +11,23 @@ export interface Column {
   isVisible?: boolean;
 }
 
-export const useColumnsManager = (markAsChanged?: () => void) => {
-  const [columns, setColumns] = useState<Column[]>([
-    { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-    { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-    { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
-  ]);
+const getDefaultColumns = (): Column[] => [
+  { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+  { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+  { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+];
 
-  // Ensure columns is always an array before filtering
+export const useColumnsManager = (markAsChanged?: () => void) => {
+  const [columns, setColumns] = useState<Column[]>(getDefaultColumns());
+
+  // Ensure columns is always an array before filtering and ensure all default columns are visible
   const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
 
   const handleAddColumn = useCallback((name: string) => {
@@ -144,18 +146,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return layoutColumns; // Return the layout columns as fallback
       }
 
-      // Define essential built-in columns that should always be preserved (removed talent)
-      const essentialBuiltInColumns = [
-        { id: 'segmentName', name: 'Segment Name', key: 'segmentName', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-        { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-        { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-        { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
-      ];
+      // Get the default columns to ensure all built-ins are included
+      const defaultColumns = getDefaultColumns();
 
       // Filter out the "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
@@ -185,10 +177,10 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         mergedColumns.push(layoutCol);
       });
 
-      // Then, add any missing essential built-in columns
-      essentialBuiltInColumns.forEach(essentialCol => {
-        if (!layoutColumnIds.has(essentialCol.id)) {
-          mergedColumns.push(essentialCol);
+      // Then, add any missing default columns (including gfx and video)
+      defaultColumns.forEach(defaultCol => {
+        if (!layoutColumnIds.has(defaultCol.id)) {
+          mergedColumns.push(defaultCol);
         }
       });
 
@@ -201,6 +193,15 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     });
   }, [markAsChanged]);
 
+  // Reset to default columns function for new rundowns
+  const resetToDefaults = useCallback(() => {
+    console.log('🔄 Resetting to default columns');
+    setColumns(getDefaultColumns());
+    if (markAsChanged) {
+      markAsChanged();
+    }
+  }, [markAsChanged]);
+
   return {
     columns: Array.isArray(columns) ? columns : [],
     visibleColumns,
@@ -210,6 +211,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth
+    handleUpdateColumnWidth,
+    resetToDefaults
   };
 };
