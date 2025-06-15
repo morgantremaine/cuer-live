@@ -28,12 +28,14 @@ export const parseCSV = (csvText: string): string[][] => {
   });
 };
 
-// Standard field mappings
+// Standard field mappings - updated to match RundownItem interface
 const STANDARD_FIELD_MAPPINGS: Record<string, string> = {
   'row number': 'rowNumber',
   'rownumber': 'rowNumber',
   'name': 'name',
   'title': 'name',
+  'segment name': 'name',
+  'segmentname': 'name',
   'start time': 'startTime',
   'starttime': 'startTime',
   'start': 'startTime',
@@ -66,28 +68,26 @@ export const mapCSVToRundownItems = (csvData: string[][]): { items: RundownItem[
   const headers = csvData[0].map(h => h.toLowerCase().trim());
   const rows = csvData.slice(1);
 
-  // Create column mappings
-  const columns: Column[] = [];
+  // Start with essential columns
+  const columns: Column[] = [
+    { id: 'segmentName', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+    { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+  ];
+
   const customFieldMap: Record<number, string> = {};
 
+  // Process headers to identify custom fields and add standard columns that appear in CSV
   headers.forEach((header, index) => {
     const standardField = STANDARD_FIELD_MAPPINGS[header];
     
-    if (standardField) {
-      // Add standard columns that aren't already included
-      const existingColumn = columns.find(col => col.key === standardField);
-      if (!existingColumn) {
-        columns.push({
-          id: `col_${Date.now()}_${index}`,
-          name: header.charAt(0).toUpperCase() + header.slice(1),
-          key: standardField,
-          width: '150px',
-          isCustom: false,
-          isEditable: true,
-          isVisible: true
-        });
-      }
-    } else {
+    if (!standardField) {
       // Create custom field column
       const customFieldKey = `custom_${header.replace(/[^a-zA-Z0-9]/g, '_')}`;
       customFieldMap[index] = customFieldKey;
@@ -135,15 +135,16 @@ export const mapCSVToRundownItems = (csvData: string[][]): { items: RundownItem[
         if (standardField === 'type') {
           item.type = cellValue.toLowerCase() === 'header' ? 'header' : 'regular';
         } else {
+          // Map to the correct field
           (item as any)[standardField] = cellValue;
         }
       } else {
         // Add to custom fields
         const customFieldKey = customFieldMap[colIndex];
-        if (customFieldKey && !item.customFields) {
-          item.customFields = {};
-        }
-        if (item.customFields && customFieldKey) {
+        if (customFieldKey) {
+          if (!item.customFields) {
+            item.customFields = {};
+          }
           item.customFields[customFieldKey] = cellValue;
         }
       }

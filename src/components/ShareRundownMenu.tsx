@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   DropdownMenu,
@@ -18,7 +19,11 @@ import { exportRundownToCSV, downloadCSV } from '@/utils/csvUtils';
 interface ShareRundownMenuProps {
   rundownId: string;
   rundownTitle: string;
-  rundownData?: any; // Add rundown data for print functionality
+  rundownData?: {
+    items: any[];
+    columns: any[];
+    title: string;
+  };
 }
 
 export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
@@ -87,7 +92,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
 
     try {
       const csvContent = exportRundownToCSV(rundownData.items, rundownData.columns);
-      const filename = `${rundownTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+      const filename = `${(rundownData.title || rundownTitle).replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
       
       downloadCSV(csvContent, filename);
       

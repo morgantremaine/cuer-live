@@ -28,13 +28,13 @@ export const useCsvImport = () => {
     }
 
     try {
-      // Create new rundown object
+      // Create new rundown object with both items and columns
       const newRundown = {
         id: '',
         user_id: user.id,
         title: data.title,
         items: data.items,
-        columns: data.columns,
+        columns: data.columns, // Include the imported columns
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         start_time: '00:00:00',
         icon: '📋',
@@ -48,11 +48,16 @@ export const useCsvImport = () => {
         creator_profile: null
       };
 
-      // Save the rundown
+      // Save the rundown with both items and columns
       const rundownId = await saveRundown(newRundown);
       
       // Navigate to the new rundown
       navigate(`/rundown/${rundownId}`);
+
+      toast({
+        title: 'Import successful',
+        description: `Created "${data.title}" with ${data.items.length} items and ${data.columns.filter(c => c.isCustom).length} custom columns`,
+      });
 
       return rundownId;
     } catch (error) {
