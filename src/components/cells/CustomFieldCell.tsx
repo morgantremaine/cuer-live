@@ -1,72 +1,49 @@
 
 import React from 'react';
-import HighlightedText from '../HighlightedText';
+import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface CustomFieldCellProps {
-  value: string;
-  itemId: string;
-  cellRefKey: string;
+  column: Column;
+  item: RundownItem;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
-  highlight?: {
-    startIndex: number;
-    endIndex: number;
-  } | null;
-  onUpdateValue: (value: string) => void;
-  onCellClick: (e: React.MouseEvent) => void;
+  onUpdateItem: (id: string, field: string, value: string) => void;
+  onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  width: string;
+  className?: string;
 }
 
 const CustomFieldCell = ({
-  value,
-  itemId,
-  cellRefKey,
+  column,
+  item,
   cellRefs,
   textColor,
   backgroundColor,
-  highlight,
-  onUpdateValue,
+  onUpdateItem,
   onCellClick,
-  onKeyDown
+  onKeyDown,
+  width,
+  className
 }: CustomFieldCellProps) => {
-  // Simple key navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // For Enter key and arrow keys, navigate to next/previous cell
-    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      onKeyDown(e, itemId, cellRefKey);
-      return;
-    }
-    
-    // Allow other keys to work normally
-  };
-
-  // Create the proper cell ref key
-  const cellKey = `${itemId}-${cellRefKey}`;
+  const cellKey = `${item.id}-${column.key}`;
+  const value = (item as any)[column.key] || '';
 
   return (
-    <div className="w-full h-full flex items-center" style={{ backgroundColor }}>
-      <textarea
-        ref={el => {
-          if (el) {
-            cellRefs.current[cellKey] = el;
-          } else {
-            delete cellRefs.current[cellKey];
-          }
+    <div className="px-2 py-1" style={{ width }}>
+      <input
+        ref={(el) => {
+          if (el) cellRefs.current[cellKey] = el;
         }}
+        type="text"
         value={value}
-        onChange={(e) => onUpdateValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onClick={onCellClick}
-        data-cell-id={cellKey}
-        data-cell-ref={cellKey}
-        className="w-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none"
-        style={{ 
-          backgroundColor: 'transparent',
-          color: textColor || 'inherit',
-          minHeight: '28px'
-        }}
-        rows={1}
+        onChange={(e) => onUpdateItem(item.id, column.key, e.target.value)}
+        onClick={() => onCellClick(item.id, column.key)}
+        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+        className={`w-full bg-transparent border-none outline-none text-sm ${className || ''}`}
+        style={{ color: textColor }}
       />
     </div>
   );

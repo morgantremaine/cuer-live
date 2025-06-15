@@ -1,90 +1,70 @@
 
 import React from 'react';
-import HighlightedText from '../HighlightedText';
+import ExpandableScriptCell from '../ExpandableScriptCell';
+import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface TextAreaCellProps {
-  value: string;
-  itemId: string;
-  cellRefKey: string;
+  column: Column;
+  item: RundownItem;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
-  isDuration?: boolean;
-  highlight?: {
-    startIndex: number;
-    endIndex: number;
-  } | null;
-  onUpdateValue: (value: string) => void;
-  onCellClick: (e: React.MouseEvent) => void;
+  onUpdateItem: (id: string, field: string, value: string) => void;
+  onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  width: string;
+  className?: string;
 }
 
 const TextAreaCell = ({
-  value,
-  itemId,
-  cellRefKey,
+  column,
+  item,
   cellRefs,
   textColor,
   backgroundColor,
-  isDuration = false,
-  highlight,
-  onUpdateValue,
+  onUpdateItem,
   onCellClick,
-  onKeyDown
+  onKeyDown,
+  width,
+  className
 }: TextAreaCellProps) => {
-  // Helper function to determine if content needs two lines
-  const needsTwoLines = (text: string) => {
-    return text.length > 40 || text.includes('\n');
-  };
+  const cellKey = `${item.id}-${column.key}`;
+  const value = (item as any)[column.key] || '';
 
-  const shouldExpandRow = needsTwoLines(value);
-
-  // Simple key navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // For Enter key and arrow keys, navigate to next/previous cell
-    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      onKeyDown(e, itemId, cellRefKey);
-      return;
-    }
-    
-    // Allow other keys to work normally
-  };
-
-  // Create the proper cell ref key
-  const cellKey = `${itemId}-${cellRefKey}`;
+  // Use expandable script cell for script column
+  if (column.key === 'script') {
+    return (
+      <ExpandableScriptCell
+        value={value}
+        onChange={(newValue) => onUpdateItem(item.id, column.key, newValue)}
+        onClick={() => onCellClick(item.id, column.key)}
+        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+        textColor={textColor}
+        backgroundColor={backgroundColor}
+        width={width}
+        className={className}
+      />
+    );
+  }
 
   return (
-    <div className="relative w-full h-full min-h-[32px] flex items-center" style={{ backgroundColor }}>
+    <div className="px-2 py-1" style={{ width }}>
       <textarea
-        ref={el => {
-          if (el) {
-            cellRefs.current[cellKey] = el;
-          } else {
-            delete cellRefs.current[cellKey];
-          }
+        ref={(el) => {
+          if (el) cellRefs.current[cellKey] = el;
         }}
         value={value}
-        onChange={(e) => onUpdateValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onClick={onCellClick}
-        data-cell-id={cellKey}
-        data-cell-ref={cellKey}
-        className={`w-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
-          isDuration ? 'font-mono text-center' : ''
-        }`}
+        onChange={(e) => onUpdateItem(item.id, column.key, e.target.value)}
+        onClick={() => onCellClick(item.id, column.key)}
+        onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+        className={`w-full bg-transparent border-none outline-none resize-none text-sm ${className || ''}`}
         style={{ 
-          backgroundColor: 'transparent',
-          color: textColor || 'inherit',
-          minHeight: shouldExpandRow ? '40px' : '28px',
-          lineHeight: '1.2'
+          color: textColor,
+          minHeight: '1.5rem'
         }}
-        rows={shouldExpandRow ? 2 : 1}
+        rows={1}
       />
-      {highlight && (
-        <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm flex items-center" style={{ color: 'transparent' }}>
-          <HighlightedText text={value} highlight={highlight} />
-        </div>
-      )}
     </div>
   );
 };
