@@ -1,3 +1,4 @@
+
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -27,7 +28,7 @@ export const parseCSV = (csvText: string): string[][] => {
   });
 };
 
-// Standard field mappings - corrected to match actual RundownItem usage
+// Standard field mappings - fixed to match RundownItem structure
 const STANDARD_FIELD_MAPPINGS: Record<string, string> = {
   'row number': 'rowNumber',
   'rownumber': 'rowNumber',
@@ -68,10 +69,10 @@ export const mapCSVToRundownItems = (csvData: string[][]): { items: RundownItem[
   const headers = csvData[0].map(h => h.toLowerCase().trim());
   const rows = csvData.slice(1);
 
-  console.log('CSV Headers:', headers);
-  console.log('Sample row:', rows[0]);
+  console.log('🔄 CSV Import - Headers:', headers);
+  console.log('🔄 CSV Import - Sample row:', rows[0]);
 
-  // Start with essential columns - keep them in order but make them all visible
+  // Create columns - start with essential ones that match our key mapping
   const columns: Column[] = [
     { id: 'segmentName', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
     { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
@@ -93,13 +94,13 @@ export const mapCSVToRundownItems = (csvData: string[][]): { items: RundownItem[
     
     if (standardField) {
       usedStandardFields.add(standardField);
-      console.log(`Mapped "${header}" to standard field "${standardField}"`);
+      console.log(`✅ Mapped "${header}" to standard field "${standardField}"`);
     } else {
       // Create custom field column
       const customFieldKey = `custom_${header.replace(/[^a-zA-Z0-9]/g, '_')}`;
       customFieldMap[index] = customFieldKey;
       
-      console.log(`Creating custom field column for "${header}" with key "${customFieldKey}"`);
+      console.log(`🆕 Creating custom field column for "${header}" with key "${customFieldKey}"`);
       
       columns.push({
         id: `col_${Date.now()}_${index}`,
@@ -144,10 +145,10 @@ export const mapCSVToRundownItems = (csvData: string[][]): { items: RundownItem[
         if (standardField === 'type') {
           item.type = cellValue.toLowerCase() === 'header' ? 'header' : 'regular';
         } else {
-          // Map to the correct field
+          // Map to the correct field - ensure we're using the right property names
           (item as any)[standardField] = cellValue;
         }
-        console.log(`Set ${standardField} to "${cellValue}" for row ${rowIndex}`);
+        console.log(`📝 Set ${standardField} to "${cellValue}" for row ${rowIndex}`);
       } else {
         // Add to custom fields
         const customFieldKey = customFieldMap[colIndex];
@@ -156,7 +157,7 @@ export const mapCSVToRundownItems = (csvData: string[][]): { items: RundownItem[
             item.customFields = {};
           }
           item.customFields[customFieldKey] = cellValue;
-          console.log(`Set custom field ${customFieldKey} to "${cellValue}" for row ${rowIndex}`);
+          console.log(`🔧 Set custom field ${customFieldKey} to "${cellValue}" for row ${rowIndex}`);
         }
       }
     });
@@ -164,23 +165,33 @@ export const mapCSVToRundownItems = (csvData: string[][]): { items: RundownItem[
     return item;
   });
 
-  console.log('Created', items.length, 'items and', columns.length, 'columns');
-  console.log('Sample item:', items[0]);
-  console.log('Custom fields in first item:', items[0]?.customFields);
+  console.log('✅ CSV Import Complete:', {
+    items: items.length,
+    columns: columns.length,
+    customColumns: columns.filter(c => c.isCustom).length
+  });
 
   return { items, columns };
 };
 
 export const exportRundownToCSV = (items: RundownItem[], columns: Column[]): string => {
+  console.log('🔄 CSV Export - Starting with:', {
+    items: items.length,
+    columns: columns.length,
+    visibleColumns: columns.filter(col => col.isVisible).length
+  });
+
   // Create headers from visible columns
   const headers = columns
     .filter(col => col.isVisible)
     .map(col => col.name);
 
+  console.log('📋 CSV Export - Headers:', headers);
+
   // Create CSV rows
   const csvRows = [headers];
 
-  items.forEach(item => {
+  items.forEach((item, itemIndex) => {
     const row: string[] = [];
     
     columns
@@ -191,6 +202,7 @@ export const exportRundownToCSV = (items: RundownItem[], columns: Column[]): str
         if (col.isCustom && item.customFields) {
           value = item.customFields[col.key] || '';
         } else {
+          // Map column key to item property
           value = (item as any)[col.key] || '';
         }
         
@@ -203,9 +215,13 @@ export const exportRundownToCSV = (items: RundownItem[], columns: Column[]): str
       });
     
     csvRows.push(row);
+    console.log(`📝 CSV Export - Row ${itemIndex}:`, row.slice(0, 3), '...');
   });
 
-  return csvRows.map(row => row.join(',')).join('\n');
+  const csvContent = csvRows.map(row => row.join(',')).join('\n');
+  console.log('✅ CSV Export Complete - Content length:', csvContent.length);
+  
+  return csvContent;
 };
 
 export const downloadCSV = (csvContent: string, filename: string) => {
