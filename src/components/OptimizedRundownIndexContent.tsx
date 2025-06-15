@@ -94,14 +94,35 @@ const OptimizedRundownIndexContent = React.memo(() => {
     return status;
   }, [handlers.getRowStatus]);
 
-  // Fix getRowNumber to work with index-based interface
+  // Fix getRowNumber to work with index-based interface - create a proper index-based wrapper
   const getRowNumberWrapper = useCallback((index: number): string => {
     if (index >= 0 && index < state.items.length) {
-      const item = state.items[index];
-      return state.getRowNumber(item.id);
+      // Use index directly for row number calculation
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let headerIndex = 0;
+      let itemIndex = 0;
+      
+      // Count headers and items up to current index
+      for (let i = 0; i <= index; i++) {
+        const item = state.items[i];
+        if (item?.type === 'header') {
+          headerIndex++;
+          itemIndex = 0; // Reset item count for new section
+        } else {
+          itemIndex++;
+        }
+      }
+      
+      const currentItem = state.items[index];
+      if (currentItem?.type === 'header') {
+        return letters[headerIndex - 1] || 'A';
+      } else {
+        const letter = letters[headerIndex - 1] || 'A';
+        return `${letter}${itemIndex}`;
+      }
     }
     return '';
-  }, [state.getRowNumber, state.items]);
+  }, [state.items]);
 
   // Use simplified handlers for common operations
   const {
