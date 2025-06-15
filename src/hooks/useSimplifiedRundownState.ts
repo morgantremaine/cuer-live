@@ -170,7 +170,7 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
-  // Initialize playback controls with showcaller functionality - unchanged
+  // Initialize playbook controls with showcaller functionality - unchanged
   const {
     isPlaying,
     currentSegmentId,
@@ -340,23 +340,55 @@ export const useSimplifiedRundownState = () => {
     setSelectedRowId(null);
   }, []);
 
+  // Fixed addRowAtIndex that properly inserts at specified index
   const addRowAtIndex = useCallback((insertIndex: number) => {
+    console.log('🚀 SimplifiedState addRowAtIndex called with index:', insertIndex);
     saveUndoState(state.items, [], state.title, 'Add segment');
-    if (helpers.addRow && typeof helpers.addRow === 'function') {
-      helpers.addRow(insertIndex);
-    } else {
-      helpers.addRow();
-    }
-  }, [helpers, state.items, state.title, saveUndoState]);
+    
+    const newItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: 'New Segment',
+      duration: '00:30',
+      type: 'segment' as const,
+      startTime: '00:00:00',
+      endTime: '00:30:00',
+      notes: '',
+      script: '',
+      talent: '',
+      isFloating: false,
+      customFields: {}
+    };
 
+    // Insert at specific index
+    const newItems = [...state.items];
+    const actualIndex = Math.min(insertIndex, newItems.length);
+    newItems.splice(actualIndex, 0, newItem);
+    
+    console.log('🚀 Inserting new segment at index:', actualIndex, 'total items will be:', newItems.length);
+    actions.setItems(newItems);
+  }, [state.items, state.title, saveUndoState, actions.setItems]);
+
+  // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
+    console.log('🚀 SimplifiedState addHeaderAtIndex called with index:', insertIndex);
     saveUndoState(state.items, [], state.title, 'Add header');
-    if (helpers.addHeader && typeof helpers.addHeader === 'function') {
-      helpers.addHeader(insertIndex);
-    } else {
-      helpers.addHeader();
-    }
-  }, [helpers, state.items, state.title, saveUndoState]);
+    
+    const newHeader = {
+      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: 'New Header',
+      type: 'header' as const,
+      isFloating: false,
+      customFields: {}
+    };
+
+    // Insert at specific index
+    const newItems = [...state.items];
+    const actualIndex = Math.min(insertIndex, newItems.length);
+    newItems.splice(actualIndex, 0, newHeader);
+    
+    console.log('🚀 Inserting new header at index:', actualIndex, 'total items will be:', newItems.length);
+    actions.setItems(newItems);
+  }, [state.items, state.title, saveUndoState, actions.setItems]);
 
   // Clean up timeouts on unmount - unchanged
   useEffect(() => {
