@@ -55,13 +55,8 @@ const SharedRundown = () => {
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
-          currentTime={currentTime}
           startTime={rundownData.startTime || '09:00:00'}
-          currentSegmentId={currentSegmentId}
-          items={rundownData.items}
           timezone={rundownData.timezone || 'UTC'}
-          isPlaying={isPlaying}
-          timeRemaining={timeRemaining}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)]">
