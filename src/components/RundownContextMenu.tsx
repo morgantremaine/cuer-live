@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
@@ -23,6 +22,7 @@ interface RundownContextMenuProps {
   onToggleFloat: () => void;
   onColorPicker: () => void;
   onColorSelect: (itemId: string, color: string) => void;
+  onCloseColorPicker?: () => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
   onAddRow?: () => void;
@@ -42,6 +42,7 @@ const RundownContextMenu = memo(({
   onToggleFloat,
   onColorPicker,
   onColorSelect,
+  onCloseColorPicker,
   onPaste,
   onClearSelection,
   onAddRow,
@@ -59,6 +60,11 @@ const RundownContextMenu = memo(({
     } else {
       // Apply color to single row
       onColorSelect(id, color);
+    }
+    
+    // Always close the color picker after selection
+    if (onCloseColorPicker) {
+      onCloseColorPicker();
     }
   };
 
@@ -176,10 +182,7 @@ const RundownContextMenu = memo(({
             itemId={itemId}
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
-            onColorSelect={(id, color) => {
-              handleColorSelect(id, color);
-              onColorPicker(); // Close the color picker after selection
-            }}
+            onColorSelect={handleColorSelect}
           />
         </div>
       )}

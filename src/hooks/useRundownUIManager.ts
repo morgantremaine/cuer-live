@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { useSimpleColumnWidths } from './useSimpleColumnWidths';
 import { useColorPicker } from './useColorPicker';
@@ -43,7 +42,9 @@ export const useRundownUIManager = (
   // Color picker state
   const {
     showColorPicker,
-    handleToggleColorPicker
+    handleToggleColorPicker,
+    handleColorSelect,
+    closeColorPicker
   } = useColorPicker();
 
   // Editing state
@@ -77,7 +78,9 @@ export const useRundownUIManager = (
   // Color selection function
   const selectColor = useCallback((id: string, color: string) => {
     updateItem(id, 'color', color);
-  }, [updateItem]);
+    // Close the color picker after selection
+    closeColorPicker();
+  }, [updateItem, closeColorPicker]);
 
   // Cleanup timeout on unmount
   const cleanup = useCallback(() => {
@@ -94,6 +97,8 @@ export const useRundownUIManager = (
     // Color picker
     showColorPicker,
     handleToggleColorPicker,
+    handleColorSelect,
+    closeColorPicker,
     selectColor,
     
     // Cell interactions

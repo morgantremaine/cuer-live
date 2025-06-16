@@ -9,12 +9,18 @@ export const useColorPicker = () => {
   };
 
   const handleColorSelect = (id: string, color: string) => {
+    // Always close the color picker after selection
+    setShowColorPicker(null);
+  };
+
+  const closeColorPicker = () => {
     setShowColorPicker(null);
   };
 
   return {
     showColorPicker,
     handleToggleColorPicker,
-    handleColorSelect
+    handleColorSelect,
+    closeColorPicker
   };
 };
