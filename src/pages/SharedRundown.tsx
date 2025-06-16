@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -43,7 +42,12 @@ const SharedRundown = () => {
         return;
       }
       
-      console.log('🔍 loadSharedLayout called with:', { rundownId, rundownData: !!rundownData });
+      console.log('🔍 loadSharedLayout called with:', { 
+        rundownId, 
+        rundownData: !!rundownData,
+        rundownVisibility: rundownData.visibility,
+        rundownColumns: rundownData.columns?.length || 0
+      });
       
       setLayoutLoading(true);
       layoutLoadedRef.current = true;
@@ -52,6 +56,21 @@ const SharedRundown = () => {
       try {
         console.log('🔄 Loading shared layout for rundown:', rundownId);
         
+        // First check if this rundown is public - if not, we can't load shared layouts for anonymous users
+        if (!rundownData.visibility || rundownData.visibility !== 'public') {
+          console.log('⚠️ Rundown is not public, falling back to rundown columns or default');
+          if (rundownData.columns && rundownData.columns.length > 0) {
+            console.log('🔄 Using rundown columns (rundown not public)');
+            setLayoutColumns(rundownData.columns);
+            setLayoutName('Rundown Layout');
+          } else {
+            setLayoutColumns(null);
+            setLayoutName('Default Layout');
+          }
+          setLayoutLoading(false);
+          return;
+        }
+
         // Get the shared layout configuration - this now works for anonymous users thanks to RLS updates
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
@@ -65,7 +84,7 @@ const SharedRundown = () => {
           console.error('❌ Error loading shared layout config:', sharedError);
           // Fallback to rundown's own columns if shared layout fails
           if (rundownData.columns && rundownData.columns.length > 0) {
-            console.log('🔄 Falling back to rundown columns');
+            console.log('🔄 Falling back to rundown columns after shared layout error');
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
           } else {
@@ -195,7 +214,8 @@ const SharedRundown = () => {
     columnsToUse: columnsToUse?.length || 0,
     layoutName,
     rundownColumns: rundownData.columns?.length || 0,
-    usingDefaultColumns: !layoutColumns && !rundownData.columns
+    usingDefaultColumns: !layoutColumns && !rundownData.columns,
+    rundownVisibility: rundownData.visibility
   });
 
   // Determine if showcaller is playing and use the real-time calculated time remaining
