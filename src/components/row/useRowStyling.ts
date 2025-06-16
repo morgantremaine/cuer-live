@@ -1,3 +1,4 @@
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -43,12 +44,11 @@ export const useRowStyling = ({
     rowClass = 'bg-background hover:bg-muted/50';
   }
 
-  // Add selection styling with ring outline for both headers and regular rows
+  // Add selection styling with box-shadow for better visibility
   if (isSelected) {
-    // Use ring outline for selection indication - make it more prominent for colored backgrounds
     if (color && color !== '#FFFFFF' && color !== '#ffffff') {
-      // For colored backgrounds, use a thicker, more visible ring
-      rowClass += ' !ring-4 !ring-blue-500 !ring-inset !shadow-[inset_0_0_0_4px_rgb(59_130_246)]';
+      // For colored backgrounds, use a prominent box-shadow that creates a thick border
+      rowClass += ' !shadow-[inset_0_0_0_3px_rgb(59_130_246)] !outline !outline-2 !outline-blue-500 !outline-offset-[-2px]';
     } else {
       // Standard ring for non-colored backgrounds
       rowClass += ' !ring-2 !ring-blue-500 !ring-inset';
@@ -61,7 +61,7 @@ export const useRowStyling = ({
       // For regular rows without custom colors, add subtle background highlight
       rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
-    // For rows with custom colors, we rely on the ring to show selection
+    // For rows with custom colors, we rely on the box-shadow and outline to show selection
   }
 
   return { rowClass, backgroundColorOverride };
