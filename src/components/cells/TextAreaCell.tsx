@@ -33,28 +33,48 @@ const TextAreaCell = ({
   onKeyDown
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [calculatedHeight, setCalculatedHeight] = useState<number>(36);
+  const [calculatedHeight, setCalculatedHeight] = useState<number>(38); // Start with a more reasonable default
 
   // Function to calculate required height based on content
   const calculateHeight = () => {
-    if (!textareaRef.current) return 36;
+    if (!textareaRef.current) return;
     
     const textarea = textareaRef.current;
     
-    // Temporarily set height to auto to get the natural content height
+    // Store original styles
     const originalHeight = textarea.style.height;
-    textarea.style.height = 'auto';
+    const originalOverflow = textarea.style.overflow;
     
-    // Get the scroll height (natural content height)
+    // Reset to get natural height
+    textarea.style.height = 'auto';
+    textarea.style.overflow = 'hidden';
+    
+    // Get the scroll height
     const scrollHeight = textarea.scrollHeight;
     
-    // Restore original height
+    // Restore original styles
     textarea.style.height = originalHeight;
+    textarea.style.overflow = originalOverflow;
     
-    // Use a minimum height of 36px for single lines, but allow growth
-    const newHeight = Math.max(36, scrollHeight);
-    
-    setCalculatedHeight(newHeight);
+    // For empty content or single line, use a more conservative height
+    if (!value.trim() || !value.includes('\n')) {
+      // Calculate single line height from computed styles
+      const computedStyle = window.getComputedStyle(textarea);
+      const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+      const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
+      const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
+      const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+      const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
+      
+      const singleLineHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+      
+      // Use the smaller of scroll height or calculated single line height
+      const newHeight = Math.min(scrollHeight, singleLineHeight);
+      setCalculatedHeight(newHeight);
+    } else {
+      // For multi-line content, use scroll height
+      setCalculatedHeight(scrollHeight);
+    }
   };
 
   // Recalculate height when value changes
@@ -108,7 +128,7 @@ const TextAreaCell = ({
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
   return (
-    <div className="relative w-full h-full" style={{ backgroundColor, height: calculatedHeight }}>
+    <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
       <textarea
         ref={(el) => {
           textareaRef.current = el;
