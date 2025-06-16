@@ -3,6 +3,7 @@ import Papa from 'papaparse';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { isHeaderItem } from '@/types/rundown';
+import { calculateItemsWithTiming, timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
 
 export interface CSVExportData {
   items: RundownItem[];
@@ -57,6 +58,31 @@ const getRowNumber = (index: number, items: RundownItem[]): string => {
   return `${currentSegmentLetter}${itemCountInSegment}`;
 };
 
+// Helper function to get cell value for CSV export, similar to SharedRundownTable logic
+const getCellValueForExport = (item: RundownItem, column: Column, calculatedItem: any): string => {
+  // For time-related columns, use calculated values
+  if (column.key === 'startTime') {
+    return calculatedItem?.calculatedStartTime || item.startTime || '';
+  }
+  
+  if (column.key === 'endTime') {
+    return calculatedItem?.calculatedEndTime || item.endTime || '';
+  }
+  
+  if (column.key === 'elapsedTime') {
+    return calculatedItem?.calculatedElapsedTime || item.elapsedTime || '';
+  }
+  
+  // For custom columns, check if it's a custom field
+  if (column.isCustom && item.customFields && item.customFields[column.key]) {
+    return item.customFields[column.key] || '';
+  }
+  
+  // For standard fields, get the value directly
+  const value = item[column.key as keyof RundownItem];
+  return typeof value === 'string' ? value : (value ? String(value) : '');
+};
+
 export const exportRundownAsCSV = (data: CSVExportData, filename: string = 'rundown'): void => {
   if (!data.items || data.items.length === 0) {
     throw new Error('No rundown data available to export');
@@ -66,12 +92,16 @@ export const exportRundownAsCSV = (data: CSVExportData, filename: string = 'rund
     throw new Error('No visible columns available to export');
   }
 
+  // Calculate timing for all items using the same logic as the display
+  const calculatedItems = calculateItemsWithTiming(data.items, '09:00:00'); // Default start time
+
   // Create headers - include the # column first, then visible columns
   const headers = ['#', ...data.visibleColumns.map(column => column.name)];
 
   // Map rundown items to CSV rows based on visible columns
   const csvData = data.items.map((item, index) => {
     const row: any = {};
+    const calculatedItem = calculatedItems[index];
     
     // Add the row number as the first column using proper numbering logic
     row['#'] = getRowNumber(index, data.items);
@@ -91,9 +121,8 @@ export const exportRundownAsCSV = (data: CSVExportData, filename: string = 'rund
           row[column.name] = '';
         }
       } else {
-        // For regular items, get the value from the item based on column key
-        const value = item[column.key as keyof RundownItem];
-        row[column.name] = value || '';
+        // For regular items, get the value using the enhanced logic
+        row[column.name] = getCellValueForExport(item, column, calculatedItem);
       }
     });
     
