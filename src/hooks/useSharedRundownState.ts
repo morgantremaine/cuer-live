@@ -19,6 +19,7 @@ export const useSharedRundownState = () => {
     timezone?: string;
     lastUpdated?: string;
     showcallerState?: any;
+    visibility?: string;
   } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -82,7 +83,7 @@ export const useSharedRundownState = () => {
     try {
       const { data, error: queryError } = await supabase
         .from('rundowns')
-        .select('id, title, items, columns, start_time, timezone, showcaller_state, created_at, updated_at')
+        .select('id, title, items, columns, start_time, timezone, showcaller_state, created_at, updated_at, visibility')
         .eq('id', rundownId)
         .single();
 
@@ -106,7 +107,8 @@ export const useSharedRundownState = () => {
             startTime: data.start_time || '09:00:00',
             timezone: data.timezone || 'UTC',
             lastUpdated: data.updated_at,
-            showcallerState: data.showcaller_state
+            showcallerState: data.showcaller_state,
+            visibility: data.visibility
           };
           
           console.log('✅ Successfully loaded rundown data:', newRundownData.title);
