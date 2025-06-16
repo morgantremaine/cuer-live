@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -55,22 +56,13 @@ const SharedRundown = () => {
       
       try {
         console.log('🔄 Loading shared layout for rundown:', rundownId);
+        console.log('📋 Rundown visibility:', rundownData.visibility);
+        console.log('📋 Rundown columns count:', rundownData.columns?.length || 0);
         
-        // First check if this rundown is public - if not, we can't load shared layouts for anonymous users
-        if (!rundownData.visibility || rundownData.visibility !== 'public') {
-          console.log('⚠️ Rundown is not public, falling back to rundown columns or default');
-          if (rundownData.columns && rundownData.columns.length > 0) {
-            console.log('🔄 Using rundown columns (rundown not public)');
-            setLayoutColumns(rundownData.columns);
-            setLayoutName('Rundown Layout');
-          } else {
-            setLayoutColumns(null);
-            setLayoutName('Default Layout');
-          }
-          setLayoutLoading(false);
-          return;
-        }
-
+        // Always try to load shared layout first, regardless of visibility
+        // The RLS policies will handle access control
+        console.log('🔄 Attempting to load shared layout...');
+        
         // Get the shared layout configuration - this now works for anonymous users thanks to RLS updates
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
@@ -80,7 +72,7 @@ const SharedRundown = () => {
 
         console.log('📊 Shared layout query result:', { sharedLayoutData, sharedError });
 
-        if (sharedError && sharedError.code !== 'PGRST116') {
+        if (sharedError) {
           console.error('❌ Error loading shared layout config:', sharedError);
           // Fallback to rundown's own columns if shared layout fails
           if (rundownData.columns && rundownData.columns.length > 0) {
@@ -88,6 +80,7 @@ const SharedRundown = () => {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
           } else {
+            console.log('🔄 Using default columns after shared layout error');
             setLayoutColumns(null);
             setLayoutName('Default Layout');
           }
@@ -115,21 +108,23 @@ const SharedRundown = () => {
               setLayoutColumns(rundownData.columns);
               setLayoutName('Rundown Layout');
             } else {
+              console.log('🔄 Using default columns after layout error');
               setLayoutColumns(null);
               setLayoutName('Default Layout');
             }
           } else if (layoutData) {
-            console.log('✅ Successfully loaded layout:', layoutData.name, 'Columns:', layoutData.columns);
+            console.log('✅ Successfully loaded shared layout:', layoutData.name, 'Columns:', layoutData.columns?.length || 0);
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
           } else {
             // Layout not found, fallback to rundown columns or default
-            console.log('⚠️ Layout not found, falling back');
+            console.log('⚠️ Shared layout not found, falling back');
             if (rundownData.columns && rundownData.columns.length > 0) {
               console.log('🔄 Using rundown columns as fallback');
               setLayoutColumns(rundownData.columns);
               setLayoutName('Rundown Layout');
             } else {
+              console.log('🔄 Using default columns as final fallback');
               setLayoutColumns(null);
               setLayoutName('Default Layout');
             }
@@ -142,6 +137,7 @@ const SharedRundown = () => {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
           } else {
+            console.log('🔄 Using default columns');
             setLayoutColumns(null);
             setLayoutName('Default Layout');
           }
@@ -154,6 +150,7 @@ const SharedRundown = () => {
           setLayoutColumns(rundownData.columns);
           setLayoutName('Rundown Layout');
         } else {
+          console.log('🔄 Using default columns as final fallback');
           setLayoutColumns(null);
           setLayoutName('Default Layout');
         }
