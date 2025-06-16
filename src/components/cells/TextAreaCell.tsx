@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import HighlightedText from '../HighlightedText';
 
 interface TextAreaCellProps {
@@ -32,12 +32,57 @@ const TextAreaCell = ({
   onCellClick,
   onKeyDown
 }: TextAreaCellProps) => {
-  // Helper function to determine if content needs two lines
-  const needsTwoLines = (text: string) => {
-    return text.length > 40 || text.includes('\n');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [calculatedHeight, setCalculatedHeight] = useState<number>(36);
+
+  // Function to calculate required height based on content
+  const calculateHeight = () => {
+    if (!textareaRef.current) return 36;
+    
+    const textarea = textareaRef.current;
+    const computedStyle = window.getComputedStyle(textarea);
+    const lineHeight = parseInt(computedStyle.lineHeight) || 20;
+    const paddingTop = parseInt(computedStyle.paddingTop) || 0;
+    const paddingBottom = parseInt(computedStyle.paddingBottom) || 0;
+    
+    // Reset height to auto to get natural scroll height
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    
+    // Calculate minimum height (at least one line)
+    const minHeight = lineHeight + paddingTop + paddingBottom;
+    
+    // Use the larger of scrollHeight or minHeight
+    const newHeight = Math.max(scrollHeight, minHeight);
+    
+    setCalculatedHeight(newHeight);
+    
+    // Set the height back
+    textarea.style.height = `${newHeight}px`;
   };
 
-  const shouldExpandRow = needsTwoLines(value);
+  // Recalculate height when value changes
+  useEffect(() => {
+    calculateHeight();
+  }, [value]);
+
+  // Recalculate height when textarea resizes (column width changes)
+  useEffect(() => {
+    if (!textareaRef.current) return;
+    
+    const resizeObserver = new ResizeObserver(() => {
+      // Small delay to ensure DOM has updated
+      setTimeout(() => {
+        calculateHeight();
+      }, 0);
+    });
+    
+    resizeObserver.observe(textareaRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // Simple key navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -50,6 +95,11 @@ const TextAreaCell = ({
     // Allow other keys to work normally
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onUpdateValue(e.target.value);
+    // Height will be recalculated by useEffect
+  };
+
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
 
@@ -59,9 +109,10 @@ const TextAreaCell = ({
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
   return (
-    <div className="relative w-full h-full min-h-[32px] flex items-center" style={{ backgroundColor }}>
+    <div className="relative w-full h-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
       <textarea
-        ref={el => {
+        ref={(el) => {
+          textareaRef.current = el;
           if (el) {
             cellRefs.current[cellKey] = el;
           } else {
@@ -69,21 +120,20 @@ const TextAreaCell = ({
           }
         }}
         value={value}
-        onChange={(e) => onUpdateValue(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none ${
+        className={`w-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono text-center' : ''
         }`}
         style={{ 
           backgroundColor: 'transparent',
           color: textColor || 'inherit',
-          minHeight: shouldExpandRow ? '48px' : '36px',
+          height: `${calculatedHeight}px`,
           lineHeight: '1.3'
         }}
-        rows={shouldExpandRow ? 2 : 1}
       />
       {highlight && (
         <div className="absolute inset-0 pointer-events-none px-3 py-2 text-sm flex items-center" style={{ color: 'transparent' }}>
