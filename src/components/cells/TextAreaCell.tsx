@@ -40,31 +40,29 @@ const TextAreaCell = ({
     if (!textareaRef.current) return 36;
     
     const textarea = textareaRef.current;
-    const computedStyle = window.getComputedStyle(textarea);
-    const lineHeight = parseInt(computedStyle.lineHeight) || 20;
-    const paddingTop = parseInt(computedStyle.paddingTop) || 0;
-    const paddingBottom = parseInt(computedStyle.paddingBottom) || 0;
     
-    // Reset height to auto to get natural scroll height
+    // Temporarily set height to auto to get the natural content height
+    const originalHeight = textarea.style.height;
     textarea.style.height = 'auto';
+    
+    // Get the scroll height (natural content height)
     const scrollHeight = textarea.scrollHeight;
     
-    // Calculate minimum height for exactly one line of text
-    const singleLineHeight = lineHeight + paddingTop + paddingBottom;
+    // Restore original height
+    textarea.style.height = originalHeight;
     
-    // If the content fits in one line, use single line height
-    // Otherwise, use the natural scroll height
-    const newHeight = scrollHeight <= singleLineHeight ? singleLineHeight : scrollHeight;
+    // Use a minimum height of 36px for single lines, but allow growth
+    const newHeight = Math.max(36, scrollHeight);
     
     setCalculatedHeight(newHeight);
-    
-    // Set the height back
-    textarea.style.height = `${newHeight}px`;
   };
 
   // Recalculate height when value changes
   useEffect(() => {
-    calculateHeight();
+    // Small delay to ensure DOM is updated
+    setTimeout(() => {
+      calculateHeight();
+    }, 0);
   }, [value]);
 
   // Recalculate height when textarea resizes (column width changes)
@@ -110,7 +108,7 @@ const TextAreaCell = ({
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
   return (
-    <div className="relative w-full h-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div className="relative w-full h-full" style={{ backgroundColor, height: calculatedHeight }}>
       <textarea
         ref={(el) => {
           textareaRef.current = el;
@@ -126,7 +124,7 @@ const TextAreaCell = ({
         onClick={onCellClick}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono text-center' : ''
         }`}
         style={{ 
