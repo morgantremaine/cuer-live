@@ -88,142 +88,164 @@ const SharedRundownTable = ({
   const itemsWithTimes = calculateItemTimes();
 
   return (
-    <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400 print:overflow-visible">
-      <table className="w-full print:text-xs">
-        <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10 print:static">
-          <tr>
-            <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5">
-              #
-            </th>
-            {visibleColumns.map((column) => (
-              <th
-                key={column.id}
-                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:max-w-0 print:overflow-hidden"
-              >
-                <div className="truncate print:text-[10px]">{column.name}</div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
-          {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
-            const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
-            const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
-            const isFloated = item.isFloating || item.isFloated;
+    <>
+      <style>
+        {`
+          @media print {
+            .print-table {
+              width: 100% !important;
+              table-layout: fixed !important;
+              font-size: 8px !important;
+            }
             
-            return (
-              <React.Fragment key={item.id}>
-                {/* Green line above current row - no spacing, just the line */}
-                {isShowcallerCurrent && (
-                  <tr className="print:hidden">
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-1 bg-green-500"></div>
-                    </td>
-                  </tr>
-                )}
-                
-                <tr
-                  className={`
-                    ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
-                    ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                    ${isShowcallerCurrent ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
-                    print:break-inside-avoid print:border-0
-                  `}
-                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
+            .print-table th,
+            .print-table td {
+              padding: 1px 2px !important;
+              font-size: 8px !important;
+              line-height: 1.1 !important;
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+              hyphens: auto !important;
+              border: 0.5px solid #666 !important;
+            }
+            
+            .print-table th {
+              font-size: 7px !important;
+              padding: 1px !important;
+            }
+            
+            .print-header-row {
+              background: #e5e5e5 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .print-truncate {
+              white-space: nowrap !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+            }
+            
+            .print-break-words {
+              word-break: break-all !important;
+              hyphens: auto !important;
+              overflow-wrap: break-word !important;
+            }
+          }
+        `}
+      </style>
+      <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400 print:overflow-visible">
+        <table className="w-full print:text-xs print-table">
+          <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10 print:static">
+            <tr className="print-header-row">
+              <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5">
+                #
+              </th>
+              {visibleColumns.map((column) => (
+                <th
+                  key={column.id}
+                  className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:max-w-0 print:overflow-hidden"
                 >
-                  <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs">
-                    <div className="flex items-center">
-                      {/* Blue play icon - matching main rundown styling */}
-                      {isShowcallerCurrent && (
-                        <Play 
-                          className="h-3 w-3 text-blue-500 fill-blue-500 mr-2 print:hidden" 
-                        />
-                      )}
-                      {isFloated && (
-                        <span className="text-yellow-400 mr-1 print:mr-0.5">🛟</span>
-                      )}
-                      <span>{getRowNumber(index, items)}</span>
-                    </div>
-                  </td>
-                  
-                  {visibleColumns.map((column) => {
-                    // For headers, handle special cases
-                    if (item.type === 'header') {
-                      if (column.key === 'segmentName') {
-                        // Show the header name
-                        return (
-                          <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
-                            <div className="break-words whitespace-pre-wrap print:break-all print:hyphens-auto">{item.name || ''}</div>
-                          </td>
-                        );
-                      } else if (column.key === 'duration') {
-                        // Show the calculated header duration (excluding floated items)
-                        return (
-                          <td key={column.id} className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
-                            <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
-                          </td>
-                        );
-                      } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
-                        // Don't show time fields for headers
-                        return (
-                          <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
-                            <div className="break-words whitespace-pre-wrap"></div>
-                          </td>
-                        );
-                      } else {
-                        // For other columns, show empty cell for headers
-                        return (
-                          <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
-                            <div className="break-words whitespace-pre-wrap"></div>
-                          </td>
-                        );
-                      }
-                    }
-                    
-                    // For regular items, use the calculated times
-                    const value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
-                    
-                    return (
-                      <td
-                        key={column.id}
-                        className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0 ${isFloated ? 'text-white' : 'text-gray-900'}`}
-                      >
-                        <div className="break-words whitespace-pre-wrap print:break-all print:hyphens-auto print:leading-tight">{value}</div>
+                  <div className="truncate print-truncate">{column.name}</div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
+            {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
+              const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
+              const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
+              const isFloated = item.isFloating || item.isFloated;
+              
+              return (
+                <React.Fragment key={item.id}>
+                  {/* Green line above current row - no spacing, just the line */}
+                  {isShowcallerCurrent && (
+                    <tr className="print:hidden">
+                      <td colSpan={visibleColumns.length + 1} className="p-0">
+                        <div className="h-1 bg-green-500"></div>
                       </td>
-                    );
-                  })}
-                </tr>
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-      
-      {/* Print-specific styles */}
-      <style jsx>{`
-        @media print {
-          table {
-            width: 100% !important;
-            table-layout: fixed !important;
-            font-size: 10px !important;
-          }
-          
-          th, td {
-            max-width: 0 !important;
-            overflow: hidden !important;
-            word-wrap: break-word !important;
-            hyphens: auto !important;
-            padding: 2px 4px !important;
-          }
-          
-          .truncate {
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-          }
-        }
-      `}</style>
-    </div>
+                    </tr>
+                  )}
+                  
+                  <tr
+                    className={`
+                      ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
+                      ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                      ${isShowcallerCurrent ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
+                      print:break-inside-avoid print:border-0
+                    `}
+                    style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
+                  >
+                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs">
+                      <div className="flex items-center">
+                        {/* Blue play icon - matching main rundown styling */}
+                        {isShowcallerCurrent && (
+                          <Play 
+                            className="h-3 w-3 text-blue-500 fill-blue-500 mr-2 print:hidden" 
+                          />
+                        )}
+                        {isFloated && (
+                          <span className="text-yellow-400 mr-1 print:mr-0.5">🛟</span>
+                        )}
+                        <span>{getRowNumber(index, items)}</span>
+                      </div>
+                    </td>
+                    
+                    {visibleColumns.map((column) => {
+                      // For headers, handle special cases
+                      if (item.type === 'header') {
+                        if (column.key === 'segmentName') {
+                          // Show the header name
+                          return (
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words">{item.name || ''}</div>
+                            </td>
+                          );
+                        } else if (column.key === 'duration') {
+                          // Show the calculated header duration (excluding floated items)
+                          return (
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words">({calculateHeaderDuration(index)})</div>
+                            </td>
+                          );
+                        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+                          // Don't show time fields for headers
+                          return (
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words"></div>
+                            </td>
+                          );
+                        } else {
+                          // For other columns, show empty cell for headers
+                          return (
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words"></div>
+                            </td>
+                          );
+                        }
+                      }
+                      
+                      // For regular items, use the calculated times
+                      const value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
+                      
+                      return (
+                        <td
+                          key={column.id}
+                          className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0 ${isFloated ? 'text-white' : 'text-gray-900'}`}
+                        >
+                          <div className="break-words whitespace-pre-wrap print-break-words">{value}</div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 };
 
