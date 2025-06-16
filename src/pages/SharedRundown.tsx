@@ -182,7 +182,7 @@ const SharedRundown = () => {
           timeRemaining={timeRemaining}
         />
 
-        <div className="overflow-auto max-h-[calc(100vh-220px)]">
+        <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
           <SharedRundownTable
             items={rundownData.items}
             visibleColumns={visibleColumns}

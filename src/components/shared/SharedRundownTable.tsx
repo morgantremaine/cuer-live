@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -209,8 +208,8 @@ const SharedRundownTable = ({
                     {visibleColumns.map((column) => {
                       // For headers, handle special cases
                       if (item.type === 'header') {
-                        if (column.key === 'segmentName') {
-                          // Show the header name
+                        if (column.key === 'segmentName' || column.key === 'name') {
+                          // Show the header name for both segmentName and name columns
                           return (
                             <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
                               <div className="break-words whitespace-pre-wrap print-break-words">{item.name || ''}</div>
