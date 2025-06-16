@@ -95,14 +95,14 @@ const SharedRundownTable = ({
             .print-table {
               width: 100% !important;
               table-layout: fixed !important;
-              font-size: 8px !important;
+              font-size: 9px !important;
             }
             
             .print-table th,
             .print-table td {
-              padding: 1px 2px !important;
-              font-size: 8px !important;
-              line-height: 1.1 !important;
+              padding: 2px 3px !important;
+              font-size: 9px !important;
+              line-height: 1.2 !important;
               word-wrap: break-word !important;
               overflow-wrap: break-word !important;
               hyphens: auto !important;
@@ -110,8 +110,13 @@ const SharedRundownTable = ({
             }
             
             .print-table th {
-              font-size: 7px !important;
-              padding: 1px !important;
+              font-size: 8px !important;
+              font-weight: bold !important;
+              padding: 3px 2px !important;
+              background: #f0f0f0 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color: #000 !important;
             }
             
             .print-header-row {
@@ -131,6 +136,13 @@ const SharedRundownTable = ({
               hyphens: auto !important;
               overflow-wrap: break-word !important;
             }
+            
+            .print-header-text {
+              font-weight: bold !important;
+              color: #000 !important;
+              font-size: 8px !important;
+              text-transform: uppercase !important;
+            }
           }
         `}
       </style>
@@ -139,14 +151,16 @@ const SharedRundownTable = ({
           <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10 print:static">
             <tr className="print-header-row">
               <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5">
-                #
+                <span className="print-header-text">#</span>
               </th>
               {visibleColumns.map((column) => (
                 <th
                   key={column.id}
                   className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:max-w-0 print:overflow-hidden"
                 >
-                  <div className="truncate print-truncate">{column.name}</div>
+                  <div className="truncate print-truncate">
+                    <span className="print-header-text">{column.name}</span>
+                  </div>
                 </th>
               ))}
             </tr>
