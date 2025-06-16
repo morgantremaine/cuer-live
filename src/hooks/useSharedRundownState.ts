@@ -1,12 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id; // Remove the problematic check
+  const rundownId = params.id;
   
   console.log('🔍 useSharedRundownState - rundownId from params:', rundownId);
   
@@ -24,6 +24,11 @@ export const useSharedRundownState = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [calculatedTimeRemaining, setCalculatedTimeRemaining] = useState(0);
+
+  // Refs to prevent excessive polling
+  const lastUpdateTimestamp = useRef<string | null>(null);
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const isLoadingRef = useRef(false);
 
   // Update current time every second
   useEffect(() => {
@@ -65,16 +70,14 @@ export const useSharedRundownState = () => {
     return () => clearInterval(timer);
   }, [rundownData?.showcallerState?.isPlaying, rundownData?.showcallerState?.currentSegmentId, rundownData?.showcallerState?.playbackStartTime, rundownData?.items]);
 
-  // Load rundown data with showcaller state
-  const loadRundownData = async () => {
-    if (!rundownId) {
-      setLoading(false);
-      setError('No rundown ID provided');
+  // Optimized load function with timestamp checking
+  const loadRundownData = useCallback(async () => {
+    if (!rundownId || isLoadingRef.current) {
       return;
     }
 
     console.log('📊 Loading rundown data for ID:', rundownId);
-    setError(null);
+    isLoadingRef.current = true;
 
     try {
       const { data, error: queryError } = await supabase
@@ -93,26 +96,23 @@ export const useSharedRundownState = () => {
         }
         setRundownData(null);
       } else if (data) {
-        const newRundownData = {
-          id: data.id,
-          title: data.title || 'Untitled Rundown',
-          items: data.items || [],
-          columns: data.columns || [],
-          startTime: data.start_time || '09:00:00',
-          timezone: data.timezone || 'UTC',
-          lastUpdated: data.updated_at,
-          showcallerState: data.showcaller_state
-        };
-        
-        console.log('✅ Successfully loaded rundown data:', newRundownData.title);
-        
-        // Only update if data has actually changed
-        setRundownData(prev => {
-          if (!prev || prev.lastUpdated !== newRundownData.lastUpdated) {
-            return newRundownData;
-          }
-          return prev;
-        });
+        // Only update if data has actually changed (compare timestamps)
+        if (lastUpdateTimestamp.current !== data.updated_at) {
+          const newRundownData = {
+            id: data.id,
+            title: data.title || 'Untitled Rundown',
+            items: data.items || [],
+            columns: data.columns || [],
+            startTime: data.start_time || '09:00:00',
+            timezone: data.timezone || 'UTC',
+            lastUpdated: data.updated_at,
+            showcallerState: data.showcaller_state
+          };
+          
+          console.log('✅ Successfully loaded rundown data:', newRundownData.title);
+          setRundownData(newRundownData);
+          lastUpdateTimestamp.current = data.updated_at;
+        }
         setError(null);
       } else {
         setError('Rundown not found');
@@ -124,27 +124,41 @@ export const useSharedRundownState = () => {
       setRundownData(null);
     }
 
+    isLoadingRef.current = false;
     setLoading(false);
-  };
+  }, [rundownId]);
 
   // Initial load
   useEffect(() => {
-    loadRundownData();
-  }, [rundownId]);
+    if (rundownId) {
+      loadRundownData();
+    }
+  }, [rundownId, loadRundownData]);
 
-  // Set up more frequent polling for showcaller updates (every 500ms when playing, 2 seconds when not)
+  // Optimized polling with better interval management
   useEffect(() => {
     if (!rundownId || loading) return;
     
+    // Clear any existing interval
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+    }
+    
     const isPlaying = rundownData?.showcallerState?.isPlaying;
-    const pollInterval = setInterval(() => {
+    
+    // Only poll if showcaller is playing, otherwise use longer interval
+    const pollFrequency = isPlaying ? 2000 : 5000; // 2 seconds when playing, 5 seconds when not
+    
+    pollingInterval.current = setInterval(() => {
       loadRundownData();
-    }, isPlaying ? 500 : 2000);
+    }, pollFrequency);
 
     return () => {
-      clearInterval(pollInterval);
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+      }
     };
-  }, [rundownId, loading, rundownData?.showcallerState?.isPlaying]);
+  }, [rundownId, loading, rundownData?.showcallerState?.isPlaying, loadRundownData]);
 
   // Find the showcaller segment from showcaller_state or fallback to item status
   const currentSegmentId = rundownData?.showcallerState?.currentSegmentId || 

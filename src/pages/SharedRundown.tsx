@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
 import { SharedRundownHeader } from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const SharedRundown = () => {
@@ -12,21 +13,33 @@ const SharedRundown = () => {
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
+  
+  // Prevent duplicate layout loads
+  const layoutLoadedRef = useRef(false);
+  const rundownIdRef = useRef<string | null>(null);
 
   // Get rundownId from the rundownData instead of useParams
   const rundownId = rundownData?.id;
 
-  // Load the shared layout for this rundown
+  // Load the shared layout for this rundown - optimized to prevent repeated calls
   useEffect(() => {
     const loadSharedLayout = async () => {
-      console.log('🔍 loadSharedLayout called with:', { rundownId, rundownData: !!rundownData });
-      
-      if (!rundownId || !rundownData) {
-        console.log('❌ Missing rundownId or rundownData, skipping layout load');
+      // Only load if we have new rundown data and haven't loaded this layout yet
+      if (!rundownId || !rundownData || layoutLoading) {
         return;
       }
       
+      // Skip if we've already loaded layout for this rundown
+      if (layoutLoadedRef.current && rundownIdRef.current === rundownId) {
+        return;
+      }
+      
+      console.log('🔍 loadSharedLayout called with:', { rundownId, rundownData: !!rundownData });
+      
       setLayoutLoading(true);
+      layoutLoadedRef.current = true;
+      rundownIdRef.current = rundownId;
+      
       try {
         console.log('🔄 Loading shared layout for rundown:', rundownId);
         
@@ -90,8 +103,13 @@ const SharedRundown = () => {
       }
     };
 
+    // Reset layout loading flag when rundownId changes
+    if (rundownIdRef.current !== rundownId) {
+      layoutLoadedRef.current = false;
+    }
+
     loadSharedLayout();
-  }, [rundownId, rundownData]);
+  }, [rundownId, rundownData, layoutLoading]);
 
   if (loading) {
     return (
