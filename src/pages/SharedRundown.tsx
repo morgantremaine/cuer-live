@@ -8,6 +8,15 @@ import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
+// Default columns to use when rundown has no columns defined
+const DEFAULT_COLUMNS = [
+  { id: 'segmentName', name: 'Segment Name', key: 'segmentName', isVisible: true, width: '200px' },
+  { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px' },
+  { id: 'startTime', name: 'Start Time', key: 'startTime', isVisible: true, width: '100px' },
+  { id: 'endTime', name: 'End Time', key: 'endTime', isVisible: true, width: '100px' },
+  { id: 'description', name: 'Description', key: 'description', isVisible: true, width: '300px' }
+];
+
 const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
   const [layoutColumns, setLayoutColumns] = useState(null);
@@ -146,15 +155,16 @@ const SharedRundown = () => {
     );
   }
 
-  // Use layout columns if available, otherwise fall back to rundown's default columns
-  const columnsToUse = layoutColumns || rundownData.columns;
+  // Use layout columns if available, otherwise fall back to rundown's default columns, or finally to DEFAULT_COLUMNS
+  const columnsToUse = layoutColumns || rundownData.columns || DEFAULT_COLUMNS;
   const visibleColumns = getVisibleColumns(columnsToUse);
 
   console.log('🎯 Final state:', {
     layoutColumns: layoutColumns ? 'loaded' : 'null',
     columnsToUse: columnsToUse?.length || 0,
     layoutName,
-    rundownColumns: rundownData.columns?.length || 0
+    rundownColumns: rundownData.columns?.length || 0,
+    usingDefaultColumns: !layoutColumns && !rundownData.columns
   });
 
   // Determine if showcaller is playing and use the real-time calculated time remaining
