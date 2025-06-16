@@ -1,7 +1,7 @@
+
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
-import CustomFieldCell from './cells/CustomFieldCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -89,26 +89,6 @@ const CellRenderer = ({
   // Create cell key for referencing
   const cellKey = `${item.id}-${column.key}`;
 
-  // Use CustomFieldCell for custom fields
-  if (column.isCustom) {
-    return (
-      <CustomFieldCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={textColor}
-        backgroundColor={backgroundColor}
-        onUpdateValue={(newValue) => {
-          const field = `customFields.${column.key}`;
-          onUpdateItem(item.id, field, newValue);
-        }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
-        onKeyDown={onKeyDown}
-      />
-    );
-  }
-
   // Use ExpandableScriptCell for script and notes fields (both built-in columns)
   if (column.key === 'script' || column.key === 'notes') {
     return (
@@ -126,7 +106,7 @@ const CellRenderer = ({
     );
   }
 
-  // Use TextAreaCell for all other editable fields to ensure consistent navigation
+  // Use TextAreaCell for ALL editable fields (built-in AND custom) to ensure consistent behavior
   return (
     <TextAreaCell
       value={value}
@@ -137,9 +117,15 @@ const CellRenderer = ({
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
-        // For segmentName column, always update the 'name' field
-        const field = column.key === 'segmentName' ? 'name' : column.key;
-        onUpdateItem(item.id, field, newValue);
+        // Handle custom fields vs built-in fields
+        if (column.isCustom) {
+          const field = `customFields.${column.key}`;
+          onUpdateItem(item.id, field, newValue);
+        } else {
+          // For segmentName column, always update the 'name' field
+          const field = column.key === 'segmentName' ? 'name' : column.key;
+          onUpdateItem(item.id, field, newValue);
+        }
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}
