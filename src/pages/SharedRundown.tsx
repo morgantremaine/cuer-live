@@ -30,7 +30,7 @@ const SharedRundown = () => {
   // Get rundownId from the rundownData instead of useParams
   const rundownId = rundownData?.id;
 
-  // Load the shared layout for this rundown - optimized to prevent repeated calls
+  // Load the shared layout for this rundown - updated to work for anonymous users
   useEffect(() => {
     const loadSharedLayout = async () => {
       // Only load if we have new rundown data and haven't loaded this layout yet
@@ -52,7 +52,7 @@ const SharedRundown = () => {
       try {
         console.log('🔄 Loading shared layout for rundown:', rundownId);
         
-        // Get the shared layout configuration
+        // Get the shared layout configuration - this now works for anonymous users thanks to RLS updates
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
           .select('layout_id')
@@ -63,8 +63,15 @@ const SharedRundown = () => {
 
         if (sharedError && sharedError.code !== 'PGRST116') {
           console.error('❌ Error loading shared layout config:', sharedError);
-          setLayoutColumns(null);
-          setLayoutName('Default Layout');
+          // Fallback to rundown's own columns if shared layout fails
+          if (rundownData.columns && rundownData.columns.length > 0) {
+            console.log('🔄 Falling back to rundown columns');
+            setLayoutColumns(rundownData.columns);
+            setLayoutName('Rundown Layout');
+          } else {
+            setLayoutColumns(null);
+            setLayoutName('Default Layout');
+          }
           setLayoutLoading(false);
           return;
         }
@@ -83,30 +90,54 @@ const SharedRundown = () => {
 
           if (layoutError) {
             console.error('❌ Error loading layout:', layoutError);
-            // Fallback to default
-            setLayoutColumns(null);
-            setLayoutName('Default Layout');
+            // Fallback to rundown's own columns if layout loading fails
+            if (rundownData.columns && rundownData.columns.length > 0) {
+              console.log('🔄 Falling back to rundown columns after layout error');
+              setLayoutColumns(rundownData.columns);
+              setLayoutName('Rundown Layout');
+            } else {
+              setLayoutColumns(null);
+              setLayoutName('Default Layout');
+            }
           } else if (layoutData) {
             console.log('✅ Successfully loaded layout:', layoutData.name, 'Columns:', layoutData.columns);
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
           } else {
-            // Layout not found, fallback to default
-            console.log('⚠️ Layout not found, using default');
+            // Layout not found, fallback to rundown columns or default
+            console.log('⚠️ Layout not found, falling back');
+            if (rundownData.columns && rundownData.columns.length > 0) {
+              console.log('🔄 Using rundown columns as fallback');
+              setLayoutColumns(rundownData.columns);
+              setLayoutName('Rundown Layout');
+            } else {
+              setLayoutColumns(null);
+              setLayoutName('Default Layout');
+            }
+          }
+        } else {
+          // No specific layout set, use rundown's own columns or default
+          console.log('🎨 No shared layout configured');
+          if (rundownData.columns && rundownData.columns.length > 0) {
+            console.log('🔄 Using rundown columns');
+            setLayoutColumns(rundownData.columns);
+            setLayoutName('Rundown Layout');
+          } else {
             setLayoutColumns(null);
             setLayoutName('Default Layout');
           }
-        } else {
-          // No specific layout set, use default
-          console.log('🎨 No shared layout configured, using default');
-          setLayoutColumns(null);
-          setLayoutName('Default Layout');
         }
       } catch (error) {
         console.error('💥 Failed to load shared layout:', error);
-        // Fallback to default
-        setLayoutColumns(null);
-        setLayoutName('Default Layout');
+        // Fallback to rundown's own columns or default
+        if (rundownData.columns && rundownData.columns.length > 0) {
+          console.log('🔄 Using rundown columns as final fallback');
+          setLayoutColumns(rundownData.columns);
+          setLayoutName('Rundown Layout');
+        } else {
+          setLayoutColumns(null);
+          setLayoutName('Default Layout');
+        }
       } finally {
         setLayoutLoading(false);
       }
