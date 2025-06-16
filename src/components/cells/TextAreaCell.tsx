@@ -33,31 +33,47 @@ const TextAreaCell = ({
   onKeyDown
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
+  const [currentWidth, setCurrentWidth] = useState<number>(0);
 
-  // Function to calculate required height based on content and wrapping
+  // Function to calculate required height using a measurement div
   const calculateHeight = () => {
-    if (!textareaRef.current) return;
+    if (!textareaRef.current || !measurementRef.current) return;
     
     const textarea = textareaRef.current;
+    const measurementDiv = measurementRef.current;
     
-    // Store original styles
-    const originalHeight = textarea.style.height;
-    const originalOverflow = textarea.style.overflow;
+    // Get the current width of the textarea
+    const textareaWidth = textarea.getBoundingClientRect().width;
     
-    // Reset to get natural height with current width
-    textarea.style.height = 'auto';
-    textarea.style.overflow = 'hidden';
+    // Only recalculate if width changed or content changed
+    if (textareaWidth === currentWidth && calculatedHeight > 38) {
+      return;
+    }
     
-    // Get the scroll height which accounts for text wrapping
-    const scrollHeight = textarea.scrollHeight;
+    setCurrentWidth(textareaWidth);
     
-    // Restore original styles
-    textarea.style.height = originalHeight;
-    textarea.style.overflow = originalOverflow;
-    
-    // Calculate minimum single line height from computed styles
+    // Copy textarea styles to measurement div
     const computedStyle = window.getComputedStyle(textarea);
+    measurementDiv.style.width = `${textareaWidth}px`;
+    measurementDiv.style.fontSize = computedStyle.fontSize;
+    measurementDiv.style.fontFamily = computedStyle.fontFamily;
+    measurementDiv.style.fontWeight = computedStyle.fontWeight;
+    measurementDiv.style.lineHeight = computedStyle.lineHeight;
+    measurementDiv.style.padding = computedStyle.padding;
+    measurementDiv.style.border = computedStyle.border;
+    measurementDiv.style.boxSizing = computedStyle.boxSizing;
+    measurementDiv.style.wordWrap = 'break-word';
+    measurementDiv.style.whiteSpace = 'pre-wrap';
+    
+    // Set the content
+    measurementDiv.textContent = value || ' '; // Use space for empty content
+    
+    // Get the natural height
+    const naturalHeight = measurementDiv.offsetHeight;
+    
+    // Calculate minimum height (single line)
     const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
     const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
     const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
@@ -66,9 +82,12 @@ const TextAreaCell = ({
     
     const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
     
-    // Use the larger of scroll height (which accounts for wrapping) or minimum height
-    const newHeight = Math.max(scrollHeight, minHeight);
-    setCalculatedHeight(newHeight);
+    // Use the larger of natural height or minimum height
+    const newHeight = Math.max(naturalHeight, minHeight);
+    
+    if (newHeight !== calculatedHeight) {
+      setCalculatedHeight(newHeight);
+    }
   };
 
   // Recalculate height when value changes
@@ -83,10 +102,15 @@ const TextAreaCell = ({
   useEffect(() => {
     if (!textareaRef.current) return;
     
-    const resizeObserver = new ResizeObserver(() => {
-      const timer = setTimeout(() => {
-        calculateHeight();
-      }, 0);
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newWidth = entry.contentRect.width;
+        if (newWidth !== currentWidth) {
+          const timer = setTimeout(() => {
+            calculateHeight();
+          }, 0);
+        }
+      }
     });
     
     resizeObserver.observe(textareaRef.current);
@@ -94,7 +118,7 @@ const TextAreaCell = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [currentWidth]);
 
   // Simple key navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -122,6 +146,18 @@ const TextAreaCell = ({
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
+      {/* Hidden measurement div */}
+      <div
+        ref={measurementRef}
+        className="absolute top-0 left-0 opacity-0 pointer-events-none whitespace-pre-wrap break-words"
+        style={{ 
+          fontSize: isHeaderRow ? '14px' : '14px',
+          fontFamily: 'inherit',
+          lineHeight: '1.3',
+          zIndex: -1
+        }}
+      />
+      
       <textarea
         ref={(el) => {
           textareaRef.current = el;
@@ -138,13 +174,14 @@ const TextAreaCell = ({
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
-          isDuration ? 'font-mono text-center' : ''
+          isDuration ? 'font-mono' : ''
         }`}
         style={{ 
           backgroundColor: 'transparent',
           color: textColor || 'inherit',
           height: `${calculatedHeight}px`,
-          lineHeight: '1.3'
+          lineHeight: '1.3',
+          textAlign: isDuration ? 'center' : 'left'
         }}
       />
       {highlight && (
