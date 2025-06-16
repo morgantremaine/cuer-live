@@ -80,7 +80,8 @@ const RegularRow = (props: RegularRowProps) => {
     handleContextMenuCopy,
     handleContextMenuDelete,
     handleContextMenuColor,
-    handleContextMenuPaste
+    handleContextMenuPaste,
+    handleContextMenuFloat
   } = useRowEventHandlers({
     item,
     index,
@@ -91,13 +92,10 @@ const RegularRow = (props: RegularRowProps) => {
     onDeleteSelectedRows: props.onDeleteSelectedRows,
     onCopySelectedRows: props.onCopySelectedRows,
     onToggleColorPicker: props.onToggleColorPicker,
+    onToggleFloat,
     selectedRows,
     onPasteRows: props.onPasteRows
   });
-
-  const handleContextMenuFloat = () => {
-    onToggleFloat(item.id);
-  };
 
   // Use backgroundColorOverride for floated rows, otherwise use item color
   const backgroundColor = backgroundColorOverride || 
