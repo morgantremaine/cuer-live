@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import HighlightedText from '../HighlightedText';
 
@@ -42,18 +41,19 @@ const TextAreaCell = ({
     const textarea = textareaRef.current;
     const computedStyle = window.getComputedStyle(textarea);
     const lineHeight = parseInt(computedStyle.lineHeight) || 20;
-    const paddingTop = parseInt(computedStyle.paddingTop) || 0;
-    const paddingBottom = parseInt(computedStyle.paddingBottom) || 0;
+    const paddingTop = parseInt(computedStyle.paddingTop) || 8;
+    const paddingBottom = parseInt(computedStyle.paddingBottom) || 8;
     
     // Reset height to auto to get natural scroll height
     textarea.style.height = 'auto';
     const scrollHeight = textarea.scrollHeight;
     
-    // Calculate minimum height (at least one line)
-    const minHeight = lineHeight + paddingTop + paddingBottom;
+    // Calculate minimum height for exactly one line of text
+    const singleLineHeight = lineHeight + paddingTop + paddingBottom;
     
-    // Use the larger of scrollHeight or minHeight
-    const newHeight = Math.max(scrollHeight, minHeight);
+    // If the content fits in one line, use single line height
+    // Otherwise, use the natural scroll height
+    const newHeight = scrollHeight <= singleLineHeight ? singleLineHeight : scrollHeight;
     
     setCalculatedHeight(newHeight);
     
