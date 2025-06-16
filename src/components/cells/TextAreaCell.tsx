@@ -33,9 +33,9 @@ const TextAreaCell = ({
   onKeyDown
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [calculatedHeight, setCalculatedHeight] = useState<number>(38); // Start with a more reasonable default
+  const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
 
-  // Function to calculate required height based on content
+  // Function to calculate required height based on content and wrapping
   const calculateHeight = () => {
     if (!textareaRef.current) return;
     
@@ -45,53 +45,46 @@ const TextAreaCell = ({
     const originalHeight = textarea.style.height;
     const originalOverflow = textarea.style.overflow;
     
-    // Reset to get natural height
+    // Reset to get natural height with current width
     textarea.style.height = 'auto';
     textarea.style.overflow = 'hidden';
     
-    // Get the scroll height
+    // Get the scroll height which accounts for text wrapping
     const scrollHeight = textarea.scrollHeight;
     
     // Restore original styles
     textarea.style.height = originalHeight;
     textarea.style.overflow = originalOverflow;
     
-    // For empty content or single line, use a more conservative height
-    if (!value.trim() || !value.includes('\n')) {
-      // Calculate single line height from computed styles
-      const computedStyle = window.getComputedStyle(textarea);
-      const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
-      const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
-      const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
-      const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
-      const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
-      
-      const singleLineHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
-      
-      // Use the smaller of scroll height or calculated single line height
-      const newHeight = Math.min(scrollHeight, singleLineHeight);
-      setCalculatedHeight(newHeight);
-    } else {
-      // For multi-line content, use scroll height
-      setCalculatedHeight(scrollHeight);
-    }
+    // Calculate minimum single line height from computed styles
+    const computedStyle = window.getComputedStyle(textarea);
+    const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
+    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
+    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+    const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
+    
+    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    
+    // Use the larger of scroll height (which accounts for wrapping) or minimum height
+    const newHeight = Math.max(scrollHeight, minHeight);
+    setCalculatedHeight(newHeight);
   };
 
   // Recalculate height when value changes
   useEffect(() => {
-    // Small delay to ensure DOM is updated
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       calculateHeight();
     }, 0);
+    return () => clearTimeout(timer);
   }, [value]);
 
-  // Recalculate height when textarea resizes (column width changes)
+  // Recalculate height when textarea width changes (column resize)
   useEffect(() => {
     if (!textareaRef.current) return;
     
     const resizeObserver = new ResizeObserver(() => {
-      // Small delay to ensure DOM has updated
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         calculateHeight();
       }, 0);
     });
