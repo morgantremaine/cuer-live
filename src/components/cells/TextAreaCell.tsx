@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import HighlightedText from '../HighlightedText';
 
@@ -41,8 +42,8 @@ const TextAreaCell = ({
     const textarea = textareaRef.current;
     const computedStyle = window.getComputedStyle(textarea);
     const lineHeight = parseInt(computedStyle.lineHeight) || 20;
-    const paddingTop = parseInt(computedStyle.paddingTop) || 8;
-    const paddingBottom = parseInt(computedStyle.paddingBottom) || 8;
+    const paddingTop = parseInt(computedStyle.paddingTop) || 0;
+    const paddingBottom = parseInt(computedStyle.paddingBottom) || 0;
     
     // Reset height to auto to get natural scroll height
     textarea.style.height = 'auto';
