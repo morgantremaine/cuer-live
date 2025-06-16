@@ -1,4 +1,3 @@
-
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -46,8 +45,9 @@ export const useRowStyling = ({
 
   // Add selection styling with box-shadow for better visibility
   if (isSelected) {
-    if (color && color !== '#FFFFFF' && color !== '#ffffff') {
-      // For colored backgrounds, use a prominent box-shadow that creates a thick border
+    // Check if row has custom color OR is floated (both need prominent selection styling)
+    if ((color && color !== '#FFFFFF' && color !== '#ffffff') || (isFloating || isFloated)) {
+      // For colored backgrounds or floated rows, use a prominent box-shadow that creates a thick border
       rowClass += ' !shadow-[inset_0_0_0_3px_rgb(59_130_246)] !outline !outline-2 !outline-blue-500 !outline-offset-[-2px]';
     } else {
       // Standard ring for non-colored backgrounds
@@ -57,11 +57,11 @@ export const useRowStyling = ({
     if (isHeader) {
       // For headers, only add the ring - don't change background color
       // The header keeps its original bg-muted styling
-    } else if (!color || color === '#FFFFFF' || color === '#ffffff') {
-      // For regular rows without custom colors, add subtle background highlight
+    } else if ((!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
+      // For regular rows without custom colors and not floated, add subtle background highlight
       rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
-    // For rows with custom colors, we rely on the box-shadow and outline to show selection
+    // For rows with custom colors or floated rows, we rely on the box-shadow and outline to show selection
   }
 
   return { rowClass, backgroundColorOverride };
