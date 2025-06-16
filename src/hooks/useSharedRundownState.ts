@@ -108,10 +108,12 @@ export const useSharedRundownState = () => {
             timezone: data.timezone || 'UTC',
             lastUpdated: data.updated_at,
             showcallerState: data.showcaller_state,
-            visibility: data.visibility
+            visibility: data.visibility || 'private' // Ensure we always have a visibility value
           };
           
           console.log('✅ Successfully loaded rundown data:', newRundownData.title);
+          console.log('📋 Rundown visibility from DB:', data.visibility);
+          console.log('📋 Rundown columns from DB:', data.columns?.length || 0);
           setRundownData(newRundownData);
           lastUpdateTimestamp.current = data.updated_at;
         }
