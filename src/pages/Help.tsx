@@ -94,9 +94,6 @@ const Help = () => {
                   <li><strong>Column mapping:</strong> Map your CSV columns to the appropriate rundown fields during import</li>
                   <li><strong>Custom layouts:</strong> For best results, create and save a custom column layout that matches your CSV structure before importing</li>
                 </ul>
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mt-4">
-                  <p className="text-sm"><strong>Tip:</strong> If your CSV has custom columns, set up a saved layout with matching custom columns first. This ensures your imported data displays correctly and maintains your preferred column organization.</p>
-                </div>
               </div>
             </section>
 
@@ -181,11 +178,8 @@ const Help = () => {
                   <li><strong>Team Management:</strong> Invite team members from account settings</li>
                   <li><strong>Shared Access:</strong> All team members can edit the same rundown</li>
                   <li><strong>Auto-save:</strong> Changes are saved automatically to prevent data loss</li>
-                  <li><strong>Individual Layouts:</strong> Each team member can use their own custom column layout while working on the same rundown - your layout preferences don't affect what others see</li>
+                  <li><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown</li>
                 </ul>
-                <div className="bg-green-50 border border-green-200 rounded p-4 mt-4">
-                  <p className="text-sm"><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown.</p>
-                </div>
               </div>
             </section>
 
