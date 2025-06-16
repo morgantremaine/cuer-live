@@ -81,7 +81,7 @@ const SharedRundown = () => {
             setLayoutName('Rundown Layout');
           } else {
             console.log('🔄 Using default columns after shared layout error');
-            setLayoutColumns(null);
+            setLayoutColumns(DEFAULT_COLUMNS);
             setLayoutName('Default Layout');
           }
           setLayoutLoading(false);
@@ -109,7 +109,7 @@ const SharedRundown = () => {
               setLayoutName('Rundown Layout');
             } else {
               console.log('🔄 Using default columns after layout error');
-              setLayoutColumns(null);
+              setLayoutColumns(DEFAULT_COLUMNS);
               setLayoutName('Default Layout');
             }
           } else if (layoutData) {
@@ -125,7 +125,7 @@ const SharedRundown = () => {
               setLayoutName('Rundown Layout');
             } else {
               console.log('🔄 Using default columns as final fallback');
-              setLayoutColumns(null);
+              setLayoutColumns(DEFAULT_COLUMNS);
               setLayoutName('Default Layout');
             }
           }
@@ -138,7 +138,7 @@ const SharedRundown = () => {
             setLayoutName('Rundown Layout');
           } else {
             console.log('🔄 Using default columns');
-            setLayoutColumns(null);
+            setLayoutColumns(DEFAULT_COLUMNS);
             setLayoutName('Default Layout');
           }
         }
@@ -151,7 +151,7 @@ const SharedRundown = () => {
           setLayoutName('Rundown Layout');
         } else {
           console.log('🔄 Using default columns as final fallback');
-          setLayoutColumns(null);
+          setLayoutColumns(DEFAULT_COLUMNS);
           setLayoutName('Default Layout');
         }
       } finally {
