@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
@@ -65,6 +66,11 @@ const RundownContextMenu = memo(({
     // Always close the color picker after selection
     if (onCloseColorPicker) {
       onCloseColorPicker();
+    }
+    
+    // Clear selection after color selection
+    if (onClearSelection) {
+      onClearSelection();
     }
   };
 

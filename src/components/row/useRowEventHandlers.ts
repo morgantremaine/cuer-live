@@ -14,6 +14,7 @@ interface UseRowEventHandlersProps {
   onToggleFloat?: (id: string) => void;
   selectedRows?: Set<string>;
   onPasteRows?: (targetRowId?: string) => void;
+  onClearSelection?: () => void;
 }
 
 export const useRowEventHandlers = ({
@@ -28,7 +29,8 @@ export const useRowEventHandlers = ({
   onToggleColorPicker,
   onToggleFloat,
   selectedRows,
-  onPasteRows
+  onPasteRows,
+  onClearSelection
 }: UseRowEventHandlersProps) => {
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -73,6 +75,11 @@ export const useRowEventHandlers = ({
         });
       } else {
         onToggleFloat(item.id);
+      }
+      
+      // Clear selection after floating
+      if (onClearSelection) {
+        onClearSelection();
       }
     }
   };

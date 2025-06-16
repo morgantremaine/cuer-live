@@ -94,7 +94,8 @@ const RegularRow = (props: RegularRowProps) => {
     onToggleColorPicker: props.onToggleColorPicker,
     onToggleFloat,
     selectedRows,
-    onPasteRows: props.onPasteRows
+    onPasteRows: props.onPasteRows,
+    onClearSelection
   });
 
   // Use backgroundColorOverride for floated rows, otherwise use item color
