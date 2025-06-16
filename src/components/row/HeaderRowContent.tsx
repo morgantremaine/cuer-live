@@ -53,7 +53,7 @@ const HeaderRowContent = ({
         const widthValue = parseInt(columnWidth.replace('px', ''));
         
         // Special handling for headers - only show specific fields
-        if (column.key === 'segmentName') {
+        if (column.key === 'segmentName' || column.key === 'name') {
           // Show the header name - this is the editable field for headers
           return (
             <td
