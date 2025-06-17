@@ -8,7 +8,7 @@ interface UseShowcallerTimingProps {
   rundownStartTime: string;
   isPlaying: boolean;
   currentSegmentId: string | null;
-  timeRemaining: number; // Add this to get actual showcaller state
+  timeRemaining: number;
 }
 
 interface TimingStatus {
@@ -25,22 +25,33 @@ export const useShowcallerTiming = ({
   currentSegmentId,
   timeRemaining
 }: UseShowcallerTimingProps): TimingStatus => {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [baseTime, setBaseTime] = useState<Date | null>(null);
+  const [lastTimeRemaining, setLastTimeRemaining] = useState<number>(timeRemaining);
 
-  // Update current time every second when playing
+  // Set base time when showcaller starts or segment changes
   useEffect(() => {
-    if (!isPlaying) return;
+    if (isPlaying && currentSegmentId && !baseTime) {
+      setBaseTime(new Date());
+      setLastTimeRemaining(timeRemaining);
+    }
+    
+    // Reset base time when stopping or changing segments
+    if (!isPlaying || !currentSegmentId) {
+      setBaseTime(null);
+    }
+  }, [isPlaying, currentSegmentId, baseTime, timeRemaining]);
 
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isPlaying]);
+  // Update base time and last time remaining when timeRemaining changes significantly
+  useEffect(() => {
+    if (isPlaying && Math.abs(timeRemaining - lastTimeRemaining) > 2) {
+      setBaseTime(new Date());
+      setLastTimeRemaining(timeRemaining);
+    }
+  }, [timeRemaining, lastTimeRemaining, isPlaying]);
 
   const timingStatus = useMemo(() => {
     // Only show when playing and we have a current segment
-    if (!isPlaying || !currentSegmentId || !rundownStartTime) {
+    if (!isPlaying || !currentSegmentId || !rundownStartTime || !baseTime) {
       return {
         isOnTime: false,
         isAhead: false,
@@ -70,7 +81,7 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Calculate when this segment should have started (elapsed time from rundown start to segment start)
+    // Calculate when this segment should have started
     let expectedElapsedToSegmentStart = 0;
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
@@ -82,36 +93,39 @@ export const useShowcallerTiming = ({
     // Get current segment duration
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     
-    // Calculate actual elapsed time within the current segment using showcaller state
-    const actualElapsedInSegment = currentSegmentDuration - timeRemaining;
+    // Calculate actual elapsed time within the current segment
+    // Use stable calculation based on when we started tracking
+    const elapsedSinceBase = (new Date().getTime() - baseTime.getTime()) / 1000;
+    const actualElapsedInSegment = (lastTimeRemaining - timeRemaining) + elapsedSinceBase;
     
-    // Get current real time
-    const now = currentTime;
+    // Calculate expected elapsed time within current segment based on rundown schedule
+    const rundownStartSeconds = timeToSeconds(rundownStartTime);
+    const segmentScheduledStartTime = rundownStartSeconds + expectedElapsedToSegmentStart;
+    
+    // Get current time in seconds
+    const now = new Date();
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     
-    // Calculate rundown start time in seconds
-    const rundownStartSeconds = timeToSeconds(rundownStartTime);
-    
-    // Calculate actual elapsed time since rundown start
-    let actualElapsedSinceStart = currentTimeSeconds - rundownStartSeconds;
-    
     // Handle day boundary crossing
-    if (actualElapsedSinceStart < 0) {
-      actualElapsedSinceStart += 24 * 3600; // Add 24 hours
+    let adjustedCurrentTime = currentTimeSeconds;
+    if (currentTimeSeconds < rundownStartSeconds) {
+      adjustedCurrentTime += 24 * 3600; // Add 24 hours
     }
     
-    // Calculate expected elapsed time within current segment based on real time
-    const expectedElapsedInSegment = actualElapsedSinceStart - expectedElapsedToSegmentStart;
+    // Calculate expected elapsed time within current segment
+    const expectedElapsedInSegment = Math.max(0, adjustedCurrentTime - segmentScheduledStartTime);
     
-    // Calculate the difference between actual showcaller position and where it should be
-    // Positive = showcaller is behind (over time), Negative = showcaller is ahead (under time)
+    // Calculate the difference (positive = over time, negative = under time)
     const differenceSeconds = actualElapsedInSegment - expectedElapsedInSegment;
     
-    // Consider "on time" if within 1 second of expected time
-    const isOnTime = Math.abs(differenceSeconds) <= 1;
-    const isAhead = differenceSeconds < -1; // Showcaller is ahead of real time
-    const absoluteDifference = Math.abs(differenceSeconds);
+    // Round to nearest second to prevent flickering
+    const roundedDifference = Math.round(differenceSeconds);
+    
+    // Consider "on time" if within 2 seconds of expected time
+    const isOnTime = Math.abs(roundedDifference) <= 2;
+    const isAhead = roundedDifference < -2; // Showcaller is ahead of schedule
+    const absoluteDifference = Math.abs(roundedDifference);
     const timeDifference = secondsToTime(absoluteDifference);
 
     return {
@@ -120,7 +134,7 @@ export const useShowcallerTiming = ({
       timeDifference,
       isVisible: true
     };
-  }, [items, rundownStartTime, isPlaying, currentSegmentId, currentTime, timeRemaining]);
+  }, [items, rundownStartTime, isPlaying, currentSegmentId, baseTime, timeRemaining, lastTimeRemaining]);
 
   return timingStatus;
 };
