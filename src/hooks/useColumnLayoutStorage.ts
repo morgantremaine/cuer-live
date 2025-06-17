@@ -48,13 +48,7 @@ export const useColumnLayoutStorage = () => {
       // Load layouts that user can access (own layouts + team layouts)
       const { data: layoutsData, error } = await supabase
         .from('column_layouts')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            email
-          )
-        `)
+        .select('*')
         .or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`)
         .order('updated_at', { ascending: false })
 
@@ -65,17 +59,41 @@ export const useColumnLayoutStorage = () => {
           variant: 'destructive',
         })
         console.error('Error loading layouts:', error)
-      } else {
-        // Map the data to include creator profile information
-        const mappedLayouts = (layoutsData || []).map(layout => ({
-          ...layout,
-          creator_profile: layout.profiles ? {
-            full_name: layout.profiles.full_name,
-            email: layout.profiles.email
-          } : null
-        }))
-        setSavedLayouts(mappedLayouts)
+        setLoading(false)
+        return
       }
+
+      // Get unique user IDs from the layouts to fetch their profiles
+      const userIds = [...new Set((layoutsData || []).map(layout => layout.user_id))]
+      
+      let profilesData = []
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds)
+
+        if (profilesError) {
+          console.error('Error loading profiles:', profilesError)
+          // Continue without profile data instead of failing
+        } else {
+          profilesData = profiles || []
+        }
+      }
+
+      // Map the data to include creator profile information
+      const mappedLayouts = (layoutsData || []).map(layout => {
+        const creatorProfile = profilesData.find(p => p.id === layout.user_id)
+        return {
+          ...layout,
+          creator_profile: creatorProfile ? {
+            full_name: creatorProfile.full_name,
+            email: creatorProfile.email
+          } : null
+        }
+      })
+      
+      setSavedLayouts(mappedLayouts)
     } catch (error) {
       console.error('Error in loadLayouts:', error)
       toast({
