@@ -117,7 +117,7 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
               fontSize: `${fontSize + 8}px`
             }}
           >
-            {getRowNumber(item.originalIndex)}: {formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}
+            {getRowNumber(item.originalIndex)} - {formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}
           </span>
         </h2>
       </div>
@@ -139,7 +139,7 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
             fontSize: `${fontSize + 4}px`
           }}
         >
-          {getRowNumber(item.originalIndex)}: {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}
+          {getRowNumber(item.originalIndex)} - {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}
         </span>
       </div>
 
