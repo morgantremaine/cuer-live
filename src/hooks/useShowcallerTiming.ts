@@ -47,7 +47,7 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Find current segment index
+    // Find current segment and its index
     const currentSegmentIndex = items.findIndex(item => item.id === currentSegmentId);
     if (currentSegmentIndex === -1) {
       return {
@@ -58,14 +58,33 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Calculate expected time by summing durations up to current segment
-    let expectedElapsedSeconds = 0;
+    const currentSegment = items[currentSegmentIndex];
+    if (!currentSegment || currentSegment.type !== 'regular') {
+      return {
+        isOnTime: false,
+        isAhead: false,
+        timeDifference: '00:00:00',
+        isVisible: false
+      };
+    }
+
+    // Calculate expected elapsed time from rundown start to current segment start
+    let expectedElapsedToSegmentStart = 0;
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
-        expectedElapsedSeconds += timeToSeconds(item.duration || '00:00');
+        expectedElapsedToSegmentStart += timeToSeconds(item.duration || '00:00');
       }
     }
+
+    // Get current segment duration and calculate how much time should have elapsed within it
+    const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
+    
+    // Find how much time has elapsed in the current segment by looking at remaining time
+    // This is tricky - we need to get this from the showcaller state somehow
+    // For now, let's calculate based on the assumption that if we're in this segment,
+    // we should compare against where we should be at the END of this segment
+    const expectedElapsedTotal = expectedElapsedToSegmentStart + currentSegmentDuration;
 
     // Get current real time
     const now = currentTime;
@@ -76,10 +95,16 @@ export const useShowcallerTiming = ({
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
     // Calculate actual elapsed time since rundown start
-    const actualElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+    let actualElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+    
+    // Handle day boundary crossing
+    if (actualElapsedSeconds < 0) {
+      actualElapsedSeconds += 24 * 3600; // Add 24 hours
+    }
     
     // Calculate the difference (positive = behind schedule, negative = ahead)
-    const differenceSeconds = actualElapsedSeconds - expectedElapsedSeconds;
+    // We compare against where we should be at the END of the current segment
+    const differenceSeconds = actualElapsedSeconds - expectedElapsedTotal;
     
     // Consider "on time" if within 1 second of expected time
     const isOnTime = Math.abs(differenceSeconds) <= 1;
