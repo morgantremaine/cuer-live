@@ -11,6 +11,7 @@ interface UseShowcallerTimingProps {
 }
 
 interface TimingStatus {
+  isOnTime: boolean;
   isAhead: boolean;
   timeDifference: string;
   isVisible: boolean;
@@ -39,6 +40,7 @@ export const useShowcallerTiming = ({
     // Only show when playing and we have a current segment
     if (!isPlaying || !currentSegmentId || !rundownStartTime) {
       return {
+        isOnTime: false,
         isAhead: false,
         timeDifference: '00:00:00',
         isVisible: false
@@ -49,6 +51,7 @@ export const useShowcallerTiming = ({
     const currentSegmentIndex = items.findIndex(item => item.id === currentSegmentId);
     if (currentSegmentIndex === -1) {
       return {
+        isOnTime: false,
         isAhead: false,
         timeDifference: '00:00:00',
         isVisible: false
@@ -78,11 +81,14 @@ export const useShowcallerTiming = ({
     // Calculate the difference (positive = behind schedule, negative = ahead)
     const differenceSeconds = actualElapsedSeconds - expectedElapsedSeconds;
     
-    const isAhead = differenceSeconds < 0;
+    // Consider "on time" if within 1 second of expected time
+    const isOnTime = Math.abs(differenceSeconds) <= 1;
+    const isAhead = differenceSeconds < -1;
     const absoluteDifference = Math.abs(differenceSeconds);
     const timeDifference = secondsToTime(absoluteDifference);
 
     return {
+      isOnTime,
       isAhead,
       timeDifference,
       isVisible: true

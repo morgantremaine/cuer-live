@@ -27,7 +27,7 @@ const HeaderBottomSection = ({
   const [isFocused, setIsFocused] = useState(false);
 
   // Get timing status from the showcaller timing hook
-  const { isAhead, timeDifference, isVisible } = useShowcallerTiming({
+  const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
     items,
     rundownStartTime,
     isPlaying,
@@ -108,6 +108,7 @@ const HeaderBottomSection = ({
             />
           </div>
           <ShowcallerTimingIndicator
+            isOnTime={isOnTime}
             isAhead={isAhead}
             timeDifference={timeDifference}
             isVisible={isVisible}
