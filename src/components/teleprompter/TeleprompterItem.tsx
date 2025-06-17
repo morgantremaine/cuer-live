@@ -109,7 +109,16 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
           className="font-bold text-left mb-8"
           style={{ fontSize: `${fontSize + 8}px` }}
         >
-          [{getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}]
+          <span
+            className="py-0.5 px-2 inline-block rounded"
+            style={{ 
+              backgroundColor: 'white',
+              color: 'black',
+              fontSize: `${fontSize + 8}px`
+            }}
+          >
+            {getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}
+          </span>
         </h2>
       </div>
     );
@@ -122,7 +131,16 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
         className="text-left mb-6"
         style={{ fontSize: `${fontSize + 4}px` }}
       >
-        [{getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}]
+        <span
+          className="py-0.5 px-2 inline-block rounded"
+          style={{ 
+            backgroundColor: 'white',
+            color: 'black',
+            fontSize: `${fontSize + 4}px`
+          }}
+        >
+          {getRowNumber(item.originalIndex)} {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}
+        </span>
       </div>
 
       {/* Script with bracket parsing only - no talent content */}
