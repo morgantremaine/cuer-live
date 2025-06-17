@@ -98,6 +98,53 @@ const RegularRow = (props: RegularRowProps) => {
     onClearSelection
   });
 
+  // Enhanced drag start handler that prevents dragging when selecting text
+  const handleDragStart = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Check if the target is an input, textarea, or if there's an active text selection
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    const hasTextSelection = window.getSelection()?.toString().length > 0;
+    
+    // If user is selecting text or interacting with text inputs, prevent dragging
+    if (isTextInput || hasTextSelection) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    // Check if the mouse is down on a text input (even if target isn't the input itself)
+    const textInputs = document.querySelectorAll('input, textarea');
+    for (const input of textInputs) {
+      if (input === document.activeElement) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    }
+    
+    props.onDragStart(e, index);
+  };
+
+  // Enhanced mouse down handler to detect text selection intent
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    // If clicking on text input, disable draggable temporarily
+    if (isTextInput) {
+      const row = e.currentTarget as HTMLElement;
+      row.setAttribute('draggable', 'false');
+      
+      // Re-enable draggable after a short delay to allow text selection
+      setTimeout(() => {
+        if (row) {
+          row.setAttribute('draggable', 'true');
+        }
+      }, 100);
+    }
+  };
+
   // Use backgroundColorOverride for floated rows, otherwise use item color
   const backgroundColor = backgroundColorOverride || 
     (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
@@ -126,9 +173,10 @@ const RegularRow = (props: RegularRowProps) => {
           backgroundColor
         }}
         draggable
-        onDragStart={(e) => props.onDragStart(e, index)}
+        onDragStart={handleDragStart}
         onDragOver={props.onDragOver}
         onDrop={(e) => props.onDrop(e, index)}
+        onMouseDown={handleMouseDown}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
       >

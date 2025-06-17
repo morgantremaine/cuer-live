@@ -136,6 +136,33 @@ const TextAreaCell = ({
     // Height will be recalculated by useEffect
   };
 
+  // Enhanced mouse down handler to prevent row dragging when selecting text
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Stop propagation to prevent row drag events
+    e.stopPropagation();
+  };
+
+  // Enhanced focus handler to disable row dragging when editing
+  const handleFocus = (e: React.FocusEvent) => {
+    // Find the parent row and disable dragging while editing
+    const row = e.target.closest('tr');
+    if (row) {
+      row.setAttribute('draggable', 'false');
+    }
+  };
+
+  // Enhanced blur handler to re-enable row dragging
+  const handleBlur = (e: React.FocusEvent) => {
+    // Re-enable dragging when not editing
+    const row = e.target.closest('tr');
+    if (row) {
+      // Use a small delay to avoid conflicts with other mouse events
+      setTimeout(() => {
+        row.setAttribute('draggable', 'true');
+      }, 50);
+    }
+  };
+
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
 
@@ -171,6 +198,9 @@ const TextAreaCell = ({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onClick={onCellClick}
+        onMouseDown={handleMouseDown}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
