@@ -33,8 +33,8 @@ const ShowcallerTimingIndicator = ({
 
   return (
     <div className={`flex items-center space-x-2 animate-fade-in ${statusColor}`}>
-      <Clock className="h-4 w-4" />
-      <span className="text-sm font-mono font-medium">
+      <Clock className="h-5 w-5" />
+      <span className="text-lg font-mono font-bold">
         {statusText}
       </span>
     </div>
