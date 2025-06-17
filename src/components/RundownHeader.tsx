@@ -6,6 +6,7 @@ import HeaderControls from './header/HeaderControls';
 import HeaderBottomSection from './header/HeaderBottomSection';
 import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import { SearchHighlight } from '@/types/search';
+import { RundownItem } from '@/types/rundown';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -18,7 +19,7 @@ interface RundownHeaderProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
-  items?: any[];
+  items?: RundownItem[];
   visibleColumns?: any[];
   onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
@@ -28,6 +29,8 @@ interface RundownHeaderProps {
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
+  isPlaying?: boolean;
+  currentSegmentId?: string | null;
 }
 
 const RundownHeader = ({ 
@@ -50,7 +53,9 @@ const RundownHeader = ({
   canUndo,
   lastAction,
   isConnected,
-  isProcessingRealtimeUpdate
+  isProcessingRealtimeUpdate,
+  isPlaying = false,
+  currentSegmentId = null
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -138,6 +143,9 @@ const RundownHeader = ({
           totalRuntime={totalRuntime}
           rundownStartTime={rundownStartTime}
           onRundownStartTimeChange={onRundownStartTimeChange}
+          items={items}
+          isPlaying={isPlaying}
+          currentSegmentId={currentSegmentId}
         />
       </div>
     </div>

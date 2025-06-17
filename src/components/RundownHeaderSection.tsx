@@ -112,6 +112,8 @@ const RundownHeaderSection = ({
         lastAction={lastAction}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}
