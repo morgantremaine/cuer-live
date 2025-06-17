@@ -94,7 +94,6 @@ export const useShowcallerTiming = ({
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     
     // Calculate actual elapsed time within the current segment
-    // Use stable calculation based on when we started tracking
     const elapsedSinceBase = (new Date().getTime() - baseTime.getTime()) / 1000;
     const actualElapsedInSegment = (lastTimeRemaining - timeRemaining) + elapsedSinceBase;
     
@@ -119,12 +118,12 @@ export const useShowcallerTiming = ({
     // Calculate the difference (positive = over time, negative = under time)
     const differenceSeconds = actualElapsedInSegment - expectedElapsedInSegment;
     
-    // Round to nearest second to prevent flickering
-    const roundedDifference = Math.round(differenceSeconds);
+    // Round to nearest 5 seconds to prevent flickering
+    const roundedDifference = Math.round(differenceSeconds / 5) * 5;
     
-    // Consider "on time" if within 2 seconds of expected time
-    const isOnTime = Math.abs(roundedDifference) <= 2;
-    const isAhead = roundedDifference < -2; // Showcaller is ahead of schedule
+    // Consider "on time" if within 5 seconds of expected time
+    const isOnTime = Math.abs(roundedDifference) <= 5;
+    const isAhead = roundedDifference < -5; // Showcaller is ahead of schedule
     const absoluteDifference = Math.abs(roundedDifference);
     const timeDifference = secondsToTime(absoluteDifference);
 
