@@ -80,11 +80,11 @@ const HeaderRowContent = ({
             </td>
           );
         } else if (column.key === 'duration') {
-          // Show the calculated header duration in parentheses
+          // Show the calculated header duration in parentheses - remove overflow hidden to prevent truncation
           return (
             <td
               key={column.id}
-              className="align-middle border border-border px-3 py-3 min-h-[56px] overflow-hidden"
+              className="align-middle border border-border px-3 py-3 min-h-[56px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -92,7 +92,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="truncate text-sm font-medium text-gray-600 dark:text-gray-300" style={{ color: textColor }}>
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
                 ({headerDuration})
               </div>
             </td>
