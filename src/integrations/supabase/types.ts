@@ -72,6 +72,7 @@ export type Database = {
           id: string
           is_default: boolean | null
           name: string
+          team_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -81,6 +82,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           name: string
+          team_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -90,10 +92,19 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           name?: string
+          team_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "column_layouts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -431,6 +442,10 @@ export type Database = {
         Returns: string
       }
       get_user_team_ids: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
+      get_user_team_ids_for_layouts: {
         Args: { user_uuid: string }
         Returns: string[]
       }

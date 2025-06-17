@@ -38,7 +38,15 @@ const ColumnManager = ({
   onRenameColumn,
   onClose 
 }: ColumnManagerProps) => {
-  const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout } = useColumnLayoutStorage();
+  const { 
+    savedLayouts, 
+    loading, 
+    saveLayout, 
+    updateLayout, 
+    renameLayout, 
+    deleteLayout,
+    canEditLayout
+  } = useColumnLayoutStorage();
 
   // Enhanced load layout handler with better validation
   const handleLoadLayout = (layoutColumns: Column[]) => {
@@ -95,6 +103,7 @@ const ColumnManager = ({
             onRenameLayout={renameLayout}
             onDeleteLayout={deleteLayout}
             onLoadLayout={handleLoadLayout}
+            canEditLayout={canEditLayout}
           />
 
           <ColumnEditor onAddColumn={onAddColumn} />
