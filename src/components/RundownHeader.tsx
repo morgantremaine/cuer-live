@@ -31,6 +31,7 @@ interface RundownHeaderProps {
   isProcessingRealtimeUpdate?: boolean;
   isPlaying?: boolean;
   currentSegmentId?: string | null;
+  timeRemaining?: number; // Add this prop
 }
 
 const RundownHeader = ({ 
@@ -55,7 +56,8 @@ const RundownHeader = ({
   isConnected,
   isProcessingRealtimeUpdate,
   isPlaying = false,
-  currentSegmentId = null
+  currentSegmentId = null,
+  timeRemaining = 0 // Add default value
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -146,6 +148,7 @@ const RundownHeader = ({
           items={items}
           isPlaying={isPlaying}
           currentSegmentId={currentSegmentId}
+          timeRemaining={timeRemaining}
         />
       </div>
     </div>

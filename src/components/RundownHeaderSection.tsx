@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
@@ -114,6 +113,7 @@ const RundownHeaderSection = ({
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}

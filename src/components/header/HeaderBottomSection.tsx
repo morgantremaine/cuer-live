@@ -12,6 +12,7 @@ interface HeaderBottomSectionProps {
   items?: RundownItem[];
   isPlaying?: boolean;
   currentSegmentId?: string | null;
+  timeRemaining?: number; // Add this prop
 }
 
 const HeaderBottomSection = ({
@@ -20,7 +21,8 @@ const HeaderBottomSection = ({
   onRundownStartTimeChange,
   items = [],
   isPlaying = false,
-  currentSegmentId = null
+  currentSegmentId = null,
+  timeRemaining = 0 // Default value
 }: HeaderBottomSectionProps) => {
   // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
@@ -31,7 +33,8 @@ const HeaderBottomSection = ({
     items,
     rundownStartTime,
     isPlaying,
-    currentSegmentId
+    currentSegmentId,
+    timeRemaining // Pass the timeRemaining value
   });
 
   // Update local state only when not focused and external value changes
