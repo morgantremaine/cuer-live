@@ -17,6 +17,12 @@ interface ColumnLayout {
   name: string;
   columns: any[];
   is_default: boolean;
+  user_id: string;
+  team_id?: string;
+  creator_profile?: {
+    full_name: string | null;
+    email: string;
+  };
 }
 
 export const useSharedRundownLayout = (rundownId: string | null) => {
@@ -51,22 +57,67 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
     }
   }, [rundownId]);
 
-  // Load user's available layouts
+  // Load user's available layouts (both own and team layouts)
   const loadAvailableLayouts = useCallback(async () => {
     if (!user?.id) return;
 
     try {
-      const { data, error } = await supabase
+      // Get user's team memberships first
+      const { data: teamMemberships, error: teamError } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id);
+
+      if (teamError) {
+        console.error('Error loading team memberships:', teamError);
+        return;
+      }
+
+      const teamIds = teamMemberships?.map(membership => membership.team_id) || [];
+
+      // Load layouts that user can access (own layouts + team layouts)
+      const { data: layoutsData, error } = await supabase
         .from('column_layouts')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`)
+        .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Error loading available layouts:', error);
-      } else {
-        setAvailableLayouts(data || []);
+        return;
       }
+
+      // Get unique user IDs from the layouts to fetch their profiles
+      const userIds = [...new Set((layoutsData || []).map(layout => layout.user_id))];
+      
+      let profilesData = [];
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+
+        if (profilesError) {
+          console.error('Error loading profiles:', profilesError);
+          // Continue without profile data instead of failing
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Map the data to include creator profile information
+      const mappedLayouts = (layoutsData || []).map(layout => {
+        const creatorProfile = profilesData.find(p => p.id === layout.user_id);
+        return {
+          ...layout,
+          creator_profile: creatorProfile ? {
+            full_name: creatorProfile.full_name,
+            email: creatorProfile.email
+          } : null
+        };
+      });
+
+      setAvailableLayouts(mappedLayouts);
     } catch (error) {
       console.error('Failed to load available layouts:', error);
     }
