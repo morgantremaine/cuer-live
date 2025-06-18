@@ -54,10 +54,10 @@ const PlaybackControls = ({
   };
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-1">
       {/* Always show timer when there's a current segment with valid time */}
       {currentSegmentId && timeRemaining >= 0 && (
-        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border min-w-[50px] text-center">
+        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-1.5 py-0.5 rounded font-mono text-xs border min-w-[45px] text-center">
           {formatTime(timeRemaining)}
         </div>
       )}
@@ -65,30 +65,33 @@ const PlaybackControls = ({
       <Button
         onClick={handleBackward}
         variant="outline"
-        size={size}
+        size="sm"
         disabled={!currentSegmentId}
         title="Previous segment"
+        className="h-7 w-7 p-0"
       >
-        <SkipBack className="h-4 w-4" />
+        <SkipBack className="h-3 w-3" />
       </Button>
       
       <Button
         onClick={handlePlayPause}
         variant="outline"
-        size={size}
+        size="sm"
         title={isPlaying ? "Pause" : "Play"}
+        className="h-7 w-7 p-0"
       >
-        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-blue-500" />}
+        {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3 text-blue-500" />}
       </Button>
       
       <Button
         onClick={handleForward}
         variant="outline"
-        size={size}
+        size="sm"
         disabled={!currentSegmentId}
         title="Next segment"
+        className="h-7 w-7 p-0"
       >
-        <SkipForward className="h-4 w-4" />
+        <SkipForward className="h-3 w-3" />
       </Button>
     </div>
   );

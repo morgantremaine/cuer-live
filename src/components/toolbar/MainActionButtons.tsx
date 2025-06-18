@@ -67,18 +67,20 @@ const MainActionButtons = ({
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const buttonSize = isMobile ? 'sm' : 'default';
-  const buttonClass = isMobile ? 'flex items-center space-x-1' : 'flex items-center space-x-2';
+  const buttonSize = 'sm';
+  const buttonClass = isMobile 
+    ? 'flex items-center space-x-1 h-7 px-2 text-xs' 
+    : 'flex items-center space-x-1 h-7 px-2 text-xs';
 
   return (
     <>
       <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
-        <Plus className="h-4 w-4" />
-        <span>{isMobile ? 'Segment' : 'Add Segment'}</span>
+        <Plus className="h-3 w-3" />
+        <span>{isMobile ? 'Segment' : 'Segment'}</span>
       </Button>
       <Button onClick={onAddHeader} variant="outline" size={buttonSize} className={buttonClass}>
-        <Plus className="h-4 w-4" />
-        <span>{isMobile ? 'Header' : 'Add Header'}</span>
+        <Plus className="h-3 w-3" />
+        <span>{isMobile ? 'Header' : 'Header'}</span>
       </Button>
       <Button 
         onClick={onUndo} 
@@ -88,12 +90,12 @@ const MainActionButtons = ({
         title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
         className={buttonClass}
       >
-        <Undo className="h-4 w-4" />
+        <Undo className="h-3 w-3" />
         <span>Undo</span>
       </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
-        <Settings className="h-4 w-4" />
-        <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
+        <Settings className="h-3 w-3" />
+        <span>{isMobile ? 'Columns' : 'Columns'}</span>
       </Button>
       
       {rundownId && (
@@ -105,11 +107,11 @@ const MainActionButtons = ({
       )}
       
       <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
-        <Monitor className="h-4 w-4" />
+        <Monitor className="h-3 w-3" />
         <span>Teleprompter</span>
       </Button>
       <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className={buttonClass}>
-        <FileText className="h-4 w-4" />
+        <FileText className="h-3 w-3" />
         <span>Blueprint</span>
       </Button>
     </>
