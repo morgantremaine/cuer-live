@@ -92,49 +92,41 @@ export const useShowcallerTiming = ({
     const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Determine if we're before or after the rundown start time
-    const isPreStart = currentTimeSeconds < rundownStartSeconds;
+    // Calculate real elapsed time since rundown start
+    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
     
-    let differenceSeconds: number;
-    let isOnTime: boolean;
-    let isAhead: boolean;
-    
-    if (isPreStart) {
-      // PRE-START LOGIC: Rundown hasn't started yet
-      // If showcaller is at position 0, we're on time
-      // If showcaller has progressed, we're ahead by that amount
-      differenceSeconds = -showcallerElapsedSeconds; // Negative = ahead
-      isOnTime = showcallerElapsedSeconds <= 5; // Within 5 seconds of start
-      isAhead = showcallerElapsedSeconds > 5; // More than 5 seconds into the show
-    } else {
-      // POST-START LOGIC: Rundown has started, compare against real elapsed time
-      let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
-      
-      // Handle day boundary crossing for post-start
-      if (realElapsedSeconds < 0) {
-        realElapsedSeconds += 24 * 3600;
-      }
-      
-      // Calculate the difference
-      // Positive = showcaller is behind schedule (over time)
-      // Negative = showcaller is ahead of schedule (under time)
-      differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
-      
-      isOnTime = Math.abs(differenceSeconds) <= 5;
-      isAhead = differenceSeconds < -5; // Showcaller is ahead of real time
+    // Handle day boundary crossing
+    if (realElapsedSeconds < 0) {
+      realElapsedSeconds += 24 * 3600;
     }
+
+    // Calculate the difference - CORRECTED LOGIC
+    // If showcaller is at 5 minutes but real time is at 6 minutes since start:
+    // showcallerElapsedSeconds = 300, realElapsedSeconds = 360
+    // differenceSeconds = 300 - 360 = -60 (showcaller is 60 seconds behind real time = OVER by 60 seconds)
+    // 
+    // If showcaller is at 7 minutes but real time is at 6 minutes since start:
+    // showcallerElapsedSeconds = 420, realElapsedSeconds = 360  
+    // differenceSeconds = 420 - 360 = +60 (showcaller is 60 seconds ahead of real time = UNDER by 60 seconds)
+    const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
+    
+    // CORRECTED: 
+    // Positive difference = showcaller ahead of real time = UNDER time
+    // Negative difference = showcaller behind real time = OVER time  
+    const isOnTime = Math.abs(differenceSeconds) <= 5;
+    const isAhead = differenceSeconds > 5; // Showcaller is ahead of real time = under time
     
     console.log('📺 Timing Debug:', {
-      mode: isPreStart ? 'PRE-START' : 'POST-START',
       currentTime: currentTimeString,
       rundownStartTime,
       currentTimeSeconds,
       rundownStartSeconds,
+      realElapsedSeconds: secondsToTime(realElapsedSeconds),
       showcallerElapsedSeconds: secondsToTime(showcallerElapsedSeconds),
       differenceSeconds,
       differenceFriendly: secondsToTime(Math.abs(differenceSeconds)),
       isOnTime,
-      isAhead,
+      isAhead: isAhead ? 'UNDER (ahead of real time)' : 'OVER (behind real time)',
       currentSegment: currentSegment.name,
       timeRemaining,
       elapsedInCurrentSegment: secondsToTime(elapsedInCurrentSegment)
