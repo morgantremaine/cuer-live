@@ -121,9 +121,9 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
+        <Button variant="outline" size="sm" className="flex items-center space-x-1">
+          <Share2 className="h-4 w-4" />
+          <span>Share</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
