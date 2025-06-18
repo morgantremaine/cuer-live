@@ -75,23 +75,6 @@ export const useShowcallerTiming = ({
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
-    
-    // Calculate how much time has actually elapsed since rundown start time
-    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
-    
-    // Handle day boundary - only add 24 hours if we've actually crossed midnight
-    // If current time is before rundown start and the difference is large, 
-    // it means rundown is later today (future), not that we crossed midnight
-    if (realElapsedSeconds < 0) {
-      // If the negative difference is less than 12 hours, rundown is later today
-      if (Math.abs(realElapsedSeconds) < 12 * 3600) {
-        // Rundown hasn't started yet - showcaller is ahead of schedule
-        realElapsedSeconds = realElapsedSeconds; // Keep negative
-      } else {
-        // Large negative difference suggests we crossed midnight
-        realElapsedSeconds += 24 * 3600;
-      }
-    }
 
     // Calculate where the showcaller currently is (total elapsed time in showcaller)
     let showcallerElapsedSeconds = 0;
@@ -109,29 +92,54 @@ export const useShowcallerTiming = ({
     const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Calculate the difference
-    // Positive = showcaller is behind schedule (over time)
-    // Negative = showcaller is ahead of schedule (under time)
-    const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
+    // Determine if we're before or after the rundown start time
+    const isPreStart = currentTimeSeconds < rundownStartSeconds;
+    
+    let differenceSeconds: number;
+    let isOnTime: boolean;
+    let isAhead: boolean;
+    
+    if (isPreStart) {
+      // PRE-START LOGIC: Rundown hasn't started yet
+      // If showcaller is at position 0, we're on time
+      // If showcaller has progressed, we're ahead by that amount
+      differenceSeconds = -showcallerElapsedSeconds; // Negative = ahead
+      isOnTime = showcallerElapsedSeconds <= 5; // Within 5 seconds of start
+      isAhead = showcallerElapsedSeconds > 5; // More than 5 seconds into the show
+    } else {
+      // POST-START LOGIC: Rundown has started, compare against real elapsed time
+      let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+      
+      // Handle day boundary crossing for post-start
+      if (realElapsedSeconds < 0) {
+        realElapsedSeconds += 24 * 3600;
+      }
+      
+      // Calculate the difference
+      // Positive = showcaller is behind schedule (over time)
+      // Negative = showcaller is ahead of schedule (under time)
+      differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
+      
+      isOnTime = Math.abs(differenceSeconds) <= 5;
+      isAhead = differenceSeconds < -5; // Showcaller is ahead of real time
+    }
     
     console.log('📺 Timing Debug:', {
+      mode: isPreStart ? 'PRE-START' : 'POST-START',
       currentTime: currentTimeString,
       rundownStartTime,
       currentTimeSeconds,
       rundownStartSeconds,
-      realElapsedSeconds: secondsToTime(Math.abs(realElapsedSeconds)),
-      realElapsedSecondsRaw: realElapsedSeconds,
       showcallerElapsedSeconds: secondsToTime(showcallerElapsedSeconds),
       differenceSeconds,
       differenceFriendly: secondsToTime(Math.abs(differenceSeconds)),
+      isOnTime,
+      isAhead,
       currentSegment: currentSegment.name,
       timeRemaining,
       elapsedInCurrentSegment: secondsToTime(elapsedInCurrentSegment)
     });
     
-    // Consider "on time" if within 5 seconds of expected time
-    const isOnTime = Math.abs(differenceSeconds) <= 5;
-    const isAhead = differenceSeconds < -5; // Showcaller is ahead of real time (under time)
     const absoluteDifference = Math.abs(differenceSeconds);
     const timeDifference = secondsToTime(absoluteDifference);
 
