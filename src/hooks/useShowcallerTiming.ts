@@ -70,47 +70,63 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Calculate total expected elapsed time based on real clock time
+    // Get current real time
     const now = currentTime;
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
-    let expectedElapsedTotal = currentTimeSeconds - rundownStartSeconds;
+    // Calculate how much time has actually elapsed since rundown start time
+    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
     
-    // Handle day boundary crossing
-    if (expectedElapsedTotal < 0) {
-      expectedElapsedTotal += 24 * 3600; // Add 24 hours
+    // Handle day boundary - only add 24 hours if we've actually crossed midnight
+    // If current time is before rundown start and the difference is large, 
+    // it means rundown is later today (future), not that we crossed midnight
+    if (realElapsedSeconds < 0) {
+      // If the negative difference is less than 12 hours, rundown is later today
+      if (Math.abs(realElapsedSeconds) < 12 * 3600) {
+        // Rundown hasn't started yet - showcaller is ahead of schedule
+        realElapsedSeconds = realElapsedSeconds; // Keep negative
+      } else {
+        // Large negative difference suggests we crossed midnight
+        realElapsedSeconds += 24 * 3600;
+      }
     }
 
-    // Calculate total actual elapsed time based on showcaller position
-    // Sum up durations of all completed segments
-    let actualElapsedTotal = 0;
+    // Calculate where the showcaller currently is (total elapsed time in showcaller)
+    let showcallerElapsedSeconds = 0;
+    
+    // Add up durations of all completed segments
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
-        actualElapsedTotal += timeToSeconds(item.duration || '00:00');
+        showcallerElapsedSeconds += timeToSeconds(item.duration || '00:00');
       }
     }
     
     // Add elapsed time within current segment
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
-    actualElapsedTotal += elapsedInCurrentSegment;
+    showcallerElapsedSeconds += elapsedInCurrentSegment;
 
     // Calculate the difference
-    // Positive = showcaller is behind (over time), Negative = showcaller is ahead (under time)
-    const differenceSeconds = actualElapsedTotal - expectedElapsedTotal;
+    // Positive = showcaller is behind schedule (over time)
+    // Negative = showcaller is ahead of schedule (under time)
+    const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
     console.log('📺 Timing Debug:', {
       currentTime: currentTimeString,
       rundownStartTime,
-      expectedElapsedTotal: secondsToTime(expectedElapsedTotal),
-      actualElapsedTotal: secondsToTime(actualElapsedTotal),
+      currentTimeSeconds,
+      rundownStartSeconds,
+      realElapsedSeconds: secondsToTime(Math.abs(realElapsedSeconds)),
+      realElapsedSecondsRaw: realElapsedSeconds,
+      showcallerElapsedSeconds: secondsToTime(showcallerElapsedSeconds),
       differenceSeconds,
+      differenceFriendly: secondsToTime(Math.abs(differenceSeconds)),
       currentSegment: currentSegment.name,
       timeRemaining,
-      elapsedInCurrentSegment
+      elapsedInCurrentSegment: secondsToTime(elapsedInCurrentSegment)
     });
     
     // Consider "on time" if within 5 seconds of expected time
