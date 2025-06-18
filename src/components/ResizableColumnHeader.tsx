@@ -17,19 +17,19 @@ const getMinimumWidth = (column: Column): number => {
     case 'startTime':
     case 'endTime':
     case 'elapsedTime':
-      return 95; // Reduced from 110px to 95px due to tighter padding
+      return 95;
     case 'segmentName':
-      return 100; // Reduced from 150px to 100px
+      return 100;
     case 'talent':
-      return 60; // Reduced from 100px to 60px
+      return 60;
     case 'script':
     case 'notes':
-      return 120; // Reduced from 200px to 120px for text fields
+      return 120;
     case 'gfx':
     case 'video':
-      return 80; // Reduced from 120px to 80px
+      return 80;
     default:
-      return 50; // Reduced from 100px to 50px for custom columns
+      return 50;
   }
 };
 
@@ -134,7 +134,7 @@ const ResizableColumnHeader = ({
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
-        maxWidth: constrainedWidthPx // Ensure exact width matching
+        maxWidth: constrainedWidthPx
       }}
     >
       {showLeftSeparator && (

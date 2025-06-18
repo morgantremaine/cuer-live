@@ -56,7 +56,7 @@ const MobileToolbar = ({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
+    <div className="p-1 border-b bg-gray-50 dark:bg-gray-700">
       <div className="flex items-center justify-between">
         {/* Dropdown Menu for Actions */}
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -88,7 +88,7 @@ const MobileToolbar = ({
         </DropdownMenu>
 
         {/* Playback Controls and Theme Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <PlaybackControls
             selectedRowId={selectedRowId}
             isPlaying={isPlaying}

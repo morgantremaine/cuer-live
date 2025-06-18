@@ -47,8 +47,8 @@ const DesktopToolbar = ({
   rundownData
 }: DesktopToolbarProps) => {
   return (
-    <div className="p-2 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
-      <div className="flex space-x-2">
+    <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+      <div className="flex space-x-1">
         <MainActionButtons
           onAddRow={onAddRow}
           onAddHeader={onAddHeader}
@@ -65,9 +65,9 @@ const DesktopToolbar = ({
         />
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1">
         {/* Playback Controls */}
-        <div className="flex items-center space-x-2 px-2 border-r border-gray-300 dark:border-gray-600">
+        <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
           <PlaybackControls
             selectedRowId={selectedRowId}
             isPlaying={isPlaying}

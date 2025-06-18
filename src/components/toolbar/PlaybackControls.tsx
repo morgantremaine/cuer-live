@@ -54,7 +54,7 @@ const PlaybackControls = ({
   };
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-1">
       {/* Always show timer when there's a current segment with valid time */}
       {currentSegmentId && timeRemaining >= 0 && (
         <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border min-w-[50px] text-center">

@@ -67,8 +67,8 @@ const MainActionButtons = ({
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const buttonSize = isMobile ? 'sm' : 'default';
-  const buttonClass = isMobile ? 'flex items-center space-x-1' : 'flex items-center space-x-2';
+  const buttonSize = 'sm';
+  const buttonClass = isMobile ? 'flex items-center space-x-1' : 'flex items-center space-x-1';
 
   return (
     <>
