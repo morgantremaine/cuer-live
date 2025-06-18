@@ -92,41 +92,37 @@ export const useShowcallerTiming = ({
     const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Determine if we're before or after the rundown start time
+    // CRITICAL: Check if we're before or after the rundown start time WITHOUT day boundary adjustment
     const isPreStart = currentTimeSeconds < rundownStartSeconds;
     
     let differenceSeconds: number;
     let realElapsedSeconds: number;
     
     if (isPreStart) {
-      // PRE-START LOGIC: Rundown hasn't started yet
+      // PRE-START LOGIC: Show hasn't started yet
       // Real elapsed time is negative (we're before the start)
-      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds; // This will be negative
       
-      // Don't apply day boundary logic for pre-start
-      // The difference shows how far ahead showcaller is compared to when it should be
+      // Calculate difference: showcaller position vs where it should be (which is 0 or negative)
+      // If showcaller has progressed into the rundown but show hasn't started = showcaller is ahead = UNDER
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
       
       console.log('📺 PRE-START Timing Debug:', {
         currentTime: currentTimeString,
         rundownStartTime,
-        currentTimeSeconds,
-        rundownStartSeconds,
-        realElapsedSeconds: `${realElapsedSeconds < 0 ? '-' : ''}${secondsToTime(Math.abs(realElapsedSeconds))}`,
-        showcallerElapsedSeconds: secondsToTime(showcallerElapsedSeconds),
+        timeUntilStart: secondsToTime(Math.abs(realElapsedSeconds)),
+        showcallerPosition: secondsToTime(showcallerElapsedSeconds),
         differenceSeconds,
-        differenceFriendly: secondsToTime(Math.abs(differenceSeconds)),
-        currentSegment: currentSegment.name,
-        timeRemaining,
-        elapsedInCurrentSegment: secondsToTime(elapsedInCurrentSegment)
+        isShowcallerAhead: showcallerElapsedSeconds > 0,
+        currentSegment: currentSegment.name
       });
     } else {
-      // POST-START LOGIC: Rundown has started
+      // POST-START LOGIC: Show has started
       realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
       
-      // Handle day boundary crossing only for post-start
+      // Only NOW apply day boundary logic if needed
       if (realElapsedSeconds < 0) {
-        realElapsedSeconds += 24 * 3600;
+        realElapsedSeconds += 24 * 3600; // Handle day crossing
       }
       
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
@@ -134,26 +130,29 @@ export const useShowcallerTiming = ({
       console.log('📺 POST-START Timing Debug:', {
         currentTime: currentTimeString,
         rundownStartTime,
-        currentTimeSeconds,
-        rundownStartSeconds,
-        realElapsedSeconds: secondsToTime(realElapsedSeconds),
-        showcallerElapsedSeconds: secondsToTime(showcallerElapsedSeconds),
+        realElapsedSinceStart: secondsToTime(realElapsedSeconds),
+        showcallerPosition: secondsToTime(showcallerElapsedSeconds),
         differenceSeconds,
-        differenceFriendly: secondsToTime(Math.abs(differenceSeconds)),
-        currentSegment: currentSegment.name,
-        timeRemaining,
-        elapsedInCurrentSegment: secondsToTime(elapsedInCurrentSegment)
+        currentSegment: currentSegment.name
       });
     }
     
-    // CORRECT LOGIC:
+    // TIMING LOGIC:
     // Positive difference = showcaller is ahead of where it should be = UNDER time
     // Negative difference = showcaller is behind where it should be = OVER time
     const isOnTime = Math.abs(differenceSeconds) <= 5;
-    const isAhead = differenceSeconds > 5; // Showcaller is ahead = under time
+    const isAhead = differenceSeconds > 5; // Showcaller ahead of schedule = under time
     
     const absoluteDifference = Math.abs(differenceSeconds);
     const timeDifference = secondsToTime(absoluteDifference);
+
+    console.log('📺 Final Timing Result:', {
+      mode: isPreStart ? 'PRE-START' : 'POST-START',
+      isOnTime,
+      isAhead,
+      status: isOnTime ? 'ON TIME' : (isAhead ? 'UNDER' : 'OVER'),
+      timeDifference
+    });
 
     return {
       isOnTime,
