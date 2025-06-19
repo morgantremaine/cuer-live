@@ -55,12 +55,10 @@ export const useSimpleAutoSave = (
 
     // Create a signature of the current state - EXCLUDE columns and showcaller data
     const currentSignature = JSON.stringify({
-      items: state.items?.map(item => ({
-        ...item,
-        // Exclude showcaller-specific fields that change frequently
-        status: undefined,
-        currentSegmentId: undefined
-      })) || [],
+      items: state.items?.map(item => {
+        const { status, currentSegmentId, ...cleanItem } = item;
+        return cleanItem;
+      }) || [],
       title: state.title,
       startTime: state.startTime,
       timezone: state.timezone
@@ -96,11 +94,10 @@ export const useSimpleAutoSave = (
       
       // Check if state changed again during debounce
       const finalSignature = JSON.stringify({
-        items: state.items?.map(item => ({
-          ...item,
-          status: undefined,
-          currentSegmentId: undefined
-        })) || [],
+        items: state.items?.map(item => {
+          const { status, currentSegmentId, ...cleanItem } = item;
+          return cleanItem;
+        }) || [],
         title: state.title,
         startTime: state.startTime,
         timezone: state.timezone

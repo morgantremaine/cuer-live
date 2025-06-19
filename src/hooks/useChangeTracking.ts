@@ -29,10 +29,7 @@ export const useChangeTracking = (
     // Only include actual content, completely exclude showcaller state
     return JSON.stringify({
       items: (items || []).map(item => {
-        const cleanItem = { ...item };
-        // Remove ALL showcaller-specific fields from signature
-        delete cleanItem.status;
-        delete cleanItem.currentSegmentId;
+        const { status, currentSegmentId, ...cleanItem } = item;
         return cleanItem;
       }),
       title: rundownTitle || '',
@@ -122,10 +119,7 @@ export const useChangeTracking = (
   ) => {
     const savedSignature = JSON.stringify({
       items: (savedItems || []).map(item => {
-        const cleanItem = { ...item };
-        // Remove showcaller fields from saved signature too
-        delete cleanItem.status;
-        delete cleanItem.currentSegmentId;
+        const { status, currentSegmentId, ...cleanItem } = item;
         return cleanItem;
       }),
       title: savedTitle || '',
@@ -167,10 +161,7 @@ export const useChangeTracking = (
 
     const newSignature = JSON.stringify({
       items: (newItems || []).map(item => {
-        const cleanItem = { ...item };
-        // Remove showcaller fields from realtime signature too
-        delete cleanItem.status;
-        delete cleanItem.currentSegmentId;
+        const { status, currentSegmentId, ...cleanItem } = item;
         return cleanItem;
       }),
       title: newTitle || '',

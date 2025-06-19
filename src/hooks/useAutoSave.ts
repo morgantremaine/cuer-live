@@ -106,13 +106,10 @@ export const useAutoSave = (
       return;
     }
 
-    // Create signature excluding showcaller-specific fields AND status changes
+    // Create signature excluding showcaller-specific fields
     const currentDataSignature = JSON.stringify({
       items: (items || []).map(item => {
-        const cleanItem = { ...item };
-        // Remove ALL showcaller-related fields from signature
-        delete cleanItem.status;
-        delete cleanItem.currentSegmentId;
+        const { status, currentSegmentId, ...cleanItem } = item;
         return cleanItem;
       }),
       title: rundownTitle || '',
