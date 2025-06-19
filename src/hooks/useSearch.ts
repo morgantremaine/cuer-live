@@ -13,6 +13,8 @@ export const useSearch = (
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
 
   const performSearch = (text: string) => {
+    console.log('🔍 Performing search for:', text);
+    
     if (!text.trim()) {
       setMatches([]);
       setCurrentMatchIndex(-1);
@@ -30,6 +32,8 @@ export const useSearch = (
       visibleColumns.forEach((column) => {
         // Get the actual cell value using the shared utility
         const cellValue = getCellValue(item, column);
+        if (!cellValue) return;
+        
         const cellValueLower = cellValue.toLowerCase();
         
         // Use indexOf for exact phrase matching
@@ -50,22 +54,15 @@ export const useSearch = (
       });
     });
 
+    console.log('🔍 Found matches:', foundMatches.length);
     setMatches(foundMatches);
     
-    // Only update current match index if we have matches and no current match is set
+    // Auto-select first match if we have matches
     if (foundMatches.length > 0) {
-      // If we don't have a current match or the current index is invalid, set to first match
-      if (currentMatchIndex === -1 || currentMatchIndex >= foundMatches.length) {
-        setCurrentMatchIndex(0);
-        const firstMatch = foundMatches[0];
-        onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
-      } else {
-        // Keep the current match if it's still valid
-        const currentMatch = foundMatches[currentMatchIndex];
-        if (currentMatch) {
-          onHighlightMatch(currentMatch.itemId, currentMatch.field, currentMatch.index, currentMatch.index + currentMatch.length);
-        }
-      }
+      setCurrentMatchIndex(0);
+      const firstMatch = foundMatches[0];
+      console.log('🎯 Highlighting first match:', firstMatch);
+      onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
     } else {
       setCurrentMatchIndex(-1);
       onHighlightMatch('', '', 0, 0);
@@ -73,15 +70,21 @@ export const useSearch = (
   };
 
   const updateCurrentMatch = (newIndex: number) => {
+    console.log('🎯 Updating current match to index:', newIndex);
     setCurrentMatchIndex(newIndex);
     if (newIndex >= 0 && newIndex < matches.length) {
       const match = matches[newIndex];
+      console.log('🎯 Highlighting match:', match);
       onHighlightMatch(match.itemId, match.field, match.index, match.index + match.length);
     }
   };
 
   useEffect(() => {
-    performSearch(searchText);
+    const timeoutId = setTimeout(() => {
+      performSearch(searchText);
+    }, 100); // Small delay to debounce search
+
+    return () => clearTimeout(timeoutId);
   }, [searchText, items]);
 
   return {

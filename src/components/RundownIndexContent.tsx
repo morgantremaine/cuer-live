@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
@@ -10,6 +10,12 @@ import { getCellValue } from '@/utils/sharedRundownUtils';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  const [highlightedCell, setHighlightedCell] = useState<{
+    itemId: string;
+    field: string;
+    startIndex: number;
+    endIndex: number;
+  } | null>(null);
   
   const {
     coreState,
@@ -130,23 +136,70 @@ const RundownIndexContent = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Handle highlight match functionality
+  const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
+    console.log('🎯 Highlighting match:', { itemId, field, startIndex, endIndex });
+    
+    if (!itemId || !field) {
+      // Clear highlighting
+      setHighlightedCell(null);
+      return;
+    }
+
+    // Set the highlighted cell
+    setHighlightedCell({
+      itemId,
+      field,
+      startIndex,
+      endIndex
+    });
+
+    // Focus the cell
+    const cellKey = `${itemId}-${field}`;
+    const cellElement = cellRefs.current[cellKey];
+    if (cellElement) {
+      cellElement.focus();
+      cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Select the text if it's an input or textarea
+      if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
+        cellElement.setSelectionRange(startIndex, endIndex);
+      }
+    }
+  };
+
   // Handle replace text functionality
-  const handleReplaceText = (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
+  const handleReplaceText = async (itemId: string, field: string, searchText: string, replaceText: string) => {
+    console.log('🔄 Replacing text:', { itemId, field, searchText, replaceText });
+    
     const item = items.find(item => item.id === itemId);
-    if (!item) return;
+    if (!item) {
+      console.log('❌ Item not found:', itemId);
+      return;
+    }
 
     const currentValue = getCellValue(item, { key: field });
+    console.log('📝 Current value:', currentValue);
     
+    if (!currentValue) {
+      console.log('❌ No current value found');
+      return;
+    }
+
     // Create a case-insensitive replace function that handles phrases
     const replacePhrase = (text: string, search: string, replacement: string) => {
       const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
       return text.replace(searchRegex, replacement);
     };
 
-    const newValue = replacePhrase(currentValue, searchText.trim(), replaceText);
+    const newValue = replacePhrase(currentValue, searchText, replaceText);
+    console.log('📝 New value:', newValue);
     
     if (newValue !== currentValue) {
       updateItem(itemId, field, newValue);
+      console.log('✅ Text replaced successfully');
+    } else {
+      console.log('⚠️ No changes made - text not found or already replaced');
     }
   };
 
@@ -382,9 +435,7 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        onHighlightMatch={(itemId, field, startIndex, endIndex) => {
-          // Handle highlighting logic if needed
-        }}
+        onHighlightMatch={handleHighlightMatch}
         onReplaceText={handleReplaceText}
       />
       

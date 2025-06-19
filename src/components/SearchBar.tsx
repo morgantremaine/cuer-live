@@ -36,24 +36,32 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     navigateMatch(matches, currentMatchIndex, setCurrentMatchIndex, direction);
   };
 
-  const handleReplace = (replaceAll: boolean = false) => {
-    if (!searchText.trim() || !replaceText.trim()) return;
+  const handleReplace = async (replaceAll: boolean = false) => {
+    if (!searchText.trim()) {
+      console.log('❌ No search text provided');
+      return;
+    }
+
+    console.log('🔄 Replace operation:', { searchText, replaceText, replaceAll, matchesCount: matches.length });
 
     if (replaceAll) {
       // Replace all occurrences
-      matches.forEach(match => {
-        onReplaceText(match.itemId, match.field, searchText, replaceText, false);
-      });
+      console.log('🔄 Replacing all matches');
+      for (const match of matches) {
+        await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText);
+      }
     } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
       // Replace current match only
       const currentMatch = matches[currentMatchIndex];
-      onReplaceText(currentMatch.itemId, currentMatch.field, searchText, replaceText, false);
+      console.log('🔄 Replacing current match:', currentMatch);
+      await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText);
     }
 
-    // Refresh search results after replacement
+    // Refresh search results after replacement with a longer delay
     setTimeout(() => {
+      console.log('🔄 Refreshing search after replace');
       performSearch(searchText);
-    }, 100);
+    }, 200);
   };
 
   const handleClose = () => {
@@ -67,6 +75,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    console.log('🔍 Search text changed:', value);
     setSearchText(value);
     setTimeout(() => {
       if (searchInputRef.current) {
@@ -141,8 +150,8 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
         />
 
         {searchText && matches.length === 0 && (
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            No matches found
+          <div className="text-sm text-red-500 dark:text-red-400">
+            No matches found for "{searchText}"
           </div>
         )}
       </div>

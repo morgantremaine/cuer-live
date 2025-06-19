@@ -27,10 +27,20 @@ const ReplaceControls = ({
       />
       {hasMatches && (
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={onReplace}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onReplace}
+            disabled={!replaceText.trim()}
+          >
             Replace
           </Button>
-          <Button variant="outline" size="sm" onClick={onReplaceAll}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onReplaceAll}
+            disabled={!replaceText.trim()}
+          >
             Replace All
           </Button>
         </div>
