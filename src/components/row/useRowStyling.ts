@@ -32,8 +32,8 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
     }
   } else if (isCurrentlyPlaying) {
-    // Showcaller active row styling - reduced border thickness
-    rowClass = 'bg-muted !border-l-6 !border-blue-600 !border-2 !border-blue-600 shadow-xl shadow-blue-500/50 relative z-10 transform transition-all duration-200';
+    // Showcaller active row styling - thick left border with thinner overall border
+    rowClass = 'bg-muted !border-l-6 !border-l-blue-600 !border !border-blue-600 shadow-xl shadow-blue-500/50 relative z-10 transform transition-all duration-200';
     // Add stronger shadow above and below
     rowClass += ' [box-shadow:0_-12px_20px_-5px_rgba(59,130,246,0.5),0_12px_20px_-5px_rgba(59,130,246,0.5)]';
   } else if (isHeader) {
