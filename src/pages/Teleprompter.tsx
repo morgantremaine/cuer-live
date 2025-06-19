@@ -152,7 +152,15 @@ const Teleprompter = () => {
             @media print {
               @page {
                 margin: 0.5in;
+                size: letter;
               }
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+            * {
+              box-sizing: border-box;
             }
             body {
               font-family: Arial, sans-serif;
@@ -160,41 +168,51 @@ const Teleprompter = () => {
               background: white;
               line-height: 1.3;
               margin: 0;
-              padding: 10px;
+              padding: 0;
+              font-size: 12px;
             }
             .header {
               text-align: center;
-              margin-bottom: 20px;
+              margin-bottom: 15px;
               border-bottom: 1px solid #000;
-              padding-bottom: 10px;
+              padding-bottom: 8px;
+              page-break-after: avoid;
             }
             .header h1 {
-              font-size: 18px;
-              margin: 0 0 5px 0;
+              font-size: 16px;
+              margin: 0 0 3px 0;
+              font-weight: bold;
             }
             .header p {
-              font-size: 12px;
+              font-size: 10px;
               margin: 0;
               color: #666;
             }
             .script-item {
-              margin-bottom: 25px;
+              margin-bottom: 20px;
               page-break-inside: avoid;
+              orphans: 3;
+              widows: 3;
+            }
+            .script-item:first-child {
+              page-break-before: avoid;
             }
             .script-title {
               font-weight: bold;
-              font-size: 14px;
-              margin-bottom: 8px;
-              padding: 4px 8px;
+              font-size: 12px;
+              margin-bottom: 6px;
+              padding: 3px 6px;
               background: #f0f0f0;
               border: 1px solid #ccc;
               display: inline-block;
+              page-break-after: avoid;
             }
             .script-content {
-              font-size: 13px;
+              font-size: 11px;
               line-height: 1.4;
               white-space: pre-wrap;
               margin-left: 0;
+              page-break-before: avoid;
             }
             .page-break {
               page-break-before: always;
@@ -214,7 +232,7 @@ const Teleprompter = () => {
               : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
             
             return `
-              <div class="script-item ${index > 0 && index % 4 === 0 ? 'page-break' : ''}">
+              <div class="script-item ${index > 0 && index % 5 === 0 ? 'page-break' : ''}">
                 <div class="script-title">${title}</div>
                 <div class="script-content">${processScriptForPrint(item.script || '')}</div>
               </div>
