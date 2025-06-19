@@ -189,14 +189,17 @@ const SharedRundownTable = ({
                     className={`
                       ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                       ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                      ${isShowcallerCurrent ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
+                      ${isShowcallerCurrent ? 'bg-blue-50 border-l-6 border-blue-600 border-2 border-blue-600 shadow-xl shadow-blue-500/50 relative z-10 transform transition-all duration-200' : ''}
                       print:break-inside-avoid print:border-0
                     `}
-                    style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
+                    style={{ 
+                      backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined,
+                      boxShadow: isShowcallerCurrent ? '0 -12px 20px -5px rgba(59,130,246,0.5), 0 12px 20px -5px rgba(59,130,246,0.5)' : undefined
+                    }}
                   >
                     <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-row-number">
                       <div className="flex items-center">
-                        {/* Blue play icon - matching main rundown styling with larger size */}
+                        {/* Blue play icon - matching main rundown styling exactly */}
                         {isShowcallerCurrent && (
                           <Play 
                             className="h-5 w-5 text-blue-500 fill-blue-500 scale-125 mr-2 print:hidden" 
