@@ -58,10 +58,22 @@ export const useAutoSave = (
     }
   }, [setChangeTrackingUserTyping]);
 
-  // Method to set showcaller active state
+  // Method to set showcaller active state - ENHANCED to prevent save conflicts
   const setShowcallerActive = useCallback((active: boolean) => {
     const wasActive = showcallerActiveRef.current;
     showcallerActiveRef.current = active;
+    
+    if (active && !wasActive) {
+      console.log('📺 Showcaller activated - temporarily pausing auto-save to prevent conflicts');
+      // Clear any pending auto-save when showcaller becomes active
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
+      }
+    } else if (!active && wasActive) {
+      console.log('📺 Showcaller deactivated - auto-save can resume');
+    }
+    
     console.log('📺 Showcaller active state changed:', wasActive, '->', active);
   }, []);
 
@@ -72,7 +84,7 @@ export const useAutoSave = (
     console.log('↩️ Undo active state changed:', wasActive, '->', active);
   }, []);
 
-  // Enhanced debounced save function with better protection
+  // Enhanced debounced save function with better showcaller protection
   const debouncedSave = useCallback(async () => {
     // Enhanced checks to prevent unnecessary saves
     if (!user || 
@@ -94,13 +106,15 @@ export const useAutoSave = (
       return;
     }
 
-    // Create signature excluding showcaller-specific fields
+    // Create signature excluding showcaller-specific fields AND status changes
     const currentDataSignature = JSON.stringify({
-      items: (items || []).map(item => ({
-        ...item,
-        status: undefined,
-        currentSegmentId: undefined
-      })),
+      items: (items || []).map(item => {
+        const cleanItem = { ...item };
+        // Remove ALL showcaller-related fields from signature
+        delete cleanItem.status;
+        delete cleanItem.currentSegmentId;
+        return cleanItem;
+      }),
       title: rundownTitle || '',
       columns: columns || [],
       timezone: timezone || '',
@@ -109,7 +123,7 @@ export const useAutoSave = (
 
     // Skip if data hasn't actually changed
     if (currentDataSignature === lastSaveDataRef.current) {
-      console.log('💾 Save skipped - no content changes detected');
+      console.log('💾 Save skipped - no content changes detected (showcaller changes ignored)');
       return;
     }
 
@@ -145,7 +159,7 @@ export const useAutoSave = (
     }
   }, [user, items, rundownTitle, columns, timezone, startTime, performSave, markAsSaved, isInitialized, isProcessingRealtimeUpdate]);
 
-  // Enhanced auto-save effect with longer debouncing
+  // Enhanced auto-save effect with showcaller protection
   useEffect(() => {
     if (!hasUnsavedChanges || 
         !isInitialized || 
@@ -161,12 +175,17 @@ export const useAutoSave = (
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Longer debounce times to prevent aggressive saving
+    // Longer debounce times to prevent aggressive saving, especially during showcaller use
     const delay = saveInProgressRef.current ? 5000 : 3000; // Increased delays
     console.log('💾 Auto-save scheduled in', delay, 'ms');
     
     debounceTimeoutRef.current = setTimeout(() => {
-      debouncedSave();
+      // Double-check showcaller state before executing save
+      if (!showcallerActiveRef.current) {
+        debouncedSave();
+      } else {
+        console.log('💾 Auto-save cancelled - showcaller is active');
+      }
     }, delay);
 
     return () => {
