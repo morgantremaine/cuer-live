@@ -121,6 +121,15 @@ const RundownTable = ({
                   </tr>
                 )}
                 
+                {/* Show thick green line with rounded corners ABOVE the current segment */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-2 bg-green-500 w-full rounded-full"></div>
+                    </td>
+                  </tr>
+                )}
+                
                 <RundownRow
                   item={item}
                   index={index}
@@ -158,6 +167,15 @@ const RundownTable = ({
                   onAddHeader={onAddHeader}
                   getColumnWidth={getColumnWidth}
                 />
+                
+                {/* Show thick grey line with rounded corners UNDER the current segment */}
+                {isCurrentlyPlaying && (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 1} className="p-0">
+                      <div className="h-2 bg-gray-400 rounded-full" style={{ width: '300px' }}></div>
+                    </td>
+                  </tr>
+                )}
                 
                 {/* Show drop indicator line AFTER the last row if it's the drop target */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
