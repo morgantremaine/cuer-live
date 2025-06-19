@@ -6,22 +6,27 @@ export const useSearchNavigation = () => {
     console.log('🎯 Attempting to focus cell:', itemId, field);
     
     try {
-      // Try multiple selectors to find the actual cell element
+      // Use attribute selectors instead of ID selectors to avoid CSS selector issues
       const selectors = [
-        `input[data-item-id="${itemId}"][data-field="${field}"]`,
-        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+        `[data-item-id="${itemId}"][data-field="${field}"]`,
         `[data-cell-key="${itemId}-${field}"]`,
-        `#${itemId}-${field}`,
-        `[data-rundown-cell="${itemId}-${field}"]`
+        `[data-rundown-cell="${itemId}-${field}"]`,
+        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+        `input[data-item-id="${itemId}"][data-field="${field}"]`
       ];
 
       let cellElement: HTMLInputElement | HTMLTextAreaElement | null = null;
 
       for (const selector of selectors) {
-        cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
-        if (cellElement) {
-          console.log('✅ Found cell element with selector:', selector);
-          break;
+        try {
+          cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+          if (cellElement) {
+            console.log('✅ Found cell element with selector:', selector);
+            break;
+          }
+        } catch (error) {
+          console.log('❌ Invalid selector:', selector, error);
+          continue;
         }
       }
       
@@ -33,15 +38,10 @@ export const useSearchNavigation = () => {
           inline: 'center'
         });
         
-        // Ensure the cell is visible and focused
-        setTimeout(() => {
-          if (cellElement) {
-            cellElement.focus();
-          }
-        }, 100);
+        console.log('✅ Successfully focused and scrolled to cell');
       } else {
         console.log('❌ Could not find cell element for:', itemId, field);
-        console.log('Available elements:', document.querySelectorAll('input, textarea').length);
+        console.log('Available elements with data-item-id:', document.querySelectorAll('[data-item-id]').length);
       }
     } catch (error) {
       console.log('❌ Error focusing cell:', error);
@@ -63,11 +63,14 @@ export const useSearchNavigation = () => {
       newIndex = currentMatchIndex > 0 ? currentMatchIndex - 1 : matches.length - 1;
     }
 
-    console.log('🔄 Navigating to match index:', newIndex);
+    console.log('🔄 Navigating from index', currentMatchIndex, 'to index:', newIndex);
     setCurrentMatchIndex(newIndex);
     
     const match = matches[newIndex];
-    focusCell(match.itemId, match.field);
+    if (match) {
+      console.log('🎯 Focusing on match:', match);
+      focusCell(match.itemId, match.field);
+    }
   };
 
   return { navigateMatch, focusCell };

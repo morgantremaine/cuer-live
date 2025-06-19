@@ -20,6 +20,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
   const [replaceText, setReplaceText] = useState('');
   const [showReplace, setShowReplace] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const isReplacingRef = useRef(false);
 
   const {
     searchText,
@@ -37,11 +38,12 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
   };
 
   const handleReplace = async (replaceAll: boolean = false) => {
-    if (!searchText.trim() || !replaceText.trim()) {
-      console.log('❌ Missing search or replace text');
+    if (!searchText.trim() || !replaceText.trim() || isReplacingRef.current) {
+      console.log('❌ Missing search/replace text or already replacing');
       return;
     }
 
+    isReplacingRef.current = true;
     console.log('🔄 Replace operation:', { 
       searchText: searchText.trim(), 
       replaceText: replaceText.trim(), 
@@ -52,40 +54,15 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     try {
       if (replaceAll) {
         console.log('🔄 Replacing all matches');
-        // Create a map to track unique items that need updating
-        const itemUpdates = new Map<string, Map<string, string>>();
+        // Process unique item-field combinations
+        const processedItems = new Set<string>();
         
-        // Process all matches and build replacement map
         for (const match of matches) {
           const key = `${match.itemId}-${match.field}`;
-          if (!itemUpdates.has(key)) {
-            // Get current value for this item/field combination
-            const item = items.find(item => item.id === match.itemId);
-            if (item) {
-              const column = visibleColumns.find(col => col.key === match.field);
-              if (column) {
-                const currentValue = item[match.field] || '';
-                if (typeof currentValue === 'string') {
-                  // Perform case-insensitive replacement
-                  const searchRegex = new RegExp(searchText.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-                  const newValue = currentValue.replace(searchRegex, replaceText.trim());
-                  
-                  if (newValue !== currentValue) {
-                    const fieldMap = new Map<string, string>();
-                    fieldMap.set(match.field, newValue);
-                    itemUpdates.set(match.itemId, fieldMap);
-                  }
-                }
-              }
-            }
-          }
-        }
-        
-        // Apply all updates
-        for (const [itemId, fieldMap] of itemUpdates) {
-          for (const [field, newValue] of fieldMap) {
-            console.log('✅ Updating item:', itemId, field, 'with value:', newValue);
-            await onReplaceText(itemId, field, searchText.trim(), replaceText.trim(), true);
+          if (!processedItems.has(key)) {
+            processedItems.add(key);
+            console.log('✅ Replacing in item:', match.itemId, match.field);
+            await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText.trim(), true);
           }
         }
       } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
@@ -101,6 +78,8 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
       }, 500);
     } catch (error) {
       console.error('❌ Replace operation failed:', error);
+    } finally {
+      isReplacingRef.current = false;
     }
   };
 

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { SearchMatch } from '@/types/search';
 import { getCellValue } from '@/utils/sharedRundownUtils';
 
@@ -11,14 +11,24 @@ export const useSearch = (
   const [searchText, setSearchText] = useState('');
   const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSearchingRef = useRef(false);
 
   const performSearch = useCallback((text: string) => {
+    // Prevent multiple simultaneous searches
+    if (isSearchingRef.current) {
+      console.log('⚠️ Search already in progress, skipping');
+      return;
+    }
+
+    isSearchingRef.current = true;
     console.log('🔍 Performing search for:', text);
     
     if (!text.trim()) {
       setMatches([]);
       setCurrentMatchIndex(-1);
       onHighlightMatch('', '', 0, 0);
+      isSearchingRef.current = false;
       return;
     }
 
@@ -63,6 +73,8 @@ export const useSearch = (
       setCurrentMatchIndex(-1);
       onHighlightMatch('', '', 0, 0);
     }
+
+    isSearchingRef.current = false;
   }, [items, visibleColumns, onHighlightMatch]);
 
   const updateCurrentMatch = useCallback((newIndex: number) => {
@@ -76,17 +88,29 @@ export const useSearch = (
   }, [matches, onHighlightMatch]);
 
   const refreshSearch = useCallback(() => {
-    if (searchText.trim()) {
+    if (searchText.trim() && !isSearchingRef.current) {
       performSearch(searchText);
     }
   }, [searchText, performSearch]);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      performSearch(searchText);
-    }, 150);
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-    return () => clearTimeout(timeoutId);
+    // Debounce the search
+    searchTimeoutRef.current = setTimeout(() => {
+      if (!isSearchingRef.current) {
+        performSearch(searchText);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, [searchText, performSearch]);
 
   return {

@@ -16,6 +16,7 @@ const RundownIndexContent = () => {
     startIndex: number;
     endIndex: number;
   } | null>(null);
+  const replaceOperationRef = useRef(false);
   
   const {
     coreState,
@@ -155,20 +156,25 @@ const RundownIndexContent = () => {
     // Focus and scroll to the cell with improved targeting
     setTimeout(() => {
       const selectors = [
-        `input[data-item-id="${itemId}"][data-field="${field}"]`,
-        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+        `[data-item-id="${itemId}"][data-field="${field}"]`,
         `[data-cell-key="${itemId}-${field}"]`,
-        `#${itemId}-${field}`,
-        `[data-rundown-cell="${itemId}-${field}"]`
+        `[data-rundown-cell="${itemId}-${field}"]`,
+        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+        `input[data-item-id="${itemId}"][data-field="${field}"]`
       ];
 
       let cellElement: HTMLInputElement | HTMLTextAreaElement | null = null;
 
       for (const selector of selectors) {
-        cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
-        if (cellElement) {
-          console.log('✅ Found cell element with selector:', selector);
-          break;
+        try {
+          cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+          if (cellElement) {
+            console.log('✅ Found cell element with selector:', selector);
+            break;
+          }
+        } catch (error) {
+          console.log('❌ Invalid selector:', selector, error);
+          continue;
         }
       }
 
@@ -186,6 +192,7 @@ const RundownIndexContent = () => {
           if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
             try {
               cellElement.setSelectionRange(startIndex, endIndex);
+              console.log('✅ Set text selection range:', startIndex, endIndex);
             } catch (error) {
               console.log('Could not set selection range:', error);
             }
@@ -193,58 +200,76 @@ const RundownIndexContent = () => {
         }, 200);
       } else {
         console.log('❌ Could not find cell element for:', itemId, field);
-        console.log('Available input/textarea elements:', document.querySelectorAll('input, textarea').length);
+        console.log('Available elements with data-item-id:', document.querySelectorAll('[data-item-id]').length);
       }
     }, 100);
   };
 
   // Enhanced replace text functionality with proper state updates
   const handleReplaceText = async (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
+    if (replaceOperationRef.current) {
+      console.log('⚠️ Replace operation already in progress');
+      return;
+    }
+
+    replaceOperationRef.current = true;
     console.log('🔄 Replace operation starting:', { itemId, field, searchText, replaceText, replaceAll });
     
-    const item = items.find(item => item.id === itemId);
-    if (!item) {
-      console.log('❌ Item not found:', itemId);
-      return;
-    }
-
-    const currentValue = item[field] || '';
-    console.log('📝 Current cell value:', currentValue);
-    
-    if (typeof currentValue !== 'string') {
-      console.log('❌ No valid current value found or not a string');
-      return;
-    }
-
-    // Perform case-insensitive replacement
-    const searchRegex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    const newValue = currentValue.replace(searchRegex, replaceText);
-    
-    console.log('📝 Replacement result:', { original: currentValue, new: newValue });
-    
-    if (newValue !== currentValue) {
-      console.log('✅ Updating item with new value');
-      
-      // Use the updateItem function from the unified state
-      updateItem(itemId, field, newValue);
-      
-      // Also update any DOM elements directly
-      const selectors = [
-        `input[data-item-id="${itemId}"][data-field="${field}"]`,
-        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
-        `[data-cell-key="${itemId}-${field}"]`
-      ];
-
-      for (const selector of selectors) {
-        const cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
-        if (cellElement) {
-          cellElement.value = newValue;
-          console.log('✅ Updated DOM element value');
-          break;
-        }
+    try {
+      const item = items.find(item => item.id === itemId);
+      if (!item) {
+        console.log('❌ Item not found:', itemId);
+        return;
       }
-    } else {
-      console.log('⚠️ No changes made - search text not found or already replaced');
+
+      const currentValue = item[field] || '';
+      console.log('📝 Current cell value:', currentValue);
+      
+      if (typeof currentValue !== 'string') {
+        console.log('❌ No valid current value found or not a string');
+        return;
+      }
+
+      // Perform case-insensitive replacement
+      const searchRegex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      const newValue = currentValue.replace(searchRegex, replaceText);
+      
+      console.log('📝 Replacement result:', { original: currentValue, new: newValue });
+      
+      if (newValue !== currentValue) {
+        console.log('✅ Updating item with new value');
+        
+        // Use the updateItem function from the unified state
+        updateItem(itemId, field, newValue);
+        
+        // Force update DOM elements
+        setTimeout(() => {
+          const selectors = [
+            `[data-item-id="${itemId}"][data-field="${field}"]`,
+            `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+            `input[data-item-id="${itemId}"][data-field="${field}"]`
+          ];
+
+          for (const selector of selectors) {
+            try {
+              const cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+              if (cellElement && cellElement.value !== newValue) {
+                cellElement.value = newValue;
+                console.log('✅ Updated DOM element value');
+                break;
+              }
+            } catch (error) {
+              console.log('❌ Error updating DOM element:', error);
+            }
+          }
+        }, 100);
+      } else {
+        console.log('⚠️ No changes made - search text not found or already replaced');
+      }
+    } catch (error) {
+      console.error('❌ Replace operation failed:', error);
+    } finally {
+      replaceOperationRef.current = false;
     }
   };
 
