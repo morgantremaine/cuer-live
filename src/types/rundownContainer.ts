@@ -2,6 +2,7 @@
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchBarProps } from '@/types/search';
 
 export interface RundownContainerProps {
   currentTime: Date;
@@ -74,4 +75,7 @@ export interface RundownContainerProps {
   // Realtime collaboration props
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
+  
+  // Search functionality
+  searchBarProps?: SearchBarProps;
 }

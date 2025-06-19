@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { User, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,7 @@ interface HeaderControlsProps {
   visibleColumns: any[];
   onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
+  updateItem: (id: string, field: string, value: string) => void;
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
@@ -35,6 +35,7 @@ const HeaderControls = ({
   visibleColumns,
   onHighlightMatch,
   onReplaceText,
+  updateItem,
   onUndo,
   canUndo,
   lastAction
@@ -82,6 +83,7 @@ const HeaderControls = ({
           visibleColumns={visibleColumns}
           onHighlightMatch={onHighlightMatch}
           onReplaceText={onReplaceText}
+          updateItem={updateItem}
         />
       </div>
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
