@@ -13,11 +13,57 @@ const CameraPlotMiniPreview = ({
   containerWidth = 400, 
   containerHeight = 300 
 }: CameraPlotMiniPreviewProps) => {
-  const scale = 0.15; // Scale down elements for mini preview
+  // Calculate bounds of all elements to determine how to scale and center them
+  const calculateBounds = () => {
+    if (elements.length === 0) {
+      return { minX: 0, minY: 0, maxX: containerWidth, maxY: containerHeight };
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    elements.forEach(element => {
+      const left = element.x;
+      const right = element.x + element.width;
+      const top = element.y;
+      const bottom = element.y + element.height;
+
+      minX = Math.min(minX, left);
+      minY = Math.min(minY, top);
+      maxX = Math.max(maxX, right);
+      maxY = Math.max(maxY, bottom);
+    });
+
+    // Add some padding
+    const padding = 20;
+    return {
+      minX: minX - padding,
+      minY: minY - padding,
+      maxX: maxX + padding,
+      maxY: maxY + padding
+    };
+  };
+
+  const bounds = calculateBounds();
+  const sceneWidth = bounds.maxX - bounds.minX;
+  const sceneHeight = bounds.maxY - bounds.minY;
+  
+  // Calculate scale to fit the scene in the preview container
+  const scaleX = containerWidth / sceneWidth;
+  const scaleY = containerHeight / sceneHeight;
+  const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1:1
+
+  // Calculate offset to center the scaled content
+  const scaledWidth = sceneWidth * scale;
+  const scaledHeight = sceneHeight * scale;
+  const offsetX = (containerWidth - scaledWidth) / 2;
+  const offsetY = (containerHeight - scaledHeight) / 2;
 
   const renderElement = (element: CameraElement) => {
-    const x = element.x * scale;
-    const y = element.y * scale;
+    const x = (element.x - bounds.minX) * scale + offsetX;
+    const y = (element.y - bounds.minY) * scale + offsetY;
     const width = element.width * scale;
     const height = element.height * scale;
     const rotation = element.rotation || 0;
@@ -108,8 +154,8 @@ const CameraPlotMiniPreview = ({
     <div 
       className="relative bg-gray-100 border border-gray-300 overflow-hidden"
       style={{ 
-        width: containerWidth * scale, 
-        height: containerHeight * scale,
+        width: containerWidth, 
+        height: containerHeight,
         minHeight: '60px'
       }}
     >
