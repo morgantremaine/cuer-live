@@ -36,11 +36,17 @@ const ImageCell = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('🖼️ ImageCell handleInputChange:', { itemId, newValue, oldValue: internalValue });
+    console.log('🖼️ ImageCell handleInputChange:', { 
+      itemId, 
+      newValue, 
+      oldValue: internalValue,
+      timestamp: new Date().toISOString()
+    });
     
     setInternalValue(newValue);
     
     // Immediately call onUpdateValue to ensure the change is propagated
+    // This is crucial for change detection
     onUpdateValue(newValue);
     
     setImageError(false); // Reset error when URL changes
@@ -79,12 +85,22 @@ const ImageCell = ({
     e.stopPropagation();
     setIsEditing(false);
     
-    // Final update on blur to ensure consistency
+    // Final update on blur to ensure consistency - this is important
     const finalValue = e.target.value;
+    console.log('🖼️ ImageCell final blur update:', { 
+      itemId, 
+      finalValue, 
+      internalValue,
+      changed: finalValue !== internalValue,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Always call onUpdateValue on blur to ensure the final state is saved
+    // This helps with cases where change detection might have missed something
+    onUpdateValue(finalValue);
+    
     if (finalValue !== internalValue) {
-      console.log('🖼️ ImageCell final update on blur:', { itemId, finalValue, internalValue });
       setInternalValue(finalValue);
-      onUpdateValue(finalValue);
     }
   };
 

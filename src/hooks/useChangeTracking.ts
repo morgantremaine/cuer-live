@@ -109,14 +109,27 @@ export const useChangeTracking = (
         isLoading || 
         isProcessingRealtimeUpdate || 
         isApplyingRemoteUpdateRef.current ||
-        isInRealtimeCooldown.current ||
         showcallerUpdateRef.current) {
+      console.log('🚫 Skipping change detection due to flags:', {
+        initialized: isInitialized,
+        loading: isLoading,
+        realtime: isProcessingRealtimeUpdate,
+        applying: isApplyingRemoteUpdateRef.current,
+        showcaller: showcallerUpdateRef.current
+      });
+      return;
+    }
+
+    // Reduced cooldown period - this was causing issues with subsequent changes
+    if (isInRealtimeCooldown.current) {
+      console.log('🚫 Skipping change detection - in realtime cooldown');
       return;
     }
 
     // Don't trigger changes immediately after clearing processing flags
     const timeSinceLastClear = Date.now() - lastProcessingFlagClearTime.current;
-    if (timeSinceLastClear < 2000) {
+    if (timeSinceLastClear < 1000) { // Reduced from 2000ms
+      console.log('🚫 Skipping change detection - recent flag clear');
       return;
     }
 
@@ -126,9 +139,9 @@ export const useChangeTracking = (
       return;
     }
 
-    // Additional protection: don't process changes too soon after user interaction
+    // Reduced protection time after user interaction
     const timeSinceLastInteraction = Date.now() - lastUserInteractionRef.current;
-    if (timeSinceLastInteraction < 1500) {
+    if (timeSinceLastInteraction < 500) { // Reduced from 1500ms
       console.log('🚫 Skipping change detection - recent user interaction');
       return;
     }
@@ -140,7 +153,26 @@ export const useChangeTracking = (
       console.log('📝 Content change detected, marking as changed');
       console.log('📝 Previous signature length:', lastSavedDataRef.current.length);
       console.log('📝 Current signature length:', currentSignature.length);
+      
+      // For debugging: log a subset of the actual changes
+      if (lastSavedDataRef.current && currentSignature) {
+        const prevObj = JSON.parse(lastSavedDataRef.current);
+        const currObj = JSON.parse(currentSignature);
+        console.log('📝 Items count changed:', prevObj.items?.length, '->', currObj.items?.length);
+        
+        // Check for image field changes specifically
+        const imageChanges = currObj.items?.filter((item: any, index: number) => {
+          const prevItem = prevObj.items?.[index];
+          return prevItem && prevItem.images !== item.images;
+        });
+        if (imageChanges?.length > 0) {
+          console.log('🖼️ Image changes detected:', imageChanges.length, 'items');
+        }
+      }
+      
       setHasUnsavedChanges(true);
+    } else {
+      console.log('📝 No signature change detected');
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignature, isProcessingRealtimeUpdate]);
 
@@ -197,7 +229,7 @@ export const useChangeTracking = (
     }
   }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
 
-  // Enhanced signature update with better synchronization
+  // Enhanced signature update with reduced cooldown periods
   const updateSavedSignature = useCallback((
     newItems: RundownItem[], 
     newTitle: string, 
@@ -205,7 +237,7 @@ export const useChangeTracking = (
     newTimezone?: string, 
     newStartTime?: string
   ) => {
-    // Start realtime cooldown period
+    // Start realtime cooldown period - reduced time
     isInRealtimeCooldown.current = true;
     if (realtimeCooldownRef.current) {
       clearTimeout(realtimeCooldownRef.current);
@@ -243,11 +275,11 @@ export const useChangeTracking = (
     setHasUnsavedChanges(false);
     console.log('🔄 Updated saved signature from realtime, length:', newSignature.length);
 
-    // Extended cooldown period to prevent immediate change detection
+    // Reduced cooldown period to prevent blocking legitimate changes
     realtimeCooldownRef.current = setTimeout(() => {
       isInRealtimeCooldown.current = false;
       console.log('❄️ Realtime cooldown ended');
-    }, 3000);
+    }, 1500); // Reduced from 3000ms
   }, []);
 
   // Enhanced method to set the applying remote update flag
@@ -255,7 +287,7 @@ export const useChangeTracking = (
     isApplyingRemoteUpdateRef.current = applying;
 
     if (!applying) {
-      // When finishing remote update, ensure extended cooldown
+      // When finishing remote update, ensure extended cooldown - but reduced time
       lastProcessingFlagClearTime.current = Date.now();
       isInRealtimeCooldown.current = true;
       if (realtimeCooldownRef.current) {
@@ -264,7 +296,7 @@ export const useChangeTracking = (
       realtimeCooldownRef.current = setTimeout(() => {
         isInRealtimeCooldown.current = false;
         console.log('❄️ Extended realtime cooldown ended after remote update');
-      }, 4000);
+      }, 2000); // Reduced from 4000ms
     }
   }, []);
 
