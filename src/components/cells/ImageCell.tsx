@@ -28,7 +28,10 @@ const ImageCell = ({
   const [isEditing, setIsEditing] = useState(false);
   const cellKey = `${itemId}-${cellRefKey}`;
 
+  console.log('🖼️ ImageCell rendered with value:', value, 'isEditing:', isEditing);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🖼️ ImageCell input changed:', e.target.value);
     onUpdateValue(e.target.value);
     setImageError(false); // Reset error when URL changes
   };
@@ -42,24 +45,31 @@ const ImageCell = ({
   };
 
   const handleImageError = () => {
+    console.log('🖼️ Image error for URL:', value);
     setImageError(true);
   };
 
   const handleImageLoad = () => {
+    console.log('🖼️ Image loaded successfully for URL:', value);
     setImageError(false);
+  };
+
+  const handleCellClick = () => {
+    console.log('🖼️ ImageCell clicked, setting editing to true');
+    setIsEditing(true);
   };
 
   const isValidImageUrl = value && value.trim() && !imageError;
 
   return (
     <div 
-      className="relative w-full p-1"
+      className="relative w-full p-1 cursor-pointer"
       style={{ 
         backgroundColor,
-        minHeight: isValidImageUrl ? '72px' : '32px', // 3 lines worth of height when image present
+        minHeight: isValidImageUrl ? '72px' : '32px',
         height: isValidImageUrl ? '72px' : 'auto'
       }}
-      onClick={onCellClick}
+      onClick={onCellClick || handleCellClick}
     >
       {isEditing || !value ? (
         <input
@@ -72,8 +82,14 @@ const ImageCell = ({
           value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onBlur={() => setIsEditing(false)}
-          onFocus={() => setIsEditing(true)}
+          onBlur={() => {
+            console.log('🖼️ ImageCell input blurred');
+            setIsEditing(false);
+          }}
+          onFocus={() => {
+            console.log('🖼️ ImageCell input focused');
+            setIsEditing(true);
+          }}
           placeholder="Enter image URL..."
           className="w-full h-full bg-transparent border-none outline-none resize-none text-sm"
           style={{ color: textColor }}
@@ -82,7 +98,7 @@ const ImageCell = ({
       ) : (
         <div 
           className="w-full h-full cursor-pointer"
-          onClick={() => setIsEditing(true)}
+          onClick={handleCellClick}
         >
           {isValidImageUrl ? (
             <img
@@ -91,7 +107,7 @@ const ImageCell = ({
               className="w-full h-full object-contain rounded"
               onError={handleImageError}
               onLoad={handleImageLoad}
-              style={{ maxHeight: '68px' }} // Slightly less than container to account for padding
+              style={{ maxHeight: '68px' }}
             />
           ) : (
             <div 

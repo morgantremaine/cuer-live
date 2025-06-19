@@ -92,8 +92,9 @@ const CellRenderer = ({
   // Create cell key for referencing
   const cellKey = `${item.id}-${column.key}`;
 
-  // Use ImageCell for images column
-  if (column.key === 'images') {
+  // Use ImageCell for images column - check both column.key and column.id
+  if (column.key === 'images' || column.id === 'images') {
+    console.log('🖼️ Rendering ImageCell for column:', column.key, 'value:', value);
     return (
       <ImageCell
         value={value}
@@ -103,6 +104,7 @@ const CellRenderer = ({
         textColor={textColor}
         backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
+          console.log('🖼️ ImageCell updating value:', newValue);
           onUpdateItem(item.id, column.key, newValue);
         }}
         onCellClick={(e) => onCellClick(item.id, column.key)}
