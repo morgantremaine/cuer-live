@@ -34,6 +34,7 @@ export const useRealtimeRundown = ({
   const currentRundownIdRef = useRef<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
   const isInitializedRef = useRef(false);
+  const processingDelayRef = useRef<NodeJS.Timeout | null>(null);
 
   // Stable refs to prevent infinite loops
   const stableOnRundownUpdatedRef = useRef(onRundownUpdated);
@@ -51,29 +52,41 @@ export const useRealtimeRundown = ({
   currentRundownIdRef.current = rundownId;
   currentUserIdRef.current = user?.id || null;
 
-  // Enhanced tracking of our own updates with timestamp-based detection
+  // Enhanced tracking of our own updates with longer cleanup times
   const trackOwnUpdate = useCallback((timestamp: string) => {
     console.log('🏷️ Tracking own update with timestamp:', timestamp);
     ownUpdateTrackingRef.current.add(timestamp);
     
-    // Clean up old tracked updates after 10 seconds
+    // Clean up old tracked updates after longer time
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
       console.log('🧹 Cleaned up tracked update:', timestamp);
-    }, 10000);
+    }, 15000); // Increased from 10 seconds to 15 seconds
   }, []);
 
-  // Set editing state
+  // Set editing state with better coordination
   const setEditingState = useCallback((editing: boolean) => {
     isEditingRef.current = editing;
     console.log('✏️ Editing state changed:', editing);
+    
+    if (editing) {
+      // When user starts editing, add extra protection against updates
+      if (processingDelayRef.current) {
+        clearTimeout(processingDelayRef.current);
+      }
+    }
   }, []);
 
-  // Create content hash to detect actual content changes
+  // Enhanced content hash that excludes showcaller data
   const createContentHash = useCallback((data: any) => {
     if (!data) return '';
     const contentData = {
-      items: data.items,
+      items: (data.items || []).map((item: any) => ({
+        ...item,
+        // Exclude showcaller-specific fields
+        status: undefined,
+        currentSegmentId: undefined
+      })),
       title: data.title,
       columns: data.columns,
       timezone: data.timezone,
@@ -92,7 +105,8 @@ export const useRealtimeRundown = ({
       rundownId: payload.new?.id,
       currentRundownId: currentRundownId,
       currentUserId: currentUserId,
-      trackedUpdates: Array.from(ownUpdateTrackingRef.current)
+      trackedUpdates: Array.from(ownUpdateTrackingRef.current),
+      isEditing: isEditingRef.current
     });
     
     // Skip if not for the current rundown
@@ -113,7 +127,7 @@ export const useRealtimeRundown = ({
       return;
     }
 
-    // Check if this is only a showcaller state update
+    // Enhanced showcaller-only update detection
     const currentContentHash = createContentHash(payload.new);
     const isShowcallerOnlyUpdate = currentContentHash === lastContentHashRef.current;
 
@@ -125,16 +139,37 @@ export const useRealtimeRundown = ({
       contentHashMatch: currentContentHash === lastContentHashRef.current
     });
 
-    // Allow showcaller updates through unless actively editing
-    if (isShowcallerOnlyUpdate && isEditingRef.current) {
-      console.log('📺 Skipping showcaller-only update due to active editing');
+    // Enhanced protection: Skip showcaller-only updates if user is actively editing
+    if (isShowcallerOnlyUpdate) {
+      if (isEditingRef.current) {
+        console.log('📺 Skipping showcaller-only update due to active editing');
+      } else {
+        console.log('📺 Allowing showcaller-only update (user not editing)');
+      }
       lastUpdateTimestampRef.current = updateTimestamp;
+      lastContentHashRef.current = currentContentHash;
       return;
     }
 
-    // Skip if currently processing
+    // Skip if currently processing or add delay if user was recently editing
     if (isProcessingUpdate) {
       console.log('⏸️ Deferring update - processing in progress');
+      return;
+    }
+
+    // Add processing delay if user was recently editing
+    if (isEditingRef.current) {
+      console.log('⏸️ Delaying update - user is editing');
+      if (processingDelayRef.current) {
+        clearTimeout(processingDelayRef.current);
+      }
+      
+      processingDelayRef.current = setTimeout(() => {
+        // Retry the update after delay if user stopped editing
+        if (!isEditingRef.current) {
+          handleRealtimeUpdate(payload);
+        }
+      }, 3000);
       return;
     }
 
@@ -150,9 +185,6 @@ export const useRealtimeRundown = ({
     }
 
     try {
-      // REMOVED: Manual save conflict dialogs since we have auto-save
-      // No conflict resolution needed for auto-saved content
-
       console.log('🔄 Fetching updated rundown data');
 
       // Fetch the complete updated rundown data
@@ -169,11 +201,11 @@ export const useRealtimeRundown = ({
         .single();
 
       if (error) {
-        console.error('Error fetching updated rundown:', error);
+        console.error('📡 Error fetching updated rundown:', error);
         throw error;
       }
 
-      console.log('📦 Fetched rundown data:', data);
+      console.log('📦 Fetched rundown data');
 
       // Transform the data to match our expected format
       const updatedRundown: SavedRundown = {
@@ -208,12 +240,12 @@ export const useRealtimeRundown = ({
         );
       }
 
-      // Apply the rundown update - this should trigger UI refresh
+      // Apply the rundown update
       stableOnRundownUpdatedRef.current(updatedRundown);
 
       console.log('✅ Successfully applied realtime rundown update');
 
-      // Force a small delay to ensure state has propagated
+      // Post-update signature sync with delay
       setTimeout(() => {
         if (stableUpdateSavedSignatureRef.current) {
           stableUpdateSavedSignatureRef.current(
@@ -224,10 +256,10 @@ export const useRealtimeRundown = ({
             updatedRundown.start_time
           );
         }
-      }, 100);
+      }, 200);
 
     } catch (error) {
-      console.error('Error processing realtime update:', error);
+      console.error('📡 Error processing realtime update:', error);
       
       toast({
         title: 'Sync Error',
@@ -236,42 +268,48 @@ export const useRealtimeRundown = ({
         duration: 5000,
       });
     } finally {
-      // Clear processing flags quickly for responsiveness
+      // Clear processing flags with longer delay for stability
       setTimeout(() => {
         if (stableSetApplyingRemoteUpdateRef.current) {
           stableSetApplyingRemoteUpdateRef.current(false);
         }
         stableSetIsProcessingUpdateRef.current(false);
-      }, 150);
+      }, 300); // Increased from 150ms
     }
   }, [hasUnsavedChanges, isProcessingUpdate, toast, createContentHash]);
 
-  // STABLE subscription management - avoid excessive cleanup/recreation
+  // Clean up processing delay timeout
+  useEffect(() => {
+    return () => {
+      if (processingDelayRef.current) {
+        clearTimeout(processingDelayRef.current);
+      }
+    };
+  }, []);
+
+  // STABLE subscription management
   useEffect(() => {
     const currentUserId = user?.id;
     const currentRundownId = rundownId;
 
-    // Only set up subscription if we have required data and it's different from current
     if (!currentUserId || !currentRundownId) {
       console.log('⏸️ Skipping realtime setup - missing rundown ID or user');
       return;
     }
 
-    // Don't recreate subscription if it's already for the same rundown
     if (subscriptionRef.current && isInitializedRef.current && 
         currentRundownIdRef.current === currentRundownId) {
       console.log('♻️ Keeping existing subscription for rundown:', currentRundownId);
       return;
     }
 
-    // Clean up existing subscription only when necessary
     if (subscriptionRef.current) {
       console.log('🧹 Cleaning up realtime subscription on rundown change');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
     }
 
-    console.log('✅ Setting up realtime subscription for rundown:', currentRundownId);
+    console.log('✅ Setting up enhanced realtime subscription for rundown:', currentRundownId);
 
     const channel = supabase
       .channel(`rundown-content-${currentRundownId}-${currentUserId}`)
@@ -286,12 +324,12 @@ export const useRealtimeRundown = ({
         handleRealtimeUpdate
       )
       .subscribe((status) => {
-        console.log('📡 Realtime subscription status:', status, 'for rundown:', currentRundownId);
+        console.log('📡 Enhanced realtime subscription status:', status, 'for rundown:', currentRundownId);
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to rundown content updates');
+          console.log('✅ Successfully subscribed to enhanced rundown content updates');
           isInitializedRef.current = true;
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Failed to subscribe to rundown content updates');
+          console.error('❌ Failed to subscribe to enhanced rundown content updates');
           isInitializedRef.current = false;
         }
       });
@@ -300,13 +338,13 @@ export const useRealtimeRundown = ({
 
     return () => {
       if (subscriptionRef.current) {
-        console.log('🧹 Cleaning up realtime subscription on unmount');
+        console.log('🧹 Cleaning up enhanced realtime subscription on unmount');
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
         isInitializedRef.current = false;
       }
     };
-  }, [rundownId, user?.id]); // Minimal dependencies to avoid excessive re-creation
+  }, [rundownId, user?.id]);
 
   return {
     isConnected: !!subscriptionRef.current,

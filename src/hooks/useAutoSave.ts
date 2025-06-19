@@ -21,6 +21,8 @@ export const useAutoSave = (
   const lastSaveTimestampRef = useRef<number>(0);
   const showcallerActiveRef = useRef(false);
   const undoActiveRef = useRef(false);
+  const userTypingRef = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -31,35 +33,74 @@ export const useAutoSave = (
     isInitialized,
     setIsLoading,
     setApplyingRemoteUpdate,
-    updateSavedSignature
+    updateSavedSignature,
+    setUserTyping: setChangeTrackingUserTyping
   } = useChangeTracking(items, rundownTitle, columns, timezone, startTime, isProcessingRealtimeUpdate);
+
+  // Enhanced user typing coordination
+  const setUserTyping = useCallback((typing: boolean) => {
+    userTypingRef.current = typing;
+    setChangeTrackingUserTyping(typing);
+    
+    if (typing) {
+      console.log('⌨️ User started typing - pausing auto-save');
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set timeout to clear typing state after user stops
+      typingTimeoutRef.current = setTimeout(() => {
+        userTypingRef.current = false;
+        setChangeTrackingUserTyping(false);
+        console.log('⌨️ User stopped typing - auto-save can resume');
+      }, 2500); // 2.5 seconds after stopping typing
+    }
+  }, [setChangeTrackingUserTyping]);
 
   // Method to set showcaller active state
   const setShowcallerActive = useCallback((active: boolean) => {
     const wasActive = showcallerActiveRef.current;
     showcallerActiveRef.current = active;
+    console.log('📺 Showcaller active state changed:', wasActive, '->', active);
   }, []);
 
   // Method to set undo active state
   const setUndoActive = useCallback((active: boolean) => {
     const wasActive = undoActiveRef.current;
     undoActiveRef.current = active;
+    console.log('↩️ Undo active state changed:', wasActive, '->', active);
   }, []);
 
-  // Debounced save function with multiple layers of protection
+  // Enhanced debounced save function with better protection
   const debouncedSave = useCallback(async () => {
-    // Multiple checks to prevent unnecessary saves
+    // Enhanced checks to prevent unnecessary saves
     if (!user || 
         !isInitialized || 
         saveInProgressRef.current || 
         showcallerActiveRef.current ||
         undoActiveRef.current ||
+        userTypingRef.current ||
         isProcessingRealtimeUpdate) {
+      console.log('💾 Save skipped:', {
+        user: !!user,
+        initialized: isInitialized,
+        saving: saveInProgressRef.current,
+        showcaller: showcallerActiveRef.current,
+        undo: undoActiveRef.current,
+        typing: userTypingRef.current,
+        realtime: isProcessingRealtimeUpdate
+      });
       return;
     }
 
+    // Create signature excluding showcaller-specific fields
     const currentDataSignature = JSON.stringify({
-      items: items || [],
+      items: (items || []).map(item => ({
+        ...item,
+        status: undefined,
+        currentSegmentId: undefined
+      })),
       title: rundownTitle || '',
       columns: columns || [],
       timezone: timezone || '',
@@ -68,12 +109,14 @@ export const useAutoSave = (
 
     // Skip if data hasn't actually changed
     if (currentDataSignature === lastSaveDataRef.current) {
+      console.log('💾 Save skipped - no content changes detected');
       return;
     }
 
-    // Prevent rapid successive saves
+    // Prevent rapid successive saves - increased interval
     const now = Date.now();
-    if (now - lastSaveTimestampRef.current < 1000) {
+    if (now - lastSaveTimestampRef.current < 2000) { // Increased from 1000ms
+      console.log('💾 Save skipped - too soon after last save');
       return;
     }
 
@@ -81,6 +124,7 @@ export const useAutoSave = (
     lastSaveTimestampRef.current = now;
 
     try {
+      console.log('💾 Starting debounced save...');
       const saveSuccess = await performSave(
         items || [], 
         rundownTitle || '', 
@@ -92,20 +136,22 @@ export const useAutoSave = (
       if (saveSuccess) {
         lastSaveDataRef.current = currentDataSignature;
         markAsSaved(items || [], rundownTitle || '', columns, timezone, startTime);
+        console.log('✅ Debounced save completed successfully');
       }
     } catch (error) {
-      console.error('Auto-save failed:', error);
+      console.error('❌ Auto-save failed:', error);
     } finally {
       saveInProgressRef.current = false;
     }
   }, [user, items, rundownTitle, columns, timezone, startTime, performSave, markAsSaved, isInitialized, isProcessingRealtimeUpdate]);
 
-  // Auto-save effect with intelligent debouncing
+  // Enhanced auto-save effect with longer debouncing
   useEffect(() => {
     if (!hasUnsavedChanges || 
         !isInitialized || 
         showcallerActiveRef.current || 
         undoActiveRef.current ||
+        userTypingRef.current ||
         isProcessingRealtimeUpdate) {
       return;
     }
@@ -115,8 +161,10 @@ export const useAutoSave = (
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Set new timeout with smart delay
-    const delay = saveInProgressRef.current ? 3000 : 1500;
+    // Longer debounce times to prevent aggressive saving
+    const delay = saveInProgressRef.current ? 5000 : 3000; // Increased delays
+    console.log('💾 Auto-save scheduled in', delay, 'ms');
+    
     debounceTimeoutRef.current = setTimeout(() => {
       debouncedSave();
     }, delay);
@@ -134,6 +182,9 @@ export const useAutoSave = (
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -147,7 +198,7 @@ export const useAutoSave = (
     setApplyingRemoteUpdate,
     updateSavedSignature,
     setShowcallerActive,
-    setUndoActive
+    setUndoActive,
+    setUserTyping // Export for input components
   };
 };
-
