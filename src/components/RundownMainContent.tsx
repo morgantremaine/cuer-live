@@ -1,15 +1,14 @@
 
 import React from 'react';
 import RundownContent from './RundownContent';
-import ColumnManager from './ColumnManager';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchHighlight } from '@/types/rundownContainer';
 
 interface RundownMainContentProps {
-  currentTime: Date;
   items: RundownItem[];
   visibleColumns: Column[];
-  columns: Column[];
+  currentTime: Date;
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
@@ -18,6 +17,7 @@ interface RundownMainContentProps {
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
+  selectedRowId?: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -39,27 +39,16 @@ interface RundownMainContentProps {
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  showColumnManager: boolean;
-  setShowColumnManager: (show: boolean) => void;
-  handleAddColumn: (name: string) => void;
-  handleReorderColumns: (columns: Column[]) => void;
-  handleDeleteColumnWithCleanup: (columnId: string) => void;
-  handleRenameColumn: (columnId: string, newName: string) => void;
-  handleToggleColumnVisibility: (columnId: string) => void;
-  handleLoadLayout: (layoutColumns: Column[]) => void;
-  timeRemaining: number;
-  isPlaying: boolean;
-  currentSegmentName: string;
-  totalDuration: string;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  currentHighlight?: SearchHighlight | null;
+  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const RundownMainContent = ({
-  currentTime,
   items,
   visibleColumns,
-  columns,
+  currentTime,
   showColorPicker,
   cellRefs,
   selectedRows,
@@ -68,6 +57,7 @@ const RundownMainContent = ({
   dropTargetIndex,
   currentSegmentId,
   hasClipboardData = false,
+  selectedRowId = null,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -89,73 +79,52 @@ const RundownMainContent = ({
   onDeleteSelectedRows,
   onPasteRows,
   onClearSelection,
-  showColumnManager,
-  setShowColumnManager,
-  handleAddColumn,
-  handleReorderColumns,
-  handleDeleteColumnWithCleanup,
-  handleRenameColumn,
-  handleToggleColumnVisibility,
-  handleLoadLayout,
-  timeRemaining,
-  isPlaying,
-  currentSegmentName,
-  totalDuration,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  currentHighlight,
+  getHighlightForCell
 }: RundownMainContentProps) => {
+
   return (
-    <>
-      <RundownContent
-        items={items}
-        visibleColumns={visibleColumns}
-        currentTime={currentTime}
-        showColorPicker={showColorPicker}
-        cellRefs={cellRefs}
-        selectedRows={selectedRows}
-        draggedItemIndex={draggedItemIndex}
-        isDraggingMultiple={isDraggingMultiple}
-        dropTargetIndex={dropTargetIndex}
-        currentSegmentId={currentSegmentId}
-        hasClipboardData={hasClipboardData}
-        getColumnWidth={getColumnWidth}
-        updateColumnWidth={updateColumnWidth}
-        getRowNumber={getRowNumber}
-        getRowStatus={getRowStatus}
-        calculateHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={onUpdateItem}
-        onCellClick={onCellClick}
-        onKeyDown={onKeyDown}
-        onToggleColorPicker={onToggleColorPicker}
-        onColorSelect={onColorSelect}
-        onDeleteRow={onDeleteRow}
-        onToggleFloat={onToggleFloat}
-        onRowSelect={onRowSelect}
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        onDrop={onDrop}
-        onCopySelectedRows={onCopySelectedRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onPasteRows={onPasteRows}
-        onClearSelection={onClearSelection}
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
-      />
-      
-      {showColumnManager && (
-        <ColumnManager
-          columns={columns}
-          onAddColumn={handleAddColumn}
-          onReorderColumns={handleReorderColumns}
-          onDeleteColumn={handleDeleteColumnWithCleanup}
-          onToggleColumnVisibility={handleToggleColumnVisibility}
-          onLoadLayout={handleLoadLayout}
-          onRenameColumn={handleRenameColumn}
-          onClose={() => setShowColumnManager(false)}
-        />
-      )}
-    </>
+    <RundownContent
+      items={items}
+      visibleColumns={visibleColumns}
+      currentTime={currentTime}
+      showColorPicker={showColorPicker}
+      cellRefs={cellRefs}
+      selectedRows={selectedRows}
+      draggedItemIndex={draggedItemIndex}
+      isDraggingMultiple={isDraggingMultiple}
+      dropTargetIndex={dropTargetIndex}
+      currentSegmentId={currentSegmentId}
+      hasClipboardData={hasClipboardData}
+      selectedRowId={selectedRowId}
+      getColumnWidth={getColumnWidth}
+      updateColumnWidth={updateColumnWidth}
+      getRowNumber={getRowNumber}
+      getRowStatus={getRowStatus}
+      calculateHeaderDuration={calculateHeaderDuration}
+      onUpdateItem={onUpdateItem}
+      onCellClick={onCellClick}
+      onKeyDown={onKeyDown}
+      onToggleColorPicker={onToggleColorPicker}
+      onColorSelect={onColorSelect}
+      onDeleteRow={onDeleteRow}
+      onToggleFloat={onToggleFloat}
+      onRowSelect={onRowSelect}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onCopySelectedRows={onCopySelectedRows}
+      onDeleteSelectedRows={onDeleteSelectedRows}
+      onPasteRows={onPasteRows}
+      onClearSelection={onClearSelection}
+      onAddRow={onAddRow}
+      onAddHeader={onAddHeader}
+      currentHighlight={currentHighlight}
+      getHighlightForCell={getHighlightForCell}
+    />
   );
 };
 

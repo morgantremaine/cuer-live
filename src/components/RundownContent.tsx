@@ -5,6 +5,7 @@ import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchHighlight } from '@/types/rundownContainer';
 
 interface RundownContentProps {
   items: RundownItem[];
@@ -42,6 +43,8 @@ interface RundownContentProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  currentHighlight?: SearchHighlight | null;
+  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const RundownContent = ({
@@ -79,7 +82,9 @@ const RundownContent = ({
   onPasteRows,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  currentHighlight,
+  getHighlightForCell
 }: RundownContentProps) => {
 
   return (
@@ -135,6 +140,8 @@ const RundownContent = ({
             onClearSelection={onClearSelection || (() => {})}
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
+            currentHighlight={currentHighlight}
+            getHighlightForCell={getHighlightForCell}
           />
         </div>
         <ScrollBar orientation="horizontal" />

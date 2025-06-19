@@ -6,6 +6,7 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+import { useSearchHighlight } from '@/hooks/useSearchHighlight';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -15,6 +16,14 @@ const RundownIndexContent = () => {
     interactions,
     uiState
   } = useRundownStateCoordination();
+  
+  // Search highlighting state management
+  const {
+    currentHighlight,
+    updateHighlight,
+    clearHighlight,
+    getHighlightForCell
+  } = useSearchHighlight();
   
   // Extract all needed values from the unified state
   const {
@@ -260,11 +269,10 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Create a working onReplaceText handler
-  const handleReplaceText = (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
-    console.log('Replace operation:', { itemId, field, searchText, replaceText, replaceAll });
-    // This is now handled by the SearchBar component using the new useTextReplace hook
-    // The actual replacement logic is in the SearchBar component
+  // Enhanced search highlight handler
+  const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
+    console.log('🔍 Highlighting match:', { itemId, field, startIndex, endIndex });
+    updateHighlight(itemId, field, startIndex, endIndex);
   };
 
   // Create a saveUndoState function for replace operations
@@ -379,16 +387,15 @@ const RundownIndexContent = () => {
         searchBarProps={{
           items,
           visibleColumns,
-          onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => {
-            // Handle search highlighting
-            console.log('Highlighting match:', { itemId, field, startIndex, endIndex });
-          },
-          onReplaceText: handleReplaceText,
+          onHighlightMatch: handleHighlightMatch,
+          onReplaceText: () => {}, // This is now handled by SearchBar internally
           updateItem: updateItem,
           saveUndoState: handleSaveUndoState,
           columns: userColumns,
           title: rundownTitle
         }}
+        currentHighlight={currentHighlight}
+        getHighlightForCell={getHighlightForCell}
       />
       
       <CuerChatButton rundownData={rundownData} />

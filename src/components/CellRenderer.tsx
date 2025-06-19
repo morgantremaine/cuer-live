@@ -21,6 +21,7 @@ interface CellRendererProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   width?: string;
+  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const CellRenderer = ({
@@ -32,7 +33,8 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  width
+  width,
+  getHighlightForCell
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -75,6 +77,9 @@ const CellRenderer = ({
     column.key === 'endTime' || 
     column.key === 'elapsedTime';
 
+  // Get highlight information for this cell
+  const highlight = getHighlightForCell ? getHighlightForCell(item.id, column.key) : null;
+
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
@@ -98,6 +103,7 @@ const CellRenderer = ({
         cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={textColor}
+        currentHighlight={highlight}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -116,6 +122,7 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
+      highlight={highlight}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {

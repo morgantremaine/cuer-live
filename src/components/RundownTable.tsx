@@ -3,6 +3,7 @@ import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchHighlight } from '@/types/rundownContainer';
 
 interface RundownTableProps {
   items: any[];
@@ -40,6 +41,8 @@ interface RundownTableProps {
   onClearSelection: () => void;
   onAddRow: () => void;
   onAddHeader: () => void;
+  currentHighlight?: SearchHighlight | null;
+  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const RundownTable = ({
@@ -77,7 +80,9 @@ const RundownTable = ({
   onPasteRows,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  currentHighlight,
+  getHighlightForCell
 }: RundownTableProps) => {
 
   // Handler for drag over events on the table container
@@ -166,6 +171,7 @@ const RundownTable = ({
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
                   getColumnWidth={getColumnWidth}
+                  getHighlightForCell={getHighlightForCell}
                 />
                 
                 {/* Show full-width grey line with rounded corners UNDER the current segment */}
