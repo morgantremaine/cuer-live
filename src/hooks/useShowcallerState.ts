@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -378,6 +377,47 @@ export const useShowcallerState = ({
     }
   }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer]);
 
+  // NEW: Jump to specific segment function
+  const jumpTo = useCallback((segmentId: string) => {
+    console.log('📺 Jump to segment called by user:', userId, 'target segment:', segmentId);
+    
+    const targetSegment = items.find(item => item.id === segmentId && item.type === 'regular');
+    if (!targetSegment) {
+      console.log('📺 Target segment not found or not regular:', segmentId);
+      return;
+    }
+
+    // Mark segments before target as completed, after as upcoming
+    const targetIndex = items.findIndex(item => item.id === segmentId);
+    items.forEach((item, index) => {
+      if (item.type === 'regular') {
+        if (index < targetIndex) {
+          updateItem(item.id, 'status', 'completed');
+        } else if (index > targetIndex) {
+          updateItem(item.id, 'status', 'upcoming');
+        }
+      }
+    });
+
+    // Set the target segment as current
+    updateItem(segmentId, 'status', 'current');
+    
+    const duration = timeToSeconds(targetSegment.duration || '00:00');
+    
+    // Update showcaller state
+    updateShowcallerState({
+      currentSegmentId: segmentId,
+      timeRemaining: duration,
+      playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
+      controllerId: userId
+    }, true);
+    
+    // Restart timer if playing
+    if (showcallerState.isPlaying) {
+      startTimer();
+    }
+  }, [items, updateItem, timeToSeconds, showcallerState.isPlaying, userId, updateShowcallerState, startTimer]);
+
   // External state application
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
     if (lastSyncedStateRef.current === externalState.lastUpdate) {
@@ -459,6 +499,7 @@ export const useShowcallerState = ({
     pause,
     forward,
     backward,
+    jumpTo,
     applyShowcallerState,
     isPlaying: showcallerState.isPlaying,
     currentSegmentId: showcallerState.currentSegmentId,
@@ -470,6 +511,7 @@ export const useShowcallerState = ({
     pause,
     forward,
     backward,
+    jumpTo,
     applyShowcallerState,
     isController
   ]);
