@@ -2,6 +2,7 @@
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
+import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -62,6 +63,8 @@ const CellRenderer = ({
         return item.gfx || '';
       case 'video':
         return item.video || '';
+      case 'images':
+        return item.images || '';
       default:
         return (item as any)[column.key] || '';
     }
@@ -89,6 +92,25 @@ const CellRenderer = ({
   // Create cell key for referencing
   const cellKey = `${item.id}-${column.key}`;
 
+  // Use ImageCell for images column
+  if (column.key === 'images') {
+    return (
+      <ImageCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        backgroundColor={backgroundColor}
+        onUpdateValue={(newValue) => {
+          onUpdateItem(item.id, column.key, newValue);
+        }}
+        onCellClick={(e) => onCellClick(item.id, column.key)}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
   // Use ExpandableScriptCell for script and notes fields (both built-in columns)
   if (column.key === 'script' || column.key === 'notes') {
     return (
@@ -106,7 +128,7 @@ const CellRenderer = ({
     );
   }
 
-  // Use TextAreaCell for ALL editable fields (built-in AND custom) to ensure consistent behavior
+  // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
   return (
     <TextAreaCell
       value={value}

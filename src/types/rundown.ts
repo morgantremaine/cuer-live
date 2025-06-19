@@ -12,6 +12,7 @@ export interface RundownItem {
   script: string;
   gfx: string;
   video: string;
+  images: string;
   notes: string;
   color: string;
   isFloating: boolean;
