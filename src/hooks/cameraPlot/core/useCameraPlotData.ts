@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 
@@ -15,6 +14,7 @@ export interface CameraElement {
   labelOffsetX?: number;
   labelOffsetY?: number;
   cameraNumber?: number;
+  color?: string;
 }
 
 export interface CameraPlotScene {

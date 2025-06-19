@@ -28,7 +28,7 @@ const CameraPlotSceneGrid = ({ scenes, onOpenEditor }: CameraPlotSceneGridProps)
         >
           <h4 className="text-white font-medium mb-2">{plot.name}</h4>
           <div className="rounded h-32 relative overflow-hidden border border-gray-500">
-            <CameraPlotMiniPreview plot={plot} />
+            <CameraPlotMiniPreview elements={plot.elements || []} />
           </div>
           <div className="mt-2 text-xs text-gray-400">
             {plot.elements?.length || 0} elements
