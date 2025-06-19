@@ -17,7 +17,7 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown } = useRundownStorage();
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
   
@@ -93,49 +93,30 @@ const Dashboard = () => {
 
   const handleDuplicateRundown = async (rundownId: string, title: string, items: any[], e: React.MouseEvent) => {
     e.stopPropagation();
-    // For now, just show a toast that this feature is coming soon
-    toast({
-      title: 'Coming Soon',
-      description: 'Duplicate rundown feature will be available soon.',
-    });
-  };
-
-  const handleCSVImport = async (result: CSVImportResult, layoutColumns: Column[]) => {
     try {
-      console.log('Dashboard handling CSV import:', { result, layoutColumns });
-
-      if (!result.items || result.items.length === 0) {
+      const rundown = savedRundowns.find(r => r.id === rundownId);
+      if (!rundown) {
         toast({
-          title: 'No data to import',
-          description: 'The CSV file does not contain any valid rundown data.',
+          title: 'Error',
+          description: 'Rundown not found.',
           variant: 'destructive',
         });
         return;
       }
 
-      // Set the columns from the selected layout
-      if (layoutColumns && layoutColumns.length > 0) {
-        console.log('Setting columns from layout:', layoutColumns);
-        handleLoadLayout(layoutColumns);
-      }
-
-      // Create a new rundown with the imported data
-      const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;
-      const rundownId = await createRundown(rundownTitle, result.items);
-      
+      const newRundownId = await duplicateRundown(rundown);
       toast({
-        title: 'Import successful',
-        description: `Imported ${result.items.length} items into a new rundown.`,
+        title: 'Rundown duplicated',
+        description: `"${rundown.title}" has been duplicated successfully.`,
       });
-
-      // Navigate to the new rundown
-      navigate(`/rundown/${rundownId}`);
       
+      // Navigate to the duplicated rundown
+      navigate(`/rundown/${newRundownId}`);
     } catch (error) {
-      console.error('Error importing CSV:', error);
+      console.error('Error duplicating rundown:', error);
       toast({
-        title: 'Import failed',
-        description: 'There was an error importing the CSV file. Please try again.',
+        title: 'Error',
+        description: 'Failed to duplicate rundown. Please try again.',
         variant: 'destructive',
       });
     }
