@@ -122,7 +122,12 @@ const CellRenderer = ({
         textColor={textColor}
         backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
-          console.log('🖼️ ImageCell updating value:', newValue, 'for item:', item.id);
+          console.log('🖼️ CellRenderer.onUpdateValue called:', {
+            itemId: item.id,
+            newValue,
+            columnKey: column.key,
+            onUpdateItemFunction: typeof onUpdateItem
+          });
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
         }}

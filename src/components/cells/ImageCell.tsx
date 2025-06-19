@@ -36,13 +36,18 @@ const ImageCell = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    console.log('🖼️ ImageCell handleInputChange:', { itemId, newValue, cellRefKey });
     setInternalValue(newValue);
+    
+    // Call onUpdateValue immediately to trigger the update
+    console.log('🖼️ ImageCell calling onUpdateValue:', { itemId, newValue });
     onUpdateValue(newValue);
     setImageError(false); // Reset error when URL changes
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      console.log('🖼️ ImageCell Enter key pressed, finalizing value:', internalValue);
       setIsEditing(false);
       (e.target as HTMLInputElement).blur();
     }
@@ -60,6 +65,7 @@ const ImageCell = ({
   const handleCellClick = (e: React.MouseEvent) => {
     // Prevent event bubbling to row click handler
     e.stopPropagation();
+    console.log('🖼️ ImageCell clicked, entering edit mode for item:', itemId);
     setIsEditing(true);
     
     // Call the parent onCellClick if provided
@@ -104,11 +110,13 @@ const ImageCell = ({
           onBlur={(e) => {
             // Prevent event bubbling
             e.stopPropagation();
+            console.log('🖼️ ImageCell blur event, exiting edit mode for item:', itemId);
             setIsEditing(false);
           }}
           onFocus={(e) => {
             // Prevent event bubbling
             e.stopPropagation();
+            console.log('🖼️ ImageCell focus event for item:', itemId);
             setIsEditing(true);
           }}
           onClick={(e) => {
