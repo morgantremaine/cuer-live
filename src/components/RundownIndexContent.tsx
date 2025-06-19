@@ -205,48 +205,57 @@ const RundownIndexContent = () => {
     replaceOperationRef.current = true;
     
     try {
+      console.log('🔄 Replace operation:', { itemId, field, searchText, replaceText, replaceAll });
+      
       const item = items.find(item => item.id === itemId);
       if (!item) {
+        console.log('❌ Item not found:', itemId);
         return;
       }
 
-      const currentValue = item[field] || '';
+      // Get the current value using the correct field path
+      let currentValue;
+      if (field.startsWith('customFields.')) {
+        const customField = field.replace('customFields.', '');
+        currentValue = item.customFields?.[customField] || '';
+      } else {
+        currentValue = item[field] || '';
+      }
       
       if (typeof currentValue !== 'string') {
+        console.log('❌ Current value is not a string:', typeof currentValue);
         return;
       }
+
+      console.log('📝 Current value:', currentValue);
 
       // Perform case-insensitive replacement
       const searchRegex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
       const newValue = currentValue.replace(searchRegex, replaceText);
       
+      console.log('📝 New value:', newValue);
+      
       if (newValue !== currentValue) {
+        console.log('✅ Updating item:', itemId, field, 'with value:', newValue);
+        
         // Use the updateItem function from the unified state
         updateItem(itemId, field, newValue);
         
-        // Force update DOM elements
+        // Force update the textarea value immediately
         setTimeout(() => {
-          const selectors = [
-            `[data-item-id="${itemId}"][data-field="${field}"]`,
-            `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
-            `input[data-item-id="${itemId}"][data-field="${field}"]`
-          ];
-
-          for (const selector of selectors) {
-            try {
-              const cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
-              if (cellElement && cellElement.value !== newValue) {
-                cellElement.value = newValue;
-                break;
-              }
-            } catch (error) {
-              // Ignore DOM update errors
-            }
+          const cellElement = document.querySelector(`[data-item-id="${itemId}"][data-field="${field}"]`) as HTMLInputElement | HTMLTextAreaElement;
+          if (cellElement && cellElement.value !== newValue) {
+            cellElement.value = newValue;
+            // Trigger a change event to ensure React state is updated
+            const changeEvent = new Event('input', { bubbles: true });
+            cellElement.dispatchEvent(changeEvent);
           }
         }, 50);
+      } else {
+        console.log('⚠️ No changes made - values are identical');
       }
     } catch (error) {
-      console.error('Replace operation failed:', error);
+      console.error('❌ Replace operation failed:', error);
     } finally {
       replaceOperationRef.current = false;
     }

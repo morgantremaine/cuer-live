@@ -166,6 +166,23 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative">
+        {/* Highlight overlay - positioned above textarea */}
+        {currentHighlight && (
+          <div 
+            className="absolute inset-0 pointer-events-none z-10 px-2 py-1 text-sm overflow-hidden"
+            style={{ 
+              whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
+              wordWrap: isExpanded ? 'break-word' : 'normal'
+            }}
+          >
+            <HighlightedText 
+              text={value} 
+              highlight={currentHighlight}
+              className={isExpanded ? 'whitespace-pre-wrap break-words' : 'whitespace-nowrap'}
+            />
+          </div>
+        )}
+        
         <textarea
           ref={(el) => {
             if (el) {
@@ -198,9 +215,11 @@ const ExpandableScriptCell = ({
           data-rundown-cell={cellKey}
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
-          className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
+          className={`w-full border-none focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none ${
+            currentHighlight ? 'bg-transparent' : 'bg-transparent'
+          }`}
           style={{ 
-            color: textColor || undefined,
+            color: currentHighlight ? 'transparent' : (textColor || undefined),
             minHeight: isExpanded ? '120px' : '24px',
             height: isExpanded ? 'auto' : '24px',
             overflow: isExpanded ? 'hidden' : 'hidden',
@@ -209,11 +228,6 @@ const ExpandableScriptCell = ({
             textOverflow: isExpanded ? 'unset' : 'ellipsis'
           }}
         />
-        {currentHighlight && (
-          <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
-            <HighlightedText text={value} highlight={currentHighlight} />
-          </div>
-        )}
       </div>
     </div>
   );

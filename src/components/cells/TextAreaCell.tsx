@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import HighlightedText from '../HighlightedText';
 
@@ -185,6 +184,24 @@ const TextAreaCell = ({
         }}
       />
       
+      {/* Highlight overlay - positioned above textarea */}
+      {highlight && (
+        <div 
+          className="absolute inset-0 pointer-events-none z-10 px-3 py-2 text-sm overflow-hidden"
+          style={{ 
+            lineHeight: '1.3',
+            fontSize: isHeaderRow ? '14px' : '14px',
+            fontFamily: 'inherit'
+          }}
+        >
+          <HighlightedText 
+            text={value} 
+            highlight={highlight}
+            className="whitespace-pre-wrap break-words"
+          />
+        </div>
+      )}
+      
       <textarea
         ref={(el) => {
           textareaRef.current = el;
@@ -209,20 +226,15 @@ const TextAreaCell = ({
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        }`}
+        } ${highlight ? 'bg-transparent' : ''}`}
         style={{ 
-          backgroundColor: 'transparent',
-          color: textColor || 'inherit',
+          backgroundColor: highlight ? 'transparent' : 'transparent',
+          color: highlight ? 'transparent' : (textColor || 'inherit'),
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'
         }}
       />
-      {highlight && (
-        <div className="absolute inset-0 pointer-events-none px-3 py-2 text-sm flex items-center" style={{ color: 'transparent' }}>
-          <HighlightedText text={value} highlight={highlight} />
-        </div>
-      )}
     </div>
   );
 };
