@@ -1,3 +1,4 @@
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -31,9 +32,9 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
     }
   } else if (isCurrentlyPlaying) {
-    // Showcaller active row styling - prominent green indication
-    rowClass = 'border-l-8 border-green-500 shadow-lg shadow-green-500/20';
-    backgroundColorOverride = 'rgba(34, 197, 94, 0.1)'; // Light green background
+    // Showcaller active row styling - use light blue background like column headers
+    rowClass = 'bg-muted border-l-8 border-blue-500 shadow-lg shadow-blue-500/20';
+    // Don't override background color - use the muted class for consistency
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold hover:bg-muted/80';
   } else if (isFloating || isFloated) {
