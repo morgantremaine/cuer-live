@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -40,6 +39,46 @@ const SharedRundownTable = ({
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Helper function to check if a URL is likely an image
+  const isLikelyImageUrl = (url: string): boolean => {
+    if (!url || !url.trim()) return false;
+    return (
+      /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url) ||
+      /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(url) ||
+      url.includes('images') ||
+      url.includes('photos') ||
+      url.includes('imgur') ||
+      url.includes('unsplash')
+    );
+  };
+
+  // Helper function to render cell content
+  const renderCellContent = (item: RundownItem, column: any, calculatedStartTime: string) => {
+    const value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
+    
+    // Special handling for images column
+    if (column.key === 'images' && value && isLikelyImageUrl(value)) {
+      return (
+        <img
+          src={value}
+          alt="Rundown image"
+          className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
+          onError={(e) => {
+            // If image fails to load, show the URL as text instead
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              parent.innerHTML = value;
+            }
+          }}
+        />
+      );
+    }
+    
+    return value;
   };
 
   // Calculate start times for all items based on their position and durations
@@ -244,9 +283,7 @@ const SharedRundownTable = ({
                         }
                       }
                       
-                      // For regular items, use the calculated times
-                      const value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
-                      
+                      // For regular items, render content with special handling for images
                       return (
                         <td
                           key={column.id}
@@ -256,7 +293,9 @@ const SharedRundownTable = ({
                               : 'print-content-column'
                           } ${isFloated ? 'text-white' : 'text-gray-900'}`}
                         >
-                          <div className="break-words whitespace-pre-wrap">{value}</div>
+                          <div className="break-words whitespace-pre-wrap">
+                            {renderCellContent(item, column, calculatedStartTime)}
+                          </div>
                         </td>
                       );
                     })}
@@ -281,4 +320,3 @@ const SharedRundownTable = ({
 };
 
 export default SharedRundownTable;
-
