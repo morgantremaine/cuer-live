@@ -96,13 +96,6 @@ const RundownTable = ({
     onDragOver(e, targetIndex);
   };
 
-  // Create a wrapper function that converts item id to index for getHeaderDuration
-  const getHeaderDurationById = (id: string): string => {
-    const itemIndex = items.findIndex(item => item.id === id);
-    if (itemIndex === -1) return '';
-    return getHeaderDuration(itemIndex);
-  };
-
   return (
     <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">
@@ -140,29 +133,39 @@ const RundownTable = ({
                 <RundownRow
                   item={item}
                   index={index}
+                  rowNumber={rowNumber}
+                  status={status}
+                  showColorPicker={showColorPicker}
+                  cellRefs={cellRefs}
                   columns={visibleColumns}
-                  visibleColumns={visibleColumns}
+                  isSelected={isActuallySelected}
+                  isCurrentlyPlaying={isCurrentlyPlaying}
+                  isDraggingMultiple={isDraggingMultiple}
+                  selectedRowsCount={selectedRows.size}
+                  selectedRows={selectedRows}
+                  headerDuration={headerDuration}
+                  hasClipboardData={hasClipboardData}
+                  isDragging={isDragging}
                   onUpdateItem={onUpdateItem}
+                  onCellClick={onCellClick}
+                  onKeyDown={onKeyDown}
+                  onToggleColorPicker={onToggleColorPicker}
+                  onColorSelect={onColorSelect}
                   onDeleteRow={onDeleteRow}
                   onToggleFloat={onToggleFloat}
-                  showColorPicker={showColorPicker}
-                  onToggleColorPicker={onToggleColorPicker}
-                  selectedRows={selectedRows}
-                  onRowSelection={onRowSelect}
-                  isDragging={isDragging}
-                  dropTargetIndex={dropTargetIndex}
+                  onRowSelect={onRowSelect}
                   onDragStart={onDragStart}
                   onDragOver={(e) => handleRowDragOver(e, index)}
-                  onDragLeave={onDragLeave}
                   onDrop={(e) => {
                     onDrop(e, index);
                   }}
-                  cellRefs={cellRefs}
-                  onCellClick={onCellClick}
-                  onKeyDown={onKeyDown}
-                  getRowNumber={getRowNumber}
-                  getHeaderDuration={getHeaderDurationById}
-                  calculateHeaderDuration={(index: number) => getHeaderDuration(index)}
+                  onCopySelectedRows={onCopySelectedRows}
+                  onDeleteSelectedRows={onDeleteSelectedRows}
+                  onPasteRows={onPasteRows}
+                  onClearSelection={onClearSelection}
+                  onAddRow={onAddRow}
+                  onAddHeader={onAddHeader}
+                  getColumnWidth={getColumnWidth}
                 />
                 
                 {/* Show full-width grey line with rounded corners UNDER the current segment */}

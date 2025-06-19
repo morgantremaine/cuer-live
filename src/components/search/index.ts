@@ -1,2 +1,0 @@
-
-export { SearchDialog } from './SearchDialog';
