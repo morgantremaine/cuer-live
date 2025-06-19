@@ -38,6 +38,7 @@ interface RegularRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToRow?: (itemId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -60,6 +61,7 @@ const RegularRow = (props: RegularRowProps) => {
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onJumpToRow,
     isDragging
   } = props;
 
@@ -81,7 +83,8 @@ const RegularRow = (props: RegularRowProps) => {
     handleContextMenuDelete,
     handleContextMenuColor,
     handleContextMenuPaste,
-    handleContextMenuFloat
+    handleContextMenuFloat,
+    handleContextMenuJumpTo
   } = useRowEventHandlers({
     item,
     index,
@@ -95,7 +98,8 @@ const RegularRow = (props: RegularRowProps) => {
     onToggleFloat,
     selectedRows,
     onPasteRows: props.onPasteRows,
-    onClearSelection
+    onClearSelection,
+    onJumpToRow
   });
 
   // Enhanced drag start handler that prevents dragging when selecting text
@@ -157,6 +161,7 @@ const RegularRow = (props: RegularRowProps) => {
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
+      isRegularRow={true}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
@@ -166,6 +171,7 @@ const RegularRow = (props: RegularRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
+      onJumpToRow={handleContextMenuJumpTo}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}

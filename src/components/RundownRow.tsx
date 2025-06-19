@@ -39,6 +39,7 @@ interface RundownRowProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToRow?: (itemId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -78,6 +79,7 @@ const RundownRow = (props: RundownRowProps) => {
       onClearSelection={props.onClearSelection}
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
+      onJumpToRow={props.onJumpToRow}
     />
   );
 };

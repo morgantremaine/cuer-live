@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Play } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,6 +18,7 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
+  isRegularRow?: boolean;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -28,6 +29,7 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToRow?: () => void;
 }
 
 const RundownContextMenu = memo(({
@@ -38,6 +40,7 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
+  isRegularRow = false,
   onCopy,
   onDelete,
   onToggleFloat,
@@ -47,7 +50,8 @@ const RundownContextMenu = memo(({
   onPaste,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  onJumpToRow
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -135,6 +139,20 @@ const RundownContextMenu = memo(({
           )}
           
           <ContextMenuSeparator />
+          
+          {/* Jump to Here option - only show for regular rows and single selection */}
+          {isRegularRow && !isMultipleSelection && onJumpToRow && (
+            <>
+              <ContextMenuItem 
+                onClick={onJumpToRow} 
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Jump to Here
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
           
           <ContextMenuItem 
             onClick={handleContextMenuFloat} 
