@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useToast } from '@/hooks/use-toast';
+import { getUniqueItems } from '@/utils/blueprintUtils';
 import BlueprintListHeader from './listCard/BlueprintListHeader';
 import BlueprintListItem from './listCard/BlueprintListItem';
 
@@ -13,6 +14,7 @@ interface BlueprintListCardProps {
   onDelete: (listId: string) => void;
   onRename: (listId: string, newName: string) => void;
   onUpdateCheckedItems: (listId: string, checkedItems: Record<string, boolean>) => void;
+  onToggleUnique?: (listId: string, showUnique: boolean) => void;
   isDragging?: boolean;
   onDragStart?: (e: React.DragEvent, listId: string) => void;
   onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
@@ -26,6 +28,7 @@ const BlueprintListCard = ({
   onDelete, 
   onRename,
   onUpdateCheckedItems,
+  onToggleUnique,
   isDragging = false,
   onDragStart,
   onDragEnterContainer,
@@ -33,6 +36,10 @@ const BlueprintListCard = ({
   index
 }: BlueprintListCardProps) => {
   const { toast } = useToast();
+
+  // Calculate unique items and their count
+  const uniqueItems = getUniqueItems(list.items);
+  const itemsToDisplay = list.showUniqueOnly ? uniqueItems : list.items;
 
   const handleCheckboxChange = (itemIndex: number, checked: boolean) => {
     console.log('📋 BlueprintListCard: checkbox change for item', itemIndex, 'checked:', checked);
@@ -49,7 +56,7 @@ const BlueprintListCard = ({
   };
 
   const copyToClipboard = async () => {
-    const text = list.items.join('\n');
+    const text = itemsToDisplay.join('\n');
     try {
       await navigator.clipboard.writeText(text);
       toast({
@@ -88,6 +95,12 @@ const BlueprintListCard = ({
     return headerItem?.startTime || null;
   };
 
+  const handleToggleUnique = (showUnique: boolean) => {
+    if (onToggleUnique) {
+      onToggleUnique(list.id, showUnique);
+    }
+  };
+
   // Enhanced logging for debugging checkbox state
   console.log('📋 BlueprintListCard: rendering list', list.name, 'with checkedItems:', list.checkedItems);
 
@@ -106,27 +119,32 @@ const BlueprintListCard = ({
           listName={list.name}
           sourceColumn={list.sourceColumn}
           itemCount={list.items.length}
+          uniqueItemCount={uniqueItems.length}
+          showUniqueOnly={list.showUniqueOnly}
           onRename={(newName) => onRename(list.id, newName)}
           onCopy={copyToClipboard}
           onDelete={() => onDelete(list.id)}
+          onToggleUnique={uniqueItems.length !== list.items.length ? handleToggleUnique : undefined}
         />
       </CardHeader>
       <CardContent>
         <div className="space-y-2 max-h-96 overflow-y-auto">
-          {list.items.length === 0 ? (
+          {itemsToDisplay.length === 0 ? (
             <p className="text-gray-500 italic">No items found</p>
           ) : (
-            list.items.map((item, itemIndex) => {
+            itemsToDisplay.map((item, itemIndex) => {
               const startTime = getHeaderStartTime(item);
-              const isChecked = list.checkedItems?.[itemIndex] || false;
+              // For unique mode, use the original index for checkbox state
+              const originalIndex = list.showUniqueOnly ? list.items.indexOf(item) : itemIndex;
+              const isChecked = list.checkedItems?.[originalIndex] || false;
               
               console.log(`📋 BlueprintListCard: item ${itemIndex} "${item}" isChecked:`, isChecked);
               
               return (
                 <BlueprintListItem
-                  key={itemIndex}
+                  key={`${item}-${itemIndex}`}
                   item={item}
-                  index={itemIndex}
+                  index={originalIndex}
                   isChecked={isChecked}
                   startTime={startTime}
                   onCheckboxChange={handleCheckboxChange}

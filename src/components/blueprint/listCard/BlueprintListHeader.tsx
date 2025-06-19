@@ -1,39 +1,61 @@
 
 import React, { useState } from 'react';
-import { CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Edit2, Check, X, GripVertical, Copy, Trash2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { 
+  MoreVertical, 
+  Edit2, 
+  Copy, 
+  Trash2, 
+  Check, 
+  X,
+  Filter,
+  List
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 interface BlueprintListHeaderProps {
   listName: string;
   sourceColumn: string;
   itemCount: number;
+  uniqueItemCount?: number;
+  showUniqueOnly?: boolean;
   onRename: (newName: string) => void;
   onCopy: () => void;
   onDelete: () => void;
+  onToggleUnique?: (showUnique: boolean) => void;
 }
 
 const BlueprintListHeader = ({ 
   listName, 
   sourceColumn, 
-  itemCount, 
+  itemCount,
+  uniqueItemCount,
+  showUniqueOnly = false,
   onRename, 
   onCopy, 
-  onDelete 
+  onDelete,
+  onToggleUnique
 }: BlueprintListHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(listName);
+  const [editValue, setEditValue] = useState(listName);
 
   const handleRename = () => {
-    if (editName.trim() && editName !== listName) {
-      onRename(editName.trim());
+    if (editValue.trim() && editValue !== listName) {
+      onRename(editValue.trim());
     }
     setIsEditing(false);
   };
 
-  const handleCancelEdit = () => {
-    setEditName(listName);
+  const handleCancel = () => {
+    setEditValue(listName);
     setIsEditing(false);
   };
 
@@ -41,83 +63,104 @@ const BlueprintListHeader = ({
     if (e.key === 'Enter') {
       handleRename();
     } else if (e.key === 'Escape') {
-      handleCancelEdit();
+      handleCancel();
     }
   };
 
+  const displayCount = showUniqueOnly && uniqueItemCount !== undefined ? uniqueItemCount : itemCount;
+  const countLabel = showUniqueOnly && uniqueItemCount !== undefined && uniqueItemCount !== itemCount 
+    ? `${uniqueItemCount} unique of ${itemCount}` 
+    : `${itemCount} items`;
+
   return (
-    <>
-      <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between">
+      <div className="flex-1 min-w-0">
         {isEditing ? (
-          <div className="flex items-center gap-2 flex-1 mr-2">
+          <div className="flex items-center gap-2">
             <Input
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleKeyPress}
-              className="text-lg bg-gray-700 border-gray-600 text-white"
+              className="text-sm bg-gray-700 border-gray-600 text-white"
               autoFocus
             />
             <Button
-              variant="ghost"
-              size="icon"
+              size="sm"
               onClick={handleRename}
-              className="h-8 w-8 text-green-400 hover:text-green-300 hover:bg-green-900/50"
+              className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
             >
-              <Check className="h-4 w-4" />
+              <Check className="h-3 w-3" />
             </Button>
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancelEdit}
-              className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50"
+              size="sm"
+              variant="outline"
+              onClick={handleCancel}
+              className="h-6 w-6 p-0 border-gray-600 text-gray-400 hover:text-white"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </Button>
           </div>
         ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <GripVertical className="h-5 w-5 text-gray-400 cursor-grab active:cursor-grabbing" />
-              <CardTitle className="text-lg text-white">{listName}</CardTitle>
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsEditing(true)}
-                className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
-                title="Rename list"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onCopy}
-                className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
-                title="Copy to clipboard"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onDelete}
-                className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50"
-                title="Delete list"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </>
+          <div>
+            <h3 className="text-white font-medium text-sm truncate">{listName}</h3>
+            <p className="text-gray-400 text-xs">
+              {countLabel}
+            </p>
+            
+            {/* Unique Toggle */}
+            {onToggleUnique && uniqueItemCount !== undefined && uniqueItemCount !== itemCount && (
+              <div className="flex items-center gap-2 mt-2">
+                <Switch
+                  checked={showUniqueOnly}
+                  onCheckedChange={onToggleUnique}
+                  className="data-[state=checked]:bg-blue-600"
+                />
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  {showUniqueOnly ? <Filter className="h-3 w-3" /> : <List className="h-3 w-3" />}
+                  <span>{showUniqueOnly ? 'Unique only' : 'Show all'}</span>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
-      {!isEditing && (
-        <p className="text-sm text-gray-400">
-          From: {sourceColumn} • {itemCount} items
-        </p>
-      )}
-    </>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0"
+          >
+            <MoreVertical className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+          <DropdownMenuItem 
+            onClick={() => setIsEditing(true)}
+            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+          >
+            <Edit2 className="h-4 w-4 mr-2" />
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={onCopy}
+            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Copy to Clipboard
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="bg-gray-700" />
+          <DropdownMenuItem 
+            onClick={onDelete}
+            className="text-red-400 hover:text-red-300 hover:bg-red-900/50 cursor-pointer"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete List
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 };
 

@@ -46,6 +46,20 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
   }
 };
 
+export const getUniqueItems = (items: string[]): string[] => {
+  const seen = new Set<string>();
+  const uniqueItems: string[] = [];
+  
+  items.forEach(item => {
+    if (!seen.has(item)) {
+      seen.add(item);
+      uniqueItems.push(item);
+    }
+  });
+  
+  return uniqueItems;
+};
+
 export const getAvailableColumns = (items: RundownItem[]) => {
   console.log('📋 getAvailableColumns called with items:', items.length);
   
@@ -107,7 +121,8 @@ export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string
         name: column.name,
         sourceColumn: column.value,
         items: listItems,
-        checkedItems: {}
+        checkedItems: {},
+        showUniqueOnly: false
       };
       defaultLists.push(newList);
       console.log('📋 Created default list:', newList.name, 'with', newList.items.length, 'items');

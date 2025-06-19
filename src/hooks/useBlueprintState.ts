@@ -98,6 +98,31 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     });
   }, [saveBlueprint, savedBlueprint]);
 
+  // Toggle unique items display
+  const toggleUniqueItems = useCallback((listId: string, showUnique: boolean) => {
+    setLists(currentLists => {
+      const updatedLists = currentLists.map(list => 
+        list.id === listId ? { ...list, showUniqueOnly: showUnique } : list
+      );
+      
+      // Save with the correct parameter order including component order
+      setTimeout(() => {
+        const currentComponentOrder = savedBlueprint?.component_order || ['crew-list', 'camera-plot', 'scratchpad'];
+        saveBlueprint(
+          updatedLists, // updatedLists
+          true, // silent
+          undefined, // showDateOverride (use current)
+          undefined, // notes (keep existing)
+          undefined, // crewData (keep existing)
+          undefined, // cameraPlots (keep existing)
+          currentComponentOrder // componentOrder
+        );
+      }, 100);
+      
+      return updatedLists;
+    });
+  }, [saveBlueprint, savedBlueprint]);
+
   // Add new list
   const addNewList = useCallback((name: string, sourceColumn: string) => {
     const newList: BlueprintList = {
@@ -105,7 +130,8 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
       name,
       sourceColumn,
       items: generateListFromColumn(items, sourceColumn),
-      checkedItems: {}
+      checkedItems: {},
+      showUniqueOnly: false
     };
     
     setLists(currentLists => {
@@ -171,6 +197,7 @@ export const useBlueprintState = (rundownId: string, rundownTitle: string, items
     deleteList,
     renameList,
     updateCheckedItems,
+    toggleUniqueItems,
     refreshAllLists,
     draggedListId,
     insertionIndex,
