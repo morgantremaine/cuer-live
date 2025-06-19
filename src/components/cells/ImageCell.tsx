@@ -34,11 +34,8 @@ const ImageCell = ({
     setInternalValue(value || '');
   }, [value]);
 
-  console.log('🖼️ ImageCell rendered with value:', value, 'internalValue:', internalValue, 'isEditing:', isEditing);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('🖼️ ImageCell input changed:', newValue);
     setInternalValue(newValue);
     onUpdateValue(newValue);
     setImageError(false); // Reset error when URL changes
@@ -53,17 +50,14 @@ const ImageCell = ({
   };
 
   const handleImageError = () => {
-    console.log('🖼️ Image error for URL:', internalValue);
     setImageError(true);
   };
 
   const handleImageLoad = () => {
-    console.log('🖼️ Image loaded successfully for URL:', internalValue);
     setImageError(false);
   };
 
   const handleCellClick = (e: React.MouseEvent) => {
-    console.log('🖼️ ImageCell clicked, setting editing to true');
     // Prevent event bubbling to row click handler
     e.stopPropagation();
     setIsEditing(true);
@@ -108,13 +102,11 @@ const ImageCell = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onBlur={(e) => {
-            console.log('🖼️ ImageCell input blurred');
             // Prevent event bubbling
             e.stopPropagation();
             setIsEditing(false);
           }}
           onFocus={(e) => {
-            console.log('🖼️ ImageCell input focused');
             // Prevent event bubbling
             e.stopPropagation();
             setIsEditing(true);

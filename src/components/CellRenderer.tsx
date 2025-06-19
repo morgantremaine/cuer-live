@@ -94,7 +94,6 @@ const CellRenderer = ({
 
   // Use ImageCell for images column - check both column.key and column.id
   if (column.key === 'images' || column.id === 'images') {
-    console.log('🖼️ Rendering ImageCell for column:', column.key, 'value:', value);
     return (
       <ImageCell
         value={value}
@@ -104,12 +103,9 @@ const CellRenderer = ({
         textColor={textColor}
         backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
-          console.log('🖼️ ImageCell updating value:', newValue, 'for item:', item.id);
-          console.log('🖼️ Calling onUpdateItem with field: images');
           onUpdateItem(item.id, 'images', newValue);
         }}
         onCellClick={(e) => {
-          console.log('🖼️ ImageCell onCellClick called');
           onCellClick(item.id, column.key);
         }}
         onKeyDown={onKeyDown}
