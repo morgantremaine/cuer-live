@@ -1,6 +1,5 @@
 
 import React from 'react';
-import HighlightedText from '../HighlightedText';
 
 interface CustomFieldCellProps {
   value: string;
@@ -9,10 +8,6 @@ interface CustomFieldCellProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
-  highlight?: {
-    startIndex: number;
-    endIndex: number;
-  } | null;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -25,7 +20,6 @@ const CustomFieldCell = ({
   cellRefs,
   textColor,
   backgroundColor,
-  highlight,
   onUpdateValue,
   onCellClick,
   onKeyDown

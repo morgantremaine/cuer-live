@@ -5,7 +5,6 @@ import HeaderTitle from './header/HeaderTitle';
 import HeaderControls from './header/HeaderControls';
 import HeaderBottomSection from './header/HeaderBottomSection';
 import RealtimeStatusIndicator from './RealtimeStatusIndicator';
-import { SearchHighlight } from '@/types/search';
 import { RundownItem } from '@/types/rundown';
 
 interface RundownHeaderProps {
@@ -21,9 +20,6 @@ interface RundownHeaderProps {
   onRundownStartTimeChange: (startTime: string) => void;
   items?: RundownItem[];
   visibleColumns?: any[];
-  onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
-  onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
-  currentHighlight?: SearchHighlight | null;
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
@@ -47,9 +43,6 @@ const RundownHeader = ({
   onRundownStartTimeChange,
   items = [],
   visibleColumns = [],
-  onHighlightMatch = () => {},
-  onReplaceText = () => {},
-  currentHighlight,
   onUndo,
   canUndo,
   lastAction,
@@ -95,10 +88,6 @@ const RundownHeader = ({
           currentTime={currentTime}
           timezone={timezone}
           onTimezoneChange={onTimezoneChange}
-          items={items}
-          visibleColumns={visibleColumns}
-          onHighlightMatch={onHighlightMatch}
-          onReplaceText={onReplaceText}
           onUndo={onUndo}
           canUndo={canUndo}
           lastAction={lastAction}
@@ -130,10 +119,6 @@ const RundownHeader = ({
               currentTime={currentTime}
               timezone={timezone}
               onTimezoneChange={onTimezoneChange}
-              items={items}
-              visibleColumns={visibleColumns}
-              onHighlightMatch={onHighlightMatch}
-              onReplaceText={onReplaceText}
               onUndo={onUndo}
               canUndo={canUndo}
               lastAction={lastAction}

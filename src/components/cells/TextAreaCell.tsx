@@ -1,6 +1,4 @@
-
 import React, { useEffect, useRef, useState } from 'react';
-import HighlightedText from '../HighlightedText';
 
 interface TextAreaCellProps {
   value: string;
@@ -10,10 +8,6 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
-  highlight?: {
-    startIndex: number;
-    endIndex: number;
-  } | null;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -27,7 +21,6 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
-  highlight,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -214,11 +207,6 @@ const TextAreaCell = ({
           textAlign: isDuration ? 'center' : 'left'
         }}
       />
-      {highlight && (
-        <div className="absolute inset-0 pointer-events-none px-3 py-2 text-sm flex items-center" style={{ color: 'transparent' }}>
-          <HighlightedText text={value} highlight={highlight} />
-        </div>
-      )}
     </div>
   );
 };

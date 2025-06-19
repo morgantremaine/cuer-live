@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import HighlightedText from './HighlightedText';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -8,10 +7,6 @@ interface ExpandableScriptCellProps {
   cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
-  currentHighlight?: {
-    startIndex: number;
-    endIndex: number;
-  } | null;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -22,7 +17,6 @@ const ExpandableScriptCell = ({
   cellRefKey,
   cellRefs,
   textColor,
-  currentHighlight,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
@@ -205,11 +199,6 @@ const ExpandableScriptCell = ({
             textOverflow: isExpanded ? 'unset' : 'ellipsis'
           }}
         />
-        {currentHighlight && (
-          <div className="absolute inset-0 pointer-events-none px-2 py-1 text-sm" style={{ color: 'transparent' }}>
-            <HighlightedText text={value} highlight={currentHighlight} />
-          </div>
-        )}
       </div>
     </div>
   );
