@@ -67,19 +67,28 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
         element.label.toLowerCase().includes('circle')
       );
       
+      // Use the element's color or default to gray
+      const furnitureColor = element.color || '#6b7280'; // gray-500
+      
       if (isRound) {
         return (
           <div 
-            className="bg-gray-500 border-2 border-black rounded-full"
-            style={baseStyle}
+            className="border-2 border-black rounded-full"
+            style={{
+              ...baseStyle,
+              backgroundColor: furnitureColor
+            }}
           />
         );
       }
       
       return (
         <div 
-          className="bg-gray-500 border-2 border-black"
-          style={baseStyle}
+          className="border-2 border-black"
+          style={{
+            ...baseStyle,
+            backgroundColor: furnitureColor
+          }}
         />
       );
       

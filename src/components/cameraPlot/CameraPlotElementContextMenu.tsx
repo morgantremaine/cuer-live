@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { CameraElement } from '@/hooks/useCameraPlot';
+import ColorPicker from '@/components/ColorPicker';
+import { useColorPicker } from '@/hooks/useColorPicker';
 
 interface CameraPlotElementContextMenuProps {
   isVisible: boolean;
@@ -23,6 +25,12 @@ const CameraPlotElementContextMenu = ({
   onDuplicate,
   allElements = []
 }: CameraPlotElementContextMenuProps) => {
+  const {
+    showColorPicker,
+    handleToggleColorPicker,
+    handleColorSelect
+  } = useColorPicker();
+
   if (!isVisible) return null;
 
   const handleDuplicate = () => {
@@ -41,6 +49,13 @@ const CameraPlotElementContextMenu = ({
     onClose();
   };
 
+  const handleColorChange = (elementId: string, color: string) => {
+    onUpdate(elementId, { color });
+    handleColorSelect(elementId, color);
+  };
+
+  const isFurniture = element.type === 'furniture';
+
   return (
     <>
       <div
@@ -48,7 +63,7 @@ const CameraPlotElementContextMenu = ({
         onClick={onClose}
       />
       <div
-        className="fixed bg-gray-800 border border-gray-600 rounded shadow-lg py-1 z-50"
+        className="fixed bg-gray-800 border border-gray-600 rounded shadow-lg py-1 z-50 min-w-32"
         style={{ left: position.x, top: position.y }}
       >
         <button
@@ -57,8 +72,23 @@ const CameraPlotElementContextMenu = ({
         >
           Duplicate
         </button>
+        
+        {isFurniture && (
+          <div className="px-4 py-2 border-t border-gray-600">
+            <div className="flex items-center justify-between">
+              <span className="text-white text-sm">Color</span>
+              <ColorPicker
+                itemId={element.id}
+                showColorPicker={showColorPicker}
+                onToggle={handleToggleColorPicker}
+                onColorSelect={handleColorChange}
+              />
+            </div>
+          </div>
+        )}
+        
         <button
-          className="block w-full px-4 py-2 text-left text-white hover:bg-gray-700"
+          className="block w-full px-4 py-2 text-left text-white hover:bg-gray-700 border-t border-gray-600"
           onClick={handleDelete}
         >
           Delete
