@@ -55,7 +55,6 @@ export const useSearch = (
     console.log('🔍 Found matches:', foundMatches.length);
     setMatches(foundMatches);
     
-    // Auto-select first match if we have matches
     if (foundMatches.length > 0) {
       setCurrentMatchIndex(0);
       const firstMatch = foundMatches[0];

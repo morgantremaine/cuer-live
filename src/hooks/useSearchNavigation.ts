@@ -3,15 +3,32 @@ import { SearchMatch } from '@/types/search';
 
 export const useSearchNavigation = () => {
   const focusCell = (itemId: string, field: string) => {
+    console.log('🎯 Attempting to focus cell:', itemId, field);
+    
     try {
       const cellKey = `${itemId}-${field}`;
-      const cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
+      
+      // Try multiple methods to find the cell
+      let cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
+      
+      if (!cellElement) {
+        cellElement = document.querySelector(`input[data-item-id="${itemId}"][data-field="${field}"], textarea[data-item-id="${itemId}"][data-field="${field}"]`) as HTMLInputElement | HTMLTextAreaElement;
+      }
+      
+      if (!cellElement) {
+        // Try finding by ID if it exists
+        cellElement = document.getElementById(cellKey) as HTMLInputElement | HTMLTextAreaElement;
+      }
+      
       if (cellElement) {
+        console.log('✅ Found and focusing cell element');
         cellElement.focus();
         cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        console.log('❌ Could not find cell element for:', cellKey);
       }
     } catch (error) {
-      console.log('Could not focus cell:', error);
+      console.log('❌ Error focusing cell:', error);
     }
   };
 
@@ -30,10 +47,12 @@ export const useSearchNavigation = () => {
       newIndex = currentMatchIndex > 0 ? currentMatchIndex - 1 : matches.length - 1;
     }
 
+    console.log('🔄 Navigating to match index:', newIndex);
     setCurrentMatchIndex(newIndex);
+    
     const match = matches[newIndex];
     focusCell(match.itemId, match.field);
   };
 
-  return { navigateMatch };
+  return { navigateMatch, focusCell };
 };

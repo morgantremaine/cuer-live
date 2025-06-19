@@ -136,7 +136,7 @@ const RundownIndexContent = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Handle highlight match functionality
+  // Enhanced highlight match functionality with proper cell focusing and highlighting
   const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
     console.log('🎯 Highlighting match:', { itemId, field, startIndex, endIndex });
     
@@ -153,21 +153,41 @@ const RundownIndexContent = () => {
     });
 
     // Focus and scroll to the cell
-    const cellKey = `${itemId}-${field}`;
-    const cellElement = cellRefs.current[cellKey];
-    if (cellElement) {
-      cellElement.focus();
-      cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      const cellKey = `${itemId}-${field}`;
+      console.log('🎯 Looking for cell with key:', cellKey);
       
-      if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
-        setTimeout(() => {
-          cellElement.setSelectionRange(startIndex, endIndex);
-        }, 100);
+      // Try multiple ways to find the cell element
+      let cellElement = cellRefs.current[cellKey];
+      
+      if (!cellElement) {
+        // Fallback: try to find by data attribute
+        cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
       }
-    }
+      
+      if (!cellElement) {
+        // Another fallback: try to find by combining itemId and field
+        cellElement = document.querySelector(`input[data-item-id="${itemId}"][data-field="${field}"], textarea[data-item-id="${itemId}"][data-field="${field}"]`) as HTMLInputElement | HTMLTextAreaElement;
+      }
+
+      if (cellElement) {
+        console.log('✅ Found cell element, focusing and scrolling');
+        cellElement.focus();
+        cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Select the text range after a short delay
+        setTimeout(() => {
+          if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
+            cellElement.setSelectionRange(startIndex, endIndex);
+          }
+        }, 100);
+      } else {
+        console.log('❌ Could not find cell element for:', cellKey);
+      }
+    }, 50);
   };
 
-  // Handle replace text functionality - completely rewritten for reliability
+  // Enhanced replace text functionality with proper state updates
   const handleReplaceText = async (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
     console.log('🔄 Replace operation starting:', { itemId, field, searchText, replaceText, replaceAll });
     
@@ -185,7 +205,7 @@ const RundownIndexContent = () => {
       return;
     }
 
-    // Perform case-insensitive replacement while preserving the original case of non-matching text
+    // Perform case-insensitive replacement
     const searchRegex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
     const newValue = currentValue.replace(searchRegex, replaceText);
     
@@ -194,6 +214,13 @@ const RundownIndexContent = () => {
     if (newValue !== currentValue) {
       console.log('✅ Updating item with new value');
       updateItem(itemId, field, newValue);
+      
+      // Force a re-render by updating the cell in the DOM
+      const cellKey = `${itemId}-${field}`;
+      const cellElement = cellRefs.current[cellKey];
+      if (cellElement) {
+        cellElement.value = newValue;
+      }
     } else {
       console.log('⚠️ No changes made - search text not found');
     }
