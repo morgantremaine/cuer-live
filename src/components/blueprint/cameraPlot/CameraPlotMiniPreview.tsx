@@ -36,8 +36,11 @@ const CameraPlotMiniPreview = ({
       maxY = Math.max(maxY, bottom);
     });
 
-    // Add some padding
-    const padding = 20;
+    // Add padding proportional to the scene size
+    const sceneWidth = maxX - minX;
+    const sceneHeight = maxY - minY;
+    const padding = Math.max(sceneWidth * 0.1, sceneHeight * 0.1, 20);
+    
     return {
       minX: minX - padding,
       minY: minY - padding,
@@ -85,10 +88,21 @@ const CameraPlotMiniPreview = ({
             key={element.id}
             style={{
               ...commonStyle,
-              backgroundColor: '#3b82f6',
-              borderRadius: '2px'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
-          />
+          >
+            <img 
+              src="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
+              alt="Camera"
+              style={{
+                width: Math.max(8 * scale, 4),
+                height: Math.max(8 * scale, 4),
+                objectFit: 'contain'
+              }}
+            />
+          </div>
         );
       
       case 'person':
@@ -97,10 +111,21 @@ const CameraPlotMiniPreview = ({
             key={element.id}
             style={{
               ...commonStyle,
-              backgroundColor: '#10b981',
-              borderRadius: '50%'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
-          />
+          >
+            <img 
+              src="/lovable-uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
+              alt="Person"
+              style={{
+                width: Math.max(12 * scale, 6),
+                height: Math.max(12 * scale, 6),
+                objectFit: 'contain'
+              }}
+            />
+          </div>
         );
       
       case 'wall':
@@ -110,7 +135,7 @@ const CameraPlotMiniPreview = ({
             style={{
               ...commonStyle,
               backgroundColor: '#374151',
-              border: '1px solid #6b7280'
+              border: `${Math.max(1 * scale, 0.5)}px solid #6b7280`
             }}
           />
         );
@@ -131,7 +156,7 @@ const CameraPlotMiniPreview = ({
               ...commonStyle,
               backgroundColor: furnitureColor,
               borderRadius: isRound ? '50%' : '0',
-              border: '1px solid #000000'
+              border: `${Math.max(1 * scale, 0.5)}px solid #000000`
             }}
           />
         );
@@ -143,7 +168,7 @@ const CameraPlotMiniPreview = ({
             style={{
               ...commonStyle,
               backgroundColor: '#6b7280',
-              border: '1px solid #000000'
+              border: `${Math.max(1 * scale, 0.5)}px solid #000000`
             }}
           />
         );
@@ -152,7 +177,7 @@ const CameraPlotMiniPreview = ({
 
   return (
     <div 
-      className="relative bg-gray-100 border border-gray-300 overflow-hidden"
+      className="relative bg-gray-800 border border-gray-600 overflow-hidden"
       style={{ 
         width: containerWidth, 
         height: containerHeight,
