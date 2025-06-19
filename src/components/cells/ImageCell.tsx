@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ImageCellProps {
   value: string;
@@ -26,13 +26,21 @@ const ImageCell = ({
 }: ImageCellProps) => {
   const [imageError, setImageError] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [internalValue, setInternalValue] = useState(value || '');
   const cellKey = `${itemId}-${cellRefKey}`;
 
-  console.log('🖼️ ImageCell rendered with value:', value, 'isEditing:', isEditing);
+  // Sync internal value when external value changes
+  useEffect(() => {
+    setInternalValue(value || '');
+  }, [value]);
+
+  console.log('🖼️ ImageCell rendered with value:', value, 'internalValue:', internalValue, 'isEditing:', isEditing);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🖼️ ImageCell input changed:', e.target.value);
-    onUpdateValue(e.target.value);
+    const newValue = e.target.value;
+    console.log('🖼️ ImageCell input changed:', newValue);
+    setInternalValue(newValue);
+    onUpdateValue(newValue);
     setImageError(false); // Reset error when URL changes
   };
 
@@ -45,12 +53,12 @@ const ImageCell = ({
   };
 
   const handleImageError = () => {
-    console.log('🖼️ Image error for URL:', value);
+    console.log('🖼️ Image error for URL:', internalValue);
     setImageError(true);
   };
 
   const handleImageLoad = () => {
-    console.log('🖼️ Image loaded successfully for URL:', value);
+    console.log('🖼️ Image loaded successfully for URL:', internalValue);
     setImageError(false);
   };
 
@@ -59,7 +67,17 @@ const ImageCell = ({
     setIsEditing(true);
   };
 
-  const isValidImageUrl = value && value.trim() && !imageError;
+  // Check if we have a valid image URL (non-empty and no error)
+  const isValidImageUrl = internalValue && internalValue.trim() && !imageError;
+  // Check if it looks like an image URL (ends with common image extensions or contains image domains)
+  const isLikelyImageUrl = internalValue && (
+    /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(internalValue) ||
+    /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(internalValue) ||
+    internalValue.includes('images') ||
+    internalValue.includes('photos') ||
+    internalValue.includes('imgur') ||
+    internalValue.includes('unsplash')
+  );
 
   return (
     <div 
@@ -71,7 +89,7 @@ const ImageCell = ({
       }}
       onClick={onCellClick || handleCellClick}
     >
-      {isEditing || !value ? (
+      {isEditing ? (
         <input
           ref={(el) => {
             if (el) {
@@ -79,7 +97,7 @@ const ImageCell = ({
             }
           }}
           type="text"
-          value={value}
+          value={internalValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onBlur={() => {
@@ -93,16 +111,16 @@ const ImageCell = ({
           placeholder="Enter image URL..."
           className="w-full h-full bg-transparent border-none outline-none resize-none text-sm"
           style={{ color: textColor }}
-          autoFocus={isEditing}
+          autoFocus={true}
         />
       ) : (
         <div 
           className="w-full h-full cursor-pointer"
           onClick={handleCellClick}
         >
-          {isValidImageUrl ? (
+          {isValidImageUrl && isLikelyImageUrl ? (
             <img
-              src={value}
+              src={internalValue}
               alt="Rundown image"
               className="w-full h-full object-contain rounded"
               onError={handleImageError}
@@ -111,10 +129,10 @@ const ImageCell = ({
             />
           ) : (
             <div 
-              className="w-full h-8 flex items-center text-sm opacity-60"
-              style={{ color: textColor }}
+              className="w-full h-8 flex items-center text-sm"
+              style={{ color: textColor || '#666' }}
             >
-              {imageError ? 'Invalid image URL' : (value || 'Enter image URL...')}
+              {imageError ? 'Invalid image URL' : (internalValue || 'Enter image URL...')}
             </div>
           )}
         </div>
