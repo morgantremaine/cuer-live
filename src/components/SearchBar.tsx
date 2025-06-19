@@ -37,11 +37,20 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
   };
 
   const handleReplace = (replaceAll: boolean = false) => {
-    if (!searchText.trim() || currentMatchIndex === -1) return;
+    if (!searchText.trim() || !replaceText.trim()) return;
 
-    const currentMatch = matches[currentMatchIndex];
-    onReplaceText(currentMatch.itemId, currentMatch.field, searchText, replaceText, replaceAll);
+    if (replaceAll) {
+      // Replace all occurrences
+      matches.forEach(match => {
+        onReplaceText(match.itemId, match.field, searchText, replaceText, false);
+      });
+    } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
+      // Replace current match only
+      const currentMatch = matches[currentMatchIndex];
+      onReplaceText(currentMatch.itemId, currentMatch.field, searchText, replaceText, false);
+    }
 
+    // Refresh search results after replacement
     setTimeout(() => {
       performSearch(searchText);
     }, 100);

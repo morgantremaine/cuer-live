@@ -22,7 +22,7 @@ export const useSearch = (
     }
 
     const foundMatches: SearchMatch[] = [];
-    const searchLower = text.toLowerCase();
+    const searchLower = text.toLowerCase().trim();
 
     items.forEach((item) => {
       if (item.type === 'header') return;
@@ -31,20 +31,21 @@ export const useSearch = (
         // Get the actual cell value using the shared utility
         const cellValue = getCellValue(item, column);
         const cellValueLower = cellValue.toLowerCase();
-        let index = 0;
-
-        while (index < cellValue.length) {
-          const foundIndex = cellValueLower.indexOf(searchLower, index);
+        
+        // Use indexOf for exact phrase matching
+        let searchIndex = 0;
+        while (searchIndex < cellValue.length) {
+          const foundIndex = cellValueLower.indexOf(searchLower, searchIndex);
           if (foundIndex === -1) break;
 
           foundMatches.push({
             itemId: item.id,
-            field: column.key, // Use column.key instead of column.id
+            field: column.key,
             index: foundIndex,
-            length: text.length
+            length: text.trim().length
           });
 
-          index = foundIndex + 1;
+          searchIndex = foundIndex + 1;
         }
       });
     });

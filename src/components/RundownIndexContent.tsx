@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -7,6 +6,7 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+import { getCellValue } from '@/utils/sharedRundownUtils';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -128,6 +128,26 @@ const RundownIndexContent = () => {
     const seconds = totalSeconds % 60;
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Handle replace text functionality
+  const handleReplaceText = (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
+    const item = items.find(item => item.id === itemId);
+    if (!item) return;
+
+    const currentValue = getCellValue(item, { key: field });
+    
+    // Create a case-insensitive replace function that handles phrases
+    const replacePhrase = (text: string, search: string, replacement: string) => {
+      const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      return text.replace(searchRegex, replacement);
+    };
+
+    const newValue = replacePhrase(currentValue, searchText.trim(), replaceText);
+    
+    if (newValue !== currentValue) {
+      updateItem(itemId, field, newValue);
+    }
   };
 
   // Create wrapper for cell click to match signature
@@ -362,6 +382,10 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        onHighlightMatch={(itemId, field, startIndex, endIndex) => {
+          // Handle highlighting logic if needed
+        }}
+        onReplaceText={handleReplaceText}
       />
       
       <CuerChatButton rundownData={rundownData} />
