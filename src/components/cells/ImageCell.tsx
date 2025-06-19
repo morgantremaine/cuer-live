@@ -62,9 +62,16 @@ const ImageCell = ({
     setImageError(false);
   };
 
-  const handleCellClick = () => {
+  const handleCellClick = (e: React.MouseEvent) => {
     console.log('🖼️ ImageCell clicked, setting editing to true');
+    // Prevent event bubbling to row click handler
+    e.stopPropagation();
     setIsEditing(true);
+    
+    // Call the parent onCellClick if provided
+    if (onCellClick) {
+      onCellClick(e);
+    }
   };
 
   // Check if we have a valid image URL (non-empty and no error)
@@ -87,7 +94,7 @@ const ImageCell = ({
         minHeight: isValidImageUrl ? '72px' : '32px',
         height: isValidImageUrl ? '72px' : 'auto'
       }}
-      onClick={onCellClick || handleCellClick}
+      onClick={handleCellClick}
     >
       {isEditing ? (
         <input
@@ -100,13 +107,21 @@ const ImageCell = ({
           value={internalValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onBlur={() => {
+          onBlur={(e) => {
             console.log('🖼️ ImageCell input blurred');
+            // Prevent event bubbling
+            e.stopPropagation();
             setIsEditing(false);
           }}
-          onFocus={() => {
+          onFocus={(e) => {
             console.log('🖼️ ImageCell input focused');
+            // Prevent event bubbling
+            e.stopPropagation();
             setIsEditing(true);
+          }}
+          onClick={(e) => {
+            // Prevent event bubbling when clicking on input
+            e.stopPropagation();
           }}
           placeholder="Enter image URL..."
           className="w-full h-full bg-transparent border-none outline-none resize-none text-sm"
@@ -125,6 +140,11 @@ const ImageCell = ({
               className="w-full h-full object-contain rounded"
               onError={handleImageError}
               onLoad={handleImageLoad}
+              onClick={(e) => {
+                // Prevent event bubbling when clicking on image
+                e.stopPropagation();
+                handleCellClick(e);
+              }}
               style={{ maxHeight: '68px' }}
             />
           ) : (

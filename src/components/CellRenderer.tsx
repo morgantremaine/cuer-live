@@ -104,10 +104,14 @@ const CellRenderer = ({
         textColor={textColor}
         backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
-          console.log('🖼️ ImageCell updating value:', newValue);
-          onUpdateItem(item.id, column.key, newValue);
+          console.log('🖼️ ImageCell updating value:', newValue, 'for item:', item.id);
+          console.log('🖼️ Calling onUpdateItem with field: images');
+          onUpdateItem(item.id, 'images', newValue);
         }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
+        onCellClick={(e) => {
+          console.log('🖼️ ImageCell onCellClick called');
+          onCellClick(item.id, column.key);
+        }}
         onKeyDown={onKeyDown}
       />
     );
