@@ -15,7 +15,6 @@ interface UseRowEventHandlersProps {
   selectedRows?: Set<string>;
   onPasteRows?: (targetRowId?: string) => void;
   onClearSelection?: () => void;
-  onJumpToRow?: (itemId: string) => void;
 }
 
 export const useRowEventHandlers = ({
@@ -31,8 +30,7 @@ export const useRowEventHandlers = ({
   onToggleFloat,
   selectedRows,
   onPasteRows,
-  onClearSelection,
-  onJumpToRow
+  onClearSelection
 }: UseRowEventHandlersProps) => {
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -97,12 +95,6 @@ export const useRowEventHandlers = ({
     }
   };
 
-  const handleContextMenuJumpTo = () => {
-    if (onJumpToRow) {
-      onJumpToRow(item.id);
-    }
-  };
-
   return {
     handleRowClick,
     handleContextMenu,
@@ -110,7 +102,6 @@ export const useRowEventHandlers = ({
     handleContextMenuDelete,
     handleContextMenuFloat,
     handleContextMenuColor,
-    handleContextMenuPaste,
-    handleContextMenuJumpTo
+    handleContextMenuPaste
   };
 };

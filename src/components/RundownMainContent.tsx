@@ -53,8 +53,6 @@ interface RundownMainContentProps {
   totalDuration: string;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  selectedRowId: string | null;
-  onPlay: (selectedSegmentId?: string) => void;
 }
 
 const RundownMainContent = ({
@@ -104,13 +102,8 @@ const RundownMainContent = ({
   currentSegmentName,
   totalDuration,
   onAddRow,
-  onAddHeader,
-  selectedRowId,
-  onPlay
+  onAddHeader
 }: RundownMainContentProps) => {
-  // Create a wrapper function that curries currentTime
-  const getRowStatusWithTime = (item: any) => getRowStatus(item, currentTime);
-
   return (
     <>
       <RundownContent
@@ -125,12 +118,11 @@ const RundownMainContent = ({
         dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
         hasClipboardData={hasClipboardData}
-        selectedRowId={selectedRowId}
         getColumnWidth={getColumnWidth}
         updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
-        getRowStatus={getRowStatusWithTime}
-        getHeaderDuration={calculateHeaderDuration}
+        getRowStatus={getRowStatus}
+        calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={onUpdateItem}
         onCellClick={onCellClick}
         onKeyDown={onKeyDown}
@@ -149,7 +141,6 @@ const RundownMainContent = ({
         onClearSelection={onClearSelection}
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
-        onPlay={onPlay}
       />
       
       {showColumnManager && (
