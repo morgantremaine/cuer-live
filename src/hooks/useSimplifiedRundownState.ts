@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -83,10 +84,10 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Realtime rundown updates - now EXCLUDES columns from sync
+  // Realtime rundown updates - now EXCLUDES columns from sync - FIXED PROPERTY NAME
   const realtimeRundown = useRealtimeRundown({
     rundownId,
-    onRundownUpdated: useCallback((updatedRundown) => {
+    onRundownUpdate: useCallback((updatedRundown) => {
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
         // Load state WITHOUT columns (they're user-specific)
