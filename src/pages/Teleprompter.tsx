@@ -170,22 +170,6 @@ const Teleprompter = () => {
               padding: 0;
               font-size: 14px;
             }
-            .header {
-              text-align: center;
-              margin-bottom: 20px;
-              padding-bottom: 10px;
-              border-bottom: 2px solid #000;
-            }
-            .header h1 {
-              font-size: 20px;
-              margin: 0 0 5px 0;
-              font-weight: bold;
-            }
-            .header p {
-              font-size: 12px;
-              margin: 0;
-              color: #666;
-            }
             .script-item {
               margin-bottom: 25px;
               page-break-inside: avoid;
@@ -214,10 +198,6 @@ const Teleprompter = () => {
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>${formatText(rundownData.title)}</h1>
-            <p>Teleprompter Script - ${new Date().toLocaleDateString()}</p>
-          </div>
           ${itemsWithScript.map((item, index) => {
             const rowNumber = getRowNumber(item.originalIndex);
             const isHeader = item.type === 'header';
