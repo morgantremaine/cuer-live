@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     matches,
     currentMatchIndex,
     setCurrentMatchIndex,
-    performSearch
+    refreshSearch
   } = useSearch(items, visibleColumns, onHighlightMatch);
 
   const { navigateMatch } = useSearchNavigation();
@@ -36,31 +37,39 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
   };
 
   const handleReplace = async (replaceAll: boolean = false) => {
-    if (!searchText.trim()) {
-      console.log('❌ No search text provided');
+    if (!searchText.trim() || !replaceText.trim()) {
+      console.log('❌ Missing search or replace text');
       return;
     }
 
-    console.log('🔄 Replace operation:', { searchText, replaceText, replaceAll, matchesCount: matches.length });
+    console.log('🔄 Replace operation:', { 
+      searchText: searchText.trim(), 
+      replaceText: replaceText.trim(), 
+      replaceAll, 
+      matchesCount: matches.length 
+    });
 
-    if (replaceAll) {
-      // Replace all occurrences
-      console.log('🔄 Replacing all matches');
-      for (const match of matches) {
-        await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText, true);
+    try {
+      if (replaceAll) {
+        console.log('🔄 Replacing all matches');
+        // Process all matches
+        for (const match of matches) {
+          await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText.trim(), true);
+        }
+      } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
+        console.log('🔄 Replacing current match');
+        const currentMatch = matches[currentMatchIndex];
+        await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText.trim(), false);
       }
-    } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
-      // Replace current match only
-      const currentMatch = matches[currentMatchIndex];
-      console.log('🔄 Replacing current match:', currentMatch);
-      await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText, false);
-    }
 
-    // Refresh search results after replacement with a longer delay
-    setTimeout(() => {
-      console.log('🔄 Refreshing search after replace');
-      performSearch(searchText);
-    }, 200);
+      // Refresh search results after a delay to allow for state updates
+      setTimeout(() => {
+        console.log('🔄 Refreshing search after replace');
+        refreshSearch();
+      }, 300);
+    } catch (error) {
+      console.error('❌ Replace operation failed:', error);
+    }
   };
 
   const handleClose = () => {
@@ -68,7 +77,6 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     setSearchText('');
     setReplaceText('');
     setShowReplace(false);
-    // Clear highlights when closing
     onHighlightMatch('', '', 0, 0);
   };
 
@@ -76,11 +84,6 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     const value = e.target.value;
     console.log('🔍 Search text changed:', value);
     setSearchText(value);
-    setTimeout(() => {
-      if (searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    }, 0);
   };
 
   useEffect(() => {

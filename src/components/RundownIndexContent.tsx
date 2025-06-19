@@ -141,12 +141,10 @@ const RundownIndexContent = () => {
     console.log('🎯 Highlighting match:', { itemId, field, startIndex, endIndex });
     
     if (!itemId || !field) {
-      // Clear highlighting
       setHighlightedCell(null);
       return;
     }
 
-    // Set the highlighted cell
     setHighlightedCell({
       itemId,
       field,
@@ -154,23 +152,24 @@ const RundownIndexContent = () => {
       endIndex
     });
 
-    // Focus the cell
+    // Focus and scroll to the cell
     const cellKey = `${itemId}-${field}`;
     const cellElement = cellRefs.current[cellKey];
     if (cellElement) {
       cellElement.focus();
       cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      // Select the text if it's an input or textarea
       if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
-        cellElement.setSelectionRange(startIndex, endIndex);
+        setTimeout(() => {
+          cellElement.setSelectionRange(startIndex, endIndex);
+        }, 100);
       }
     }
   };
 
-  // Handle replace text functionality
-  const handleReplaceText = async (itemId: string, field: string, searchText: string, replaceText: string) => {
-    console.log('🔄 Replacing text:', { itemId, field, searchText, replaceText });
+  // Handle replace text functionality - completely rewritten for reliability
+  const handleReplaceText = async (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
+    console.log('🔄 Replace operation starting:', { itemId, field, searchText, replaceText, replaceAll });
     
     const item = items.find(item => item.id === itemId);
     if (!item) {
@@ -179,27 +178,24 @@ const RundownIndexContent = () => {
     }
 
     const currentValue = getCellValue(item, { key: field });
-    console.log('📝 Current value:', currentValue);
+    console.log('📝 Current cell value:', currentValue);
     
-    if (!currentValue) {
-      console.log('❌ No current value found');
+    if (!currentValue || typeof currentValue !== 'string') {
+      console.log('❌ No valid current value found');
       return;
     }
 
-    // Create a case-insensitive replace function that handles phrases
-    const replacePhrase = (text: string, search: string, replacement: string) => {
-      const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-      return text.replace(searchRegex, replacement);
-    };
-
-    const newValue = replacePhrase(currentValue, searchText, replaceText);
-    console.log('📝 New value:', newValue);
+    // Perform case-insensitive replacement while preserving the original case of non-matching text
+    const searchRegex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const newValue = currentValue.replace(searchRegex, replaceText);
+    
+    console.log('📝 Replacement result:', { original: currentValue, new: newValue });
     
     if (newValue !== currentValue) {
+      console.log('✅ Updating item with new value');
       updateItem(itemId, field, newValue);
-      console.log('✅ Text replaced successfully');
     } else {
-      console.log('⚠️ No changes made - text not found or already replaced');
+      console.log('⚠️ No changes made - search text not found');
     }
   };
 
