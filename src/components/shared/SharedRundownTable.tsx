@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -176,11 +175,11 @@ const SharedRundownTable = ({
               
               return (
                 <React.Fragment key={item.id}>
-                  {/* Green line above current row - no spacing, just the line */}
+                  {/* Show thick green line with rounded corners ABOVE the current segment - matching main rundown */}
                   {isShowcallerCurrent && (
                     <tr className="print:hidden">
                       <td colSpan={visibleColumns.length + 1} className="p-0">
-                        <div className="h-1 bg-green-500"></div>
+                        <div className="h-2 bg-green-500 w-full rounded-full"></div>
                       </td>
                     </tr>
                   )}
@@ -260,6 +259,15 @@ const SharedRundownTable = ({
                       );
                     })}
                   </tr>
+                  
+                  {/* Show reduced grey line with rounded corners UNDER the current segment - matching main rundown */}
+                  {isShowcallerCurrent && (
+                    <tr className="print:hidden">
+                      <td colSpan={visibleColumns.length + 1} className="p-0">
+                        <div className="h-1 bg-gray-400 rounded-full" style={{ width: '200px' }}></div>
+                      </td>
+                    </tr>
+                  )}
                 </React.Fragment>
               );
             })}

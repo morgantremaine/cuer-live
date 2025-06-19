@@ -168,11 +168,11 @@ const RundownTable = ({
                   getColumnWidth={getColumnWidth}
                 />
                 
-                {/* Show thick grey line with rounded corners UNDER the current segment */}
+                {/* Show reduced grey line with rounded corners UNDER the current segment */}
                 {isCurrentlyPlaying && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-2 bg-gray-400 rounded-full" style={{ width: '300px' }}></div>
+                      <div className="h-1 bg-gray-400 rounded-full" style={{ width: '200px' }}></div>
                     </td>
                   </tr>
                 )}
