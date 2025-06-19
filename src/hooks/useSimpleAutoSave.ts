@@ -18,6 +18,8 @@ export const useSimpleAutoSave = (
   const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
   const userTypingRef = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const showcallerUpdateRef = useRef(false);
+  const showcallerUpdateTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -42,14 +44,36 @@ export const useSimpleAutoSave = (
     }
   };
 
+  // Function to set showcaller update state - prevents saves during showcaller updates
+  const setShowcallerUpdate = (isUpdate: boolean) => {
+    showcallerUpdateRef.current = isUpdate;
+    
+    if (isUpdate) {
+      console.log('📺 Marking as showcaller update - preventing auto-save');
+      // Clear existing timeout
+      if (showcallerUpdateTimeoutRef.current) {
+        clearTimeout(showcallerUpdateTimeoutRef.current);
+      }
+      
+      // Set a timeout to clear showcaller update state
+      showcallerUpdateTimeoutRef.current = setTimeout(() => {
+        showcallerUpdateRef.current = false;
+        console.log('📺 Showcaller update state cleared - auto-save can resume');
+      }, 1000); // 1 second after showcaller update
+    }
+  };
+
   // Function to set the own update tracker from realtime hook
   const setTrackOwnUpdate = (tracker: (timestamp: string) => void) => {
     trackOwnUpdateRef.current = tracker;
   };
 
   useEffect(() => {
-    // Don't save if no changes, undo is active, or user is actively typing
-    if (!state.hasUnsavedChanges || undoActiveRef.current || userTypingRef.current) {
+    // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, or showcaller is updating
+    if (!state.hasUnsavedChanges || 
+        undoActiveRef.current || 
+        userTypingRef.current || 
+        showcallerUpdateRef.current) {
       return;
     }
 
@@ -104,8 +128,16 @@ export const useSimpleAutoSave = (
     // Debounce the save with longer timing
     saveTimeoutRef.current = setTimeout(async () => {
       // Triple-check conditions when timeout executes
-      if (isSaving || undoActiveRef.current || userTypingRef.current) {
-        console.log('💾 Auto-save cancelled - conditions changed');
+      if (isSaving || 
+          undoActiveRef.current || 
+          userTypingRef.current || 
+          showcallerUpdateRef.current) {
+        console.log('💾 Auto-save cancelled - conditions changed', {
+          isSaving,
+          undoActive: undoActiveRef.current,
+          userTyping: userTypingRef.current,
+          showcallerUpdate: showcallerUpdateRef.current
+        });
         return;
       }
       
@@ -225,11 +257,14 @@ export const useSimpleAutoSave = (
     };
   }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.title, state.startTime, state.timezone, isSaving, navigate]);
 
-  // Cleanup typing timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
+      }
+      if (showcallerUpdateTimeoutRef.current) {
+        clearTimeout(showcallerUpdateTimeoutRef.current);
       }
     };
   }, []);
@@ -238,6 +273,7 @@ export const useSimpleAutoSave = (
     isSaving,
     setUndoActive,
     setTrackOwnUpdate,
-    setUserTyping // Export this for input handlers
+    setUserTyping,
+    setShowcallerUpdate // Export this for showcaller integration
   };
 };

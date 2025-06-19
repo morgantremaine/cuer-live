@@ -37,6 +37,10 @@ export const usePlaybackControls = (
       // Only save if this user is the controller
       if (isController) {
         console.log('📺 State changed, saving...');
+        // Signal that this is a showcaller update to prevent auto-save conflicts
+        if (setShowcallerUpdate) {
+          setShowcallerUpdate(true);
+        }
         // Track the update before saving to prevent our own update from triggering conflicts
         trackOwnShowcallerUpdate(state.lastUpdate);
         saveShowcallerState(state);
