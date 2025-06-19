@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -119,8 +120,11 @@ const Teleprompter = () => {
   const handlePrint = () => {
     if (!rundownData) return;
 
-    // Filter items to only show those with script content
-    const itemsWithScript = rundownData.items.filter(item => item.script && item.script.trim() !== '');
+    // Filter items to only show those with script content and add originalIndex
+    const itemsWithScript = rundownData.items.map((item, originalIndex) => ({
+      ...item,
+      originalIndex
+    })).filter(item => item.script && item.script.trim() !== '');
     
     // Create print window
     const printWindow = window.open('', '_blank');
@@ -193,7 +197,7 @@ const Teleprompter = () => {
             <p>Teleprompter Script - Generated on ${new Date().toLocaleDateString()}</p>
           </div>
           ${itemsWithScript.map((item, index) => {
-            const rowNumber = getRowNumber(item.originalIndex || index);
+            const rowNumber = getRowNumber(item.originalIndex);
             const isHeader = item.type === 'header';
             const title = isHeader 
               ? `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}`
@@ -291,10 +295,10 @@ const Teleprompter = () => {
   }
 
   // Filter items to only show those with script content
-  const itemsWithScript = rundownData.items.map((item, originalIndex) => ({
+  const itemsWithScript = rundownData?.items.map((item, originalIndex) => ({
     ...item,
     originalIndex
-  })).filter(item => item.script && item.script.trim() !== '');
+  })).filter(item => item.script && item.script.trim() !== '') || [];
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
