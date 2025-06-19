@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -101,8 +100,7 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions, isSaving]),
     hasUnsavedChanges: state.hasUnsavedChanges,
-    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate,
-    setIsProcessingUpdate: setIsProcessingRealtimeUpdate
+    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate
   });
 
   // Stable realtime collaboration - unchanged
