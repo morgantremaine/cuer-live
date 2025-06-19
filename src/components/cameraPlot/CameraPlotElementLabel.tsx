@@ -84,19 +84,16 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const labelX = elementX + elementWidth / 2 + labelOffsetX;
   const labelY = elementY + elementHeight + labelOffsetY;
 
-  // Calculate distance from default position with type-specific logic
-  const defaultOffsetY = getDefaultOffset();
-  const distanceFromDefault = Math.sqrt(
-    Math.pow(labelOffsetX, 2) + Math.pow(labelOffsetY - defaultOffsetY, 2)
-  );
-  
-  // Use type-specific threshold for line appearance
-  const lineThreshold = getLineThreshold();
-  const needsDottedLine = distanceFromDefault > lineThreshold;
-  
-  // Calculate line from element center to label with appropriate padding
+  // Calculate distance from element center to label center - this is the key fix
   const elementCenterX = elementX + elementWidth / 2;
   const elementCenterY = elementY + elementHeight / 2;
+  const distanceFromCenter = Math.sqrt(
+    Math.pow(labelX - elementCenterX, 2) + Math.pow(labelY - elementCenterY, 2)
+  );
+  
+  // Use type-specific threshold for line appearance - now based on actual distance from element
+  const lineThreshold = getLineThreshold();
+  const needsDottedLine = distanceFromCenter > lineThreshold;
   
   // Type-specific padding to keep lines away from icons
   const iconPadding = element.type === 'furniture' ? 25 : 30; // Reduced for furniture
