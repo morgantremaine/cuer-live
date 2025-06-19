@@ -53,13 +53,28 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Create a signature of the current state - EXCLUDE columns and showcaller data
+    // Create a signature of the current state - EXCLUDE showcaller data completely
     const currentSignature = JSON.stringify({
       items: state.items?.map(item => ({
-        ...item,
-        // Exclude showcaller-specific fields that change frequently
-        status: undefined,
-        currentSegmentId: undefined
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        duration: item.duration,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        isFloated: item.isFloated,
+        customFields: item.customFields,
+        segmentName: item.segmentName,
+        elapsedTime: item.elapsedTime,
+        rowNumber: item.rowNumber
+        // Explicitly exclude: status, currentSegmentId and any other showcaller fields
       })) || [],
       title: state.title,
       startTime: state.startTime,
@@ -97,9 +112,24 @@ export const useSimpleAutoSave = (
       // Check if state changed again during debounce
       const finalSignature = JSON.stringify({
         items: state.items?.map(item => ({
-          ...item,
-          status: undefined,
-          currentSegmentId: undefined
+          id: item.id,
+          type: item.type,
+          name: item.name,
+          duration: item.duration,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          talent: item.talent,
+          script: item.script,
+          gfx: item.gfx,
+          video: item.video,
+          notes: item.notes,
+          color: item.color,
+          isFloating: item.isFloating,
+          isFloated: item.isFloated,
+          customFields: item.customFields,
+          segmentName: item.segmentName,
+          elapsedTime: item.elapsedTime,
+          rowNumber: item.rowNumber
         })) || [],
         title: state.title,
         startTime: state.startTime,

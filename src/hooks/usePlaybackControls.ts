@@ -10,12 +10,13 @@ export const usePlaybackControls = (
   items: RundownItem[],
   updateItem: (id: string, field: string, value: string) => void,
   rundownId?: string,
-  onShowcallerActivity?: (active: boolean) => void
+  onShowcallerActivity?: (active: boolean) => void,
+  setShowcallerUpdate?: (isUpdate: boolean) => void // Add this to prevent change tracking
 ) => {
   const { user } = useAuth();
   const hasLoadedInitialState = useRef(false);
 
-  // Initialize showcaller state management with user ID
+  // Initialize showcaller state management with user ID and change tracking prevention
   const {
     showcallerState,
     play,
@@ -31,6 +32,7 @@ export const usePlaybackControls = (
     items,
     updateItem,
     userId: user?.id,
+    setShowcallerUpdate, // Pass this to prevent change tracking
     onShowcallerStateChange: (state) => {
       // Only save if this user is the controller
       if (isController) {

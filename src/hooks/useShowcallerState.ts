@@ -17,6 +17,7 @@ interface UseShowcallerStateProps {
   onShowcallerStateChange?: (state: ShowcallerState) => void;
   userId?: string;
   trackOwnUpdate?: (lastUpdate: string) => void;
+  setShowcallerUpdate?: (isUpdate: boolean) => void; // Add this to prevent change tracking
 }
 
 export const useShowcallerState = ({
@@ -24,7 +25,8 @@ export const useShowcallerState = ({
   updateItem,
   onShowcallerStateChange,
   userId,
-  trackOwnUpdate
+  trackOwnUpdate,
+  setShowcallerUpdate
 }: UseShowcallerStateProps) => {
   const [showcallerState, setShowcallerState] = useState<ShowcallerState>({
     isPlaying: false,
@@ -114,8 +116,13 @@ export const useShowcallerState = ({
     }, 150); // 150ms debounce to group rapid updates
   }, [trackOwnUpdate]);
 
-  // Update showcaller state
+  // Update showcaller state with change tracking exclusion
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
+    // Mark as showcaller update to prevent change tracking
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+    }
+
     const updatedState = {
       ...showcallerState,
       ...newState,
@@ -129,21 +136,47 @@ export const useShowcallerState = ({
       console.log('📺 Syncing state change (debounced)');
       debouncedSync(updatedState);
     }
-  }, [showcallerState, debouncedSync]);
+
+    // Clear the showcaller update flag after a brief delay
+    if (setShowcallerUpdate) {
+      setTimeout(() => {
+        setShowcallerUpdate(false);
+      }, 100);
+    }
+  }, [showcallerState, debouncedSync, setShowcallerUpdate]);
 
   // Clear current status from all items
   const clearCurrentStatus = useCallback(() => {
     console.log('📺 Clearing current status from all items');
+    
+    // Mark as showcaller update
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+    }
+
     items.forEach(item => {
       if (item.status === 'current') {
         console.log('📺 Clearing current status from:', item.id);
         updateItem(item.id, 'status', 'completed');
       }
     });
-  }, [items, updateItem]);
+
+    // Clear the flag after updates
+    setTimeout(() => {
+      if (setShowcallerUpdate) {
+        setShowcallerUpdate(false);
+      }
+    }, 100);
+  }, [items, updateItem, setShowcallerUpdate]);
 
   const setCurrentSegment = useCallback((segmentId: string) => {
     console.log('📺 setCurrentSegment called with:', segmentId);
+    
+    // Mark as showcaller update
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+    }
+
     clearCurrentStatus();
     const segment = items.find(item => item.id === segmentId);
     console.log('📺 Found segment:', segment);
@@ -161,7 +194,14 @@ export const useShowcallerState = ({
         controllerId: userId
       }, true);
     }
-  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
+
+    // Clear the flag after updates
+    setTimeout(() => {
+      if (setShowcallerUpdate) {
+        setShowcallerUpdate(false);
+      }
+    }, 100);
+  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId, setShowcallerUpdate]);
 
   // Timer logic
   const startTimer = useCallback(() => {
@@ -177,6 +217,11 @@ export const useShowcallerState = ({
         if (prevState.timeRemaining <= 1) {
           // Only controller handles segment advancement
           if (isActiveController && prevState.currentSegmentId) {
+            // Mark as showcaller update
+            if (setShowcallerUpdate) {
+              setShowcallerUpdate(true);
+            }
+
             updateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
@@ -198,6 +243,13 @@ export const useShowcallerState = ({
               if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
+
+              // Clear the flag after updates
+              setTimeout(() => {
+                if (setShowcallerUpdate) {
+                  setShowcallerUpdate(false);
+                }
+              }, 100);
               
               return newState;
             } else {
@@ -218,6 +270,13 @@ export const useShowcallerState = ({
               if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
+
+              // Clear the flag after updates
+              setTimeout(() => {
+                if (setShowcallerUpdate) {
+                  setShowcallerUpdate(false);
+                }
+              }, 100);
               
               return newState;
             }
@@ -248,7 +307,7 @@ export const useShowcallerState = ({
         return newState;
       });
     }, 1000);
-  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate]);
+  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate, setShowcallerUpdate]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -262,6 +321,11 @@ export const useShowcallerState = ({
   const play = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Play called with segmentId:', selectedSegmentId, 'by user:', userId);
     const playbackStartTime = Date.now();
+    
+    // Mark as showcaller update
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+    }
     
     if (selectedSegmentId) {
       console.log('📺 Playing specific segment:', selectedSegmentId);
@@ -300,7 +364,14 @@ export const useShowcallerState = ({
     }, true);
     
     startTimer();
-  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer]);
+
+    // Clear the flag after updates
+    setTimeout(() => {
+      if (setShowcallerUpdate) {
+        setShowcallerUpdate(false);
+      }
+    }, 100);
+  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer, setShowcallerUpdate]);
 
   const pause = useCallback(() => {
     console.log('📺 Pause called by user:', userId);
@@ -316,6 +387,12 @@ export const useShowcallerState = ({
   // ENHANCED: Improved forward/backward with better coordination
   const forward = useCallback(() => {
     console.log('📺 Forward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
+    
+    // Mark as showcaller update
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+    }
+
     if (showcallerState.currentSegmentId) {
       const nextSegment = getNextSegment(showcallerState.currentSegmentId);
       if (nextSegment) {
@@ -344,10 +421,23 @@ export const useShowcallerState = ({
     } else {
       console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer]);
+
+    // Clear the flag after updates
+    setTimeout(() => {
+      if (setShowcallerUpdate) {
+        setShowcallerUpdate(false);
+      }
+    }, 100);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, setShowcallerUpdate]);
 
   const backward = useCallback(() => {
     console.log('📺 Backward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
+    
+    // Mark as showcaller update
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+    }
+
     if (showcallerState.currentSegmentId) {
       const prevSegment = getPreviousSegment(showcallerState.currentSegmentId);
       if (prevSegment) {
@@ -376,7 +466,14 @@ export const useShowcallerState = ({
     } else {
       console.log('📺 No current segment to move from');
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer]);
+
+    // Clear the flag after updates
+    setTimeout(() => {
+      if (setShowcallerUpdate) {
+        setShowcallerUpdate(false);
+      }
+    }, 100);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, setShowcallerUpdate]);
 
   // External state application
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
@@ -386,6 +483,11 @@ export const useShowcallerState = ({
     lastSyncedStateRef.current = externalState.lastUpdate;
 
     console.log('📺 Applying external showcaller state from controller:', externalState.controllerId);
+    
+    // Mark as showcaller update
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+    }
     
     stopTimer();
     clearCurrentStatus();
@@ -422,7 +524,14 @@ export const useShowcallerState = ({
       console.log('📺 Restarting timer after sync');
       setTimeout(() => startTimer(), 100);
     }
-  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer]);
+
+    // Clear the flag after updates
+    setTimeout(() => {
+      if (setShowcallerUpdate) {
+        setShowcallerUpdate(false);
+      }
+    }, 100);
+  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer, setShowcallerUpdate]);
 
   // Initialize current segment on mount if none exists
   useEffect(() => {

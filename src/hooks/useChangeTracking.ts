@@ -23,16 +23,32 @@ export const useChangeTracking = (
   const lastProcessingFlagClearTime = useRef<number>(0);
   const userActivelyTypingRef = useRef(false);
   const lastUserInteractionRef = useRef<number>(0);
+  const showcallerUpdateRef = useRef(false);
 
   // Enhanced signature creation that excludes showcaller-only changes
   const createContentSignature = useCallback(() => {
-    // Only include actual content, not showcaller state
+    // Only include actual content, not showcaller state - be very explicit about what we include
     return JSON.stringify({
       items: (items || []).map(item => ({
-        ...item,
-        // Remove showcaller-specific fields from signature
-        status: undefined,
-        currentSegmentId: undefined
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        duration: item.duration,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        isFloated: item.isFloated,
+        customFields: item.customFields,
+        segmentName: item.segmentName,
+        elapsedTime: item.elapsedTime,
+        rowNumber: item.rowNumber
+        // Explicitly exclude: status, currentSegmentId and any other showcaller-specific fields
       })),
       title: rundownTitle || '',
       columns: columns || [],
@@ -46,6 +62,14 @@ export const useChangeTracking = (
     userActivelyTypingRef.current = typing;
     if (typing) {
       lastUserInteractionRef.current = Date.now();
+    }
+  }, []);
+
+  // Track showcaller updates to prevent them from triggering change detection
+  const setShowcallerUpdate = useCallback((isShowcallerUpdate: boolean) => {
+    showcallerUpdateRef.current = isShowcallerUpdate;
+    if (isShowcallerUpdate) {
+      console.log('📺 Marking as showcaller update - excluding from change detection');
     }
   }, []);
 
@@ -73,14 +97,15 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createContentSignature]);
 
-  // Enhanced change detection with better protection
+  // Enhanced change detection with better protection against showcaller updates
   useEffect(() => {
     // CRITICAL: Multiple layers of protection against false positives
     if (!isInitialized || 
         isLoading || 
         isProcessingRealtimeUpdate || 
         isApplyingRemoteUpdateRef.current ||
-        isInRealtimeCooldown.current) {
+        isInRealtimeCooldown.current ||
+        showcallerUpdateRef.current) { // Add showcaller update protection
       return;
     }
 
@@ -121,9 +146,24 @@ export const useChangeTracking = (
   ) => {
     const savedSignature = JSON.stringify({
       items: (savedItems || []).map(item => ({
-        ...item,
-        status: undefined,
-        currentSegmentId: undefined
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        duration: item.duration,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        isFloated: item.isFloated,
+        customFields: item.customFields,
+        segmentName: item.segmentName,
+        elapsedTime: item.elapsedTime,
+        rowNumber: item.rowNumber
       })),
       title: savedTitle || '',
       columns: savedColumns || [],
@@ -142,7 +182,8 @@ export const useChangeTracking = (
         !isProcessingRealtimeUpdate && 
         !isApplyingRemoteUpdateRef.current &&
         !isInRealtimeCooldown.current &&
-        !userActivelyTypingRef.current) {
+        !userActivelyTypingRef.current &&
+        !showcallerUpdateRef.current) { // Add showcaller protection
       console.log('📝 Manually marking as changed');
       setHasUnsavedChanges(true);
     }
@@ -164,9 +205,24 @@ export const useChangeTracking = (
 
     const newSignature = JSON.stringify({
       items: (newItems || []).map(item => ({
-        ...item,
-        status: undefined,
-        currentSegmentId: undefined
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        duration: item.duration,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        isFloated: item.isFloated,
+        customFields: item.customFields,
+        segmentName: item.segmentName,
+        elapsedTime: item.elapsedTime,
+        rowNumber: item.rowNumber
       })),
       title: newTitle || '',
       columns: newColumns || [],
@@ -221,6 +277,7 @@ export const useChangeTracking = (
     setIsLoading,
     updateSavedSignature,
     setApplyingRemoteUpdate,
-    setUserTyping // Export this for components to use
+    setUserTyping, // Export this for components to use
+    setShowcallerUpdate // Export this to prevent showcaller updates from triggering changes
   };
 };
