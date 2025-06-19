@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CameraElement } from '@/hooks/useCameraPlot';
+import { CameraElement } from '@/hooks/cameraPlot/core/useCameraPlotData';
 
 interface CameraPlotMiniPreviewProps {
   elements: CameraElement[];
