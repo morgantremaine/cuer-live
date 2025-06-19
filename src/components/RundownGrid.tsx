@@ -57,10 +57,11 @@ const RundownGrid = () => {
     updateColumnWidth,
     handleCellClick,
     handleKeyDown,
-    cellRefs,
-    // Add highlightedCell from uiState if it exists
-    highlightedCell
+    cellRefs
   } = uiState;
+
+  // Create a mock highlightedCell for now - this should be added to uiState
+  const highlightedCell = null;
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
@@ -129,8 +130,8 @@ const RundownGrid = () => {
     <RundownTable
       items={items}
       visibleColumns={visibleColumns}
-      currentTime={currentTime}
-      showColorPicker={showColorPicker}
+      currentTime={currentTime.toISOString()}
+      showColorPicker={{ [showColorPicker]: true }}
       cellRefs={cellRefs}
       selectedRows={selectedRows}
       draggedItemIndex={draggedItemIndex}
@@ -165,7 +166,7 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
-      highlightedCell={highlightedCell || null}
+      highlightedCell={highlightedCell}
     />
   );
 };

@@ -107,10 +107,10 @@ const HeaderRow = (props: HeaderRowProps) => {
       <RundownContextMenu
         item={item}
         showColorPicker={props.showColorPicker}
-        onToggleColorPicker={props.onToggleColorPicker}
+        onToggleColorPicker={() => props.onToggleColorPicker(item.id)}
         onColorSelect={props.onColorSelect}
-        onDeleteRow={props.onDeleteRow}
-        onToggleFloat={props.onToggleFloat}
+        onDeleteRow={() => props.onDeleteRow(item.id)}
+        onToggleFloat={() => props.onToggleFloat(item.id)}
       />
     </>
   );

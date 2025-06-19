@@ -92,7 +92,7 @@ const RundownTable = ({
       <table className="w-full border-collapse">
         <RundownTableHeader 
           visibleColumns={visibleColumns}
-          getColumnWidth={(column: Column) => getColumnWidth(column.id)}
+          getColumnWidth={getColumnWidth}
           updateColumnWidth={updateColumnWidth}
         />
         <tbody>
