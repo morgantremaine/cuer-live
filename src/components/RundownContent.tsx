@@ -82,6 +82,13 @@ const RundownContent = ({
   onAddHeader
 }: RundownContentProps) => {
 
+  // Create a wrapper function to convert headerId to index for header duration calculation
+  const getHeaderDurationById = (headerId: string): string => {
+    const itemIndex = items.findIndex(item => item.id === headerId);
+    if (itemIndex === -1) return '00:00:00';
+    return calculateHeaderDuration(itemIndex);
+  };
+
   return (
     <div className="relative bg-background">
       {/* Scrollable Content with Header Inside */}
@@ -101,22 +108,17 @@ const RundownContent = ({
           {/* Table Content */}
           <RundownTable
             items={items}
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
+            columns={visibleColumns}
             showColorPicker={showColorPicker}
             cellRefs={cellRefs}
             selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
+            currentlyPlayingId={currentSegmentId}
             isDraggingMultiple={isDraggingMultiple}
-            dropTargetIndex={dropTargetIndex}
-            currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
-            selectedRowId={selectedRowId}
             getColumnWidth={getColumnWidth}
-            updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
             getRowStatus={(item) => getRowStatus(item, currentTime)}
-            getHeaderDuration={calculateHeaderDuration}
+            getHeaderDuration={getHeaderDurationById}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}
@@ -127,7 +129,6 @@ const RundownContent = ({
             onRowSelect={onRowSelect}
             onDragStart={onDragStart}
             onDragOver={onDragOver}
-            onDragLeave={onDragLeave}
             onDrop={onDrop}
             onCopySelectedRows={onCopySelectedRows}
             onDeleteSelectedRows={onDeleteSelectedRows}
@@ -135,6 +136,7 @@ const RundownContent = ({
             onClearSelection={onClearSelection || (() => {})}
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
+            isDragging={draggedItemIndex !== null}
           />
         </div>
         <ScrollBar orientation="horizontal" />

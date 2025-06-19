@@ -81,8 +81,9 @@ const RundownTable = ({
     <div className="flex-1 overflow-auto">
       <table className="w-full border-collapse">
         <RundownTableHeader 
-          columns={columns}
+          visibleColumns={columns}
           getColumnWidth={getColumnWidth}
+          updateColumnWidth={() => {}} // Add empty function since it's required
         />
         <tbody>
           {items.map((item, index) => (
