@@ -28,7 +28,7 @@ export const useChangeTracking = (
   // Enhanced signature creation that excludes showcaller-only changes
   const createContentSignature = useCallback(() => {
     // Only include actual content, not showcaller state - be very explicit about what we include
-    return JSON.stringify({
+    const signature = JSON.stringify({
       items: (items || []).map(item => ({
         id: item.id,
         type: item.type,
@@ -40,6 +40,7 @@ export const useChangeTracking = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
+        images: item.images, // Make sure images field is included
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
@@ -55,10 +56,14 @@ export const useChangeTracking = (
       timezone: timezone || '',
       startTime: startTime || ''
     });
+    
+    console.log('🔍 Created content signature, items count:', items?.length || 0);
+    return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
 
   // Track user typing activity
   const setUserTyping = useCallback((typing: boolean) => {
+    console.log('⌨️ User typing state changed:', typing);
     userActivelyTypingRef.current = typing;
     if (typing) {
       lastUserInteractionRef.current = Date.now();
@@ -87,7 +92,7 @@ export const useChangeTracking = (
         lastSavedDataRef.current = currentSignature;
         setIsInitialized(true);
         console.log('🔄 Change tracking initialized with signature length:', currentSignature.length);
-      }, 1000); // Increased from 500ms
+      }, 1000);
     }
 
     return () => {
@@ -105,13 +110,13 @@ export const useChangeTracking = (
         isProcessingRealtimeUpdate || 
         isApplyingRemoteUpdateRef.current ||
         isInRealtimeCooldown.current ||
-        showcallerUpdateRef.current) { // Add showcaller update protection
+        showcallerUpdateRef.current) {
       return;
     }
 
     // Don't trigger changes immediately after clearing processing flags
     const timeSinceLastClear = Date.now() - lastProcessingFlagClearTime.current;
-    if (timeSinceLastClear < 2000) { // Increased from 1000ms
+    if (timeSinceLastClear < 2000) {
       return;
     }
 
@@ -133,6 +138,8 @@ export const useChangeTracking = (
     // Only trigger if signature actually changed
     if (lastSavedDataRef.current !== currentSignature) {
       console.log('📝 Content change detected, marking as changed');
+      console.log('📝 Previous signature length:', lastSavedDataRef.current.length);
+      console.log('📝 Current signature length:', currentSignature.length);
       setHasUnsavedChanges(true);
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignature, isProcessingRealtimeUpdate]);
@@ -156,6 +163,7 @@ export const useChangeTracking = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
+        images: item.images, // Make sure images field is included
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
@@ -183,7 +191,7 @@ export const useChangeTracking = (
         !isApplyingRemoteUpdateRef.current &&
         !isInRealtimeCooldown.current &&
         !userActivelyTypingRef.current &&
-        !showcallerUpdateRef.current) { // Add showcaller protection
+        !showcallerUpdateRef.current) {
       console.log('📝 Manually marking as changed');
       setHasUnsavedChanges(true);
     }
@@ -215,6 +223,7 @@ export const useChangeTracking = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
+        images: item.images, // Make sure images field is included
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
@@ -238,7 +247,7 @@ export const useChangeTracking = (
     realtimeCooldownRef.current = setTimeout(() => {
       isInRealtimeCooldown.current = false;
       console.log('❄️ Realtime cooldown ended');
-    }, 3000); // Increased from 1.5 seconds
+    }, 3000);
   }, []);
 
   // Enhanced method to set the applying remote update flag
@@ -255,7 +264,7 @@ export const useChangeTracking = (
       realtimeCooldownRef.current = setTimeout(() => {
         isInRealtimeCooldown.current = false;
         console.log('❄️ Extended realtime cooldown ended after remote update');
-      }, 4000); // Extended cooldown after remote updates
+      }, 4000);
     }
   }, []);
 
@@ -277,7 +286,7 @@ export const useChangeTracking = (
     setIsLoading,
     updateSavedSignature,
     setApplyingRemoteUpdate,
-    setUserTyping, // Export this for components to use
-    setShowcallerUpdate // Export this to prevent showcaller updates from triggering changes
+    setUserTyping,
+    setShowcallerUpdate
   };
 };

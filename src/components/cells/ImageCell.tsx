@@ -36,8 +36,13 @@ const ImageCell = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    console.log('🖼️ ImageCell handleInputChange:', { itemId, newValue, oldValue: internalValue });
+    
     setInternalValue(newValue);
+    
+    // Immediately call onUpdateValue to ensure the change is propagated
     onUpdateValue(newValue);
+    
     setImageError(false); // Reset error when URL changes
   };
 
@@ -60,12 +65,33 @@ const ImageCell = ({
   const handleCellClick = (e: React.MouseEvent) => {
     // Prevent event bubbling to row click handler
     e.stopPropagation();
+    console.log('🖼️ ImageCell clicked, entering edit mode for item:', itemId);
     setIsEditing(true);
     
     // Call the parent onCellClick if provided
     if (onCellClick) {
       onCellClick(e);
     }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    console.log('🖼️ ImageCell blur event, exiting edit mode for item:', itemId);
+    e.stopPropagation();
+    setIsEditing(false);
+    
+    // Final update on blur to ensure consistency
+    const finalValue = e.target.value;
+    if (finalValue !== internalValue) {
+      console.log('🖼️ ImageCell final update on blur:', { itemId, finalValue, internalValue });
+      setInternalValue(finalValue);
+      onUpdateValue(finalValue);
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    console.log('🖼️ ImageCell focus event for item:', itemId);
+    e.stopPropagation();
+    setIsEditing(true);
   };
 
   // Check if we have a valid image URL (non-empty and no error)
@@ -101,16 +127,8 @@ const ImageCell = ({
           value={internalValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onBlur={(e) => {
-            // Prevent event bubbling
-            e.stopPropagation();
-            setIsEditing(false);
-          }}
-          onFocus={(e) => {
-            // Prevent event bubbling
-            e.stopPropagation();
-            setIsEditing(true);
-          }}
+          onBlur={handleBlur}
+          onFocus={handleFocus}
           onClick={(e) => {
             // Prevent event bubbling when clicking on input
             e.stopPropagation();
