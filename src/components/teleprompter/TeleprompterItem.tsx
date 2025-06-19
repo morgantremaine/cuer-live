@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 interface TeleprompterItemProps {
@@ -7,12 +7,34 @@ interface TeleprompterItemProps {
   fontSize: number;
   isUppercase: boolean;
   getRowNumber: (index: number) => string;
+  onUpdateScript?: (itemId: string, newScript: string) => void;
+  canEdit?: boolean;
 }
 
-const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: TeleprompterItemProps) => {
+const TeleprompterItem = ({ 
+  item, 
+  fontSize, 
+  isUppercase, 
+  getRowNumber, 
+  onUpdateScript,
+  canEdit = false 
+}: TeleprompterItemProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(item.script || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const formatText = (text: string) => {
     return isUppercase ? text.toUpperCase() : text;
   };
+
+  // Auto-resize textarea and focus when editing starts
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [isEditing]);
 
   // Function to parse and render script text with bracket styling
   const renderScriptWithBrackets = (text: string) => {
@@ -102,6 +124,42 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
     return parts.length > 0 ? parts : formatText(text);
   };
 
+  const handleScriptClick = () => {
+    if (canEdit && !isHeaderItem(item) && onUpdateScript) {
+      setIsEditing(true);
+      setEditText(item.script || '');
+    }
+  };
+
+  const handleScriptSave = () => {
+    if (onUpdateScript && editText !== item.script) {
+      onUpdateScript(item.id, editText);
+    }
+    setIsEditing(false);
+  };
+
+  const handleScriptCancel = () => {
+    setEditText(item.script || '');
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      handleScriptSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleScriptCancel();
+    }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditText(e.target.value);
+    // Auto-resize textarea
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+  };
+
   if (isHeaderItem(item)) {
     return (
       <div className="mb-12">
@@ -143,15 +201,44 @@ const TeleprompterItem = ({ item, fontSize, isUppercase, getRowNumber }: Telepro
         </span>
       </div>
 
-      {/* Script with bracket parsing only - no talent content */}
-      <div 
-        className="leading-relaxed text-left whitespace-pre-wrap"
-        style={{ 
-          fontSize: `${fontSize}px`,
-          lineHeight: '1.2'
-        }}
-      >
-        {item.script ? renderScriptWithBrackets(item.script) : ''}
+      {/* Script with bracket parsing and editing capability */}
+      <div className="leading-relaxed text-left whitespace-pre-wrap">
+        {isEditing ? (
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={editText}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              onBlur={handleScriptSave}
+              className="w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden"
+              style={{ 
+                fontSize: `${fontSize}px`,
+                lineHeight: '1.2',
+                minHeight: '100px'
+              }}
+              placeholder="Enter script content..."
+            />
+            <div className="absolute top-2 right-2 text-xs text-gray-400">
+              Ctrl+Enter to save, Esc to cancel
+            </div>
+          </div>
+        ) : (
+          <div
+            onClick={handleScriptClick}
+            className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
+            style={{ 
+              fontSize: `${fontSize}px`,
+              lineHeight: '1.2'
+            }}
+          >
+            {item.script ? renderScriptWithBrackets(item.script) : (
+              canEdit ? (
+                <span className="text-gray-500 italic">Click to add script content...</span>
+              ) : ''
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -7,12 +7,12 @@ import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
+import { useAuth } from '@/hooks/useAuth';
 
 const Teleprompter = () => {
+  const { user } = useAuth();
   const params = useParams<{ id: string }>();
-  // Filter out the literal ":id" string that sometimes comes from route patterns
-  const rawId = params.id;
-  const rundownId = rawId === ':id' ? undefined : rawId;
+  const rundownId = params.id;
   
   const [rundownData, setRundownData] = useState<{
     title: string;
@@ -41,18 +41,18 @@ const Teleprompter = () => {
   // Use the scroll hook with reverse support
   useTeleprompterScroll(isScrolling, scrollSpeed, containerRef, isReverse());
 
-  // Load rundown data with public access (same as SharedRundown)
+  // Load rundown data with authentication
   const loadRundownData = async () => {
-    if (!rundownId) {
+    if (!rundownId || !user) {
       setLoading(false);
-      setError('No rundown ID provided');
+      setError('Authentication required or no rundown ID provided');
       return;
     }
 
     setError(null);
 
     try {
-      // Try to access rundown without RLS enforcement (public access)
+      // Access rundown with authentication
       const { data, error: queryError } = await supabase
         .from('rundowns')
         .select('id, title, items, columns, created_at, updated_at')
@@ -60,14 +60,8 @@ const Teleprompter = () => {
         .single();
 
       if (queryError) {
-        // Handle different types of errors
-        if (queryError.code === 'PGRST116') {
-          setError('Rundown not found - it may be private or the ID is incorrect');
-        } else if (queryError.message.includes('RLS')) {
-          setError('This rundown is private and cannot be shared publicly');
-        } else {
-          setError(`Database error: ${queryError.message} (Code: ${queryError.code})`);
-        }
+        console.error('Database error:', queryError);
+        setError(`Unable to load rundown: ${queryError.message}`);
         setRundownData(null);
       } else if (data) {
         setRundownData({
@@ -88,23 +82,57 @@ const Teleprompter = () => {
     setLoading(false);
   };
 
+  // Update script content and sync back to main rundown
+  const updateScriptContent = async (itemId: string, newScript: string) => {
+    if (!rundownData || !user) return;
+
+    try {
+      // Update the local state immediately
+      const updatedItems = rundownData.items.map(item =>
+        item.id === itemId ? { ...item, script: newScript } : item
+      );
+      
+      setRundownData({
+        ...rundownData,
+        items: updatedItems
+      });
+
+      // Update the database
+      const { error } = await supabase
+        .from('rundowns')
+        .update({ 
+          items: updatedItems,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rundownId);
+
+      if (error) {
+        console.error('Error updating script:', error);
+        // Revert local state on error
+        setRundownData(rundownData);
+      }
+    } catch (error) {
+      console.error('Error updating script:', error);
+    }
+  };
+
   // Initial load
   useEffect(() => {
     loadRundownData();
-  }, [rundownId]);
+  }, [rundownId, user]);
 
-  // Set up polling for updates (check every 5 seconds, same as SharedRundown)
+  // Set up polling for updates (check every 5 seconds)
   useEffect(() => {
-    if (!rundownId || loading) return;
+    if (!rundownId || loading || !user) return;
     
     const pollInterval = setInterval(() => {
       loadRundownData();
-    }, 5000); // Poll every 5 seconds
+    }, 5000);
 
     return () => {
       clearInterval(pollInterval);
     };
-  }, [rundownId, loading]);
+  }, [rundownId, loading, user]);
 
   const getRowNumber = (index: number) => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -143,9 +171,6 @@ const Teleprompter = () => {
         <div className="text-center">
           <div className="text-white text-xl mb-2">Error loading teleprompter</div>
           <div className="text-gray-400 text-sm">{error}</div>
-          <div className="text-gray-500 text-xs mt-4">
-            This rundown may be private or the link may be incorrect.
-          </div>
         </div>
       </div>
     );
@@ -157,7 +182,7 @@ const Teleprompter = () => {
         <div className="text-center">
           <div className="text-white text-xl mb-2">Rundown not found</div>
           <div className="text-gray-400 text-sm">
-            This rundown may be private or the link may be incorrect.
+            The rundown may not exist or you may not have access to it.
           </div>
         </div>
       </div>
@@ -196,12 +221,15 @@ const Teleprompter = () => {
         fontSize={fontSize}
         isUppercase={isUppercase}
         getRowNumber={getRowNumber}
+        onUpdateScript={updateScriptContent}
+        canEdit={!isFullscreen}
       />
 
       {/* Keyboard Instructions - Only show when not fullscreen */}
       {!isFullscreen && (
         <div className="fixed bottom-4 left-4 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
           <div>Arrow Keys: Adjust Speed | Space: Play/Pause | Esc: Exit Fullscreen</div>
+          <div>Click on script text to edit (editing pauses scrolling)</div>
         </div>
       )}
     </div>
@@ -209,4 +237,3 @@ const Teleprompter = () => {
 };
 
 export default Teleprompter;
-

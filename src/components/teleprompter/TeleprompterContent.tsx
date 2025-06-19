@@ -11,6 +11,8 @@ interface TeleprompterContentProps {
   fontSize: number;
   isUppercase: boolean;
   getRowNumber: (index: number) => string;
+  onUpdateScript?: (itemId: string, newScript: string) => void;
+  canEdit?: boolean;
 }
 
 const TeleprompterContent = ({
@@ -19,7 +21,9 @@ const TeleprompterContent = ({
   itemsWithScript,
   fontSize,
   isUppercase,
-  getRowNumber
+  getRowNumber,
+  onUpdateScript,
+  canEdit = false
 }: TeleprompterContentProps) => {
   return (
     <div className={`relative ${isFullscreen ? 'cursor-none' : ''}`}>
@@ -54,6 +58,8 @@ const TeleprompterContent = ({
               fontSize={fontSize}
               isUppercase={isUppercase}
               getRowNumber={getRowNumber}
+              onUpdateScript={onUpdateScript}
+              canEdit={canEdit}
             />
           ))}
         </div>

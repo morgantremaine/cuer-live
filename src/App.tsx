@@ -46,8 +46,6 @@ const AppRoutes = () => {
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
       <Route path="/join-team/:token" element={<JoinTeam />} />
       <Route path="/help" element={<Help />} />
-      {/* Make teleprompter public - no authentication required */}
-      <Route path="/teleprompter/:id" element={<Teleprompter />} />
       
       {/* Auth callback routes */}
       <Route path="/auth/callback" element={<AuthCallback />} />
@@ -99,6 +97,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <CameraPlotEditor />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teleprompter/:id" 
+        element={
+          <ProtectedRoute>
+            <Teleprompter />
           </ProtectedRoute>
         } 
       />
