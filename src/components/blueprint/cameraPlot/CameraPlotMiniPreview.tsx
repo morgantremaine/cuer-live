@@ -39,7 +39,7 @@ const CameraPlotMiniPreview = ({
     // Add padding proportional to the scene size
     const sceneWidth = maxX - minX;
     const sceneHeight = maxY - minY;
-    const padding = Math.max(sceneWidth * 0.1, sceneHeight * 0.1, 20);
+    const padding = Math.max(sceneWidth * 0.15, sceneHeight * 0.15, 30);
     
     return {
       minX: minX - padding,
@@ -56,7 +56,7 @@ const CameraPlotMiniPreview = ({
   // Calculate scale to fit the scene in the preview container
   const scaleX = containerWidth / sceneWidth;
   const scaleY = containerHeight / sceneHeight;
-  const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1:1
+  const scale = Math.min(scaleX, scaleY); // Remove the 1 limit to allow proper scaling
 
   // Calculate offset to center the scaled content
   const scaledWidth = sceneWidth * scale;
@@ -97,8 +97,8 @@ const CameraPlotMiniPreview = ({
               src="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
               alt="Camera"
               style={{
-                width: Math.max(8 * scale, 4),
-                height: Math.max(8 * scale, 4),
+                width: Math.max(width * 0.6, 8),
+                height: Math.max(height * 0.6, 8),
                 objectFit: 'contain'
               }}
             />
@@ -120,8 +120,8 @@ const CameraPlotMiniPreview = ({
               src="/lovable-uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
               alt="Person"
               style={{
-                width: Math.max(12 * scale, 6),
-                height: Math.max(12 * scale, 6),
+                width: Math.max(width * 0.8, 10),
+                height: Math.max(height * 0.8, 10),
                 objectFit: 'contain'
               }}
             />
