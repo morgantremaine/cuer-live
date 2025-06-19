@@ -167,9 +167,9 @@ const TeleprompterItem = ({
 
   if (isHeaderItem(item)) {
     return (
-      <div className="mb-12">
+      <div className="mb-8">
         <h2 
-          className="font-bold text-left mb-8"
+          className="font-bold text-left mb-6"
           style={{ fontSize: `${fontSize + 8}px` }}
         >
           <span
@@ -191,7 +191,7 @@ const TeleprompterItem = ({
   const isNullItem = item.script && item.script.trim() === '[null]';
 
   return (
-    <div className="mb-16">
+    <div className="mb-8">
       {/* Segment Title */}
       <div 
         className="text-left mb-6"
