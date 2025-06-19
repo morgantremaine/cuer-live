@@ -63,15 +63,18 @@ export const useShowcallerRealtime = ({
 
     const showcallerState = payload.new.showcaller_state as ShowcallerState;
     
+    // Convert lastUpdate to string for comparison
+    const lastUpdateString = showcallerState.lastUpdate?.toString();
+    
     // Prevent processing duplicate updates based on lastUpdate timestamp
-    if (showcallerState.lastUpdate && showcallerState.lastUpdate === lastProcessedUpdateRef.current) {
-      console.log('📺 Skipping duplicate update:', showcallerState.lastUpdate);
+    if (lastUpdateString && lastUpdateString === lastProcessedUpdateRef.current) {
+      console.log('📺 Skipping duplicate update:', lastUpdateString);
       return;
     }
 
     // Skip if this update originated from this user
-    if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
-      console.log('📺 Skipping own update:', showcallerState.lastUpdate);
+    if (lastUpdateString && ownUpdateTrackingRef.current.has(lastUpdateString)) {
+      console.log('📺 Skipping own update:', lastUpdateString);
       return;
     }
 
@@ -81,7 +84,7 @@ export const useShowcallerRealtime = ({
     }
 
     processingTimeoutRef.current = setTimeout(() => {
-      lastProcessedUpdateRef.current = showcallerState.lastUpdate;
+      lastProcessedUpdateRef.current = lastUpdateString || null;
       
       console.log('📺 Processing showcaller state update:', {
         controllerId: showcallerState.controllerId,
