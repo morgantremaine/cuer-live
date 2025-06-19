@@ -30,6 +30,10 @@ export const useRowStyling = ({
     } else {
       rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
     }
+  } else if (isCurrentlyPlaying) {
+    // Showcaller active row styling - prominent green indication
+    rowClass = 'border-l-8 border-green-500 shadow-lg shadow-green-500/20';
+    backgroundColorOverride = 'rgba(34, 197, 94, 0.1)'; // Light green background
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold hover:bg-muted/80';
   } else if (isFloating || isFloated) {
@@ -57,11 +61,11 @@ export const useRowStyling = ({
     if (isHeader) {
       // For headers, only add the ring - don't change background color
       // The header keeps its original bg-muted styling
-    } else if ((!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
-      // For regular rows without custom colors and not floated, add subtle background highlight
+    } else if ((!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated && !isCurrentlyPlaying) {
+      // For regular rows without custom colors and not floated or currently playing, add subtle background highlight
       rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
-    // For rows with custom colors or floated rows, we rely on the box-shadow and outline to show selection
+    // For rows with custom colors or floated rows or currently playing rows, we rely on the box-shadow and outline to show selection
   }
 
   return { rowClass, backgroundColorOverride };
