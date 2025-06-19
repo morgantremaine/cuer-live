@@ -61,9 +61,25 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         setColumns(defaultColumns);
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
-        console.log('✅ Loaded user column preferences:', loadedColumns.length, 'columns');
-        setColumns(loadedColumns);
-        lastSavedRef.current = JSON.stringify(loadedColumns);
+        
+        // Ensure images column has correct properties - fix any potential mismatches
+        const fixedColumns = loadedColumns.map(col => {
+          if (col.key === 'images' || col.id === 'images') {
+            return {
+              ...col,
+              id: 'images',
+              key: 'images',
+              name: col.name || 'Images',
+              isCustom: false,
+              isEditable: true
+            };
+          }
+          return col;
+        });
+        
+        console.log('✅ Loaded user column preferences:', fixedColumns.length, 'columns');
+        setColumns(fixedColumns);
+        lastSavedRef.current = JSON.stringify(fixedColumns);
       } else {
         console.log('📋 No saved preferences, using defaults');
         setColumns(defaultColumns);

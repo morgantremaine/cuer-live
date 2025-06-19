@@ -45,6 +45,9 @@ const CellRenderer = ({
       case 'segmentName':
         // For segment name column, always use item.name (the actual segment description)
         return item.name || '';
+      case 'name':
+        // Also handle 'name' key directly
+        return item.name || '';
       case 'duration':
         return item.duration || '';
       case 'startTime':
@@ -64,6 +67,7 @@ const CellRenderer = ({
       case 'video':
         return item.video || '';
       case 'images':
+        // Explicitly handle images column
         return item.images || '';
       default:
         return (item as any)[column.key] || '';
@@ -147,7 +151,8 @@ const CellRenderer = ({
           onUpdateItem(item.id, field, newValue);
         } else {
           // For segmentName column, always update the 'name' field
-          const field = column.key === 'segmentName' ? 'name' : column.key;
+          // For name column, also update the 'name' field
+          const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
           onUpdateItem(item.id, field, newValue);
         }
       }}
