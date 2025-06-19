@@ -13,13 +13,25 @@ import SearchControls from './SearchControls';
 import ReplaceControls from './ReplaceControls';
 import { useSearch } from '@/hooks/useSearch';
 import { useSearchNavigation } from '@/hooks/useSearchNavigation';
+import { useTextReplace } from '@/hooks/useTextReplace';
 import { SearchBarProps } from '@/types/search';
+import { useToast } from '@/hooks/use-toast';
 
-const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: SearchBarProps) => {
+const SearchBar = ({ 
+  items, 
+  visibleColumns, 
+  onHighlightMatch, 
+  onReplaceText,
+  updateItem,
+  saveUndoState,
+  columns,
+  title
+}: SearchBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [replaceText, setReplaceText] = useState('');
   const [showReplace, setShowReplace] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const {
     searchText,
@@ -32,19 +44,93 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
 
   const { navigateMatch } = useSearchNavigation();
 
+  const {
+    isReplacing,
+    lastReplaceResult,
+    replaceInCurrentMatch,
+    replaceAll: replaceAllMatches,
+    clearLastResult
+  } = useTextReplace({
+    items,
+    visibleColumns,
+    updateItem,
+    saveUndoState,
+    columns,
+    title
+  });
+
   const handleNavigate = (direction: 'next' | 'prev') => {
     navigateMatch(matches, currentMatchIndex, setCurrentMatchIndex, direction);
   };
 
-  const handleReplace = (replaceAll: boolean = false) => {
-    if (!searchText.trim() || currentMatchIndex === -1) return;
+  const handleReplace = async (replaceAll: boolean = false) => {
+    if (!searchText.trim()) {
+      toast({
+        title: "Search text required",
+        description: "Please enter text to search for before replacing.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    const currentMatch = matches[currentMatchIndex];
-    onReplaceText(currentMatch.itemId, currentMatch.field, searchText, replaceText, replaceAll);
+    if (!replaceText.trim()) {
+      toast({
+        title: "Replace text required", 
+        description: "Please enter replacement text.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    setTimeout(() => {
-      performSearch(searchText);
-    }, 100);
+    try {
+      let result;
+      
+      if (replaceAll) {
+        result = await replaceAllMatches(searchText, replaceText);
+      } else {
+        if (currentMatchIndex === -1 || matches.length === 0) {
+          toast({
+            title: "No match selected",
+            description: "Please select a match to replace.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        const currentMatch = matches[currentMatchIndex];
+        result = await replaceInCurrentMatch(
+          searchText, 
+          replaceText, 
+          currentMatch.itemId, 
+          currentMatch.field
+        );
+      }
+
+      if (result.success) {
+        const count = result.replacements.length;
+        toast({
+          title: "Replacement successful",
+          description: `${count} replacement${count !== 1 ? 's' : ''} made.`
+        });
+
+        // Refresh search results after replacement
+        setTimeout(() => {
+          performSearch(searchText);
+        }, 100);
+      } else {
+        toast({
+          title: "Replacement failed",
+          description: result.errors.join(', '),
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Replacement error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleClose = () => {
@@ -52,6 +138,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     setSearchText('');
     setReplaceText('');
     setShowReplace(false);
+    clearLastResult();
     // Clear highlights when closing
     onHighlightMatch('', '', 0, 0);
   };
@@ -122,6 +209,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
             onReplace={() => handleReplace(false)}
             onReplaceAll={() => handleReplace(true)}
             hasMatches={matches.length > 0}
+            isReplacing={isReplacing}
           />
         )}
 
@@ -134,6 +222,12 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
         {searchText && matches.length === 0 && (
           <div className="text-sm text-gray-500 dark:text-gray-400">
             No matches found
+          </div>
+        )}
+
+        {lastReplaceResult && lastReplaceResult.errors.length > 0 && (
+          <div className="text-sm text-red-600 dark:text-red-400">
+            {lastReplaceResult.errors.join(', ')}
           </div>
         )}
       </div>

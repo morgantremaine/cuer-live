@@ -1,4 +1,7 @@
 
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
+
 export interface SearchMatch {
   itemId: string;
   field: string;
@@ -14,8 +17,12 @@ export interface SearchHighlight {
 }
 
 export interface SearchBarProps {
-  items: any[];
-  visibleColumns: any[];
+  items: RundownItem[];
+  visibleColumns: Column[];
   onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
   onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
+  updateItem: (id: string, field: string, value: string) => void;
+  saveUndoState?: (items: RundownItem[], columns: Column[], title: string, action: string) => void;
+  columns?: Column[];
+  title?: string;
 }

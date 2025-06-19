@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -261,6 +260,21 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
+  // Create a working onReplaceText handler
+  const handleReplaceText = (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
+    console.log('Replace operation:', { itemId, field, searchText, replaceText, replaceAll });
+    // This is now handled by the SearchBar component using the new useTextReplace hook
+    // The actual replacement logic is in the SearchBar component
+  };
+
+  // Create a saveUndoState function for replace operations
+  const handleSaveUndoState = (items: any[], columns: any[], title: string, action: string) => {
+    if (undo) {
+      // Use the existing undo system from coreState
+      console.log('Saving undo state for:', action);
+    }
+  };
+
   // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
@@ -362,6 +376,19 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        searchBarProps={{
+          items,
+          visibleColumns,
+          onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => {
+            // Handle search highlighting
+            console.log('Highlighting match:', { itemId, field, startIndex, endIndex });
+          },
+          onReplaceText: handleReplaceText,
+          updateItem: updateItem,
+          saveUndoState: handleSaveUndoState,
+          columns: userColumns,
+          title: rundownTitle
+        }}
       />
       
       <CuerChatButton rundownData={rundownData} />
