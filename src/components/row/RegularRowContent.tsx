@@ -51,8 +51,8 @@ const RegularRowContent = ({
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
             <Play 
-              className="h-4 w-4 text-blue-500 fill-blue-500 scale-125" 
-              style={{ filter: 'drop-shadow(0 0 1px black)' }}
+              className="h-6 w-6 text-blue-500 fill-blue-500 scale-150" 
+              style={{ filter: 'drop-shadow(0 0 2px black)' }}
             />
           )}
           <span style={{ color: textColor }}>{rowNumber}</span>
