@@ -31,6 +31,7 @@ export const useStableRealtimeCollaboration = ({
   const lastSetupUserId = useRef<string | null>(null);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const lastProcessedTimestamp = useRef<string | null>(null);
+  const lastSaveTimestamp = useRef<string | null>(null);
   
   // Keep refs updated but NEVER trigger effects
   currentRundownIdRef.current = rundownId;
@@ -43,6 +44,7 @@ export const useStableRealtimeCollaboration = ({
   const trackOwnUpdate = useCallback((timestamp: string) => {
     console.log('🏷️ Stable - tracking own update:', timestamp);
     ownUpdateTrackingRef.current.add(timestamp);
+    lastSaveTimestamp.current = timestamp;
     
     // Clean up old tracked updates after 10 seconds
     setTimeout(() => {
@@ -75,7 +77,8 @@ export const useStableRealtimeCollaboration = ({
       timestamp: updateTimestamp,
       currentUserId: currentUserId,
       trackedUpdates: Array.from(ownUpdateTrackingRef.current),
-      lastProcessed: lastProcessedTimestamp.current
+      lastProcessed: lastProcessedTimestamp.current,
+      lastSave: lastSaveTimestamp.current
     });
 
     // Only process updates for the current rundown
@@ -97,24 +100,41 @@ export const useStableRealtimeCollaboration = ({
       return;
     }
 
+    // ENHANCED: Skip if this matches our last save timestamp
+    if (updateTimestamp && updateTimestamp === lastSaveTimestamp.current) {
+      console.log('⏭️ Stable - ignoring own update (last save match):', updateTimestamp);
+      lastProcessedTimestamp.current = updateTimestamp;
+      return;
+    }
+
     // ENHANCED: Additional check for very recent updates (within 1 second) from same user
     // This handles cases where timestamps might be slightly different but it's still our update
     if (updateTimestamp) {
       const updateTime = new Date(updateTimestamp).getTime();
       const now = Date.now();
-      const isVeryRecent = (now - updateTime) < 5000; // Within 5 seconds
+      const isVeryRecent = (now - updateTime) < 8000; // Within 8 seconds
       
       if (isVeryRecent) {
-        // Check if we have any tracked updates within the last 10 seconds
+        // Check if we have any tracked updates within the last 15 seconds
         const hasRecentOwnUpdates = Array.from(ownUpdateTrackingRef.current).some(trackedTimestamp => {
           const trackedTime = new Date(trackedTimestamp).getTime();
-          return Math.abs(updateTime - trackedTime) < 10000; // Within 10 seconds
+          return Math.abs(updateTime - trackedTime) < 15000; // Within 15 seconds
         });
         
         if (hasRecentOwnUpdates) {
           console.log('⏭️ Stable - ignoring likely own update (recent and close to tracked):', updateTimestamp);
           lastProcessedTimestamp.current = updateTimestamp;
           return;
+        }
+
+        // Additional check: if we just saved within the last 8 seconds, it's probably our update
+        if (lastSaveTimestamp.current) {
+          const lastSaveTime = new Date(lastSaveTimestamp.current).getTime();
+          if (Math.abs(updateTime - lastSaveTime) < 8000) {
+            console.log('⏭️ Stable - ignoring update close to our last save:', updateTimestamp);
+            lastProcessedTimestamp.current = updateTimestamp;
+            return;
+          }
         }
       }
     }

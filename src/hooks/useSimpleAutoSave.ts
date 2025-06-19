@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RundownState } from './useRundownState';
@@ -20,6 +21,7 @@ export const useSimpleAutoSave = (
   const showcallerUpdateRef = useRef(false);
   const showcallerUpdateTimeoutRef = useRef<NodeJS.Timeout>();
   const ownUpdateTimestamps = useRef<Set<string>>(new Set());
+  const pendingSaveRef = useRef(false);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -27,7 +29,7 @@ export const useSimpleAutoSave = (
   };
 
   // Function to set user typing state - prevents saves during active typing
-  const setUserTyping = (typing: boolean) => {
+  const setUserTyping = useCallback((typing: boolean) => {
     userTypingRef.current = typing;
     
     if (typing) {
@@ -41,10 +43,10 @@ export const useSimpleAutoSave = (
         userTypingRef.current = false;
       }, 2000); // 2 seconds after stopping typing
     }
-  };
+  }, []);
 
   // Function to set showcaller update state - prevents saves during showcaller updates
-  const setShowcallerUpdate = (isUpdate: boolean) => {
+  const setShowcallerUpdate = useCallback((isUpdate: boolean) => {
     showcallerUpdateRef.current = isUpdate;
     
     if (isUpdate) {
@@ -58,7 +60,7 @@ export const useSimpleAutoSave = (
         showcallerUpdateRef.current = false;
       }, 1000); // 1 second after showcaller update
     }
-  };
+  }, []);
 
   // Function to set the own update tracker from realtime hook
   const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
@@ -83,11 +85,12 @@ export const useSimpleAutoSave = (
   }, []);
 
   useEffect(() => {
-    // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, or showcaller is updating
+    // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, showcaller is updating, or we're already saving
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current || 
-        showcallerUpdateRef.current) {
+        showcallerUpdateRef.current ||
+        pendingSaveRef.current) {
       return;
     }
 
@@ -143,7 +146,8 @@ export const useSimpleAutoSave = (
       if (isSaving || 
           undoActiveRef.current || 
           userTypingRef.current || 
-          showcallerUpdateRef.current) {
+          showcallerUpdateRef.current ||
+          pendingSaveRef.current) {
         return;
       }
       
@@ -180,6 +184,7 @@ export const useSimpleAutoSave = (
       }
       
       setIsSaving(true);
+      pendingSaveRef.current = true;
       lastSaveTimeRef.current = Date.now();
       
       try {
@@ -250,6 +255,7 @@ export const useSimpleAutoSave = (
         console.error('❌ Save error:', error);
       } finally {
         setIsSaving(false);
+        pendingSaveRef.current = false;
       }
     }, debounceTime);
 
