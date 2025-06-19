@@ -122,6 +122,47 @@ const Dashboard = () => {
     }
   };
 
+  const handleCSVImport = async (result: CSVImportResult, layoutColumns: Column[]) => {
+    try {
+      console.log('Dashboard handling CSV import:', { result, layoutColumns });
+
+      if (!result.items || result.items.length === 0) {
+        toast({
+          title: 'No data to import',
+          description: 'The CSV file does not contain any valid rundown data.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Set the columns from the selected layout
+      if (layoutColumns && layoutColumns.length > 0) {
+        console.log('Setting columns from layout:', layoutColumns);
+        handleLoadLayout(layoutColumns);
+      }
+
+      // Create a new rundown with the imported data
+      const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;
+      const rundownId = await createRundown(rundownTitle, result.items);
+      
+      toast({
+        title: 'Import successful',
+        description: `Imported ${result.items.length} items into a new rundown.`,
+      });
+
+      // Navigate to the new rundown
+      navigate(`/rundown/${rundownId}`);
+      
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      toast({
+        title: 'Import failed',
+        description: 'There was an error importing the CSV file. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Filter rundowns - now show ALL team rundowns regardless of who created them
   const activeRundowns = savedRundowns.filter(rundown => !rundown.archived);
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
