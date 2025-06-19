@@ -196,10 +196,10 @@ const SharedRundownTable = ({
                   >
                     <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-row-number">
                       <div className="flex items-center">
-                        {/* Blue play icon - matching main rundown styling */}
+                        {/* Blue play icon - matching main rundown styling with larger size */}
                         {isShowcallerCurrent && (
                           <Play 
-                            className="h-3 w-3 text-blue-500 fill-blue-500 mr-2 print:hidden" 
+                            className="h-5 w-5 text-blue-500 fill-blue-500 scale-125 mr-2 print:hidden" 
                           />
                         )}
                         {isFloated && (
