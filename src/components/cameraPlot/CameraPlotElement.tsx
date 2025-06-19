@@ -84,6 +84,8 @@ const CameraPlotElement = ({
     }
   };
 
+  const rotation = element.rotation || 0;
+
   return (
     <>
       {/* Main element - no selection highlighting */}
@@ -95,7 +97,9 @@ const CameraPlotElement = ({
           top: element.y,
           width: element.width,
           height: element.height,
-          cursor: getCursor()
+          cursor: getCursor(),
+          transform: `rotate(${rotation}deg)`,
+          transformOrigin: 'center'
         }}
         onMouseDown={handleElementMouseDown}
         onContextMenu={handleContextMenu}

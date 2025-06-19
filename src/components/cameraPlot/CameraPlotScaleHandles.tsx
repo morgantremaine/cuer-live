@@ -11,72 +11,105 @@ const CameraPlotScaleHandles = ({ onScaleStart, isScaling }: CameraPlotScaleHand
     isScaling ? 'bg-blue-600' : ''
   }`;
 
-  // Style for handles that inherit the element's rotation
-  const rotatedHandleStyle = `${handleStyle} transform-gpu`;
-
   return (
-    <div className="absolute inset-0 pointer-events-none" style={{ transform: 'inherit' }}>
-      {/* Corner handles - these move with rotation */}
+    <div className="absolute inset-0 pointer-events-none">
+      {/* Corner handles - these now properly inherit rotation */}
       <div
-        className={`${rotatedHandleStyle} cursor-nw-resize pointer-events-auto`}
-        style={{ top: '-6px', left: '-6px' }}
+        className={`${handleStyle} cursor-nw-resize pointer-events-auto`}
+        style={{ 
+          top: '-6px', 
+          left: '-6px',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="nw"
       />
       
       <div
-        className={`${rotatedHandleStyle} cursor-ne-resize pointer-events-auto`}
-        style={{ top: '-6px', right: '-6px' }}
+        className={`${handleStyle} cursor-ne-resize pointer-events-auto`}
+        style={{ 
+          top: '-6px', 
+          right: '-6px',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="ne"
       />
       
       <div
-        className={`${rotatedHandleStyle} cursor-sw-resize pointer-events-auto`}
-        style={{ bottom: '-6px', left: '-6px' }}
+        className={`${handleStyle} cursor-sw-resize pointer-events-auto`}
+        style={{ 
+          bottom: '-6px', 
+          left: '-6px',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="sw"
       />
       
       <div
-        className={`${rotatedHandleStyle} cursor-se-resize pointer-events-auto`}
-        style={{ bottom: '-6px', right: '-6px' }}
+        className={`${handleStyle} cursor-se-resize pointer-events-auto`}
+        style={{ 
+          bottom: '-6px', 
+          right: '-6px',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="se"
       />
       
-      {/* Edge handles - these also move with rotation */}
+      {/* Edge handles - these also properly inherit rotation */}
       <div
-        className={`${rotatedHandleStyle} cursor-n-resize pointer-events-auto`}
-        style={{ top: '-6px', left: '50%', transform: 'translateX(-50%)' }}
+        className={`${handleStyle} cursor-n-resize pointer-events-auto`}
+        style={{ 
+          top: '-6px', 
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="n"
       />
       
       <div
-        className={`${rotatedHandleStyle} cursor-s-resize pointer-events-auto`}
-        style={{ bottom: '-6px', left: '50%', transform: 'translateX(-50%)' }}
+        className={`${handleStyle} cursor-s-resize pointer-events-auto`}
+        style={{ 
+          bottom: '-6px', 
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="s"
       />
       
       <div
-        className={`${rotatedHandleStyle} cursor-w-resize pointer-events-auto`}
-        style={{ left: '-6px', top: '50%', transform: 'translateY(-50%)' }}
+        className={`${handleStyle} cursor-w-resize pointer-events-auto`}
+        style={{ 
+          left: '-6px', 
+          top: '50%', 
+          transform: 'translateY(-50%)',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="w"
       />
       
       <div
-        className={`${rotatedHandleStyle} cursor-e-resize pointer-events-auto`}
-        style={{ right: '-6px', top: '50%', transform: 'translateY(-50%)' }}
+        className={`${handleStyle} cursor-e-resize pointer-events-auto`}
+        style={{ 
+          right: '-6px', 
+          top: '50%', 
+          transform: 'translateY(-50%)',
+          transformOrigin: 'center'
+        }}
         onMouseDown={onScaleStart}
         title="Drag to resize"
         data-handle="e"

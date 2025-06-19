@@ -7,7 +7,6 @@ interface CameraPlotElementRendererProps {
 }
 
 const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) => {
-  const rotation = element.rotation || 0;
   const scale = element.scale || 1;
   
   const baseStyle = {
@@ -16,7 +15,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transform: `rotate(${rotation}deg) scale(${scale})`,
+    transform: `scale(${scale})`,
     transformOrigin: 'center'
   };
 
@@ -54,7 +53,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
         <div 
           className="bg-gray-800 border border-gray-600"
           style={{
-            transform: `rotate(${rotation}deg) scale(${scale})`,
+            transform: `scale(${scale})`,
             transformOrigin: 'center',
             width: '100%',
             height: '100%'
