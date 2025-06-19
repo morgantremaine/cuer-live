@@ -43,6 +43,9 @@ const RundownContainer = (props: RundownContainerProps) => {
     onPlay
   } = props;
 
+  // Create a wrapper function that curries currentTime
+  const getRowStatusWithTime = (item: any) => getRowStatus(item, currentTime);
+
   return (
     <div className="rundown-container">
       <RundownContent
@@ -61,7 +64,7 @@ const RundownContainer = (props: RundownContainerProps) => {
         getColumnWidth={getColumnWidth}
         updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
-        getRowStatus={getRowStatus}
+        getRowStatus={getRowStatusWithTime}
         getHeaderDuration={calculateHeaderDuration}
         onUpdateItem={onUpdateItem}
         onCellClick={onCellClick}

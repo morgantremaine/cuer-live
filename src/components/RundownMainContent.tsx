@@ -104,6 +104,9 @@ const RundownMainContent = ({
   onAddRow,
   onAddHeader
 }: RundownMainContentProps) => {
+  // Create a wrapper function that curries currentTime
+  const getRowStatusWithTime = (item: any) => getRowStatus(item, currentTime);
+
   return (
     <>
       <RundownContent
@@ -121,7 +124,7 @@ const RundownMainContent = ({
         getColumnWidth={getColumnWidth}
         updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
-        getRowStatus={getRowStatus}
+        getRowStatus={getRowStatusWithTime}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={onUpdateItem}
         onCellClick={onCellClick}
