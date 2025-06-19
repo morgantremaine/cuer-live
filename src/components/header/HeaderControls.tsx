@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, LogOut, HelpCircle } from 'lucide-react';
+import { User, LogOut, HelpCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
+import { SearchDialog } from '../search/SearchDialog';
 import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderControlsProps {
@@ -20,6 +21,9 @@ interface HeaderControlsProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  // Search props
+  rundownItems?: any[];
+  onUpdateItem?: (itemId: string, field: string, value: string) => void;
 }
 
 const HeaderControls = ({
@@ -28,9 +32,12 @@ const HeaderControls = ({
   onTimezoneChange,
   onUndo,
   canUndo,
-  lastAction
+  lastAction,
+  rundownItems = [],
+  onUpdateItem = () => {}
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -63,10 +70,23 @@ const HeaderControls = ({
   return (
     <div className="flex items-center space-x-4">
       <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
+      
+      {/* Search Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowSearchDialog(true)}
+        className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+        title="Search & Replace"
+      >
+        <Search className="h-4 w-4" />
+      </Button>
+      
       <TimezoneSelector 
         currentTimezone={timezone}
         onTimezoneChange={handleTimezoneChange}
       />
+      
       {/* Search functionality removed */}
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
@@ -113,9 +133,17 @@ const HeaderControls = ({
           Sign In
         </Button>
       )}
+      
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 
+      />
+      
+      <SearchDialog
+        isOpen={showSearchDialog}
+        onClose={() => setShowSearchDialog(false)}
+        items={rundownItems}
+        onUpdateItem={onUpdateItem}
       />
     </div>
   );
