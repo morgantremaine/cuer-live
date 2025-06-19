@@ -39,7 +39,6 @@ export const useSimpleAutoSave = (
       // Set a timeout to clear typing state after user stops
       typingTimeoutRef.current = setTimeout(() => {
         userTypingRef.current = false;
-        console.log('⌨️ User stopped typing, auto-save can resume');
       }, 2000); // 2 seconds after stopping typing
     }
   };
@@ -49,7 +48,6 @@ export const useSimpleAutoSave = (
     showcallerUpdateRef.current = isUpdate;
     
     if (isUpdate) {
-      console.log('📺 Marking as showcaller update - preventing auto-save');
       // Clear existing timeout
       if (showcallerUpdateTimeoutRef.current) {
         clearTimeout(showcallerUpdateTimeoutRef.current);
@@ -58,7 +56,6 @@ export const useSimpleAutoSave = (
       // Set a timeout to clear showcaller update state
       showcallerUpdateTimeoutRef.current = setTimeout(() => {
         showcallerUpdateRef.current = false;
-        console.log('📺 Showcaller update state cleared - auto-save can resume');
       }, 1000); // 1 second after showcaller update
     }
   };
@@ -69,20 +66,11 @@ export const useSimpleAutoSave = (
   };
 
   useEffect(() => {
-    console.log('💾 AutoSave effect triggered - state.hasUnsavedChanges:', state.hasUnsavedChanges);
-    console.log('💾 AutoSave conditions check:', {
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      undoActive: undoActiveRef.current,
-      userTyping: userTypingRef.current,
-      showcallerUpdate: showcallerUpdateRef.current
-    });
-    
     // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, or showcaller is updating
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current || 
         showcallerUpdateRef.current) {
-      console.log('💾 AutoSave skipped due to conditions');
       return;
     }
 
@@ -115,16 +103,10 @@ export const useSimpleAutoSave = (
       timezone: state.timezone
     });
 
-    console.log('💾 Current signature length:', currentSignature.length);
-    console.log('💾 Last saved signature length:', lastSavedRef.current.length);
-
     // Only save if state actually changed
     if (currentSignature === lastSavedRef.current) {
-      console.log('💾 Signatures match - no save needed');
       return;
     }
-
-    console.log('💾 Signatures differ - proceeding with save');
 
     // Increased rate limiting: don't save more than once every 3 seconds
     const now = Date.now();
@@ -133,8 +115,6 @@ export const useSimpleAutoSave = (
     
     // If we just saved recently, extend the debounce time significantly
     const debounceTime = timeSinceLastSave < minSaveInterval ? 5000 : 2000; // Increased debounce times
-
-    console.log('💾 Auto-save scheduled in', debounceTime, 'ms');
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
@@ -148,12 +128,6 @@ export const useSimpleAutoSave = (
           undoActiveRef.current || 
           userTypingRef.current || 
           showcallerUpdateRef.current) {
-        console.log('💾 Auto-save cancelled - conditions changed', {
-          isSaving,
-          undoActive: undoActiveRef.current,
-          userTyping: userTypingRef.current,
-          showcallerUpdate: showcallerUpdateRef.current
-        });
         return;
       }
       
@@ -186,7 +160,6 @@ export const useSimpleAutoSave = (
       });
       
       if (finalSignature === lastSavedRef.current) {
-        console.log('💾 Auto-save skipped - no changes detected');
         return;
       }
       
@@ -195,7 +168,6 @@ export const useSimpleAutoSave = (
       
       try {
         const updateTimestamp = new Date().toISOString();
-        console.log('💾 Starting auto-save with timestamp:', updateTimestamp);
 
         // Track this as our own update BEFORE saving
         if (trackOwnUpdateRef.current) {
@@ -235,7 +207,6 @@ export const useSimpleAutoSave = (
           } else {
             lastSavedRef.current = finalSignature;
             onSaved();
-            console.log('✅ New rundown created and saved');
             
             // Update the URL to reflect the new rundown ID
             navigate(`/rundown/${newRundown.id}`, { replace: true });
@@ -257,7 +228,6 @@ export const useSimpleAutoSave = (
           } else {
             lastSavedRef.current = finalSignature;
             onSaved();
-            console.log('✅ Rundown auto-saved successfully');
           }
         }
       } catch (error) {

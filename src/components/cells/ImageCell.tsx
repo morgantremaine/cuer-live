@@ -36,18 +36,9 @@ const ImageCell = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('🖼️ ImageCell handleInputChange:', { 
-      itemId, 
-      field: cellRefKey,
-      newValue, 
-      oldValue: internalValue,
-      timestamp: new Date().toISOString()
-    });
-    
     setInternalValue(newValue);
     
     // CRITICAL: Immediately propagate the change
-    console.log('🖼️ ImageCell calling onUpdateValue for field:', cellRefKey, 'with value:', newValue);
     onUpdateValue(newValue);
     
     setImageError(false); // Reset error when URL changes
@@ -72,7 +63,6 @@ const ImageCell = ({
   const handleCellClick = (e: React.MouseEvent) => {
     // Prevent event bubbling to row click handler
     e.stopPropagation();
-    console.log('🖼️ ImageCell clicked, entering edit mode for item:', itemId);
     setIsEditing(true);
     
     // Call the parent onCellClick if provided
@@ -82,23 +72,13 @@ const ImageCell = ({
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    console.log('🖼️ ImageCell blur event, exiting edit mode for item:', itemId);
     e.stopPropagation();
     setIsEditing(false);
     
     // Final update on blur to ensure consistency
     const finalValue = e.target.value;
-    console.log('🖼️ ImageCell final blur update:', { 
-      itemId, 
-      field: cellRefKey,
-      finalValue, 
-      internalValue,
-      changed: finalValue !== internalValue,
-      timestamp: new Date().toISOString()
-    });
     
     // CRITICAL: Always call onUpdateValue on blur to ensure the final state is saved
-    console.log('🖼️ ImageCell final onUpdateValue call for field:', cellRefKey, 'with value:', finalValue);
     onUpdateValue(finalValue);
     
     if (finalValue !== internalValue) {
@@ -107,7 +87,6 @@ const ImageCell = ({
   };
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    console.log('🖼️ ImageCell focus event for item:', itemId);
     e.stopPropagation();
     setIsEditing(true);
   };
