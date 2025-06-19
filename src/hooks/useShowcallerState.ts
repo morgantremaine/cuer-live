@@ -1,229 +1,476 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
-interface ShowcallerState {
+export interface ShowcallerState {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
-  lastUpdate: number;
+  playbackStartTime: number | null;
+  lastUpdate: string;
   controllerId: string | null;
 }
 
 interface UseShowcallerStateProps {
   items: RundownItem[];
   updateItem: (id: string, field: string, value: string) => void;
-  userId?: string;
   onShowcallerStateChange?: (state: ShowcallerState) => void;
+  userId?: string;
+  trackOwnUpdate?: (lastUpdate: string) => void;
 }
-
-// Export the ShowcallerState type
-export type { ShowcallerState };
 
 export const useShowcallerState = ({
   items,
   updateItem,
+  onShowcallerStateChange,
   userId,
-  onShowcallerStateChange
+  trackOwnUpdate
 }: UseShowcallerStateProps) => {
   const [showcallerState, setShowcallerState] = useState<ShowcallerState>({
     isPlaying: false,
     currentSegmentId: null,
     timeRemaining: 0,
-    lastUpdate: Date.now(),
+    playbackStartTime: null,
+    lastUpdate: new Date().toISOString(),
     controllerId: null
   });
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isController = showcallerState.controllerId === userId || !showcallerState.controllerId;
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const stateChangeCallbackRef = useRef(onShowcallerStateChange);
+  const hasInitialized = useRef(false);
+  const lastSyncedStateRef = useRef<string | null>(null);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Keep callback ref updated
+  stateChangeCallbackRef.current = onShowcallerStateChange;
 
-  // Helper function to find current segment index
-  const findSegmentIndex = useCallback((segmentId: string | null) => {
-    if (!segmentId) return -1;
-    return items.findIndex(item => item.id === segmentId && item.type !== 'header');
-  }, [items]);
+  // Check if current user is the active controller
+  const isController = useCallback(() => {
+    return showcallerState.controllerId === userId;
+  }, [showcallerState.controllerId, userId]);
 
-  // Helper function to get next/previous segment
-  const getAdjacentSegment = useCallback((direction: 'next' | 'previous') => {
-    const currentIndex = findSegmentIndex(showcallerState.currentSegmentId);
-    const segments = items.filter(item => item.type !== 'header');
+  // Helper function to convert time string to seconds
+  const timeToSeconds = useCallback((timeStr: string) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
     
-    if (direction === 'next') {
-      return currentIndex < segments.length - 1 ? segments[currentIndex + 1] : null;
-    } else {
-      return currentIndex > 0 ? segments[currentIndex - 1] : null;
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return hours * 3600 + minutes * 60 + seconds;
     }
-  }, [items, showcallerState.currentSegmentId, findSegmentIndex]);
-
-  // Timer logic
-  useEffect(() => {
-    if (showcallerState.isPlaying && showcallerState.currentSegmentId) {
-      intervalRef.current = setInterval(() => {
-        setShowcallerState(prev => {
-          const newTimeRemaining = Math.max(0, prev.timeRemaining - 1);
-          const newState = {
-            ...prev,
-            timeRemaining: newTimeRemaining,
-            lastUpdate: Date.now()
-          };
-
-          // Auto advance when time reaches 0
-          if (newTimeRemaining === 0) {
-            const nextSegment = getAdjacentSegment('next');
-            if (nextSegment) {
-              const duration = nextSegment.duration || '00:30';
-              const [minutes, seconds] = duration.split(':').map(Number);
-              const totalSeconds = (minutes || 0) * 60 + (seconds || 0);
-              
-              newState.currentSegmentId = nextSegment.id;
-              newState.timeRemaining = totalSeconds;
-            } else {
-              newState.isPlaying = false;
-            }
-          }
-
-          return newState;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [showcallerState.isPlaying, showcallerState.currentSegmentId, getAdjacentSegment]);
-
-  // Notify about state changes
-  useEffect(() => {
-    if (onShowcallerStateChange) {
-      onShowcallerStateChange(showcallerState);
-    }
-  }, [showcallerState, onShowcallerStateChange]);
-
-  const play = useCallback((selectedSegmentId?: string) => {
-    if (!isController) return;
-
-    setShowcallerState(prev => {
-      let segmentId = selectedSegmentId || prev.currentSegmentId;
-      let timeRemaining = prev.timeRemaining;
-
-      // If no segment selected, start with first non-header item
-      if (!segmentId) {
-        const firstSegment = items.find(item => item.type !== 'header');
-        if (firstSegment) {
-          segmentId = firstSegment.id;
-          const duration = firstSegment.duration || '00:30';
-          const [minutes, seconds] = duration.split(':').map(Number);
-          timeRemaining = (minutes || 0) * 60 + (seconds || 0);
-        }
-      }
-
-      // If starting a new segment, reset timer
-      if (selectedSegmentId && selectedSegmentId !== prev.currentSegmentId) {
-        const segment = items.find(item => item.id === selectedSegmentId);
-        if (segment) {
-          const duration = segment.duration || '00:30';
-          const [minutes, seconds] = duration.split(':').map(Number);
-          timeRemaining = (minutes || 0) * 60 + (seconds || 0);
-        }
-      }
-
-      return {
-        ...prev,
-        isPlaying: true,
-        currentSegmentId: segmentId,
-        timeRemaining,
-        lastUpdate: Date.now(),
-        controllerId: userId || prev.controllerId
-      };
-    });
-  }, [items, userId, isController]);
-
-  const pause = useCallback(() => {
-    if (!isController) return;
-    
-    setShowcallerState(prev => ({
-      ...prev,
-      isPlaying: false,
-      lastUpdate: Date.now()
-    }));
-  }, [isController]);
-
-  const forward = useCallback(() => {
-    if (!isController) return;
-
-    const nextSegment = getAdjacentSegment('next');
-    if (nextSegment) {
-      const duration = nextSegment.duration || '00:30';
-      const [minutes, seconds] = duration.split(':').map(Number);
-      const totalSeconds = (minutes || 0) * 60 + (seconds || 0);
-
-      setShowcallerState(prev => ({
-        ...prev,
-        currentSegmentId: nextSegment.id,
-        timeRemaining: totalSeconds,
-        lastUpdate: Date.now()
-      }));
-    }
-  }, [getAdjacentSegment, isController]);
-
-  const backward = useCallback(() => {
-    if (!isController) return;
-
-    const prevSegment = getAdjacentSegment('previous');
-    if (prevSegment) {
-      const duration = prevSegment.duration || '00:30';
-      const [minutes, seconds] = duration.split(':').map(Number);
-      const totalSeconds = (minutes || 0) * 60 + (seconds || 0);
-
-      setShowcallerState(prev => ({
-        ...prev,
-        currentSegmentId: prevSegment.id,
-        timeRemaining: totalSeconds,
-        lastUpdate: Date.now()
-      }));
-    }
-  }, [getAdjacentSegment, isController]);
-
-  const jumpTo = useCallback((segmentId: string) => {
-    if (!isController) return;
-
-    const segment = items.find(item => item.id === segmentId && item.type !== 'header');
-    if (segment) {
-      const duration = segment.duration || '00:30';
-      const [minutes, seconds] = duration.split(':').map(Number);
-      const totalSeconds = (minutes || 0) * 60 + (seconds || 0);
-
-      setShowcallerState(prev => ({
-        ...prev,
-        currentSegmentId: segment.id,
-        timeRemaining: totalSeconds,
-        lastUpdate: Date.now()
-      }));
-    }
-  }, [items, isController]);
-
-  const applyShowcallerState = useCallback((newState: ShowcallerState) => {
-    setShowcallerState(newState);
+    return 0;
   }, []);
 
-  return {
+  // Helper function to get next/previous segments
+  const getNextSegment = useCallback((currentId: string) => {
+    console.log('📺 getNextSegment called with:', currentId, 'from items:', items.length);
+    const currentIndex = items.findIndex(item => item.id === currentId);
+    console.log('📺 Current index:', currentIndex);
+    
+    for (let i = currentIndex + 1; i < items.length; i++) {
+      console.log('📺 Checking item at index', i, ':', items[i]);
+      if (items[i].type === 'regular') {
+        console.log('📺 Found next segment:', items[i]);
+        return items[i];
+      }
+    }
+    console.log('📺 No next segment found');
+    return null;
+  }, [items]);
+
+  const getPreviousSegment = useCallback((currentId: string) => {
+    console.log('📺 getPreviousSegment called with:', currentId, 'from items:', items.length);
+    const currentIndex = items.findIndex(item => item.id === currentId);
+    console.log('📺 Current index:', currentIndex);
+    
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      console.log('📺 Checking item at index', i, ':', items[i]);
+      if (items[i].type === 'regular') {
+        console.log('📺 Found previous segment:', items[i]);
+        return items[i];
+      }
+    }
+    console.log('📺 No previous segment found');
+    return null;
+  }, [items]);
+
+  // ENHANCED: Debounced sync function to prevent rapid fire updates
+  const debouncedSync = useCallback((newState: ShowcallerState) => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    
+    syncTimeoutRef.current = setTimeout(() => {
+      console.log('📺 Debounced sync executing for state:', newState);
+      if (trackOwnUpdate) {
+        trackOwnUpdate(newState.lastUpdate);
+      }
+      if (stateChangeCallbackRef.current) {
+        stateChangeCallbackRef.current(newState);
+      }
+    }, 150); // 150ms debounce to group rapid updates
+  }, [trackOwnUpdate]);
+
+  // Update showcaller state
+  const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
+    const updatedState = {
+      ...showcallerState,
+      ...newState,
+      lastUpdate: new Date().toISOString()
+    };
+    
+    console.log('📺 Updating showcaller state:', updatedState);
+    setShowcallerState(updatedState);
+    
+    if (shouldSync && stateChangeCallbackRef.current) {
+      console.log('📺 Syncing state change (debounced)');
+      debouncedSync(updatedState);
+    }
+  }, [showcallerState, debouncedSync]);
+
+  // Clear current status from all items
+  const clearCurrentStatus = useCallback(() => {
+    console.log('📺 Clearing current status from all items');
+    items.forEach(item => {
+      if (item.status === 'current') {
+        console.log('📺 Clearing current status from:', item.id);
+        updateItem(item.id, 'status', 'completed');
+      }
+    });
+  }, [items, updateItem]);
+
+  const setCurrentSegment = useCallback((segmentId: string) => {
+    console.log('📺 setCurrentSegment called with:', segmentId);
+    clearCurrentStatus();
+    const segment = items.find(item => item.id === segmentId);
+    console.log('📺 Found segment:', segment);
+    
+    if (segment && segment.type === 'regular') {
+      console.log('📺 Setting segment as current:', segmentId);
+      updateItem(segmentId, 'status', 'current');
+      const duration = timeToSeconds(segment.duration || '00:00');
+      console.log('📺 Segment duration in seconds:', duration);
+      
+      updateShowcallerState({
+        currentSegmentId: segmentId,
+        timeRemaining: duration,
+        playbackStartTime: Date.now(),
+        controllerId: userId
+      }, true);
+    }
+  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
+
+  // Timer logic
+  const startTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    const isActiveController = isController();
+    console.log('📺 Starting timer', isActiveController ? '(controller)' : '(display only)');
+    
+    timerRef.current = setInterval(() => {
+      setShowcallerState(prevState => {
+        if (prevState.timeRemaining <= 1) {
+          // Only controller handles segment advancement
+          if (isActiveController && prevState.currentSegmentId) {
+            updateItem(prevState.currentSegmentId, 'status', 'completed');
+            const nextSegment = getNextSegment(prevState.currentSegmentId);
+            
+            if (nextSegment) {
+              const duration = timeToSeconds(nextSegment.duration || '00:00');
+              updateItem(nextSegment.id, 'status', 'current');
+              
+              const newState = {
+                ...prevState,
+                currentSegmentId: nextSegment.id,
+                timeRemaining: duration,
+                playbackStartTime: Date.now(),
+                lastUpdate: new Date().toISOString()
+              };
+              
+              if (trackOwnUpdate) {
+                trackOwnUpdate(newState.lastUpdate);
+              }
+              if (stateChangeCallbackRef.current) {
+                stateChangeCallbackRef.current(newState);
+              }
+              
+              return newState;
+            } else {
+              // No more segments, stop playback
+              const newState = {
+                ...prevState,
+                isPlaying: false,
+                currentSegmentId: null,
+                timeRemaining: 0,
+                playbackStartTime: null,
+                controllerId: null,
+                lastUpdate: new Date().toISOString()
+              };
+              
+              if (trackOwnUpdate) {
+                trackOwnUpdate(newState.lastUpdate);
+              }
+              if (stateChangeCallbackRef.current) {
+                stateChangeCallbackRef.current(newState);
+              }
+              
+              return newState;
+            }
+          } else {
+            return {
+              ...prevState,
+              timeRemaining: 0,
+              isPlaying: false
+            };
+          }
+        }
+        
+        // Regular timer tick
+        const newState = {
+          ...prevState,
+          timeRemaining: prevState.timeRemaining - 1,
+          lastUpdate: new Date().toISOString()
+        };
+        
+        // Sync every 30 seconds to reduce conflicts
+        if (isActiveController && prevState.timeRemaining % 30 === 0 && stateChangeCallbackRef.current) {
+          if (trackOwnUpdate) {
+            trackOwnUpdate(newState.lastUpdate);
+          }
+          stateChangeCallbackRef.current(newState);
+        }
+        
+        return newState;
+      });
+    }, 1000);
+  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate]);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      console.log('📺 Stopped timer');
+    }
+  }, []);
+
+  // Control functions
+  const play = useCallback((selectedSegmentId?: string) => {
+    console.log('📺 Play called with segmentId:', selectedSegmentId, 'by user:', userId);
+    const playbackStartTime = Date.now();
+    
+    if (selectedSegmentId) {
+      console.log('📺 Playing specific segment:', selectedSegmentId);
+      // Mark segments before selected as completed, after as upcoming
+      const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
+      items.forEach((item, index) => {
+        if (item.type === 'regular') {
+          if (index < selectedIndex) {
+            updateItem(item.id, 'status', 'completed');
+          } else if (index > selectedIndex) {
+            updateItem(item.id, 'status', 'upcoming');
+          }
+        }
+      });
+      setCurrentSegment(selectedSegmentId);
+    } else if (!showcallerState.currentSegmentId) {
+      // No current segment, find first regular item
+      console.log('📺 No current segment, finding first regular item');
+      const firstSegment = items.find(item => item.type === 'regular');
+      if (firstSegment) {
+        console.log('📺 Found first segment:', firstSegment.id);
+        setCurrentSegment(firstSegment.id);
+      }
+    } else {
+      // Resume current segment
+      const currentSegment = items.find(item => item.id === showcallerState.currentSegmentId);
+      if (currentSegment) {
+        updateItem(currentSegment.id, 'status', 'current');
+      }
+    }
+    
+    updateShowcallerState({ 
+      isPlaying: true,
+      playbackStartTime,
+      controllerId: userId
+    }, true);
+    
+    startTimer();
+  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer]);
+
+  const pause = useCallback(() => {
+    console.log('📺 Pause called by user:', userId);
+    stopTimer();
+    
+    updateShowcallerState({ 
+      isPlaying: false,
+      playbackStartTime: null,
+      controllerId: userId
+    }, true);
+  }, [updateShowcallerState, stopTimer, userId]);
+
+  // ENHANCED: Improved forward/backward with better coordination
+  const forward = useCallback(() => {
+    console.log('📺 Forward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
+    if (showcallerState.currentSegmentId) {
+      const nextSegment = getNextSegment(showcallerState.currentSegmentId);
+      if (nextSegment) {
+        console.log('📺 Moving to next segment:', nextSegment.id);
+        
+        // BATCH the operations to reduce conflicts
+        updateItem(showcallerState.currentSegmentId, 'status', 'completed');
+        updateItem(nextSegment.id, 'status', 'current');
+        
+        const duration = timeToSeconds(nextSegment.duration || '00:00');
+        
+        // Single coordinated state update
+        updateShowcallerState({
+          currentSegmentId: nextSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
+          controllerId: userId
+        }, true);
+        
+        if (showcallerState.isPlaying) {
+          startTimer();
+        }
+      } else {
+        console.log('📺 No next segment available');
+      }
+    } else {
+      console.log('📺 No current segment to move from');
+    }
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer]);
+
+  const backward = useCallback(() => {
+    console.log('📺 Backward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
+    if (showcallerState.currentSegmentId) {
+      const prevSegment = getPreviousSegment(showcallerState.currentSegmentId);
+      if (prevSegment) {
+        console.log('📺 Moving to previous segment:', prevSegment.id);
+        
+        // BATCH the operations to reduce conflicts
+        updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
+        updateItem(prevSegment.id, 'status', 'current');
+        
+        const duration = timeToSeconds(prevSegment.duration || '00:00');
+        
+        // Single coordinated state update
+        updateShowcallerState({
+          currentSegmentId: prevSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
+          controllerId: userId
+        }, true);
+        
+        if (showcallerState.isPlaying) {
+          startTimer();
+        }
+      } else {
+        console.log('📺 No previous segment available');
+      }
+    } else {
+      console.log('📺 No current segment to move from');
+    }
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer]);
+
+  // External state application
+  const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
+    if (lastSyncedStateRef.current === externalState.lastUpdate) {
+      return;
+    }
+    lastSyncedStateRef.current = externalState.lastUpdate;
+
+    console.log('📺 Applying external showcaller state from controller:', externalState.controllerId);
+    
+    stopTimer();
+    clearCurrentStatus();
+    
+    if (externalState.currentSegmentId) {
+      const segment = items.find(item => item.id === externalState.currentSegmentId);
+      if (segment) {
+        updateItem(externalState.currentSegmentId, 'status', 'current');
+      }
+    }
+    
+    // Calculate synchronized time remaining if playing
+    let synchronizedState = { ...externalState };
+    
+    if (externalState.isPlaying && externalState.playbackStartTime && externalState.currentSegmentId) {
+      const segment = items.find(item => item.id === externalState.currentSegmentId);
+      if (segment) {
+        const segmentDuration = timeToSeconds(segment.duration || '00:00');
+        const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000);
+        const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
+        
+        synchronizedState = {
+          ...externalState,
+          timeRemaining: syncedTimeRemaining
+        };
+        
+        console.log('📺 Synchronized time remaining:', syncedTimeRemaining, 'from elapsed:', elapsedTime);
+      }
+    }
+    
+    setShowcallerState(synchronizedState);
+    
+    if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
+      console.log('📺 Restarting timer after sync');
+      setTimeout(() => startTimer(), 100);
+    }
+  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer]);
+
+  // Initialize current segment on mount if none exists
+  useEffect(() => {
+    if (!hasInitialized.current && !showcallerState.currentSegmentId && items.length > 0) {
+      const firstSegment = items.find(item => item.type === 'regular');
+      if (firstSegment) {
+        const duration = timeToSeconds(firstSegment.duration || '00:00');
+        console.log('📺 Initializing with first segment:', firstSegment.id);
+        setShowcallerState(prev => ({
+          ...prev,
+          currentSegmentId: firstSegment.id,
+          timeRemaining: duration
+        }));
+        hasInitialized.current = true;
+      }
+    }
+  }, [items.length, showcallerState.currentSegmentId, timeToSeconds]);
+
+  // Cleanup timer and sync timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return useMemo(() => ({
     showcallerState,
-    isPlaying: showcallerState.isPlaying,
-    currentSegmentId: showcallerState.currentSegmentId,
-    timeRemaining: showcallerState.timeRemaining,
-    isController,
     play,
     pause,
     forward,
     backward,
-    jumpTo,
-    applyShowcallerState
-  };
+    applyShowcallerState,
+    isPlaying: showcallerState.isPlaying,
+    currentSegmentId: showcallerState.currentSegmentId,
+    timeRemaining: showcallerState.timeRemaining,
+    isController: isController()
+  }), [
+    showcallerState,
+    play,
+    pause,
+    forward,
+    backward,
+    applyShowcallerState,
+    isController
+  ]);
 };

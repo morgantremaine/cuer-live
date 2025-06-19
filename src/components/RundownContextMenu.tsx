@@ -18,7 +18,6 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
-  itemType?: string;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -39,7 +38,6 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
-  itemType,
   onCopy,
   onDelete,
   onToggleFloat,

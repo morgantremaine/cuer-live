@@ -41,9 +41,9 @@ export const useShowcallerPersistence = ({
         return false;
       }
 
-      // Track this as our own update - convert number to string
+      // Track this as our own update
       if (trackOwnUpdate && state.lastUpdate) {
-        trackOwnUpdate(state.lastUpdate.toString());
+        trackOwnUpdate(state.lastUpdate);
       }
 
       console.log('📺 Successfully saved showcaller state');

@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface UseRowEventHandlersProps {
-  item: { id: string; type?: string };
+  item: { id: string };
   index: number;
   isSelected?: boolean;
   selectedRowsCount?: number;

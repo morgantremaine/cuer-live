@@ -22,7 +22,6 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
-    jumpTo,
     applyShowcallerState,
     isPlaying,
     currentSegmentId,
@@ -37,7 +36,7 @@ export const usePlaybackControls = (
       if (isController) {
         console.log('📺 State changed, saving...');
         // Track the update before saving to prevent our own update from triggering conflicts
-        trackOwnShowcallerUpdate(state.lastUpdate.toString());
+        trackOwnShowcallerUpdate(state.lastUpdate);
         saveShowcallerState(state);
       }
     }
@@ -98,7 +97,6 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
-    jumpTo,
     isController
   };
 };
