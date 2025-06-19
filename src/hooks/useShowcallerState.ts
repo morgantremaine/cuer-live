@@ -17,6 +17,9 @@ interface UseShowcallerStateProps {
   onShowcallerStateChange?: (state: ShowcallerState) => void;
 }
 
+// Export the ShowcallerState type
+export type { ShowcallerState };
+
 export const useShowcallerState = ({
   items,
   updateItem,

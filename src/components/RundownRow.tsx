@@ -22,7 +22,6 @@ interface RundownRowProps {
   headerDuration?: string;
   hasClipboardData?: boolean;
   currentHighlight?: SearchHighlight | null;
-  isShowcallerController?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -40,7 +39,6 @@ interface RundownRowProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: (itemId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -58,12 +56,10 @@ const RundownRow = (props: RundownRowProps) => {
         selectedRowsCount={props.selectedRowsCount || 1}
         selectedRows={props.selectedRows}
         hasClipboardData={props.hasClipboardData}
-        isShowcallerController={props.isShowcallerController}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
-        onJumpToHere={props.onJumpToHere}
       />
     );
   }
@@ -77,13 +73,11 @@ const RundownRow = (props: RundownRowProps) => {
       selectedRowsCount={props.selectedRowsCount || 1}
       selectedRows={props.selectedRows}
       hasClipboardData={props.hasClipboardData}
-      isShowcallerController={props.isShowcallerController}
       onToggleFloat={props.onToggleFloat || (() => {})}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
-      onJumpToHere={props.onJumpToHere}
     />
   );
 };

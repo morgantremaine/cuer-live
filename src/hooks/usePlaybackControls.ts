@@ -37,7 +37,7 @@ export const usePlaybackControls = (
       if (isController) {
         console.log('📺 State changed, saving...');
         // Track the update before saving to prevent our own update from triggering conflicts
-        trackOwnShowcallerUpdate(state.lastUpdate);
+        trackOwnShowcallerUpdate(state.lastUpdate.toString());
         saveShowcallerState(state);
       }
     }
