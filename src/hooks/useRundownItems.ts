@@ -1,319 +1,207 @@
 
-import { useState, useCallback, useMemo } from 'react';
-import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { RundownItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
-import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
-export type { RundownItem } from '@/types/rundown';
+export { type RundownItem };
 
-export const useRundownItems = (markAsChanged: () => void) => {
-  const [items, setItems] = useState<RundownItem[]>([]);
+export const useRundownItems = (
+  initialItems: RundownItem[] = [],
+  onItemsChange?: (items: RundownItem[]) => void
+) => {
+  const [items, setItems] = useState<RundownItem[]>(initialItems);
 
-  // Helper function to renumber all headers in sequence
-  const renumberItems = useCallback((items: RundownItem[]) => {
-    let headerIndex = 0;
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  // Sync with external changes
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
+
+  // Notify of changes
+  useEffect(() => {
+    onItemsChange?.(items);
+  }, [items, onItemsChange]);
+
+  const updateItem = useCallback((id: string, field: string, value: string) => {
+    console.log('🔄 useRundownItems updateItem called:', { id, field, value });
     
-    return items.map(item => {
-      if (item.type === 'header') {
-        const newHeaderLetter = letters[headerIndex] || 'A';
-        headerIndex++;
-        return {
-          ...item,
-          rowNumber: newHeaderLetter
-        };
-      } else {
+    setItems(prevItems => {
+      const newItems = prevItems.map(item => {
+        if (item.id === id) {
+          // Handle nested field updates (like customFields.fieldName)
+          if (field.includes('.')) {
+            const [parentField, childField] = field.split('.');
+            const updatedItem = {
+              ...item,
+              [parentField]: {
+                ...item[parentField as keyof RundownItem],
+                [childField]: value
+              }
+            };
+            
+            // Add debugging for images field specifically
+            if (field === 'images' || childField === 'images') {
+              console.log('🖼️ useRundownItems updating images field:', {
+                id,
+                field,
+                value,
+                updatedItem: updatedItem
+              });
+            }
+            
+            return updatedItem;
+          } else {
+            const updatedItem = {
+              ...item,
+              [field]: value
+            };
+            
+            // Add debugging for images field specifically
+            if (field === 'images') {
+              console.log('🖼️ useRundownItems updating images field (direct):', {
+                id,
+                field,
+                value,
+                beforeUpdate: item,
+                afterUpdate: updatedItem
+              });
+            }
+            
+            return updatedItem;
+          }
+        }
         return item;
+      });
+      
+      // Log the final result for images updates
+      if (field === 'images' || field.includes('images')) {
+        const updatedItem = newItems.find(item => item.id === id);
+        console.log('🖼️ useRundownItems final state after images update:', {
+          id,
+          field,
+          value,
+          updatedItemImages: updatedItem?.images,
+          fullUpdatedItem: updatedItem
+        });
       }
+      
+      return newItems;
     });
   }, []);
 
-  const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
-    setItems(prevItems => {
-      const newItems = prevItems.map(item => 
-        item.id === id ? { ...item, ...updates } : item
-      );
-      markAsChanged();
-      return newItems;
-    });
-  }, [markAsChanged]);
-
-  const addRow = useCallback((calculateEndTime: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
+  const addItem = useCallback((item?: Partial<RundownItem>) => {
     const newItem: RundownItem = {
       id: uuidv4(),
-      type: 'regular',
-      rowNumber: '',
-      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
+      name: '',
+      duration: '',
       startTime: '',
-      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
       endTime: '',
-      elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
+      elapsedTime: '',
       talent: '',
       script: '',
+      notes: '',
       gfx: '',
       video: '',
       images: '',
-      notes: '',
-      color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
+      type: 'segment',
+      color: '#ffffff',
       isFloating: false,
-      customFields: {}
+      isFloated: false,
+      customFields: {},
+      ...item
     };
+    setItems(prev => [...prev, newItem]);
+    return newItem;
+  }, []);
 
-    setItems(prevItems => {
-      let insertIndex = prevItems.length; // Default to end
+  const deleteItem = useCallback((id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+  }, []);
 
-      // Determine insertion point based on selection
-      if (selectedRows && selectedRows.size > 0) {
-        // Find the highest index of selected rows
-        const selectedIndices = Array.from(selectedRows)
-          .map(id => prevItems.findIndex(item => item.id === id))
-          .filter(index => index !== -1);
-        
-        if (selectedIndices.length > 0) {
-          insertIndex = Math.max(...selectedIndices) + 1;
-        }
-      } else if (selectedRowId) {
-        // Find index of single selected row
-        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
-        if (selectedIndex !== -1) {
-          insertIndex = selectedIndex + 1;
-        }
-      }
-
-      const newItems = [...prevItems];
-      newItems.splice(insertIndex, 0, newItem);
-      
-      markAsChanged();
-      return newItems;
+  const reorderItems = useCallback((startIndex: number, endIndex: number) => {
+    setItems(prev => {
+      const result = Array.from(prev);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      return result;
     });
-  }, [markAsChanged]);
+  }, []);
 
-  const addHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
-    setItems(prevItems => {
-      const newItem: RundownItem = {
+  const duplicateItem = useCallback((id: string) => {
+    setItems(prev => {
+      const index = prev.findIndex(item => item.id === id);
+      if (index === -1) return prev;
+      
+      const itemToDuplicate = prev[index];
+      const duplicatedItem: RundownItem = {
+        ...itemToDuplicate,
         id: uuidv4(),
-        type: 'header',
-        rowNumber: 'A', // Will be renumbered below
-        name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
-        startTime: '',
-        duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
-        endTime: '',
-        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        images: '',
-        notes: '',
-        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-        isFloating: false,
-        customFields: {}
+        name: `${itemToDuplicate.name} (Copy)`
       };
-
-      let insertIndex = prevItems.length; // Default to end
-
-      // Determine insertion point based on selection
-      if (selectedRows && selectedRows.size > 0) {
-        // Find the highest index of selected rows
-        const selectedIndices = Array.from(selectedRows)
-          .map(id => prevItems.findIndex(item => item.id === id))
-          .filter(index => index !== -1);
-        
-        if (selectedIndices.length > 0) {
-          insertIndex = Math.max(...selectedIndices) + 1;
-        }
-      } else if (selectedRowId) {
-        // Find index of single selected row
-        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
-        if (selectedIndex !== -1) {
-          insertIndex = selectedIndex + 1;
-        }
-      }
-
-      const newItems = [...prevItems];
-      newItems.splice(insertIndex, 0, newItem);
       
-      // Renumber all headers after adding the new one
-      const renumberedItems = renumberItems(newItems);
-      
-      markAsChanged();
-      return renumberedItems;
+      const result = [...prev];
+      result.splice(index + 1, 0, duplicatedItem);
+      return result;
     });
-  }, [markAsChanged, renumberItems]);
+  }, []);
 
-  const deleteRow = useCallback((id: string) => {
-    setItems(prevItems => {
-      const itemToDelete = prevItems.find(item => item.id === id);
-      const newItems = prevItems.filter(item => item.id !== id);
-      
-      // If we deleted a header, renumber all remaining headers
-      if (itemToDelete?.type === 'header') {
-        const renumberedItems = renumberItems(newItems);
-        markAsChanged();
-        return renumberedItems;
-      }
-      
-      markAsChanged();
-      return newItems;
-    });
-  }, [markAsChanged, renumberItems]);
+  const toggleFloat = useCallback((id: string) => {
+    setItems(prev => prev.map(item => 
+      item.id === id 
+        ? { ...item, isFloating: !item.isFloating, isFloated: !item.isFloating }
+        : item
+    ));
+  }, []);
 
-  const deleteMultipleRows = useCallback((ids: string[]) => {
-    setItems(prevItems => {
-      const itemsToDelete = prevItems.filter(item => ids.includes(item.id));
-      const hasHeaderDeleted = itemsToDelete.some(item => item.type === 'header');
-      const newItems = prevItems.filter(item => !ids.includes(item.id));
-      
-      // If any deleted item was a header, renumber all remaining headers
-      if (hasHeaderDeleted) {
-        const renumberedItems = renumberItems(newItems);
-        markAsChanged();
-        return renumberedItems;
-      }
-      
-      markAsChanged();
-      return newItems;
-    });
-  }, [markAsChanged, renumberItems]);
+  const setItemColor = useCallback((id: string, color: string) => {
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, color } : item
+    ));
+  }, []);
 
-  const addMultipleRows = useCallback((newItems: RundownItem[]) => {
-    setItems(prevItems => {
-      const allItems = [...prevItems, ...newItems];
-      markAsChanged();
-      return allItems;
-    });
-  }, [markAsChanged]);
+  const addMultipleItems = useCallback((newItems: RundownItem[]) => {
+    setItems(prev => [...prev, ...newItems]);
+  }, []);
 
-  // Change back to useCallback but force re-calculation by making it depend on items
-  const getRowNumber = useCallback((index: number) => {
-    if (index < 0 || index >= items.length) return '';
-    
-    const item = items[index];
-    if (!item) return '';
-    
-    // For headers, count how many headers we've seen so far
-    if (item.type === 'header') {
-      let headerCount = 0;
-      for (let i = 0; i <= index; i++) {
-        if (items[i]?.type === 'header') {
-          headerCount++;
-        }
-      }
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      return letters[headerCount - 1] || 'A';
-    }
-    
-    // For regular items, find which segment they belong to
-    let currentSegmentLetter = 'A';
-    let itemCountInSegment = 0;
-    
-    // Go through items up to current index
-    for (let i = 0; i <= index; i++) {
-      const currentItem = items[i];
-      if (!currentItem) continue;
-      
-      if (currentItem.type === 'header') {
-        // Update which segment we're in
-        let headerCount = 0;
-        for (let j = 0; j <= i; j++) {
-          if (items[j]?.type === 'header') {
-            headerCount++;
-          }
-        }
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        currentSegmentLetter = letters[headerCount - 1] || 'A';
-        itemCountInSegment = 0; // Reset count for new segment
-      } else if (currentItem.type === 'regular') {
-        itemCountInSegment++;
-      }
-    }
-    
-    return `${currentSegmentLetter}${itemCountInSegment}`;
+  const deleteMultipleItems = useCallback((ids: string[]) => {
+    setItems(prev => prev.filter(item => !ids.includes(item.id)));
+  }, []);
+
+  const clearAllItems = useCallback(() => {
+    setItems([]);
+  }, []);
+
+  // Memoized computed values
+  const itemsById = useMemo(() => {
+    return items.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {} as Record<string, RundownItem>);
   }, [items]);
 
-  const toggleFloatRow = useCallback((id: string) => {
-    setItems(prevItems => {
-      const newItems = prevItems.map(item => 
-        item.id === id ? { ...item, isFloating: !item.isFloating } : item
-      );
-      markAsChanged();
-      return newItems;
-    });
-  }, [markAsChanged]);
-
-  const calculateTotalRuntime = useCallback(() => {
-    let totalSeconds = 0;
-    items.forEach(item => {
-      if (item.type === 'regular' && item.duration) {
-        const duration = item.duration;
-        const parts = duration.split(':');
-        if (parts.length === 2) {
-          const minutes = parseInt(parts[0]) || 0;
-          const seconds = parseInt(parts[1]) || 0;
-          totalSeconds += minutes * 60 + seconds;
-        }
-      }
-    });
-    
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    } else {
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-  }, [items]);
-
-  const calculateHeaderDuration = useCallback((index: number) => {
-    if (index < 0 || index >= items.length) return '';
-    
-    const headerItem = items[index];
-    if (!headerItem || headerItem.type !== 'header') return '';
-    
-    let totalSeconds = 0;
-    
-    // Sum up durations of all regular items after this header until the next header
-    for (let i = index + 1; i < items.length; i++) {
-      const item = items[i];
-      if (item.type === 'header') break; // Stop at next header
+  const totalDuration = useMemo(() => {
+    return items.reduce((total, item) => {
+      if (item.type === 'header' || item.isFloating || item.isFloated) return total;
       
-      if (item.type === 'regular' && item.duration) {
-        const duration = item.duration;
-        const parts = duration.split(':');
-        if (parts.length === 2) {
-          const minutes = parseInt(parts[0]) || 0;
-          const seconds = parseInt(parts[1]) || 0;
-          totalSeconds += minutes * 60 + seconds;
-        }
-      }
-    }
-    
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    } else {
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
+      const duration = item.duration || '00:00';
+      const [minutes, seconds] = duration.split(':').map(Number);
+      return total + (minutes * 60) + (seconds || 0);
+    }, 0);
   }, [items]);
 
   return {
     items,
     setItems,
     updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    getRowNumber,
-    toggleFloatRow,
-    calculateTotalRuntime,
-    calculateHeaderDuration
+    addItem,
+    deleteItem,
+    reorderItems,
+    duplicateItem,
+    toggleFloat,
+    setItemColor,
+    addMultipleItems,
+    deleteMultipleItems,
+    clearAllItems,
+    itemsById,
+    totalDuration
   };
 };
-
