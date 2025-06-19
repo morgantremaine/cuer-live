@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -74,11 +73,7 @@ const Help = () => {
                   <li><strong>Rundown Analysis:</strong> Ask the AI to review your rundown for spelling, grammar, timing, or structural improvements</li>
                   <li><strong>Content Suggestions:</strong> Get help writing scripts, segment descriptions, or other rundown content</li>
                   <li><strong>Timing Assistance:</strong> Ask questions about duration calculations and scheduling</li>
-                  <li><strong>Quick Modifications:</strong> Request changes to multiple items at once (e.g., "Make all segment durations 2 minutes")</li>
                 </ul>
-                <div className="bg-blue-50 border border-blue-200 rounded p-4 mt-4">
-                  <p className="text-sm"><strong>Note:</strong> The AI assistant requires an OpenAI API key to be configured. Contact your administrator if the feature is not available.</p>
-                </div>
               </div>
             </section>
 
