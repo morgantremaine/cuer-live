@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -199,7 +200,7 @@ const SharedRundownTable = ({
                         {/* Blue play icon - matching main rundown styling */}
                         {isShowcallerCurrent && (
                           <Play 
-                            className="h-3 w-3 text-blue-500 fill-blue-500 mr-2 print:hidden" 
+                            className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print:hidden" 
                           />
                         )}
                         {isFloated && (
@@ -280,3 +281,4 @@ const SharedRundownTable = ({
 };
 
 export default SharedRundownTable;
+
