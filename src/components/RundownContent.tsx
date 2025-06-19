@@ -82,17 +82,6 @@ const RundownContent = ({
   onAddHeader
 }: RundownContentProps) => {
 
-  // Add debugging wrapper for onUpdateItem to trace the flow
-  const debugOnUpdateItem = (id: string, field: string, value: string) => {
-    console.log('🔧 RundownContent.onUpdateItem called:', {
-      id,
-      field,
-      value,
-      onUpdateItemFunction: typeof onUpdateItem
-    });
-    onUpdateItem(id, field, value);
-  };
-
   return (
     <div className="relative bg-background">
       {/* Scrollable Content with Header Inside */}
@@ -128,7 +117,7 @@ const RundownContent = ({
             getRowNumber={getRowNumber}
             getRowStatus={(item) => getRowStatus(item, currentTime)}
             getHeaderDuration={calculateHeaderDuration}
-            onUpdateItem={debugOnUpdateItem}
+            onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}
             onToggleColorPicker={onToggleColorPicker}

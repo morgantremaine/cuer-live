@@ -65,17 +65,6 @@ export const useRundownGridInteractions = (
     addHeaderAtIndex
   );
 
-  // Add debugging wrapper for handleUpdateItem to trace the flow
-  const debugHandleUpdateItem = (id: string, field: string, value: string) => {
-    console.log('🔧 GridInteractions.handleUpdateItem called:', {
-      id,
-      field,
-      value,
-      originalUpdateItem: typeof updateItem
-    });
-    handleUpdateItem(id, field, value);
-  };
-
   return {
     selectedRows,
     toggleRowSelection,
@@ -90,7 +79,7 @@ export const useRundownGridInteractions = (
     clipboardItems,
     copyItems,
     hasClipboardData,
-    handleUpdateItem: debugHandleUpdateItem,
+    handleUpdateItem,
     handleAddRow,
     handleAddHeader,
     handleDeleteRow,

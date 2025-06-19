@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -135,7 +134,7 @@ const RundownGrid = () => {
       isDraggingMultiple={isDraggingMultiple}
       dropTargetIndex={dropTargetIndex}
       currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData}
+      hasClipboardData={hasClipboardData()}
       selectedRowId={selectedRowId}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}

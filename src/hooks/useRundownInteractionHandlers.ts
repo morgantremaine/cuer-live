@@ -1,5 +1,4 @@
 
-
 import { useMultiRowSelection } from './useMultiRowSelection';
 import { useDragAndDrop } from './useDragAndDrop';
 import { useClipboard } from './useClipboard';
@@ -41,12 +40,6 @@ export const useRundownInteractionHandlers = (
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
 
-  // Create a wrapper for toggleRowSelection that matches the expected interface signature
-  const wrappedToggleRowSelection = (id: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    // Call the original function with the items array as the 5th parameter
-    toggleRowSelection(id, index, isShiftClick, isCtrlClick, items);
-  };
-
   // Grid handlers - fix the function call to match expected signature
   const {
     handleUpdateItem,
@@ -78,8 +71,8 @@ export const useRundownInteractionHandlers = (
     clearSelection,
     copyItems,
     clipboardItems,
-    hasClipboardData: hasClipboardData(), // Call the function to get boolean value
-    toggleRowSelection: wrappedToggleRowSelection, // Use the wrapper function
+    hasClipboardData,
+    toggleRowSelection,
     items,
     setRundownTitle,
     addRowAtIndex,
@@ -88,7 +81,7 @@ export const useRundownInteractionHandlers = (
 
   return {
     selectedRows,
-    toggleRowSelection: wrappedToggleRowSelection,
+    toggleRowSelection,
     clearSelection,
     draggedItemIndex,
     isDraggingMultiple,
@@ -99,7 +92,7 @@ export const useRundownInteractionHandlers = (
     handleDrop,
     clipboardItems,
     copyItems,
-    hasClipboardData: hasClipboardData(), // Return boolean value, not function
+    hasClipboardData,
     handleUpdateItem,
     handleAddRow,
     handleAddHeader,
@@ -114,4 +107,3 @@ export const useRundownInteractionHandlers = (
     handleTitleChange
   };
 };
-

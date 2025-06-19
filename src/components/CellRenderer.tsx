@@ -67,16 +67,8 @@ const CellRenderer = ({
       case 'video':
         return item.video || '';
       case 'images':
-        // Explicitly handle images column with debugging
-        const imageValue = item.images || '';
-        console.log('🖼️ CellRenderer getCellValue for images column:', {
-          itemId: item.id,
-          imageValue,
-          columnKey: column.key,
-          columnId: column.id,
-          fullItem: item
-        });
-        return imageValue;
+        // Explicitly handle images column
+        return item.images || '';
       default:
         return (item as any)[column.key] || '';
     }
@@ -106,13 +98,6 @@ const CellRenderer = ({
 
   // Use ImageCell for images column - check both column.key and column.id
   if (column.key === 'images' || column.id === 'images') {
-    console.log('🖼️ CellRenderer rendering ImageCell:', {
-      itemId: item.id,
-      value,
-      columnKey: column.key,
-      columnId: column.id
-    });
-    
     return (
       <ImageCell
         value={value}
@@ -122,12 +107,7 @@ const CellRenderer = ({
         textColor={textColor}
         backgroundColor={backgroundColor}
         onUpdateValue={(newValue) => {
-          console.log('🖼️ CellRenderer.onUpdateValue called:', {
-            itemId: item.id,
-            newValue,
-            columnKey: column.key,
-            onUpdateItemFunction: typeof onUpdateItem
-          });
+          console.log('🖼️ ImageCell updating value:', newValue, 'for item:', item.id);
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
         }}
