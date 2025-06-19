@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -69,6 +68,18 @@ const BlueprintContent = () => {
     }));
     updateLists(refreshedLists);
   }, [rundown?.items, state.lists, updateLists]);
+
+  // Toggle unique items display
+  const toggleUniqueItems = React.useCallback((listId: string, showUnique: boolean) => {
+    console.log('📋 BlueprintContent: toggleUniqueItems called for list', listId, 'showUnique:', showUnique);
+    
+    const updatedLists = state.lists.map(list => 
+      list.id === listId ? { ...list, showUniqueOnly: showUnique } : list
+    );
+    
+    console.log('📋 BlueprintContent: updating lists with showUniqueOnly toggle');
+    updateLists(updatedLists);
+  }, [state.lists, updateLists]);
 
   // Drag and drop state for lists and components
   const [draggedListId, setDraggedListId] = React.useState<string | null>(null);
@@ -321,6 +332,7 @@ const BlueprintContent = () => {
               onDeleteList={deleteList}
               onRenameList={renameList}
               onUpdateCheckedItems={updateCheckedItems}
+              onToggleUnique={toggleUniqueItems}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnterContainer={handleDragEnterContainer}

@@ -37,6 +37,8 @@ const BlueprintListsGrid = ({
   onDrop,
   onDragEnd
 }: BlueprintListsGridProps) => {
+  console.log('📋 BlueprintListsGrid: onToggleUnique prop received:', !!onToggleUnique);
+
   return (
     <div 
       className="columns-2 gap-6 relative"
