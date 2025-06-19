@@ -20,6 +20,7 @@ export const useSimpleAutoSave = (
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const showcallerUpdateRef = useRef(false);
   const showcallerUpdateTimeoutRef = useRef<NodeJS.Timeout>();
+  const ownUpdateTimestamps = useRef<Set<string>>(new Set());
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -61,9 +62,26 @@ export const useSimpleAutoSave = (
   };
 
   // Function to set the own update tracker from realtime hook
-  const setTrackOwnUpdate = (tracker: (timestamp: string) => void) => {
+  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
     trackOwnUpdateRef.current = tracker;
-  };
+  }, []);
+
+  // Enhanced own update tracking
+  const trackMyUpdate = useCallback((timestamp: string) => {
+    console.log('💾 Tracking my own update:', timestamp);
+    ownUpdateTimestamps.current.add(timestamp);
+    
+    // Inform realtime system about this update
+    if (trackOwnUpdateRef.current) {
+      trackOwnUpdateRef.current(timestamp);
+    }
+    
+    // Clean up old timestamps after 15 seconds
+    setTimeout(() => {
+      ownUpdateTimestamps.current.delete(timestamp);
+      console.log('🧹 Cleaned up own update timestamp:', timestamp);
+    }, 15000);
+  }, []);
 
   useEffect(() => {
     // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, or showcaller is updating
@@ -108,20 +126,19 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Increased rate limiting: don't save more than once every 3 seconds
+    // Rate limiting: don't save more than once every 2 seconds
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 3000; // Increased from 2 seconds to 3 seconds
+    const minSaveInterval = 2000;
     
-    // If we just saved recently, extend the debounce time significantly
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 5000 : 2000; // Increased debounce times
+    const debounceTime = timeSinceLastSave < minSaveInterval ? 3000 : 1500;
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce the save with longer timing
+    // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
       // Triple-check conditions when timeout executes
       if (isSaving || 
@@ -170,9 +187,7 @@ export const useSimpleAutoSave = (
         const updateTimestamp = new Date().toISOString();
 
         // Track this as our own update BEFORE saving
-        if (trackOwnUpdateRef.current) {
-          trackOwnUpdateRef.current(updateTimestamp);
-        }
+        trackMyUpdate(updateTimestamp);
 
         // For new rundowns, we need to create them first
         if (!rundownId) {
@@ -206,6 +221,7 @@ export const useSimpleAutoSave = (
             console.error('❌ Save failed:', createError);
           } else {
             lastSavedRef.current = finalSignature;
+            console.log('✅ Successfully saved new rundown');
             onSaved();
             
             // Update the URL to reflect the new rundown ID
@@ -227,6 +243,7 @@ export const useSimpleAutoSave = (
             console.error('❌ Save failed:', error);
           } else {
             lastSavedRef.current = finalSignature;
+            console.log('✅ Successfully saved rundown at', updateTimestamp);
             onSaved();
           }
         }
@@ -242,7 +259,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.title, state.startTime, state.timezone, isSaving, navigate]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.title, state.startTime, state.timezone, isSaving, navigate, trackMyUpdate]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {

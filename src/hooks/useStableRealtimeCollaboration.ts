@@ -30,6 +30,7 @@ export const useStableRealtimeCollaboration = ({
   const lastSetupRundownId = useRef<string | null>(null);
   const lastSetupUserId = useRef<string | null>(null);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
+  const lastProcessedTimestamp = useRef<string | null>(null);
   
   // Keep refs updated but NEVER trigger effects
   currentRundownIdRef.current = rundownId;
@@ -73,7 +74,8 @@ export const useStableRealtimeCollaboration = ({
       rundownId: payload.new?.id,
       timestamp: updateTimestamp,
       currentUserId: currentUserId,
-      trackedUpdates: Array.from(ownUpdateTrackingRef.current)
+      trackedUpdates: Array.from(ownUpdateTrackingRef.current),
+      lastProcessed: lastProcessedTimestamp.current
     });
 
     // Only process updates for the current rundown
@@ -82,12 +84,42 @@ export const useStableRealtimeCollaboration = ({
       return;
     }
 
-    // ONLY skip if this update timestamp is in our tracked updates (our own updates)
-    if (updateTimestamp && ownUpdateTrackingRef.current.has(updateTimestamp)) {
-      console.log('⏭️ Stable - ignoring own update (timestamp match)');
+    // Skip if this is exactly the same timestamp we just processed
+    if (updateTimestamp && updateTimestamp === lastProcessedTimestamp.current) {
+      console.log('⏭️ Stable - ignoring duplicate timestamp');
       return;
     }
 
+    // ENHANCED: Skip if this update timestamp is in our tracked updates (our own updates)
+    if (updateTimestamp && ownUpdateTrackingRef.current.has(updateTimestamp)) {
+      console.log('⏭️ Stable - ignoring own update (timestamp match):', updateTimestamp);
+      lastProcessedTimestamp.current = updateTimestamp;
+      return;
+    }
+
+    // ENHANCED: Additional check for very recent updates (within 1 second) from same user
+    // This handles cases where timestamps might be slightly different but it's still our update
+    if (updateTimestamp) {
+      const updateTime = new Date(updateTimestamp).getTime();
+      const now = Date.now();
+      const isVeryRecent = (now - updateTime) < 5000; // Within 5 seconds
+      
+      if (isVeryRecent) {
+        // Check if we have any tracked updates within the last 10 seconds
+        const hasRecentOwnUpdates = Array.from(ownUpdateTrackingRef.current).some(trackedTimestamp => {
+          const trackedTime = new Date(trackedTimestamp).getTime();
+          return Math.abs(updateTime - trackedTime) < 10000; // Within 10 seconds
+        });
+        
+        if (hasRecentOwnUpdates) {
+          console.log('⏭️ Stable - ignoring likely own update (recent and close to tracked):', updateTimestamp);
+          lastProcessedTimestamp.current = updateTimestamp;
+          return;
+        }
+      }
+    }
+
+    lastProcessedTimestamp.current = updateTimestamp;
     console.log('✅ Stable - processing remote update from teammate');
     
     // Trigger remote update callback immediately
