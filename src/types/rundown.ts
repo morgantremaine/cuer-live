@@ -22,7 +22,6 @@ export interface RundownItem {
   customFields?: { [key: string]: string };
   segmentName?: string;
   status?: 'upcoming' | 'current' | 'completed';
-  currentSegmentId?: string; // Add this property for showcaller functionality
 }
 
 // Helper type guards for better type safety

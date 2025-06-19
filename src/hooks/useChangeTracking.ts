@@ -24,14 +24,16 @@ export const useChangeTracking = (
   const userActivelyTypingRef = useRef(false);
   const lastUserInteractionRef = useRef<number>(0);
 
-  // Enhanced signature creation that COMPLETELY excludes showcaller-only changes
+  // Enhanced signature creation that excludes showcaller-only changes
   const createContentSignature = useCallback(() => {
-    // Only include actual content, completely exclude showcaller state
+    // Only include actual content, not showcaller state
     return JSON.stringify({
-      items: (items || []).map(item => {
-        const { status, currentSegmentId, ...cleanItem } = item;
-        return cleanItem;
-      }),
+      items: (items || []).map(item => ({
+        ...item,
+        // Remove showcaller-specific fields from signature
+        status: undefined,
+        currentSegmentId: undefined
+      })),
       title: rundownTitle || '',
       columns: columns || [],
       timezone: timezone || '',
@@ -71,7 +73,7 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createContentSignature]);
 
-  // Enhanced change detection with showcaller exclusion
+  // Enhanced change detection with better protection
   useEffect(() => {
     // CRITICAL: Multiple layers of protection against false positives
     if (!isInitialized || 
@@ -103,9 +105,9 @@ export const useChangeTracking = (
 
     const currentSignature = createContentSignature();
     
-    // Only trigger if signature actually changed (showcaller changes are excluded)
+    // Only trigger if signature actually changed
     if (lastSavedDataRef.current !== currentSignature) {
-      console.log('📝 Content change detected (excluding showcaller), marking as changed');
+      console.log('📝 Content change detected, marking as changed');
       setHasUnsavedChanges(true);
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignature, isProcessingRealtimeUpdate]);
@@ -118,10 +120,11 @@ export const useChangeTracking = (
     savedStartTime?: string
   ) => {
     const savedSignature = JSON.stringify({
-      items: (savedItems || []).map(item => {
-        const { status, currentSegmentId, ...cleanItem } = item;
-        return cleanItem;
-      }),
+      items: (savedItems || []).map(item => ({
+        ...item,
+        status: undefined,
+        currentSegmentId: undefined
+      })),
       title: savedTitle || '',
       columns: savedColumns || [],
       timezone: savedTimezone || '',
@@ -145,7 +148,7 @@ export const useChangeTracking = (
     }
   }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
 
-  // Enhanced signature update with showcaller exclusion
+  // Enhanced signature update with better synchronization
   const updateSavedSignature = useCallback((
     newItems: RundownItem[], 
     newTitle: string, 
@@ -160,10 +163,11 @@ export const useChangeTracking = (
     }
 
     const newSignature = JSON.stringify({
-      items: (newItems || []).map(item => {
-        const { status, currentSegmentId, ...cleanItem } = item;
-        return cleanItem;
-      }),
+      items: (newItems || []).map(item => ({
+        ...item,
+        status: undefined,
+        currentSegmentId: undefined
+      })),
       title: newTitle || '',
       columns: newColumns || [],
       timezone: newTimezone || '',
@@ -172,7 +176,7 @@ export const useChangeTracking = (
     
     lastSavedDataRef.current = newSignature;
     setHasUnsavedChanges(false);
-    console.log('🔄 Updated saved signature from realtime (excluding showcaller), length:', newSignature.length);
+    console.log('🔄 Updated saved signature from realtime, length:', newSignature.length);
 
     // Extended cooldown period to prevent immediate change detection
     realtimeCooldownRef.current = setTimeout(() => {
