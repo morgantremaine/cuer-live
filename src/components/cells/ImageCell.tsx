@@ -38,6 +38,7 @@ const ImageCell = ({
     const newValue = e.target.value;
     console.log('🖼️ ImageCell handleInputChange:', { 
       itemId, 
+      field: cellRefKey,
       newValue, 
       oldValue: internalValue,
       timestamp: new Date().toISOString()
@@ -45,8 +46,8 @@ const ImageCell = ({
     
     setInternalValue(newValue);
     
-    // Immediately call onUpdateValue to ensure the change is propagated
-    // This is crucial for change detection
+    // CRITICAL: Immediately propagate the change
+    console.log('🖼️ ImageCell calling onUpdateValue for field:', cellRefKey, 'with value:', newValue);
     onUpdateValue(newValue);
     
     setImageError(false); // Reset error when URL changes
@@ -85,18 +86,19 @@ const ImageCell = ({
     e.stopPropagation();
     setIsEditing(false);
     
-    // Final update on blur to ensure consistency - this is important
+    // Final update on blur to ensure consistency
     const finalValue = e.target.value;
     console.log('🖼️ ImageCell final blur update:', { 
       itemId, 
+      field: cellRefKey,
       finalValue, 
       internalValue,
       changed: finalValue !== internalValue,
       timestamp: new Date().toISOString()
     });
     
-    // Always call onUpdateValue on blur to ensure the final state is saved
-    // This helps with cases where change detection might have missed something
+    // CRITICAL: Always call onUpdateValue on blur to ensure the final state is saved
+    console.log('🖼️ ImageCell final onUpdateValue call for field:', cellRefKey, 'with value:', finalValue);
     onUpdateValue(finalValue);
     
     if (finalValue !== internalValue) {
