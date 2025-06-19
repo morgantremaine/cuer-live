@@ -33,6 +33,12 @@ const SearchBar = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Provide default values for optional props
+  const safeItems = items || [];
+  const safeVisibleColumns = visibleColumns || [];
+  const safeColumns = columns || [];
+  const safeTitle = title || '';
+
   const {
     searchText,
     setSearchText,
@@ -40,7 +46,7 @@ const SearchBar = ({
     currentMatchIndex,
     setCurrentMatchIndex,
     performSearch
-  } = useSearch(items, visibleColumns, onHighlightMatch);
+  } = useSearch(safeItems, safeVisibleColumns, onHighlightMatch);
 
   const { navigateMatch } = useSearchNavigation();
 
@@ -51,12 +57,12 @@ const SearchBar = ({
     replaceAll: replaceAllMatches,
     clearLastResult
   } = useTextReplace({
-    items,
-    visibleColumns,
-    updateItem,
+    items: safeItems,
+    visibleColumns: safeVisibleColumns,
+    updateItem: updateItem || (() => {}),
     saveUndoState,
-    columns,
-    title
+    columns: safeColumns,
+    title: safeTitle
   });
 
   const handleNavigate = (direction: 'next' | 'prev') => {
@@ -125,6 +131,7 @@ const SearchBar = ({
         });
       }
     } catch (error) {
+      console.error('Replace error:', error);
       toast({
         title: "Replacement error",
         description: error instanceof Error ? error.message : "An unexpected error occurred.",

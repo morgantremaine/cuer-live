@@ -44,7 +44,7 @@ export const useTextReplace = ({
     setIsReplacing(true);
 
     try {
-      // Save undo state before making changes
+      // Save undo state before making changes (only if available)
       if (saveUndoState) {
         const action = replaceAll ? 'Replace All' : 'Replace';
         saveUndoState(items, columns, title, action);
@@ -52,8 +52,8 @@ export const useTextReplace = ({
 
       // Perform the replacement
       const result = replaceTextInItems(
-        items,
-        visibleColumns,
+        items || [],
+        visibleColumns || [],
         searchText,
         replaceText,
         replaceAll,
@@ -64,7 +64,9 @@ export const useTextReplace = ({
       if (result.success && result.replacements.length > 0) {
         // Apply each replacement using the updateItem function
         for (const replacement of result.replacements) {
-          updateItem(replacement.itemId, replacement.field, replacement.newValue);
+          if (updateItem) {
+            updateItem(replacement.itemId, replacement.field, replacement.newValue);
+          }
         }
 
         console.log(`Replace operation completed: ${result.replacements.length} replacements made`);
@@ -73,6 +75,7 @@ export const useTextReplace = ({
       setLastReplaceResult(result);
       return result;
     } catch (error) {
+      console.error('Replace operation failed:', error);
       const result: ReplaceResult = {
         success: false,
         replacements: [],

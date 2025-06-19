@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -86,7 +87,6 @@ const HeaderControls = ({
           updateItem={updateItem}
         />
       </div>
-      {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
           <DropdownMenu>
