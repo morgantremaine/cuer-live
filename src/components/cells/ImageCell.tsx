@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 interface ImageCellProps {
@@ -36,12 +35,28 @@ const ImageCell = ({
 
   // Helper function to convert Google Drive links to direct image URLs
   const convertGoogleDriveUrl = (url: string): string => {
-    // Check if it's a Google Drive sharing link
-    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (driveMatch) {
-      const fileId = driveMatch[1];
+    // Check for different Google Drive link formats
+    let fileId = null;
+    
+    // Format 1: https://drive.google.com/file/d/FILE_ID/view
+    const viewMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/);
+    if (viewMatch) {
+      fileId = viewMatch[1];
+    }
+    
+    // Format 2: https://drive.google.com/file/d/FILE_ID (without /view)
+    if (!fileId) {
+      const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileMatch) {
+        fileId = fileMatch[1];
+      }
+    }
+    
+    // If we found a file ID, convert to direct image URL
+    if (fileId) {
       return `https://drive.google.com/uc?export=view&id=${fileId}`;
     }
+    
     return url;
   };
 
