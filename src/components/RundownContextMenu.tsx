@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,6 +18,8 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
+  itemType?: 'regular' | 'header'; // NEW: Add item type prop
+  canJumpTo?: boolean; // NEW: Add jump capability prop
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -28,6 +30,7 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToSegment?: (segmentId: string) => void; // NEW: Add jump callback
 }
 
 const RundownContextMenu = memo(({
@@ -38,6 +41,8 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
+  itemType = 'regular', // NEW: Default to regular
+  canJumpTo = false, // NEW: Default to false
   onCopy,
   onDelete,
   onToggleFloat,
@@ -47,7 +52,8 @@ const RundownContextMenu = memo(({
   onPaste,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  onJumpToSegment // NEW: Jump callback
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -87,6 +93,13 @@ const RundownContextMenu = memo(({
     }
   };
 
+  // NEW: Handle jump to segment
+  const handleJumpToSegment = () => {
+    if (onJumpToSegment && itemType === 'regular') {
+      onJumpToSegment(itemId);
+    }
+  };
+
   return (
     <>
       <ContextMenu>
@@ -115,6 +128,20 @@ const RundownContextMenu = memo(({
           )}
           
           {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
+          
+          {/* NEW: Jump to here option - only for regular segments and when controller */}
+          {canJumpTo && itemType === 'regular' && onJumpToSegment && !isMultipleSelection && (
+            <>
+              <ContextMenuItem 
+                onClick={handleJumpToSegment} 
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <Navigation className="mr-2 h-4 w-4" />
+                Jump to here
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
           
           <ContextMenuItem 
             onClick={onCopy} 

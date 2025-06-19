@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -162,6 +161,56 @@ export const useShowcallerState = ({
       }, true);
     }
   }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId]);
+
+  // NEW: Jump to specific segment function
+  const jumpToSegment = useCallback((segmentId: string) => {
+    console.log('📺 jumpToSegment called with:', segmentId, 'by user:', userId);
+    
+    // Only allow controller to jump
+    if (!isController()) {
+      console.log('📺 User is not controller, cannot jump');
+      return;
+    }
+    
+    const segment = items.find(item => item.id === segmentId);
+    if (!segment || segment.type !== 'regular') {
+      console.log('📺 Invalid segment for jump:', segmentId);
+      return;
+    }
+    
+    console.log('📺 Jumping to segment:', segment.name);
+    
+    // Clear all current statuses
+    clearCurrentStatus();
+    
+    // Set appropriate statuses based on jump target
+    const targetIndex = items.findIndex(item => item.id === segmentId);
+    items.forEach((item, index) => {
+      if (item.type === 'regular') {
+        if (index < targetIndex) {
+          updateItem(item.id, 'status', 'completed');
+        } else if (index > targetIndex) {
+          updateItem(item.id, 'status', 'upcoming');
+        }
+      }
+    });
+    
+    // Set the target segment as current
+    updateItem(segmentId, 'status', 'current');
+    const duration = timeToSeconds(segment.duration || '00:00');
+    
+    updateShowcallerState({
+      currentSegmentId: segmentId,
+      timeRemaining: duration,
+      playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
+      controllerId: userId
+    }, true);
+    
+    // Restart timer if playing
+    if (showcallerState.isPlaying) {
+      startTimer();
+    }
+  }, [items, isController, clearCurrentStatus, updateItem, timeToSeconds, updateShowcallerState, userId, showcallerState.isPlaying, startTimer]);
 
   // Timer logic
   const startTimer = useCallback(() => {
@@ -459,6 +508,7 @@ export const useShowcallerState = ({
     pause,
     forward,
     backward,
+    jumpToSegment,
     applyShowcallerState,
     isPlaying: showcallerState.isPlaying,
     currentSegmentId: showcallerState.currentSegmentId,
@@ -470,6 +520,7 @@ export const useShowcallerState = ({
     pause,
     forward,
     backward,
+    jumpToSegment,
     applyShowcallerState,
     isController
   ]);

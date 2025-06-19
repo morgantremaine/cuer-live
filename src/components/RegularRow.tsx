@@ -21,6 +21,7 @@ interface RegularRowProps {
   isDraggingMultiple?: boolean;
   showColorPicker: string | null;
   hasClipboardData?: boolean;
+  canJumpTo?: boolean; // NEW: Add jump capability prop
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -38,6 +39,7 @@ interface RegularRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToSegment?: (segmentId: string) => void; // NEW: Add jump callback
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -55,11 +57,13 @@ const RegularRow = (props: RegularRowProps) => {
     isDraggingMultiple = false,
     showColorPicker,
     hasClipboardData = false,
+    canJumpTo = false, // NEW: Default to false
     onToggleFloat,
     onColorSelect,
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onJumpToSegment, // NEW: Jump callback
     isDragging
   } = props;
 
@@ -157,6 +161,8 @@ const RegularRow = (props: RegularRowProps) => {
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
+      itemType="regular" // NEW: Specify item type
+      canJumpTo={canJumpTo} // NEW: Pass jump capability
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
@@ -166,6 +172,7 @@ const RegularRow = (props: RegularRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
+      onJumpToSegment={onJumpToSegment} // NEW: Pass jump callback
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
