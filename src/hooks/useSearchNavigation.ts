@@ -6,26 +6,42 @@ export const useSearchNavigation = () => {
     console.log('🎯 Attempting to focus cell:', itemId, field);
     
     try {
-      const cellKey = `${itemId}-${field}`;
-      
-      // Try multiple methods to find the cell
-      let cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
-      
-      if (!cellElement) {
-        cellElement = document.querySelector(`input[data-item-id="${itemId}"][data-field="${field}"], textarea[data-item-id="${itemId}"][data-field="${field}"]`) as HTMLInputElement | HTMLTextAreaElement;
-      }
-      
-      if (!cellElement) {
-        // Try finding by ID if it exists
-        cellElement = document.getElementById(cellKey) as HTMLInputElement | HTMLTextAreaElement;
+      // Try multiple selectors to find the actual cell element
+      const selectors = [
+        `input[data-item-id="${itemId}"][data-field="${field}"]`,
+        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+        `[data-cell-key="${itemId}-${field}"]`,
+        `#${itemId}-${field}`,
+        `[data-rundown-cell="${itemId}-${field}"]`
+      ];
+
+      let cellElement: HTMLInputElement | HTMLTextAreaElement | null = null;
+
+      for (const selector of selectors) {
+        cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+        if (cellElement) {
+          console.log('✅ Found cell element with selector:', selector);
+          break;
+        }
       }
       
       if (cellElement) {
-        console.log('✅ Found and focusing cell element');
         cellElement.focus();
-        cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cellElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        });
+        
+        // Ensure the cell is visible and focused
+        setTimeout(() => {
+          if (cellElement) {
+            cellElement.focus();
+          }
+        }, 100);
       } else {
-        console.log('❌ Could not find cell element for:', cellKey);
+        console.log('❌ Could not find cell element for:', itemId, field);
+        console.log('Available elements:', document.querySelectorAll('input, textarea').length);
       }
     } catch (error) {
       console.log('❌ Error focusing cell:', error);

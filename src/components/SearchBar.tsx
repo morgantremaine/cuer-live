@@ -52,9 +52,41 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     try {
       if (replaceAll) {
         console.log('🔄 Replacing all matches');
-        // Process all matches
+        // Create a map to track unique items that need updating
+        const itemUpdates = new Map<string, Map<string, string>>();
+        
+        // Process all matches and build replacement map
         for (const match of matches) {
-          await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText.trim(), true);
+          const key = `${match.itemId}-${match.field}`;
+          if (!itemUpdates.has(key)) {
+            // Get current value for this item/field combination
+            const item = items.find(item => item.id === match.itemId);
+            if (item) {
+              const column = visibleColumns.find(col => col.key === match.field);
+              if (column) {
+                const currentValue = item[match.field] || '';
+                if (typeof currentValue === 'string') {
+                  // Perform case-insensitive replacement
+                  const searchRegex = new RegExp(searchText.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                  const newValue = currentValue.replace(searchRegex, replaceText.trim());
+                  
+                  if (newValue !== currentValue) {
+                    const fieldMap = new Map<string, string>();
+                    fieldMap.set(match.field, newValue);
+                    itemUpdates.set(match.itemId, fieldMap);
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Apply all updates
+        for (const [itemId, fieldMap] of itemUpdates) {
+          for (const [field, newValue] of fieldMap) {
+            console.log('✅ Updating item:', itemId, field, 'with value:', newValue);
+            await onReplaceText(itemId, field, searchText.trim(), replaceText.trim(), true);
+          }
         }
       } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
         console.log('🔄 Replacing current match');
@@ -62,11 +94,11 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
         await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText.trim(), false);
       }
 
-      // Refresh search results after a delay to allow for state updates
+      // Refresh search results after replacement
       setTimeout(() => {
         console.log('🔄 Refreshing search after replace');
         refreshSearch();
-      }, 300);
+      }, 500);
     } catch (error) {
       console.error('❌ Replace operation failed:', error);
     }

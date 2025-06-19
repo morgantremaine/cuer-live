@@ -136,7 +136,7 @@ const RundownIndexContent = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Enhanced highlight match functionality with proper cell focusing and highlighting
+  // Enhanced highlight match functionality with better cell targeting
   const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
     console.log('🎯 Highlighting match:', { itemId, field, startIndex, endIndex });
     
@@ -152,39 +152,50 @@ const RundownIndexContent = () => {
       endIndex
     });
 
-    // Focus and scroll to the cell
+    // Focus and scroll to the cell with improved targeting
     setTimeout(() => {
-      const cellKey = `${itemId}-${field}`;
-      console.log('🎯 Looking for cell with key:', cellKey);
-      
-      // Try multiple ways to find the cell element
-      let cellElement = cellRefs.current[cellKey];
-      
-      if (!cellElement) {
-        // Fallback: try to find by data attribute
-        cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
-      }
-      
-      if (!cellElement) {
-        // Another fallback: try to find by combining itemId and field
-        cellElement = document.querySelector(`input[data-item-id="${itemId}"][data-field="${field}"], textarea[data-item-id="${itemId}"][data-field="${field}"]`) as HTMLInputElement | HTMLTextAreaElement;
+      const selectors = [
+        `input[data-item-id="${itemId}"][data-field="${field}"]`,
+        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+        `[data-cell-key="${itemId}-${field}"]`,
+        `#${itemId}-${field}`,
+        `[data-rundown-cell="${itemId}-${field}"]`
+      ];
+
+      let cellElement: HTMLInputElement | HTMLTextAreaElement | null = null;
+
+      for (const selector of selectors) {
+        cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+        if (cellElement) {
+          console.log('✅ Found cell element with selector:', selector);
+          break;
+        }
       }
 
       if (cellElement) {
         console.log('✅ Found cell element, focusing and scrolling');
         cellElement.focus();
-        cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cellElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        });
         
-        // Select the text range after a short delay
+        // Select the text range after focusing
         setTimeout(() => {
           if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
-            cellElement.setSelectionRange(startIndex, endIndex);
+            try {
+              cellElement.setSelectionRange(startIndex, endIndex);
+            } catch (error) {
+              console.log('Could not set selection range:', error);
+            }
           }
-        }, 100);
+        }, 200);
       } else {
-        console.log('❌ Could not find cell element for:', cellKey);
+        console.log('❌ Could not find cell element for:', itemId, field);
+        console.log('Available input/textarea elements:', document.querySelectorAll('input, textarea').length);
       }
-    }, 50);
+    }, 100);
   };
 
   // Enhanced replace text functionality with proper state updates
@@ -197,11 +208,11 @@ const RundownIndexContent = () => {
       return;
     }
 
-    const currentValue = getCellValue(item, { key: field });
+    const currentValue = item[field] || '';
     console.log('📝 Current cell value:', currentValue);
     
-    if (!currentValue || typeof currentValue !== 'string') {
-      console.log('❌ No valid current value found');
+    if (typeof currentValue !== 'string') {
+      console.log('❌ No valid current value found or not a string');
       return;
     }
 
@@ -213,16 +224,27 @@ const RundownIndexContent = () => {
     
     if (newValue !== currentValue) {
       console.log('✅ Updating item with new value');
+      
+      // Use the updateItem function from the unified state
       updateItem(itemId, field, newValue);
       
-      // Force a re-render by updating the cell in the DOM
-      const cellKey = `${itemId}-${field}`;
-      const cellElement = cellRefs.current[cellKey];
-      if (cellElement) {
-        cellElement.value = newValue;
+      // Also update any DOM elements directly
+      const selectors = [
+        `input[data-item-id="${itemId}"][data-field="${field}"]`,
+        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
+        `[data-cell-key="${itemId}-${field}"]`
+      ];
+
+      for (const selector of selectors) {
+        const cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+        if (cellElement) {
+          cellElement.value = newValue;
+          console.log('✅ Updated DOM element value');
+          break;
+        }
       }
     } else {
-      console.log('⚠️ No changes made - search text not found');
+      console.log('⚠️ No changes made - search text not found or already replaced');
     }
   };
 

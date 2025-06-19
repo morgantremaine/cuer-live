@@ -33,9 +33,8 @@ export const useSearch = (
         if (!cellValue || typeof cellValue !== 'string') return;
         
         const cellValueLower = cellValue.toLowerCase();
-        
-        // Find all occurrences of the search text
         let searchIndex = 0;
+        
         while (searchIndex < cellValue.length) {
           const foundIndex = cellValueLower.indexOf(searchLower, searchIndex);
           if (foundIndex === -1) break;
