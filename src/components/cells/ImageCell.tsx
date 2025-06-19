@@ -34,6 +34,17 @@ const ImageCell = ({
     setInternalValue(value || '');
   }, [value]);
 
+  // Helper function to convert Google Drive links to direct image URLs
+  const convertGoogleDriveUrl = (url: string): string => {
+    // Check if it's a Google Drive sharing link
+    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch) {
+      const fileId = driveMatch[1];
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+    return url;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInternalValue(newValue);
@@ -100,8 +111,15 @@ const ImageCell = ({
     internalValue.includes('images') ||
     internalValue.includes('photos') ||
     internalValue.includes('imgur') ||
-    internalValue.includes('unsplash')
+    internalValue.includes('unsplash') ||
+    internalValue.includes('drive.google.com') ||
+    internalValue.includes('gstatic.com') ||
+    internalValue.includes('amazonaws.com') ||
+    internalValue.includes('cloudinary.com')
   );
+
+  // Get the display URL (convert Google Drive links if necessary)
+  const displayUrl = isLikelyImageUrl && internalValue ? convertGoogleDriveUrl(internalValue) : internalValue;
 
   return (
     <div 
@@ -141,7 +159,7 @@ const ImageCell = ({
         >
           {isValidImageUrl && isLikelyImageUrl ? (
             <img
-              src={internalValue}
+              src={displayUrl}
               alt="Rundown image"
               className="w-full h-full object-contain rounded"
               onError={handleImageError}
