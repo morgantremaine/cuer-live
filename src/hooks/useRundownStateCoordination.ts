@@ -172,6 +172,7 @@ export const useRundownStateCoordination = () => {
       pause: simplifiedState.pause,
       forward: simplifiedState.forward,
       backward: simplifiedState.backward,
+      jumpToSegment: simplifiedState.jumpToSegment, // ADD: Include jumpToSegment function
       
       // Undo functionality
       undo: simplifiedState.undo,
