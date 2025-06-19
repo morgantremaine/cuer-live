@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -133,39 +132,29 @@ const RundownTable = ({
                 <RundownRow
                   item={item}
                   index={index}
-                  rowNumber={rowNumber}
-                  status={status}
-                  showColorPicker={showColorPicker}
-                  cellRefs={cellRefs}
                   columns={visibleColumns}
-                  isSelected={isActuallySelected}
-                  isCurrentlyPlaying={isCurrentlyPlaying}
-                  isDraggingMultiple={isDraggingMultiple}
-                  selectedRowsCount={selectedRows.size}
-                  selectedRows={selectedRows}
-                  headerDuration={headerDuration}
-                  hasClipboardData={hasClipboardData}
-                  isDragging={isDragging}
+                  visibleColumns={visibleColumns}
                   onUpdateItem={onUpdateItem}
-                  onCellClick={onCellClick}
-                  onKeyDown={onKeyDown}
-                  onToggleColorPicker={onToggleColorPicker}
-                  onColorSelect={onColorSelect}
                   onDeleteRow={onDeleteRow}
                   onToggleFloat={onToggleFloat}
-                  onRowSelect={onRowSelect}
+                  showColorPicker={showColorPicker}
+                  onToggleColorPicker={onToggleColorPicker}
+                  selectedRows={selectedRows}
+                  onRowSelection={onRowSelect}
+                  isDragging={isDragging}
+                  dropTargetIndex={dropTargetIndex}
                   onDragStart={onDragStart}
                   onDragOver={(e) => handleRowDragOver(e, index)}
+                  onDragLeave={onDragLeave}
                   onDrop={(e) => {
                     onDrop(e, index);
                   }}
-                  onCopySelectedRows={onCopySelectedRows}
-                  onDeleteSelectedRows={onDeleteSelectedRows}
-                  onPasteRows={onPasteRows}
-                  onClearSelection={onClearSelection}
-                  onAddRow={onAddRow}
-                  onAddHeader={onAddHeader}
-                  getColumnWidth={getColumnWidth}
+                  cellRefs={cellRefs}
+                  onCellClick={onCellClick}
+                  onKeyDown={onKeyDown}
+                  getRowNumber={getRowNumber}
+                  getHeaderDuration={getHeaderDuration}
+                  calculateHeaderDuration={(index: number) => getHeaderDuration(index)}
                 />
                 
                 {/* Show full-width grey line with rounded corners UNDER the current segment */}
