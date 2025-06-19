@@ -1,16 +1,7 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import { useRundownUIState } from '@/hooks/useRundownUIState';
-import { useRundownGridInteractions } from '@/hooks/useRundownGridInteractions';
-import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
-import { useRundownState } from '@/hooks/useRundownState';
-import { useRundownGridCore } from '@/hooks/useRundownGridCore';
-import { useRundownGridUI } from '@/hooks/useRundownGridUI';
-import { useRundownGridInteractions as useGridInteractions } from '@/hooks/useRundownGridInteractions';
-import { useRundownGridState } from '@/hooks/useRundownGridState';
-import { useRundownGridActions } from '@/hooks/useRundownGridActions';
-import { useRundownGridHelpers } from '@/hooks/useRundownGridHelpers';
 
 interface RundownRowProps {
   item: RundownItem;
