@@ -84,7 +84,6 @@ const RundownRow = ({
     return (
       <HeaderRowContent
         item={item}
-        index={index}
         rowNumber={rowNumber}
         showColorPicker={showColorPicker}
         cellRefs={cellRefs}
@@ -122,7 +121,6 @@ const RundownRow = ({
   return (
     <RegularRowContent
       item={item}
-      index={index}
       rowNumber={rowNumber}
       status={status}
       showColorPicker={showColorPicker}
