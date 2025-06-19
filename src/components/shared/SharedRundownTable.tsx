@@ -102,11 +102,10 @@ const SharedRundownTable = ({
               padding: 2px 3px !important;
               font-size: 9px !important;
               line-height: 1.2 !important;
-              word-break: keep-all !important;
+              word-wrap: break-word !important;
               overflow-wrap: break-word !important;
               hyphens: auto !important;
               border: 0.5px solid #666 !important;
-              white-space: normal !important;
             }
             
             .print-table th {
@@ -119,60 +118,22 @@ const SharedRundownTable = ({
               color: #000 !important;
             }
             
-            /* Specific column width constraints for print */
-            .print-table .col-number {
-              width: 30px !important;
-              min-width: 30px !important;
-              max-width: 30px !important;
-              text-align: center !important;
-            }
-            
-            .print-table .col-duration {
-              width: 65px !important;
-              min-width: 65px !important;
-              max-width: 65px !important;
-              text-align: center !important;
-              font-family: monospace !important;
-              white-space: nowrap !important;
-            }
-            
-            .print-table .col-start-time {
-              width: 65px !important;
-              min-width: 65px !important;
-              max-width: 65px !important;
-              text-align: center !important;
-              font-family: monospace !important;
-              white-space: nowrap !important;
-            }
-            
-            .print-table .col-end-time {
-              width: 65px !important;
-              min-width: 65px !important;
-              max-width: 65px !important;
-              text-align: center !important;
-              font-family: monospace !important;
-              white-space: nowrap !important;
-            }
-            
-            .print-table .col-elapsed-time {
-              width: 65px !important;
-              min-width: 65px !important;
-              max-width: 65px !important;
-              text-align: center !important;
-              font-family: monospace !important;
-              white-space: nowrap !important;
-            }
-            
-            /* All other columns get equal flexible width */
-            .print-table .col-flexible {
-              width: auto !important;
-              min-width: 80px !important;
-            }
-            
             .print-header-row {
               background: #e5e5e5 !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+            }
+            
+            .print-truncate {
+              white-space: nowrap !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+            }
+            
+            .print-break-words {
+              word-break: break-all !important;
+              hyphens: auto !important;
+              overflow-wrap: break-word !important;
             }
             
             .print-header-text {
@@ -188,33 +149,19 @@ const SharedRundownTable = ({
         <table className="w-full print:text-xs print-table">
           <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10 print:static">
             <tr className="print-header-row">
-              <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 col-number print:col-number">
+              <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5">
                 <span className="print-header-text">#</span>
               </th>
-              {visibleColumns.map((column) => {
-                // Determine column class based on column key
-                let columnClass = 'col-flexible print:col-flexible';
-                if (column.key === 'duration') {
-                  columnClass = 'col-duration print:col-duration';
-                } else if (column.key === 'startTime') {
-                  columnClass = 'col-start-time print:col-start-time';
-                } else if (column.key === 'endTime') {
-                  columnClass = 'col-end-time print:col-end-time';
-                } else if (column.key === 'elapsedTime') {
-                  columnClass = 'col-elapsed-time print:col-elapsed-time';
-                }
-                
-                return (
-                  <th
-                    key={column.id}
-                    className={`px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 ${columnClass}`}
-                  >
-                    <div className="truncate">
-                      <span className="print-header-text">{column.name}</span>
-                    </div>
-                  </th>
-                );
-              })}
+              {visibleColumns.map((column) => (
+                <th
+                  key={column.id}
+                  className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:max-w-0 print:overflow-hidden"
+                >
+                  <div className="truncate print-truncate">
+                    <span className="print-header-text">{column.name}</span>
+                  </div>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
@@ -243,7 +190,7 @@ const SharedRundownTable = ({
                     `}
                     style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
                   >
-                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs col-number print:col-number">
+                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs">
                       <div className="flex items-center">
                         {/* Blue play icon - matching main rundown styling */}
                         {isShowcallerCurrent && (
@@ -259,46 +206,34 @@ const SharedRundownTable = ({
                     </td>
                     
                     {visibleColumns.map((column) => {
-                      // Determine column class based on column key
-                      let columnClass = 'col-flexible print:col-flexible';
-                      if (column.key === 'duration') {
-                        columnClass = 'col-duration print:col-duration';
-                      } else if (column.key === 'startTime') {
-                        columnClass = 'col-start-time print:col-start-time';
-                      } else if (column.key === 'endTime') {
-                        columnClass = 'col-end-time print:col-end-time';
-                      } else if (column.key === 'elapsedTime') {
-                        columnClass = 'col-elapsed-time print:col-elapsed-time';
-                      }
-                      
                       // For headers, handle special cases
                       if (item.type === 'header') {
                         if (column.key === 'segmentName' || column.key === 'name') {
                           // Show the header name for both segmentName and name columns
                           return (
-                            <td key={column.id} className={`px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs ${columnClass}`}>
-                              <div className="break-words whitespace-pre-wrap">{item.name || ''}</div>
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words">{item.name || ''}</div>
                             </td>
                           );
                         } else if (column.key === 'duration') {
                           // Show the calculated header duration (excluding floated items)
                           return (
-                            <td key={column.id} className={`px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs ${columnClass}`}>
-                              <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words">({calculateHeaderDuration(index)})</div>
                             </td>
                           );
                         } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
                           // Don't show time fields for headers
                           return (
-                            <td key={column.id} className={`px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs ${columnClass}`}>
-                              <div className="break-words whitespace-pre-wrap"></div>
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words"></div>
                             </td>
                           );
                         } else {
                           // For other columns, show empty cell for headers
                           return (
-                            <td key={column.id} className={`px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs ${columnClass}`}>
-                              <div className="break-words whitespace-pre-wrap"></div>
+                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0">
+                              <div className="break-words whitespace-pre-wrap print-break-words"></div>
                             </td>
                           );
                         }
@@ -310,9 +245,9 @@ const SharedRundownTable = ({
                       return (
                         <td
                           key={column.id}
-                          className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs ${columnClass} ${isFloated ? 'text-white' : 'text-gray-900'}`}
+                          className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print:px-1 print:py-0.5 print:text-xs print:max-w-0 ${isFloated ? 'text-white' : 'text-gray-900'}`}
                         >
-                          <div className="break-words whitespace-pre-wrap">{value}</div>
+                          <div className="break-words whitespace-pre-wrap print-break-words">{value}</div>
                         </td>
                       );
                     })}
