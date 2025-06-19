@@ -33,6 +33,8 @@ interface RegularRowProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, targetIndex: number) => void;
+  onDeleteSelectedRows: () => void;
+  onCopySelectedRows: () => void;
   highlightedCell?: {
     itemId: string;
     field: string;
@@ -44,8 +46,27 @@ interface RegularRowProps {
 const RegularRow = (props: RegularRowProps) => {
   const { item, visibleColumns, cellRefs, getColumnWidth, onUpdateItem, onCellClick, onKeyDown, highlightedCell } = props;
   
-  const { handleRowClick } = useRowEventHandlers(props);
-  const { rowClassName, textColor, backgroundColor } = useRowStyling(props);
+  const { handleRowClick } = useRowEventHandlers({
+    item,
+    index: props.index,
+    isSelected: props.isSelected,
+    selectedRowsCount: 1,
+    onRowSelect: props.onRowSelect,
+    onDeleteRow: props.onDeleteRow,
+    onDeleteSelectedRows: props.onDeleteSelectedRows,
+    onCopySelectedRows: props.onCopySelectedRows,
+    onToggleColorPicker: props.onToggleColorPicker,
+    onToggleFloat: props.onToggleFloat
+  });
+  
+  const { rowClassName, textColor, backgroundColor } = useRowStyling({
+    isDragged: props.isDragged,
+    isDraggingMultiple: props.isDraggingMultiple,
+    isSelected: props.isSelected,
+    isCurrent: props.isCurrent,
+    item: props.item,
+    rowStatus: props.rowStatus
+  });
 
   return (
     <>
@@ -59,14 +80,14 @@ const RegularRow = (props: RegularRowProps) => {
         onClick={handleRowClick}
         data-row-id={item.id}
         data-row-index={props.index}
+        style={{ backgroundColor }}
       >
         {visibleColumns.map((column) => (
           <td
             key={column.id}
             className="border-b border-gray-200 dark:border-gray-700 relative"
             style={{ 
-              width: getColumnWidth(column.id),
-              backgroundColor: backgroundColor
+              width: getColumnWidth(column.id)
             }}
           >
             <CellRenderer

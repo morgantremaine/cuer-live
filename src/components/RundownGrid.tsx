@@ -58,6 +58,7 @@ const RundownGrid = () => {
     handleCellClick,
     handleKeyDown,
     cellRefs,
+    // Add highlightedCell from uiState if it exists
     highlightedCell
   } = uiState;
 
@@ -164,7 +165,7 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
-      highlightedCell={highlightedCell}
+      highlightedCell={highlightedCell || null}
     />
   );
 };

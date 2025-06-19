@@ -32,6 +32,8 @@ interface RundownRowProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, targetIndex: number) => void;
+  onDeleteSelectedRows: () => void;
+  onCopySelectedRows: () => void;
   highlightedCell?: {
     itemId: string;
     field: string;
@@ -67,6 +69,8 @@ const RundownRow = ({
   onDragOver,
   onDragLeave,
   onDrop,
+  onDeleteSelectedRows,
+  onCopySelectedRows,
   highlightedCell
 }: RundownRowProps) => {
   const commonProps = {
@@ -93,6 +97,8 @@ const RundownRow = ({
     onDragOver,
     onDragLeave,
     onDrop,
+    onDeleteSelectedRows,
+    onCopySelectedRows,
     highlightedCell
   };
 

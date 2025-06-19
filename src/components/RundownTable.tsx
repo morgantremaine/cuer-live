@@ -91,8 +91,8 @@ const RundownTable = ({
     <div className="flex-1 overflow-auto">
       <table className="w-full border-collapse">
         <RundownTableHeader 
-          columns={visibleColumns}
-          getColumnWidth={getColumnWidth}
+          visibleColumns={visibleColumns}
+          getColumnWidth={(column: Column) => getColumnWidth(column.id)}
           updateColumnWidth={updateColumnWidth}
         />
         <tbody>
@@ -125,6 +125,8 @@ const RundownTable = ({
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={onDrop}
+              onDeleteSelectedRows={onDeleteSelectedRows}
+              onCopySelectedRows={onCopySelectedRows}
               highlightedCell={highlightedCell}
             />
           ))}
