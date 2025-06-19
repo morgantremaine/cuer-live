@@ -130,7 +130,6 @@ const ImageCell = ({
             // Prevent event bubbling when clicking on input
             e.stopPropagation();
           }}
-          placeholder="Enter image URL..."
           className="w-full h-full bg-transparent border-none outline-none resize-none text-sm"
           style={{ color: textColor }}
           autoFocus={true}
@@ -159,7 +158,7 @@ const ImageCell = ({
               className="w-full h-8 flex items-center text-sm"
               style={{ color: textColor || '#666' }}
             >
-              {imageError ? 'Invalid image URL' : (internalValue || 'Enter image URL...')}
+              {imageError ? 'Invalid image URL' : (internalValue || '')}
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor, Upload, Share2 } from 'lucide-react';
+import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -50,6 +50,35 @@ const Help = () => {
                   <li>Edit content by clicking on any cell</li>
                   <li>Save your work automatically as you type</li>
                 </ul>
+                
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">Special Column Features</h3>
+                  <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+                    <li><strong>Images Column:</strong> Click on any cell in the images column and paste an image URL. The image will display automatically if it's a valid image link.</li>
+                    <li><strong>Script & Notes Columns:</strong> These columns are expandable - click on them to see the full content in a larger, easier-to-read format.</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* AI Helper */}
+            <section className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+                <Bot className="h-6 w-6 mr-2 text-purple-600" />
+                AI Helper (Cuer)
+              </h2>
+              <div className="space-y-4 text-gray-700">
+                <p>Cuer includes an intelligent AI assistant to help streamline your rundown creation and management:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li><strong>Chat Interface:</strong> Click the chat icon in the rundown toolbar to open the AI assistant</li>
+                  <li><strong>Rundown Analysis:</strong> Ask the AI to review your rundown for spelling, grammar, timing, or structural improvements</li>
+                  <li><strong>Content Suggestions:</strong> Get help writing scripts, segment descriptions, or other rundown content</li>
+                  <li><strong>Timing Assistance:</strong> Ask questions about duration calculations and scheduling</li>
+                  <li><strong>Quick Modifications:</strong> Request changes to multiple items at once (e.g., "Make all segment durations 2 minutes")</li>
+                </ul>
+                <div className="bg-blue-50 border border-blue-200 rounded p-4 mt-4">
+                  <p className="text-sm"><strong>Note:</strong> The AI assistant requires an OpenAI API key to be configured. Contact your administrator if the feature is not available.</p>
+                </div>
               </div>
             </section>
 
