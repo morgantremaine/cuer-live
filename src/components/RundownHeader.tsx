@@ -28,6 +28,7 @@ interface RundownHeaderProps {
   isPlaying?: boolean;
   currentSegmentId?: string | null;
   timeRemaining?: number;
+  logoUrl?: string | null;
 }
 
 const RundownHeader = ({ 
@@ -50,7 +51,8 @@ const RundownHeader = ({
   isProcessingRealtimeUpdate,
   isPlaying = false,
   currentSegmentId = null,
-  timeRemaining = 0
+  timeRemaining = 0,
+  logoUrl
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -69,12 +71,21 @@ const RundownHeader = ({
       {/* Mobile layout: Compact single column */}
       <div className="block sm:hidden">
         <div className="mb-1">
-          <HeaderTitle
-            title={title}
-            onTitleChange={onTitleChange}
-            hasUnsavedChanges={hasUnsavedChanges}
-            isSaving={isSaving}
-          />
+          <div className="flex items-center space-x-2">
+            {logoUrl && (
+              <img 
+                src={logoUrl} 
+                alt="Rundown logo" 
+                className="w-6 h-6 object-contain flex-shrink-0"
+              />
+            )}
+            <HeaderTitle
+              title={title}
+              onTitleChange={onTitleChange}
+              hasUnsavedChanges={hasUnsavedChanges}
+              isSaving={isSaving}
+            />
+          </div>
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1 flex items-center gap-2">
             {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
               <RealtimeStatusIndicator
@@ -99,12 +110,21 @@ const RundownHeader = ({
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center space-x-4">
             <HeaderLogo />
-            <HeaderTitle
-              title={title}
-              onTitleChange={onTitleChange}
-              hasUnsavedChanges={hasUnsavedChanges}
-              isSaving={isSaving}
-            />
+            <div className="flex items-center space-x-2">
+              {logoUrl && (
+                <img 
+                  src={logoUrl} 
+                  alt="Rundown logo" 
+                  className="w-6 h-6 object-contain flex-shrink-0"
+                />
+              )}
+              <HeaderTitle
+                title={title}
+                onTitleChange={onTitleChange}
+                hasUnsavedChanges={hasUnsavedChanges}
+                isSaving={isSaving}
+              />
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">

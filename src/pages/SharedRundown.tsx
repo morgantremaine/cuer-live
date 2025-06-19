@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -238,6 +237,7 @@ const SharedRundown = () => {
           currentSegmentId={currentSegmentId}
           isPlaying={isPlaying}
           timeRemaining={timeRemaining}
+          logoUrl={rundownData.logo_url}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
