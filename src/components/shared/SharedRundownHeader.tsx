@@ -47,12 +47,6 @@ export const SharedRundownHeader: React.FC<SharedRundownHeaderProps> = ({
               <Calendar className="h-4 w-4 mr-1" />
               {timezone}
             </div>
-            {layoutName && (
-              <div className="flex items-center">
-                <Users className="h-4 w-4 mr-1" />
-                Layout: {layoutName}
-              </div>
-            )}
           </div>
         </div>
         <div className="text-right flex items-center space-x-4">
