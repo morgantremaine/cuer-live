@@ -151,40 +151,50 @@ const Teleprompter = () => {
           <style>
             @media print {
               @page {
-                margin: 1in;
+                margin: 0.5in;
               }
             }
             body {
               font-family: Arial, sans-serif;
               color: black;
               background: white;
-              line-height: 1.4;
+              line-height: 1.3;
               margin: 0;
-              padding: 20px;
+              padding: 10px;
             }
             .header {
               text-align: center;
-              margin-bottom: 40px;
-              border-bottom: 2px solid #000;
-              padding-bottom: 20px;
+              margin-bottom: 20px;
+              border-bottom: 1px solid #000;
+              padding-bottom: 10px;
+            }
+            .header h1 {
+              font-size: 18px;
+              margin: 0 0 5px 0;
+            }
+            .header p {
+              font-size: 12px;
+              margin: 0;
+              color: #666;
             }
             .script-item {
-              margin-bottom: 40px;
+              margin-bottom: 25px;
               page-break-inside: avoid;
             }
             .script-title {
               font-weight: bold;
-              font-size: 16px;
-              margin-bottom: 15px;
-              padding: 8px 12px;
+              font-size: 14px;
+              margin-bottom: 8px;
+              padding: 4px 8px;
               background: #f0f0f0;
               border: 1px solid #ccc;
               display: inline-block;
             }
             .script-content {
-              font-size: 14px;
-              line-height: 1.6;
+              font-size: 13px;
+              line-height: 1.4;
               white-space: pre-wrap;
+              margin-left: 0;
             }
             .page-break {
               page-break-before: always;
@@ -194,7 +204,7 @@ const Teleprompter = () => {
         <body>
           <div class="header">
             <h1>${formatText(rundownData.title)}</h1>
-            <p>Teleprompter Script - Generated on ${new Date().toLocaleDateString()}</p>
+            <p>Teleprompter Script - ${new Date().toLocaleDateString()}</p>
           </div>
           ${itemsWithScript.map((item, index) => {
             const rowNumber = getRowNumber(item.originalIndex);
@@ -204,7 +214,7 @@ const Teleprompter = () => {
               : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
             
             return `
-              <div class="script-item ${index > 0 && index % 3 === 0 ? 'page-break' : ''}">
+              <div class="script-item ${index > 0 && index % 4 === 0 ? 'page-break' : ''}">
                 <div class="script-title">${title}</div>
                 <div class="script-content">${processScriptForPrint(item.script || '')}</div>
               </div>
