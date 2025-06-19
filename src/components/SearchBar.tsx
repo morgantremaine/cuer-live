@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,13 +47,13 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
       // Replace all occurrences
       console.log('🔄 Replacing all matches');
       for (const match of matches) {
-        await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText);
+        await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText, true);
       }
     } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
       // Replace current match only
       const currentMatch = matches[currentMatchIndex];
       console.log('🔄 Replacing current match:', currentMatch);
-      await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText);
+      await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText, false);
     }
 
     // Refresh search results after replacement with a longer delay
