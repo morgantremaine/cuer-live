@@ -101,7 +101,7 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions, isSaving]),
     hasUnsavedChanges: state.hasUnsavedChanges,
-    isProcessingUpdate: isProcessingRealtimeUpdate,
+    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate,
     setIsProcessingUpdate: setIsProcessingRealtimeUpdate
   });
 
