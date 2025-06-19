@@ -32,11 +32,26 @@ const ShowcallerTimingIndicator = ({
   }
 
   return (
-    <div className={`flex items-center space-x-2 animate-fade-in ${statusColor}`}>
-      <Clock className="h-5 w-5" />
-      <span className="text-xl font-mono font-bold">
-        {statusText}
-      </span>
+    <div className="relative">
+      {/* Background lines */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Green line - 600px wide from left */}
+        <div className="absolute top-1/2 left-0 w-[600px] h-0.5 bg-green-500 transform -translate-y-1/2"></div>
+        {/* Grey line - 300px wide from left */}
+        <div className="absolute top-1/2 left-0 w-[300px] h-0.5 bg-gray-400 transform -translate-y-1/2"></div>
+      </div>
+      
+      {/* Main indicator with blue shadow */}
+      <div className={`flex items-center space-x-2 animate-fade-in ${statusColor} px-4 py-2 relative z-10`}
+           style={{ 
+             filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.5))',
+             textShadow: '0 0 8px rgba(59, 130, 246, 0.3)'
+           }}>
+        <Clock className="h-5 w-5" />
+        <span className="text-xl font-mono font-bold">
+          {statusText}
+        </span>
+      </div>
     </div>
   );
 };
