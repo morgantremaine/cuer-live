@@ -7,15 +7,36 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface HeaderRowContentProps {
   item: RundownItem;
-  columns: Column[];
-  headerDuration: string;
   rowNumber: string;
-  backgroundColor?: string;
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  columns: Column[];
+  isSelected: boolean;
+  isDraggingMultiple: boolean;
+  selectedRowsCount: number;
+  selectedRows: Set<string>;
+  headerDuration: string;
+  hasClipboardData: boolean;
+  isDragging: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
+  onDeleteRow: (id: string) => void;
+  onToggleFloat: (id: string) => void;
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onCopySelectedRows: () => void;
+  onDeleteSelectedRows: () => void;
+  onPasteRows: () => void;
+  onClearSelection: () => void;
+  onAddRow: () => void;
+  onAddHeader: () => void;
   getColumnWidth: (column: Column) => string;
+  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const HeaderRowContent = ({
@@ -23,14 +44,15 @@ const HeaderRowContent = ({
   columns,
   headerDuration,
   rowNumber,
-  backgroundColor,
   cellRefs,
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  getColumnWidth
+  getColumnWidth,
+  getHighlightForCell
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
+  const backgroundColor = item.color;
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
 
   return (
@@ -76,6 +98,7 @@ const HeaderRowContent = ({
                 onCellClick={onCellClick}
                 onKeyDown={onKeyDown}
                 width={columnWidth}
+                getHighlightForCell={getHighlightForCell}
               />
             </td>
           );

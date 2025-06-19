@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -10,18 +9,36 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 interface RegularRowContentProps {
   item: RundownItem;
   rowNumber: string;
-  columns: Column[];
+  status: 'upcoming' | 'current' | 'completed';
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
-  textColor?: string;
-  backgroundColor?: string;
-  status?: 'upcoming' | 'current' | 'completed';
-  isCurrentlyPlaying?: boolean;
-  isDraggingMultiple?: boolean;
-  isSelected?: boolean;
+  columns: Column[];
+  isSelected: boolean;
+  isCurrentlyPlaying: boolean;
+  isDraggingMultiple: boolean;
+  selectedRowsCount: number;
+  selectedRows: Set<string>;
+  hasClipboardData: boolean;
+  isDragging: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
+  onDeleteRow: (id: string) => void;
+  onToggleFloat: (id: string) => void;
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onCopySelectedRows: () => void;
+  onDeleteSelectedRows: () => void;
+  onPasteRows: () => void;
+  onClearSelection: () => void;
+  onAddRow: () => void;
+  onAddHeader: () => void;
   getColumnWidth: (column: Column) => string;
+  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const RegularRowContent = ({
@@ -29,7 +46,6 @@ const RegularRowContent = ({
   rowNumber,
   columns,
   cellRefs,
-  backgroundColor,
   status,
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
@@ -37,9 +53,11 @@ const RegularRowContent = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  getColumnWidth
+  getColumnWidth,
+  getHighlightForCell
 }: RegularRowContentProps) => {
   // Calculate text color based on background color
+  const backgroundColor = item.color;
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
 
   return (
@@ -82,6 +100,7 @@ const RegularRowContent = ({
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
               width={columnWidth}
+              getHighlightForCell={getHighlightForCell}
             />
           </td>
         );
@@ -91,4 +110,3 @@ const RegularRowContent = ({
 };
 
 export default RegularRowContent;
-
