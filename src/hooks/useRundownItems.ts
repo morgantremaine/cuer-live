@@ -11,8 +11,13 @@ export const useRundownItems = (markAsChanged: () => void) => {
 
   // Helper function to renumber all headers in sequence
   const renumberItems = useCallback((items: RundownItem[]) => {
-    let headerIndex = 0;
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    // Check if there are regular rows before the first header
+    const firstHeaderIndex = items.findIndex(item => item.type === 'header');
+    const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
+    
+    let headerIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
     
     return items.map(item => {
       if (item.type === 'header') {
@@ -191,6 +196,12 @@ export const useRundownItems = (markAsChanged: () => void) => {
     const item = items[index];
     if (!item) return '';
     
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    // Check if there are regular rows before the first header
+    const firstHeaderIndex = items.findIndex(item => item.type === 'header');
+    const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
+    
     // For headers, count how many headers we've seen so far
     if (item.type === 'header') {
       let headerCount = 0;
@@ -199,13 +210,15 @@ export const useRundownItems = (markAsChanged: () => void) => {
           headerCount++;
         }
       }
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      return letters[headerCount - 1] || 'A';
+      // Adjust header numbering based on whether there are rows before first header
+      const headerIndex = hasRowsBeforeFirstHeader ? headerCount : headerCount - 1;
+      return letters[headerIndex] || 'A';
     }
     
     // For regular items, find which segment they belong to
     let currentSegmentLetter = 'A';
     let itemCountInSegment = 0;
+    let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start from A or B
     
     // Go through items up to current index
     for (let i = 0; i <= index; i++) {
@@ -214,14 +227,8 @@ export const useRundownItems = (markAsChanged: () => void) => {
       
       if (currentItem.type === 'header') {
         // Update which segment we're in
-        let headerCount = 0;
-        for (let j = 0; j <= i; j++) {
-          if (items[j]?.type === 'header') {
-            headerCount++;
-          }
-        }
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        currentSegmentLetter = letters[headerCount - 1] || 'A';
+        currentSegmentLetter = letters[segmentHeaderCount] || 'A';
+        segmentHeaderCount++;
         itemCountInSegment = 0; // Reset count for new segment
       } else if (currentItem.type === 'regular') {
         itemCountInSegment++;
@@ -316,4 +323,3 @@ export const useRundownItems = (markAsChanged: () => void) => {
     calculateHeaderDuration
   };
 };
-

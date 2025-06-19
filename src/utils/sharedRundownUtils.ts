@@ -9,7 +9,12 @@ export const getVisibleColumns = (columns: any[]) => {
 
 export const getRowNumber = (index: number, items: RundownItem[]) => {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let letterIndex = 0;
+  
+  // Check if there are regular rows before the first header
+  const firstHeaderIndex = items.findIndex(item => item.type === 'header');
+  const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
+  
+  let letterIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
   let numberIndex = 0;
   
   // Count actual rows (both headers and regular items)
@@ -24,11 +29,13 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
   
   const currentItem = items[index];
   if (currentItem?.type === 'header') {
-    // For headers, just return the letter
-    return letters[letterIndex - 1] || 'A';
+    // For headers, return the letter (adjusted based on whether there are rows before first header)
+    const headerIndex = hasRowsBeforeFirstHeader ? letterIndex - 1 : letterIndex - 1;
+    return letters[headerIndex] || 'A';
   } else {
     // For regular items, return letter + number
-    const letter = letters[letterIndex - 1] || 'A';
+    const segmentIndex = hasRowsBeforeFirstHeader ? letterIndex - 1 : letterIndex;
+    const letter = letters[segmentIndex] || 'A';
     return `${letter}${numberIndex}`;
   }
 };

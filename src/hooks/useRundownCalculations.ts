@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -26,6 +27,10 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     // Calculate row numbers based purely on position and type, not stored values
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
+    // Check if there are regular rows before the first header
+    const firstHeaderIndex = items.findIndex(item => isHeaderItem(item));
+    const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
+    
     // For headers, count how many headers we've seen so far
     if (isHeaderItem(item)) {
       let headerCount = 0;
@@ -34,12 +39,15 @@ export const useRundownCalculations = (items: RundownItem[]) => {
           headerCount++;
         }
       }
-      return letters[headerCount - 1] || 'A';
+      // Adjust header numbering based on whether there are rows before first header
+      const headerIndex = hasRowsBeforeFirstHeader ? headerCount : headerCount - 1;
+      return letters[headerIndex] || 'A';
     }
     
     // For regular items, find which segment they belong to and count within that segment
     let currentSegmentLetter = 'A';
     let itemCountInSegment = 0;
+    let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start from A or B
     
     // Go through items up to current index
     for (let i = 0; i <= index; i++) {
@@ -47,14 +55,9 @@ export const useRundownCalculations = (items: RundownItem[]) => {
       if (!currentItem) continue;
       
       if (isHeaderItem(currentItem)) {
-        // Update which segment we're in based on header count
-        let headerCount = 0;
-        for (let j = 0; j <= i; j++) {
-          if (items[j] && isHeaderItem(items[j])) {
-            headerCount++;
-          }
-        }
-        currentSegmentLetter = letters[headerCount - 1] || 'A';
+        // Update which segment we're in
+        currentSegmentLetter = letters[segmentHeaderCount] || 'A';
+        segmentHeaderCount++;
         itemCountInSegment = 0; // Reset count for new segment
       } else {
         // This is a regular item

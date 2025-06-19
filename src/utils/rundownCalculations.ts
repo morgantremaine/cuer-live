@@ -56,8 +56,13 @@ export const calculateItemsWithTiming = (
   rundownStartTime: string
 ): CalculatedRundownItem[] => {
   let currentTime = rundownStartTime;
-  let headerIndex = 0;
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  
+  // Check if there are regular rows before the first header
+  const firstHeaderIndex = items.findIndex(item => isHeaderItem(item));
+  const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
+  
+  let headerIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
 
   return items.map((item, index) => {
     let calculatedStartTime = currentTime;
@@ -89,17 +94,14 @@ export const calculateItemsWithTiming = (
       let currentSegment = 'A';
       let itemCountInSegment = 0;
 
-      // Find current segment
+      // Find current segment - adjusted for optional first header
+      let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start counting from A or B
+      
       for (let i = 0; i <= index; i++) {
         const currentItem = items[i];
         if (isHeaderItem(currentItem)) {
-          let segmentHeaderIndex = 0;
-          for (let j = 0; j <= i; j++) {
-            if (isHeaderItem(items[j])) {
-              segmentHeaderIndex++;
-            }
-          }
-          currentSegment = letters[segmentHeaderIndex - 1] || 'A';
+          currentSegment = letters[segmentHeaderCount] || 'A';
+          segmentHeaderCount++;
           itemCountInSegment = 0;
         } else {
           itemCountInSegment++;
