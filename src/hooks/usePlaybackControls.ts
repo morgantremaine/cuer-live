@@ -22,7 +22,6 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
-    jumpToSegment, // NEW: Get jump function from state hook
     applyShowcallerState,
     isPlaying,
     currentSegmentId,
@@ -98,7 +97,6 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
-    jumpToSegment, // NEW: Expose jump function
     isController
   };
 };

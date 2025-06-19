@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -48,9 +49,7 @@ const RundownIndexContent = () => {
     canUndo,
     lastAction,
     isConnected,
-    isProcessingRealtimeUpdate,
-    isController,
-    jumpToSegment
+    isProcessingRealtimeUpdate
   } = coreState;
 
   // Use user column preferences for persistent column management
@@ -290,13 +289,6 @@ const RundownIndexContent = () => {
     handleDrop(e, targetIndex);
   };
 
-  // NEW: Jump to segment handler
-  const handleJumpToSegment = (segmentId: string) => {
-    if (jumpToSegment && isController) {
-      jumpToSegment(segmentId);
-    }
-  };
-
   return (
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
@@ -351,8 +343,6 @@ const RundownIndexContent = () => {
         onPause={pause}
         onForward={forward}
         onBackward={backward}
-        onJumpToSegment={handleJumpToSegment} // NEW: Pass jump handler
-        canJumpTo={isController} // NEW: Pass controller status for jump capability
         handleAddColumn={handleAddColumnWrapper}
         handleReorderColumns={handleReorderColumnsWrapper}
         handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}

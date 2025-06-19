@@ -52,8 +52,6 @@ export interface RundownContainerProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
-  onJumpToSegment?: (segmentId: string) => void; // NEW: Add jump callback
-  canJumpTo?: boolean; // NEW: Add jump capability prop
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
