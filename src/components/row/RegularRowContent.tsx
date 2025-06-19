@@ -20,6 +20,7 @@ interface RegularRowContentProps {
   selectedRows: Set<string>;
   hasClipboardData: boolean;
   isDragging: boolean;
+  backgroundColor?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -47,6 +48,7 @@ const RegularRowContent = ({
   columns,
   cellRefs,
   status,
+  backgroundColor,
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
   isSelected = false,
@@ -56,16 +58,16 @@ const RegularRowContent = ({
   getColumnWidth,
   getHighlightForCell
 }: RegularRowContentProps) => {
-  // Calculate text color based on background color
-  const backgroundColor = item.color;
-  const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
+  // Use the passed backgroundColor or calculate from item color
+  const finalBackgroundColor = backgroundColor || item.color;
+  const textColor = finalBackgroundColor ? getContrastTextColor(finalBackgroundColor) : undefined;
 
   return (
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
         className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
-        style={{ backgroundColor }}
+        style={{ backgroundColor: finalBackgroundColor }}
       >
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
@@ -87,7 +89,7 @@ const RegularRowContent = ({
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
-              backgroundColor 
+              backgroundColor: finalBackgroundColor 
             }}
           >
             <CellRenderer
@@ -95,7 +97,7 @@ const RegularRowContent = ({
               item={item}
               cellRefs={cellRefs}
               textColor={textColor}
-              backgroundColor={backgroundColor}
+              backgroundColor={finalBackgroundColor}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}

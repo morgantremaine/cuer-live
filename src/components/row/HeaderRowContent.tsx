@@ -18,6 +18,7 @@ interface HeaderRowContentProps {
   headerDuration: string;
   hasClipboardData: boolean;
   isDragging: boolean;
+  backgroundColor?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -45,15 +46,16 @@ const HeaderRowContent = ({
   headerDuration,
   rowNumber,
   cellRefs,
+  backgroundColor,
   onUpdateItem,
   onCellClick,
   onKeyDown,
   getColumnWidth,
   getHighlightForCell
 }: HeaderRowContentProps) => {
-  // Calculate text color based on background color
-  const backgroundColor = item.color;
-  const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
+  // Use the passed backgroundColor or calculate from item color
+  const finalBackgroundColor = backgroundColor || item.color;
+  const textColor = finalBackgroundColor ? getContrastTextColor(finalBackgroundColor) : undefined;
 
   return (
     <>
@@ -61,7 +63,7 @@ const HeaderRowContent = ({
       <td 
         className="px-3 py-3 text-base font-mono font-semibold align-middle border border-border min-h-[56px]"
         style={{ 
-          backgroundColor,
+          backgroundColor: finalBackgroundColor,
           width: '64px',
           minWidth: '64px', 
           maxWidth: '64px' // Ensure exact width matching
@@ -85,7 +87,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor 
+                backgroundColor: finalBackgroundColor 
               }}
             >
               <CellRenderer
@@ -93,7 +95,7 @@ const HeaderRowContent = ({
                 item={item}
                 cellRefs={cellRefs}
                 textColor={textColor}
-                backgroundColor={backgroundColor}
+                backgroundColor={finalBackgroundColor}
                 onUpdateItem={onUpdateItem}
                 onCellClick={onCellClick}
                 onKeyDown={onKeyDown}
@@ -112,7 +114,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor 
+                backgroundColor: finalBackgroundColor 
               }}
             >
               <div className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
@@ -130,7 +132,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor 
+                backgroundColor: finalBackgroundColor 
               }}
             >
               <div className="px-3 py-3"></div>
@@ -146,7 +148,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor 
+                backgroundColor: finalBackgroundColor 
               }}
             >
               <div className="px-3 py-3"></div>
