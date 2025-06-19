@@ -1,3 +1,4 @@
+
 import { useReducer, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -46,24 +47,31 @@ const initialState: RundownState = {
 };
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
-  const markChanged = (newState: Partial<RundownState>) => ({
-    ...state,
-    ...newState,
-    hasUnsavedChanges: true,
-    lastChanged: Date.now()
-  });
+  const markChanged = (newState: Partial<RundownState>) => {
+    const result = {
+      ...state,
+      ...newState,
+      hasUnsavedChanges: true,
+      lastChanged: Date.now()
+    };
+    console.log('🔄 RundownState markChanged called:', action.type, 'hasUnsavedChanges:', result.hasUnsavedChanges);
+    return result;
+  };
 
   switch (action.type) {
     case 'SET_ITEMS':
       return markChanged({ items: action.payload });
 
     case 'UPDATE_ITEM': {
+      console.log('🔄 RundownState UPDATE_ITEM action:', action.payload);
       const items = state.items.map(item =>
         item.id === action.payload.id 
           ? { ...item, ...action.payload.updates }
           : item
       );
-      return markChanged({ items });
+      const result = markChanged({ items });
+      console.log('🔄 RundownState UPDATE_ITEM result hasUnsavedChanges:', result.hasUnsavedChanges);
+      return result;
     }
 
     case 'ADD_ITEM': {
@@ -124,6 +132,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return { ...state, isPlaying: action.payload };
 
     case 'MARK_SAVED':
+      console.log('🔄 RundownState MARK_SAVED called, setting hasUnsavedChanges to false');
       return { ...state, hasUnsavedChanges: false };
 
     case 'LOAD_STATE':

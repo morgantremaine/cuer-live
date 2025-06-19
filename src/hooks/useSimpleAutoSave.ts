@@ -69,11 +69,20 @@ export const useSimpleAutoSave = (
   };
 
   useEffect(() => {
+    console.log('💾 AutoSave effect triggered - state.hasUnsavedChanges:', state.hasUnsavedChanges);
+    console.log('💾 AutoSave conditions check:', {
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      undoActive: undoActiveRef.current,
+      userTyping: userTypingRef.current,
+      showcallerUpdate: showcallerUpdateRef.current
+    });
+    
     // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, or showcaller is updating
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current || 
         showcallerUpdateRef.current) {
+      console.log('💾 AutoSave skipped due to conditions');
       return;
     }
 
@@ -90,6 +99,7 @@ export const useSimpleAutoSave = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
+        images: item.images, // CRITICAL: Make sure images are included
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
@@ -105,10 +115,16 @@ export const useSimpleAutoSave = (
       timezone: state.timezone
     });
 
+    console.log('💾 Current signature length:', currentSignature.length);
+    console.log('💾 Last saved signature length:', lastSavedRef.current.length);
+
     // Only save if state actually changed
     if (currentSignature === lastSavedRef.current) {
+      console.log('💾 Signatures match - no save needed');
       return;
     }
+
+    console.log('💾 Signatures differ - proceeding with save');
 
     // Increased rate limiting: don't save more than once every 3 seconds
     const now = Date.now();
@@ -154,6 +170,7 @@ export const useSimpleAutoSave = (
           script: item.script,
           gfx: item.gfx,
           video: item.video,
+          images: item.images, // CRITICAL: Make sure images are included
           notes: item.notes,
           color: item.color,
           isFloating: item.isFloating,

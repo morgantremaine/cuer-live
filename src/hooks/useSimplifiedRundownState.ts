@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -44,6 +43,11 @@ export const useSimplifiedRundownState = () => {
     startTime: '09:00:00',
     timezone: 'America/New_York'
   });
+
+  // Add debugging for state changes
+  useEffect(() => {
+    console.log('🔄 SimplifiedRundownState - state.hasUnsavedChanges changed:', state.hasUnsavedChanges);
+  }, [state.hasUnsavedChanges]);
 
   // User-specific column preferences (separate from team sync)
   const {
@@ -118,7 +122,7 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeRundown.isConnected || stableRealtime.isConnected);
   }, [realtimeRundown.isConnected, stableRealtime.isConnected]);
 
-  // Enhanced updateItem function - save undo state with content only (not columns) - FIXED to include images field
+  // Enhanced updateItem function with better debugging
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     console.log('🔄 enhancedUpdateItem called:', { id, field, value });
     
@@ -175,9 +179,17 @@ export const useSimplifiedRundownState = () => {
       if (field === 'segmentName') updateField = 'name';
       
       console.log('🔄 Updating item field:', updateField, 'with value:', value);
+      console.log('🔄 Current state.hasUnsavedChanges before update:', state.hasUnsavedChanges);
+      
+      // CRITICAL: Ensure the update triggers the state change
       actions.updateItem(id, { [updateField]: value });
+      
+      // Add a small delay to check if the state was updated
+      setTimeout(() => {
+        console.log('🔄 State.hasUnsavedChanges after update:', state.hasUnsavedChanges);
+      }, 10);
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState]);
+  }, [actions.updateItem, state.items, state.title, state.hasUnsavedChanges, saveUndoState]);
 
   // Initialize playbook controls with showcaller functionality - unchanged
   const {
