@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type } from 'lucide-react';
+import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type, Printer } from 'lucide-react';
 
 interface TeleprompterControlsProps {
   isScrolling: boolean;
@@ -13,6 +13,7 @@ interface TeleprompterControlsProps {
   onToggleUppercase: () => void;
   onAdjustFontSize: (delta: number) => void;
   onAdjustScrollSpeed: (delta: number) => void;
+  onPrint?: () => void;
 }
 
 const TeleprompterControls = ({
@@ -25,7 +26,8 @@ const TeleprompterControls = ({
   onToggleFullscreen,
   onToggleUppercase,
   onAdjustFontSize,
-  onAdjustScrollSpeed
+  onAdjustScrollSpeed,
+  onPrint
 }: TeleprompterControlsProps) => {
   const formatSpeed = (speed: number) => {
     if (speed === 0) return '0x';
@@ -75,6 +77,16 @@ const TeleprompterControls = ({
             <Type className="h-4 w-4" />
             <span>UPPERCASE</span>
           </button>
+
+          {onPrint && (
+            <button
+              onClick={onPrint}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm"
+            >
+              <Printer className="h-4 w-4" />
+              <span>Print</span>
+            </button>
+          )}
         </div>
 
         {/* Center controls */}

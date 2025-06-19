@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -116,6 +115,108 @@ const Teleprompter = () => {
     }
   };
 
+  // Print function
+  const handlePrint = () => {
+    if (!rundownData) return;
+
+    // Filter items to only show those with script content
+    const itemsWithScript = rundownData.items.filter(item => item.script && item.script.trim() !== '');
+    
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    // Helper function to format text (with uppercase if needed)
+    const formatText = (text: string) => {
+      return isUppercase ? text.toUpperCase() : text;
+    };
+
+    // Helper function to process script text and remove bracket styling for print
+    const processScriptForPrint = (text: string) => {
+      // Remove bracket formatting for print - just keep the text inside brackets
+      const cleanText = text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, '$1');
+      return formatText(cleanText);
+    };
+
+    // Generate HTML for print
+    const printHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${rundownData.title} - Teleprompter Script</title>
+          <style>
+            @media print {
+              @page {
+                margin: 1in;
+              }
+            }
+            body {
+              font-family: Arial, sans-serif;
+              color: black;
+              background: white;
+              line-height: 1.4;
+              margin: 0;
+              padding: 20px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 40px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 20px;
+            }
+            .script-item {
+              margin-bottom: 40px;
+              page-break-inside: avoid;
+            }
+            .script-title {
+              font-weight: bold;
+              font-size: 16px;
+              margin-bottom: 15px;
+              padding: 8px 12px;
+              background: #f0f0f0;
+              border: 1px solid #ccc;
+              display: inline-block;
+            }
+            .script-content {
+              font-size: 14px;
+              line-height: 1.6;
+              white-space: pre-wrap;
+            }
+            .page-break {
+              page-break-before: always;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${formatText(rundownData.title)}</h1>
+            <p>Teleprompter Script - Generated on ${new Date().toLocaleDateString()}</p>
+          </div>
+          ${itemsWithScript.map((item, index) => {
+            const rowNumber = getRowNumber(item.originalIndex || index);
+            const isHeader = item.type === 'header';
+            const title = isHeader 
+              ? `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}`
+              : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
+            
+            return `
+              <div class="script-item ${index > 0 && index % 3 === 0 ? 'page-break' : ''}">
+                <div class="script-title">${title}</div>
+                <div class="script-content">${processScriptForPrint(item.script || '')}</div>
+              </div>
+            `;
+          }).join('')}
+        </body>
+      </html>
+    `;
+
+    // Write content and print
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
   // Initial load
   useEffect(() => {
     loadRundownData();
@@ -210,6 +311,7 @@ const Teleprompter = () => {
           onToggleUppercase={toggleUppercase}
           onAdjustFontSize={adjustFontSize}
           onAdjustScrollSpeed={adjustScrollSpeed}
+          onPrint={handlePrint}
         />
       )}
 
