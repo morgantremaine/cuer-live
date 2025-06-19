@@ -2,10 +2,11 @@
 import React from 'react';
 
 interface UseRowEventHandlersProps {
-  item: { id: string };
+  item: { id: string; type?: string };
   index: number;
   isSelected?: boolean;
   selectedRowsCount?: number;
+  isShowcallerController?: boolean;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDeleteRow: (id: string) => void;
   onDeleteSelectedRows: () => void;
@@ -15,6 +16,7 @@ interface UseRowEventHandlersProps {
   selectedRows?: Set<string>;
   onPasteRows?: (targetRowId?: string) => void;
   onClearSelection?: () => void;
+  onJumpToHere?: (itemId: string) => void;
 }
 
 export const useRowEventHandlers = ({
@@ -22,6 +24,7 @@ export const useRowEventHandlers = ({
   index,
   isSelected = false,
   selectedRowsCount = 1,
+  isShowcallerController = false,
   onRowSelect,
   onDeleteRow,
   onDeleteSelectedRows,
@@ -30,7 +33,8 @@ export const useRowEventHandlers = ({
   onToggleFloat,
   selectedRows,
   onPasteRows,
-  onClearSelection
+  onClearSelection,
+  onJumpToHere
 }: UseRowEventHandlersProps) => {
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -95,6 +99,12 @@ export const useRowEventHandlers = ({
     }
   };
 
+  const handleContextMenuJumpToHere = () => {
+    if (onJumpToHere && item.type !== 'header') {
+      onJumpToHere(item.id);
+    }
+  };
+
   return {
     handleRowClick,
     handleContextMenu,
@@ -102,6 +112,7 @@ export const useRowEventHandlers = ({
     handleContextMenuDelete,
     handleContextMenuFloat,
     handleContextMenuColor,
-    handleContextMenuPaste
+    handleContextMenuPaste,
+    handleContextMenuJumpToHere
   };
 };

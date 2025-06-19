@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Play } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,6 +18,8 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
+  itemType?: string;
+  isShowcallerController?: boolean;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -28,6 +30,7 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToHere?: (itemId: string) => void;
 }
 
 const RundownContextMenu = memo(({
@@ -38,6 +41,8 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
+  itemType,
+  isShowcallerController = false,
   onCopy,
   onDelete,
   onToggleFloat,
@@ -47,9 +52,11 @@ const RundownContextMenu = memo(({
   onPaste,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  onJumpToHere
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
+  const isRegularItem = itemType !== 'header';
 
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
@@ -87,6 +94,13 @@ const RundownContextMenu = memo(({
     }
   };
 
+  // Handle jump to here
+  const handleJumpToHere = () => {
+    if (onJumpToHere && isRegularItem) {
+      onJumpToHere(itemId);
+    }
+  };
+
   return (
     <>
       <ContextMenu>
@@ -94,6 +108,20 @@ const RundownContextMenu = memo(({
           {children}
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
+          {/* Showcaller jump option - only for regular items and when user is controller */}
+          {isRegularItem && isShowcallerController && onJumpToHere && !isMultipleSelection && (
+            <>
+              <ContextMenuItem 
+                onClick={handleJumpToHere} 
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Jump showcaller here
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
+
           {onAddRow && (
             <ContextMenuItem 
               onClick={onAddRow} 
