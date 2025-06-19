@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
@@ -306,7 +307,6 @@ const DashboardRundownGrid = ({
                       >
                         {rundown.title}
                       </CardTitle>
-                      <div className={`w-2 h-2 rounded-full ${activity.color} opacity-60`} />
                     </div>
                     
                     {/* Creator and Date Info */}
