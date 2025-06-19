@@ -7,17 +7,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText, Upload } from 'lucide-react'
+import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
-import { useState } from 'react'
-import RundownLogoUpload from './RundownLogoUpload'
 
 interface SavedRundown {
   id: string
@@ -26,7 +18,6 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
-  logo_url?: string | null
 }
 
 interface RundownCardProps {
@@ -36,7 +27,6 @@ interface RundownCardProps {
   onArchive?: (id: string, title: string, e: React.MouseEvent) => void
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
-  onUpdate?: (rundown: SavedRundown) => void
   isArchived?: boolean
 }
 
@@ -47,11 +37,8 @@ const RundownCard = ({
   onArchive, 
   onUnarchive, 
   onDuplicate,
-  onUpdate,
   isArchived = false 
 }: RundownCardProps) => {
-  const [showLogoUpload, setShowLogoUpload] = useState(false);
-
   const handleBlueprintClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     window.location.href = `/blueprint/${rundown.id}`
@@ -62,131 +49,16 @@ const RundownCard = ({
     onOpen(rundown.id)
   }
 
-  const handleLogoUpdate = (logoUrl: string | null) => {
-    if (onUpdate) {
-      onUpdate({
-        ...rundown,
-        logo_url: logoUrl
-      });
-    }
-  };
-
   // Collapsed view for archived rundowns
   if (isArchived) {
     return (
-      <>
-        <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 opacity-75">
-          <CardHeader className="py-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center text-white">
-                <Archive className="h-4 w-4 mr-2 text-gray-400" />
-                {rundown.logo_url && (
-                  <img 
-                    src={rundown.logo_url} 
-                    alt="Logo" 
-                    className="w-5 h-5 object-contain mr-2"
-                  />
-                )}
-                {rundown.title}
-              </CardTitle>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 relative z-20 hover:bg-gray-700 text-gray-400 hover:text-white"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
-                >
-                  {onDuplicate && (
-                    <DropdownMenuItem 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onDuplicate(rundown.id, rundown.title, rundown.items, e)
-                      }}
-                      className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
-                    }}
-                    className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
-                  >
-                    <Archive className="h-4 w-4 mr-2" />
-                    Unarchive
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete(rundown.id, rundown.title, e)
-                    }}
-                    className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Permanently
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </CardHeader>
-        </Card>
-
-        <Dialog open={showLogoUpload} onOpenChange={setShowLogoUpload}>
-          <DialogContent className="bg-gray-800 border-gray-700">
-            <DialogHeader>
-              <DialogTitle className="text-white">Upload Rundown Logo</DialogTitle>
-            </DialogHeader>
-            <RundownLogoUpload
-              rundownId={rundown.id}
-              currentLogoUrl={rundown.logo_url}
-              onLogoUpdate={handleLogoUpdate}
-              onClose={() => setShowLogoUpload(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      </>
-    )
-  }
-
-  // Regular view for active rundowns
-  return (
-    <>
-      <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-lg flex items-center text-white">
-                {rundown.logo_url && (
-                  <img 
-                    src={rundown.logo_url} 
-                    alt="Logo" 
-                    className="w-5 h-5 object-contain mr-2"
-                  />
-                )}
-                {rundown.title}
-              </CardTitle>
-              <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Modified: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
-                </div>
-              </CardDescription>
-            </div>
+      <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 opacity-75">
+        <CardHeader className="py-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center text-white">
+              <Archive className="h-4 w-4 mr-2 text-gray-400" />
+              {rundown.title}
+            </CardTitle>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -202,16 +74,6 @@ const RundownCard = ({
                 align="end" 
                 className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
               >
-                <DropdownMenuItem 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowLogoUpload(true)
-                  }}
-                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {rundown.logo_url ? 'Change Logo' : 'Upload Logo'}
-                </DropdownMenuItem>
                 {onDuplicate && (
                   <DropdownMenuItem 
                     onClick={(e) => {
@@ -227,12 +89,12 @@ const RundownCard = ({
                 <DropdownMenuItem 
                   onClick={(e) => {
                     e.stopPropagation()
-                    onArchive?.(rundown.id, rundown.title, e)
+                    onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
                   }}
                   className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
                 >
                   <Archive className="h-4 w-4 mr-2" />
-                  Archive
+                  Unarchive
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={(e) => {
@@ -242,54 +104,114 @@ const RundownCard = ({
                   className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  Delete Permanently
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-sm text-gray-400">
-              {rundown.items?.length || 0} items
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
-                onClick={handleBlueprintClick}
-              >
-                <FileText className="h-4 w-4 mr-1" />
-                Blueprint
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
-                onClick={handleOpenClick}
-              >
-                Open →
-              </Button>
-            </div>
-          </div>
-        </CardContent>
       </Card>
+    )
+  }
 
-      <Dialog open={showLogoUpload} onOpenChange={setShowLogoUpload}>
-        <DialogContent className="bg-gray-800 border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Upload Rundown Logo</DialogTitle>
-          </DialogHeader>
-          <RundownLogoUpload
-            rundownId={rundown.id}
-            currentLogoUrl={rundown.logo_url}
-            onLogoUpdate={handleLogoUpdate}
-            onClose={() => setShowLogoUpload(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </>
+  // Regular view for active rundowns
+  return (
+    <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg flex items-center text-white">
+              {rundown.title}
+            </CardTitle>
+            <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
+              </div>
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                Modified: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
+              </div>
+            </CardDescription>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 relative z-20 hover:bg-gray-700 text-gray-400 hover:text-white"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
+            >
+              {onDuplicate && (
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDuplicate(rundown.id, rundown.title, rundown.items, e)
+                  }}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onArchive?.(rundown.id, rundown.title, e)
+                }}
+                className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete(rundown.id, rundown.title, e)
+                }}
+                className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center text-sm text-gray-400">
+            {rundown.items?.length || 0} items
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+              onClick={handleBlueprintClick}
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Blueprint
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-300 hover:text-white hover:bg-gray-700"
+              onClick={handleOpenClick}
+            >
+              Open →
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 

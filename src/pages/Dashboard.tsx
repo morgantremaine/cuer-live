@@ -17,7 +17,7 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown } = useRundownStorage();
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
   
@@ -122,11 +122,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleRundownUpdate = async (updatedRundown: any) => {
-    // Refresh the rundown list to show the updated logo
-    await loadRundowns();
-  };
-
   const handleCSVImport = async (result: CSVImportResult, layoutColumns: Column[]) => {
     try {
       console.log('Dashboard handling CSV import:', { result, layoutColumns });
@@ -204,7 +199,6 @@ const Dashboard = () => {
             onDelete={handleDeleteRundown}
             onArchive={handleArchiveRundown}
             onDuplicate={handleDuplicateRundown}
-            onUpdate={handleRundownUpdate}
             isArchived={false}
             currentUserId={user?.id}
           />
@@ -219,7 +213,6 @@ const Dashboard = () => {
               onDelete={handleDeleteRundown}
               onUnarchive={handleUnarchiveRundown}
               onDuplicate={handleDuplicateRundown}
-              onUpdate={handleRundownUpdate}
               isArchived={true}
               showEmptyState={false}
               currentUserId={user?.id}
