@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -8,19 +9,19 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface RegularRowContentProps {
   item: RundownItem;
-  columns: Column[];
   rowNumber: string;
-  status: 'upcoming' | 'current' | 'completed';
-  backgroundColor?: string;
-  isCurrentlyPlaying: boolean;
-  isDraggingMultiple: boolean;
-  isSelected: boolean;
+  columns: Column[];
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  textColor?: string;
+  backgroundColor?: string;
+  status?: 'upcoming' | 'current' | 'completed';
+  isCurrentlyPlaying?: boolean;
+  isDraggingMultiple?: boolean;
+  isSelected?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   getColumnWidth: (column: Column) => string;
-  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const RegularRowContent = ({
@@ -28,27 +29,25 @@ const RegularRowContent = ({
   rowNumber,
   columns,
   cellRefs,
-  status,
   backgroundColor,
+  status,
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
   isSelected = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  getColumnWidth,
-  getHighlightForCell
+  getColumnWidth
 }: RegularRowContentProps) => {
-  // Use the passed backgroundColor or calculate from item color
-  const finalBackgroundColor = backgroundColor || item.color;
-  const textColor = finalBackgroundColor ? getContrastTextColor(finalBackgroundColor) : undefined;
+  // Calculate text color based on background color
+  const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
 
   return (
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
         className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
-        style={{ backgroundColor: finalBackgroundColor }}
+        style={{ backgroundColor }}
       >
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
@@ -70,7 +69,7 @@ const RegularRowContent = ({
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
-              backgroundColor: finalBackgroundColor 
+              backgroundColor 
             }}
           >
             <CellRenderer
@@ -78,12 +77,11 @@ const RegularRowContent = ({
               item={item}
               cellRefs={cellRefs}
               textColor={textColor}
-              backgroundColor={finalBackgroundColor}
+              backgroundColor={backgroundColor}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
               width={columnWidth}
-              getHighlightForCell={getHighlightForCell}
             />
           </td>
         );
@@ -93,3 +91,4 @@ const RegularRowContent = ({
 };
 
 export default RegularRowContent;
+

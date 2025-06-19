@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -6,7 +7,6 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
-import { useSearchHighlight } from '@/hooks/useSearchHighlight';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -16,14 +16,6 @@ const RundownIndexContent = () => {
     interactions,
     uiState
   } = useRundownStateCoordination();
-  
-  // Search highlighting state management
-  const {
-    currentHighlight,
-    updateHighlight,
-    clearHighlight,
-    getHighlightForCell
-  } = useSearchHighlight();
   
   // Extract all needed values from the unified state
   const {
@@ -269,20 +261,6 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Enhanced search highlight handler
-  const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
-    console.log('🔍 Highlighting match:', { itemId, field, startIndex, endIndex });
-    updateHighlight(itemId, field, startIndex, endIndex);
-  };
-
-  // Create a saveUndoState function for replace operations
-  const handleSaveUndoState = (items: any[], columns: any[], title: string, action: string) => {
-    if (undo) {
-      // Use the existing undo system from coreState
-      console.log('Saving undo state for:', action);
-    }
-  };
-
   // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
@@ -384,18 +362,6 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        searchBarProps={{
-          items,
-          visibleColumns,
-          onHighlightMatch: handleHighlightMatch,
-          onReplaceText: () => {}, // This is now handled by SearchBar internally
-          updateItem: updateItem,
-          saveUndoState: handleSaveUndoState,
-          columns: userColumns,
-          title: rundownTitle
-        }}
-        currentHighlight={currentHighlight}
-        getHighlightForCell={getHighlightForCell}
       />
       
       <CuerChatButton rundownData={rundownData} />

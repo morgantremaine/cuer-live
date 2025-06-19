@@ -1,10 +1,10 @@
 
 import React from 'react';
+import HeaderRow from './HeaderRow';
+import RegularRow from './RegularRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import CellRenderer from './CellRenderer';
-import HeaderRowContent from './row/HeaderRowContent';
-import RegularRowContent from './row/RegularRowContent';
+import { SearchHighlight } from '@/types/search';
 
 interface RundownRowProps {
   item: RundownItem;
@@ -14,144 +14,70 @@ interface RundownRowProps {
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
-  isSelected: boolean;
-  isCurrentlyPlaying: boolean;
-  isDraggingMultiple: boolean;
-  selectedRowsCount: number;
-  selectedRows: Set<string>;
-  headerDuration: string;
-  hasClipboardData: boolean;
-  isDragging: boolean;
+  isSelected?: boolean;
+  isCurrentlyPlaying?: boolean;
+  isDraggingMultiple?: boolean;
+  selectedRowsCount?: number;
+  selectedRows?: Set<string>;
+  headerDuration?: string;
+  hasClipboardData?: boolean;
+  currentHighlight?: SearchHighlight | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
-  onToggleFloat: (id: string) => void;
-  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onToggleFloat?: (id: string) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
-  onPasteRows: () => void;
-  onClearSelection: () => void;
-  onAddRow: () => void;
-  onAddHeader: () => void;
+  onPasteRows?: () => void;
+  onClearSelection?: () => void;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
+  isDragging: boolean;
   getColumnWidth: (column: Column) => string;
-  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
-const RundownRow = ({ 
-  item,
-  index,
-  rowNumber,
-  status,
-  showColorPicker,
-  cellRefs,
-  columns,
-  isSelected,
-  isCurrentlyPlaying,
-  isDraggingMultiple,
-  selectedRowsCount,
-  selectedRows,
-  headerDuration,
-  hasClipboardData,
-  isDragging,
-  onUpdateItem,
-  onCellClick,
-  onKeyDown,
-  onToggleColorPicker,
-  onColorSelect,
-  onDeleteRow,
-  onToggleFloat,
-  onRowSelect,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onCopySelectedRows,
-  onDeleteSelectedRows,
-  onPasteRows,
-  onClearSelection,
-  onAddRow,
-  onAddHeader,
-  getColumnWidth,
-  getHighlightForCell
-}: RundownRowProps) => {
+const RundownRow = (props: RundownRowProps) => {
+  // Only use multi-selection state for determining if selected
+  const isActuallySelected = props.isSelected || false;
 
-  if (isHeaderItem(item)) {
+  if (isHeaderItem(props.item)) {
     return (
-      <HeaderRowContent
-        item={item}
-        rowNumber={rowNumber}
-        showColorPicker={showColorPicker}
-        cellRefs={cellRefs}
-        columns={columns}
-        isSelected={isSelected}
-        isDraggingMultiple={isDraggingMultiple}
-        selectedRowsCount={selectedRowsCount}
-        selectedRows={selectedRows}
-        headerDuration={headerDuration}
-        hasClipboardData={hasClipboardData}
-        isDragging={isDragging}
-        onUpdateItem={onUpdateItem}
-        onCellClick={onCellClick}
-        onKeyDown={onKeyDown}
-        onToggleColorPicker={onToggleColorPicker}
-        onColorSelect={onColorSelect}
-        onDeleteRow={onDeleteRow}
-        onToggleFloat={onToggleFloat}
-        onRowSelect={onRowSelect}
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        onCopySelectedRows={onCopySelectedRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onPasteRows={onPasteRows}
-        onClearSelection={onClearSelection}
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
-        getColumnWidth={getColumnWidth}
-        getHighlightForCell={getHighlightForCell}
+      <HeaderRow 
+        {...props} 
+        isSelected={isActuallySelected}
+        headerDuration={props.headerDuration || ''}
+        selectedRowsCount={props.selectedRowsCount || 1}
+        selectedRows={props.selectedRows}
+        hasClipboardData={props.hasClipboardData}
+        onPasteRows={props.onPasteRows}
+        onClearSelection={props.onClearSelection}
+        onAddRow={props.onAddRow}
+        onAddHeader={props.onAddHeader}
       />
     );
   }
 
   return (
-    <RegularRowContent
-      item={item}
-      rowNumber={rowNumber}
-      status={status}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      columns={columns}
-      isSelected={isSelected}
-      isCurrentlyPlaying={isCurrentlyPlaying}
-      isDraggingMultiple={isDraggingMultiple}
-      selectedRowsCount={selectedRowsCount}
-      selectedRows={selectedRows}
-      hasClipboardData={hasClipboardData}
-      isDragging={isDragging}
-      onUpdateItem={onUpdateItem}
-      onCellClick={onCellClick}
-      onKeyDown={onKeyDown}
-      onToggleColorPicker={onToggleColorPicker}
-      onColorSelect={onColorSelect}
-      onDeleteRow={onDeleteRow}
-      onToggleFloat={onToggleFloat}
-      onRowSelect={onRowSelect}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-      onCopySelectedRows={onCopySelectedRows}
-      onDeleteSelectedRows={onDeleteSelectedRows}
-      onPasteRows={onPasteRows}
-      onClearSelection={onClearSelection}
-      onAddRow={onAddRow}
-      onAddHeader={onAddHeader}
-      getColumnWidth={getColumnWidth}
-      getHighlightForCell={getHighlightForCell}
+    <RegularRow 
+      {...props} 
+      isSelected={isActuallySelected}
+      isCurrentlyPlaying={props.isCurrentlyPlaying}
+      isDraggingMultiple={props.isDraggingMultiple}
+      selectedRowsCount={props.selectedRowsCount || 1}
+      selectedRows={props.selectedRows}
+      hasClipboardData={props.hasClipboardData}
+      onToggleFloat={props.onToggleFloat || (() => {})}
+      onPasteRows={props.onPasteRows}
+      onClearSelection={props.onClearSelection}
+      onAddRow={props.onAddRow}
+      onAddHeader={props.onAddHeader}
     />
   );
 };

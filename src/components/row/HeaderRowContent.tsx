@@ -16,7 +16,6 @@ interface HeaderRowContentProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   getColumnWidth: (column: Column) => string;
-  getHighlightForCell?: (itemId: string, field: string) => { startIndex: number; endIndex: number } | null;
 }
 
 const HeaderRowContent = ({
@@ -24,17 +23,15 @@ const HeaderRowContent = ({
   columns,
   headerDuration,
   rowNumber,
-  cellRefs,
   backgroundColor,
+  cellRefs,
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  getColumnWidth,
-  getHighlightForCell
+  getColumnWidth
 }: HeaderRowContentProps) => {
-  // Use the passed backgroundColor or calculate from item color
-  const finalBackgroundColor = backgroundColor || item.color;
-  const textColor = finalBackgroundColor ? getContrastTextColor(finalBackgroundColor) : undefined;
+  // Calculate text color based on background color
+  const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
 
   return (
     <>
@@ -42,7 +39,7 @@ const HeaderRowContent = ({
       <td 
         className="px-3 py-3 text-base font-mono font-semibold align-middle border border-border min-h-[56px]"
         style={{ 
-          backgroundColor: finalBackgroundColor,
+          backgroundColor,
           width: '64px',
           minWidth: '64px', 
           maxWidth: '64px' // Ensure exact width matching
@@ -66,7 +63,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor: finalBackgroundColor 
+                backgroundColor 
               }}
             >
               <CellRenderer
@@ -74,12 +71,11 @@ const HeaderRowContent = ({
                 item={item}
                 cellRefs={cellRefs}
                 textColor={textColor}
-                backgroundColor={finalBackgroundColor}
+                backgroundColor={backgroundColor}
                 onUpdateItem={onUpdateItem}
                 onCellClick={onCellClick}
                 onKeyDown={onKeyDown}
                 width={columnWidth}
-                getHighlightForCell={getHighlightForCell}
               />
             </td>
           );
@@ -93,7 +89,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor: finalBackgroundColor 
+                backgroundColor 
               }}
             >
               <div className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
@@ -111,7 +107,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor: finalBackgroundColor 
+                backgroundColor 
               }}
             >
               <div className="px-3 py-3"></div>
@@ -127,7 +123,7 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor: finalBackgroundColor 
+                backgroundColor 
               }}
             >
               <div className="px-3 py-3"></div>
