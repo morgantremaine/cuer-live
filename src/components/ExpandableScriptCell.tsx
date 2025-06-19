@@ -192,9 +192,13 @@ const ExpandableScriptCell = ({
             }
           }}
           onKeyDown={handleKeyDown}
+          data-item-id={itemId}
+          data-field={cellRefKey}
+          data-cell-key={cellKey}
+          data-rundown-cell={cellKey}
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
+          className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
           style={{ 
             color: textColor || undefined,
             minHeight: isExpanded ? '120px' : '24px',

@@ -13,16 +13,16 @@ export const useSearch = (
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSearchingRef = useRef(false);
+  const lastSearchTextRef = useRef('');
 
   const performSearch = useCallback((text: string) => {
-    // Prevent multiple simultaneous searches
-    if (isSearchingRef.current) {
-      console.log('⚠️ Search already in progress, skipping');
+    // Prevent search loops by checking if text actually changed
+    if (isSearchingRef.current || lastSearchTextRef.current === text) {
       return;
     }
 
     isSearchingRef.current = true;
-    console.log('🔍 Performing search for:', text);
+    lastSearchTextRef.current = text;
     
     if (!text.trim()) {
       setMatches([]);
@@ -61,13 +61,11 @@ export const useSearch = (
       });
     });
 
-    console.log('🔍 Found matches:', foundMatches.length);
     setMatches(foundMatches);
     
     if (foundMatches.length > 0) {
       setCurrentMatchIndex(0);
       const firstMatch = foundMatches[0];
-      console.log('🎯 Highlighting first match:', firstMatch);
       onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
     } else {
       setCurrentMatchIndex(-1);
@@ -78,17 +76,17 @@ export const useSearch = (
   }, [items, visibleColumns, onHighlightMatch]);
 
   const updateCurrentMatch = useCallback((newIndex: number) => {
-    console.log('🎯 Updating current match to index:', newIndex);
     setCurrentMatchIndex(newIndex);
     if (newIndex >= 0 && newIndex < matches.length) {
       const match = matches[newIndex];
-      console.log('🎯 Highlighting match:', match);
       onHighlightMatch(match.itemId, match.field, match.index, match.index + match.length);
     }
   }, [matches, onHighlightMatch]);
 
   const refreshSearch = useCallback(() => {
     if (searchText.trim() && !isSearchingRef.current) {
+      // Reset the last search text to force a fresh search
+      lastSearchTextRef.current = '';
       performSearch(searchText);
     }
   }, [searchText, performSearch]);
@@ -99,12 +97,12 @@ export const useSearch = (
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Debounce the search
-    searchTimeoutRef.current = setTimeout(() => {
-      if (!isSearchingRef.current) {
+    // Only trigger search if text actually changed
+    if (searchText !== lastSearchTextRef.current) {
+      searchTimeoutRef.current = setTimeout(() => {
         performSearch(searchText);
-      }
-    }, 300);
+      }, 300);
+    }
 
     return () => {
       if (searchTimeoutRef.current) {

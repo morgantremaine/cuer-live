@@ -139,8 +139,6 @@ const RundownIndexContent = () => {
 
   // Enhanced highlight match functionality with better cell targeting
   const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
-    console.log('🎯 Highlighting match:', { itemId, field, startIndex, endIndex });
-    
     if (!itemId || !field) {
       setHighlightedCell(null);
       return;
@@ -169,17 +167,14 @@ const RundownIndexContent = () => {
         try {
           cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
           if (cellElement) {
-            console.log('✅ Found cell element with selector:', selector);
             break;
           }
         } catch (error) {
-          console.log('❌ Invalid selector:', selector, error);
           continue;
         }
       }
 
       if (cellElement) {
-        console.log('✅ Found cell element, focusing and scrolling');
         cellElement.focus();
         cellElement.scrollIntoView({ 
           behavior: 'smooth', 
@@ -192,41 +187,32 @@ const RundownIndexContent = () => {
           if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
             try {
               cellElement.setSelectionRange(startIndex, endIndex);
-              console.log('✅ Set text selection range:', startIndex, endIndex);
             } catch (error) {
-              console.log('Could not set selection range:', error);
+              // Ignore selection errors
             }
           }
-        }, 200);
-      } else {
-        console.log('❌ Could not find cell element for:', itemId, field);
-        console.log('Available elements with data-item-id:', document.querySelectorAll('[data-item-id]').length);
+        }, 100);
       }
-    }, 100);
+    }, 50);
   };
 
   // Enhanced replace text functionality with proper state updates
   const handleReplaceText = async (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
     if (replaceOperationRef.current) {
-      console.log('⚠️ Replace operation already in progress');
       return;
     }
 
     replaceOperationRef.current = true;
-    console.log('🔄 Replace operation starting:', { itemId, field, searchText, replaceText, replaceAll });
     
     try {
       const item = items.find(item => item.id === itemId);
       if (!item) {
-        console.log('❌ Item not found:', itemId);
         return;
       }
 
       const currentValue = item[field] || '';
-      console.log('📝 Current cell value:', currentValue);
       
       if (typeof currentValue !== 'string') {
-        console.log('❌ No valid current value found or not a string');
         return;
       }
 
@@ -234,11 +220,7 @@ const RundownIndexContent = () => {
       const searchRegex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
       const newValue = currentValue.replace(searchRegex, replaceText);
       
-      console.log('📝 Replacement result:', { original: currentValue, new: newValue });
-      
       if (newValue !== currentValue) {
-        console.log('✅ Updating item with new value');
-        
         // Use the updateItem function from the unified state
         updateItem(itemId, field, newValue);
         
@@ -255,19 +237,16 @@ const RundownIndexContent = () => {
               const cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
               if (cellElement && cellElement.value !== newValue) {
                 cellElement.value = newValue;
-                console.log('✅ Updated DOM element value');
                 break;
               }
             } catch (error) {
-              console.log('❌ Error updating DOM element:', error);
+              // Ignore DOM update errors
             }
           }
-        }, 100);
-      } else {
-        console.log('⚠️ No changes made - search text not found or already replaced');
+        }, 50);
       }
     } catch (error) {
-      console.error('❌ Replace operation failed:', error);
+      console.error('Replace operation failed:', error);
     } finally {
       replaceOperationRef.current = false;
     }

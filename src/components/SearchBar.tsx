@@ -39,21 +39,13 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
 
   const handleReplace = async (replaceAll: boolean = false) => {
     if (!searchText.trim() || !replaceText.trim() || isReplacingRef.current) {
-      console.log('❌ Missing search/replace text or already replacing');
       return;
     }
 
     isReplacingRef.current = true;
-    console.log('🔄 Replace operation:', { 
-      searchText: searchText.trim(), 
-      replaceText: replaceText.trim(), 
-      replaceAll, 
-      matchesCount: matches.length 
-    });
-
+    
     try {
       if (replaceAll) {
-        console.log('🔄 Replacing all matches');
         // Process unique item-field combinations
         const processedItems = new Set<string>();
         
@@ -61,23 +53,20 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
           const key = `${match.itemId}-${match.field}`;
           if (!processedItems.has(key)) {
             processedItems.add(key);
-            console.log('✅ Replacing in item:', match.itemId, match.field);
             await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText.trim(), true);
           }
         }
       } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
-        console.log('🔄 Replacing current match');
         const currentMatch = matches[currentMatchIndex];
         await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText.trim(), false);
       }
 
       // Refresh search results after replacement
       setTimeout(() => {
-        console.log('🔄 Refreshing search after replace');
         refreshSearch();
-      }, 500);
+      }, 100);
     } catch (error) {
-      console.error('❌ Replace operation failed:', error);
+      console.error('Replace operation failed:', error);
     } finally {
       isReplacingRef.current = false;
     }
@@ -92,9 +81,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    console.log('🔍 Search text changed:', value);
-    setSearchText(value);
+    setSearchText(e.target.value);
   };
 
   useEffect(() => {
