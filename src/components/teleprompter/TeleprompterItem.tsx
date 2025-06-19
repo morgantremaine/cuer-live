@@ -38,6 +38,11 @@ const TeleprompterItem = ({
 
   // Function to parse and render script text with bracket styling
   const renderScriptWithBrackets = (text: string) => {
+    // Handle [null] case - don't render any script content
+    if (text.trim() === '[null]') {
+      return null;
+    }
+
     // Regex to match brackets with optional color specification
     // Matches [TEXT] or [TEXT{COLOR}]
     const bracketRegex = /\[([^\[\]{}]+)(?:\{([^}]+)\})?\]/g;
@@ -182,6 +187,9 @@ const TeleprompterItem = ({
     );
   }
 
+  // Check if this is a [null] item
+  const isNullItem = item.script && item.script.trim() === '[null]';
+
   return (
     <div className="mb-16">
       {/* Segment Title */}
@@ -232,10 +240,17 @@ const TeleprompterItem = ({
               lineHeight: '1.2'
             }}
           >
-            {item.script ? renderScriptWithBrackets(item.script) : (
+            {isNullItem ? (
+              // For [null] items, don't show any script content, but still show the segment title above
               canEdit ? (
                 <span className="text-gray-500 italic">Click to add script content...</span>
-              ) : ''
+              ) : null
+            ) : item.script ? (
+              renderScriptWithBrackets(item.script)
+            ) : (
+              canEdit ? (
+                <span className="text-gray-500 italic">Click to add script content...</span>
+              ) : null
             )}
           </div>
         )}

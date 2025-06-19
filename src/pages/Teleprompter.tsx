@@ -115,15 +115,24 @@ const Teleprompter = () => {
     }
   };
 
+  // Helper function to check if item should be included in teleprompter
+  const shouldIncludeInTeleprompter = (item: RundownItem) => {
+    if (!item.script) return false;
+    const trimmedScript = item.script.trim();
+    if (trimmedScript === '') return false;
+    // Include items with [null] marker or any other content
+    return true;
+  };
+
   // Print function
   const handlePrint = () => {
     if (!rundownData) return;
 
-    // Filter items to only show those with script content and add originalIndex
+    // Filter items using the same logic as display
     const itemsWithScript = rundownData.items.map((item, originalIndex) => ({
       ...item,
       originalIndex
-    })).filter(item => item.script && item.script.trim() !== '');
+    })).filter(shouldIncludeInTeleprompter);
     
     // Create print window
     const printWindow = window.open('', '_blank');
@@ -136,6 +145,10 @@ const Teleprompter = () => {
 
     // Helper function to process script text and remove bracket styling for print
     const processScriptForPrint = (text: string) => {
+      // Handle [null] case - don't show any script content in print
+      if (text.trim() === '[null]') {
+        return '';
+      }
       // Remove bracket formatting for print - just keep the text inside brackets
       const cleanText = text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, '$1');
       return formatText(cleanText);
@@ -205,10 +218,12 @@ const Teleprompter = () => {
               ? `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}`
               : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
             
+            const scriptContent = processScriptForPrint(item.script || '');
+            
             return `
               <div class="script-item ${index > 0 && index % 4 === 0 ? 'page-break' : ''}">
                 <div class="script-title">${title}</div>
-                <div class="script-content">${processScriptForPrint(item.script || '')}</div>
+                ${scriptContent ? `<div class="script-content">${scriptContent}</div>` : ''}
               </div>
             `;
           }).join('')}
@@ -296,11 +311,11 @@ const Teleprompter = () => {
     );
   }
 
-  // Filter items to only show those with script content
+  // Filter items using the helper function and add originalIndex
   const itemsWithScript = rundownData?.items.map((item, originalIndex) => ({
     ...item,
     originalIndex
-  })).filter(item => item.script && item.script.trim() !== '') || [];
+  })).filter(shouldIncludeInTeleprompter) || [];
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
