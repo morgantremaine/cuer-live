@@ -71,7 +71,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       if (isRound) {
         return (
           <div 
-            className="bg-amber-500 border-2 border-black rounded-full"
+            className="bg-gray-500 border-2 border-black rounded-full"
             style={baseStyle}
           />
         );
@@ -79,7 +79,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       
       return (
         <div 
-          className="bg-amber-500 border-2 border-black"
+          className="bg-gray-500 border-2 border-black"
           style={baseStyle}
         />
       );

@@ -128,8 +128,8 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
                   cx={x + width/2}
                   cy={y + height/2}
                   r={Math.min(width, height)/2}
-                  fill="#f59e0b"
-                  stroke="#d97706"
+                  fill="#6b7280"
+                  stroke="#374151"
                   strokeWidth="1"
                 />
               );
@@ -142,8 +142,8 @@ const CameraPlotMiniPreview = ({ plot }: CameraPlotMiniPreviewProps) => {
                 y={y}
                 width={width}
                 height={height}
-                fill="#f59e0b"
-                stroke="#d97706"
+                fill="#6b7280"
+                stroke="#374151"
                 strokeWidth="1"
                 rx="2"
               />
