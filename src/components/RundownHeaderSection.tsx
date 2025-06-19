@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
@@ -35,9 +36,6 @@ interface RundownHeaderSectionProps {
   onOpenTeleprompter: () => void;
   items?: any[];
   visibleColumns?: any[];
-  onHighlightMatch?: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
-  onReplaceText?: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
-  currentHighlight?: any;
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
@@ -78,9 +76,6 @@ const RundownHeaderSection = ({
   onOpenTeleprompter,
   items = [],
   visibleColumns = [],
-  onHighlightMatch = () => {},
-  onReplaceText = () => {},
-  currentHighlight,
   onUndo,
   canUndo,
   lastAction,
@@ -103,9 +98,6 @@ const RundownHeaderSection = ({
         onRundownStartTimeChange={onRundownStartTimeChange}
         items={items}
         visibleColumns={visibleColumns}
-        onHighlightMatch={onHighlightMatch}
-        onReplaceText={onReplaceText}
-        currentHighlight={currentHighlight}
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
