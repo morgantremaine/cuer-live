@@ -1,4 +1,5 @@
 
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -32,8 +33,8 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
     }
   } else if (isCurrentlyPlaying) {
-    // Showcaller active row styling - elevated with thick blue border, column header background, and shadows above and below
-    rowClass = 'bg-muted border-l-8 border-blue-500 shadow-xl shadow-blue-500/30 relative z-10 transform transition-all duration-200';
+    // Showcaller active row styling - elevated with thick bright blue border, column header background, and shadows above and below
+    rowClass = 'bg-muted !border-l-8 !border-blue-600 shadow-xl shadow-blue-500/30 relative z-10 transform transition-all duration-200';
     // Add shadow above using box-shadow
     rowClass += ' [box-shadow:0_-8px_15px_-3px_rgba(59,130,246,0.3),0_8px_15px_-3px_rgba(59,130,246,0.3)]';
   } else if (isHeader) {
@@ -72,3 +73,4 @@ export const useRowStyling = ({
 
   return { rowClass, backgroundColorOverride };
 };
+
