@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -59,9 +58,6 @@ const RundownGrid = () => {
     handleKeyDown,
     cellRefs
   } = uiState;
-
-  // Create a mock highlightedCell for now - this should be added to uiState
-  const highlightedCell = null;
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
@@ -130,8 +126,8 @@ const RundownGrid = () => {
     <RundownTable
       items={items}
       visibleColumns={visibleColumns}
-      currentTime={currentTime.toISOString()}
-      showColorPicker={{ [showColorPicker]: true }}
+      currentTime={currentTime}
+      showColorPicker={showColorPicker}
       cellRefs={cellRefs}
       selectedRows={selectedRows}
       draggedItemIndex={draggedItemIndex}
@@ -166,7 +162,6 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
-      highlightedCell={highlightedCell}
     />
   );
 };

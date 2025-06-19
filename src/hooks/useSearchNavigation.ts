@@ -4,38 +4,14 @@ import { SearchMatch } from '@/types/search';
 export const useSearchNavigation = () => {
   const focusCell = (itemId: string, field: string) => {
     try {
-      // Use the corrected attribute selectors that match the actual DOM attributes
-      const selectors = [
-        `[data-item-id="${itemId}"][data-field="${field}"]`,
-        `[data-cell-key="${itemId}-${field}"]`,
-        `[data-rundown-cell="${itemId}-${field}"]`,
-        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
-        `input[data-item-id="${itemId}"][data-field="${field}"]`
-      ];
-
-      let cellElement: HTMLInputElement | HTMLTextAreaElement | null = null;
-
-      for (const selector of selectors) {
-        try {
-          cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
-          if (cellElement) {
-            break;
-          }
-        } catch (error) {
-          continue;
-        }
-      }
-      
+      const cellKey = `${itemId}-${field}`;
+      const cellElement = document.querySelector(`[data-cell-key="${cellKey}"]`) as HTMLInputElement | HTMLTextAreaElement;
       if (cellElement) {
         cellElement.focus();
-        cellElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'center'
-        });
+        cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     } catch (error) {
-      console.error('Error focusing cell:', error);
+      console.log('Could not focus cell:', error);
     }
   };
 
@@ -55,12 +31,9 @@ export const useSearchNavigation = () => {
     }
 
     setCurrentMatchIndex(newIndex);
-    
     const match = matches[newIndex];
-    if (match) {
-      focusCell(match.itemId, match.field);
-    }
+    focusCell(match.itemId, match.field);
   };
 
-  return { navigateMatch, focusCell };
+  return { navigateMatch };
 };

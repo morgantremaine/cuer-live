@@ -1,7 +1,7 @@
 
 import React from 'react';
-import CellRenderer from './CellRenderer';
 import RundownContextMenu from './RundownContextMenu';
+import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -10,109 +10,178 @@ import { Column } from '@/hooks/useColumnsManager';
 interface HeaderRowProps {
   item: RundownItem;
   index: number;
-  visibleColumns: Column[];
+  rowNumber: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
-  isSelected: boolean;
-  isDragged: boolean;
-  isDropTarget: boolean;
-  isDraggingMultiple: boolean;
-  showColorPicker: boolean;
-  isCurrent: boolean;
-  getColumnWidth: (columnId: string) => string;
+  columns: Column[];
   headerDuration: string;
+  selectedRowsCount?: number;
+  selectedRows?: Set<string>;
+  isSelected?: boolean;
+  showColorPicker: string | null;
+  hasClipboardData?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onToggleColorPicker: (id: string) => void;
-  onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
-  onToggleFloat: (id: string) => void;
-  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, targetIndex: number) => void;
-  onDeleteSelectedRows: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
-  highlightedCell?: {
-    itemId: string;
-    field: string;
-    startIndex: number;
-    endIndex: number;
-  } | null;
+  onDeleteSelectedRows: () => void;
+  onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
+  onPasteRows?: () => void;
+  onClearSelection?: () => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
+  isDragging: boolean;
+  getColumnWidth: (column: Column) => string;
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
-  const { item, visibleColumns, cellRefs, getColumnWidth, onUpdateItem, onCellClick, onKeyDown, highlightedCell } = props;
-  
-  const { handleRowClick } = useRowEventHandlers({
+  const {
     item,
-    index: props.index,
-    isSelected: props.isSelected,
-    selectedRowsCount: 1,
+    index,
+    rowNumber,
+    selectedRowsCount = 1,
+    selectedRows,
+    isSelected = false,
+    showColorPicker,
+    hasClipboardData = false,
+    onColorSelect,
+    onClearSelection,
+    onAddRow,
+    onAddHeader,
+    isDragging
+  } = props;
+
+  const { rowClass } = useRowStyling({
+    isDragging,
+    isSelected,
+    isHeader: true,
+    color: item.color
+  });
+
+  const {
+    handleRowClick,
+    handleContextMenu,
+    handleContextMenuCopy,
+    handleContextMenuDelete,
+    handleContextMenuColor,
+    handleContextMenuPaste
+  } = useRowEventHandlers({
+    item,
+    index,
+    isSelected,
+    selectedRowsCount,
     onRowSelect: props.onRowSelect,
     onDeleteRow: props.onDeleteRow,
     onDeleteSelectedRows: props.onDeleteSelectedRows,
     onCopySelectedRows: props.onCopySelectedRows,
     onToggleColorPicker: props.onToggleColorPicker,
-    onToggleFloat: props.onToggleFloat
-  });
-  
-  const { rowClassName, textColor, backgroundColor } = useRowStyling({
-    isDragged: props.isDragged,
-    isDraggingMultiple: props.isDraggingMultiple,
-    isSelected: props.isSelected,
-    isCurrent: props.isCurrent,
-    item: props.item,
-    rowStatus: 'header'
+    selectedRows,
+    onPasteRows: props.onPasteRows
   });
 
-  return (
-    <>
-      <tr
-        className={rowClassName}
-        draggable
-        onDragStart={(e) => props.onDragStart(e, props.index)}
-        onDragOver={(e) => props.onDragOver(e, props.index)}
-        onDragLeave={props.onDragLeave}
-        onDrop={(e) => props.onDrop(e, props.index)}
-        onClick={handleRowClick}
-        data-row-id={item.id}
-        data-row-index={props.index}
-        style={{ backgroundColor }}
-      >
-        {visibleColumns.map((column) => (
-          <td
-            key={column.id}
-            className="border-b border-gray-200 dark:border-gray-700 relative"
-            style={{ 
-              width: getColumnWidth(column.id)
-            }}
-          >
-            <CellRenderer
-              column={column}
-              item={item}
-              cellRefs={cellRefs}
-              textColor={textColor}
-              backgroundColor={backgroundColor}
-              onUpdateItem={onUpdateItem}
-              onCellClick={onCellClick}
-              onKeyDown={onKeyDown}
-              highlightedCell={highlightedCell}
-            />
-          </td>
-        ))}
-      </tr>
+  const handleContextMenuFloat = () => {
+    // Headers don't float, but we'll keep the interface consistent
+  };
+
+  // Enhanced drag start handler that prevents dragging when selecting text
+  const handleDragStart = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Check if the target is an input, textarea, or if there's an active text selection
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    const hasTextSelection = window.getSelection()?.toString().length > 0;
+    
+    // If user is selecting text or interacting with text inputs, prevent dragging
+    if (isTextInput || hasTextSelection) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    // Check if the mouse is down on a text input (even if target isn't the input itself)
+    const textInputs = document.querySelectorAll('input, textarea');
+    for (const input of textInputs) {
+      if (input === document.activeElement) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    }
+    
+    props.onDragStart(e, index);
+  };
+
+  // Enhanced mouse down handler to detect text selection intent
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    // If clicking on text input, disable draggable temporarily
+    if (isTextInput) {
+      const row = e.currentTarget as HTMLElement;
+      row.setAttribute('draggable', 'false');
       
-      <RundownContextMenu
-        item={item}
-        showColorPicker={props.showColorPicker}
-        onToggleColorPicker={() => props.onToggleColorPicker(item.id)}
-        onColorSelect={props.onColorSelect}
-        onDeleteRow={() => props.onDeleteRow(item.id)}
-        onToggleFloat={() => props.onToggleFloat(item.id)}
-      />
-    </>
+      // Re-enable draggable after a short delay to allow text selection
+      setTimeout(() => {
+        if (row) {
+          row.setAttribute('draggable', 'true');
+        }
+      }, 100);
+    }
+  };
+
+  const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
+
+  return (
+    <RundownContextMenu
+      selectedCount={isSelected ? selectedRowsCount : 1}
+      selectedRows={selectedRows}
+      isFloated={false}
+      hasClipboardData={hasClipboardData}
+      showColorPicker={showColorPicker}
+      itemId={item.id}
+      onCopy={handleContextMenuCopy}
+      onDelete={handleContextMenuDelete}
+      onToggleFloat={handleContextMenuFloat}
+      onColorPicker={handleContextMenuColor}
+      onColorSelect={onColorSelect}
+      onPaste={handleContextMenuPaste}
+      onClearSelection={onClearSelection}
+      onAddRow={onAddRow}
+      onAddHeader={onAddHeader}
+    >
+      <tr 
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
+        style={{
+          backgroundColor
+        }}
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={props.onDragOver}
+        onDrop={(e) => props.onDrop(e, index)}
+        onMouseDown={handleMouseDown}
+        onClick={handleRowClick}
+        onContextMenu={handleContextMenu}
+      >
+        <HeaderRowContent
+          item={item}
+          columns={props.columns}
+          headerDuration={props.headerDuration}
+          rowNumber={rowNumber}
+          backgroundColor={backgroundColor}
+          cellRefs={props.cellRefs}
+          onUpdateItem={props.onUpdateItem}
+          onCellClick={props.onCellClick}
+          onKeyDown={props.onKeyDown}
+          getColumnWidth={props.getColumnWidth}
+        />
+      </tr>
+    </RundownContextMenu>
   );
 };
 

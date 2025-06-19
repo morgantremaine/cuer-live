@@ -18,41 +18,19 @@ const ReplaceControls = ({
   onReplaceAll, 
   hasMatches 
 }: ReplaceControlsProps) => {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onReplaceTextChange(e.target.value);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && hasMatches && replaceText.trim()) {
-      e.preventDefault();
-      onReplace();
-    }
-  };
-
   return (
     <div className="space-y-3">
       <Input
         placeholder="Replace with..."
         value={replaceText}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
+        onChange={(e) => onReplaceTextChange(e.target.value)}
       />
       {hasMatches && (
         <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onReplace}
-            disabled={!replaceText.trim()}
-          >
+          <Button variant="outline" size="sm" onClick={onReplace}>
             Replace
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onReplaceAll}
-            disabled={!replaceText.trim()}
-          >
+          <Button variant="outline" size="sm" onClick={onReplaceAll}>
             Replace All
           </Button>
         </div>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchMatch } from '@/types/search';
 import { getCellValue } from '@/utils/sharedRundownUtils';
 
@@ -11,105 +11,77 @@ export const useSearch = (
   const [searchText, setSearchText] = useState('');
   const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isSearchingRef = useRef(false);
-  const lastSearchTextRef = useRef('');
 
-  const performSearch = useCallback((text: string) => {
-    // Prevent search loops by checking if text actually changed
-    if (isSearchingRef.current || lastSearchTextRef.current === text) {
-      return;
-    }
-
-    isSearchingRef.current = true;
-    lastSearchTextRef.current = text;
-    
+  const performSearch = (text: string) => {
     if (!text.trim()) {
       setMatches([]);
       setCurrentMatchIndex(-1);
+      // Clear any existing highlights
       onHighlightMatch('', '', 0, 0);
-      isSearchingRef.current = false;
       return;
     }
 
     const foundMatches: SearchMatch[] = [];
-    const searchLower = text.toLowerCase().trim();
+    const searchLower = text.toLowerCase();
 
     items.forEach((item) => {
       if (item.type === 'header') return;
 
       visibleColumns.forEach((column) => {
+        // Get the actual cell value using the shared utility
         const cellValue = getCellValue(item, column);
-        if (!cellValue || typeof cellValue !== 'string') return;
-        
         const cellValueLower = cellValue.toLowerCase();
-        let searchIndex = 0;
-        
-        while (searchIndex < cellValue.length) {
-          const foundIndex = cellValueLower.indexOf(searchLower, searchIndex);
+        let index = 0;
+
+        while (index < cellValue.length) {
+          const foundIndex = cellValueLower.indexOf(searchLower, index);
           if (foundIndex === -1) break;
 
           foundMatches.push({
             itemId: item.id,
-            field: column.key,
+            field: column.key, // Use column.key instead of column.id
             index: foundIndex,
-            length: text.trim().length
+            length: text.length
           });
 
-          searchIndex = foundIndex + 1;
+          index = foundIndex + 1;
         }
       });
     });
 
     setMatches(foundMatches);
     
+    // Only update current match index if we have matches and no current match is set
     if (foundMatches.length > 0) {
-      setCurrentMatchIndex(0);
-      const firstMatch = foundMatches[0];
-      onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
+      // If we don't have a current match or the current index is invalid, set to first match
+      if (currentMatchIndex === -1 || currentMatchIndex >= foundMatches.length) {
+        setCurrentMatchIndex(0);
+        const firstMatch = foundMatches[0];
+        onHighlightMatch(firstMatch.itemId, firstMatch.field, firstMatch.index, firstMatch.index + firstMatch.length);
+      } else {
+        // Keep the current match if it's still valid
+        const currentMatch = foundMatches[currentMatchIndex];
+        if (currentMatch) {
+          onHighlightMatch(currentMatch.itemId, currentMatch.field, currentMatch.index, currentMatch.index + currentMatch.length);
+        }
+      }
     } else {
       setCurrentMatchIndex(-1);
       onHighlightMatch('', '', 0, 0);
     }
+  };
 
-    isSearchingRef.current = false;
-  }, [items, visibleColumns, onHighlightMatch]);
-
-  const updateCurrentMatch = useCallback((newIndex: number) => {
+  const updateCurrentMatch = (newIndex: number) => {
     setCurrentMatchIndex(newIndex);
     if (newIndex >= 0 && newIndex < matches.length) {
       const match = matches[newIndex];
       onHighlightMatch(match.itemId, match.field, match.index, match.index + match.length);
     }
-  }, [matches, onHighlightMatch]);
-
-  const refreshSearch = useCallback(() => {
-    if (searchText.trim() && !isSearchingRef.current) {
-      // Reset the last search text to force a fresh search
-      lastSearchTextRef.current = '';
-      performSearch(searchText);
-    }
-  }, [searchText, performSearch]);
+  };
 
   useEffect(() => {
-    // Clear any existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Only trigger search if text actually changed
-    if (searchText !== lastSearchTextRef.current) {
-      searchTimeoutRef.current = setTimeout(() => {
-        performSearch(searchText);
-      }, 300);
-    }
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchText, performSearch]);
+    performSearch(searchText);
+  }, [searchText, items]);
 
   return {
     searchText,
@@ -117,7 +89,6 @@ export const useSearch = (
     matches,
     currentMatchIndex,
     setCurrentMatchIndex: updateCurrentMatch,
-    performSearch,
-    refreshSearch
+    performSearch
   };
 };

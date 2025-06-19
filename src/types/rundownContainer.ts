@@ -74,8 +74,4 @@ export interface RundownContainerProps {
   // Realtime collaboration props
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
-  
-  // Search and replace functionality
-  onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
-  onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
 }

@@ -20,7 +20,6 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
   const [replaceText, setReplaceText] = useState('');
   const [showReplace, setShowReplace] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const isReplacingRef = useRef(false);
 
   const {
     searchText,
@@ -28,7 +27,7 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     matches,
     currentMatchIndex,
     setCurrentMatchIndex,
-    refreshSearch
+    performSearch
   } = useSearch(items, visibleColumns, onHighlightMatch);
 
   const { navigateMatch } = useSearchNavigation();
@@ -37,39 +36,15 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     navigateMatch(matches, currentMatchIndex, setCurrentMatchIndex, direction);
   };
 
-  const handleReplace = async (replaceAll: boolean = false) => {
-    if (!searchText.trim() || !replaceText.trim() || isReplacingRef.current) {
-      return;
-    }
+  const handleReplace = (replaceAll: boolean = false) => {
+    if (!searchText.trim() || currentMatchIndex === -1) return;
 
-    isReplacingRef.current = true;
-    
-    try {
-      if (replaceAll) {
-        // Process unique item-field combinations
-        const processedItems = new Set<string>();
-        
-        for (const match of matches) {
-          const key = `${match.itemId}-${match.field}`;
-          if (!processedItems.has(key)) {
-            processedItems.add(key);
-            await onReplaceText(match.itemId, match.field, searchText.trim(), replaceText.trim(), true);
-          }
-        }
-      } else if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
-        const currentMatch = matches[currentMatchIndex];
-        await onReplaceText(currentMatch.itemId, currentMatch.field, searchText.trim(), replaceText.trim(), false);
-      }
+    const currentMatch = matches[currentMatchIndex];
+    onReplaceText(currentMatch.itemId, currentMatch.field, searchText, replaceText, replaceAll);
 
-      // Refresh search results after replacement
-      setTimeout(() => {
-        refreshSearch();
-      }, 100);
-    } catch (error) {
-      console.error('Replace operation failed:', error);
-    } finally {
-      isReplacingRef.current = false;
-    }
+    setTimeout(() => {
+      performSearch(searchText);
+    }, 100);
   };
 
   const handleClose = () => {
@@ -77,11 +52,18 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
     setSearchText('');
     setReplaceText('');
     setShowReplace(false);
+    // Clear highlights when closing
     onHighlightMatch('', '', 0, 0);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchText(e.target.value);
+    const value = e.target.value;
+    setSearchText(value);
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
   };
 
   useEffect(() => {
@@ -150,8 +132,8 @@ const SearchBar = ({ items, visibleColumns, onHighlightMatch, onReplaceText }: S
         />
 
         {searchText && matches.length === 0 && (
-          <div className="text-sm text-red-500 dark:text-red-400">
-            No matches found for "{searchText}"
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            No matches found
           </div>
         )}
       </div>

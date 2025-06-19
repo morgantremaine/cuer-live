@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+
+import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
@@ -6,17 +7,9 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
-import { getCellValue } from '@/utils/sharedRundownUtils';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
-  const [highlightedCell, setHighlightedCell] = useState<{
-    itemId: string;
-    field: string;
-    startIndex: number;
-    endIndex: number;
-  } | null>(null);
-  const replaceOperationRef = useRef(false);
   
   const {
     coreState,
@@ -135,130 +128,6 @@ const RundownIndexContent = () => {
     const seconds = totalSeconds % 60;
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Enhanced highlight match functionality with better cell targeting
-  const handleHighlightMatch = (itemId: string, field: string, startIndex: number, endIndex: number) => {
-    if (!itemId || !field) {
-      setHighlightedCell(null);
-      return;
-    }
-
-    setHighlightedCell({
-      itemId,
-      field,
-      startIndex,
-      endIndex
-    });
-
-    // Focus and scroll to the cell with improved targeting
-    setTimeout(() => {
-      const selectors = [
-        `[data-item-id="${itemId}"][data-field="${field}"]`,
-        `[data-cell-key="${itemId}-${field}"]`,
-        `[data-rundown-cell="${itemId}-${field}"]`,
-        `textarea[data-item-id="${itemId}"][data-field="${field}"]`,
-        `input[data-item-id="${itemId}"][data-field="${field}"]`
-      ];
-
-      let cellElement: HTMLInputElement | HTMLTextAreaElement | null = null;
-
-      for (const selector of selectors) {
-        try {
-          cellElement = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
-          if (cellElement) {
-            break;
-          }
-        } catch (error) {
-          continue;
-        }
-      }
-
-      if (cellElement) {
-        cellElement.focus();
-        cellElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'center'
-        });
-        
-        // Select the text range after focusing
-        setTimeout(() => {
-          if (cellElement instanceof HTMLInputElement || cellElement instanceof HTMLTextAreaElement) {
-            try {
-              cellElement.setSelectionRange(startIndex, endIndex);
-            } catch (error) {
-              // Ignore selection errors
-            }
-          }
-        }, 100);
-      }
-    }, 50);
-  };
-
-  // Enhanced replace text functionality with proper state updates
-  const handleReplaceText = async (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => {
-    if (replaceOperationRef.current) {
-      return;
-    }
-
-    replaceOperationRef.current = true;
-    
-    try {
-      console.log('🔄 Replace operation:', { itemId, field, searchText, replaceText, replaceAll });
-      
-      const item = items.find(item => item.id === itemId);
-      if (!item) {
-        console.log('❌ Item not found:', itemId);
-        return;
-      }
-
-      // Get the current value using the correct field path
-      let currentValue;
-      if (field.startsWith('customFields.')) {
-        const customField = field.replace('customFields.', '');
-        currentValue = item.customFields?.[customField] || '';
-      } else {
-        currentValue = item[field] || '';
-      }
-      
-      if (typeof currentValue !== 'string') {
-        console.log('❌ Current value is not a string:', typeof currentValue);
-        return;
-      }
-
-      console.log('📝 Current value:', currentValue);
-
-      // Perform case-insensitive replacement
-      const searchRegex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-      const newValue = currentValue.replace(searchRegex, replaceText);
-      
-      console.log('📝 New value:', newValue);
-      
-      if (newValue !== currentValue) {
-        console.log('✅ Updating item:', itemId, field, 'with value:', newValue);
-        
-        // Use the updateItem function from the unified state
-        updateItem(itemId, field, newValue);
-        
-        // Force update the textarea value immediately
-        setTimeout(() => {
-          const cellElement = document.querySelector(`[data-item-id="${itemId}"][data-field="${field}"]`) as HTMLInputElement | HTMLTextAreaElement;
-          if (cellElement && cellElement.value !== newValue) {
-            cellElement.value = newValue;
-            // Trigger a change event to ensure React state is updated
-            const changeEvent = new Event('input', { bubbles: true });
-            cellElement.dispatchEvent(changeEvent);
-          }
-        }, 50);
-      } else {
-        console.log('⚠️ No changes made - values are identical');
-      }
-    } catch (error) {
-      console.error('❌ Replace operation failed:', error);
-    } finally {
-      replaceOperationRef.current = false;
-    }
   };
 
   // Create wrapper for cell click to match signature
@@ -493,8 +362,6 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        onHighlightMatch={handleHighlightMatch}
-        onReplaceText={handleReplaceText}
       />
       
       <CuerChatButton rundownData={rundownData} />
