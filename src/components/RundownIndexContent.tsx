@@ -38,7 +38,6 @@ const RundownIndexContent = () => {
     pause,
     forward,
     backward,
-    jumpToSegment,
     hasUnsavedChanges,
     isSaving,
     totalRuntime,
@@ -50,7 +49,8 @@ const RundownIndexContent = () => {
     lastAction,
     isConnected,
     isProcessingRealtimeUpdate,
-    isController
+    isController,
+    jumpToSegment
   } = coreState;
 
   // Use user column preferences for persistent column management
