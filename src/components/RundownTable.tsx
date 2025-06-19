@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -95,6 +96,13 @@ const RundownTable = ({
     onDragOver(e, targetIndex);
   };
 
+  // Create a wrapper function that converts item id to index for getHeaderDuration
+  const getHeaderDurationById = (id: string): string => {
+    const itemIndex = items.findIndex(item => item.id === id);
+    if (itemIndex === -1) return '';
+    return getHeaderDuration(itemIndex);
+  };
+
   return (
     <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">
@@ -153,7 +161,7 @@ const RundownTable = ({
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
                   getRowNumber={getRowNumber}
-                  getHeaderDuration={getHeaderDuration}
+                  getHeaderDuration={getHeaderDurationById}
                   calculateHeaderDuration={(index: number) => getHeaderDuration(index)}
                 />
                 
