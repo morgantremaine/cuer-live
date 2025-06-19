@@ -18,6 +18,7 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     notes: '',
     gfx: '',
     video: '',
+    images: '',
     customFields: {},
     rowNumber: 'A',
     color: ''
@@ -36,6 +37,7 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     notes: '',
     gfx: '',
     video: '',
+    images: '',
     customFields: {},
     rowNumber: '',
     color: ''
@@ -54,6 +56,7 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     notes: '',
     gfx: '',
     video: '',
+    images: '',
     customFields: {},
     rowNumber: '',
     color: ''
@@ -72,6 +75,7 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     notes: '',
     gfx: '',
     video: '',
+    images: '',
     customFields: {},
     rowNumber: '',
     color: ''

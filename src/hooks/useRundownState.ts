@@ -322,6 +322,7 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
         script: '',
         gfx: '',
         video: '',
+        images: '',
         notes: '',
         color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
         isFloating: false
@@ -343,6 +344,7 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
         script: '',
         gfx: '',
         video: '',
+        images: '',
         notes: '',
         color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
         isFloating: false
