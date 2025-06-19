@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -151,7 +150,7 @@ const Teleprompter = () => {
           <style>
             @media print {
               @page {
-                margin: 0.5in;
+                margin: 0.75in;
                 size: letter;
               }
               body {
@@ -166,53 +165,48 @@ const Teleprompter = () => {
               font-family: Arial, sans-serif;
               color: black;
               background: white;
-              line-height: 1.3;
+              line-height: 1.4;
               margin: 0;
               padding: 0;
-              font-size: 12px;
+              font-size: 14px;
             }
             .header {
               text-align: center;
-              margin-bottom: 15px;
-              border-bottom: 1px solid #000;
-              padding-bottom: 8px;
-              page-break-after: avoid;
+              margin-bottom: 20px;
+              padding-bottom: 10px;
+              border-bottom: 2px solid #000;
             }
             .header h1 {
-              font-size: 16px;
-              margin: 0 0 3px 0;
+              font-size: 20px;
+              margin: 0 0 5px 0;
               font-weight: bold;
             }
             .header p {
-              font-size: 10px;
+              font-size: 12px;
               margin: 0;
               color: #666;
             }
             .script-item {
-              margin-bottom: 20px;
+              margin-bottom: 25px;
               page-break-inside: avoid;
-              orphans: 3;
-              widows: 3;
-            }
-            .script-item:first-child {
-              page-break-before: avoid;
+              orphans: 2;
+              widows: 2;
             }
             .script-title {
               font-weight: bold;
-              font-size: 12px;
-              margin-bottom: 6px;
-              padding: 3px 6px;
+              font-size: 16px;
+              margin-bottom: 8px;
+              padding: 4px 8px;
               background: #f0f0f0;
               border: 1px solid #ccc;
               display: inline-block;
               page-break-after: avoid;
             }
             .script-content {
-              font-size: 11px;
-              line-height: 1.4;
+              font-size: 14px;
+              line-height: 1.5;
               white-space: pre-wrap;
               margin-left: 0;
-              page-break-before: avoid;
             }
             .page-break {
               page-break-before: always;
@@ -232,7 +226,7 @@ const Teleprompter = () => {
               : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
             
             return `
-              <div class="script-item ${index > 0 && index % 5 === 0 ? 'page-break' : ''}">
+              <div class="script-item ${index > 0 && index % 4 === 0 ? 'page-break' : ''}">
                 <div class="script-title">${title}</div>
                 <div class="script-content">${processScriptForPrint(item.script || '')}</div>
               </div>
