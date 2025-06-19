@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 
 interface ImageCellProps {
@@ -37,8 +36,6 @@ const ImageCell = ({
 
   // Helper function to convert Google Drive links to direct image URLs
   const convertGoogleDriveUrl = (url: string): string => {
-    console.log('🔍 Converting Google Drive URL:', url);
-    
     // Check for different Google Drive link formats
     let fileId = null;
     
@@ -46,7 +43,6 @@ const ImageCell = ({
     const viewMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/);
     if (viewMatch) {
       fileId = viewMatch[1];
-      console.log('📁 Found file ID from /view format:', fileId);
     }
     
     // Format 2: https://drive.google.com/file/d/FILE_ID (without /view)
@@ -54,7 +50,6 @@ const ImageCell = ({
       const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
       if (fileMatch) {
         fileId = fileMatch[1];
-        console.log('📁 Found file ID from basic format:', fileId);
       }
     }
     
@@ -62,11 +57,9 @@ const ImageCell = ({
     if (fileId) {
       // Try the thumbnail API first (works better for images)
       const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h300`;
-      console.log('✅ Converted to thumbnail URL:', convertedUrl);
       return convertedUrl;
     }
     
-    console.log('❌ No file ID found, returning original URL');
     return url;
   };
 
@@ -89,12 +82,10 @@ const ImageCell = ({
   };
 
   const handleImageError = () => {
-    console.log('❌ Image failed to load for URL:', displayUrl);
     setImageError(true);
   };
 
   const handleImageLoad = () => {
-    console.log('✅ Image loaded successfully for URL:', displayUrl);
     setImageError(false);
   };
 
@@ -148,14 +139,6 @@ const ImageCell = ({
 
   // Check if we have a valid image URL (non-empty and no error)
   const isValidImageUrl = internalValue && internalValue.trim() && !imageError;
-
-  console.log('🖼️ ImageCell render state:', {
-    internalValue,
-    isLikelyImageUrl,
-    displayUrl,
-    isValidImageUrl,
-    imageError
-  });
 
   return (
     <div 
@@ -222,4 +205,3 @@ const ImageCell = ({
 };
 
 export default ImageCell;
-
