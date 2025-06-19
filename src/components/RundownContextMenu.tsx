@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Play } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -28,9 +28,6 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: () => void;
-  isShowcallerController?: boolean;
-  isRegularItem?: boolean;
 }
 
 const RundownContextMenu = memo(({
@@ -50,10 +47,7 @@ const RundownContextMenu = memo(({
   onPaste,
   onClearSelection,
   onAddRow,
-  onAddHeader,
-  onJumpToHere,
-  isShowcallerController = false,
-  isRegularItem = false
+  onAddHeader
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -121,20 +115,6 @@ const RundownContextMenu = memo(({
           )}
           
           {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
-
-          {/* Show Jump to Here only for regular items when user is showcaller controller */}
-          {onJumpToHere && isRegularItem && isShowcallerController && (
-            <>
-              <ContextMenuItem 
-                onClick={onJumpToHere} 
-                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Jump to here
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-            </>
-          )}
           
           <ContextMenuItem 
             onClick={onCopy} 

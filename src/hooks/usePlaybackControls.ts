@@ -22,7 +22,6 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
-    jumpTo,
     applyShowcallerState,
     isPlaying,
     currentSegmentId,
@@ -98,7 +97,6 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
-    jumpTo,
     isController
   };
 };

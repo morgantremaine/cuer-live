@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -87,13 +86,6 @@ const RundownGrid = () => {
     return status;
   };
 
-  // Create a wrapper function to convert headerId to index for header duration calculation
-  const getHeaderDurationById = (headerId: string): string => {
-    const itemIndex = items.findIndex(item => item.id === headerId);
-    if (itemIndex === -1) return '00:00:00';
-    return calculateHeaderDuration(itemIndex);
-  };
-
   // Enhanced row selection that properly handles both single and multi-selection
   const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     if (isShiftClick || isCtrlClick) {
@@ -133,17 +125,22 @@ const RundownGrid = () => {
   return (
     <RundownTable
       items={items}
-      columns={visibleColumns}
+      visibleColumns={visibleColumns}
+      currentTime={currentTime}
       showColorPicker={showColorPicker}
       cellRefs={cellRefs}
       selectedRows={selectedRows}
-      currentlyPlayingId={currentSegmentId}
+      draggedItemIndex={draggedItemIndex}
       isDraggingMultiple={isDraggingMultiple}
+      dropTargetIndex={dropTargetIndex}
+      currentSegmentId={currentSegmentId}
       hasClipboardData={hasClipboardData()}
+      selectedRowId={selectedRowId}
       getColumnWidth={getColumnWidth}
+      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       getRowNumber={getRowNumber}
       getRowStatus={getRowStatusForTable}
-      getHeaderDuration={getHeaderDurationById}
+      getHeaderDuration={calculateHeaderDuration}
       onUpdateItem={coreState.updateItem}
       onCellClick={handleCellClickWrapper}
       onKeyDown={handleKeyDownWrapper}
@@ -154,6 +151,7 @@ const RundownGrid = () => {
       onRowSelect={handleEnhancedRowSelection}
       onDragStart={handleDragStartWrapper}
       onDragOver={handleDragOverWrapper}
+      onDragLeave={handleDragLeaveWrapper}
       onDrop={handleDropWrapper}
       onCopySelectedRows={handleCopySelectedRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
@@ -164,7 +162,6 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
-      isDragging={draggedItemIndex !== null}
     />
   );
 };

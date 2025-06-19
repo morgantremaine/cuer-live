@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -37,8 +38,6 @@ interface RegularRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: (segmentId: string) => void;
-  isShowcallerController?: boolean;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -82,8 +81,7 @@ const RegularRow = (props: RegularRowProps) => {
     handleContextMenuDelete,
     handleContextMenuColor,
     handleContextMenuPaste,
-    handleContextMenuFloat,
-    handleContextMenuJumpToHere
+    handleContextMenuFloat
   } = useRowEventHandlers({
     item,
     index,
@@ -97,8 +95,7 @@ const RegularRow = (props: RegularRowProps) => {
     onToggleFloat,
     selectedRows,
     onPasteRows: props.onPasteRows,
-    onClearSelection,
-    onJumpToHere: props.onJumpToHere
+    onClearSelection
   });
 
   // Enhanced drag start handler that prevents dragging when selecting text
@@ -169,9 +166,6 @@ const RegularRow = (props: RegularRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
-      onJumpToHere={handleContextMenuJumpToHere}
-      isShowcallerController={props.isShowcallerController}
-      isRegularItem={true}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
