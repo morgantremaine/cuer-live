@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -56,7 +57,8 @@ const RundownGrid = () => {
     updateColumnWidth,
     handleCellClick,
     handleKeyDown,
-    cellRefs
+    cellRefs,
+    highlightedCell
   } = uiState;
 
   // Create wrapper for cell click to match signature
@@ -162,6 +164,7 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
+      highlightedCell={highlightedCell}
     />
   );
 };
