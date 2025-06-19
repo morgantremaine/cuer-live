@@ -49,31 +49,44 @@ const SharedRundownTable = ({
       url.includes('images') ||
       url.includes('photos') ||
       url.includes('imgur') ||
-      url.includes('unsplash')
+      url.includes('unsplash') ||
+      url.includes('gstatic.com') ||
+      url.includes('amazonaws.com') ||
+      url.includes('cloudinary.com')
     );
   };
 
   // Helper function to render cell content
   const renderCellContent = (item: RundownItem, column: any, calculatedStartTime: string) => {
-    const value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
+    // Get the raw value first
+    let value;
     
-    // Special handling for images column - check both column.key and column.id
+    // Check if this is the images column specifically
+    if (column.key === 'images' || column.id === 'images') {
+      value = item.images || '';
+    } else {
+      value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
+    }
+    
+    // Special handling for images column - render as image if it's a valid URL
     if ((column.key === 'images' || column.id === 'images') && value && isLikelyImageUrl(value)) {
       return (
-        <img
-          src={value}
-          alt="Rundown image"
-          className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
-          onError={(e) => {
-            // If image fails to load, show the URL as text instead
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const parent = target.parentElement;
-            if (parent) {
-              parent.innerHTML = value;
-            }
-          }}
-        />
+        <div className="flex items-center justify-center h-16">
+          <img
+            src={value}
+            alt="Rundown image"
+            className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
+            onError={(e) => {
+              // If image fails to load, show the URL as text instead
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent) {
+                parent.innerHTML = `<span class="text-xs text-gray-500">${value}</span>`;
+              }
+            }}
+          />
+        </div>
       );
     }
     
