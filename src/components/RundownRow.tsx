@@ -4,7 +4,6 @@ import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import { SearchHighlight } from '@/types/search';
 
 interface RundownRowProps {
   item: RundownItem;
@@ -21,7 +20,6 @@ interface RundownRowProps {
   selectedRows?: Set<string>;
   headerDuration?: string;
   hasClipboardData?: boolean;
-  currentHighlight?: SearchHighlight | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;

@@ -11,17 +11,12 @@ import {
 import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
-import SearchBar from '../SearchBar';
 import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderControlsProps {
   currentTime: Date;
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
-  items: any[];
-  visibleColumns: any[];
-  onHighlightMatch: (itemId: string, field: string, startIndex: number, endIndex: number) => void;
-  onReplaceText: (itemId: string, field: string, searchText: string, replaceText: string, replaceAll: boolean) => void;
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
@@ -31,10 +26,6 @@ const HeaderControls = ({
   currentTime,
   timezone,
   onTimezoneChange,
-  items,
-  visibleColumns,
-  onHighlightMatch,
-  onReplaceText,
   onUndo,
   canUndo,
   lastAction
@@ -76,14 +67,7 @@ const HeaderControls = ({
         currentTimezone={timezone}
         onTimezoneChange={handleTimezoneChange}
       />
-      <div className="relative">
-        <SearchBar
-          items={items}
-          visibleColumns={visibleColumns}
-          onHighlightMatch={onHighlightMatch}
-          onReplaceText={onReplaceText}
-        />
-      </div>
+      {/* Search functionality removed */}
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
