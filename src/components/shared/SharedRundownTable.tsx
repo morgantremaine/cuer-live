@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -58,8 +57,8 @@ const SharedRundownTable = ({
   const renderCellContent = (item: RundownItem, column: any, calculatedStartTime: string) => {
     const value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
     
-    // Special handling for images column
-    if (column.key === 'images' && value && isLikelyImageUrl(value)) {
+    // Special handling for images column - check both column.key and column.id
+    if ((column.key === 'images' || column.id === 'images') && value && isLikelyImageUrl(value)) {
       return (
         <img
           src={value}

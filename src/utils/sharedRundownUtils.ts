@@ -113,6 +113,10 @@ export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: 
       case 'talent':
         value = item.talent || '';
         break;
+      case 'images':
+        // Handle the images column specifically
+        value = item.images || '';
+        break;
       default:
         // Handle any other fields that might exist on the item
         value = (item as any)[column.key] || '';
