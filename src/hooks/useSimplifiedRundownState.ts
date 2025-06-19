@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -117,17 +118,21 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeRundown.isConnected || stableRealtime.isConnected);
   }, [realtimeRundown.isConnected, stableRealtime.isConnected]);
 
-  // Enhanced updateItem function - save undo state with content only (not columns)
+  // Enhanced updateItem function - save undo state with content only (not columns) - FIXED to include images field
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // Check if this is a typing field
+    console.log('🔄 enhancedUpdateItem called:', { id, field, value });
+    
+    // Check if this is a typing field - CRITICAL: Added 'images' to the typing fields
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
-                         field === 'gfx' || field === 'video' || field.startsWith('customFields.') || field === 'segmentName';
+                         field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
     
     if (isTypingField) {
       const sessionKey = `${id}-${field}`;
+      console.log('🔄 Processing typing field:', field, 'for session:', sessionKey);
       
       // If this is the start of a new typing session, save undo state
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
+        console.log('🔄 Starting new typing session, saving undo state for field:', field);
         // Save undo with content only (no columns)
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
@@ -142,10 +147,12 @@ export const useSimplifiedRundownState = () => {
       }
       
       typingTimeoutRef.current = setTimeout(() => {
+        console.log('🔄 Ending typing session for field:', field);
         typingSessionRef.current = null;
       }, 1000);
     } else if (field === 'duration') {
       // For duration changes, save immediately since they're usually intentional
+      console.log('🔄 Duration change detected, saving undo state');
       saveUndoState(state.items, [], state.title, 'Edit duration');
     }
     
@@ -154,6 +161,7 @@ export const useSimplifiedRundownState = () => {
       const item = state.items.find(i => i.id === id);
       if (item) {
         const currentCustomFields = item.customFields || {};
+        console.log('🔄 Updating custom field:', customFieldKey, 'with value:', value);
         actions.updateItem(id, {
           customFields: {
             ...currentCustomFields,
@@ -166,6 +174,7 @@ export const useSimplifiedRundownState = () => {
       let updateField = field;
       if (field === 'segmentName') updateField = 'name';
       
+      console.log('🔄 Updating item field:', updateField, 'with value:', value);
       actions.updateItem(id, { [updateField]: value });
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);

@@ -102,7 +102,7 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createContentSignature]);
 
-  // Simplified change detection with fewer protections
+  // Simplified change detection with enhanced logging for images
   useEffect(() => {
     // Only essential protection checks
     if (!isInitialized || 
@@ -118,7 +118,7 @@ export const useChangeTracking = (
       return;
     }
 
-    // Remove most cooldown checks for more responsive change detection
+    // Create new signature
     const currentSignature = createContentSignature();
     
     // Only trigger if signature actually changed
@@ -149,7 +149,25 @@ export const useChangeTracking = (
             console.log('🖼️ Total image changes detected:', imageChanges.length, 'items');
           }
           
+          // Also check for any item-level changes
+          const changedItems = currObj.items?.filter((item: any, index: number) => {
+            const prevItem = prevObj.items?.[index];
+            if (!prevItem) return true; // New item
+            
+            const itemSignature = JSON.stringify(item);
+            const prevItemSignature = JSON.stringify(prevItem);
+            const hasChanges = itemSignature !== prevItemSignature;
+            
+            if (hasChanges) {
+              console.log('📝 Item changes detected for:', item.id, 'item index:', index);
+            }
+            
+            return hasChanges;
+          });
+          
           console.log('📝 Items count changed:', prevObj.items?.length, '->', currObj.items?.length);
+          console.log('📝 Changed items count:', changedItems?.length || 0);
+          
         } catch (e) {
           console.log('📝 Could not parse signatures for comparison:', e);
         }
@@ -259,7 +277,7 @@ export const useChangeTracking = (
     realtimeCooldownRef.current = setTimeout(() => {
       isInRealtimeCooldown.current = false;
       console.log('❄️ Realtime cooldown ended');
-    }, 500); // Very short cooldown
+    }, 200); // Very short cooldown
   }, []);
 
   // Method to set the applying remote update flag
@@ -276,7 +294,7 @@ export const useChangeTracking = (
       realtimeCooldownRef.current = setTimeout(() => {
         isInRealtimeCooldown.current = false;
         console.log('❄️ Brief realtime cooldown ended after remote update');
-      }, 300); // Very short cooldown
+      }, 200); // Very short cooldown
     }
   }, []);
 
