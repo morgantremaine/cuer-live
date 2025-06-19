@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,7 +32,7 @@ export const useRundownItems = (
             const updatedItem = {
               ...item,
               [parentField]: {
-                ...item[parentField as keyof RundownItem],
+                ...(item[parentField as keyof RundownItem] as object || {}),
                 [childField]: value
               }
             };
@@ -91,6 +90,7 @@ export const useRundownItems = (
   const addItem = useCallback((item?: Partial<RundownItem>) => {
     const newItem: RundownItem = {
       id: uuidv4(),
+      rowNumber: '',
       name: '',
       duration: '',
       startTime: '',
@@ -102,7 +102,7 @@ export const useRundownItems = (
       gfx: '',
       video: '',
       images: '',
-      type: 'segment',
+      type: 'regular',
       color: '#ffffff',
       isFloating: false,
       isFloated: false,
