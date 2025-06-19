@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 
 interface ImageCellProps {
@@ -57,10 +58,11 @@ const ImageCell = ({
       }
     }
     
-    // If we found a file ID, convert to direct image URL
+    // If we found a file ID, convert to direct image URL using thumbnail API
     if (fileId) {
-      const convertedUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-      console.log('✅ Converted to direct URL:', convertedUrl);
+      // Try the thumbnail API first (works better for images)
+      const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h300`;
+      console.log('✅ Converted to thumbnail URL:', convertedUrl);
       return convertedUrl;
     }
     
@@ -220,3 +222,4 @@ const ImageCell = ({
 };
 
 export default ImageCell;
+
