@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -233,7 +234,6 @@ const SharedRundownTable = ({
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                     ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                    ${isShowcallerCurrent ? 'bg-blue-500 text-white' : ''}
                     print:break-inside-avoid print:border-0
                   `}
                   style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
@@ -243,7 +243,7 @@ const SharedRundownTable = ({
                       {/* Blue play icon for current segment */}
                       {isShowcallerCurrent && (
                         <Play 
-                          className="h-5 w-5 text-white fill-white mr-2 print:hidden" 
+                          className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print:hidden" 
                         />
                       )}
                       {isFloated && (
@@ -254,6 +254,10 @@ const SharedRundownTable = ({
                   </td>
                   
                   {visibleColumns.map((column) => {
+                    // Check if this is the current segment and this is the segment name column
+                    const isCurrentSegmentName = isShowcallerCurrent && 
+                      (column.key === 'segmentName' || column.key === 'name');
+                    
                     // For headers, handle special cases
                     if (item.type === 'header') {
                       if (column.key === 'segmentName' || column.key === 'name') {
@@ -287,7 +291,7 @@ const SharedRundownTable = ({
                       }
                     }
                     
-                    // For regular items, render content with special handling for images
+                    // For regular items, render content with special highlighting for current segment name
                     return (
                       <td
                         key={column.id}
@@ -295,7 +299,9 @@ const SharedRundownTable = ({
                           ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
                             ? 'print-time-column' 
                             : 'print-content-column'
-                        } ${isFloated ? 'text-white' : isShowcallerCurrent ? 'text-white' : 'text-gray-900'}`}
+                        } ${isFloated ? 'text-white' : 'text-gray-900'} ${
+                          isCurrentSegmentName ? 'bg-blue-500 text-white' : ''
+                        }`}
                       >
                         <div className="break-words whitespace-pre-wrap">
                           {renderCellContent(item, column, calculatedStartTime)}
