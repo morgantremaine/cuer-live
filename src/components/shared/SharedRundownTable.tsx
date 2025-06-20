@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -232,7 +233,7 @@ const SharedRundownTable = ({
       <div className={`relative border rounded-lg print:border-gray-400 print:overflow-visible ${
         isDark ? 'border-gray-700' : 'border-gray-200'
       }`}>
-        <div className="overflow-auto max-h-screen print:overflow-visible print:max-h-none">
+        <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
           <table className="w-full print:text-xs print-table table-fixed">
             <thead className={`sticky top-0 z-50 print:static ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'

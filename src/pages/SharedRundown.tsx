@@ -258,16 +258,14 @@ const SharedRundown = () => {
           onToggleTheme={toggleTheme}
         />
 
-        <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
-          <SharedRundownTable
-            items={rundownData.items}
-            visibleColumns={visibleColumns}
-            currentSegmentId={currentSegmentId}
-            isPlaying={isPlaying}
-            rundownStartTime={rundownData.startTime || '09:00:00'}
-            isDark={isDark}
-          />
-        </div>
+        <SharedRundownTable
+          items={rundownData.items}
+          visibleColumns={visibleColumns}
+          currentSegmentId={currentSegmentId}
+          isPlaying={isPlaying}
+          rundownStartTime={rundownData.startTime || '09:00:00'}
+          isDark={isDark}
+        />
 
         <SharedRundownFooter />
       </div>
