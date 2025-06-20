@@ -66,7 +66,7 @@ export const SharedRundownHeader = ({
         )}
       </div>
       
-      {/* Showcaller status and auto-scroll toggle */}
+      {/* Showcaller status - only when playing */}
       {isPlaying && currentSegmentId && (
         <div className={`flex items-center justify-between gap-4 text-sm p-2 rounded mb-2 ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'}`}>
           <div className="flex items-center gap-2">
@@ -78,19 +78,24 @@ export const SharedRundownHeader = ({
               </span>
             )}
           </div>
-          
-          {/* Auto-scroll toggle */}
-          {onToggleAutoScroll && (
-            <div className="flex items-center gap-2 print:hidden">
-              <Navigation className="h-4 w-4" />
-              <span className="text-xs">Follow playback</span>
-              <Switch
-                checked={autoScroll}
-                onCheckedChange={onToggleAutoScroll}
-                className="data-[state=checked]:bg-blue-600"
-              />
-            </div>
-          )}
+        </div>
+      )}
+      
+      {/* Auto-scroll toggle - always visible when function is available */}
+      {onToggleAutoScroll && (
+        <div className={`flex items-center justify-between gap-4 text-sm p-2 rounded mb-2 print:hidden ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
+          <div className="flex items-center gap-2">
+            <Navigation className="h-4 w-4" />
+            <span>Auto-scroll to current segment</span>
+            <span className="text-xs opacity-75">
+              {isPlaying ? '(Live playback)' : '(Ready for playback)'}
+            </span>
+          </div>
+          <Switch
+            checked={autoScroll}
+            onCheckedChange={onToggleAutoScroll}
+            className="data-[state=checked]:bg-blue-600"
+          />
         </div>
       )}
     </div>
