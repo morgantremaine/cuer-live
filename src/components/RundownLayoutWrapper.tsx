@@ -7,9 +7,9 @@ interface RundownLayoutWrapperProps {
 
 const RundownLayoutWrapper = ({ children }: RundownLayoutWrapperProps) => {
   return (
-    <div className="overflow-hidden">
-      <div>
-        <div className="bg-white dark:bg-gray-800 overflow-hidden">
+    <div className="h-screen overflow-hidden">
+      <div className="h-full">
+        <div className="bg-white dark:bg-gray-800 h-full overflow-hidden">
           {children}
         </div>
       </div>

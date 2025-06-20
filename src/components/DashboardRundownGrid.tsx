@@ -192,15 +192,8 @@ const DashboardRundownGrid = ({
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <CardTitle 
-                        className="text-white text-base cursor-pointer hover:text-blue-300 transition-colors leading-tight"
+                        className="text-white text-base truncate cursor-pointer hover:text-blue-300 transition-colors"
                         onClick={() => onOpen(rundown.id)}
-                        style={{ 
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          wordBreak: 'break-word'
-                        }}
                       >
                         {rundown.title}
                       </CardTitle>
@@ -217,7 +210,7 @@ const DashboardRundownGrid = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <MoreVertical className="h-3 w-3" />
                         </Button>
@@ -307,17 +300,10 @@ const DashboardRundownGrid = ({
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1">
                       <CardTitle 
-                        className="text-white text-lg cursor-pointer hover:text-blue-300 transition-colors leading-tight flex-1"
+                        className="text-white text-lg truncate cursor-pointer hover:text-blue-300 transition-colors"
                         onClick={() => onOpen(rundown.id)}
-                        style={{ 
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          wordBreak: 'break-word'
-                        }}
                       >
                         {rundown.title}
                       </CardTitle>
@@ -342,7 +328,7 @@ const DashboardRundownGrid = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
@@ -397,11 +383,11 @@ const DashboardRundownGrid = ({
                                 Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardHeader>
               
@@ -425,22 +411,22 @@ const DashboardRundownGrid = ({
                   </div>
                 </div>
 
-                {/* Content Preview - Reduced height when title wraps */}
+                {/* Content Preview */}
                 {preview.firstItems.length > 0 && (
                   <div className="bg-gray-700/30 rounded-lg p-3">
                     <div className="text-gray-300 text-xs font-medium mb-2 flex items-center gap-1">
                       <FileText className="h-3 w-3" />
                       Headers Preview
                     </div>
-                    <div className="space-y-1 max-h-16 overflow-hidden">
-                      {preview.firstItems.slice(0, 2).map((item, index) => (
+                    <div className="space-y-1">
+                      {preview.firstItems.map((item, index) => (
                         <div key={index} className="text-gray-400 text-xs truncate">
                           • {item}
                         </div>
                       ))}
-                      {preview.segmentCount > 2 && (
+                      {preview.segmentCount > 3 && (
                         <div className="text-gray-500 text-xs">
-                          +{preview.segmentCount - 2} more headers...
+                          +{preview.segmentCount - 3} more headers...
                         </div>
                       )}
                     </div>
