@@ -79,15 +79,6 @@ const PlaybackControls = ({
       </Button>
       
       <Button
-        onClick={handlePlayPause}
-        variant="outline"
-        size={size}
-        title={isPlaying ? "Pause" : "Play"}
-      >
-        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-blue-500" />}
-      </Button>
-      
-      <Button
         onClick={handleReset}
         variant="outline"
         size={size}
@@ -95,6 +86,15 @@ const PlaybackControls = ({
         title="Reset timer to full duration"
       >
         <TimerReset className="h-4 w-4" />
+      </Button>
+      
+      <Button
+        onClick={handlePlayPause}
+        variant="outline"
+        size={size}
+        title={isPlaying ? "Pause" : "Play"}
+      >
+        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-blue-500" />}
       </Button>
       
       <Button
