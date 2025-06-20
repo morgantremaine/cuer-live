@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -207,8 +208,8 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(columnsToUse);
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-      <div className="flex flex-col min-h-screen" ref={scrollContainerRef}>
+    <div className={`h-screen ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className="h-full flex flex-col" ref={scrollContainerRef}>
         <SharedRundownHeader
           title={rundownData.title}
           startTime={rundownData.startTime || '09:00:00'}
@@ -223,7 +224,7 @@ const SharedRundown = () => {
           onToggleAutoScroll={handleToggleAutoScroll}
         />
 
-        <div className="flex-1">
+        <div className="flex-1 min-h-0">
           <SharedRundownTable
             items={rundownData.items}
             visibleColumns={visibleColumns}
