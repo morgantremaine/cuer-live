@@ -22,6 +22,7 @@ interface RundownContentProps {
   selectedRowId?: string | null;
   isPlaying?: boolean;
   autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -63,6 +64,7 @@ const RundownContent = ({
   selectedRowId = null,
   isPlaying = false,
   autoScrollEnabled = false,
+  onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -89,7 +91,16 @@ const RundownContent = ({
   onJumpToHere
 }: RundownContentProps) => {
 
-  // Initialize autoscroll functionality
+  // Debug autoscroll props
+  console.log('🔄 RundownContent: Autoscroll debug:', {
+    autoScrollEnabled,
+    currentSegmentId,
+    isPlaying,
+    itemCount: items.length,
+    hasToggleFunction: !!onToggleAutoScroll
+  });
+
+  // Initialize autoscroll functionality with enhanced debugging
   const { scrollContainerRef } = useRundownAutoscroll({
     currentSegmentId,
     isPlaying,
