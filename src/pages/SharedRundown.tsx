@@ -207,7 +207,7 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(columnsToUse);
 
   return (
-    <div className={`${isDark ? 'bg-gray-900' : 'bg-white'}`} ref={scrollContainerRef}>
+    <div ref={scrollContainerRef}>
       <SharedRundownHeader
         title={rundownData.title}
         startTime={rundownData.startTime || '09:00:00'}
@@ -222,18 +222,16 @@ const SharedRundown = () => {
         onToggleAutoScroll={handleToggleAutoScroll}
       />
 
-      <div className="p-4 print:p-2">
-        <SharedRundownTable
-          items={rundownData.items}
-          visibleColumns={visibleColumns}
-          currentSegmentId={currentSegmentId}
-          isPlaying={isPlaying}
-          rundownStartTime={rundownData.startTime || '09:00:00'}
-          isDark={isDark}
-        />
+      <SharedRundownTable
+        items={rundownData.items}
+        visibleColumns={visibleColumns}
+        currentSegmentId={currentSegmentId}
+        isPlaying={isPlaying}
+        rundownStartTime={rundownData.startTime || '09:00:00'}
+        isDark={isDark}
+      />
 
-        <SharedRundownFooter />
-      </div>
+      <SharedRundownFooter />
     </div>
   );
 };
