@@ -48,6 +48,30 @@ export const useShowcallerVisualState = ({
     return nonFloatedItems.findIndex(item => item.id === visualState.currentSegmentId);
   }, [visualState.currentSegmentId, getNonFloatedRegularItems]);
 
+  // Helper function to get visual status for an item
+  const getItemVisualStatus = useCallback((item: RundownItem) => {
+    if (!visualState.isPlaying || !visualState.currentSegmentId) {
+      return 'upcoming';
+    }
+    
+    if (item.id === visualState.currentSegmentId) {
+      return 'current';
+    }
+    
+    // For non-floated items, check if they come before the current segment
+    if (!isFloated(item) && item.type === 'regular') {
+      const nonFloatedItems = getNonFloatedRegularItems();
+      const itemIndex = nonFloatedItems.findIndex(i => i.id === item.id);
+      const currentIndex = nonFloatedItems.findIndex(i => i.id === visualState.currentSegmentId);
+      
+      if (itemIndex !== -1 && currentIndex !== -1 && itemIndex < currentIndex) {
+        return 'completed';
+      }
+    }
+    
+    return 'upcoming';
+  }, [visualState.isPlaying, visualState.currentSegmentId, getNonFloatedRegularItems]);
+
   // Calculate time remaining for current segment
   const timeRemaining = (() => {
     if (!visualState.isPlaying || !visualState.currentSegmentId || !visualState.startTime) {
@@ -109,28 +133,30 @@ export const useShowcallerVisualState = ({
   }, [rundownId, userId]);
 
   // Track own updates to prevent feedback loops
-  const trackOwnUpdate = useCallback((callback: () => void) => {
-    callback();
+  const trackOwnUpdate = useCallback((timestamp: string) => {
+    // This function receives a timestamp string but doesn't need to do anything with it
+    // It's just a marker for tracking our own updates vs external updates
+    console.log('📺 Tracking own update at:', timestamp);
   }, []);
 
-  // Play function - starts from current segment or first non-floated segment
-  const play = useCallback(() => {
-    console.log('📺 Visual play called with segmentId:', visualState.currentSegmentId);
+  // Play function - starts from current segment or first non-floated segment, optionally with specific segment
+  const play = useCallback((targetSegmentId?: string) => {
+    console.log('📺 Visual play called with segmentId:', targetSegmentId);
     
     const nonFloatedItems = getNonFloatedRegularItems();
     if (nonFloatedItems.length === 0) return;
 
-    let targetSegmentId = visualState.currentSegmentId;
+    let segmentToPlay = targetSegmentId || visualState.currentSegmentId;
     
     // If no current segment or current segment is floated, start from first non-floated item
-    if (!targetSegmentId || !nonFloatedItems.find(item => item.id === targetSegmentId)) {
-      targetSegmentId = nonFloatedItems[0].id;
+    if (!segmentToPlay || !nonFloatedItems.find(item => item.id === segmentToPlay)) {
+      segmentToPlay = nonFloatedItems[0].id;
     }
 
     const newState = {
       ...visualState,
       isPlaying: true,
-      currentSegmentId: targetSegmentId,
+      currentSegmentId: segmentToPlay,
       startTime: Date.now(),
       lastUpdateTime: Date.now()
     };
@@ -253,6 +279,7 @@ export const useShowcallerVisualState = ({
     currentSegmentId: visualState.currentSegmentId,
     timeRemaining,
     isController,
-    trackOwnUpdate
+    trackOwnUpdate,
+    getItemVisualStatus
   };
 };

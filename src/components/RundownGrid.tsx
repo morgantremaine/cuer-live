@@ -141,7 +141,7 @@ const RundownGrid = () => {
       console.log('🎯 Play function type:', typeof play);
       
       try {
-        // Call the play function
+        // Call the play function with the segment ID
         play(segmentId);
         console.log('🎯 Play function called successfully');
         

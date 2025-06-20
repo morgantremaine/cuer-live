@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -367,7 +368,7 @@ const RundownIndexContent = () => {
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
         timeRemaining={timeRemainingNumber}
-        onPlay={play}
+        onPlay={() => play()}
         onPause={pause}
         onForward={forward}
         onBackward={backward}
