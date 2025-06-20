@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -227,101 +228,82 @@ const SharedRundownTable = ({
               const isFloated = item.isFloating || item.isFloated;
               
               return (
-                <React.Fragment key={item.id}>
-                  {/* Show thick green line with rounded corners ABOVE the current segment - matching main rundown */}
-                  {isShowcallerCurrent && (
-                    <tr className="print:hidden">
-                      <td colSpan={visibleColumns.length + 1} className="p-0">
-                        <div className="h-2 bg-green-500 w-full rounded-full"></div>
-                      </td>
-                    </tr>
-                  )}
+                <tr
+                  key={item.id}
+                  className={`
+                    ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
+                    ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                    ${isShowcallerCurrent ? 'bg-blue-500 text-white border-l-4 border-blue-600' : ''}
+                    print:break-inside-avoid print:border-0
+                  `}
+                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
+                >
+                  <td className="px-2 py-1 whitespace-nowrap text-sm border-r border-gray-200 print:border-gray-400 print-row-number">
+                    <div className="flex items-center">
+                      {/* Blue play icon for current segment */}
+                      {isShowcallerCurrent && (
+                        <Play 
+                          className="h-5 w-5 text-white fill-white mr-2 print:hidden" 
+                        />
+                      )}
+                      {isFloated && (
+                        <span className="text-yellow-400 mr-1 print:mr-0.5">🛟</span>
+                      )}
+                      <span>{getRowNumber(index, items)}</span>
+                    </div>
+                  </td>
                   
-                  <tr
-                    className={`
-                      ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
-                      ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                      ${isShowcallerCurrent ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
-                      print:break-inside-avoid print:border-0
-                    `}
-                    style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
-                  >
-                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-row-number">
-                      <div className="flex items-center">
-                        {/* Blue play icon - matching main rundown styling */}
-                        {isShowcallerCurrent && (
-                          <Play 
-                            className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print:hidden" 
-                          />
-                        )}
-                        {isFloated && (
-                          <span className="text-yellow-400 mr-1 print:mr-0.5">🛟</span>
-                        )}
-                        <span>{getRowNumber(index, items)}</span>
-                      </div>
-                    </td>
-                    
-                    {visibleColumns.map((column) => {
-                      // For headers, handle special cases
-                      if (item.type === 'header') {
-                        if (column.key === 'segmentName' || column.key === 'name') {
-                          // Show the header name for both segmentName and name columns
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-content-column">
-                              <div className="break-words whitespace-pre-wrap">{item.name || ''}</div>
-                            </td>
-                          );
-                        } else if (column.key === 'duration') {
-                          // Show the calculated header duration (excluding floated items)
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print-time-column">
-                              <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
-                            </td>
-                          );
-                        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
-                          // Don't show time fields for headers
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-time-column">
-                              <div className="break-words whitespace-pre-wrap"></div>
-                            </td>
-                          );
-                        } else {
-                          // For other columns, show empty cell for headers
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-content-column">
-                              <div className="break-words whitespace-pre-wrap"></div>
-                            </td>
-                          );
-                        }
+                  {visibleColumns.map((column) => {
+                    // For headers, handle special cases
+                    if (item.type === 'header') {
+                      if (column.key === 'segmentName' || column.key === 'name') {
+                        // Show the header name for both segmentName and name columns
+                        return (
+                          <td key={column.id} className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column">
+                            <div className="break-words whitespace-pre-wrap">{item.name || ''}</div>
+                          </td>
+                        );
+                      } else if (column.key === 'duration') {
+                        // Show the calculated header duration (excluding floated items)
+                        return (
+                          <td key={column.id} className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print-time-column">
+                            <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
+                          </td>
+                        );
+                      } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+                        // Don't show time fields for headers
+                        return (
+                          <td key={column.id} className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-time-column">
+                            <div className="break-words whitespace-pre-wrap"></div>
+                          </td>
+                        );
+                      } else {
+                        // For other columns, show empty cell for headers
+                        return (
+                          <td key={column.id} className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column">
+                            <div className="break-words whitespace-pre-wrap"></div>
+                          </td>
+                        );
                       }
-                      
-                      // For regular items, render content with special handling for images
-                      return (
-                        <td
-                          key={column.id}
-                          className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 ${
-                            ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
-                              ? 'print-time-column' 
-                              : 'print-content-column'
-                          } ${isFloated ? 'text-white' : 'text-gray-900'}`}
-                        >
-                          <div className="break-words whitespace-pre-wrap">
-                            {renderCellContent(item, column, calculatedStartTime)}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                  
-                  {/* Show full-width grey line with rounded corners UNDER the current segment - matching main rundown */}
-                  {isShowcallerCurrent && (
-                    <tr className="print:hidden">
-                      <td colSpan={visibleColumns.length + 1} className="p-0">
-                        <div className="h-1 bg-gray-400 w-full rounded-full"></div>
+                    }
+                    
+                    // For regular items, render content with special handling for images
+                    return (
+                      <td
+                        key={column.id}
+                        className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 ${
+                          ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+                            ? 'print-time-column' 
+                            : 'print-content-column'
+                        } ${isFloated ? 'text-white' : isShowcallerCurrent ? 'text-white' : 'text-gray-900'}`}
+                      >
+                        <div className="break-words whitespace-pre-wrap">
+                          {renderCellContent(item, column, calculatedStartTime)}
+                        </div>
                       </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+                    );
+                  })}
+                </tr>
               );
             })}
           </tbody>
