@@ -12,7 +12,6 @@ import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import { useAuth } from '@/hooks/useAuth';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeaderControlsProps {
   currentTime: Date;
@@ -34,7 +33,6 @@ const HeaderControls = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
 
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -63,7 +61,7 @@ const HeaderControls = ({
   };
 
   return (
-    <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-4'}`}>
+    <div className="flex items-center space-x-4">
       <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
       <TimezoneSelector 
         currentTimezone={timezone}
@@ -75,9 +73,9 @@ const HeaderControls = ({
         <div className="flex items-center space-x-2 relative">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-gray-900 dark:text-white hover:text-gray-100 hover:bg-transparent max-w-[200px]">
-                <User className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{user.email}</span>
+              <Button variant="ghost" className="text-gray-900 dark:text-white hover:text-gray-100 hover:bg-transparent">
+                <User className="h-4 w-4 mr-2" />
+                {user.email}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
