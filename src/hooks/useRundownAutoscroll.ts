@@ -59,14 +59,29 @@ export const useRundownAutoscroll = ({
       });
 
       if (targetElement) {
-        console.log('🔄 useRundownAutoscroll: Scrolling to element');
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
+        console.log('🔄 useRundownAutoscroll: Scrolling to element at 1/4 from top');
+        
+        // Get container and element dimensions
+        const containerRect = scrollContainerRef.current.getBoundingClientRect();
+        const elementRect = targetElement.getBoundingClientRect();
+        
+        // Calculate the desired position (1/4 from top of container)
+        const quarterFromTop = containerRect.height * 0.25;
+        
+        // Calculate current element position relative to container
+        const currentElementTop = elementRect.top - containerRect.top + scrollContainerRef.current.scrollTop;
+        
+        // Calculate the scroll position needed to place element at 1/4 from top
+        const targetScrollTop = currentElementTop - quarterFromTop;
+        
+        // Smooth scroll to the calculated position
+        scrollContainerRef.current.scrollTo({
+          top: targetScrollTop,
+          behavior: 'smooth'
         });
+        
         lastScrolledSegmentRef.current = currentSegmentId;
-        console.log('🔄 useRundownAutoscroll: Scroll completed');
+        console.log('🔄 useRundownAutoscroll: Scroll completed to 1/4 position');
       } else {
         console.warn('🔄 useRundownAutoscroll: Target element not found');
         // List all available data-item-id elements for debugging
