@@ -12,7 +12,6 @@ export const useBlueprintDragDrop = (
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
 
   const handleDragStart = useCallback((e: React.DragEvent, listId: string) => {
-    console.log('📋 Drag start:', listId);
     setDraggedListId(listId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', listId);
@@ -25,7 +24,6 @@ export const useBlueprintDragDrop = (
 
   const handleDragEnterContainer = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault();
-    console.log('📋 Drag enter container at index:', index, 'for item:', draggedListId);
     setInsertionIndex(index);
   }, [draggedListId]);
 
@@ -40,12 +38,9 @@ export const useBlueprintDragDrop = (
     e.preventDefault();
     const draggedId = e.dataTransfer.getData('text/plain') || draggedListId;
     
-    console.log('📋 Drop event:', { draggedId, insertionIndex });
-    
     if (draggedId && insertionIndex !== null) {
       const currentIndex = lists.findIndex(list => list.id === draggedId);
       if (currentIndex === -1) {
-        console.error('📋 Could not find dragged list in current lists');
         return;
       }
 
@@ -56,12 +51,6 @@ export const useBlueprintDragDrop = (
       // Adjust insertion index if moving from before to after
       const adjustedIndex = insertionIndex > currentIndex ? insertionIndex - 1 : insertionIndex;
       newLists.splice(adjustedIndex, 0, draggedItem);
-      
-      console.log('📋 Reordered lists:', newLists.map(l => l.name));
-      console.log('📋 DRAG DROP DEBUG - Full reordered lists:');
-      newLists.forEach((list, index) => {
-        console.log(`📋 DRAG DROP DEBUG - Position ${index}: ${list.name} (${list.id}) - checkedItems:`, list.checkedItems);
-      });
       
       setLists(newLists);
       
@@ -76,7 +65,6 @@ export const useBlueprintDragDrop = (
   }, [draggedListId, insertionIndex, lists, setLists, saveBlueprint, getCurrentComponentOrder]);
 
   const handleDragEnd = useCallback(() => {
-    console.log('📋 Drag end');
     setDraggedListId(null);
     setInsertionIndex(null);
   }, []);

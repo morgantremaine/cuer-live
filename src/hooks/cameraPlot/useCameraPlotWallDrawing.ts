@@ -18,20 +18,13 @@ export const useCameraPlotWallDrawing = () => {
   const [previewPoint, setPreviewPoint] = useState<WallPoint | null>(null);
 
   const startDrawing = (point: WallPoint) => {
-    console.log('Starting wall drawing at:', point);
     setIsDrawing(true);
     setCurrentPath([point]);
     setPreviewPoint(null);
   };
 
   const addPoint = (point: WallPoint) => {
-    console.log('Adding wall point:', point);
-    console.log('Current path before adding:', currentPath);
-    setCurrentPath(prev => {
-      const newPath = [...prev, point];
-      console.log('New path after adding:', newPath);
-      return newPath;
-    });
+    setCurrentPath(prev => [...prev, point]);
   };
 
   const updatePreview = (point: WallPoint) => {
@@ -41,7 +34,6 @@ export const useCameraPlotWallDrawing = () => {
   };
 
   const finishDrawing = () => {
-    console.log('Finishing wall drawing with path:', currentPath);
     const segments: WallSegment[] = [];
     
     for (let i = 0; i < currentPath.length - 1; i++) {
@@ -51,10 +43,7 @@ export const useCameraPlotWallDrawing = () => {
         end: currentPath[i + 1]
       };
       segments.push(segment);
-      console.log(`Created segment ${i + 1}:`, segment);
     }
-    
-    console.log('All segments created:', segments);
     
     setIsDrawing(false);
     setCurrentPath([]);
@@ -64,7 +53,6 @@ export const useCameraPlotWallDrawing = () => {
   };
 
   const cancelDrawing = () => {
-    console.log('Canceling wall drawing');
     setIsDrawing(false);
     setCurrentPath([]);
     setPreviewPoint(null);

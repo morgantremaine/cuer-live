@@ -36,7 +36,6 @@ export const usePlaybackControls = (
     onShowcallerStateChange: (state) => {
       // Only save if this user is the controller
       if (isController) {
-        console.log('📺 State changed, saving...');
         // Signal that this is a showcaller update to prevent auto-save conflicts
         if (setShowcallerUpdate) {
           setShowcallerUpdate(true);
@@ -71,19 +70,15 @@ export const usePlaybackControls = (
       return;
     }
 
-    console.log('📺 Loading initial showcaller state for rundown:', rundownId);
     hasLoadedInitialState.current = true;
     
     try {
       const state = await loadShowcallerState();
       if (state) {
-        console.log('📺 Applying loaded state:', state);
         applyShowcallerState(state);
-      } else {
-        console.log('📺 No initial state found');
       }
     } catch (error) {
-      console.error('📺 Error loading initial state:', error);
+      console.error('Error loading initial state:', error);
     }
   }, [rundownId]); // Only depend on rundownId
 

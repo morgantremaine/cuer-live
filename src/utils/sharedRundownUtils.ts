@@ -28,24 +28,32 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
         headerCount++;
       }
     }
-    // Adjust header numbering based on whether there are rows before first header
-    const headerIndex = hasRowsBeforeFirstHeader ? headerCount : headerCount - 1;
+    // Start from A if there are rows before first header, otherwise start from A for first header
+    const headerIndex = hasRowsBeforeFirstHeader ? headerCount - 1 : headerCount - 1;
     return letters[headerIndex] || 'A';
   }
   
   // For regular items, find which segment they belong to and count within that segment
-  let currentSegmentLetter = 'A';
+  let currentSegmentLetter = '';
   let itemCountInSegment = 0;
-  let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start from A or B
+  let segmentHeaderCount = 0;
   
-  // Go through items up to current index
+  // If there are rows before the first header, they belong to an implied "A" segment
+  if (hasRowsBeforeFirstHeader && index < firstHeaderIndex) {
+    currentSegmentLetter = 'A';
+    itemCountInSegment = index + 1;
+    return `${currentSegmentLetter}${itemCountInSegment}`;
+  }
+  
+  // Go through items up to current index to find current segment
   for (let i = 0; i <= index; i++) {
     const currentItem = items[i];
     if (!currentItem) continue;
     
     if (currentItem.type === 'header') {
       // Update which segment we're in
-      currentSegmentLetter = letters[segmentHeaderCount] || 'A';
+      const headerIndex = hasRowsBeforeFirstHeader ? segmentHeaderCount + 1 : segmentHeaderCount;
+      currentSegmentLetter = letters[headerIndex] || 'A';
       segmentHeaderCount++;
       itemCountInSegment = 0; // Reset count for new segment
     } else {
