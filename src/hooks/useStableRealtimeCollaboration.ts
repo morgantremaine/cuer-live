@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
 
 interface UseStableRealtimeCollaborationProps {
   rundownId: string | null;
@@ -17,7 +16,6 @@ export const useStableRealtimeCollaboration = ({
   enabled = true
 }: UseStableRealtimeCollaborationProps) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   
   // Use refs to store ALL values and prevent ANY re-renders
   const subscriptionRef = useRef<any>(null);
@@ -42,21 +40,44 @@ export const useStableRealtimeCollaboration = ({
 
   // Track our own updates to avoid processing them
   const trackOwnUpdate = useCallback((timestamp: string) => {
-    console.log('🏷️ Stable - tracking own update:', timestamp);
     ownUpdateTrackingRef.current.add(timestamp);
     lastSaveTimestamp.current = timestamp;
     
     // Clean up old tracked updates after 10 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
-      console.log('🧹 Stable - cleaned up tracked update:', timestamp);
     }, 10000);
+  }, []);
+
+  // Enhanced showcaller detection
+  const isShowcallerOnlyUpdate = useCallback((oldData: any, newData: any): boolean => {
+    if (!oldData || !newData) return false;
+
+    // Check if only showcaller_state changed
+    const fieldsToCheck = ['title', 'items', 'start_time', 'timezone'];
+    
+    for (const field of fieldsToCheck) {
+      if (field === 'items') {
+        const oldItemsStr = JSON.stringify(oldData.items || []);
+        const newItemsStr = JSON.stringify(newData.items || []);
+        if (oldItemsStr !== newItemsStr) {
+          return false; // Content changed
+        }
+      } else {
+        if (oldData[field] !== newData[field]) {
+          return false; // Content changed
+        }
+      }
+    }
+    
+    // If we get here, no content changed - check if showcaller_state changed
+    const showcallerStateChanged = JSON.stringify(oldData.showcaller_state || {}) !== JSON.stringify(newData.showcaller_state || {});
+    return showcallerStateChanged;
   }, []);
 
   // Create stable cleanup function that never changes
   const cleanup = useCallback(() => {
     if (subscriptionRef.current) {
-      console.log('🧹 Cleaning up stable realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
       isConnectedRef.current = false;
@@ -71,58 +92,50 @@ export const useStableRealtimeCollaboration = ({
     const currentRundownId = currentRundownIdRef.current;
     const updateTimestamp = payload.new?.updated_at;
     
-    console.log('📡 Stable realtime update received:', {
-      event: payload.eventType,
-      rundownId: payload.new?.id,
-      timestamp: updateTimestamp,
-      currentUserId: currentUserId,
-      trackedUpdates: Array.from(ownUpdateTrackingRef.current),
-      lastProcessed: lastProcessedTimestamp.current,
-      lastSave: lastSaveTimestamp.current
-    });
-
     // Only process updates for the current rundown
     if (!currentRundownId || payload.new?.id !== currentRundownId) {
-      console.log('⏭️ Stable - ignoring wrong rundown');
       return;
     }
 
     // Skip if this is exactly the same timestamp we just processed
     if (updateTimestamp && updateTimestamp === lastProcessedTimestamp.current) {
-      console.log('⏭️ Stable - ignoring duplicate timestamp');
       return;
     }
 
-    // ENHANCED: Skip if this update timestamp is in our tracked updates (our own updates)
+    // Skip if this update timestamp is in our tracked updates (our own updates)
     if (updateTimestamp && ownUpdateTrackingRef.current.has(updateTimestamp)) {
-      console.log('⏭️ Stable - ignoring own update (timestamp match):', updateTimestamp);
       lastProcessedTimestamp.current = updateTimestamp;
       return;
     }
 
-    // ENHANCED: Skip if this matches our last save timestamp
+    // Skip if this matches our last save timestamp
     if (updateTimestamp && updateTimestamp === lastSaveTimestamp.current) {
-      console.log('⏭️ Stable - ignoring own update (last save match):', updateTimestamp);
       lastProcessedTimestamp.current = updateTimestamp;
       return;
     }
 
-    // ENHANCED: Additional check for very recent updates (within 1 second) from same user
-    // This handles cases where timestamps might be slightly different but it's still our update
+    // Enhanced showcaller-only detection
+    const isShowcallerOnly = isShowcallerOnlyUpdate(payload.old, payload.new);
+    if (isShowcallerOnly) {
+      // For showcaller-only updates, don't trigger content reload
+      lastProcessedTimestamp.current = updateTimestamp;
+      return;
+    }
+
+    // Additional check for very recent updates from same user
     if (updateTimestamp) {
       const updateTime = new Date(updateTimestamp).getTime();
       const now = Date.now();
-      const isVeryRecent = (now - updateTime) < 8000; // Within 8 seconds
+      const isVeryRecent = (now - updateTime) < 8000;
       
       if (isVeryRecent) {
         // Check if we have any tracked updates within the last 15 seconds
         const hasRecentOwnUpdates = Array.from(ownUpdateTrackingRef.current).some(trackedTimestamp => {
           const trackedTime = new Date(trackedTimestamp).getTime();
-          return Math.abs(updateTime - trackedTime) < 15000; // Within 15 seconds
+          return Math.abs(updateTime - trackedTime) < 15000;
         });
         
         if (hasRecentOwnUpdates) {
-          console.log('⏭️ Stable - ignoring likely own update (recent and close to tracked):', updateTimestamp);
           lastProcessedTimestamp.current = updateTimestamp;
           return;
         }
@@ -131,7 +144,6 @@ export const useStableRealtimeCollaboration = ({
         if (lastSaveTimestamp.current) {
           const lastSaveTime = new Date(lastSaveTimestamp.current).getTime();
           if (Math.abs(updateTime - lastSaveTime) < 8000) {
-            console.log('⏭️ Stable - ignoring update close to our last save:', updateTimestamp);
             lastProcessedTimestamp.current = updateTimestamp;
             return;
           }
@@ -140,7 +152,6 @@ export const useStableRealtimeCollaboration = ({
     }
 
     lastProcessedTimestamp.current = updateTimestamp;
-    console.log('✅ Stable - processing remote update from teammate');
     
     // Trigger remote update callback immediately
     try {
@@ -152,7 +163,6 @@ export const useStableRealtimeCollaboration = ({
     // Reload current rundown data after a short delay to show changes
     if (onReloadCurrentRundownRef.current) {
       setTimeout(() => {
-        console.log('🔄 Stable - reloading current rundown data');
         try {
           onReloadCurrentRundownRef.current?.();
         } catch (error) {
@@ -160,7 +170,7 @@ export const useStableRealtimeCollaboration = ({
         }
       }, 100);
     }
-  }, []);
+  }, [isShowcallerOnlyUpdate]);
 
   // Separate effect to handle rundown changes - prevent unnecessary re-subscriptions
   useEffect(() => {
@@ -171,8 +181,6 @@ export const useStableRealtimeCollaboration = ({
     // Only setup if we have all required data and it's different from what we have
     if (currentEnabled && currentUserId && currentRundownId && 
         (lastSetupRundownId.current !== currentRundownId || lastSetupUserId.current !== currentUserId)) {
-      
-      console.log('🔄 Stable - setting up new subscription for rundown:', currentRundownId, 'user:', currentUserId);
       
       // Cleanup existing
       cleanup();
@@ -193,12 +201,9 @@ export const useStableRealtimeCollaboration = ({
           handleRealtimeUpdate
         )
         .subscribe((status) => {
-          console.log('📡 Stable subscription status:', status, 'for rundown:', currentRundownId);
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Stable - successfully subscribed to realtime updates');
             isConnectedRef.current = true;
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Stable - failed to subscribe to realtime updates');
             cleanup();
           }
         });

@@ -48,6 +48,7 @@ export const useRealtimeRundown = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const showcallerActivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   
   // Keep callback refs updated
@@ -74,7 +75,7 @@ export const useRealtimeRundown = ({
     }
   }, []);
 
-  // Enhanced showcaller-only detection
+  // Enhanced showcaller-only detection with better logic
   const isShowcallerOnlyUpdate = useCallback((payload: any): boolean => {
     const newData = payload.new;
     const oldData = payload.old;
@@ -120,12 +121,10 @@ export const useRealtimeRundown = ({
   // Function to track our own updates
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
     ownUpdateTrackingRef.current.add(timestamp);
-    console.log('📡 Tracking own realtime update:', timestamp, 'total tracked:', ownUpdateTrackingRef.current.size);
     
     // Clean up old tracked updates after 10 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
-      console.log('📡 Cleaned up tracked realtime update:', timestamp);
     }, 10000);
     
     // Also track via parent if available
@@ -134,7 +133,7 @@ export const useRealtimeRundown = ({
     }
   }, []);
 
-  // ENHANCED: Debounced update handler with better showcaller detection
+  // Enhanced update handler with better showcaller detection
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -156,17 +155,15 @@ export const useRealtimeRundown = ({
 
     // Prevent processing duplicate updates based on timestamp
     if (updateData.timestamp === lastProcessedUpdateRef.current) {
-      console.log('📡 Skipping duplicate realtime update:', updateData.timestamp);
       return;
     }
 
     // Skip if this update originated from this user
     if (ownUpdateTrackingRef.current.has(updateData.timestamp)) {
-      console.log('📡 Skipping own realtime update:', updateData.timestamp);
       return;
     }
 
-    // ENHANCED: Better showcaller-only detection
+    // Enhanced showcaller-only detection
     const isShowcallerOnly = isShowcallerOnlyUpdate(payload);
     
     // Create content hash from the new data (excluding showcaller_state)
@@ -179,34 +176,36 @@ export const useRealtimeRundown = ({
     const newContentHash = JSON.stringify(contentForHash);
     const contentHashMatch = currentContentHash === newContentHash;
 
-    const analysis = {
-      isShowcallerOnly,
-      isEditing,
-      hasUnsavedChanges,
-      isProcessing: isProcessingRealtimeUpdate,
-      contentHashMatch
-    };
-
-    console.log('📡 Realtime update received:', updateData);
-    console.log('📡 Update analysis:', analysis);
-
-    // If it's showcaller-only and user is not editing, allow the update but don't trigger content sync
-    if (isShowcallerOnly && !isEditing) {
-      console.log('📺 Allowing showcaller-only update (user not editing)');
-      signalActivity();
+    // If it's showcaller-only, handle it specially
+    if (isShowcallerOnly) {
+      // Signal showcaller activity with extended timeout
+      if (onShowcallerActivityRef.current) {
+        onShowcallerActivityRef.current(true);
+        
+        // Clear existing showcaller activity timeout
+        if (showcallerActivityTimeoutRef.current) {
+          clearTimeout(showcallerActivityTimeoutRef.current);
+        }
+        
+        // Set longer timeout for showcaller activity
+        showcallerActivityTimeoutRef.current = setTimeout(() => {
+          if (onShowcallerActivityRef.current) {
+            onShowcallerActivityRef.current(false);
+          }
+        }, 12000); // 12 seconds for showcaller activity
+      }
+      
       lastProcessedUpdateRef.current = updateData.timestamp;
-      return;
+      return; // Don't trigger content sync for showcaller-only updates
     }
 
-    // ENHANCED: Debounce rapid updates to prevent conflicts
+    // Debounce rapid updates to prevent conflicts
     if (processingTimeoutRef.current) {
       clearTimeout(processingTimeoutRef.current);
     }
 
     processingTimeoutRef.current = setTimeout(() => {
       lastProcessedUpdateRef.current = updateData.timestamp;
-      
-      console.log('🔄 Processing remote update from teammate');
       
       signalActivity();
       
@@ -216,7 +215,7 @@ export const useRealtimeRundown = ({
       } catch (error) {
         console.error('Error processing realtime update:', error);
       }
-    }, 150); // 150ms debounce for rapid updates
+    }, 150);
     
   }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
 
@@ -247,11 +246,8 @@ export const useRealtimeRundown = ({
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('📡 Enhanced realtime subscription status: SUBSCRIBED for rundown:', rundownId);
-          console.log('✅ Successfully subscribed to enhanced rundown content updates');
           setIsConnected(true);
         } else {
-          console.log('📡 Enhanced realtime subscription status:', status);
           setIsConnected(false);
         }
       });
@@ -269,6 +265,9 @@ export const useRealtimeRundown = ({
       }
       if (processingTimeoutRef.current) {
         clearTimeout(processingTimeoutRef.current);
+      }
+      if (showcallerActivityTimeoutRef.current) {
+        clearTimeout(showcallerActivityTimeoutRef.current);
       }
     };
   }, [rundownId, user, enabled, handleRealtimeUpdate]);

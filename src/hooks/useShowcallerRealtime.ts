@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,7 +48,7 @@ export const useShowcallerRealtime = ({
     }
   }, []);
 
-  // ENHANCED: Debounced update handler to prevent rapid-fire processing
+  // Debounced update handler to prevent rapid-fire processing
   const handleShowcallerUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -65,17 +64,15 @@ export const useShowcallerRealtime = ({
     
     // Prevent processing duplicate updates based on lastUpdate timestamp
     if (showcallerState.lastUpdate && showcallerState.lastUpdate === lastProcessedUpdateRef.current) {
-      console.log('📺 Skipping duplicate update:', showcallerState.lastUpdate);
       return;
     }
 
     // Skip if this update originated from this user
     if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
-      console.log('📺 Skipping own update:', showcallerState.lastUpdate);
       return;
     }
 
-    // ENHANCED: Debounce rapid updates to prevent conflicts
+    // Debounce rapid updates to prevent conflicts
     if (processingTimeoutRef.current) {
       clearTimeout(processingTimeoutRef.current);
     }
@@ -83,14 +80,6 @@ export const useShowcallerRealtime = ({
     processingTimeoutRef.current = setTimeout(() => {
       lastProcessedUpdateRef.current = showcallerState.lastUpdate;
       
-      console.log('📺 Processing showcaller state update:', {
-        controllerId: showcallerState.controllerId,
-        isPlaying: showcallerState.isPlaying,
-        currentSegment: showcallerState.currentSegmentId,
-        fromUser: showcallerState.controllerId,
-        timestamp: showcallerState.lastUpdate
-      });
-
       // Signal showcaller activity
       signalActivity();
       
@@ -100,7 +89,7 @@ export const useShowcallerRealtime = ({
       } catch (error) {
         console.error('Error processing showcaller realtime update:', error);
       }
-    }, 100); // 100ms debounce for rapid updates
+    }, 100);
     
   }, [rundownId, signalActivity]);
 
@@ -111,12 +100,9 @@ export const useShowcallerRealtime = ({
     // Signal our own activity
     signalActivity();
     
-    console.log('📺 Tracking own update:', lastUpdate, 'total tracked:', ownUpdateTrackingRef.current.size);
-    
-    // Clean up old tracked updates after 8 seconds (shorter window)
+    // Clean up old tracked updates after 8 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(lastUpdate);
-      console.log('📺 Cleaned up tracked update:', lastUpdate);
     }, 8000);
   }, [signalActivity]);
 
@@ -144,11 +130,7 @@ export const useShowcallerRealtime = ({
         },
         handleShowcallerUpdate
       )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('📺 Successfully subscribed to showcaller updates');
-        }
-      });
+      .subscribe();
 
     subscriptionRef.current = channel;
 

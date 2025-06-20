@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -17,7 +16,7 @@ interface UseShowcallerStateProps {
   onShowcallerStateChange?: (state: ShowcallerState) => void;
   userId?: string;
   trackOwnUpdate?: (lastUpdate: string) => void;
-  setShowcallerUpdate?: (isUpdate: boolean) => void; // Add this to prevent change tracking
+  setShowcallerUpdate?: (isUpdate: boolean) => void;
 }
 
 export const useShowcallerState = ({
@@ -42,6 +41,7 @@ export const useShowcallerState = ({
   const hasInitialized = useRef(false);
   const lastSyncedStateRef = useRef<string | null>(null);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const showcallerUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Keep callback ref updated
   stateChangeCallbackRef.current = onShowcallerStateChange;
@@ -68,60 +68,64 @@ export const useShowcallerState = ({
 
   // Helper function to get next/previous segments
   const getNextSegment = useCallback((currentId: string) => {
-    console.log('📺 getNextSegment called with:', currentId, 'from items:', items.length);
     const currentIndex = items.findIndex(item => item.id === currentId);
-    console.log('📺 Current index:', currentIndex);
     
     for (let i = currentIndex + 1; i < items.length; i++) {
-      console.log('📺 Checking item at index', i, ':', items[i]);
       if (items[i].type === 'regular') {
-        console.log('📺 Found next segment:', items[i]);
         return items[i];
       }
     }
-    console.log('📺 No next segment found');
     return null;
   }, [items]);
 
   const getPreviousSegment = useCallback((currentId: string) => {
-    console.log('📺 getPreviousSegment called with:', currentId, 'from items:', items.length);
     const currentIndex = items.findIndex(item => item.id === currentId);
-    console.log('📺 Current index:', currentIndex);
     
     for (let i = currentIndex - 1; i >= 0; i--) {
-      console.log('📺 Checking item at index', i, ':', items[i]);
       if (items[i].type === 'regular') {
-        console.log('📺 Found previous segment:', items[i]);
         return items[i];
       }
     }
-    console.log('📺 No previous segment found');
     return null;
   }, [items]);
 
-  // ENHANCED: Debounced sync function to prevent rapid fire updates
+  // Enhanced showcaller update marking with longer duration
+  const markAsShowcallerUpdate = useCallback(() => {
+    if (setShowcallerUpdate) {
+      setShowcallerUpdate(true);
+      
+      // Clear any existing timeout
+      if (showcallerUpdateTimeoutRef.current) {
+        clearTimeout(showcallerUpdateTimeoutRef.current);
+      }
+      
+      // Set a longer timeout to ensure the flag stays active during all related operations
+      showcallerUpdateTimeoutRef.current = setTimeout(() => {
+        setShowcallerUpdate(false);
+      }, 3000); // 3 seconds to cover all related database operations
+    }
+  }, [setShowcallerUpdate]);
+
+  // Debounced sync function to prevent rapid fire updates
   const debouncedSync = useCallback((newState: ShowcallerState) => {
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
     }
     
     syncTimeoutRef.current = setTimeout(() => {
-      console.log('📺 Debounced sync executing for state:', newState);
       if (trackOwnUpdate) {
         trackOwnUpdate(newState.lastUpdate);
       }
       if (stateChangeCallbackRef.current) {
         stateChangeCallbackRef.current(newState);
       }
-    }, 150); // 150ms debounce to group rapid updates
+    }, 150);
   }, [trackOwnUpdate]);
 
-  // Update showcaller state with change tracking exclusion
+  // Update showcaller state with enhanced change tracking exclusion
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
-    // Mark as showcaller update to prevent change tracking
-    if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
-    }
+    // Mark as showcaller update with extended duration
+    markAsShowcallerUpdate();
 
     const updatedState = {
       ...showcallerState,
@@ -129,63 +133,33 @@ export const useShowcallerState = ({
       lastUpdate: new Date().toISOString()
     };
     
-    console.log('📺 Updating showcaller state:', updatedState);
     setShowcallerState(updatedState);
     
     if (shouldSync && stateChangeCallbackRef.current) {
-      console.log('📺 Syncing state change (debounced)');
       debouncedSync(updatedState);
     }
-
-    // Clear the showcaller update flag after a brief delay
-    if (setShowcallerUpdate) {
-      setTimeout(() => {
-        setShowcallerUpdate(false);
-      }, 100);
-    }
-  }, [showcallerState, debouncedSync, setShowcallerUpdate]);
+  }, [showcallerState, debouncedSync, markAsShowcallerUpdate]);
 
   // Clear current status from all items
   const clearCurrentStatus = useCallback(() => {
-    console.log('📺 Clearing current status from all items');
-    
-    // Mark as showcaller update
-    if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
-    }
+    markAsShowcallerUpdate();
 
     items.forEach(item => {
       if (item.status === 'current') {
-        console.log('📺 Clearing current status from:', item.id);
         updateItem(item.id, 'status', 'completed');
       }
     });
-
-    // Clear the flag after updates
-    setTimeout(() => {
-      if (setShowcallerUpdate) {
-        setShowcallerUpdate(false);
-      }
-    }, 100);
-  }, [items, updateItem, setShowcallerUpdate]);
+  }, [items, updateItem, markAsShowcallerUpdate]);
 
   const setCurrentSegment = useCallback((segmentId: string) => {
-    console.log('📺 setCurrentSegment called with:', segmentId);
-    
-    // Mark as showcaller update
-    if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
-    }
+    markAsShowcallerUpdate();
 
     clearCurrentStatus();
     const segment = items.find(item => item.id === segmentId);
-    console.log('📺 Found segment:', segment);
     
     if (segment && segment.type === 'regular') {
-      console.log('📺 Setting segment as current:', segmentId);
       updateItem(segmentId, 'status', 'current');
       const duration = timeToSeconds(segment.duration || '00:00');
-      console.log('📺 Segment duration in seconds:', duration);
       
       updateShowcallerState({
         currentSegmentId: segmentId,
@@ -194,14 +168,7 @@ export const useShowcallerState = ({
         controllerId: userId
       }, true);
     }
-
-    // Clear the flag after updates
-    setTimeout(() => {
-      if (setShowcallerUpdate) {
-        setShowcallerUpdate(false);
-      }
-    }, 100);
-  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId, setShowcallerUpdate]);
+  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId, markAsShowcallerUpdate]);
 
   // Timer logic
   const startTimer = useCallback(() => {
@@ -210,17 +177,13 @@ export const useShowcallerState = ({
     }
 
     const isActiveController = isController();
-    console.log('📺 Starting timer', isActiveController ? '(controller)' : '(display only)');
     
     timerRef.current = setInterval(() => {
       setShowcallerState(prevState => {
         if (prevState.timeRemaining <= 1) {
           // Only controller handles segment advancement
           if (isActiveController && prevState.currentSegmentId) {
-            // Mark as showcaller update
-            if (setShowcallerUpdate) {
-              setShowcallerUpdate(true);
-            }
+            markAsShowcallerUpdate();
 
             updateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
@@ -243,13 +206,6 @@ export const useShowcallerState = ({
               if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
-
-              // Clear the flag after updates
-              setTimeout(() => {
-                if (setShowcallerUpdate) {
-                  setShowcallerUpdate(false);
-                }
-              }, 100);
               
               return newState;
             } else {
@@ -270,13 +226,6 @@ export const useShowcallerState = ({
               if (stateChangeCallbackRef.current) {
                 stateChangeCallbackRef.current(newState);
               }
-
-              // Clear the flag after updates
-              setTimeout(() => {
-                if (setShowcallerUpdate) {
-                  setShowcallerUpdate(false);
-                }
-              }, 100);
               
               return newState;
             }
@@ -307,28 +256,22 @@ export const useShowcallerState = ({
         return newState;
       });
     }, 1000);
-  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate, setShowcallerUpdate]);
+  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate, markAsShowcallerUpdate]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
-      console.log('📺 Stopped timer');
     }
   }, []);
 
   // Control functions
   const play = useCallback((selectedSegmentId?: string) => {
-    console.log('📺 Play called with segmentId:', selectedSegmentId, 'by user:', userId);
     const playbackStartTime = Date.now();
     
-    // Mark as showcaller update
-    if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
-    }
+    markAsShowcallerUpdate();
     
     if (selectedSegmentId) {
-      console.log('📺 Playing specific segment:', selectedSegmentId);
       // Mark segments before selected as completed, after as upcoming
       const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
       items.forEach((item, index) => {
@@ -343,10 +286,8 @@ export const useShowcallerState = ({
       setCurrentSegment(selectedSegmentId);
     } else if (!showcallerState.currentSegmentId) {
       // No current segment, find first regular item
-      console.log('📺 No current segment, finding first regular item');
       const firstSegment = items.find(item => item.type === 'regular');
       if (firstSegment) {
-        console.log('📺 Found first segment:', firstSegment.id);
         setCurrentSegment(firstSegment.id);
       }
     } else {
@@ -364,17 +305,9 @@ export const useShowcallerState = ({
     }, true);
     
     startTimer();
-
-    // Clear the flag after updates
-    setTimeout(() => {
-      if (setShowcallerUpdate) {
-        setShowcallerUpdate(false);
-      }
-    }, 100);
-  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer, setShowcallerUpdate]);
+  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer, markAsShowcallerUpdate]);
 
   const pause = useCallback(() => {
-    console.log('📺 Pause called by user:', userId);
     stopTimer();
     
     updateShowcallerState({ 
@@ -384,21 +317,14 @@ export const useShowcallerState = ({
     }, true);
   }, [updateShowcallerState, stopTimer, userId]);
 
-  // ENHANCED: Improved forward/backward with better coordination
+  // Enhanced forward/backward with better coordination
   const forward = useCallback(() => {
-    console.log('📺 Forward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
-    
-    // Mark as showcaller update
-    if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
-    }
+    markAsShowcallerUpdate();
 
     if (showcallerState.currentSegmentId) {
       const nextSegment = getNextSegment(showcallerState.currentSegmentId);
       if (nextSegment) {
-        console.log('📺 Moving to next segment:', nextSegment.id);
-        
-        // BATCH the operations to reduce conflicts
+        // Batch the operations to reduce conflicts
         updateItem(showcallerState.currentSegmentId, 'status', 'completed');
         updateItem(nextSegment.id, 'status', 'current');
         
@@ -415,35 +341,17 @@ export const useShowcallerState = ({
         if (showcallerState.isPlaying) {
           startTimer();
         }
-      } else {
-        console.log('📺 No next segment available');
       }
-    } else {
-      console.log('📺 No current segment to move from');
     }
-
-    // Clear the flag after updates
-    setTimeout(() => {
-      if (setShowcallerUpdate) {
-        setShowcallerUpdate(false);
-      }
-    }, 100);
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, setShowcallerUpdate]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markAsShowcallerUpdate]);
 
   const backward = useCallback(() => {
-    console.log('📺 Backward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
-    
-    // Mark as showcaller update
-    if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
-    }
+    markAsShowcallerUpdate();
 
     if (showcallerState.currentSegmentId) {
       const prevSegment = getPreviousSegment(showcallerState.currentSegmentId);
       if (prevSegment) {
-        console.log('📺 Moving to previous segment:', prevSegment.id);
-        
-        // BATCH the operations to reduce conflicts
+        // Batch the operations to reduce conflicts
         updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
         updateItem(prevSegment.id, 'status', 'current');
         
@@ -460,20 +368,9 @@ export const useShowcallerState = ({
         if (showcallerState.isPlaying) {
           startTimer();
         }
-      } else {
-        console.log('📺 No previous segment available');
       }
-    } else {
-      console.log('📺 No current segment to move from');
     }
-
-    // Clear the flag after updates
-    setTimeout(() => {
-      if (setShowcallerUpdate) {
-        setShowcallerUpdate(false);
-      }
-    }, 100);
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, setShowcallerUpdate]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markAsShowcallerUpdate]);
 
   // External state application
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
@@ -481,13 +378,8 @@ export const useShowcallerState = ({
       return;
     }
     lastSyncedStateRef.current = externalState.lastUpdate;
-
-    console.log('📺 Applying external showcaller state from controller:', externalState.controllerId);
     
-    // Mark as showcaller update
-    if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
-    }
+    markAsShowcallerUpdate();
     
     stopTimer();
     clearCurrentStatus();
@@ -513,25 +405,15 @@ export const useShowcallerState = ({
           ...externalState,
           timeRemaining: syncedTimeRemaining
         };
-        
-        console.log('📺 Synchronized time remaining:', syncedTimeRemaining, 'from elapsed:', elapsedTime);
       }
     }
     
     setShowcallerState(synchronizedState);
     
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
-      console.log('📺 Restarting timer after sync');
       setTimeout(() => startTimer(), 100);
     }
-
-    // Clear the flag after updates
-    setTimeout(() => {
-      if (setShowcallerUpdate) {
-        setShowcallerUpdate(false);
-      }
-    }, 100);
-  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer, setShowcallerUpdate]);
+  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer, markAsShowcallerUpdate]);
 
   // Initialize current segment on mount if none exists
   useEffect(() => {
@@ -539,7 +421,6 @@ export const useShowcallerState = ({
       const firstSegment = items.find(item => item.type === 'regular');
       if (firstSegment) {
         const duration = timeToSeconds(firstSegment.duration || '00:00');
-        console.log('📺 Initializing with first segment:', firstSegment.id);
         setShowcallerState(prev => ({
           ...prev,
           currentSegmentId: firstSegment.id,
@@ -558,6 +439,9 @@ export const useShowcallerState = ({
       }
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
+      }
+      if (showcallerUpdateTimeoutRef.current) {
+        clearTimeout(showcallerUpdateTimeoutRef.current);
       }
     };
   }, []);
