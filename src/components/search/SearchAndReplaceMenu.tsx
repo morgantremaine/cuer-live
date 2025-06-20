@@ -120,7 +120,7 @@ const SearchAndReplaceMenu = ({
             <Checkbox
               id="case-sensitive"
               checked={caseSensitive}
-              onCheckedChange={setCaseSensitive}
+              onCheckedChange={(checked) => setCaseSensitive(checked === true)}
             />
             <label htmlFor="case-sensitive" className="cursor-pointer">
               Match case
@@ -130,7 +130,7 @@ const SearchAndReplaceMenu = ({
             <Checkbox
               id="whole-word"
               checked={wholeWord}
-              onCheckedChange={setWholeWord}
+              onCheckedChange={(checked) => setWholeWord(checked === true)}
             />
             <label htmlFor="whole-word" className="cursor-pointer">
               Whole word

@@ -94,23 +94,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         timezone={timezone}
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
-        onShowColumnManager={() => setShowColumnManager(true)}
-        selectedCount={selectedCount}
-        hasClipboardData={hasClipboardData}
-        onCopySelectedRows={onCopySelectedRows}
-        onPasteRows={onPasteRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onClearSelection={onClearSelection}
-        selectedRowId={selectedRowId}
-        isPlaying={isPlaying}
-        currentSegmentId={currentSegmentId}
-        timeRemaining={timeRemaining}
-        onPlay={onPlay}
-        onPause={onPause}
-        onForward={onForward}
-        onBackward={onBackward}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
         rundownTitle={rundownTitle}
@@ -120,13 +103,21 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
         items={items}
-        visibleColumns={visibleColumns}
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        rundownData={rundownData}
+        showColumnManager={showColumnManager}
+        setShowColumnManager={setShowColumnManager}
+        columns={columns}
+        handleAddColumn={handleAddColumn}
+        handleReorderColumns={handleReorderColumns}
+        handleDeleteColumnWithCleanup={handleDeleteColumnWithCleanup}
+        handleRenameColumn={handleRenameColumn}
+        handleToggleColumnVisibility={handleToggleColumnVisibility}
+        handleLoadLayout={handleLoadLayout}
+        onUpdateItem={onUpdateItem}
       />
 
       {/* Main Content */}

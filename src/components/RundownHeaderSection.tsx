@@ -1,12 +1,8 @@
+
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Edit, Check, X } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast"
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateRundownTitle } from '@/lib/api';
-import { useDebounce } from '@/hooks/useDebounce';
-import { Loader2 } from "lucide-react"
 import HeaderControls from './header/HeaderControls';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -74,29 +70,6 @@ const RundownHeaderSection = ({
 }: RundownHeaderSectionProps) => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(rundownTitle);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const debouncedTitle = useDebounce(tempTitle, 500);
-
-  const mutation = useMutation(updateRundownTitle, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['rundown', rundownId]);
-      toast({
-        title: "Title updated",
-        description: "The rundown title has been successfully updated.",
-      })
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Failed to update title",
-        description: error.message || "Something went wrong. Please try again.",
-      })
-    },
-    onSettled: () => {
-      setEditingTitle(false);
-    }
-  });
 
   const handleTitleDoubleClick = () => {
     setEditingTitle(true);
@@ -106,23 +79,15 @@ const RundownHeaderSection = ({
     setTempTitle(e.target.value);
   };
 
-  const handleTitleSave = async () => {
-    if (rundownId) {
-      mutation.mutate({ rundownId, title: debouncedTitle });
-    }
+  const handleTitleSave = () => {
+    onTitleChange(tempTitle);
+    setEditingTitle(false);
   };
 
   const handleTitleCancel = () => {
     setTempTitle(rundownTitle);
     setEditingTitle(false);
   };
-
-  React.useEffect(() => {
-    if (debouncedTitle !== rundownTitle) {
-      handleTitleSave();
-      onTitleChange(debouncedTitle);
-    }
-  }, [debouncedTitle, rundownTitle, onTitleChange]);
 
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
@@ -140,13 +105,9 @@ const RundownHeaderSection = ({
                 onBlur={handleTitleCancel}
                 autoFocus
               />
-              {mutation.isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Button variant="ghost" size="sm" onClick={handleTitleSave}>
-                  <Check className="h-4 w-4" />
-                </Button>
-              )}
+              <Button variant="ghost" size="sm" onClick={handleTitleSave}>
+                <Check className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" size="sm" onClick={handleTitleCancel}>
                 <X className="h-4 w-4" />
               </Button>
