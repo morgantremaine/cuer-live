@@ -27,10 +27,10 @@ export const SharedRundownHeader = ({
   onToggleTheme
 }: SharedRundownHeaderProps) => {
   return (
-    <div className={`pb-4 mb-4 ${isDark ? '' : ''}`}>
-      <div className="flex justify-between items-start mb-4">
+    <div className={`pb-2 mb-2 ${isDark ? '' : ''}`}>
+      <div className="flex justify-between items-start mb-2">
         <div>
-          <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {title}
           </h1>
           <div className={`text-sm space-y-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -63,7 +63,7 @@ export const SharedRundownHeader = ({
       
       {/* Showcaller status */}
       {isPlaying && currentSegmentId && (
-        <div className={`flex items-center gap-2 text-sm p-2 rounded ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'}`}>
+        <div className={`flex items-center gap-2 text-sm p-2 rounded mb-2 ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'}`}>
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
           <span>Live - Currently playing</span>
           {timeRemaining && (
