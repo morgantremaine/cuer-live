@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 
 interface TextAreaCellProps {
@@ -117,11 +116,82 @@ const TextAreaCell = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Simple key navigation
+  // Enhanced key navigation that allows multi-line editing
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // For Enter key and arrow keys, navigate to next/previous cell
-    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      onKeyDown(e, itemId, cellRefKey);
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const { selectionStart, selectionEnd } = textarea;
+    const textValue = textarea.value;
+    const lines = textValue.split('\n');
+    
+    // Find current line and position
+    let currentLineIndex = 0;
+    let charCount = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount + lines[i].length >= selectionStart) {
+        currentLineIndex = i;
+        break;
+      }
+      charCount += lines[i].length + 1; // +1 for newline
+    }
+    
+    const currentLineStart = charCount;
+    const currentLineEnd = charCount + lines[currentLineIndex].length;
+    const positionInLine = selectionStart - currentLineStart;
+
+    // Handle different key combinations
+    if (e.key === 'Enter') {
+      if (e.ctrlKey) {
+        // Ctrl+Enter navigates to next cell
+        e.preventDefault();
+        onKeyDown(e, itemId, cellRefKey);
+      }
+      // Regular Enter creates a line break (default behavior)
+      return;
+    }
+    
+    if (e.key === 'ArrowUp') {
+      if (e.ctrlKey) {
+        // Ctrl+Up navigates to previous cell
+        e.preventDefault();
+        onKeyDown(e, itemId, cellRefKey);
+      } else if (currentLineIndex === 0) {
+        // At first line, navigate to previous cell
+        e.preventDefault();
+        onKeyDown(e, itemId, cellRefKey);
+      }
+      // Otherwise allow normal arrow navigation within text
+      return;
+    }
+    
+    if (e.key === 'ArrowDown') {
+      if (e.ctrlKey) {
+        // Ctrl+Down navigates to next cell
+        e.preventDefault();
+        onKeyDown(e, itemId, cellRefKey);
+      } else if (currentLineIndex === lines.length - 1) {
+        // At last line, navigate to next cell
+        e.preventDefault();
+        onKeyDown(e, itemId, cellRefKey);
+      }
+      // Otherwise allow normal arrow navigation within text
+      return;
+    }
+    
+    if (e.key === 'ArrowLeft') {
+      if (selectionStart === 0 && selectionEnd === 0) {
+        // At beginning of text, don't navigate (stay in current cell)
+        e.preventDefault();
+      }
+      return;
+    }
+    
+    if (e.key === 'ArrowRight') {
+      if (selectionStart === textValue.length && selectionEnd === textValue.length) {
+        // At end of text, don't navigate (stay in current cell)
+        e.preventDefault();
+      }
       return;
     }
     
