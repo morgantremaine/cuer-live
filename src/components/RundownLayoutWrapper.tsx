@@ -8,8 +8,8 @@ interface RundownLayoutWrapperProps {
 const RundownLayoutWrapper = ({ children }: RundownLayoutWrapperProps) => {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
-      <div className="max-w-none mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div className="max-w-none mx-auto h-full">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden h-full">
           {children}
         </div>
       </div>
