@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { calculateItemsWithTiming, calculateHeaderDuration } from '@/utils/rundownCalculations';
 import SharedCellRenderer from './SharedCellRenderer';
 
 interface SharedRundownTableProps {
@@ -116,7 +117,7 @@ const SharedRundownTable = ({
                             />
                           ) : column.key === 'duration' ? (
                             <div className="px-3 py-2 text-sm font-medium text-gray-600">
-                              ({item.calculatedDuration || '00:00'})
+                              ({calculateHeaderDuration(items, index)})
                             </div>
                           ) : (
                             <div className="px-3 py-2"></div>
