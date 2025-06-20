@@ -172,6 +172,9 @@ const RundownGrid = () => {
     console.log('🎯 === JUMP TO HERE DEBUG END ===');
   };
 
+  // Add debug logging for RundownGrid
+  console.log('🎯 RundownGrid: handleJumpToHere function created:', typeof handleJumpToHere);
+
   return (
     <RundownTable
       items={items}
