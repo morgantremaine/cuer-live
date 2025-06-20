@@ -130,6 +130,30 @@ const RundownIndexContent = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Create the handleJumpToHere function that connects to showcaller play
+  const handleJumpToHere = (segmentId: string) => {
+    console.log('🎯 IndexContent: handleJumpToHere called with segmentId:', segmentId);
+    console.log('🎯 IndexContent: play function exists:', !!play);
+    console.log('🎯 IndexContent: current segment ID before jump:', currentSegmentId);
+    console.log('🎯 IndexContent: is currently playing:', isPlaying);
+    
+    // Find the target segment to ensure it exists
+    const targetSegment = items.find(item => item.id === segmentId);
+    console.log('🎯 IndexContent: target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
+    
+    if (targetSegment && play) {
+      console.log('🎯 IndexContent: Calling play function with segment ID:', segmentId);
+      try {
+        play(segmentId);
+        console.log('🎯 IndexContent: Play function called successfully');
+      } catch (error) {
+        console.error('🎯 IndexContent: Error calling play function:', error);
+      }
+    } else {
+      console.error('🎯 IndexContent: Cannot jump - target segment not found or play function unavailable');
+    }
+  };
+
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
     const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
@@ -362,6 +386,7 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        onJumpToHere={handleJumpToHere}
       />
       
       <CuerChatButton rundownData={rundownData} />

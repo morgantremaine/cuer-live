@@ -53,6 +53,7 @@ interface RundownMainContentProps {
   totalDuration: string;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToHere?: (segmentId: string) => void;
 }
 
 const RundownMainContent = ({
@@ -102,7 +103,8 @@ const RundownMainContent = ({
   currentSegmentName,
   totalDuration,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  onJumpToHere
 }: RundownMainContentProps) => {
   return (
     <>
@@ -137,10 +139,11 @@ const RundownMainContent = ({
         onDrop={onDrop}
         onCopySelectedRows={onCopySelectedRows}
         onDeleteSelectedRows={onDeleteSelectedRows}
-        onPasteRows={onPasteRows}
-        onClearSelection={onClearSelection}
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
+        onPasteRows={onPasteRows || (() => {})}
+        onClearSelection={onClearSelection || (() => {})}
+        onAddRow={onAddRow || (() => {})}
+        onAddHeader={onAddHeader || (() => {})}
+        onJumpToHere={onJumpToHere}
       />
       
       {showColumnManager && (
