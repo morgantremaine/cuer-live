@@ -158,11 +158,12 @@ const CellRenderer = ({
   if (isCurrentSegmentName) {
     return (
       <div 
-        className="h-full w-full flex items-center px-3 py-1"
+        className="absolute inset-0 flex items-center px-3 py-1"
         style={{ 
           backgroundColor: showcallerBackgroundColor,
           color: showcallerTextColor,
-          minHeight: 'inherit'
+          minHeight: '100%',
+          height: '100%'
         }}
       >
         <TextAreaCell

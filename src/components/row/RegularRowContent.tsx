@@ -62,11 +62,13 @@ const RegularRowContent = ({
       {/* Dynamic columns */}
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
+        const isCurrentSegmentName = currentSegmentId === item.id && 
+          (column.key === 'segmentName' || column.key === 'name');
         
         return (
           <td
             key={column.id}
-            className="align-middle border border-border"
+            className={`align-middle border border-border ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
