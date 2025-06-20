@@ -151,9 +151,6 @@ const RegularRow = (props: RegularRowProps) => {
   const backgroundColor = backgroundColorOverride || 
     (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
 
-  // Check if this is the current segment for showcaller
-  const isCurrentSegment = currentSegmentId === item.id;
-
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -173,7 +170,7 @@ const RegularRow = (props: RegularRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`${isCurrentSegment ? '' : 'border-b'} border-border ${rowClass} transition-colors cursor-pointer`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
         style={{
           backgroundColor
         }}
