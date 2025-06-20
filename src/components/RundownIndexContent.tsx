@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -39,6 +38,7 @@ const RundownIndexContent = () => {
     pause,
     forward,
     backward,
+    reset,
     hasUnsavedChanges,
     isSaving,
     totalRuntime,
@@ -371,6 +371,7 @@ const RundownIndexContent = () => {
         onPause={pause}
         onForward={forward}
         onBackward={backward}
+        onReset={reset}
         handleAddColumn={handleAddColumnWrapper}
         handleReorderColumns={handleReorderColumnsWrapper}
         handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}
