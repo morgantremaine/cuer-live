@@ -1,159 +1,132 @@
 
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Edit, Check, X } from 'lucide-react';
-import HeaderControls from './header/HeaderControls';
-import { Column } from '@/hooks/useColumnsManager';
-import { RundownItem } from '@/hooks/useRundownItems';
+import React from 'react';
+import RundownHeader from './RundownHeader';
+import RundownToolbar from './RundownToolbar';
+import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownHeaderSectionProps {
+  currentTime: Date;
+  timezone: string;
+  onTimezoneChange: (timezone: string) => void;
+  totalRuntime: string;
+  onAddRow: (selectedRowId?: string | null) => void;
+  onAddHeader: (selectedRowId?: string | null) => void;
+  onShowColumnManager: () => void;
+  selectedCount: number;
+  hasClipboardData: boolean;
+  onCopySelectedRows: () => void;
+  onPasteRows: () => void;
+  onDeleteSelectedRows: () => void;
+  onClearSelection: () => void;
+  selectedRowId: string | null;
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
+  onPlay: (selectedSegmentId?: string) => void;
+  onPause: () => void;
+  onForward: () => void;
+  onBackward: () => void;
+  hasUnsavedChanges: boolean;
+  isSaving: boolean;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
-  totalRuntime: string;
-  currentTime: Date;
-  timezone: string;
-  onTimezoneChange: (timezone: string) => void;
   onOpenTeleprompter: () => void;
+  items?: any[];
+  visibleColumns?: any[];
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
-  hasUnsavedChanges: boolean;
-  isSaving: boolean;
-  showColumnManager: boolean;
-  setShowColumnManager: (show: boolean) => void;
-  columns: Column[];
-  handleAddColumn: (name: string) => void;
-  handleReorderColumns: (columns: Column[]) => void;
-  handleDeleteColumnWithCleanup: (columnId: string) => void;
-  handleRenameColumn: (columnId: string, newName: string) => void;
-  handleToggleColumnVisibility: (columnId: string) => void;
-  handleLoadLayout: (layoutColumns: Column[]) => void;
-  items: RundownItem[];
-  onUpdateItem: (id: string, field: string, value: string) => void;
+  rundownData?: CSVExportData;
 }
 
 const RundownHeaderSection = ({
+  currentTime,
+  timezone,
+  onTimezoneChange,
+  totalRuntime,
+  onAddRow,
+  onAddHeader,
+  onShowColumnManager,
+  selectedCount,
+  hasClipboardData,
+  onCopySelectedRows,
+  onPasteRows,
+  onDeleteSelectedRows,
+  onClearSelection,
+  selectedRowId,
+  isPlaying,
+  currentSegmentId,
+  timeRemaining,
+  onPlay,
+  onPause,
+  onForward,
+  onBackward,
+  hasUnsavedChanges,
+  isSaving,
   rundownTitle,
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
   rundownId,
-  totalRuntime,
-  currentTime,
-  timezone,
-  onTimezoneChange,
   onOpenTeleprompter,
+  items = [],
+  visibleColumns = [],
   onUndo,
   canUndo,
   lastAction,
   isConnected,
   isProcessingRealtimeUpdate,
-  hasUnsavedChanges,
-  isSaving,
-  showColumnManager,
-  setShowColumnManager,
-  columns,
-  handleAddColumn,
-  handleReorderColumns,
-  handleDeleteColumnWithCleanup,
-  handleRenameColumn,
-  handleToggleColumnVisibility,
-  handleLoadLayout,
-  items,
-  onUpdateItem
+  rundownData
 }: RundownHeaderSectionProps) => {
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [tempTitle, setTempTitle] = useState(rundownTitle);
-
-  const handleTitleDoubleClick = () => {
-    setEditingTitle(true);
-  };
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTempTitle(e.target.value);
-  };
-
-  const handleTitleSave = () => {
-    onTitleChange(tempTitle);
-    setEditingTitle(false);
-  };
-
-  const handleTitleCancel = () => {
-    setTempTitle(rundownTitle);
-    setEditingTitle(false);
-  };
-
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
-      {/* Top Section with Title and Toolbar */}
-      <div className="px-6 py-4 flex items-center justify-between">
-        {/* Title Section */}
-        <div className="flex items-center">
-          {editingTitle ? (
-            <div className="flex items-center space-x-2">
-              <Input
-                type="text"
-                value={tempTitle}
-                onChange={handleTitleChange}
-                className="text-lg font-semibold dark:bg-gray-700 dark:text-white"
-                onBlur={handleTitleCancel}
-                autoFocus
-              />
-              <Button variant="ghost" size="sm" onClick={handleTitleSave}>
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleTitleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <h1
-              className="text-lg font-semibold cursor-pointer dark:text-white"
-              onDoubleClick={handleTitleDoubleClick}
-              title="Double click to edit"
-            >
-              {rundownTitle}
-              <Button variant="ghost" size="icon" onClick={handleTitleDoubleClick}>
-                <Edit className="h-4 w-4 ml-2" />
-              </Button>
-            </h1>
-          )}
-        </div>
-
-        {/* Toolbar Section */}
-        <div className="flex items-center space-x-4">
-          <Button onClick={onOpenTeleprompter} variant="outline" size="sm">
-            Open Teleprompter
-          </Button>
-        </div>
-      </div>
-      
-      {/* Header Controls Section */}
-      <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Total Runtime: {totalRuntime}
-            </span>
-          </div>
-          <HeaderControls
-            currentTime={currentTime}
-            timezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-            onUndo={onUndo}
-            canUndo={canUndo}
-            lastAction={lastAction}
-            items={items}
-            onUpdateItem={onUpdateItem}
-          />
-        </div>
-      </div>
+    <div>
+      <RundownHeader
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        title={rundownTitle}
+        onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        items={items}
+        visibleColumns={visibleColumns}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+      />
+      <RundownToolbar
+        onAddRow={() => onAddRow(selectedRowId)}
+        onAddHeader={() => onAddHeader(selectedRowId)}
+        onShowColumnManager={onShowColumnManager}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
+        rundownTitle={rundownTitle}
+        rundownData={rundownData}
+      />
     </div>
   );
 };

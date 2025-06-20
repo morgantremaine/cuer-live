@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, LogOut, HelpCircle, Search } from 'lucide-react';
+import { User, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,9 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
-import SearchAndReplaceMenu from '../search/SearchAndReplaceMenu';
 import { useAuth } from '@/hooks/useAuth';
-import { RundownItem } from '@/hooks/useRundownItems';
 
 interface HeaderControlsProps {
   currentTime: Date;
@@ -22,9 +20,6 @@ interface HeaderControlsProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  // Search functionality props
-  items?: RundownItem[];
-  onUpdateItem?: (id: string, field: string, value: string) => void;
 }
 
 const HeaderControls = ({
@@ -33,12 +28,9 @@ const HeaderControls = ({
   onTimezoneChange,
   onUndo,
   canUndo,
-  lastAction,
-  items = [],
-  onUpdateItem = () => {}
+  lastAction
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showSearchMenu, setShowSearchMenu] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -68,19 +60,6 @@ const HeaderControls = ({
     onTimezoneChange(newTimezone);
   };
 
-  // Handle global keyboard shortcuts
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        setShowSearchMenu(true);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   return (
     <div className="flex items-center space-x-4">
       <span className="text-lg font-mono">{formatTime(currentTime, timezone)}</span>
@@ -88,27 +67,8 @@ const HeaderControls = ({
         currentTimezone={timezone}
         onTimezoneChange={handleTimezoneChange}
       />
-      
-      {/* Search Icon */}
-      <div className="relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowSearchMenu(!showSearchMenu)}
-          className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-          title="Search & Replace (Ctrl+F)"
-        >
-          <Search className="h-4 w-4" />
-        </Button>
-        
-        <SearchAndReplaceMenu
-          items={items}
-          onUpdateItem={onUpdateItem}
-          isOpen={showSearchMenu}
-          onClose={() => setShowSearchMenu(false)}
-        />
-      </div>
-
+      {/* Search functionality removed */}
+      {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
           <DropdownMenu>
