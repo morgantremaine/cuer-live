@@ -53,7 +53,7 @@ export const useSimplifiedRundownState = () => {
   } = useUserColumnPreferences(rundownId);
 
   // Auto-save functionality - now EXCLUDES columns from sync
-  const { isSaving, setUndoActive } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setShowcallerUpdate } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -496,6 +496,9 @@ export const useSimplifiedRundownState = () => {
     // Undo functionality - properly expose these
     undo,
     canUndo,
-    lastAction
+    lastAction,
+    
+    // Expose the showcaller update function for coordination
+    setShowcallerUpdate
   };
 };
