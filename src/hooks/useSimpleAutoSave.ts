@@ -18,8 +18,6 @@ export const useSimpleAutoSave = (
   const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
   const userTypingRef = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const showcallerActiveRef = useRef(false);
-  const showcallerTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSaveRef = useRef(false);
 
   // Function to coordinate with undo operations
@@ -42,27 +40,6 @@ export const useSimpleAutoSave = (
     }
   }, []);
 
-  // Enhanced showcaller blocking - completely isolates showcaller operations
-  const setShowcallerUpdate = useCallback((isUpdate: boolean) => {
-    showcallerActiveRef.current = isUpdate;
-    
-    if (isUpdate) {
-      console.log('📺 Showcaller operation active - completely blocking autosave');
-      
-      if (showcallerTimeoutRef.current) {
-        clearTimeout(showcallerTimeoutRef.current);
-      }
-      
-      // Extended timeout to ensure showcaller operations complete fully
-      showcallerTimeoutRef.current = setTimeout(() => {
-        showcallerActiveRef.current = false;
-        console.log('📺 Showcaller operation completed - autosave can resume');
-      }, 10000); // 10 seconds to handle complex showcaller sequences
-    } else {
-      console.log('📺 Showcaller operation cleared');
-    }
-  }, []);
-
   // Function to set the own update tracker from realtime hook
   const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
     trackOwnUpdateRef.current = tracker;
@@ -77,40 +54,28 @@ export const useSimpleAutoSave = (
     }
   }, []);
 
-  // Create content signature that ONLY includes actual content (NO showcaller fields)
+  // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
-    // Immediately return last saved if showcaller is active
-    if (showcallerActiveRef.current) {
-      console.log('🚫 Showcaller active - using cached signature to prevent saves');
-      return lastSavedRef.current;
-    }
-
-    // Create signature with ONLY content fields - completely exclude showcaller data
+    // Create signature with ONLY content fields - completely exclude ALL showcaller data
     const cleanItems = state.items?.map(item => {
-      // Explicitly exclude ALL showcaller-related fields
-      const {
-        status,           // Showcaller field
-        elapsedTime,      // Showcaller field  
-        ...contentItem
-      } = item;
-      
       return {
-        id: contentItem.id,
-        type: contentItem.type,
-        rowNumber: contentItem.rowNumber,
-        name: contentItem.name,
-        startTime: contentItem.startTime,
-        duration: contentItem.duration,
-        endTime: contentItem.endTime,
-        talent: contentItem.talent,
-        script: contentItem.script,
-        gfx: contentItem.gfx,
-        video: contentItem.video,
-        images: contentItem.images,
-        notes: contentItem.notes,
-        color: contentItem.color,
-        isFloating: contentItem.isFloating,
-        customFields: contentItem.customFields
+        id: item.id,
+        type: item.type,
+        rowNumber: item.rowNumber,
+        name: item.name,
+        startTime: item.startTime,
+        duration: item.duration,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        images: item.images,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        customFields: item.customFields
+        // EXPLICITLY EXCLUDED: status, elapsedTime, and any other showcaller fields
       };
     }) || [];
 
@@ -125,17 +90,11 @@ export const useSimpleAutoSave = (
   }, [state.items, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
-    // Enhanced blocking conditions - showcaller operations completely prevent saves
+    // Simple blocking conditions - no showcaller interference possible
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
-        userTypingRef.current || 
-        showcallerActiveRef.current ||
+        userTypingRef.current ||
         pendingSaveRef.current) {
-      
-      if (showcallerActiveRef.current) {
-        console.log('🚫 Autosave completely blocked - showcaller operation in progress');
-      }
-      
       return;
     }
 
@@ -151,9 +110,9 @@ export const useSimpleAutoSave = (
     // Rate limiting
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 5000; // Increased interval
+    const minSaveInterval = 3000;
     
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 10000 : 5000; // Longer debounce
+    const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
 
     console.log('💾 Scheduling autosave in', debounceTime, 'ms');
 
@@ -162,13 +121,12 @@ export const useSimpleAutoSave = (
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      // Final check for showcaller activity
+      // Final check before saving
       if (isSaving || 
           undoActiveRef.current || 
-          userTypingRef.current || 
-          showcallerActiveRef.current ||
+          userTypingRef.current ||
           pendingSaveRef.current) {
-        console.log('🚫 Save cancelled - showcaller or other blocking condition active');
+        console.log('🚫 Save cancelled - blocking condition active');
         return;
       }
       
@@ -225,7 +183,7 @@ export const useSimpleAutoSave = (
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
         } else {
-          // Save only main content - showcaller state is handled separately
+          // Save only main content - showcaller state handled completely separately
           const { error } = await supabase
             .from('rundowns')
             .update({
@@ -266,9 +224,6 @@ export const useSimpleAutoSave = (
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      if (showcallerTimeoutRef.current) {
-        clearTimeout(showcallerTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -276,7 +231,6 @@ export const useSimpleAutoSave = (
     isSaving,
     setUndoActive,
     setTrackOwnUpdate,
-    setUserTyping,
-    setShowcallerUpdate
+    setUserTyping
   };
 };

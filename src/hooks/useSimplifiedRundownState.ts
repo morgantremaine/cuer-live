@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
-import { usePlaybackControls } from './usePlaybackControls';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useRealtimeRundown } from './useRealtimeRundown';
 import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
@@ -52,8 +51,8 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
 
-  // Auto-save functionality - now EXCLUDES columns from sync
-  const { isSaving, setUndoActive, setShowcallerUpdate } = useSimpleAutoSave(
+  // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
+  const { isSaving, setUndoActive } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -62,37 +61,32 @@ export const useSimplifiedRundownState = () => {
     actions.markSaved
   );
 
-  // Standalone undo system with proper change trigger - unchanged
+  // Standalone undo system - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
-    onUndo: (items, _, title) => { // Note: columns parameter ignored since they're user-specific
-      // Set undo active to prevent auto-save interference
+    onUndo: (items, _, title) => {
       setUndoActive(true);
-      
-      // Apply undo state using existing actions (items and title only)
       actions.setItems(items);
       actions.setTitle(title);
       
-      // Mark as changed and trigger auto-save after undo
       setTimeout(() => {
-        // Force a change to trigger auto-save
-        actions.markSaved(); // Clear the saved state first
-        actions.setItems([...items]); // Trigger change detection
+        actions.markSaved();
+        actions.setItems([...items]);
         setUndoActive(false);
       }, 100);
     },
     setUndoActive
   });
 
-  // Realtime rundown updates - now EXCLUDES columns from sync - FIXED PROPERTY NAME
+  // Realtime rundown updates - EXCLUDES showcaller completely
   const realtimeRundown = useRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
-        // Load state WITHOUT columns (they're user-specific)
+        // Load state WITHOUT any showcaller data
         actions.loadState({
           items: updatedRundown.items || [],
-          columns: [], // Don't sync columns
+          columns: [],
           title: updatedRundown.title || 'Untitled Rundown',
           startTime: updatedRundown.start_time || '09:00:00',
           timezone: updatedRundown.timezone || 'America/New_York'
@@ -117,18 +111,16 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeRundown.isConnected || stableRealtime.isConnected);
   }, [realtimeRundown.isConnected, stableRealtime.isConnected]);
 
-  // Enhanced updateItem function with better debugging
+  // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // Check if this is a typing field - CRITICAL: Added 'images' to the typing fields
+    // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
     
     if (isTypingField) {
       const sessionKey = `${id}-${field}`;
       
-      // If this is the start of a new typing session, save undo state
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        // Save undo with content only (no columns)
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
           fieldKey: sessionKey,
@@ -136,7 +128,6 @@ export const useSimplifiedRundownState = () => {
         };
       }
       
-      // Clear existing timeout and set new one to end typing session
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -145,7 +136,6 @@ export const useSimplifiedRundownState = () => {
         typingSessionRef.current = null;
       }, 1000);
     } else if (field === 'duration') {
-      // For duration changes, save immediately since they're usually intentional
       saveUndoState(state.items, [], state.title, 'Edit duration');
     }
     
@@ -162,31 +152,12 @@ export const useSimplifiedRundownState = () => {
         });
       }
     } else {
-      // Map field names to proper item properties
       let updateField = field;
       if (field === 'segmentName') updateField = 'name';
       
-      // CRITICAL: Ensure the update triggers the state change
       actions.updateItem(id, { [updateField]: value });
     }
-  }, [actions.updateItem, state.items, state.title, state.hasUnsavedChanges, saveUndoState]);
-
-  // Initialize playbook controls with showcaller functionality - unchanged
-  const {
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
-    isController
-  } = usePlaybackControls(
-    state.items,
-    enhancedUpdateItem,
-    rundownId,
-    setShowcallerActivity
-  );
+  }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
   // Update current time every second
   useEffect(() => {
@@ -219,7 +190,7 @@ export const useSimplifiedRundownState = () => {
           // Load content only (columns loaded separately by useUserColumnPreferences)
           actions.loadState({
             items: itemsToLoad,
-            columns: [], // Don't load columns from rundown
+            columns: [],
             title: data.title || 'Untitled Rundown',
             startTime: data.start_time || '09:00:00',
             timezone: data.timezone || 'America/New_York'
@@ -229,7 +200,7 @@ export const useSimplifiedRundownState = () => {
         console.error('Failed to load rundown:', error);
         actions.loadState({
           items: createDefaultRundownItems(),
-          columns: [], // Don't load columns from rundown
+          columns: [],
           title: 'Untitled Rundown',
           startTime: '09:00:00',
           timezone: 'America/New_York'
@@ -247,7 +218,7 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId && !isInitialized) {
       actions.loadState({
         items: createDefaultRundownItems(),
-        columns: [], // Don't load columns from rundown
+        columns: [],
         title: 'Untitled Rundown',
         startTime: '09:00:00',
         timezone: 'America/New_York'
@@ -365,7 +336,6 @@ export const useSimplifiedRundownState = () => {
       customFields: {}
     };
 
-    // Insert at specific index
     const newItems = [...state.items];
     const actualIndex = Math.min(insertIndex, newItems.length);
     newItems.splice(actualIndex, 0, newItem);
@@ -397,7 +367,6 @@ export const useSimplifiedRundownState = () => {
       customFields: {}
     };
 
-    // Insert at specific index
     const newItems = [...state.items];
     const actualIndex = Math.min(insertIndex, newItems.length);
     newItems.splice(actualIndex, 0, newHeader);
@@ -418,14 +387,12 @@ export const useSimplifiedRundownState = () => {
     // Core state with calculated values
     items: calculatedItems,
     setItems: actions.setItems,
-    columns, // Now from user preferences
-    setColumns, // Now saves to user preferences
+    columns,
+    setColumns,
     visibleColumns,
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
     timezone: state.timezone,
-    currentSegmentId,
-    isPlaying,
     
     selectedRowId,
     handleRowSelection,
@@ -441,22 +408,6 @@ export const useSimplifiedRundownState = () => {
     // Realtime connection status
     isConnected,
     isProcessingRealtimeUpdate,
-    
-    // Playback controls - properly expose these functions with correct signatures
-    play: (selectedSegmentId?: string) => {
-      play(selectedSegmentId);
-    },
-    pause: () => {
-      pause();
-    },
-    forward: () => {
-      forward();
-    },
-    backward: () => {
-      backward();
-    },
-    isController,
-    timeRemaining,
     
     // Calculations
     totalRuntime,
@@ -496,9 +447,6 @@ export const useSimplifiedRundownState = () => {
     // Undo functionality - properly expose these
     undo,
     canUndo,
-    lastAction,
-    
-    // Expose the showcaller update function for coordination
-    setShowcallerUpdate
+    lastAction
   };
 };

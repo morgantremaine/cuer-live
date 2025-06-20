@@ -2,7 +2,8 @@
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
-import { useShowcallerStateManager } from './useShowcallerStateManager';
+import { useShowcallerVisualState } from './useShowcallerVisualState';
+import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
 
@@ -11,19 +12,21 @@ export const useRundownStateCoordination = () => {
   const { user } = useAuth();
   const userId = user?.id;
 
-  // Single source of truth for all rundown state
+  // Single source of truth for all rundown state (NO showcaller interference)
   const simplifiedState = useSimplifiedRundownState();
 
-  // Get the autosave showcaller update function
-  const setShowcallerUpdate = simplifiedState.setShowcallerUpdate || (() => {});
-
-  // Dedicated showcaller state management (isolated from main autosave)
-  const showcallerManager = useShowcallerStateManager({
+  // Completely separate showcaller visual state management
+  const showcallerVisual = useShowcallerVisualState({
     items: simplifiedState.items,
-    setItems: simplifiedState.setItems,
     rundownId: simplifiedState.rundownId,
-    userId: userId,
-    setShowcallerUpdate: setShowcallerUpdate // Connect to autosave blocking
+    userId: userId
+  });
+
+  // Separate realtime sync for showcaller visual state only  
+  const showcallerSync = useShowcallerRealtimeSync({
+    rundownId: simplifiedState.rundownId,
+    onExternalVisualStateReceived: showcallerVisual.applyExternalVisualState,
+    enabled: !!simplifiedState.rundownId
   });
 
   // Helper function to calculate end time
@@ -78,7 +81,7 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // UI interactions that depend on the core state
+  // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
     simplifiedState.items,
     (updater) => {
@@ -122,7 +125,7 @@ export const useRundownStateCoordination = () => {
 
   return {
     coreState: {
-      // Core data
+      // Core data (NO showcaller interference)
       items: simplifiedState.items,
       columns: simplifiedState.columns,
       visibleColumns: simplifiedState.visibleColumns,
@@ -132,19 +135,22 @@ export const useRundownStateCoordination = () => {
       currentTime: simplifiedState.currentTime,
       rundownId: simplifiedState.rundownId,
       
-      // State flags
+      // State flags (NO showcaller interference)
       isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
-      isConnected: simplifiedState.isConnected,
+      isConnected: simplifiedState.isConnected || showcallerSync.isConnected,
       isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate,
       
-      // Showcaller state from dedicated manager
-      currentSegmentId: showcallerManager.currentSegmentId,
-      isPlaying: showcallerManager.isPlaying,
-      timeRemaining: showcallerManager.timeRemaining,
-      isController: showcallerManager.isController,
-      showcallerActivity: false, // No longer needed with isolated system
+      // Showcaller visual state from completely separate system
+      currentSegmentId: showcallerVisual.currentSegmentId,
+      isPlaying: showcallerVisual.isPlaying,
+      timeRemaining: showcallerVisual.timeRemaining,
+      isController: showcallerVisual.isController,
+      showcallerActivity: false, // No longer interferes with main state
+      
+      // Visual status overlay function (doesn't touch main state)
+      getItemVisualStatus: showcallerVisual.getItemVisualStatus,
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -160,7 +166,7 @@ export const useRundownStateCoordination = () => {
         return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
       },
       
-      // Core actions
+      // Core actions (NO showcaller interference)
       updateItem: simplifiedState.updateItem,
       deleteRow: simplifiedState.deleteRow,
       toggleFloatRow: simplifiedState.toggleFloat,
@@ -179,11 +185,11 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Showcaller controls from dedicated manager
-      play: showcallerManager.play,
-      pause: showcallerManager.pause,
-      forward: showcallerManager.forward,
-      backward: showcallerManager.backward,
+      // Showcaller visual controls (completely separate from main state)
+      play: showcallerVisual.play,
+      pause: showcallerVisual.pause,
+      forward: showcallerVisual.forward,
+      backward: showcallerVisual.backward,
       
       // Undo functionality
       undo: simplifiedState.undo,
