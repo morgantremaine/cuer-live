@@ -440,6 +440,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_orphaned_memberships: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      delete_user_completely: {
+        Args: { user_uuid: string }
+        Returns: undefined
+      }
       get_user_role_in_team: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -42,18 +43,18 @@ export const useTeam = () => {
   const [userRole, setUserRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  // Cleanup accepted invitations using the new database function
-  const cleanupAcceptedInvitations = async () => {
+  // Enhanced cleanup function that runs all cleanup operations
+  const runFullCleanup = async () => {
     try {
-      console.log('Running cleanup for accepted invitations...');
-      const { error } = await supabase.rpc('cleanup_accepted_invitations');
-      if (error) {
-        console.error('Error running cleanup:', error);
-      } else {
-        console.log('Cleanup completed successfully');
-      }
+      console.log('Running full cleanup operations...');
+      
+      // Run all cleanup functions
+      await supabase.rpc('cleanup_orphaned_memberships');
+      await supabase.rpc('cleanup_accepted_invitations');
+      
+      console.log('Full cleanup completed successfully');
     } catch (error) {
-      console.error('Error in cleanup function:', error);
+      console.error('Error during full cleanup:', error);
     }
   };
 
@@ -66,6 +67,9 @@ export const useTeam = () => {
 
     try {
       console.log('Loading team data for user:', user.id);
+      
+      // Run cleanup first to ensure clean state
+      await runFullCleanup();
       
       // Check for pending invitation token first
       const pendingToken = localStorage.getItem('pendingInvitationToken');
@@ -87,8 +91,7 @@ export const useTeam = () => {
           if (!acceptResult.error) {
             console.log('Invitation accepted successfully, reloading team data');
             localStorage.removeItem('pendingInvitationToken');
-            // Run cleanup to ensure invitation is marked as accepted
-            await cleanupAcceptedInvitations();
+            await runFullCleanup();
             // Recursively call loadTeamData to load the correct team
             await loadTeamData();
             return;
@@ -274,8 +277,8 @@ export const useTeam = () => {
     try {
       console.log('Loading pending invitations for team:', teamId);
       
-      // Run cleanup first to ensure we have accurate data
-      await cleanupAcceptedInvitations();
+      // Run cleanup first to ensure accurate data
+      await runFullCleanup();
       
       const { data, error } = await supabase
         .from('team_invitations')
@@ -305,6 +308,9 @@ export const useTeam = () => {
     try {
       console.log('Inviting team member:', email);
       
+      // First run cleanup to ensure clean state
+      await runFullCleanup();
+      
       // Check if user already exists in team by checking profiles
       const { data: existingMember } = await supabase
         .from('team_members')
@@ -327,6 +333,20 @@ export const useTeam = () => {
         if (memberEmails?.includes(email)) {
           return { error: 'User is already a member of this team' };
         }
+      }
+
+      // Check for existing pending invitations for this email
+      const { data: existingInvitation } = await supabase
+        .from('team_invitations')
+        .select('id')
+        .eq('team_id', team.id)
+        .eq('email', email)
+        .eq('accepted', false)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (existingInvitation) {
+        return { error: 'An invitation is already pending for this email address' };
       }
 
       // Generate invitation token
@@ -357,7 +377,7 @@ export const useTeam = () => {
           email,
           teamName: team.name,
           inviterName: user.user_metadata?.full_name || user.email,
-          token: token // Fix: pass token instead of invitationToken
+          token: token
         }
       });
 
@@ -443,7 +463,7 @@ export const useTeam = () => {
         return { error: 'Failed to join team' };
       }
 
-      // Try to mark invitation as accepted, but don't fail if this doesn't work
+      // Mark invitation as accepted
       try {
         const { error: updateError } = await supabase
           .from('team_invitations')
@@ -458,7 +478,7 @@ export const useTeam = () => {
       }
 
       // Run cleanup to ensure invitation is marked as accepted
-      await cleanupAcceptedInvitations();
+      await runFullCleanup();
 
       console.log('Invitation accepted successfully');
       return { error: null };
@@ -474,6 +494,15 @@ export const useTeam = () => {
     }
 
     try {
+      console.log('Removing team member:', memberId);
+      
+      // Get member details before deletion for cleanup
+      const { data: memberData } = await supabase
+        .from('team_members')
+        .select('user_id, team_id')
+        .eq('id', memberId)
+        .single();
+
       const { error } = await supabase
         .from('team_members')
         .delete()
@@ -484,7 +513,25 @@ export const useTeam = () => {
         return { error: 'Failed to remove team member' };
       }
 
-      // Reload team members
+      // If member was successfully removed, also revoke any pending invitations for that user
+      if (memberData) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', memberData.user_id)
+          .single();
+
+        if (profileData?.email) {
+          await supabase
+            .from('team_invitations')
+            .delete()
+            .eq('team_id', memberData.team_id)
+            .eq('email', profileData.email);
+        }
+      }
+
+      // Run cleanup and reload team members
+      await runFullCleanup();
       await loadTeamMembers(team.id);
 
       return { error: null };
@@ -496,6 +543,8 @@ export const useTeam = () => {
 
   const revokeInvitation = async (invitationId: string) => {
     try {
+      console.log('Revoking invitation:', invitationId);
+      
       const { error } = await supabase
         .from('team_invitations')
         .delete()

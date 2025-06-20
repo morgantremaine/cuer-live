@@ -42,9 +42,9 @@ export const useInvitationHandler = () => {
 
       console.log('Processing pending invitation for user:', user.email);
 
-      // Let useTeam handle the invitation acceptance via loadTeamData
-      // This ensures proper team loading and prevents duplicate team creation
       try {
+        // Let useTeam handle the invitation acceptance via loadTeamData
+        // This ensures proper team loading and prevents duplicate team creation
         await loadTeamData();
         
         // Check if token was cleared (meaning invitation was processed)
@@ -58,11 +58,44 @@ export const useInvitationHandler = () => {
             title: 'Success',
             description: 'Successfully joined the team!',
           });
+          
+          // Navigate to dashboard after successful join
           navigate('/dashboard');
+        } else {
+          // Token is still there, which might mean the invitation failed or is invalid
+          console.log('Invitation token still present, checking validity...');
+          
+          // Try to validate the token - if it's invalid, clear it
+          try {
+            const { validateInvitationToken } = await import('@/utils/invitationUtils');
+            const isValid = await validateInvitationToken(pendingToken);
+            
+            if (!isValid) {
+              console.log('Invalid invitation token detected, clearing it');
+              localStorage.removeItem('pendingInvitationToken');
+              
+              toast({
+                title: 'Invitation Expired',
+                description: 'The invitation link has expired. Please request a new invitation.',
+                variant: 'destructive',
+              });
+            }
+          } catch (error) {
+            console.error('Error validating invitation token:', error);
+            localStorage.removeItem('pendingInvitationToken');
+          }
         }
       } catch (error) {
         console.error('Error processing pending invitation:', error);
+        
+        // Clear the token if there's an error to prevent infinite loops
         localStorage.removeItem('pendingInvitationToken');
+        
+        toast({
+          title: 'Error',
+          description: 'Failed to process team invitation. Please try again or request a new invitation.',
+          variant: 'destructive',
+        });
       }
     };
 

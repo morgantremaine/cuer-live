@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener FIRST
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('Auth state changed:', _event, session?.user?.email || 'no user');
       setUser(session?.user ?? null)
       setLoading(false)
@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Only clean up invalid tokens when there's actually a user session
       // This prevents clearing tokens during initial auth state determination
       if (session?.user) {
+        // Use a small delay to prevent interference with auth flow
         setTimeout(() => clearInvalidTokens(), 100);
       }
     })
