@@ -20,16 +20,21 @@ export const useChangeTracking = (
   const isApplyingRemoteUpdateRef = useRef(false);
   const realtimeCooldownRef = useRef<NodeJS.Timeout | null>(null);
   const isInRealtimeCooldown = useRef(false);
-  const lastProcessingFlagClearTime = useRef<number>(0);
   const userActivelyTypingRef = useRef(false);
-  const lastUserInteractionRef = useRef<number>(0);
-  const showcallerUpdateRef = useRef(false);
+  const showcallerActiveRef = useRef(false);
 
-  // Enhanced signature creation that excludes showcaller-only changes
+  // Create content signature that COMPLETELY excludes showcaller fields
   const createContentSignature = useCallback(() => {
-    // Only include actual content, not showcaller state - be very explicit about what we include
+    // If showcaller is active, don't create new signatures
+    if (showcallerActiveRef.current) {
+      console.log('🚫 Showcaller active - using cached signature to prevent change detection');
+      return lastSavedDataRef.current;
+    }
+
+    // Create signature with ONLY content fields - NO showcaller data
     const signature = JSON.stringify({
       items: (items || []).map(item => ({
+        // Core content fields only
         id: item.id,
         type: item.type,
         name: item.name,
@@ -40,16 +45,15 @@ export const useChangeTracking = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
-        images: item.images, // Critical: Make sure images field is included
+        images: item.images,
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
         isFloated: item.isFloated,
         customFields: item.customFields,
         segmentName: item.segmentName,
-        elapsedTime: item.elapsedTime,
         rowNumber: item.rowNumber
-        // Explicitly exclude: status, currentSegmentId and any other showcaller-specific fields
+        // EXPLICITLY EXCLUDED: status, elapsedTime, currentSegmentId
       })),
       title: rundownTitle || '',
       columns: columns || [],
@@ -57,7 +61,7 @@ export const useChangeTracking = (
       startTime: startTime || ''
     });
     
-    console.log('🔍 Created content signature, items count:', items?.length || 0);
+    console.log('🔍 Created content signature (showcaller-free), items count:', items?.length || 0);
     return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
 
@@ -65,34 +69,31 @@ export const useChangeTracking = (
   const setUserTyping = useCallback((typing: boolean) => {
     console.log('⌨️ User typing state changed:', typing);
     userActivelyTypingRef.current = typing;
-    if (typing) {
-      lastUserInteractionRef.current = Date.now();
-    }
   }, []);
 
-  // Track showcaller updates to prevent them from triggering change detection
+  // Track showcaller activity - prevents ALL change detection during showcaller operations
   const setShowcallerUpdate = useCallback((isShowcallerUpdate: boolean) => {
-    showcallerUpdateRef.current = isShowcallerUpdate;
+    showcallerActiveRef.current = isShowcallerUpdate;
     if (isShowcallerUpdate) {
-      console.log('📺 Marking as showcaller update - excluding from change detection');
+      console.log('📺 Showcaller active - completely blocking change detection');
+    } else {
+      console.log('📺 Showcaller cleared - change detection can resume');
     }
   }, []);
 
-  // Initialize tracking after a shorter delay
+  // Initialize tracking
   useEffect(() => {
     if (!isInitialized) {
-      // Clear any existing timeout
       if (initializationTimeoutRef.current) {
         clearTimeout(initializationTimeoutRef.current);
       }
 
-      // Shorter timeout for faster initialization
       initializationTimeoutRef.current = setTimeout(() => {
         const currentSignature = createContentSignature();
         lastSavedDataRef.current = currentSignature;
         setIsInitialized(true);
-        console.log('🔄 Change tracking initialized with signature length:', currentSignature.length);
-      }, 500); // Reduced from 1000ms
+        console.log('🔄 Change tracking initialized (showcaller-aware) with signature length:', currentSignature.length);
+      }, 500);
     }
 
     return () => {
@@ -102,80 +103,33 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createContentSignature]);
 
-  // Simplified change detection with enhanced logging for images
+  // Change detection that completely ignores showcaller operations
   useEffect(() => {
-    // Only essential protection checks
+    // Essential blocking conditions including showcaller
     if (!isInitialized || 
         isLoading || 
         isProcessingRealtimeUpdate || 
-        isApplyingRemoteUpdateRef.current) {
-      console.log('🚫 Skipping change detection due to flags:', {
-        initialized: isInitialized,
-        loading: isLoading,
-        realtime: isProcessingRealtimeUpdate,
-        applying: isApplyingRemoteUpdateRef.current
-      });
+        isApplyingRemoteUpdateRef.current ||
+        showcallerActiveRef.current) {
+      
+      if (showcallerActiveRef.current) {
+        console.log('🚫 Change detection blocked - showcaller operation active');
+      }
       return;
     }
 
-    // Create new signature
+    // Create new signature (will return cached if showcaller active)
     const currentSignature = createContentSignature();
     
-    // Only trigger if signature actually changed
-    if (lastSavedDataRef.current !== currentSignature) {
-      console.log('📝 Content change detected, marking as changed');
+    // Only trigger if signature actually changed AND showcaller is not active
+    if (lastSavedDataRef.current !== currentSignature && !showcallerActiveRef.current) {
+      console.log('📝 Content change detected (not showcaller), marking as changed');
       console.log('📝 Previous signature length:', lastSavedDataRef.current.length);
       console.log('📝 Current signature length:', currentSignature.length);
       
-      // Enhanced debugging for image changes
-      if (lastSavedDataRef.current && currentSignature) {
-        try {
-          const prevObj = JSON.parse(lastSavedDataRef.current);
-          const currObj = JSON.parse(currentSignature);
-          
-          // Check specifically for image field changes
-          const imageChanges = currObj.items?.filter((item: any, index: number) => {
-            const prevItem = prevObj.items?.[index];
-            if (!prevItem) return true; // New item
-            
-            const imageChanged = prevItem.images !== item.images;
-            if (imageChanged) {
-              console.log('🖼️ Image change detected for item:', item.id, 'from:', prevItem.images, 'to:', item.images);
-            }
-            return imageChanged;
-          });
-          
-          if (imageChanges?.length > 0) {
-            console.log('🖼️ Total image changes detected:', imageChanges.length, 'items');
-          }
-          
-          // Also check for any item-level changes
-          const changedItems = currObj.items?.filter((item: any, index: number) => {
-            const prevItem = prevObj.items?.[index];
-            if (!prevItem) return true; // New item
-            
-            const itemSignature = JSON.stringify(item);
-            const prevItemSignature = JSON.stringify(prevItem);
-            const hasChanges = itemSignature !== prevItemSignature;
-            
-            if (hasChanges) {
-              console.log('📝 Item changes detected for:', item.id, 'item index:', index);
-            }
-            
-            return hasChanges;
-          });
-          
-          console.log('📝 Items count changed:', prevObj.items?.length, '->', currObj.items?.length);
-          console.log('📝 Changed items count:', changedItems?.length || 0);
-          
-        } catch (e) {
-          console.log('📝 Could not parse signatures for comparison:', e);
-        }
-      }
-      
       setHasUnsavedChanges(true);
     } else {
-      console.log('📝 No signature change detected - signatures match');
+      console.log('📝 No content change detected (showcaller-aware check)');
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignature, isProcessingRealtimeUpdate]);
 
@@ -186,6 +140,7 @@ export const useChangeTracking = (
     savedTimezone?: string, 
     savedStartTime?: string
   ) => {
+    // Create saved signature excluding showcaller fields
     const savedSignature = JSON.stringify({
       items: (savedItems || []).map(item => ({
         id: item.id,
@@ -198,14 +153,13 @@ export const useChangeTracking = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
-        images: item.images, // Critical: Make sure images field is included
+        images: item.images,
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
         isFloated: item.isFloated,
         customFields: item.customFields,
         segmentName: item.segmentName,
-        elapsedTime: item.elapsedTime,
         rowNumber: item.rowNumber
       })),
       title: savedTitle || '',
@@ -216,20 +170,21 @@ export const useChangeTracking = (
     
     lastSavedDataRef.current = savedSignature;
     setHasUnsavedChanges(false);
-    console.log('✅ Marked as saved, signature length:', savedSignature.length);
+    console.log('✅ Marked as saved (showcaller-aware), signature length:', savedSignature.length);
   }, []);
 
   const markAsChanged = useCallback(() => {
     if (isInitialized && 
         !isLoading && 
         !isProcessingRealtimeUpdate && 
-        !isApplyingRemoteUpdateRef.current) {
-      console.log('📝 Manually marking as changed');
+        !isApplyingRemoteUpdateRef.current &&
+        !showcallerActiveRef.current) {
+      console.log('📝 Manually marking as changed (not showcaller)');
       setHasUnsavedChanges(true);
     }
   }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
 
-  // Simplified signature update 
+  // Update saved signature
   const updateSavedSignature = useCallback((
     newItems: RundownItem[], 
     newTitle: string, 
@@ -249,14 +204,13 @@ export const useChangeTracking = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
-        images: item.images, // Critical: Make sure images field is included
+        images: item.images,
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
         isFloated: item.isFloated,
         customFields: item.customFields,
         segmentName: item.segmentName,
-        elapsedTime: item.elapsedTime,
         rowNumber: item.rowNumber
       })),
       title: newTitle || '',
@@ -267,38 +221,33 @@ export const useChangeTracking = (
     
     lastSavedDataRef.current = newSignature;
     setHasUnsavedChanges(false);
-    console.log('🔄 Updated saved signature from realtime, length:', newSignature.length);
+    console.log('🔄 Updated saved signature from realtime (showcaller-aware), length:', newSignature.length);
 
-    // Short cooldown period to prevent immediate re-triggers
+    // Brief cooldown
     isInRealtimeCooldown.current = true;
     if (realtimeCooldownRef.current) {
       clearTimeout(realtimeCooldownRef.current);
     }
     realtimeCooldownRef.current = setTimeout(() => {
       isInRealtimeCooldown.current = false;
-      console.log('❄️ Realtime cooldown ended');
-    }, 200); // Very short cooldown
+    }, 200);
   }, []);
 
-  // Method to set the applying remote update flag
   const setApplyingRemoteUpdate = useCallback((applying: boolean) => {
     isApplyingRemoteUpdateRef.current = applying;
 
     if (!applying) {
-      // When finishing remote update, brief cooldown
-      lastProcessingFlagClearTime.current = Date.now();
       isInRealtimeCooldown.current = true;
       if (realtimeCooldownRef.current) {
         clearTimeout(realtimeCooldownRef.current);
       }
       realtimeCooldownRef.current = setTimeout(() => {
         isInRealtimeCooldown.current = false;
-        console.log('❄️ Brief realtime cooldown ended after remote update');
-      }, 200); // Very short cooldown
+      }, 200);
     }
   }, []);
 
-  // Cleanup on unmount
+  // Cleanup
   useEffect(() => {
     return () => {
       if (realtimeCooldownRef.current) {

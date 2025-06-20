@@ -2,11 +2,21 @@
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
+import { useShowcallerStateManager } from './useShowcallerStateManager';
 import { UnifiedRundownState } from '@/types/interfaces';
 
 export const useRundownStateCoordination = () => {
   // Single source of truth for all rundown state
   const simplifiedState = useSimplifiedRundownState();
+
+  // Dedicated showcaller state management (isolated from main autosave)
+  const showcallerManager = useShowcallerStateManager({
+    items: simplifiedState.items,
+    setItems: simplifiedState.setItems,
+    rundownId: simplifiedState.rundownId,
+    userId: simplifiedState.userId,
+    setShowcallerUpdate: simplifiedState.setShowcallerUpdate
+  });
 
   // Helper function to calculate end time
   const calculateEndTime = (startTime: string, duration: string) => {
@@ -30,14 +40,12 @@ export const useRundownStateCoordination = () => {
 
   // Add the missing addMultipleRows function
   const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
-    // Convert to proper RundownItem format and add them
     const itemsToAdd = newItems.map(item => ({
       ...item,
       id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
     }));
     
-    // Use setItems with updater function
     simplifiedState.setItems(itemsToAdd);
   };
 
@@ -47,7 +55,6 @@ export const useRundownStateCoordination = () => {
     if (simplifiedState.addRowAtIndex) {
       simplifiedState.addRowAtIndex(insertIndex);
     } else {
-      // Fallback to regular addRow if addRowAtIndex is not available
       console.log('⚠️ addRowAtIndex not available, using fallback addRow');
       simplifiedState.addRow();
     }
@@ -58,7 +65,6 @@ export const useRundownStateCoordination = () => {
     if (simplifiedState.addHeaderAtIndex) {
       simplifiedState.addHeaderAtIndex(insertIndex);
     } else {
-      // Fallback to regular addHeader if addHeaderAtIndex is not available
       console.log('⚠️ addHeaderAtIndex not available, using fallback addHeader');
       simplifiedState.addHeader();
     }
@@ -68,7 +74,6 @@ export const useRundownStateCoordination = () => {
   const interactions = useRundownGridInteractions(
     simplifiedState.items,
     (updater) => {
-      // Handle both direct items and updater functions
       if (typeof updater === 'function') {
         simplifiedState.setItems(updater(simplifiedState.items));
       } else {
@@ -83,7 +88,6 @@ export const useRundownStateCoordination = () => {
     simplifiedState.deleteMultipleItems,
     addMultipleRows,
     (columnId: string) => {
-      // Handle delete column - remove from columns
       const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
       simplifiedState.setColumns(newColumns);
     },
@@ -127,12 +131,12 @@ export const useRundownStateCoordination = () => {
       isConnected: simplifiedState.isConnected,
       isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate,
       
-      // Playback state
-      currentSegmentId: simplifiedState.currentSegmentId,
-      isPlaying: simplifiedState.isPlaying,
-      timeRemaining: simplifiedState.timeRemaining,
-      isController: simplifiedState.isController,
-      showcallerActivity: simplifiedState.showcallerActivity,
+      // Showcaller state from dedicated manager
+      currentSegmentId: showcallerManager.currentSegmentId,
+      isPlaying: showcallerManager.isPlaying,
+      timeRemaining: showcallerManager.timeRemaining,
+      isController: showcallerManager.isController,
+      showcallerActivity: false, // No longer needed with isolated system
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -167,11 +171,11 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Playback controls
-      play: simplifiedState.play,
-      pause: simplifiedState.pause,
-      forward: simplifiedState.forward,
-      backward: simplifiedState.backward,
+      // Showcaller controls from dedicated manager
+      play: showcallerManager.play,
+      pause: showcallerManager.pause,
+      forward: showcallerManager.forward,
+      backward: showcallerManager.backward,
       
       // Undo functionality
       undo: simplifiedState.undo,
