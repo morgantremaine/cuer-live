@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -122,27 +123,53 @@ const RundownGrid = () => {
     interactions.handleDrop(e, targetIndex);
   };
 
-  // Create jump to here handler that uses the existing play function
+  // Enhanced jump to here handler with comprehensive debugging and direct showcaller state access
   const handleJumpToHere = (segmentId: string) => {
-    console.log('🎯 Jumping to segment:', segmentId);
-    console.log('🎯 Current segment before jump:', currentSegmentId);
+    console.log('🎯 === JUMP TO HERE DEBUG START ===');
+    console.log('🎯 Target segment ID:', segmentId);
+    console.log('🎯 Current segment ID before jump:', currentSegmentId);
+    console.log('🎯 Is currently playing:', isPlaying);
+    console.log('🎯 Time remaining:', timeRemaining);
     console.log('🎯 Available items:', items.map(item => ({ id: item.id, name: item.name, type: item.type })));
     
-    // Find the segment to make sure it exists
+    // Find the target segment to ensure it exists
     const targetSegment = items.find(item => item.id === segmentId);
-    console.log('🎯 Target segment found:', targetSegment);
+    console.log('🎯 Target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
     
     if (targetSegment) {
-      console.log('🎯 Calling play with segment ID:', segmentId);
-      play(segmentId);
+      console.log('🎯 Calling play function with segment ID:', segmentId);
+      console.log('🎯 Play function type:', typeof play);
       
-      // Add a timeout to check if the jump worked
-      setTimeout(() => {
-        console.log('🎯 Current segment after jump attempt:', currentSegmentId);
-      }, 100);
+      try {
+        // Call the play function
+        play(segmentId);
+        console.log('🎯 Play function called successfully');
+        
+        // Check state immediately after call
+        setTimeout(() => {
+          console.log('🎯 State check 100ms after play call:');
+          console.log('🎯 - Current segment ID:', currentSegmentId);
+          console.log('🎯 - Is playing:', isPlaying);
+          console.log('🎯 - Time remaining:', timeRemaining);
+        }, 100);
+        
+        // Check state after a longer delay
+        setTimeout(() => {
+          console.log('🎯 State check 1000ms after play call:');
+          console.log('🎯 - Current segment ID:', currentSegmentId);
+          console.log('🎯 - Is playing:', isPlaying);
+          console.log('🎯 - Time remaining:', timeRemaining);
+        }, 1000);
+        
+      } catch (error) {
+        console.error('🎯 Error calling play function:', error);
+      }
     } else {
-      console.error('🎯 Target segment not found:', segmentId);
+      console.error('🎯 Target segment not found for ID:', segmentId);
+      console.log('🎯 Available segment IDs:', items.filter(item => item.type === 'regular').map(item => item.id));
     }
+    
+    console.log('🎯 === JUMP TO HERE DEBUG END ===');
   };
 
   return (
