@@ -66,7 +66,7 @@ const RundownHeader = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-2 border-b border-gray-200 dark:border-gray-700">
-      {/* Mobile layout: Compact single column */}
+      {/* Mobile layout: Compact single column - only for screens smaller than 640px */}
       <div className="block sm:hidden">
         <div className="mb-1">
           <HeaderTitle
@@ -94,8 +94,57 @@ const RundownHeader = ({
         />
       </div>
 
-      {/* Desktop layout: Logo, title, and controls in a row */}
-      <div className="hidden sm:block">
+      {/* Tablet layout: Optimized for tablet screens 640px - 1024px */}
+      <div className="hidden sm:block lg:hidden">
+        {/* Top row: Logo and Title */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <HeaderLogo />
+            <div className="flex-1 min-w-0">
+              <HeaderTitle
+                title={title}
+                onTitleChange={onTitleChange}
+                hasUnsavedChanges={hasUnsavedChanges}
+                isSaving={isSaving}
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
+              <RealtimeStatusIndicator
+                isConnected={isConnected || false}
+                isProcessingUpdate={isProcessingRealtimeUpdate || false}
+              />
+            )}
+          </div>
+        </div>
+        
+        {/* Bottom row: Controls */}
+        <div className="flex justify-end">
+          <HeaderControls
+            currentTime={currentTime}
+            timezone={timezone}
+            onTimezoneChange={onTimezoneChange}
+            onUndo={onUndo}
+            canUndo={canUndo}
+            lastAction={lastAction}
+          />
+        </div>
+
+        {/* Bottom section for tablet */}
+        <HeaderBottomSection
+          totalRuntime={totalRuntime}
+          rundownStartTime={rundownStartTime}
+          onRundownStartTimeChange={onRundownStartTimeChange}
+          items={items}
+          isPlaying={isPlaying}
+          currentSegmentId={currentSegmentId}
+          timeRemaining={timeRemaining}
+        />
+      </div>
+
+      {/* Desktop layout: Logo, title, and controls in a row - for screens 1024px and larger */}
+      <div className="hidden lg:block">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center space-x-4">
             <HeaderLogo />
