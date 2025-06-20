@@ -19,6 +19,7 @@ const ColumnList = ({
   onRenameColumn
 }: ColumnListProps) => {
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     console.log('🔄 ColumnList: Starting drag for column at index:', index, columns[index]?.name);
@@ -32,12 +33,31 @@ const ColumnList = ({
     e.dataTransfer.dropEffect = 'move';
   };
 
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedColumnIndex !== null && draggedColumnIndex !== index) {
+      setDropTargetIndex(index);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear drop target if we're leaving the container entirely
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDropTargetIndex(null);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     
     if (draggedColumnIndex === null || draggedColumnIndex === dropIndex) {
       console.log('🚫 Invalid drop - same position or no drag in progress');
       setDraggedColumnIndex(null);
+      setDropTargetIndex(null);
       return;
     }
 
@@ -58,10 +78,12 @@ const ColumnList = ({
     // Call the reorder handler
     onReorderColumns(newColumns);
     setDraggedColumnIndex(null);
+    setDropTargetIndex(null);
   };
 
   const handleDragEnd = () => {
     setDraggedColumnIndex(null);
+    setDropTargetIndex(null);
   };
 
   const handleToggleVisibility = (columnId: string) => {
@@ -87,22 +109,42 @@ const ColumnList = ({
       <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
         Drag columns to reorder them. Use the eye icon to hide/show columns.
       </div>
-      <div className="space-y-1 max-h-64 overflow-y-auto">
+      <div 
+        className="space-y-1 max-h-64 overflow-y-auto"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
         {columns.map((column, index) => (
-          <ColumnItem
-            key={column.id}
-            column={column}
-            index={index}
-            draggedColumnIndex={draggedColumnIndex}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onDragEnd={handleDragEnd}
-            onToggleVisibility={handleToggleVisibility}
-            onDeleteColumn={handleDeleteColumn}
-            onRenameColumn={handleRenameColumn}
-          />
+          <React.Fragment key={column.id}>
+            {/* Drop indicator line */}
+            {dropTargetIndex === index && draggedColumnIndex !== null && (
+              <div className="h-0.5 bg-gray-400 dark:bg-gray-500 rounded-full mx-2 animate-pulse" />
+            )}
+            
+            <div
+              onDragEnter={(e) => handleDragEnter(e, index)}
+              onDrop={(e) => handleDrop(e, index)}
+            >
+              <ColumnItem
+                column={column}
+                index={index}
+                draggedColumnIndex={draggedColumnIndex}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                onToggleVisibility={handleToggleVisibility}
+                onDeleteColumn={handleDeleteColumn}
+                onRenameColumn={handleRenameColumn}
+              />
+            </div>
+          </React.Fragment>
         ))}
+        
+        {/* Final drop indicator at the end */}
+        {dropTargetIndex === columns.length && draggedColumnIndex !== null && (
+          <div className="h-0.5 bg-gray-400 dark:bg-gray-500 rounded-full mx-2 animate-pulse" />
+        )}
       </div>
       {columns.length === 0 && (
         <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">

@@ -64,9 +64,9 @@ const ColumnItem = ({
     <div
       className={`
         flex items-center justify-between p-2 border border-gray-200 dark:border-gray-600 rounded-md
-        ${isDragging ? 'opacity-50 bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-700'}
+        ${isDragging ? 'opacity-50 bg-blue-50 dark:bg-blue-900/20 scale-105' : 'bg-white dark:bg-gray-700'}
         ${!isVisible ? 'opacity-60' : ''}
-        hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors
+        hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200
       `}
       draggable
       onDragStart={(e) => onDragStart(e, index)}
@@ -75,8 +75,8 @@ const ColumnItem = ({
       onDragEnd={onDragEnd}
     >
       <div className="flex items-center flex-1 min-w-0">
-        <div title="Drag to reorder">
-          <GripVertical className="h-4 w-4 text-gray-400 mr-2 cursor-grab active:cursor-grabbing" />
+        <div title="Drag to reorder" className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="h-4 w-4 text-gray-400 mr-2" />
         </div>
         
         {isEditing ? (
