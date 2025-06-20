@@ -146,6 +146,10 @@ const RundownIndexContent = () => {
       try {
         play(segmentId);
         console.log('🎯 IndexContent: Play function called successfully');
+        
+        // Clear the selection after jumping, like other context menu actions
+        clearSelection();
+        console.log('🎯 IndexContent: Selection cleared after jump');
       } catch (error) {
         console.error('🎯 IndexContent: Error calling play function:', error);
       }
