@@ -3,6 +3,8 @@ import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { format } from 'date-fns';
+import { calculateItemsWithTiming, CalculatedRundownItem, getRowStatus } from '@/utils/rundownCalculations';
+import { getCellValue } from '@/utils/sharedRundownUtils';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -22,24 +24,8 @@ const SharedRundownTable = ({
   isDark
 }: SharedRundownTableProps) => {
 
-  // Simple row status calculation for shared view
-  const getSimpleRowStatus = (item: RundownItem): 'upcoming' | 'current' | 'completed' => {
-    // For shared view, we'll use a simplified status based on current time
-    // This is less complex than the full calculation system
-    const now = new Date();
-    const currentTimeString = now.toTimeString().slice(0, 8);
-    
-    // If we have start and end times, use them for comparison
-    if (item.startTime && item.endTime) {
-      if (currentTimeString >= item.startTime && currentTimeString < item.endTime) {
-        return 'current';
-      } else if (currentTimeString >= item.endTime) {
-        return 'completed';
-      }
-    }
-    
-    return 'upcoming';
-  };
+  // Calculate all items with timing and row numbers
+  const calculatedItems = calculateItemsWithTiming(items, rundownStartTime);
 
   // Helper function to format time
   const formatTime = (time: string): string => {
@@ -74,30 +60,33 @@ const SharedRundownTable = ({
             </tr>
           </thead>
           <tbody className={`${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            {items.map((item, index) => {
-              const rowStatus = getSimpleRowStatus(item);
+            {calculatedItems.map((item, index) => {
+              const currentTime = new Date();
+              const rowStatus = getRowStatus(item, currentTime);
               const isCurrentSegment = currentSegmentId === item.id;
               
-              // Determine row background color
+              // Determine row background color with proper priority
               let rowBackgroundColor = '';
               let rowBorderColor = '';
+              let customStyle = {};
               
               if (isCurrentSegment && isPlaying) {
-                // Current playing segment - blue
+                // Highest priority: Currently playing segment - blue
                 rowBackgroundColor = isDark ? 'bg-blue-900' : 'bg-blue-50';
                 rowBorderColor = isDark ? 'border-blue-600' : 'border-blue-200';
               } else if (rowStatus === 'current') {
-                // Current time segment - yellow
+                // Second priority: Current time segment - yellow
                 rowBackgroundColor = isDark ? 'bg-yellow-900' : 'bg-yellow-50';
                 rowBorderColor = isDark ? 'border-yellow-600' : 'border-yellow-200';
               } else if (rowStatus === 'completed') {
-                // Completed segment - green
+                // Third priority: Completed segment - green
                 rowBackgroundColor = isDark ? 'bg-green-900' : 'bg-green-50';
                 rowBorderColor = isDark ? 'border-green-600' : 'border-green-200';
               } else if (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff') {
-                // Custom row color
+                // Fourth priority: Custom row color
                 rowBackgroundColor = '';
-                rowBorderColor = '';
+                rowBorderColor = isDark ? 'border-gray-700' : 'border-gray-200';
+                customStyle = { backgroundColor: item.color };
               } else {
                 // Default row
                 rowBackgroundColor = isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-50';
@@ -112,14 +101,15 @@ const SharedRundownTable = ({
                     ${rowBackgroundColor} ${rowBorderColor} border-b
                     transition-colors print:break-inside-avoid
                   `}
-                  style={{ 
-                    backgroundColor: (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff') ? item.color : undefined 
-                  }}
+                  style={customStyle}
                 >
                   {visibleColumns.map((column) => {
                     let cellContent;
           
                     switch (column.key) {
+                      case 'rowNumber':
+                        cellContent = item.calculatedRowNumber;
+                        break;
                       case 'segmentName':
                         cellContent = item.segmentName || item.name;
                         break;
@@ -127,16 +117,40 @@ const SharedRundownTable = ({
                         cellContent = item.duration;
                         break;
                       case 'startTime':
-                        cellContent = formatTime(item.startTime || '00:00');
+                        cellContent = formatTime(item.calculatedStartTime || '00:00');
                         break;
                       case 'endTime':
-                        cellContent = formatTime(item.endTime || '00:00');
+                        cellContent = formatTime(item.calculatedEndTime || '00:00');
+                        break;
+                      case 'elapsedTime':
+                        cellContent = formatTime(item.calculatedElapsedTime || '00:00');
                         break;
                       case 'description':
+                      case 'notes':
                         cellContent = item.notes;
                         break;
+                      case 'talent':
+                        cellContent = item.talent;
+                        break;
+                      case 'script':
+                        cellContent = item.script;
+                        break;
+                      case 'gfx':
+                        cellContent = item.gfx;
+                        break;
+                      case 'video':
+                        cellContent = item.video;
+                        break;
+                      case 'images':
+                        cellContent = item.images;
+                        break;
                       default:
-                        cellContent = item[column.key] || '';
+                        // Handle custom fields and any other properties
+                        if (column.isCustom) {
+                          cellContent = item.customFields?.[column.key] || '';
+                        } else {
+                          cellContent = (item as any)[column.key] || '';
+                        }
                     }
           
                     return (
