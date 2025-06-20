@@ -305,6 +305,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               max-height: none !important;
               overflow: visible !important;
             }
+            
+            /* Force sticky elements to be static for printing */
+            .print-sticky-header {
+              position: static !important;
+              top: auto !important;
+            }
           }
         `}
       </style>
@@ -316,7 +322,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       >
         <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
           <table className="w-full print:text-xs print-table table-fixed">
-            <thead className={`sticky top-0 z-10 print:static ${
+            <thead className={`sticky top-0 z-10 print:static print-sticky-header ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
             }`}>
               <tr className="print-header-row">
