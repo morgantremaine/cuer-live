@@ -48,7 +48,7 @@ export const SharedRundownHeader = ({
               <p className={`text-sm print:text-xs ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                {layoutName}
+                This is a read-only view of the rundown. Updates appear live.
               </p>
             </div>
             

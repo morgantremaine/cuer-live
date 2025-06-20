@@ -11,10 +11,7 @@ const SharedRundownFooter = () => {
       </div>
       
       {/* Screen-only footer with print button */}
-      <div className="mt-4 flex justify-between items-center print:hidden">
-        <div className="text-sm text-gray-500">
-          This is a read-only view of the rundown. Updates appear live.
-        </div>
+      <div className="mt-4 flex justify-end items-center print:hidden">
         <button
           onClick={() => window.print()}
           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-800 text-sm flex items-center"
