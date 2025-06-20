@@ -92,14 +92,6 @@ const CellRenderer = ({
   const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
   const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
 
-  console.log('🎯 CellRenderer debug:', {
-    itemId: item.id,
-    currentSegmentId,
-    columnKey: column.key,
-    isCurrentSegmentName,
-    showcallerBackgroundColor
-  });
-
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
@@ -125,7 +117,6 @@ const CellRenderer = ({
         textColor={showcallerTextColor}
         backgroundColor={showcallerBackgroundColor}
         onUpdateValue={(newValue) => {
-          console.log('🖼️ ImageCell updating value:', newValue, 'for item:', item.id);
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
         }}
