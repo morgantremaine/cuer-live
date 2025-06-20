@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -208,7 +207,7 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(columnsToUse);
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`} ref={scrollContainerRef}>
+    <div className={`${isDark ? 'bg-gray-900' : 'bg-white'}`} ref={scrollContainerRef}>
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
