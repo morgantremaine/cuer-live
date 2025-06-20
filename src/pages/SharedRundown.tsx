@@ -207,8 +207,8 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(columnsToUse);
 
   return (
-    <div className={`h-screen overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-      <div className="h-full flex flex-col">
+    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className="flex flex-col min-h-screen" ref={scrollContainerRef}>
         <SharedRundownHeader
           title={rundownData.title}
           startTime={rundownData.startTime || '09:00:00'}
@@ -223,7 +223,7 @@ const SharedRundown = () => {
           onToggleAutoScroll={handleToggleAutoScroll}
         />
 
-        <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
+        <div className="flex-1">
           <SharedRundownTable
             items={rundownData.items}
             visibleColumns={visibleColumns}
@@ -232,9 +232,9 @@ const SharedRundown = () => {
             rundownStartTime={rundownData.startTime || '09:00:00'}
             isDark={isDark}
           />
-
-          <SharedRundownFooter />
         </div>
+
+        <SharedRundownFooter />
       </div>
     </div>
   );
