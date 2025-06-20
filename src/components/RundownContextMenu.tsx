@@ -1,6 +1,5 @@
-
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Target } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,6 +17,7 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
+  isHeader?: boolean;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -28,6 +28,7 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToHere?: () => void;
 }
 
 const RundownContextMenu = memo(({
@@ -38,6 +39,7 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
+  isHeader = false,
   onCopy,
   onDelete,
   onToggleFloat,
@@ -47,7 +49,8 @@ const RundownContextMenu = memo(({
   onPaste,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  onJumpToHere
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -135,6 +138,20 @@ const RundownContextMenu = memo(({
           )}
           
           <ContextMenuSeparator />
+          
+          {!isHeader && onJumpToHere && (
+            <>
+              <ContextMenuItem 
+                onClick={onJumpToHere} 
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <Target className="mr-2 h-4 w-4" />
+                Jump to here
+              </ContextMenuItem>
+              
+              <ContextMenuSeparator />
+            </>
+          )}
           
           <ContextMenuItem 
             onClick={handleContextMenuFloat} 

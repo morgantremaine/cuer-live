@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -39,6 +38,7 @@ interface RegularRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToHere?: (segmentId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -62,6 +62,7 @@ const RegularRow = (props: RegularRowProps) => {
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onJumpToHere,
     isDragging
   } = props;
 
@@ -99,6 +100,12 @@ const RegularRow = (props: RegularRowProps) => {
     onPasteRows: props.onPasteRows,
     onClearSelection
   });
+
+  const handleContextMenuJump = () => {
+    if (onJumpToHere) {
+      onJumpToHere(item.id);
+    }
+  };
 
   // Enhanced drag start handler that prevents dragging when selecting text
   const handleDragStart = (e: React.DragEvent) => {
@@ -159,6 +166,7 @@ const RegularRow = (props: RegularRowProps) => {
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
+      isHeader={false}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
@@ -168,6 +176,7 @@ const RegularRow = (props: RegularRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
+      onJumpToHere={handleContextMenuJump}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
