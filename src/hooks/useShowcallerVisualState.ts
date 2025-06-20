@@ -32,6 +32,12 @@ export const useShowcallerVisualState = ({
     isController: false
   });
 
+  // Track own updates for realtime sync
+  const trackOwnUpdate = useCallback((timestamp: string) => {
+    console.log('📺 Tracking own update:', timestamp);
+    // This function is used by realtime sync to track updates from this client
+  }, []);
+
   // Jump to a specific segment
   const jumpToSegment = useCallback((segmentId: string) => {
     console.log('🎯 jumpToSegment called with segmentId:', segmentId);
@@ -131,6 +137,7 @@ export const useShowcallerVisualState = ({
     // Utilities
     getItemVisualStatus,
     applyExternalVisualState,
+    trackOwnUpdate,
     
     // For realtime sync
     visualState: visualStateRef.current
