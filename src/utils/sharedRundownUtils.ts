@@ -8,36 +8,53 @@ export const getVisibleColumns = (columns: any[]) => {
 };
 
 export const getRowNumber = (index: number, items: RundownItem[]) => {
+  if (index < 0 || index >= items.length) return '';
+  
+  const item = items[index];
+  if (!item) return '';
+  
+  // Calculate row numbers based purely on position and type, not stored values
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   
   // Check if there are regular rows before the first header
   const firstHeaderIndex = items.findIndex(item => item.type === 'header');
   const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
   
-  let letterIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
-  let numberIndex = 0;
+  // For headers, count how many headers we've seen so far
+  if (item.type === 'header') {
+    let headerCount = 0;
+    for (let i = 0; i <= index; i++) {
+      if (items[i] && items[i].type === 'header') {
+        headerCount++;
+      }
+    }
+    // Adjust header numbering based on whether there are rows before first header
+    const headerIndex = hasRowsBeforeFirstHeader ? headerCount : headerCount - 1;
+    return letters[headerIndex] || 'A';
+  }
   
-  // Count actual rows (both headers and regular items)
+  // For regular items, find which segment they belong to and count within that segment
+  let currentSegmentLetter = 'A';
+  let itemCountInSegment = 0;
+  let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start from A or B
+  
+  // Go through items up to current index
   for (let i = 0; i <= index; i++) {
-    if (items[i]?.type === 'header') {
-      letterIndex++;
-      numberIndex = 0; // Reset number for new section
+    const currentItem = items[i];
+    if (!currentItem) continue;
+    
+    if (currentItem.type === 'header') {
+      // Update which segment we're in
+      currentSegmentLetter = letters[segmentHeaderCount] || 'A';
+      segmentHeaderCount++;
+      itemCountInSegment = 0; // Reset count for new segment
     } else {
-      numberIndex++;
+      // This is a regular item
+      itemCountInSegment++;
     }
   }
   
-  const currentItem = items[index];
-  if (currentItem?.type === 'header') {
-    // For headers, return the letter (adjusted based on whether there are rows before first header)
-    const headerIndex = hasRowsBeforeFirstHeader ? letterIndex - 1 : letterIndex - 1;
-    return letters[headerIndex] || 'A';
-  } else {
-    // For regular items, return letter + number
-    const segmentIndex = hasRowsBeforeFirstHeader ? letterIndex - 1 : letterIndex;
-    const letter = letters[segmentIndex] || 'A';
-    return `${letter}${numberIndex}`;
-  }
+  return `${currentSegmentLetter}${itemCountInSegment}`;
 };
 
 // Helper function to convert time string to seconds
