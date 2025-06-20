@@ -64,17 +64,19 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor,
-                overflow: 'visible' // Allow content to overflow
+                position: 'relative',
+                zIndex: 1
               }}
             >
               <div 
-                className="px-3 py-3 text-2xl font-bold whitespace-nowrap relative z-20" 
+                className="px-3 py-3 text-2xl font-bold absolute top-0 left-0 h-full flex items-center"
                 style={{ 
                   color: textColor,
+                  whiteSpace: 'nowrap',
+                  zIndex: 10,
                   minWidth: 'max-content',
-                  position: 'relative'
+                  width: 'max-content'
                 }}
               >
                 <CellRenderer
