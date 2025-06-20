@@ -98,6 +98,18 @@ const RundownTable = ({
     onDragOver(e, targetIndex);
   };
 
+  // Debug wrapper for onJumpToHere
+  const handleJumpToHereDebug = (segmentId: string) => {
+    console.log('🎯 RundownTable: onJumpToHere called with segmentId:', segmentId);
+    console.log('🎯 RundownTable: onJumpToHere function exists:', !!onJumpToHere);
+    if (onJumpToHere) {
+      console.log('🎯 RundownTable: Calling parent onJumpToHere');
+      onJumpToHere(segmentId);
+    } else {
+      console.log('🎯 RundownTable: onJumpToHere is undefined!');
+    }
+  };
+
   return (
     <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">
@@ -159,7 +171,7 @@ const RundownTable = ({
                   onClearSelection={onClearSelection}
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
-                  onJumpToHere={onJumpToHere}
+                  onJumpToHere={handleJumpToHereDebug}
                   getColumnWidth={getColumnWidth}
                 />
                 
