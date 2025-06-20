@@ -185,7 +185,7 @@ const SharedRundown = () => {
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading rundown...</div>
       </div>
     );
@@ -193,7 +193,7 @@ const SharedRundown = () => {
 
   if (error) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
           <div className={`text-lg text-red-600 mb-2`}>Error loading rundown</div>
           <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{error}</div>
@@ -207,7 +207,7 @@ const SharedRundown = () => {
 
   if (!rundownData) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
           <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>Rundown not found</div>
           <div className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
