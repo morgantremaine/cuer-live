@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -7,6 +6,7 @@ import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useTheme } from '@/hooks/useTheme';
 
 // Default columns to use when rundown has no columns defined
 const DEFAULT_COLUMNS = [
@@ -22,6 +22,7 @@ const SharedRundown = () => {
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
+  const { isDark } = useTheme();
   
   // Prevent duplicate layout loads
   const layoutLoadedRef = useRef(false);
@@ -228,7 +229,7 @@ const SharedRundown = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background transition-colors">
+    <div className={`min-h-screen flex flex-col transition-colors ${isDark ? 'dark bg-background' : 'bg-background'}`}>
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
