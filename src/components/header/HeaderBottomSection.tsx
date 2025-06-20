@@ -38,7 +38,8 @@ const HeaderBottomSection = ({
     autoScrollEnabled,
     hasToggleFunction: !!onToggleAutoScroll,
     isPlaying,
-    currentSegmentId
+    currentSegmentId,
+    toggleFunctionType: typeof onToggleAutoScroll
   });
 
   // Get timing status from the showcaller timing hook
@@ -101,6 +102,21 @@ const HeaderBottomSection = ({
     }
   };
 
+  // Handle autoscroll toggle with debugging
+  const handleToggleAutoScroll = () => {
+    console.log('🔄 HeaderBottomSection: Toggle autoscroll clicked!', {
+      currentState: autoScrollEnabled,
+      hasFunction: !!onToggleAutoScroll
+    });
+    
+    if (onToggleAutoScroll) {
+      console.log('🔄 HeaderBottomSection: Calling onToggleAutoScroll function');
+      onToggleAutoScroll();
+    } else {
+      console.error('🔄 HeaderBottomSection: No onToggleAutoScroll function provided!');
+    }
+  };
+
   // Display calculated total runtime with proper formatting
   const displayRuntime = totalRuntime && totalRuntime !== '00:00:00' ? totalRuntime : '00:00:00';
 
@@ -130,11 +146,11 @@ const HeaderBottomSection = ({
           <span className="opacity-75 text-xs">Auto-scroll:</span>
           <Switch
             checked={autoScrollEnabled}
-            onCheckedChange={onToggleAutoScroll || (() => console.log('No toggle function!'))}
+            onCheckedChange={handleToggleAutoScroll}
             className="scale-75"
           />
           <span className="text-xs opacity-50">
-            {onToggleAutoScroll ? '✓' : '✗'}
+            {onToggleAutoScroll ? '✓' : '✗'} | {autoScrollEnabled ? 'ON' : 'OFF'}
           </span>
         </div>
         <ShowcallerTimingIndicator

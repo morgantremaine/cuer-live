@@ -19,6 +19,7 @@ export const useRundownStateCoordination = () => {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('rundown-autoscroll-enabled');
+      console.log('🔄 StateCoordination: Loading autoscroll from localStorage:', saved);
       return saved ? JSON.parse(saved) : false;
     }
     return false;
@@ -27,12 +28,21 @@ export const useRundownStateCoordination = () => {
   // Persist autoscroll preference
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      console.log('🔄 StateCoordination: Saving autoscroll to localStorage:', autoScrollEnabled);
       localStorage.setItem('rundown-autoscroll-enabled', JSON.stringify(autoScrollEnabled));
     }
   }, [autoScrollEnabled]);
 
   const toggleAutoScroll = () => {
-    setAutoScrollEnabled(prev => !prev);
+    console.log('🔄 StateCoordination: toggleAutoScroll called!', {
+      currentState: autoScrollEnabled,
+      newState: !autoScrollEnabled
+    });
+    setAutoScrollEnabled(prev => {
+      const newValue = !prev;
+      console.log('🔄 StateCoordination: Setting autoscroll to:', newValue);
+      return newValue;
+    });
   };
 
   // Completely separate showcaller visual state management
@@ -224,7 +234,7 @@ export const useRundownStateCoordination = () => {
       },
       addMultipleRows,
       
-      // Autoscroll state
+      // Autoscroll state with enhanced debugging
       autoScrollEnabled,
       toggleAutoScroll
     },
