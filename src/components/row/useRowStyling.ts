@@ -1,4 +1,5 @@
 
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -32,16 +33,16 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
-    rowClass = 'bg-muted border-l-4 border-border font-semibold hover:bg-muted/80';
+    rowClass = 'bg-muted border-l-4 border-border font-semibold';
   } else if (isFloating || isFloated) {
     // Apply full red background for floated rows
     rowClass = 'border-l-4 border-red-600';
     backgroundColorOverride = '#ef4444'; // Full red background
   } else if (color && color !== '#FFFFFF' && color !== '#ffffff') {
-    // For colored rows, use a subtle box-shadow hover effect that doesn't affect layout
-    rowClass = 'hover:shadow-sm';
+    // For colored rows, no additional styling needed
+    rowClass = '';
   } else {
-    rowClass = 'bg-background hover:bg-muted/50';
+    rowClass = 'bg-background';
   }
 
   // Add selection styling with box-shadow for better visibility
@@ -67,3 +68,4 @@ export const useRowStyling = ({
 
   return { rowClass, backgroundColorOverride };
 };
+
