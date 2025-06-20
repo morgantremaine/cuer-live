@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -142,6 +141,7 @@ const SharedRundownTable = ({
 
   return (
     <>
+      {/* ... keep existing code (print styles) */}
       <style>
         {`
           @media print {
@@ -233,7 +233,7 @@ const SharedRundownTable = ({
                   className={`
                     ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
                     ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                    ${isShowcallerCurrent ? 'bg-blue-500 text-white border-l-4 border-blue-600' : ''}
+                    ${isShowcallerCurrent ? 'bg-blue-500 text-white' : ''}
                     print:break-inside-avoid print:border-0
                   `}
                   style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
