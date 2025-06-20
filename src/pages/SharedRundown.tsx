@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -39,6 +38,7 @@ const SharedRundown = () => {
 
   // Handle auto-scroll toggle
   const handleToggleAutoScroll = (enabled: boolean) => {
+    console.log('🔄 Auto-scroll toggled:', enabled);
     setAutoScroll(enabled);
     localStorage.setItem('sharedRundownAutoScroll', JSON.stringify(enabled));
   };
