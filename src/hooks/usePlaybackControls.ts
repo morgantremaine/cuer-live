@@ -80,7 +80,7 @@ export const usePlaybackControls = (
     } catch (error) {
       console.error('Error loading initial state:', error);
     }
-  }, [rundownId, applyExternalVisual State]);
+  }, [rundownId, applyExternalVisualState]);
 
   // Reset the loading flag when rundownId changes
   useEffect(() => {
