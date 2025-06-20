@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { isFloated } from '@/utils/rundownCalculations';
 
 export interface ShowcallerVisualState {
   currentItemStatuses: Map<string, string>; // item id -> status
@@ -157,13 +158,14 @@ export const useShowcallerVisualState = ({
     return visualState.currentItemStatuses.get(itemId) || 'upcoming';
   }, [visualState.currentItemStatuses]);
 
-  // Navigation helpers
+  // Navigation helpers - now skip floated items
   const getNextSegment = useCallback((currentId: string) => {
     const currentIndex = items.findIndex(item => item.id === currentId);
     
     for (let i = currentIndex + 1; i < items.length; i++) {
-      if (items[i].type === 'regular') {
-        return items[i];
+      const item = items[i];
+      if (item.type === 'regular' && !isFloated(item)) {
+        return item;
       }
     }
     return null;
@@ -173,8 +175,9 @@ export const useShowcallerVisualState = ({
     const currentIndex = items.findIndex(item => item.id === currentId);
     
     for (let i = currentIndex - 1; i >= 0; i--) {
-      if (items[i].type === 'regular') {
-        return items[i];
+      const item = items[i];
+      if (item.type === 'regular' && !isFloated(item)) {
+        return item;
       }
     }
     return null;
@@ -192,7 +195,7 @@ export const useShowcallerVisualState = ({
       setVisualState(prevState => {
         if (prevState.timeRemaining <= 1) {
           if (isController && prevState.currentSegmentId) {
-            // Move to next segment
+            // Move to next segment (skipping floated items)
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
             if (nextSegment) {
@@ -266,10 +269,10 @@ export const useShowcallerVisualState = ({
     const newStatuses = new Map();
     
     if (selectedSegmentId) {
-      // Mark segments before selected as completed, after as upcoming
+      // Mark segments before selected as completed, after as upcoming (skip floated items)
       const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
       items.forEach((item, index) => {
-        if (item.type === 'regular') {
+        if (item.type === 'regular' && !isFloated(item)) {
           if (index < selectedIndex) {
             newStatuses.set(item.id, 'completed');
           } else if (index === selectedIndex) {
@@ -290,8 +293,8 @@ export const useShowcallerVisualState = ({
         currentItemStatuses: newStatuses
       }, true);
     } else if (!visualState.currentSegmentId) {
-      // Find first regular item
-      const firstSegment = items.find(item => item.type === 'regular');
+      // Find first non-floated regular item
+      const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
       if (firstSegment) {
         newStatuses.set(firstSegment.id, 'current');
         const duration = timeToSeconds(firstSegment.duration || '00:00');
@@ -460,10 +463,10 @@ export const useShowcallerVisualState = ({
     }
   }, [stopTimer, items, timeToSeconds, startTimer]);
 
-  // Initialize current segment
+  // Initialize current segment - skip floated items
   useEffect(() => {
     if (!visualState.currentSegmentId && items.length > 0) {
-      const firstSegment = items.find(item => item.type === 'regular');
+      const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
       if (firstSegment) {
         const duration = timeToSeconds(firstSegment.duration || '00:00');
         setVisualState(prev => ({
