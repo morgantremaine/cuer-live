@@ -126,7 +126,7 @@ const RundownGrid = () => {
   const handleJumpToHere = (segmentId: string) => {
     console.log('🎯 Jumping to segment:', segmentId);
     console.log('🎯 Current segment before jump:', currentSegmentId);
-    console.log('🎯 Available items:', items.map(item => ({ id: item.id, title: item.title, type: item.type })));
+    console.log('🎯 Available items:', items.map(item => ({ id: item.id, name: item.name, type: item.type })));
     
     // Find the segment to make sure it exists
     const targetSegment = items.find(item => item.id === segmentId);
