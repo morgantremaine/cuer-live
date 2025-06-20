@@ -154,16 +154,16 @@ const CellRenderer = ({
     );
   }
 
-  // For showcaller highlighting on segment name, wrap the entire cell content with rounded corners
+  // For showcaller highlighting on segment name, wrap the entire cell content
   if (isCurrentSegmentName) {
     return (
       <div 
-        className="absolute inset-1 flex items-center px-3 py-1 rounded-md"
+        className="absolute inset-0 flex items-center px-3 py-1"
         style={{ 
           backgroundColor: showcallerBackgroundColor,
           color: showcallerTextColor,
-          minHeight: 'calc(100% - 8px)',
-          height: 'calc(100% - 8px)'
+          minHeight: '100%',
+          height: '100%'
         }}
       >
         <TextAreaCell
