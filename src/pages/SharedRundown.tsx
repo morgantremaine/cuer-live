@@ -169,19 +169,19 @@ const SharedRundown = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-lg text-gray-600">Loading rundown...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-lg text-muted-foreground">Loading rundown...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="text-lg text-red-600 mb-2">Error loading rundown</div>
-          <div className="text-sm text-gray-600">{error}</div>
-          <div className="text-xs text-gray-500 mt-4">
+          <div className="text-lg text-destructive mb-2">Error loading rundown</div>
+          <div className="text-sm text-muted-foreground">{error}</div>
+          <div className="text-xs text-muted-foreground mt-4">
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -191,10 +191,10 @@ const SharedRundown = () => {
 
   if (!rundownData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="text-lg text-gray-600 mb-2">Rundown not found</div>
-          <div className="text-sm text-gray-500">
+          <div className="text-lg text-muted-foreground mb-2">Rundown not found</div>
+          <div className="text-sm text-muted-foreground">
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -221,14 +221,14 @@ const SharedRundown = () => {
 
   if (layoutLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-lg text-gray-600">Loading layout...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-lg text-muted-foreground">Loading layout...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-background transition-colors">
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
