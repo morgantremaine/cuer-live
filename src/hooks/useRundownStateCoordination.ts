@@ -3,9 +3,14 @@ import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerStateManager } from './useShowcallerStateManager';
+import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
 
 export const useRundownStateCoordination = () => {
+  // Get user ID from auth
+  const { user } = useAuth();
+  const userId = user?.id;
+
   // Single source of truth for all rundown state
   const simplifiedState = useSimplifiedRundownState();
 
@@ -14,8 +19,8 @@ export const useRundownStateCoordination = () => {
     items: simplifiedState.items,
     setItems: simplifiedState.setItems,
     rundownId: simplifiedState.rundownId,
-    userId: simplifiedState.userId,
-    setShowcallerUpdate: simplifiedState.setShowcallerUpdate
+    userId: userId,
+    setShowcallerUpdate: simplifiedState.setShowcallerUpdate || (() => {})
   });
 
   // Helper function to calculate end time

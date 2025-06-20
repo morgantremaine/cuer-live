@@ -91,7 +91,6 @@ export const useSimpleAutoSave = (
       const {
         status,           // Showcaller field
         elapsedTime,      // Showcaller field  
-        currentSegmentId, // Showcaller field
         ...contentItem
       } = item;
       
