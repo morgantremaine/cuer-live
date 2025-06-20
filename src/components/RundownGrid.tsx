@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -25,7 +26,8 @@ const RundownGrid = () => {
     forward,
     backward,
     isPlaying,
-    timeRemaining
+    timeRemaining,
+    jumpToSegment
   } = coreState;
 
   const {
@@ -44,7 +46,8 @@ const RundownGrid = () => {
     handleAddRow,
     handleAddHeader,
     handleRowSelection: handleMultiRowSelection,
-    hasClipboardData
+    hasClipboardData,
+    handleJumpToHere
   } = interactions;
 
   const { 
@@ -162,6 +165,7 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
+      onJumpToHere={handleJumpToHere}
     />
   );
 };
