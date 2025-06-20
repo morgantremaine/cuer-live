@@ -206,14 +206,28 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       <style>
         {`
           @media print {
-            /* Force print to use full page height and remove overflow constraints */
-            body, html {
-              height: auto !important;
+            /* Force print to use full page height and remove ALL overflow constraints */
+            * {
               overflow: visible !important;
             }
             
-            /* Make the container take full available space */
-            .print-container {
+            body, html {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            
+            /* Make ALL containers take full available space */
+            .print-container,
+            .print-scroll-container {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+              min-height: auto !important;
+            }
+            
+            /* Remove flex constraints that might limit height */
+            .flex-1 {
               height: auto !important;
               max-height: none !important;
               overflow: visible !important;
@@ -224,6 +238,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               table-layout: auto !important;
               font-size: 10px !important;
               height: auto !important;
+              max-height: none !important;
               overflow: visible !important;
             }
             
@@ -240,6 +255,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               /* Force light mode colors for printing */
               color: #000 !important;
               background: #fff !important;
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
             }
             
             .print-table th {
@@ -299,29 +317,38 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               white-space: normal !important;
             }
             
-            /* Remove any height constraints that prevent full printing */
-            .print-scroll-container {
+            /* Force sticky elements to be static for printing */
+            .print-sticky-header {
+              position: static !important;
+              top: auto !important;
+            }
+            
+            /* Force table body and rows to be visible */
+            tbody, tr {
               height: auto !important;
               max-height: none !important;
               overflow: visible !important;
             }
             
-            /* Force sticky elements to be static for printing */
-            .print-sticky-header {
-              position: static !important;
-              top: auto !important;
+            /* Remove any height constraints on the main container */
+            [class*="h-full"],
+            [class*="max-h-"],
+            [class*="overflow-"] {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
             }
           }
         `}
       </style>
       <div 
         className={`print-container border rounded-lg print:border-gray-400 print:overflow-visible print:h-auto print:max-h-none ${
-          isDark ? 'border-gray-700 h-full' : 'border-gray-200 h-full'
+          isDark ? 'border-gray-700 h-full print:h-auto' : 'border-gray-200 h-full print:h-auto'
         }`} 
         ref={ref}
       >
         <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
-          <table className="w-full print:text-xs print-table table-fixed">
+          <table className="w-full print:text-xs print-table table-fixed print:h-auto print:max-h-none">
             <thead className={`sticky top-0 z-10 print:static print-sticky-header ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
             }`}>
@@ -360,7 +387,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 })}
               </tr>
             </thead>
-            <tbody className={`divide-y print:divide-gray-400 ${
+            <tbody className={`divide-y print:divide-gray-400 print:h-auto print:max-h-none print:overflow-visible ${
               isDark 
                 ? 'bg-gray-900 divide-gray-700' 
                 : 'bg-white divide-gray-200'
@@ -395,7 +422,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     className={`
                       ${item.type === 'header' ? 'font-semibold' : ''}
                       ${printRowClass}
-                      print:break-inside-avoid print:border-0
+                      print:break-inside-avoid print:border-0 print:h-auto print:max-h-none print:overflow-visible
                     `}
                     style={{ 
                       backgroundColor: rowBackgroundColor,
@@ -403,7 +430,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     }}
                   >
                     <td 
-                      className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number ${
+                      className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
                         isDark ? 'border-gray-600' : 'border-gray-200'
                       }`}
                       style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
@@ -435,7 +462,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           return (
                             <td 
                               key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column ${
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
                                 isDark ? 'border-gray-600' : 'border-gray-200'
                               }`}
                               style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
@@ -448,7 +475,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           return (
                             <td 
                               key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column ${
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column print:h-auto print:max-h-none print:overflow-visible ${
                                 isDark 
                                   ? 'text-gray-400 border-gray-600' 
                                   : 'text-gray-600 border-gray-200'
@@ -463,7 +490,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           return (
                             <td 
                               key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column ${
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column print:h-auto print:max-h-none print:overflow-visible ${
                                 isDark ? 'border-gray-600' : 'border-gray-200'
                               }`}
                               style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
@@ -476,7 +503,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           return (
                             <td 
                               key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column ${
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
                                 isDark ? 'border-gray-600' : 'border-gray-200'
                               }`}
                               style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
@@ -499,7 +526,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       return (
                         <td
                           key={column.id}
-                          className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
+                          className={`px-2 py-1 text-sm border-r print:border-gray-400 print:h-auto print:max-h-none print:overflow-visible ${
                             ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
                               ? 'print-time-column' 
                               : 'print-content-column'
