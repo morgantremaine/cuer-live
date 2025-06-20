@@ -135,45 +135,50 @@ const RundownTable = ({
                   </tr>
                 )}
                 
-                <RundownRow
-                  item={item}
-                  index={index}
-                  rowNumber={rowNumber}
-                  status={status}
-                  showColorPicker={showColorPicker}
-                  cellRefs={cellRefs}
-                  columns={visibleColumns}
-                  isSelected={isActuallySelected}
-                  isCurrentlyPlaying={isCurrentlyPlaying}
-                  isDraggingMultiple={isDraggingMultiple}
-                  selectedRowsCount={selectedRows.size}
-                  selectedRows={selectedRows}
-                  headerDuration={headerDuration}
-                  hasClipboardData={hasClipboardData}
-                  currentSegmentId={currentSegmentId}
-                  isDragging={isDragging}
-                  onUpdateItem={onUpdateItem}
-                  onCellClick={onCellClick}
-                  onKeyDown={onKeyDown}
-                  onToggleColorPicker={onToggleColorPicker}
-                  onColorSelect={onColorSelect}
-                  onDeleteRow={onDeleteRow}
-                  onToggleFloat={onToggleFloat}
-                  onRowSelect={onRowSelect}
-                  onDragStart={onDragStart}
-                  onDragOver={(e) => handleRowDragOver(e, index)}
-                  onDrop={(e) => {
-                    onDrop(e, index);
-                  }}
-                  onCopySelectedRows={onCopySelectedRows}
-                  onDeleteSelectedRows={onDeleteSelectedRows}
-                  onPasteRows={onPasteRows}
-                  onClearSelection={onClearSelection}
-                  onAddRow={onAddRow}
-                  onAddHeader={onAddHeader}
-                  onJumpToHere={handleJumpToHereDebug}
-                  getColumnWidth={getColumnWidth}
-                />
+                {/* Add data-item-id attribute to the table row wrapper for autoscroll functionality */}
+                <tr data-item-id={item.id}>
+                  <td colSpan={visibleColumns.length + 1} className="p-0">
+                    <RundownRow
+                      item={item}
+                      index={index}
+                      rowNumber={rowNumber}
+                      status={status}
+                      showColorPicker={showColorPicker}
+                      cellRefs={cellRefs}
+                      columns={visibleColumns}
+                      isSelected={isActuallySelected}
+                      isCurrentlyPlaying={isCurrentlyPlaying}
+                      isDraggingMultiple={isDraggingMultiple}
+                      selectedRowsCount={selectedRows.size}
+                      selectedRows={selectedRows}
+                      headerDuration={headerDuration}
+                      hasClipboardData={hasClipboardData}
+                      currentSegmentId={currentSegmentId}
+                      isDragging={isDragging}
+                      onUpdateItem={onUpdateItem}
+                      onCellClick={onCellClick}
+                      onKeyDown={onKeyDown}
+                      onToggleColorPicker={onToggleColorPicker}
+                      onColorSelect={onColorSelect}
+                      onDeleteRow={onDeleteRow}
+                      onToggleFloat={onToggleFloat}
+                      onRowSelect={onRowSelect}
+                      onDragStart={onDragStart}
+                      onDragOver={(e) => handleRowDragOver(e, index)}
+                      onDrop={(e) => {
+                        onDrop(e, index);
+                      }}
+                      onCopySelectedRows={onCopySelectedRows}
+                      onDeleteSelectedRows={onDeleteSelectedRows}
+                      onPasteRows={onPasteRows}
+                      onClearSelection={onClearSelection}
+                      onAddRow={onAddRow}
+                      onAddHeader={onAddHeader}
+                      onJumpToHere={handleJumpToHereDebug}
+                      getColumnWidth={getColumnWidth}
+                    />
+                  </td>
+                </tr>
                 
                 {/* Show drop indicator line AFTER the last row if it's the drop target */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
