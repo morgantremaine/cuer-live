@@ -39,7 +39,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-3 py-3 text-xl font-mono font-bold align-middle border border-border min-h-[56px]"
+        className="px-3 py-3 text-2xl font-mono font-bold align-middle border border-border min-h-[56px]"
         style={{ 
           backgroundColor,
           width: '64px',
@@ -59,19 +59,19 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px] relative"
+              className="align-middle border border-border min-h-[56px] relative overflow-visible"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
               <div 
-                className="px-3 py-3 text-xl font-bold whitespace-nowrap overflow-visible"
+                className="px-3 py-3 text-2xl font-bold whitespace-nowrap absolute left-0 top-0 z-10"
                 style={{ 
                   color: textColor,
-                  minWidth: 'max-content'
+                  minWidth: 'max-content',
+                  width: 'max-content'
                 }}
               >
                 <CellRenderer
@@ -102,7 +102,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="text-base font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
+              <div className="text-lg font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
                 ({headerDuration})
               </div>
             </td>
