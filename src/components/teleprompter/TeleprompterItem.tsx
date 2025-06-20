@@ -172,6 +172,9 @@ const TeleprompterItem = ({
   };
 
   if (isHeaderItem(item)) {
+    // For headers, prioritize the name field which contains the custom text
+    const headerTitle = item.name || item.segmentName || 'HEADER';
+    
     return (
       <div className="mb-8">
         <h2 
@@ -186,7 +189,7 @@ const TeleprompterItem = ({
               fontSize: `${fontSize + 8}px`
             }}
           >
-            {getRowNumber(item.originalIndex)} - {formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}
+            {getRowNumber(item.originalIndex)} - {formatText(headerTitle.toUpperCase())}
           </span>
         </h2>
       </div>
