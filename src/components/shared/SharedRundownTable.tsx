@@ -1,333 +1,146 @@
+
 import React from 'react';
-import { RundownItem } from '@/types/rundown';
-import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { Play } from 'lucide-react';
+import { getContrastTextColor } from '@/utils/colorUtils';
+import { calculateRundownItemTimes } from '@/utils/rundownCalculations';
+import SharedCellRenderer from './SharedCellRenderer';
 
 interface SharedRundownTableProps {
-  items: RundownItem[];
+  items: any[];
   visibleColumns: any[];
   currentSegmentId: string | null;
-  isPlaying?: boolean;
-  rundownStartTime?: string;
+  isPlaying: boolean;
+  rundownStartTime: string;
 }
 
 const SharedRundownTable = ({ 
   items, 
   visibleColumns, 
   currentSegmentId, 
-  isPlaying = false,
-  rundownStartTime = '09:00:00'
+  isPlaying,
+  rundownStartTime 
 }: SharedRundownTableProps) => {
-  // Helper function to convert time string to seconds
-  const timeToSeconds = (timeStr: string): number => {
-    if (!timeStr) return 0;
-    const parts = timeStr.split(':').map(Number);
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
-    } else if (parts.length === 3) {
-      const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
-    }
-    return 0;
-  };
+  // Calculate all timing information for items
+  const itemsWithTimes = calculateRundownItemTimes(items, rundownStartTime);
 
-  // Helper function to convert seconds to time string
-  const secondsToTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Helper function to check if a URL is likely an image
-  const isLikelyImageUrl = (url: string): boolean => {
-    if (!url || !url.trim()) return false;
-    return (
-      /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url) ||
-      /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(url) ||
-      url.includes('images') ||
-      url.includes('photos') ||
-      url.includes('imgur') ||
-      url.includes('unsplash') ||
-      url.includes('gstatic.com') ||
-      url.includes('amazonaws.com') ||
-      url.includes('cloudinary.com')
-    );
-  };
-
-  // Helper function to render cell content
-  const renderCellContent = (item: RundownItem, column: any, calculatedStartTime: string) => {
-    // Get the raw value first
-    let value;
-    
-    // Check if this is the images column specifically
-    if (column.key === 'images' || column.id === 'images') {
-      value = item.images || '';
-    } else {
-      value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
-    }
-    
-    // Special handling for images column - render as image if it's a valid URL
-    if ((column.key === 'images' || column.id === 'images') && value && isLikelyImageUrl(value)) {
-      return (
-        <div className="flex items-center justify-center h-16">
-          <img
-            src={value}
-            alt="Rundown image"
-            className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
-            onError={(e) => {
-              // If image fails to load, show the URL as text instead
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              const parent = target.parentElement;
-              if (parent) {
-                parent.innerHTML = `<span class="text-xs text-gray-500">${value}</span>`;
-              }
-            }}
-          />
-        </div>
-      );
-    }
-    
-    return value;
-  };
-
-  // Calculate start times for all items based on their position and durations
-  const calculateItemTimes = () => {
-    let currentTime = rundownStartTime;
-    const itemsWithTimes: Array<{ item: RundownItem; calculatedStartTime: string }> = [];
-
-    items.forEach((item, index) => {
-      if (item.type === 'header') {
-        // Headers don't advance time
-        itemsWithTimes.push({ item, calculatedStartTime: currentTime });
-      } else {
-        // Regular items
-        itemsWithTimes.push({ item, calculatedStartTime: currentTime });
-        
-        // Only advance time if item is not floated
-        if (!item.isFloating && !item.isFloated && item.duration) {
-          const durationSeconds = timeToSeconds(item.duration);
-          const currentSeconds = timeToSeconds(currentTime);
-          currentTime = secondsToTime(currentSeconds + durationSeconds);
-        }
+  const getRowNumber = (index: number) => {
+    let rowCount = 1;
+    for (let i = 0; i < index; i++) {
+      if (items[i].type !== 'header') {
+        rowCount++;
       }
-    });
-
-    return itemsWithTimes;
-  };
-
-  const calculateHeaderDuration = (headerIndex: number) => {
-    if (headerIndex < 0 || headerIndex >= items.length || items[headerIndex].type !== 'header') {
-      return '00:00:00';
     }
-
-    let totalSeconds = 0;
-    let i = headerIndex + 1;
-
-    while (i < items.length && items[i].type !== 'header') {
-      // Only count non-floated items in header duration
-      if (!items[i].isFloating && !items[i].isFloated) {
-        totalSeconds += timeToSeconds(items[i].duration || '00:00');
-      }
-      i++;
-    }
-
-    return secondsToTime(totalSeconds);
+    return items[index].type === 'header' ? 'H' : rowCount.toString();
   };
-
-  const itemsWithTimes = calculateItemTimes();
 
   return (
-    <>
-      <style>
-        {`
-          @media print {
-            .print-table {
-              width: 100% !important;
-              table-layout: auto !important;
-              font-size: 10px !important;
-            }
-            
-            .print-table th,
-            .print-table td {
-              padding: 3px 4px !important;
-              font-size: 10px !important;
-              line-height: 1.3 !important;
-              word-break: normal !important;
-              overflow-wrap: break-word !important;
-              white-space: normal !important;
-              border: 0.5px solid #666 !important;
-              vertical-align: top !important;
-            }
-            
-            .print-table th {
-              font-size: 9px !important;
-              font-weight: bold !important;
-              background: #f0f0f0 !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              color: #000 !important;
-            }
-            
-            .print-header-row {
-              background: #e5e5e5 !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            
-            .print-row-number {
-              width: 40px !important;
-              min-width: 40px !important;
-              max-width: 40px !important;
-            }
-            
-            .print-time-column {
-              width: 80px !important;
-              min-width: 80px !important;
-              max-width: 80px !important;
-            }
-            
-            .print-content-column {
-              word-break: normal !important;
-              overflow-wrap: break-word !important;
-              white-space: normal !important;
-            }
-          }
-        `}
-      </style>
-      <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400 print:overflow-visible">
-        <table className="w-full print:text-xs print-table">
-          <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10 print:static">
-            <tr className="print-header-row">
-              <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print-row-number">
-                #
+    <div className="w-full overflow-auto">
+      <table className="w-full border-collapse border border-gray-300 print:border-gray-400">
+        <thead>
+          <tr className="bg-gray-100 print:bg-gray-200">
+            <th className="border border-gray-300 px-2 py-2 text-left font-semibold text-sm w-16 min-w-16 print:border-gray-400">
+              #
+            </th>
+            {visibleColumns.map((column) => (
+              <th
+                key={column.id}
+                className="border border-gray-300 px-3 py-2 text-left font-semibold text-sm print:border-gray-400"
+                style={{ 
+                  width: column.width, 
+                  minWidth: column.width 
+                }}
+              >
+                {column.name}
               </th>
-              {visibleColumns.map((column) => (
-                <th
-                  key={column.id}
-                  className={`px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 ${
-                    ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
-                      ? 'print-time-column' 
-                      : 'print-content-column'
-                  }`}
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {itemsWithTimes.map((item, index) => {
+            const rowNumber = getRowNumber(index);
+            const isCurrentlyPlaying = item.id === currentSegmentId;
+            const isHeader = item.type === 'header';
+            
+            // Use item color for background, with special handling for headers
+            const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
+            const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
+
+            return (
+              <tr 
+                key={item.id}
+                className={`border-b border-gray-300 print:border-gray-400 ${
+                  isHeader ? 'bg-gray-50 print:bg-gray-100 font-medium h-14 min-h-14' : 'h-12 min-h-12'
+                }`}
+                style={{
+                  backgroundColor: !isHeader ? backgroundColor : undefined
+                }}
+              >
+                {/* Row number column */}
+                <td 
+                  className="border border-gray-300 px-2 py-1 text-sm font-mono align-middle w-16 min-w-16 print:border-gray-400"
+                  style={{ backgroundColor: !isHeader ? backgroundColor : undefined }}
                 >
-                  <div className="truncate">
-                    {column.name}
+                  <div className="flex items-center space-x-1">
+                    {isCurrentlyPlaying && isPlaying && (
+                      <Play 
+                        className="h-4 w-4 text-blue-600 fill-blue-600" 
+                      />
+                    )}
+                    <span style={{ color: textColor }}>{rowNumber}</span>
                   </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400">
-            {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
-              const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
-              const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
-              const isFloated = item.isFloating || item.isFloated;
-              
-              return (
-                <React.Fragment key={item.id}>
-                  {/* Show thick green line with rounded corners ABOVE the current segment - matching main rundown */}
-                  {isShowcallerCurrent && (
-                    <tr className="print:hidden">
-                      <td colSpan={visibleColumns.length + 1} className="p-0">
-                        <div className="h-2 bg-green-500 w-full rounded-full"></div>
-                      </td>
-                    </tr>
-                  )}
+                </td>
+
+                {/* Dynamic columns */}
+                {visibleColumns.map((column) => {
+                  const isCurrentSegmentName = currentSegmentId === item.id && 
+                    (column.key === 'segmentName' || column.key === 'name');
                   
-                  <tr
-                    className={`
-                      ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200' : ''}
-                      ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
-                      ${isShowcallerCurrent ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
-                      print:break-inside-avoid print:border-0
-                    `}
-                    style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
-                  >
-                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-row-number">
-                      <div className="flex items-center">
-                        {/* Blue play icon - matching main rundown styling */}
-                        {isShowcallerCurrent && (
-                          <Play 
-                            className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print:hidden" 
-                          />
-                        )}
-                        {isFloated && (
-                          <span className="text-yellow-400 mr-1 print:mr-0.5">🛟</span>
-                        )}
-                        <span>{getRowNumber(index, items)}</span>
-                      </div>
+                  return (
+                    <td
+                      key={column.id}
+                      className={`border border-gray-300 align-middle print:border-gray-400 ${isCurrentSegmentName ? 'relative' : ''}`}
+                      style={{ 
+                        width: column.width, 
+                        minWidth: column.width,
+                        backgroundColor: !isHeader ? backgroundColor : undefined
+                      }}
+                    >
+                      {isHeader ? (
+                        // Special handling for headers
+                        <>
+                          {(column.key === 'segmentName' || column.key === 'name') ? (
+                            <SharedCellRenderer
+                              column={column}
+                              item={item}
+                              currentSegmentId={currentSegmentId}
+                              backgroundColor={backgroundColor}
+                            />
+                          ) : column.key === 'duration' ? (
+                            <div className="px-3 py-2 text-sm font-medium text-gray-600">
+                              ({item.calculatedDuration || '00:00'})
+                            </div>
+                          ) : (
+                            <div className="px-3 py-2"></div>
+                          )}
+                        </>
+                      ) : (
+                        // Regular row content
+                        <SharedCellRenderer
+                          column={column}
+                          item={item}
+                          currentSegmentId={currentSegmentId}
+                          backgroundColor={backgroundColor}
+                        />
+                      )}
                     </td>
-                    
-                    {visibleColumns.map((column) => {
-                      // For headers, handle special cases
-                      if (item.type === 'header') {
-                        if (column.key === 'segmentName' || column.key === 'name') {
-                          // Show the header name for both segmentName and name columns
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-content-column">
-                              <div className="break-words whitespace-pre-wrap">{item.name || ''}</div>
-                            </td>
-                          );
-                        } else if (column.key === 'duration') {
-                          // Show the calculated header duration (excluding floated items)
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print-time-column">
-                              <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
-                            </td>
-                          );
-                        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
-                          // Don't show time fields for headers
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-time-column">
-                              <div className="break-words whitespace-pre-wrap"></div>
-                            </td>
-                          );
-                        } else {
-                          // For other columns, show empty cell for headers
-                          return (
-                            <td key={column.id} className="px-2 py-1 text-sm text-gray-900 border-r border-gray-200 print:border-gray-400 print-content-column">
-                              <div className="break-words whitespace-pre-wrap"></div>
-                            </td>
-                          );
-                        }
-                      }
-                      
-                      // For regular items, render content with special handling for images
-                      return (
-                        <td
-                          key={column.id}
-                          className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 ${
-                            ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
-                              ? 'print-time-column' 
-                              : 'print-content-column'
-                          } ${isFloated ? 'text-white' : 'text-gray-900'}`}
-                        >
-                          <div className="break-words whitespace-pre-wrap">
-                            {renderCellContent(item, column, calculatedStartTime)}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                  
-                  {/* Show full-width grey line with rounded corners UNDER the current segment - matching main rundown */}
-                  {isShowcallerCurrent && (
-                    <tr className="print:hidden">
-                      <td colSpan={visibleColumns.length + 1} className="p-0">
-                        <div className="h-1 bg-gray-400 w-full rounded-full"></div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
