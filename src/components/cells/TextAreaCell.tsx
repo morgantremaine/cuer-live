@@ -55,31 +55,23 @@ const TextAreaCell = ({
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
-    // Set the content - use actual value or space for empty content
-    measurementDiv.textContent = value || ' ';
+    // Set the content
+    measurementDiv.textContent = value || ' '; // Use space for empty content
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
     
-    // Calculate minimum height (single line) - ensure we have proper line height
+    // Calculate minimum height (single line)
     const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
     const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
     const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
-    const minHeight = Math.max(38, lineHeight + paddingTop + paddingBottom + borderTop + borderBottom);
+    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
     
-    // Use the larger of natural height or minimum height, with a small buffer for multi-line content
+    // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
-    
-    console.log('📏 Height calculation:', {
-      value: value?.substring(0, 50) + (value?.length > 50 ? '...' : ''),
-      naturalHeight,
-      minHeight,
-      newHeight,
-      currentHeight: calculatedHeight
-    });
     
     // Always update height to ensure proper resizing (both up and down)
     setCalculatedHeight(newHeight);
@@ -87,27 +79,11 @@ const TextAreaCell = ({
 
   // Recalculate height when value changes - with immediate execution
   useEffect(() => {
-    // Use multiple approaches to ensure height updates properly
-    const immediateUpdate = () => {
+    // Use requestAnimationFrame to ensure DOM has updated
+    const frame = requestAnimationFrame(() => {
       calculateHeight();
-    };
-    
-    const delayedUpdate = () => {
-      requestAnimationFrame(() => {
-        calculateHeight();
-      });
-    };
-    
-    // Try both immediate and delayed updates to catch different timing scenarios
-    immediateUpdate();
-    delayedUpdate();
-    
-    // Also set a small timeout as fallback
-    const timer = setTimeout(() => {
-      calculateHeight();
-    }, 10);
-    
-    return () => clearTimeout(timer);
+    });
+    return () => cancelAnimationFrame(frame);
   }, [value]); // This will trigger every time value changes
 
   // Recalculate height when textarea width changes (column resize)
@@ -141,82 +117,11 @@ const TextAreaCell = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Enhanced key navigation that allows multi-line editing
+  // Simple key navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const { selectionStart, selectionEnd } = textarea;
-    const textValue = textarea.value;
-    const lines = textValue.split('\n');
-    
-    // Find current line and position
-    let currentLineIndex = 0;
-    let charCount = 0;
-    for (let i = 0; i < lines.length; i++) {
-      if (charCount + lines[i].length >= selectionStart) {
-        currentLineIndex = i;
-        break;
-      }
-      charCount += lines[i].length + 1; // +1 for newline
-    }
-    
-    const currentLineStart = charCount;
-    const currentLineEnd = charCount + lines[currentLineIndex].length;
-    const positionInLine = selectionStart - currentLineStart;
-
-    // Handle different key combinations
-    if (e.key === 'Enter') {
-      if (e.ctrlKey) {
-        // Ctrl+Enter navigates to next cell
-        e.preventDefault();
-        onKeyDown(e, itemId, cellRefKey);
-      }
-      // Regular Enter creates a line break (default behavior)
-      return;
-    }
-    
-    if (e.key === 'ArrowUp') {
-      if (e.ctrlKey) {
-        // Ctrl+Up navigates to previous cell
-        e.preventDefault();
-        onKeyDown(e, itemId, cellRefKey);
-      } else if (currentLineIndex === 0) {
-        // At first line, navigate to previous cell
-        e.preventDefault();
-        onKeyDown(e, itemId, cellRefKey);
-      }
-      // Otherwise allow normal arrow navigation within text
-      return;
-    }
-    
-    if (e.key === 'ArrowDown') {
-      if (e.ctrlKey) {
-        // Ctrl+Down navigates to next cell
-        e.preventDefault();
-        onKeyDown(e, itemId, cellRefKey);
-      } else if (currentLineIndex === lines.length - 1) {
-        // At last line, navigate to next cell
-        e.preventDefault();
-        onKeyDown(e, itemId, cellRefKey);
-      }
-      // Otherwise allow normal arrow navigation within text
-      return;
-    }
-    
-    if (e.key === 'ArrowLeft') {
-      if (selectionStart === 0 && selectionEnd === 0) {
-        // At beginning of text, don't navigate (stay in current cell)
-        e.preventDefault();
-      }
-      return;
-    }
-    
-    if (e.key === 'ArrowRight') {
-      if (selectionStart === textValue.length && selectionEnd === textValue.length) {
-        // At end of text, don't navigate (stay in current cell)
-        e.preventDefault();
-      }
+    // For Enter key and arrow keys, navigate to next/previous cell
+    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      onKeyDown(e, itemId, cellRefKey);
       return;
     }
     
@@ -224,13 +129,8 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    onUpdateValue(newValue);
-    
-    // Force immediate height recalculation on input
-    setTimeout(() => {
-      calculateHeight();
-    }, 0);
+    onUpdateValue(e.target.value);
+    // Height will be recalculated by useEffect watching value changes
   };
 
   // Enhanced mouse down handler to prevent row dragging when selecting text
@@ -269,7 +169,7 @@ const TextAreaCell = ({
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
@@ -307,7 +207,6 @@ const TextAreaCell = ({
           backgroundColor: 'transparent',
           color: textColor || 'inherit',
           height: `${calculatedHeight}px`,
-          minHeight: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'
         }}
