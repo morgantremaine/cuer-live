@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -240,7 +239,7 @@ const SharedRundownTable = ({
             }`}>
               <tr className="print-header-row">
                 <th 
-                  className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number sticky top-0 z-50 ${
+                  className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number ${
                     isDark 
                       ? 'text-gray-300 border-gray-600 bg-gray-800' 
                       : 'text-gray-500 border-gray-200 bg-gray-50'
@@ -254,7 +253,7 @@ const SharedRundownTable = ({
                   return (
                     <th
                       key={column.id}
-                      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 sticky top-0 z-50 ${
+                      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
                         isDark 
                           ? 'text-gray-300 border-gray-600 bg-gray-800' 
                           : 'text-gray-500 border-gray-200 bg-gray-50'
