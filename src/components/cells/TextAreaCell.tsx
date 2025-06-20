@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 
 interface TextAreaCellProps {
@@ -54,23 +55,31 @@ const TextAreaCell = ({
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
-    // Set the content
-    measurementDiv.textContent = value || ' '; // Use space for empty content
+    // Set the content - use actual value or space for empty content
+    measurementDiv.textContent = value || ' ';
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
     
-    // Calculate minimum height (single line)
+    // Calculate minimum height (single line) - ensure we have proper line height
     const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
     const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
     const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
-    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    const minHeight = Math.max(38, lineHeight + paddingTop + paddingBottom + borderTop + borderBottom);
     
-    // Use the larger of natural height or minimum height
+    // Use the larger of natural height or minimum height, with a small buffer for multi-line content
     const newHeight = Math.max(naturalHeight, minHeight);
+    
+    console.log('📏 Height calculation:', {
+      value: value?.substring(0, 50) + (value?.length > 50 ? '...' : ''),
+      naturalHeight,
+      minHeight,
+      newHeight,
+      currentHeight: calculatedHeight
+    });
     
     // Always update height to ensure proper resizing (both up and down)
     setCalculatedHeight(newHeight);
@@ -78,11 +87,27 @@ const TextAreaCell = ({
 
   // Recalculate height when value changes - with immediate execution
   useEffect(() => {
-    // Use requestAnimationFrame to ensure DOM has updated
-    const frame = requestAnimationFrame(() => {
+    // Use multiple approaches to ensure height updates properly
+    const immediateUpdate = () => {
       calculateHeight();
-    });
-    return () => cancelAnimationFrame(frame);
+    };
+    
+    const delayedUpdate = () => {
+      requestAnimationFrame(() => {
+        calculateHeight();
+      });
+    };
+    
+    // Try both immediate and delayed updates to catch different timing scenarios
+    immediateUpdate();
+    delayedUpdate();
+    
+    // Also set a small timeout as fallback
+    const timer = setTimeout(() => {
+      calculateHeight();
+    }, 10);
+    
+    return () => clearTimeout(timer);
   }, [value]); // This will trigger every time value changes
 
   // Recalculate height when textarea width changes (column resize)
@@ -199,8 +224,13 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onUpdateValue(e.target.value);
-    // Height will be recalculated by useEffect watching value changes
+    const newValue = e.target.value;
+    onUpdateValue(newValue);
+    
+    // Force immediate height recalculation on input
+    setTimeout(() => {
+      calculateHeight();
+    }, 0);
   };
 
   // Enhanced mouse down handler to prevent row dragging when selecting text
@@ -239,7 +269,7 @@ const TextAreaCell = ({
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
+    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
@@ -277,6 +307,7 @@ const TextAreaCell = ({
           backgroundColor: 'transparent',
           color: textColor || 'inherit',
           height: `${calculatedHeight}px`,
+          minHeight: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'
         }}
