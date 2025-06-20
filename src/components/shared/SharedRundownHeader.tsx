@@ -27,7 +27,7 @@ export const SharedRundownHeader = ({
   onToggleTheme
 }: SharedRundownHeaderProps) => {
   return (
-    <div className={`border-b pb-4 mb-4 print:border-gray-400 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+    <div className={`pb-4 mb-4 ${isDark ? '' : ''}`}>
       <div className="flex justify-between items-start mb-4">
         <div>
           <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
