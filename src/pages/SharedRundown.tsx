@@ -244,7 +244,7 @@ const SharedRundown = () => {
   }
 
   return (
-    <div className={`flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+    <div className={`${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
