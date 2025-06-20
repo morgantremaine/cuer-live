@@ -33,6 +33,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     sharedLayout,
     availableLayouts,
     updateSharedLayout,
+    reloadLayouts,
     isLoading
   } = useSharedRundownLayout(rundownId);
 
@@ -118,6 +119,12 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     return sharedLayout?.layout_id === layoutId;
   };
 
+  // Handle layout submenu opening to refresh layouts
+  const handleLayoutSubmenuOpen = () => {
+    console.log('🔄 Refreshing layouts for shared rundown menu');
+    reloadLayouts();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -145,7 +152,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuSub>
+        <DropdownMenuSub onOpenChange={(open) => open && handleLayoutSubmenuOpen()}>
           <DropdownMenuSubTrigger>
             <Layout className="h-4 w-4 mr-2" />
             Set Read-Only Layout...
