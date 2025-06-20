@@ -63,8 +63,8 @@ const SharedRundownTable = ({
               {visibleColumns.map((column) => (
                 <th
                   key={column.id}
-                  className={`px-3 py-2 text-left text-xs font-medium uppercase tracking-wider print:px-1 print:py-1 ${
-                    isDark ? 'text-gray-300' : 'text-gray-500'
+                  className={`px-3 py-2 text-left text-xs font-medium uppercase tracking-wider border-r print:px-1 print:py-1 ${
+                    isDark ? 'text-gray-300 border-gray-600' : 'text-gray-500 border-gray-200'
                   }`}
                   style={{ width: column.width }}
                 >
@@ -73,29 +73,48 @@ const SharedRundownTable = ({
               ))}
             </tr>
           </thead>
-          <tbody className={`${isDark ? 'bg-gray-900' : 'bg-white'} divide-y ${
-            isDark ? 'divide-gray-700' : 'divide-gray-200'
-          }`}>
+          <tbody className={`${isDark ? 'bg-gray-900' : 'bg-white'}`}>
             {items.map((item, index) => {
               const rowStatus = getSimpleRowStatus(item);
               const isCurrentSegment = currentSegmentId === item.id;
+              
+              // Determine row background color
+              let rowBackgroundColor = '';
+              let rowBorderColor = '';
+              
+              if (isCurrentSegment && isPlaying) {
+                // Current playing segment - blue
+                rowBackgroundColor = isDark ? 'bg-blue-900' : 'bg-blue-50';
+                rowBorderColor = isDark ? 'border-blue-600' : 'border-blue-200';
+              } else if (rowStatus === 'current') {
+                // Current time segment - yellow
+                rowBackgroundColor = isDark ? 'bg-yellow-900' : 'bg-yellow-50';
+                rowBorderColor = isDark ? 'border-yellow-600' : 'border-yellow-200';
+              } else if (rowStatus === 'completed') {
+                // Completed segment - green
+                rowBackgroundColor = isDark ? 'bg-green-900' : 'bg-green-50';
+                rowBorderColor = isDark ? 'border-green-600' : 'border-green-200';
+              } else if (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff') {
+                // Custom row color
+                rowBackgroundColor = '';
+                rowBorderColor = '';
+              } else {
+                // Default row
+                rowBackgroundColor = isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-50';
+                rowBorderColor = isDark ? 'border-gray-700' : 'border-gray-200';
+              }
               
               return (
                 <tr
                   key={item.id}
                   data-item-id={item.id}
                   className={`
-                    ${isCurrentSegment && isPlaying ? (
-                      isDark ? 'bg-blue-900 border-blue-600' : 'bg-blue-50 border-blue-200'
-                    ) : rowStatus === 'current' ? (
-                      isDark ? 'bg-yellow-900 border-yellow-600' : 'bg-yellow-50 border-yellow-200'
-                    ) : rowStatus === 'completed' ? (
-                      isDark ? 'bg-green-900 border-green-600' : 'bg-green-50 border-green-200'
-                    ) : (
-                      isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
-                    )}
+                    ${rowBackgroundColor} ${rowBorderColor} border-b
                     transition-colors print:break-inside-avoid
                   `}
+                  style={{ 
+                    backgroundColor: (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff') ? item.color : undefined 
+                  }}
                 >
                   {visibleColumns.map((column) => {
                     let cellContent;
@@ -123,8 +142,8 @@ const SharedRundownTable = ({
                     return (
                       <td
                         key={column.id}
-                        className={`px-3 py-2 text-sm print:px-1 print:py-1 ${
-                          isDark ? 'text-gray-300' : 'text-gray-900'
+                        className={`px-3 py-2 text-sm border-r print:px-1 print:py-1 ${
+                          isDark ? 'text-gray-300 border-gray-600' : 'text-gray-900 border-gray-200'
                         }`}
                         style={{ width: column.width }}
                       >
