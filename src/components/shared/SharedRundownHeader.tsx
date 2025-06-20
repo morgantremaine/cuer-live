@@ -38,7 +38,6 @@ export const SharedRundownHeader = ({
               <Clock className="h-4 w-4" />
               <span>Start Time: {startTime} ({timezone})</span>
             </div>
-            <div>Layout: {layoutName}</div>
           </div>
         </div>
         
