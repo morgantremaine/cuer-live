@@ -23,6 +23,11 @@ const SharedRundown = () => {
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
+  const [autoScroll, setAutoScroll] = useState(() => {
+    // Get auto-scroll preference from localStorage, default to true
+    const saved = localStorage.getItem('sharedRundownAutoScroll');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const { isDark, toggleTheme } = useTheme();
   
   // Better refs to prevent duplicate loads
@@ -31,6 +36,12 @@ const SharedRundown = () => {
 
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
+
+  // Handle auto-scroll toggle
+  const handleToggleAutoScroll = (enabled: boolean) => {
+    setAutoScroll(enabled);
+    localStorage.setItem('sharedRundownAutoScroll', JSON.stringify(enabled));
+  };
 
   // Helper function to format time remaining from seconds to string
   const formatTimeRemaining = (seconds: number): string => {
@@ -206,6 +217,8 @@ const SharedRundown = () => {
           timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
           isDark={isDark}
           onToggleTheme={toggleTheme}
+          autoScroll={autoScroll}
+          onToggleAutoScroll={handleToggleAutoScroll}
         />
 
         <SharedRundownTable
@@ -215,6 +228,7 @@ const SharedRundown = () => {
           isPlaying={isPlaying}
           rundownStartTime={rundownData.startTime || '09:00:00'}
           isDark={isDark}
+          autoScroll={autoScroll}
         />
 
         <SharedRundownFooter />
