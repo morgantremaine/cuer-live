@@ -11,6 +11,8 @@ import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
+import { RundownItem } from '@/types/rundown';
+import { SearchMatch } from '@/types/searchReplace';
 
 interface MobileToolbarProps {
   onAddRow: () => void;
@@ -32,6 +34,10 @@ interface MobileToolbarProps {
   onReset: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
+  // New props for search and replace
+  items?: RundownItem[];
+  selectedItemIds?: Set<string>;
+  onApplyReplacements?: (matches: SearchMatch[]) => void;
 }
 
 const MobileToolbar = ({
@@ -53,7 +59,10 @@ const MobileToolbar = ({
   onBackward,
   onReset,
   rundownTitle,
-  rundownData
+  rundownData,
+  items,
+  selectedItemIds,
+  onApplyReplacements
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -85,6 +94,9 @@ const MobileToolbar = ({
               isMobile={true}
               rundownTitle={rundownTitle}
               rundownData={rundownData}
+              items={items}
+              selectedItemIds={selectedItemIds}
+              onApplyReplacements={onApplyReplacements}
             />
           </DropdownMenuContent>
         </DropdownMenu>

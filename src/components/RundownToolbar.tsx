@@ -4,6 +4,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
 import { CSVExportData } from '@/utils/csvExport';
+import { RundownItem } from '@/types/rundown';
+import { SearchMatch } from '@/types/searchReplace';
 
 interface RundownToolbarProps {
   onAddRow: () => void;
@@ -31,6 +33,10 @@ interface RundownToolbarProps {
   rundownTitle?: string;
   // Rundown data for CSV export
   rundownData?: CSVExportData;
+  // Search and replace functionality
+  items?: RundownItem[];
+  selectedItemIds?: Set<string>;
+  onApplyReplacements?: (matches: SearchMatch[]) => void;
 }
 
 const RundownToolbar = ({
@@ -52,7 +58,10 @@ const RundownToolbar = ({
   canUndo,
   lastAction,
   rundownTitle,
-  rundownData
+  rundownData,
+  items,
+  selectedItemIds,
+  onApplyReplacements
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
 
@@ -75,7 +84,10 @@ const RundownToolbar = ({
     onBackward,
     onReset,
     rundownTitle,
-    rundownData
+    rundownData,
+    items,
+    selectedItemIds,
+    onApplyReplacements
   };
 
   if (isMobile) {
