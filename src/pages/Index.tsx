@@ -4,7 +4,7 @@ import RundownIndexContent from '@/components/RundownIndexContent';
 
 const Index = () => {
   return (
-    <div className="h-screen overflow-hidden">
+    <div>
       <RundownIndexContent />
     </div>
   );
