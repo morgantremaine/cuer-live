@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,9 +31,7 @@ export const SharedRundownHeader = ({
   onToggleAutoScroll
 }: SharedRundownHeaderProps) => {
   return (
-    <div className={`border-b print:border-gray-400 ${
-      isDark ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'
-    }`}>
+    <div className={`${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <div className="px-4 py-3 print:px-2 print:py-1">
         <div className="flex flex-col space-y-3 print:space-y-1">
           {/* Title and Controls Row */}
