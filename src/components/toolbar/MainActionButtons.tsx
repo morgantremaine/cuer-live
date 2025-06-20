@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
-import { Plus, Settings, Monitor, FileText, Undo, Search } from 'lucide-react';
+
+import React from 'react';
+import { Plus, Settings, Monitor, FileText, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
-import { SearchReplaceDialog } from '@/components/SearchReplaceDialog';
 import { CSVExportData } from '@/utils/csvExport';
-import { RundownItem } from '@/types/rundown';
-import { SearchMatch } from '@/types/searchReplace';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
@@ -22,10 +20,6 @@ interface MainActionButtonsProps {
   isMobile?: boolean;
   rundownTitle?: string;
   rundownData?: CSVExportData;
-  // New props for search and replace
-  items?: RundownItem[];
-  selectedItemIds?: Set<string>;
-  onApplyReplacements?: (matches: SearchMatch[]) => void;
 }
 
 const MainActionButtons = ({
@@ -40,14 +34,10 @@ const MainActionButtons = ({
   selectedRowId,
   isMobile = false,
   rundownTitle = 'Untitled Rundown',
-  rundownData,
-  items = [],
-  selectedItemIds = new Set(),
-  onApplyReplacements
+  rundownData
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [showSearchReplace, setShowSearchReplace] = useState(false);
 
   const handleOpenBlueprint = () => {
     if (!rundownId) {
@@ -75,16 +65,6 @@ const MainActionButtons = ({
     // Open teleprompter in a new window
     const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleSearchReplace = () => {
-    setShowSearchReplace(true);
-  };
-
-  const handleApplySearchReplacements = (matches: SearchMatch[]) => {
-    if (onApplyReplacements) {
-      onApplyReplacements(matches);
-    }
   };
 
   const buttonSize = 'sm';
@@ -116,11 +96,6 @@ const MainActionButtons = ({
         <span>{isMobile ? 'Columns' : 'Manage Columns'}</span>
       </Button>
       
-      <Button onClick={handleSearchReplace} variant="outline" size={buttonSize} className={buttonClass}>
-        <Search className="h-4 w-4" />
-        <span>{isMobile ? 'Find' : 'Find & Replace'}</span>
-      </Button>
-      
       {rundownId && (
         <ShareRundownMenu 
           rundownId={rundownId} 
@@ -137,15 +112,6 @@ const MainActionButtons = ({
         <FileText className="h-4 w-4" />
         <span>Blueprint</span>
       </Button>
-
-      {/* Search and Replace Dialog */}
-      <SearchReplaceDialog
-        open={showSearchReplace}
-        onOpenChange={setShowSearchReplace}
-        items={items}
-        selectedItemIds={selectedItemIds}
-        onApplyReplacements={handleApplySearchReplacements}
-      />
     </>
   );
 };

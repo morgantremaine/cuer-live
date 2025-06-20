@@ -4,8 +4,6 @@ import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
-import { RundownItem } from '@/types/rundown';
-import { SearchMatch } from '@/types/searchReplace';
 
 interface DesktopToolbarProps {
   onAddRow: () => void;
@@ -27,10 +25,6 @@ interface DesktopToolbarProps {
   onReset: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
-  // New props for search and replace
-  items?: RundownItem[];
-  selectedItemIds?: Set<string>;
-  onApplyReplacements?: (matches: SearchMatch[]) => void;
 }
 
 const DesktopToolbar = ({
@@ -52,10 +46,7 @@ const DesktopToolbar = ({
   onBackward,
   onReset,
   rundownTitle,
-  rundownData,
-  items,
-  selectedItemIds,
-  onApplyReplacements
+  rundownData
 }: DesktopToolbarProps) => {
   return (
     <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -73,9 +64,6 @@ const DesktopToolbar = ({
           isMobile={false}
           rundownTitle={rundownTitle}
           rundownData={rundownData}
-          items={items}
-          selectedItemIds={selectedItemIds}
-          onApplyReplacements={onApplyReplacements}
         />
       </div>
 
