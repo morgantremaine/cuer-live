@@ -161,6 +161,7 @@ const HeaderRow = (props: HeaderRowProps) => {
         style={{
           backgroundColor
         }}
+        data-item-id={item.id}
         draggable
         onDragStart={handleDragStart}
         onDragOver={props.onDragOver}
