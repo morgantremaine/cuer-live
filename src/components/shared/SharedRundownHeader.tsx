@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,14 @@ export const SharedRundownHeader = ({
             </div>
             
             <div className="flex items-center space-x-2 print:hidden">
+              {/* Start Time */}
+              <div className={`flex items-center space-x-1 text-sm ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                <Clock className="h-4 w-4" />
+                <span>Start: {startTime}</span>
+              </div>
+              
               {/* Autoscroll Toggle */}
               {onToggleAutoScroll && (
                 <div className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ${
@@ -102,12 +111,7 @@ export const SharedRundownHeader = ({
           {/* Status Information Row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="flex items-center space-x-4 text-sm print:text-xs">
-              <div className={`flex items-center space-x-1 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                <Clock className="h-4 w-4" />
-                <span>Start: {startTime}</span>
-              </div>
+              {/* This section is now empty since start time moved up */}
             </div>
             
             {/* Playback Status */}
