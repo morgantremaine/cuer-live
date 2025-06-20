@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -6,6 +5,7 @@ import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
+import { useState, useEffect } from 'react';
 
 export const useRundownStateCoordination = () => {
   // Get user ID from auth
@@ -14,6 +14,26 @@ export const useRundownStateCoordination = () => {
 
   // Single source of truth for all rundown state (NO showcaller interference)
   const simplifiedState = useSimplifiedRundownState();
+
+  // Autoscroll state with localStorage persistence
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('rundown-autoscroll-enabled');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  // Persist autoscroll preference
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rundown-autoscroll-enabled', JSON.stringify(autoScrollEnabled));
+    }
+  }, [autoScrollEnabled]);
+
+  const toggleAutoScroll = () => {
+    setAutoScrollEnabled(prev => !prev);
+  };
 
   // Completely separate showcaller visual state management
   const showcallerVisual = useShowcallerVisualState({
@@ -202,7 +222,11 @@ export const useRundownStateCoordination = () => {
       markAsChanged: () => {
         // Handled internally by simplified state
       },
-      addMultipleRows
+      addMultipleRows,
+      
+      // Autoscroll state
+      autoScrollEnabled,
+      toggleAutoScroll
     },
     interactions,
     uiState

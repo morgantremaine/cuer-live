@@ -28,6 +28,8 @@ interface RundownHeaderProps {
   isPlaying?: boolean;
   currentSegmentId?: string | null;
   timeRemaining?: number;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const RundownHeader = ({ 
@@ -50,7 +52,9 @@ const RundownHeader = ({
   isProcessingRealtimeUpdate,
   isPlaying = false,
   currentSegmentId = null,
-  timeRemaining = 0
+  timeRemaining = 0,
+  autoScrollEnabled = false,
+  onToggleAutoScroll
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -140,6 +144,8 @@ const RundownHeader = ({
           isPlaying={isPlaying}
           currentSegmentId={currentSegmentId}
           timeRemaining={timeRemaining}
+          autoScrollEnabled={autoScrollEnabled}
+          onToggleAutoScroll={onToggleAutoScroll}
         />
       </div>
 
@@ -183,6 +189,8 @@ const RundownHeader = ({
           isPlaying={isPlaying}
           currentSegmentId={currentSegmentId}
           timeRemaining={timeRemaining}
+          autoScrollEnabled={autoScrollEnabled}
+          onToggleAutoScroll={onToggleAutoScroll}
         />
       </div>
     </div>

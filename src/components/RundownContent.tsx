@@ -5,6 +5,7 @@ import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 
 interface RundownContentProps {
   items: RundownItem[];
@@ -19,6 +20,8 @@ interface RundownContentProps {
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
   selectedRowId?: string | null;
+  isPlaying?: boolean;
+  autoScrollEnabled?: boolean;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -58,6 +61,8 @@ const RundownContent = ({
   currentSegmentId,
   hasClipboardData = false,
   selectedRowId = null,
+  isPlaying = false,
+  autoScrollEnabled = false,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -84,10 +89,18 @@ const RundownContent = ({
   onJumpToHere
 }: RundownContentProps) => {
 
+  // Initialize autoscroll functionality
+  const { scrollContainerRef } = useRundownAutoscroll({
+    currentSegmentId,
+    isPlaying,
+    autoScrollEnabled,
+    items
+  });
+
   return (
     <div className="relative bg-background h-full">
       {/* Scrollable Content with Header Inside */}
-      <ScrollArea className="w-full h-full bg-background">
+      <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
         <div className="min-w-max bg-background">
           {/* Sticky Header - Inside ScrollArea */}
           <div className="sticky top-0 z-20 bg-background border-b border-border">

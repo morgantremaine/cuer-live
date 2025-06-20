@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -78,4 +77,8 @@ export interface RundownContainerProps {
   
   // Jump to here functionality
   onJumpToHere?: (segmentId: string) => void;
+  
+  // Autoscroll functionality
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }

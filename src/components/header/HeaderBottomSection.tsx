@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, RotateCcw } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import ShowcallerTimingIndicator from '../showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { RundownItem } from '@/types/rundown';
@@ -12,7 +13,9 @@ interface HeaderBottomSectionProps {
   items?: RundownItem[];
   isPlaying?: boolean;
   currentSegmentId?: string | null;
-  timeRemaining?: number; // Add this prop
+  timeRemaining?: number;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const HeaderBottomSection = ({
@@ -22,7 +25,9 @@ const HeaderBottomSection = ({
   items = [],
   isPlaying = false,
   currentSegmentId = null,
-  timeRemaining = 0 // Default value
+  timeRemaining = 0,
+  autoScrollEnabled = false,
+  onToggleAutoScroll
 }: HeaderBottomSectionProps) => {
   // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
@@ -110,7 +115,19 @@ const HeaderBottomSection = ({
           />
         </div>
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center space-x-4">
+        {/* Autoscroll Toggle */}
+        {onToggleAutoScroll && (
+          <div className="flex items-center space-x-2">
+            <RotateCcw className="h-4 w-4 opacity-75" />
+            <span className="opacity-75 text-xs">Auto-scroll:</span>
+            <Switch
+              checked={autoScrollEnabled}
+              onCheckedChange={onToggleAutoScroll}
+              className="scale-75"
+            />
+          </div>
+        )}
         <ShowcallerTimingIndicator
           isOnTime={isOnTime}
           isAhead={isAhead}

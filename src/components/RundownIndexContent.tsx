@@ -49,7 +49,9 @@ const RundownIndexContent = () => {
     canUndo,
     lastAction,
     isConnected,
-    isProcessingRealtimeUpdate
+    isProcessingRealtimeUpdate,
+    autoScrollEnabled,
+    toggleAutoScroll
   } = coreState;
 
   // Use user column preferences for persistent column management
@@ -392,6 +394,8 @@ const RundownIndexContent = () => {
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         onJumpToHere={handleJumpToHere}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={toggleAutoScroll}
       />
       
       <CuerChatButton rundownData={rundownData} />
