@@ -190,6 +190,7 @@ export const useRundownStateCoordination = () => {
       pause: showcallerVisual.pause,
       forward: showcallerVisual.forward,
       backward: showcallerVisual.backward,
+      reset: showcallerVisual.reset,
       
       // Undo functionality
       undo: simplifiedState.undo,
