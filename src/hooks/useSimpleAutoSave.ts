@@ -42,7 +42,7 @@ export const useSimpleAutoSave = (
       // Set a timeout to clear typing state after user stops
       typingTimeoutRef.current = setTimeout(() => {
         userTypingRef.current = false;
-      }, 2000); // 2 seconds after stopping typing
+      }, 3000); // 3 seconds after stopping typing
     }
   }, []);
 
@@ -53,6 +53,7 @@ export const useSimpleAutoSave = (
     
     if (isUpdate) {
       lastShowcallerActivityRef.current = now;
+      console.log('📺 Showcaller update detected - blocking autosave for 45 seconds');
       
       // Clear existing timeout
       if (showcallerUpdateTimeoutRef.current) {
@@ -62,7 +63,8 @@ export const useSimpleAutoSave = (
       // Extended timeout to cover all showcaller operations
       showcallerUpdateTimeoutRef.current = setTimeout(() => {
         showcallerUpdateRef.current = false;
-      }, 15000); // 15 seconds to cover showcaller state changes
+        console.log('📺 Showcaller update timeout cleared - autosave can resume');
+      }, 45000); // 45 seconds to ensure all showcaller operations complete
     }
   }, []);
 
@@ -81,65 +83,64 @@ export const useSimpleAutoSave = (
       trackOwnUpdateRef.current(timestamp);
     }
     
-    // Clean up old timestamps after 15 seconds
+    // Clean up old timestamps after 20 seconds
     setTimeout(() => {
       ownUpdateTimestamps.current.delete(timestamp);
       console.log('🧹 Cleaned up own update timestamp:', timestamp);
-    }, 15000);
+    }, 20000);
   }, []);
 
   // Enhanced showcaller activity detection
   const isRecentShowcallerActivity = useCallback(() => {
     const now = Date.now();
     const timeSinceLastActivity = now - lastShowcallerActivityRef.current;
-    return timeSinceLastActivity < 15000; // 15 seconds
+    const isRecent = timeSinceLastActivity < 45000; // 45 seconds
+    
+    if (isRecent) {
+      console.log('🚫 Recent showcaller activity detected, blocking autosave');
+    }
+    
+    return isRecent;
   }, []);
 
-  // Enhanced content signature that excludes showcaller fields and checks for recent showcaller activity
+  // Enhanced content signature that completely excludes showcaller-related fields
   const createContentSignature = useCallback(() => {
     // If there's recent showcaller activity, return the last saved signature to prevent saves
-    if (isRecentShowcallerActivity()) {
-      console.log('🚫 Skipping signature creation due to recent showcaller activity');
+    if (isRecentShowcallerActivity() || showcallerUpdateRef.current) {
+      console.log('🚫 Skipping signature creation due to showcaller activity');
       return lastSavedRef.current;
     }
 
-    return JSON.stringify({
-      items: state.items?.map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        customFields: item.customFields,
-        segmentName: item.segmentName,
-        elapsedTime: item.elapsedTime,
-        rowNumber: item.rowNumber
-        // Explicitly exclude: status (showcaller field)
-      })) || [],
+    // Create signature excluding ALL showcaller-related fields
+    const cleanItems = state.items?.map(item => {
+      // Create a clean copy excluding showcaller fields
+      const { status, elapsedTime, ...cleanItem } = item;
+      return cleanItem;
+    }) || [];
+
+    const signature = JSON.stringify({
+      items: cleanItems,
       title: state.title,
       startTime: state.startTime,
       timezone: state.timezone
     });
+
+    return signature;
   }, [state.items, state.title, state.startTime, state.timezone, isRecentShowcallerActivity]);
 
   useEffect(() => {
-    // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, showcaller is updating, or we're already saving
+    // Enhanced conditions - Don't save if showcaller is active or any blocking condition exists
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current || 
         showcallerUpdateRef.current ||
         pendingSaveRef.current ||
         isRecentShowcallerActivity()) {
+      
+      if (showcallerUpdateRef.current || isRecentShowcallerActivity()) {
+        console.log('🚫 Autosave blocked due to showcaller activity');
+      }
+      
       return;
     }
 
@@ -148,15 +149,18 @@ export const useSimpleAutoSave = (
 
     // Only save if state actually changed (and it's not the same as last saved due to showcaller activity)
     if (currentSignature === lastSavedRef.current) {
+      console.log('💾 No changes detected in content signature - skipping save');
       return;
     }
 
-    // Rate limiting: don't save more than once every 3 seconds (increased from 2)
+    // Rate limiting: don't save more than once every 4 seconds
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 3000;
+    const minSaveInterval = 4000; // Increased from 3000
     
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 5000 : 2000; // Increased debounce times
+    const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000; // Increased debounce times
+
+    console.log('💾 Scheduling autosave in', debounceTime, 'ms');
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
@@ -180,9 +184,11 @@ export const useSimpleAutoSave = (
       const finalSignature = createContentSignature();
       
       if (finalSignature === lastSavedRef.current) {
+        console.log('💾 No changes in final signature check - skipping save');
         return;
       }
       
+      console.log('💾 Executing autosave...');
       setIsSaving(true);
       pendingSaveRef.current = true;
       lastSaveTimeRef.current = Date.now();

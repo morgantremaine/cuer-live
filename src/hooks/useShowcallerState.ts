@@ -42,7 +42,6 @@ export const useShowcallerState = ({
   const hasInitialized = useRef(false);
   const lastSyncedStateRef = useRef<string | null>(null);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const showcallerUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const showcallerOperationInProgressRef = useRef(false);
   
   // Keep callback ref updated
@@ -98,18 +97,16 @@ export const useShowcallerState = ({
       setShowcallerUpdate(isStarting);
       
       if (isStarting) {
-        // Clear any existing timeout
-        if (showcallerUpdateTimeoutRef.current) {
-          clearTimeout(showcallerUpdateTimeoutRef.current);
-        }
+        console.log('📺 Marking showcaller operation start - blocking autosave');
         
-        // Set timeout to clear the operation flag
-        showcallerUpdateTimeoutRef.current = setTimeout(() => {
+        // Set timeout to clear the operation flag after a longer delay
+        setTimeout(() => {
           showcallerOperationInProgressRef.current = false;
           if (setShowcallerUpdate) {
             setShowcallerUpdate(false);
+            console.log('📺 Clearing showcaller operation block - autosave can resume');
           }
-        }, 20000); // 20 seconds to ensure all related operations complete
+        }, 30000); // 30 seconds to ensure all related operations complete
       }
     }
   }, [setShowcallerUpdate]);
@@ -148,6 +145,17 @@ export const useShowcallerState = ({
     }
   }, [showcallerState, debouncedSync, markShowcallerOperation]);
 
+  // Silent item update that doesn't trigger main autosave
+  const silentUpdateItem = useCallback((id: string, field: string, value: string) => {
+    // Signal we're doing a showcaller operation to prevent autosave
+    markShowcallerOperation(true);
+    
+    // Use setTimeout to ensure the showcaller update flag is set before updateItem is called
+    setTimeout(() => {
+      updateItem(id, field, value);
+    }, 10);
+  }, [updateItem, markShowcallerOperation]);
+
   // Clear current status from all items with showcaller operation marking
   const clearCurrentStatus = useCallback(() => {
     markShowcallerOperation(true);
@@ -156,10 +164,10 @@ export const useShowcallerState = ({
     items.forEach(item => {
       if (item.status === 'current') {
         console.log('📺 Clearing current status from:', item.id);
-        updateItem(item.id, 'status', 'completed');
+        silentUpdateItem(item.id, 'status', 'completed');
       }
     });
-  }, [items, updateItem, markShowcallerOperation]);
+  }, [items, silentUpdateItem, markShowcallerOperation]);
 
   const setCurrentSegment = useCallback((segmentId: string) => {
     markShowcallerOperation(true);
@@ -168,7 +176,7 @@ export const useShowcallerState = ({
     const segment = items.find(item => item.id === segmentId);
     
     if (segment && segment.type === 'regular') {
-      updateItem(segmentId, 'status', 'current');
+      silentUpdateItem(segmentId, 'status', 'current');
       const duration = timeToSeconds(segment.duration || '00:00');
       
       updateShowcallerState({
@@ -178,7 +186,7 @@ export const useShowcallerState = ({
         controllerId: userId
       }, true);
     }
-  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId, markShowcallerOperation]);
+  }, [items, silentUpdateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId, markShowcallerOperation]);
 
   // Timer logic with enhanced showcaller operation marking
   const startTimer = useCallback(() => {
@@ -195,12 +203,12 @@ export const useShowcallerState = ({
           if (isActiveController && prevState.currentSegmentId) {
             markShowcallerOperation(true);
 
-            updateItem(prevState.currentSegmentId, 'status', 'completed');
+            silentUpdateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
             if (nextSegment) {
               const duration = timeToSeconds(nextSegment.duration || '00:00');
-              updateItem(nextSegment.id, 'status', 'current');
+              silentUpdateItem(nextSegment.id, 'status', 'current');
               
               const newState = {
                 ...prevState,
@@ -266,7 +274,7 @@ export const useShowcallerState = ({
         return newState;
       });
     }, 1000);
-  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate, markShowcallerOperation]);
+  }, [isController, silentUpdateItem, getNextSegment, timeToSeconds, trackOwnUpdate, markShowcallerOperation]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -288,9 +296,9 @@ export const useShowcallerState = ({
       items.forEach((item, index) => {
         if (item.type === 'regular') {
           if (index < selectedIndex) {
-            updateItem(item.id, 'status', 'completed');
+            silentUpdateItem(item.id, 'status', 'completed');
           } else if (index > selectedIndex) {
-            updateItem(item.id, 'status', 'upcoming');
+            silentUpdateItem(item.id, 'status', 'upcoming');
           }
         }
       });
@@ -305,7 +313,7 @@ export const useShowcallerState = ({
       // Resume current segment
       const currentSegment = items.find(item => item.id === showcallerState.currentSegmentId);
       if (currentSegment) {
-        updateItem(currentSegment.id, 'status', 'current');
+        silentUpdateItem(currentSegment.id, 'status', 'current');
       }
     }
     
@@ -316,7 +324,7 @@ export const useShowcallerState = ({
     }, true);
     
     startTimer();
-  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer, markShowcallerOperation]);
+  }, [items, silentUpdateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer, markShowcallerOperation]);
 
   const pause = useCallback(() => {
     markShowcallerOperation(true);
@@ -341,8 +349,8 @@ export const useShowcallerState = ({
       if (nextSegment) {
         console.log('📺 Moving to next segment:', nextSegment.id);
         // Batch the operations to reduce conflicts
-        updateItem(showcallerState.currentSegmentId, 'status', 'completed');
-        updateItem(nextSegment.id, 'status', 'current');
+        silentUpdateItem(showcallerState.currentSegmentId, 'status', 'completed');
+        silentUpdateItem(nextSegment.id, 'status', 'current');
         
         const duration = timeToSeconds(nextSegment.duration || '00:00');
         
@@ -359,7 +367,7 @@ export const useShowcallerState = ({
         }
       }
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markShowcallerOperation]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, silentUpdateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markShowcallerOperation]);
 
   const backward = useCallback(() => {
     markShowcallerOperation(true);
@@ -370,8 +378,8 @@ export const useShowcallerState = ({
       if (prevSegment) {
         console.log('📺 Moving to previous segment:', prevSegment.id);
         // Batch the operations to reduce conflicts
-        updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
-        updateItem(prevSegment.id, 'status', 'current');
+        silentUpdateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
+        silentUpdateItem(prevSegment.id, 'status', 'current');
         
         const duration = timeToSeconds(prevSegment.duration || '00:00');
         
@@ -388,7 +396,7 @@ export const useShowcallerState = ({
         }
       }
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markShowcallerOperation]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, silentUpdateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markShowcallerOperation]);
 
   // External state application
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
@@ -406,7 +414,7 @@ export const useShowcallerState = ({
     if (externalState.currentSegmentId) {
       const segment = items.find(item => item.id === externalState.currentSegmentId);
       if (segment) {
-        updateItem(externalState.currentSegmentId, 'status', 'current');
+        silentUpdateItem(externalState.currentSegmentId, 'status', 'current');
       }
     }
     
@@ -435,7 +443,7 @@ export const useShowcallerState = ({
       console.log('📺 Restarting timer after sync');
       setTimeout(() => startTimer(), 100);
     }
-  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer, markShowcallerOperation]);
+  }, [stopTimer, clearCurrentStatus, items, silentUpdateItem, timeToSeconds, startTimer, markShowcallerOperation]);
 
   // Initialize current segment on mount if none exists
   useEffect(() => {
@@ -462,9 +470,6 @@ export const useShowcallerState = ({
       }
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
-      }
-      if (showcallerUpdateTimeoutRef.current) {
-        clearTimeout(showcallerUpdateTimeoutRef.current);
       }
     };
   }, []);
