@@ -2,7 +2,6 @@
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
-import { getRowStatus } from '@/utils/rundownCalculations';
 import { format } from 'date-fns';
 
 interface SharedRundownTableProps {
@@ -22,6 +21,25 @@ const SharedRundownTable = ({
   rundownStartTime,
   isDark
 }: SharedRundownTableProps) => {
+
+  // Simple row status calculation for shared view
+  const getSimpleRowStatus = (item: RundownItem): 'upcoming' | 'current' | 'completed' => {
+    // For shared view, we'll use a simplified status based on current time
+    // This is less complex than the full calculation system
+    const now = new Date();
+    const currentTimeString = now.toTimeString().slice(0, 8);
+    
+    // If we have start and end times, use them for comparison
+    if (item.startTime && item.endTime) {
+      if (currentTimeString >= item.startTime && currentTimeString < item.endTime) {
+        return 'current';
+      } else if (currentTimeString >= item.endTime) {
+        return 'completed';
+      }
+    }
+    
+    return 'upcoming';
+  };
 
   // Helper function to format time
   const formatTime = (time: string): string => {
@@ -59,7 +77,7 @@ const SharedRundownTable = ({
             isDark ? 'divide-gray-700' : 'divide-gray-200'
           }`}>
             {items.map((item, index) => {
-              const rowStatus = getRowStatus(item, rundownStartTime);
+              const rowStatus = getSimpleRowStatus(item);
               const isCurrentSegment = currentSegmentId === item.id;
               
               return (
