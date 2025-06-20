@@ -1,192 +1,100 @@
 
 import React from 'react';
-import HeaderLogo from './header/HeaderLogo';
-import HeaderTitle from './header/HeaderTitle';
-import HeaderControls from './header/HeaderControls';
-import HeaderBottomSection from './header/HeaderBottomSection';
-import RealtimeStatusIndicator from './RealtimeStatusIndicator';
-import { RundownItem } from '@/types/rundown';
+import { Clock, Moon, Sun, Navigation } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 
 interface RundownHeaderProps {
-  currentTime: Date;
-  timezone: string;
-  onTimezoneChange: (timezone: string) => void;
-  totalRuntime: string;
-  hasUnsavedChanges: boolean;
-  isSaving: boolean;
   title: string;
-  onTitleChange: (title: string) => void;
-  rundownStartTime: string;
-  onRundownStartTimeChange: (startTime: string) => void;
-  items?: RundownItem[];
-  visibleColumns?: any[];
-  onUndo: () => void;
-  canUndo: boolean;
-  lastAction: string | null;
-  isConnected?: boolean;
-  isProcessingRealtimeUpdate?: boolean;
+  startTime: string;
+  timezone: string;
+  currentSegmentId: string | null;
   isPlaying?: boolean;
-  currentSegmentId?: string | null;
-  timeRemaining?: number;
+  timeRemaining?: string | null;
+  isDark?: boolean;
+  onToggleTheme?: () => void;
+  autoScroll?: boolean;
+  onToggleAutoScroll?: (enabled: boolean) => void;
 }
 
-const RundownHeader = ({ 
-  currentTime, 
+export const RundownHeader = ({ 
+  title, 
+  startTime, 
   timezone, 
-  onTimezoneChange, 
-  totalRuntime,
-  hasUnsavedChanges,
-  isSaving,
-  title,
-  onTitleChange,
-  rundownStartTime,
-  onRundownStartTimeChange,
-  items = [],
-  visibleColumns = [],
-  onUndo,
-  canUndo,
-  lastAction,
-  isConnected,
-  isProcessingRealtimeUpdate,
-  isPlaying = false,
-  currentSegmentId = null,
-  timeRemaining = 0
+  currentSegmentId, 
+  isPlaying = false, 
+  timeRemaining = null,
+  isDark = false,
+  onToggleTheme,
+  autoScroll = true,
+  onToggleAutoScroll
 }: RundownHeaderProps) => {
-  const formatTime = (time: Date, tz: string) => {
-    try {
-      const timeString = time.toLocaleTimeString('en-US', { 
-        hour12: false,
-        timeZone: tz
-      });
-      return timeString;
-    } catch {
-      return time.toLocaleTimeString('en-US', { hour12: false });
-    }
-  };
-
   return (
-    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-2 border-b border-gray-200 dark:border-gray-700">
-      {/* Mobile layout: Compact single column - only for screens smaller than 640px */}
-      <div className="block sm:hidden">
-        <div className="mb-1">
-          <HeaderTitle
-            title={title}
-            onTitleChange={onTitleChange}
-            hasUnsavedChanges={hasUnsavedChanges}
-            isSaving={isSaving}
-          />
-          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1 flex items-center gap-2">
-            {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
-              <RealtimeStatusIndicator
-                isConnected={isConnected || false}
-                isProcessingUpdate={isProcessingRealtimeUpdate || false}
-              />
-            )}
-          </div>
-        </div>
-        <HeaderControls
-          currentTime={currentTime}
-          timezone={timezone}
-          onTimezoneChange={onTimezoneChange}
-          onUndo={onUndo}
-          canUndo={canUndo}
-          lastAction={lastAction}
-        />
-      </div>
-
-      {/* Tablet layout: Optimized for tablet screens 640px - 1024px */}
-      <div className="hidden sm:block lg:hidden">
-        {/* Top row: Logo and Title */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <HeaderLogo />
-            <div className="flex-1 min-w-0">
-              <HeaderTitle
-                title={title}
-                onTitleChange={onTitleChange}
-                hasUnsavedChanges={hasUnsavedChanges}
-                isSaving={isSaving}
-              />
+    <div className={`pb-1 mb-1 ${isDark ? '' : ''}`}>
+      <div className="flex justify-between items-start mb-1">
+        <div>
+          <h1 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            {title}
+          </h1>
+          <div className={`text-sm space-y-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Start Time: {startTime} ({timezone})</span>
             </div>
-          </div>
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
-              <RealtimeStatusIndicator
-                isConnected={isConnected || false}
-                isProcessingUpdate={isProcessingRealtimeUpdate || false}
-              />
-            )}
           </div>
         </div>
         
-        {/* Bottom row: Controls */}
-        <div className="flex justify-end">
-          <HeaderControls
-            currentTime={currentTime}
-            timezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-            onUndo={onUndo}
-            canUndo={canUndo}
-            lastAction={lastAction}
+        {/* Dark mode toggle */}
+        {onToggleTheme && (
+          <div className="print:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleTheme}
+              className="h-9 w-9"
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      {/* Showcaller status - only when playing */}
+      {isPlaying && currentSegmentId && (
+        <div className={`flex items-center justify-between gap-4 text-sm p-2 rounded mb-2 ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'}`}>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span>Live - Currently playing</span>
+            {timeRemaining && (
+              <span className="ml-2 font-mono">
+                {timeRemaining}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Auto-scroll toggle - always visible when function is available */}
+      {onToggleAutoScroll && (
+        <div className={`flex items-center justify-between gap-4 text-sm p-2 rounded mb-2 print:hidden ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
+          <div className="flex items-center gap-2">
+            <Navigation className="h-4 w-4" />
+            <span>Auto-scroll to current segment</span>
+            <span className="text-xs opacity-75">
+              {isPlaying ? '(Live showcaller)' : '(Ready for showcaller)'}
+            </span>
+          </div>
+          <Switch
+            checked={autoScroll}
+            onCheckedChange={onToggleAutoScroll}
+            className="data-[state=checked]:bg-blue-600"
           />
         </div>
-
-        {/* Bottom section for tablet */}
-        <HeaderBottomSection
-          totalRuntime={totalRuntime}
-          rundownStartTime={rundownStartTime}
-          onRundownStartTimeChange={onRundownStartTimeChange}
-          items={items}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-        />
-      </div>
-
-      {/* Desktop layout: Logo, title, and controls in a row - for screens 1024px and larger */}
-      <div className="hidden lg:block">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center space-x-4">
-            <HeaderLogo />
-            <HeaderTitle
-              title={title}
-              onTitleChange={onTitleChange}
-              hasUnsavedChanges={hasUnsavedChanges}
-              isSaving={isSaving}
-            />
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-              {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
-                <RealtimeStatusIndicator
-                  isConnected={isConnected || false}
-                  isProcessingUpdate={isProcessingRealtimeUpdate || false}
-                />
-              )}
-            </div>
-            <HeaderControls
-              currentTime={currentTime}
-              timezone={timezone}
-              onTimezoneChange={onTimezoneChange}
-              onUndo={onUndo}
-              canUndo={canUndo}
-              lastAction={lastAction}
-            />
-          </div>
-        </div>
-
-        <HeaderBottomSection
-          totalRuntime={totalRuntime}
-          rundownStartTime={rundownStartTime}
-          onRundownStartTimeChange={onRundownStartTimeChange}
-          items={items}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-        />
-      </div>
+      )}
     </div>
   );
 };
-
-export default RundownHeader;
