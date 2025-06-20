@@ -20,7 +20,7 @@ export const useRundownStateCoordination = () => {
     setItems: simplifiedState.setItems,
     rundownId: simplifiedState.rundownId,
     userId: userId,
-    setShowcallerUpdate: simplifiedState.setShowcallerUpdate || (() => {})
+    setShowcallerUpdate: () => {} // No-op since showcaller is now isolated
   });
 
   // Helper function to calculate end time
