@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 
 export const useTeleprompterControls = () => {
@@ -7,6 +6,7 @@ export const useTeleprompterControls = () => {
   const [scrollSpeed, setScrollSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isUppercase, setIsUppercase] = useState(false);
+  const [showAllSegments, setShowAllSegments] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Define speed steps: negative for reverse, 0 for stop, positive for forward
@@ -139,12 +139,17 @@ export const useTeleprompterControls = () => {
     setIsUppercase(!isUppercase);
   };
 
+  const toggleShowAllSegments = () => {
+    setShowAllSegments(!showAllSegments);
+  };
+
   return {
     fontSize,
     isScrolling,
     scrollSpeed,
     isFullscreen,
     isUppercase,
+    showAllSegments,
     containerRef,
     toggleScrolling,
     resetScroll,
@@ -152,6 +157,7 @@ export const useTeleprompterControls = () => {
     adjustScrollSpeed,
     toggleFullscreen,
     toggleUppercase,
+    toggleShowAllSegments,
     setIsScrolling,
     getCurrentSpeed,
     isReverse

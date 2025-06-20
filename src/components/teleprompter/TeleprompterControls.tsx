@@ -1,16 +1,17 @@
-
 import React from 'react';
-import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type, Printer } from 'lucide-react';
+import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type, Printer, List } from 'lucide-react';
 
 interface TeleprompterControlsProps {
   isScrolling: boolean;
   fontSize: number;
   scrollSpeed: number; // This now represents the actual speed (can be negative)
   isUppercase: boolean;
+  showAllSegments: boolean;
   onToggleScrolling: () => void;
   onResetScroll: () => void;
   onToggleFullscreen: () => void;
   onToggleUppercase: () => void;
+  onToggleShowAllSegments: () => void;
   onAdjustFontSize: (delta: number) => void;
   onAdjustScrollSpeed: (delta: number) => void;
   onPrint?: () => void;
@@ -21,10 +22,12 @@ const TeleprompterControls = ({
   fontSize,
   scrollSpeed,
   isUppercase,
+  showAllSegments,
   onToggleScrolling,
   onResetScroll,
   onToggleFullscreen,
   onToggleUppercase,
+  onToggleShowAllSegments,
   onAdjustFontSize,
   onAdjustScrollSpeed,
   onPrint
@@ -76,6 +79,16 @@ const TeleprompterControls = ({
           >
             <Type className="h-4 w-4" />
             <span>UPPERCASE</span>
+          </button>
+
+          <button
+            onClick={onToggleShowAllSegments}
+            className={`flex items-center space-x-2 px-4 py-2 rounded text-sm ${
+              showAllSegments ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'
+            }`}
+          >
+            <List className="h-4 w-4" />
+            <span>{showAllSegments ? 'All Segments' : 'With Script'}</span>
           </button>
 
           {onPrint && (

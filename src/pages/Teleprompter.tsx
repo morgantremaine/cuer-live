@@ -26,6 +26,7 @@ const Teleprompter = () => {
     scrollSpeed,
     isFullscreen,
     isUppercase,
+    showAllSegments,
     containerRef,
     toggleScrolling,
     resetScroll,
@@ -33,6 +34,7 @@ const Teleprompter = () => {
     adjustScrollSpeed,
     toggleFullscreen,
     toggleUppercase,
+    toggleShowAllSegments,
     getCurrentSpeed,
     isReverse
   } = useTeleprompterControls();
@@ -115,13 +117,19 @@ const Teleprompter = () => {
     }
   };
 
-  // Helper function to check if item should be included in teleprompter
+  // Updated helper function to check if item should be included in teleprompter
   const shouldIncludeInTeleprompter = (item: RundownItem) => {
-    if (!item.script) return false;
-    const trimmedScript = item.script.trim();
-    if (trimmedScript === '') return false;
-    // Include items with [null] marker (case-insensitive) or any other content
-    return true;
+    if (showAllSegments) {
+      // Show all segments when toggle is on
+      return true;
+    } else {
+      // Original logic - only show items with script content
+      if (!item.script) return false;
+      const trimmedScript = item.script.trim();
+      if (trimmedScript === '') return false;
+      // Include items with [null] marker (case-insensitive) or any other content
+      return true;
+    }
   };
 
   // Print function
@@ -311,7 +319,7 @@ const Teleprompter = () => {
     );
   }
 
-  // Filter items using the helper function and add originalIndex
+  // Filter items using the updated helper function and add originalIndex
   const itemsWithScript = rundownData?.items.map((item, originalIndex) => ({
     ...item,
     originalIndex
@@ -326,10 +334,12 @@ const Teleprompter = () => {
           fontSize={fontSize}
           scrollSpeed={getCurrentSpeed()}
           isUppercase={isUppercase}
+          showAllSegments={showAllSegments}
           onToggleScrolling={toggleScrolling}
           onResetScroll={resetScroll}
           onToggleFullscreen={toggleFullscreen}
           onToggleUppercase={toggleUppercase}
+          onToggleShowAllSegments={toggleShowAllSegments}
           onAdjustFontSize={adjustFontSize}
           onAdjustScrollSpeed={adjustScrollSpeed}
           onPrint={handlePrint}
