@@ -63,7 +63,7 @@ export const SharedRundownHeader = ({
       
       {/* Showcaller status */}
       {isPlaying && currentSegmentId && (
-        <div className={`flex items-center gap-2 text-sm p-2 rounded mb-2 ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'}`}>
+        <div className={`flex items-center gap-2 text-sm p-2 rounded mb-4 ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'}`}>
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
           <span>Live - Currently playing</span>
           {timeRemaining && (
