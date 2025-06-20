@@ -27,6 +27,7 @@ export const useSharedRundownState = () => {
   // Refs to prevent excessive polling
   const lastUpdateTimestamp = useRef<string | null>(null);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const showcallerPollingInterval = useRef<NodeJS.Timeout | null>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -145,29 +146,44 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId, loadRundownData]);
 
-  // Much more conservative polling - only when really needed
+  // Dual polling system - fast for showcaller, slow for everything else
   useEffect(() => {
     if (!rundownId || loading || !rundownData) return;
     
-    // Clear any existing interval
+    // Clear any existing intervals
     if (pollingInterval.current) {
       clearInterval(pollingInterval.current);
+    }
+    if (showcallerPollingInterval.current) {
+      clearInterval(showcallerPollingInterval.current);
     }
     
     const isPlaying = rundownData?.showcallerState?.isPlaying;
     
-    // Only poll if showcaller is playing and much less frequently
     if (isPlaying) {
+      // Fast polling for showcaller updates (every 2 seconds when playing)
+      console.log('🚀 Starting fast showcaller polling (2s interval)');
+      showcallerPollingInterval.current = setInterval(() => {
+        if (mountedRef.current) {
+          loadRundownData();
+        }
+      }, 2000);
+    } else {
+      // Slower polling for general updates (every 30 seconds when not playing)
+      console.log('🐌 Starting slow general polling (30s interval)');
       pollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
         }
-      }, 10000); // 10 seconds when playing - much less aggressive
+      }, 30000);
     }
 
     return () => {
       if (pollingInterval.current) {
         clearInterval(pollingInterval.current);
+      }
+      if (showcallerPollingInterval.current) {
+        clearInterval(showcallerPollingInterval.current);
       }
     };
   }, [rundownId, loading, rundownData?.showcallerState?.isPlaying, loadRundownData]);
@@ -178,6 +194,9 @@ export const useSharedRundownState = () => {
       mountedRef.current = false;
       if (pollingInterval.current) {
         clearInterval(pollingInterval.current);
+      }
+      if (showcallerPollingInterval.current) {
+        clearInterval(showcallerPollingInterval.current);
       }
     };
   }, []);
