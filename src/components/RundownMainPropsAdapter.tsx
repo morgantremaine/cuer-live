@@ -1,59 +1,145 @@
+
 import React from 'react';
-import { useRundown } from '@/hooks/useRundown';
-import { useShowcallerIntegration } from '@/hooks/useShowcallerIntegration';
-import { RundownMainContent } from './RundownMainContent';
-import { useTeleprompter } from '@/hooks/useTeleprompter';
+import RundownHeaderSection from './RundownHeaderSection';
+import RundownMainContent from './RundownMainContent';
+import RealtimeStatusIndicator from './RealtimeStatusIndicator';
+import { RundownContainerProps } from '@/types/rundownContainer';
+import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownMainPropsAdapterProps {
-  rundownId: string;
-  autoScroll?: boolean;
+  props: RundownContainerProps;
 }
 
-const RundownMainPropsAdapter = ({ rundownId, autoScroll }: RundownMainPropsAdapterProps) => {
-  const { 
-    rundown, 
-    items, 
-    loading, 
-    error, 
-    updateItem, 
-    createItem, 
-    deleteItem, 
-    moveItem,
-    isMutating,
-    isReordering
-  } = useRundown(rundownId);
-  
-  const { currentSegmentId } = useShowcallerIntegration(rundownId);
-  const { isTeleprompterOpen, openTeleprompter, closeTeleprompter } = useTeleprompter();
+const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
+  const {
+    currentTime,
+    timezone,
+    onTimezoneChange,
+    totalRuntime,
+    onAddRow,
+    onAddHeader,
+    showColumnManager,
+    setShowColumnManager,
+    selectedCount,
+    hasClipboardData,
+    onCopySelectedRows,
+    onPasteRows,
+    onDeleteSelectedRows,
+    onClearSelection,
+    selectedRowId,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    onPlay,
+    onPause,
+    onForward,
+    onBackward,
+    onReset,
+    hasUnsavedChanges,
+    isSaving,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId,
+    onOpenTeleprompter,
+    items,
+    visibleColumns,
+    onUndo,
+    canUndo,
+    lastAction,
+    isConnected,
+    isProcessingRealtimeUpdate,
+    cellRefs,
+    columns,
+    showColorPicker,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    getColumnWidth,
+    updateColumnWidth,
+    getRowNumber,
+    getRowStatus,
+    calculateHeaderDuration,
+    onUpdateItem,
+    onCellClick,
+    onKeyDown,
+    onToggleColorPicker,
+    onColorSelect,
+    onDeleteRow,
+    onToggleFloat,
+    onRowSelect,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumnWithCleanup,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+  } = props;
 
-  if (loading) {
-    return <div className="p-4">Loading rundown content...</div>;
-  }
-
-  if (error) {
-    return <div className="p-4 text-red-500">Error: {error}</div>;
-  }
-
-  if (!rundown || !items) {
-    return <div className="p-4">Rundown not found.</div>;
-  }
+  // Create rundown data for CSV export
+  const rundownData: CSVExportData = {
+    items: items || [],
+    visibleColumns: visibleColumns || []
+  };
 
   return (
-    <RundownMainContent
-      rundown={rundown}
-      items={items}
-      currentSegmentId={currentSegmentId}
-      updateItem={updateItem}
-      createItem={createItem}
-      deleteItem={deleteItem}
-      moveItem={moveItem}
-      isMutating={isMutating}
-      isReordering={isReordering}
-      isTeleprompterOpen={isTeleprompterOpen}
-      openTeleprompter={openTeleprompter}
-      closeTeleprompter={closeTeleprompter}
-      autoScroll={autoScroll}
-    />
+    <div className="flex flex-col h-full">
+      {/* Toolbar Section */}
+      <RundownHeaderSection
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
+        onShowColumnManager={() => setShowColumnManager(true)}
+        selectedCount={selectedCount}
+        hasClipboardData={hasClipboardData}
+        onCopySelectedRows={onCopySelectedRows}
+        onPasteRows={onPasteRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
+        onClearSelection={onClearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        onReset={onReset}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+        items={items}
+        visibleColumns={visibleColumns}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        rundownData={rundownData}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <RundownMainContent
+          {...props}
+          currentSegmentName={currentSegmentId ? items.find(item => item.id === currentSegmentId)?.name || '' : ''}
+          totalDuration={totalRuntime}
+        />
+      </div>
+    </div>
   );
 };
 

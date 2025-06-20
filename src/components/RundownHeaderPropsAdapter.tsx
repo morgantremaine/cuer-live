@@ -1,42 +1,53 @@
+
 import React from 'react';
-import { useRundown } from '@/hooks/useRundown';
-import { RundownHeader } from './RundownHeader';
+import RundownHeader from './RundownHeader';
+import { RundownContainerProps } from '@/types/rundownContainer';
 
 interface RundownHeaderPropsAdapterProps {
-  rundownId: string;
-  autoScroll?: boolean;
-  onToggleAutoScroll?: (enabled: boolean) => void;
+  props: RundownContainerProps;
 }
 
-const RundownHeaderPropsAdapter = ({ rundownId, autoScroll, onToggleAutoScroll }: RundownHeaderPropsAdapterProps) => {
-  const { 
-    rundown, 
-    currentSegmentId, 
-    currentTime, 
-    timeRemaining, 
-    isDark, 
-    toggleTheme,
-    showcallerState
-  } = useRundown(rundownId);
-
-  if (!rundown) {
-    return <div>Loading rundown header...</div>;
-  }
-
-  const isPlaying = showcallerState?.isPlaying || false;
+const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
+  const {
+    currentTime,
+    timezone,
+    onTimezoneChange,
+    totalRuntime,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId,
+    hasUnsavedChanges,
+    isSaving,
+    onUndo,
+    canUndo,
+    lastAction,
+    items,
+    visibleColumns,
+    isConnected,
+    isProcessingRealtimeUpdate
+  } = props;
 
   return (
     <RundownHeader
-      title={rundown.title}
-      startTime={rundown.startTime || '09:00:00'}
-      timezone={rundown.timezone || 'UTC'}
-      currentSegmentId={currentSegmentId}
-      isPlaying={isPlaying}
-      timeRemaining={timeRemaining}
-      isDark={isDark}
-      onToggleTheme={toggleTheme}
-      autoScroll={autoScroll}
-      onToggleAutoScroll={onToggleAutoScroll}
+      currentTime={currentTime}
+      timezone={timezone}
+      onTimezoneChange={onTimezoneChange}
+      totalRuntime={totalRuntime}
+      hasUnsavedChanges={hasUnsavedChanges}
+      isSaving={isSaving}
+      title={rundownTitle}
+      onTitleChange={onTitleChange}
+      rundownStartTime={rundownStartTime}
+      onRundownStartTimeChange={onRundownStartTimeChange}
+      items={items}
+      visibleColumns={visibleColumns}
+      onUndo={onUndo}
+      canUndo={canUndo}
+      lastAction={lastAction}
+      isConnected={isConnected}
+      isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
     />
   );
 };

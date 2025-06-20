@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+
+import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -11,7 +12,6 @@ interface SharedRundownTableProps {
   isPlaying?: boolean;
   rundownStartTime?: string;
   isDark?: boolean;
-  autoScroll?: boolean;
 }
 
 const SharedRundownTable = ({ 
@@ -20,64 +20,8 @@ const SharedRundownTable = ({
   currentSegmentId, 
   isPlaying = false,
   rundownStartTime = '09:00:00',
-  isDark = false,
-  autoScroll = true
+  isDark = false
 }: SharedRundownTableProps) => {
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const currentRowRef = useRef<HTMLTableRowElement>(null);
-  const userScrolledRef = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Track user manual scrolling
-  useEffect(() => {
-    const container = tableContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      userScrolledRef.current = true;
-      
-      // Clear existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      
-      // Re-enable auto-scroll after 3 seconds of no scrolling
-      scrollTimeoutRef.current = setTimeout(() => {
-        userScrolledRef.current = false;
-      }, 3000);
-    };
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Auto-scroll to current segment
-  useEffect(() => {
-    if (!autoScroll || !isPlaying || !currentSegmentId || userScrolledRef.current) {
-      return;
-    }
-
-    const currentRow = currentRowRef.current;
-    const container = tableContainerRef.current;
-    
-    if (currentRow && container) {
-      // Use a small timeout to ensure the DOM is updated
-      setTimeout(() => {
-        currentRow.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
-        });
-      }, 100);
-    }
-  }, [currentSegmentId, autoScroll, isPlaying]);
-
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
@@ -319,10 +263,7 @@ const SharedRundownTable = ({
       <div className={`relative border rounded-lg print:border-gray-400 print:overflow-visible ${
         isDark ? 'border-gray-700' : 'border-gray-200'
       }`}>
-        <div 
-          ref={tableContainerRef}
-          className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none"
-        >
+        <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
           <table className="w-full print:text-xs print-table table-fixed">
             <thead className={`sticky top-0 z-50 print:static ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
@@ -389,10 +330,8 @@ const SharedRundownTable = ({
                 return (
                   <tr
                     key={item.id}
-                    ref={isShowcallerCurrent ? currentRowRef : undefined}
                     className={`
                       ${item.type === 'header' ? 'font-semibold print:bg-gray-200' : ''}
-                      ${isShowcallerCurrent ? 'ring-2 ring-blue-500 ring-inset' : ''}
                       print:break-inside-avoid print:border-0
                     `}
                     style={{ 
