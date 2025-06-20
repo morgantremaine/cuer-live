@@ -120,7 +120,7 @@ const Teleprompter = () => {
     if (!item.script) return false;
     const trimmedScript = item.script.trim();
     if (trimmedScript === '') return false;
-    // Include items with [null] marker or any other content
+    // Include items with [null] marker (case-insensitive) or any other content
     return true;
   };
 
@@ -145,8 +145,8 @@ const Teleprompter = () => {
 
     // Helper function to process script text and remove bracket styling for print
     const processScriptForPrint = (text: string) => {
-      // Handle [null] case - don't show any script content in print
-      if (text.trim() === '[null]') {
+      // Handle [null] case (case-insensitive) - don't show any script content in print
+      if (text.trim().toLowerCase() === '[null]') {
         return '';
       }
       // Remove bracket formatting for print - just keep the text inside brackets

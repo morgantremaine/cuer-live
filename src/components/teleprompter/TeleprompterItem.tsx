@@ -27,6 +27,12 @@ const TeleprompterItem = ({
     return isUppercase ? text.toUpperCase() : text;
   };
 
+  // Helper function to check if script is null (case-insensitive)
+  const isNullScript = (script: string) => {
+    const trimmed = script.trim();
+    return trimmed.toLowerCase() === '[null]';
+  };
+
   // Auto-resize textarea and focus when editing starts
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -38,8 +44,8 @@ const TeleprompterItem = ({
 
   // Function to parse and render script text with bracket styling
   const renderScriptWithBrackets = (text: string) => {
-    // Handle [null] case - don't render any script content
-    if (text.trim() === '[null]') {
+    // Handle [null] case (case-insensitive) - don't render any script content
+    if (isNullScript(text)) {
       return null;
     }
 
@@ -187,8 +193,8 @@ const TeleprompterItem = ({
     );
   }
 
-  // Check if this is a [null] item
-  const isNullItem = item.script && item.script.trim() === '[null]';
+  // Check if this is a [null] item (case-insensitive)
+  const isNullItem = item.script && isNullScript(item.script);
 
   return (
     <div className="mb-8">
