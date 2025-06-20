@@ -1,6 +1,7 @@
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { Play } from 'lucide-react';
 
 interface SharedRundownTableProps {
@@ -9,6 +10,7 @@ interface SharedRundownTableProps {
   currentSegmentId: string | null;
   isPlaying?: boolean;
   rundownStartTime?: string;
+  isDark?: boolean;
 }
 
 const SharedRundownTable = ({ 
@@ -16,7 +18,8 @@ const SharedRundownTable = ({
   visibleColumns, 
   currentSegmentId, 
   isPlaying = false,
-  rundownStartTime = '09:00:00'
+  rundownStartTime = '09:00:00',
+  isDark = false
 }: SharedRundownTableProps) => {
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
@@ -226,12 +229,20 @@ const SharedRundownTable = ({
           }
         `}
       </style>
-      <div className="overflow-auto border border-gray-200 rounded-lg print:border-gray-400 print:overflow-visible dark:border-gray-700 max-h-screen">
+      <div className={`overflow-auto border rounded-lg print:border-gray-400 print:overflow-visible max-h-screen ${
+        isDark ? 'border-gray-700' : 'border-gray-200'
+      }`}>
         <table className="w-full print:text-xs print-table table-fixed">
-          <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-20 print:static dark:bg-gray-800">
+          <thead className={`sticky top-0 z-20 print:static ${
+            isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
+          }`}>
             <tr className="print-header-row">
               <th 
-                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print-row-number dark:text-gray-400 dark:border-gray-600"
+                className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number ${
+                  isDark 
+                    ? 'text-gray-300 border-gray-600' 
+                    : 'text-gray-500 border-gray-200'
+                }`}
                 style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
               >
                 #
@@ -241,7 +252,11 @@ const SharedRundownTable = ({
                 return (
                   <th
                     key={column.id}
-                    className={`px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 dark:text-gray-400 dark:border-gray-600 ${
+                    className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
+                      isDark 
+                        ? 'text-gray-300 border-gray-600' 
+                        : 'text-gray-500 border-gray-200'
+                    } ${
                       ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
                         ? 'print-time-column' 
                         : 'print-content-column'
@@ -256,24 +271,46 @@ const SharedRundownTable = ({
               })}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400 dark:bg-gray-900 dark:divide-gray-700">
+          <tbody className={`divide-y print:divide-gray-400 ${
+            isDark 
+              ? 'bg-gray-900 divide-gray-700' 
+              : 'bg-white divide-gray-200'
+          }`}>
             {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
               const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
               const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
               const isFloated = item.isFloating || item.isFloated;
               
+              // Determine row background color
+              let rowBackgroundColor = undefined;
+              let textColor = isDark ? '#ffffff' : '#000000'; // Default text colors
+              
+              if (item.type === 'header') {
+                rowBackgroundColor = isDark ? '#374151' : '#f3f4f6'; // gray-700 : gray-100
+              } else if (isFloated) {
+                rowBackgroundColor = '#dc2626'; // red-600
+                textColor = '#ffffff';
+              } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF') {
+                rowBackgroundColor = item.color;
+                textColor = getContrastTextColor(item.color);
+              }
+              
               return (
                 <tr
                   key={item.id}
                   className={`
-                    ${item.type === 'header' ? 'bg-gray-100 font-semibold print:bg-gray-200 dark:bg-gray-800' : ''}
-                    ${isFloated ? 'bg-red-800 text-white opacity-75' : ''}
+                    ${item.type === 'header' ? 'font-semibold print:bg-gray-200' : ''}
                     print:break-inside-avoid print:border-0
                   `}
-                  style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
+                  style={{ 
+                    backgroundColor: rowBackgroundColor,
+                    color: textColor
+                  }}
                 >
                   <td 
-                    className="px-2 py-1 whitespace-nowrap text-sm border-r border-gray-200 print:border-gray-400 print-row-number dark:border-gray-600"
+                    className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number ${
+                      isDark ? 'border-gray-600' : 'border-gray-200'
+                    }`}
                     style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
                   >
                     <div className="flex items-center">
@@ -286,7 +323,7 @@ const SharedRundownTable = ({
                       {isFloated && (
                         <span className="text-yellow-400 mr-1 print:mr-0.5">🛟</span>
                       )}
-                      <span className="dark:text-gray-300">{getRowNumber(index, items)}</span>
+                      <span>{getRowNumber(index, items)}</span>
                     </div>
                   </td>
                   
@@ -303,10 +340,12 @@ const SharedRundownTable = ({
                         return (
                           <td 
                             key={column.id} 
-                            className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column dark:border-gray-600"
+                            className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column ${
+                              isDark ? 'border-gray-600' : 'border-gray-200'
+                            }`}
                             style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
                           >
-                            <div className="break-words whitespace-pre-wrap overflow-hidden dark:text-gray-300">{item.name || ''}</div>
+                            <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
                           </td>
                         );
                       } else if (column.key === 'duration') {
@@ -314,7 +353,11 @@ const SharedRundownTable = ({
                         return (
                           <td 
                             key={column.id} 
-                            className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print-time-column dark:text-gray-400 dark:border-gray-600"
+                            className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column ${
+                              isDark 
+                                ? 'text-gray-400 border-gray-600' 
+                                : 'text-gray-600 border-gray-200'
+                            }`}
                             style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
                           >
                             <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
@@ -325,7 +368,9 @@ const SharedRundownTable = ({
                         return (
                           <td 
                             key={column.id} 
-                            className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-time-column dark:border-gray-600"
+                            className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column ${
+                              isDark ? 'border-gray-600' : 'border-gray-200'
+                            }`}
                             style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
                           >
                             <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
@@ -336,7 +381,9 @@ const SharedRundownTable = ({
                         return (
                           <td 
                             key={column.id} 
-                            className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column dark:border-gray-600"
+                            className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column ${
+                              isDark ? 'border-gray-600' : 'border-gray-200'
+                            }`}
                             style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
                           >
                             <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
@@ -346,17 +393,29 @@ const SharedRundownTable = ({
                     }
                     
                     // For regular items, render content with special highlighting for current segment name
+                    let cellBackgroundColor = undefined;
+                    let cellTextColor = textColor;
+                    
+                    if (isCurrentSegmentName) {
+                      cellBackgroundColor = '#3b82f6'; // blue-500
+                      cellTextColor = '#ffffff';
+                    }
+                    
                     return (
                       <td
                         key={column.id}
-                        className={`px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 dark:border-gray-600 ${
+                        className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
                           ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
                             ? 'print-time-column' 
                             : 'print-content-column'
-                        } ${isFloated ? 'text-white' : 'text-gray-900 dark:text-gray-300'} ${
-                          isCurrentSegmentName ? 'bg-blue-500 text-white' : ''
-                        }`}
-                        style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                        } ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
+                        style={{ 
+                          width: columnWidth, 
+                          minWidth: columnWidth, 
+                          maxWidth: columnWidth,
+                          backgroundColor: cellBackgroundColor,
+                          color: cellTextColor
+                        }}
                       >
                         <div className="break-words whitespace-pre-wrap overflow-hidden">
                           {renderCellContent(item, column, calculatedStartTime)}

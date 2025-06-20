@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -7,6 +6,7 @@ import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useTheme } from '@/hooks/useTheme';
 
 // Default columns to use when rundown has no columns defined
 const DEFAULT_COLUMNS = [
@@ -22,6 +22,7 @@ const SharedRundown = () => {
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
+  const { isDark, toggleTheme } = useTheme();
   
   // Prevent duplicate layout loads
   const layoutLoadedRef = useRef(false);
@@ -169,19 +170,19 @@ const SharedRundown = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-lg text-gray-600">Loading rundown...</div>
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading rundown...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
-          <div className="text-lg text-red-600 mb-2">Error loading rundown</div>
-          <div className="text-sm text-gray-600">{error}</div>
-          <div className="text-xs text-gray-500 mt-4">
+          <div className={`text-lg text-red-600 mb-2`}>Error loading rundown</div>
+          <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{error}</div>
+          <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'} mt-4`}>
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -191,10 +192,10 @@ const SharedRundown = () => {
 
   if (!rundownData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
-          <div className="text-lg text-gray-600 mb-2">Rundown not found</div>
-          <div className="text-sm text-gray-500">
+          <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>Rundown not found</div>
+          <div className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -221,14 +222,14 @@ const SharedRundown = () => {
 
   if (layoutLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-lg text-gray-600">Loading layout...</div>
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading layout...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
@@ -238,6 +239,8 @@ const SharedRundown = () => {
           currentSegmentId={currentSegmentId}
           isPlaying={isPlaying}
           timeRemaining={timeRemaining}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
@@ -247,6 +250,7 @@ const SharedRundown = () => {
             currentSegmentId={currentSegmentId}
             isPlaying={isPlaying}
             rundownStartTime={rundownData.startTime || '09:00:00'}
+            isDark={isDark}
           />
         </div>
 
