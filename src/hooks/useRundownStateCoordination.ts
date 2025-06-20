@@ -14,13 +14,16 @@ export const useRundownStateCoordination = () => {
   // Single source of truth for all rundown state
   const simplifiedState = useSimplifiedRundownState();
 
+  // Get the autosave showcaller update function
+  const setShowcallerUpdate = simplifiedState.setShowcallerUpdate || (() => {});
+
   // Dedicated showcaller state management (isolated from main autosave)
   const showcallerManager = useShowcallerStateManager({
     items: simplifiedState.items,
     setItems: simplifiedState.setItems,
     rundownId: simplifiedState.rundownId,
     userId: userId,
-    setShowcallerUpdate: () => {} // No-op since showcaller is now isolated
+    setShowcallerUpdate: setShowcallerUpdate // Connect to autosave blocking
   });
 
   // Helper function to calculate end time

@@ -22,6 +22,7 @@ export const useChangeTracking = (
   const isInRealtimeCooldown = useRef(false);
   const userActivelyTypingRef = useRef(false);
   const showcallerActiveRef = useRef(false);
+  const showcallerBlockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Create content signature that COMPLETELY excludes showcaller fields
   const createContentSignature = useCallback(() => {
@@ -71,13 +72,34 @@ export const useChangeTracking = (
     userActivelyTypingRef.current = typing;
   }, []);
 
-  // Track showcaller activity - prevents ALL change detection during showcaller operations
+  // Enhanced showcaller activity tracking with extended blocking
   const setShowcallerUpdate = useCallback((isShowcallerUpdate: boolean) => {
+    console.log('📺 Showcaller update state change:', showcallerActiveRef.current, '->', isShowcallerUpdate);
+    
     showcallerActiveRef.current = isShowcallerUpdate;
+    
     if (isShowcallerUpdate) {
       console.log('📺 Showcaller active - completely blocking change detection');
+      
+      // Clear any existing timeout
+      if (showcallerBlockTimeoutRef.current) {
+        clearTimeout(showcallerBlockTimeoutRef.current);
+      }
+      
+      // Set extended timeout to ensure showcaller operations complete
+      showcallerBlockTimeoutRef.current = setTimeout(() => {
+        showcallerActiveRef.current = false;
+        console.log('📺 Showcaller timeout expired - change detection can resume');
+      }, 8000); // 8 seconds to handle complex showcaller sequences
+      
     } else {
       console.log('📺 Showcaller cleared - change detection can resume');
+      
+      // Clear timeout since showcaller explicitly cleared
+      if (showcallerBlockTimeoutRef.current) {
+        clearTimeout(showcallerBlockTimeoutRef.current);
+        showcallerBlockTimeoutRef.current = null;
+      }
     }
   }, []);
 
@@ -103,7 +125,7 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createContentSignature]);
 
-  // Change detection that completely ignores showcaller operations
+  // Enhanced change detection that completely ignores showcaller operations
   useEffect(() => {
     // Essential blocking conditions including showcaller
     if (!isInitialized || 
@@ -252,6 +274,9 @@ export const useChangeTracking = (
     return () => {
       if (realtimeCooldownRef.current) {
         clearTimeout(realtimeCooldownRef.current);
+      }
+      if (showcallerBlockTimeoutRef.current) {
+        clearTimeout(showcallerBlockTimeoutRef.current);
       }
     };
   }, []);
