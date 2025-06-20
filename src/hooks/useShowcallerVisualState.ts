@@ -1,20 +1,18 @@
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 
-export interface ShowcallerVisualState {
-  currentItemStatuses: Map<string, string>; // item id -> status
+interface ShowcallerVisualState {
   isPlaying: boolean;
   currentSegmentId: string | null;
-  timeRemaining: number;
-  playbackStartTime: number | null;
-  lastUpdate: string;
-  controllerId: string | null;
+  startTime: number | null;
+  lastUpdateTime: number;
+  userId?: string;
 }
 
 interface UseShowcallerVisualStateProps {
   items: RundownItem[];
-  rundownId: string | null;
+  rundownId?: string;
   userId?: string;
 }
 
@@ -24,463 +22,219 @@ export const useShowcallerVisualState = ({
   userId
 }: UseShowcallerVisualStateProps) => {
   const [visualState, setVisualState] = useState<ShowcallerVisualState>({
-    currentItemStatuses: new Map(),
     isPlaying: false,
     currentSegmentId: null,
-    timeRemaining: 0,
-    playbackStartTime: null,
-    lastUpdate: new Date().toISOString(),
-    controllerId: null
+    startTime: null,
+    lastUpdateTime: 0
   });
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
-  const lastProcessedUpdateRef = useRef<string | null>(null);
+  const lastSaveRef = useRef<number>(0);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Helper function to convert time string to seconds
-  const timeToSeconds = useCallback((timeStr: string) => {
-    if (!timeStr) return 0;
-    const parts = timeStr.split(':').map(Number);
-    
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
-    } else if (parts.length === 3) {
-      const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
+  // Helper function to check if an item is floated
+  const isFloated = (item: RundownItem): boolean => {
+    return item.isFloating || item.isFloated || false;
+  };
+
+  // Helper function to get non-floated regular items only
+  const getNonFloatedRegularItems = useCallback(() => {
+    return items.filter(item => item.type === 'regular' && !isFloated(item));
+  }, [items]);
+
+  // Helper function to find the index of current segment in non-floated items
+  const getCurrentSegmentIndex = useCallback(() => {
+    if (!visualState.currentSegmentId) return -1;
+    const nonFloatedItems = getNonFloatedRegularItems();
+    return nonFloatedItems.findIndex(item => item.id === visualState.currentSegmentId);
+  }, [visualState.currentSegmentId, getNonFloatedRegularItems]);
+
+  // Calculate time remaining for current segment
+  const timeRemaining = (() => {
+    if (!visualState.isPlaying || !visualState.currentSegmentId || !visualState.startTime) {
+      return null;
     }
-    return 0;
-  }, []);
 
-  // Track our own updates to prevent feedback loops
-  const trackOwnUpdate = useCallback((timestamp: string) => {
-    ownUpdateTrackingRef.current.add(timestamp);
+    const currentItem = items.find(item => item.id === visualState.currentSegmentId);
+    if (!currentItem || !currentItem.duration) return null;
+
+    // Parse duration (MM:SS format)
+    const durationParts = currentItem.duration.split(':');
+    const totalSeconds = parseInt(durationParts[0]) * 60 + parseInt(durationParts[1]);
     
-    // Clean up old tracked updates after 10 seconds
-    setTimeout(() => {
-      ownUpdateTrackingRef.current.delete(timestamp);
-    }, 10000);
-  }, []);
+    const elapsed = Math.floor((Date.now() - visualState.startTime) / 1000);
+    const remaining = Math.max(0, totalSeconds - elapsed);
+    
+    return remaining;
+  })();
 
-  // Save showcaller visual state to database (completely separate from main rundown)
-  const saveShowcallerVisualState = useCallback(async (state: ShowcallerVisualState) => {
+  // Save state to database with debouncing
+  const saveVisualState = useCallback(async (newState: ShowcallerVisualState) => {
     if (!rundownId) return;
+
+    // Debounce saves to avoid too many database calls
+    const now = Date.now();
+    if (now - lastSaveRef.current < 500) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(() => {
+        saveVisualState(newState);
+      }, 500);
+      return;
+    }
+
+    lastSaveRef.current = now;
 
     try {
       const { supabase } = await import('@/lib/supabase');
-      
-      // Track this update as our own before saving
-      trackOwnUpdate(state.lastUpdate);
-      
-      // Convert Map to plain object for storage
-      const stateToSave = {
-        ...state,
-        currentItemStatuses: Object.fromEntries(state.currentItemStatuses)
-      };
-
       const { error } = await supabase
         .from('rundowns')
         .update({
-          showcaller_state: stateToSave,
-          updated_at: new Date().toISOString()
+          showcaller_state: {
+            ...newState,
+            lastUpdateTime: now,
+            userId: userId || null
+          }
         })
         .eq('id', rundownId);
 
       if (error) {
-        console.error('❌ Failed to save showcaller visual state:', error);
+        console.error('Error saving showcaller visual state:', error);
       } else {
         console.log('📺 Successfully saved showcaller visual state');
       }
     } catch (error) {
-      console.error('❌ Error saving showcaller visual state:', error);
+      console.error('Error saving showcaller state:', error);
     }
-  }, [rundownId, trackOwnUpdate]);
+  }, [rundownId, userId]);
 
-  // Debounced save to prevent rapid database updates
-  const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState) => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      saveShowcallerVisualState(state);
-    }, 300);
-  }, [saveShowcallerVisualState]);
-
-  // Update visual state without touching main rundown state
-  const updateVisualState = useCallback((updates: Partial<ShowcallerVisualState>, shouldSync: boolean = false) => {
-    setVisualState(prev => {
-      const newState = {
-        ...prev,
-        ...updates,
-        lastUpdate: new Date().toISOString()
-      };
-
-      if (shouldSync) {
-        debouncedSaveVisualState(newState);
-      }
-
-      return newState;
-    });
-  }, [debouncedSaveVisualState]);
-
-  // Set item status in visual state only
-  const setItemVisualStatus = useCallback((itemId: string, status: string) => {
-    setVisualState(prev => {
-      const newStatuses = new Map(prev.currentItemStatuses);
-      if (status === 'upcoming' || status === '') {
-        newStatuses.delete(itemId);
-      } else {
-        newStatuses.set(itemId, status);
-      }
-      
-      return {
-        ...prev,
-        currentItemStatuses: newStatuses,
-        lastUpdate: new Date().toISOString()
-      };
-    });
+  // Track own updates to prevent feedback loops
+  const trackOwnUpdate = useCallback((callback: () => void) => {
+    callback();
   }, []);
 
-  // Clear all visual statuses
-  const clearAllVisualStatuses = useCallback(() => {
-    setVisualState(prev => ({
-      ...prev,
-      currentItemStatuses: new Map(),
-      lastUpdate: new Date().toISOString()
-    }));
-  }, []);
-
-  // Get visual status for an item
-  const getItemVisualStatus = useCallback((itemId: string) => {
-    return visualState.currentItemStatuses.get(itemId) || 'upcoming';
-  }, [visualState.currentItemStatuses]);
-
-  // Navigation helpers
-  const getNextSegment = useCallback((currentId: string) => {
-    const currentIndex = items.findIndex(item => item.id === currentId);
+  // Play function - starts from current segment or first non-floated segment
+  const play = useCallback(() => {
+    console.log('📺 Visual play called with segmentId:', visualState.currentSegmentId);
     
-    for (let i = currentIndex + 1; i < items.length; i++) {
-      if (items[i].type === 'regular') {
-        return items[i];
-      }
-    }
-    return null;
-  }, [items]);
+    const nonFloatedItems = getNonFloatedRegularItems();
+    if (nonFloatedItems.length === 0) return;
 
-  const getPreviousSegment = useCallback((currentId: string) => {
-    const currentIndex = items.findIndex(item => item.id === currentId);
+    let targetSegmentId = visualState.currentSegmentId;
     
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      if (items[i].type === 'regular') {
-        return items[i];
-      }
-    }
-    return null;
-  }, [items]);
-
-  // Timer management
-  const startTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    // If no current segment or current segment is floated, start from first non-floated item
+    if (!targetSegmentId || !nonFloatedItems.find(item => item.id === targetSegmentId)) {
+      targetSegmentId = nonFloatedItems[0].id;
     }
 
-    const isController = visualState.controllerId === userId;
-    
-    timerRef.current = setInterval(() => {
-      setVisualState(prevState => {
-        if (prevState.timeRemaining <= 1) {
-          if (isController && prevState.currentSegmentId) {
-            // Move to next segment
-            const nextSegment = getNextSegment(prevState.currentSegmentId);
-            
-            if (nextSegment) {
-              const duration = timeToSeconds(nextSegment.duration || '00:00');
-              const newStatuses = new Map(prevState.currentItemStatuses);
-              newStatuses.set(prevState.currentSegmentId, 'completed');
-              newStatuses.set(nextSegment.id, 'current');
-              
-              const newState = {
-                ...prevState,
-                currentSegmentId: nextSegment.id,
-                timeRemaining: duration,
-                playbackStartTime: Date.now(),
-                currentItemStatuses: newStatuses,
-                lastUpdate: new Date().toISOString()
-              };
-              
-              debouncedSaveVisualState(newState);
-              return newState;
-            } else {
-              // No more segments, stop playback
-              const newState = {
-                ...prevState,
-                isPlaying: false,
-                currentSegmentId: null,
-                timeRemaining: 0,
-                playbackStartTime: null,
-                controllerId: null,
-                lastUpdate: new Date().toISOString()
-              };
-              
-              debouncedSaveVisualState(newState);
-              return newState;
-            }
-          } else {
-            return {
-              ...prevState,
-              timeRemaining: 0,
-              isPlaying: false
-            };
-          }
-        }
-        
-        const newState = {
-          ...prevState,
-          timeRemaining: prevState.timeRemaining - 1,
-          lastUpdate: new Date().toISOString()
-        };
-        
-        // Sync every 30 seconds to reduce database load
-        if (isController && prevState.timeRemaining % 30 === 0) {
-          debouncedSaveVisualState(newState);
-        }
-        
-        return newState;
-      });
-    }, 1000);
-  }, [visualState.controllerId, userId, getNextSegment, timeToSeconds, debouncedSaveVisualState]);
+    const newState = {
+      ...visualState,
+      isPlaying: true,
+      currentSegmentId: targetSegmentId,
+      startTime: Date.now(),
+      lastUpdateTime: Date.now()
+    };
 
-  const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
+    setVisualState(newState);
+    saveVisualState(newState);
+  }, [visualState, getNonFloatedRegularItems, saveVisualState]);
 
-  // Control functions that only affect visual state
-  const play = useCallback((selectedSegmentId?: string) => {
-    console.log('📺 Visual play called with segmentId:', selectedSegmentId);
-    
-    const newStatuses = new Map();
-    
-    if (selectedSegmentId) {
-      // Mark segments before selected as completed, after as upcoming
-      const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
-      items.forEach((item, index) => {
-        if (item.type === 'regular') {
-          if (index < selectedIndex) {
-            newStatuses.set(item.id, 'completed');
-          } else if (index === selectedIndex) {
-            newStatuses.set(item.id, 'current');
-          }
-        }
-      });
-      
-      const segment = items.find(item => item.id === selectedSegmentId);
-      const duration = segment ? timeToSeconds(segment.duration || '00:00') : 0;
-      
-      updateVisualState({
-        isPlaying: true,
-        currentSegmentId: selectedSegmentId,
-        timeRemaining: duration,
-        playbackStartTime: Date.now(),
-        controllerId: userId,
-        currentItemStatuses: newStatuses
-      }, true);
-    } else if (!visualState.currentSegmentId) {
-      // Find first regular item
-      const firstSegment = items.find(item => item.type === 'regular');
-      if (firstSegment) {
-        newStatuses.set(firstSegment.id, 'current');
-        const duration = timeToSeconds(firstSegment.duration || '00:00');
-        
-        updateVisualState({
-          isPlaying: true,
-          currentSegmentId: firstSegment.id,
-          timeRemaining: duration,
-          playbackStartTime: Date.now(),
-          controllerId: userId,
-          currentItemStatuses: newStatuses
-        }, true);
-      }
-    } else {
-      // Resume current segment
-      updateVisualState({
-        isPlaying: true,
-        playbackStartTime: Date.now(),
-        controllerId: userId
-      }, true);
-    }
-    
-    startTimer();
-  }, [items, visualState.currentSegmentId, userId, timeToSeconds, updateVisualState, startTimer]);
-
-  const pause = useCallback(() => {
-    console.log('📺 Visual pause called');
-    
-    stopTimer();
-    updateVisualState({
-      isPlaying: false,
-      playbackStartTime: null,
-      controllerId: userId
-    }, true);
-  }, [stopTimer, updateVisualState, userId]);
-
+  // Forward function - moves to next non-floated segment
   const forward = useCallback(() => {
     console.log('📺 Visual forward called');
     
-    if (visualState.currentSegmentId) {
-      const nextSegment = getNextSegment(visualState.currentSegmentId);
-      if (nextSegment) {
-        const newStatuses = new Map(visualState.currentItemStatuses);
-        newStatuses.set(visualState.currentSegmentId, 'completed');
-        newStatuses.set(nextSegment.id, 'current');
-        
-        const duration = timeToSeconds(nextSegment.duration || '00:00');
-        
-        updateVisualState({
-          currentSegmentId: nextSegment.id,
-          timeRemaining: duration,
-          playbackStartTime: visualState.isPlaying ? Date.now() : null,
-          controllerId: userId,
-          currentItemStatuses: newStatuses
-        }, true);
-        
-        if (visualState.isPlaying) {
-          startTimer();
-        }
-      }
-    }
-  }, [visualState, getNextSegment, timeToSeconds, userId, updateVisualState, startTimer]);
+    const nonFloatedItems = getNonFloatedRegularItems();
+    if (nonFloatedItems.length === 0) return;
 
+    const currentIndex = getCurrentSegmentIndex();
+    const nextIndex = currentIndex + 1;
+    
+    if (nextIndex < nonFloatedItems.length) {
+      const nextSegmentId = nonFloatedItems[nextIndex].id;
+      const newState = {
+        ...visualState,
+        currentSegmentId: nextSegmentId,
+        startTime: Date.now(),
+        lastUpdateTime: Date.now()
+      };
+
+      setVisualState(newState);
+      saveVisualState(newState);
+    }
+  }, [visualState, getCurrentSegmentIndex, getNonFloatedRegularItems, saveVisualState]);
+
+  // Backward function - moves to previous non-floated segment
   const backward = useCallback(() => {
     console.log('📺 Visual backward called');
     
-    if (visualState.currentSegmentId) {
-      const prevSegment = getPreviousSegment(visualState.currentSegmentId);
-      if (prevSegment) {
-        const newStatuses = new Map(visualState.currentItemStatuses);
-        newStatuses.set(visualState.currentSegmentId, 'upcoming');
-        newStatuses.set(prevSegment.id, 'current');
-        
-        const duration = timeToSeconds(prevSegment.duration || '00:00');
-        
-        updateVisualState({
-          currentSegmentId: prevSegment.id,
-          timeRemaining: duration,
-          playbackStartTime: visualState.isPlaying ? Date.now() : null,
-          controllerId: userId,
-          currentItemStatuses: newStatuses
-        }, true);
-        
-        if (visualState.isPlaying) {
-          startTimer();
-        }
-      }
-    }
-  }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startTimer]);
+    const nonFloatedItems = getNonFloatedRegularItems();
+    if (nonFloatedItems.length === 0) return;
 
-  // Reset function - resets timer to full duration of current segment
+    const currentIndex = getCurrentSegmentIndex();
+    const prevIndex = currentIndex - 1;
+    
+    if (prevIndex >= 0) {
+      const prevSegmentId = nonFloatedItems[prevIndex].id;
+      const newState = {
+        ...visualState,
+        currentSegmentId: prevSegmentId,
+        startTime: Date.now(),
+        lastUpdateTime: Date.now()
+      };
+
+      setVisualState(newState);
+      saveVisualState(newState);
+    }
+  }, [visualState, getCurrentSegmentIndex, getNonFloatedRegularItems, saveVisualState]);
+
+  // Pause function
+  const pause = useCallback(() => {
+    console.log('📺 Visual pause called');
+    
+    const newState = {
+      ...visualState,
+      isPlaying: false,
+      lastUpdateTime: Date.now()
+    };
+
+    setVisualState(newState);
+    saveVisualState(newState);
+  }, [visualState, saveVisualState]);
+
+  // Reset function - stops playback and clears current segment
   const reset = useCallback(() => {
     console.log('📺 Visual reset called');
     
-    if (visualState.currentSegmentId) {
-      const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
-      if (currentSegment) {
-        const duration = timeToSeconds(currentSegment.duration || '00:00');
-        
-        updateVisualState({
-          timeRemaining: duration,
-          playbackStartTime: visualState.isPlaying ? Date.now() : null,
-          controllerId: userId
-        }, true);
-        
-        // If currently playing, restart the timer with the reset time
-        if (visualState.isPlaying) {
-          startTimer();
-        }
-      }
-    }
-  }, [visualState, items, timeToSeconds, userId, updateVisualState, startTimer]);
-
-  // Apply external visual state with proper filtering
-  const applyExternalVisualState = useCallback((externalState: any) => {
-    // Skip if this is our own update
-    if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
-      console.log('⏭️ Skipping own showcaller update');
-      return;
-    }
-
-    // Skip duplicate updates
-    if (externalState.lastUpdate === lastProcessedUpdateRef.current) {
-      console.log('⏭️ Skipping duplicate showcaller update');
-      return;
-    }
-
-    lastProcessedUpdateRef.current = externalState.lastUpdate;
-    
-    console.log('📺 Applying external visual state from controller:', externalState.controllerId);
-    
-    stopTimer();
-    
-    // Convert plain object back to Map
-    const statusMap = new Map();
-    if (externalState.currentItemStatuses) {
-      Object.entries(externalState.currentItemStatuses).forEach(([id, status]) => {
-        statusMap.set(id, status as string);
-      });
-    }
-    
-    let synchronizedState = {
-      ...externalState,
-      currentItemStatuses: statusMap
+    const newState = {
+      ...visualState,
+      isPlaying: false,
+      currentSegmentId: null,
+      startTime: null,
+      lastUpdateTime: Date.now()
     };
-    
-    // Calculate synchronized time remaining if playing
-    if (externalState.isPlaying && externalState.playbackStartTime && externalState.currentSegmentId) {
-      const segment = items.find(item => item.id === externalState.currentSegmentId);
-      if (segment) {
-        const segmentDuration = timeToSeconds(segment.duration || '00:00');
-        const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000);
-        const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
-        
-        synchronizedState = {
-          ...synchronizedState,
-          timeRemaining: syncedTimeRemaining
-        };
-      }
-    }
-    
-    setVisualState(synchronizedState);
-    
-    if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
-      setTimeout(() => startTimer(), 100);
-    }
-  }, [stopTimer, items, timeToSeconds, startTimer]);
 
-  // Initialize current segment
-  useEffect(() => {
-    if (!visualState.currentSegmentId && items.length > 0) {
-      const firstSegment = items.find(item => item.type === 'regular');
-      if (firstSegment) {
-        const duration = timeToSeconds(firstSegment.duration || '00:00');
-        setVisualState(prev => ({
-          ...prev,
-          currentSegmentId: firstSegment.id,
-          timeRemaining: duration
-        }));
-      }
-    }
-  }, [items.length, visualState.currentSegmentId, timeToSeconds]);
+    setVisualState(newState);
+    saveVisualState(newState);
+  }, [visualState, saveVisualState]);
 
-  // Cleanup
+  // Apply external state (from realtime updates)
+  const applyExternalVisualState = useCallback((externalState: ShowcallerVisualState) => {
+    console.log('📺 Received external showcaller visual state');
+    
+    // Only apply if it's newer than our current state
+    if (externalState.lastUpdateTime > visualState.lastUpdateTime) {
+      setVisualState(externalState);
+    } else {
+      console.log('⏭️ Skipping own showcaller update');
+    }
+  }, [visualState.lastUpdateTime]);
+
+  // Determine if this client is the controller (the one that initiated the current state)
+  const isController = visualState.userId === userId;
+
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -489,9 +243,6 @@ export const useShowcallerVisualState = ({
 
   return {
     visualState,
-    getItemVisualStatus,
-    setItemVisualStatus,
-    clearAllVisualStatuses,
     play,
     pause,
     forward,
@@ -500,8 +251,8 @@ export const useShowcallerVisualState = ({
     applyExternalVisualState,
     isPlaying: visualState.isPlaying,
     currentSegmentId: visualState.currentSegmentId,
-    timeRemaining: visualState.timeRemaining,
-    isController: visualState.controllerId === userId,
+    timeRemaining,
+    isController,
     trackOwnUpdate
   };
 };
