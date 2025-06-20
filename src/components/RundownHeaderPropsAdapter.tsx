@@ -26,7 +26,12 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     items,
     visibleColumns,
     isConnected,
-    isProcessingRealtimeUpdate
+    isProcessingRealtimeUpdate,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    autoScrollEnabled,
+    onToggleAutoScroll
   } = props;
 
   return (
@@ -48,6 +53,11 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       lastAction={lastAction}
       isConnected={isConnected}
       isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+      isPlaying={isPlaying}
+      currentSegmentId={currentSegmentId}
+      timeRemaining={timeRemaining}
+      autoScrollEnabled={autoScrollEnabled}
+      onToggleAutoScroll={onToggleAutoScroll}
     />
   );
 };
