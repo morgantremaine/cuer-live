@@ -226,9 +226,9 @@ const SharedRundownTable = ({
           }
         `}
       </style>
-      <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400 print:overflow-visible dark:border-gray-700">
+      <div className="overflow-auto border border-gray-200 rounded-lg print:border-gray-400 print:overflow-visible dark:border-gray-700 max-h-screen">
         <table className="w-full print:text-xs print-table table-fixed">
-          <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10 print:static dark:bg-gray-800">
+          <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-20 print:static dark:bg-gray-800">
             <tr className="print-header-row">
               <th 
                 className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print-row-number dark:text-gray-400 dark:border-gray-600"
