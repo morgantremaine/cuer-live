@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -55,6 +54,34 @@ const SharedRundownTable = ({
       url.includes('amazonaws.com') ||
       url.includes('cloudinary.com')
     );
+  };
+
+  // Helper function to get balanced column width
+  const getColumnWidth = (column: any): string => {
+    const key = column.key || column.id;
+    
+    // Time-related columns should be narrow
+    if (['duration', 'startTime', 'endTime', 'elapsedTime'].includes(key)) {
+      return '100px';
+    }
+    
+    // Images column should be narrow
+    if (key === 'images') {
+      return '80px';
+    }
+    
+    // Segment name should be medium width
+    if (key === 'segmentName' || key === 'name') {
+      return '200px';
+    }
+    
+    // Script and other text-heavy columns should be constrained
+    if (key === 'script' || key === 'description' || key === 'notes') {
+      return '300px';
+    }
+    
+    // Other columns get medium width
+    return '150px';
   };
 
   // Helper function to render cell content
@@ -200,26 +227,33 @@ const SharedRundownTable = ({
         `}
       </style>
       <div className="overflow-hidden border border-gray-200 rounded-lg print:border-gray-400 print:overflow-visible dark:border-gray-700">
-        <table className="w-full print:text-xs print-table">
+        <table className="w-full print:text-xs print-table table-fixed">
           <thead className="bg-gray-50 print:bg-gray-100 sticky top-0 z-10 print:static dark:bg-gray-800">
             <tr className="print-header-row">
-              <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print-row-number dark:text-gray-400 dark:border-gray-600">
+              <th 
+                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 print-row-number dark:text-gray-400 dark:border-gray-600"
+                style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
+              >
                 #
               </th>
-              {visibleColumns.map((column) => (
-                <th
-                  key={column.id}
-                  className={`px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 dark:text-gray-400 dark:border-gray-600 ${
-                    ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
-                      ? 'print-time-column' 
-                      : 'print-content-column'
-                  }`}
-                >
-                  <div className="truncate">
-                    {column.name}
-                  </div>
-                </th>
-              ))}
+              {visibleColumns.map((column) => {
+                const columnWidth = getColumnWidth(column);
+                return (
+                  <th
+                    key={column.id}
+                    className={`px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 print:border-gray-400 dark:text-gray-400 dark:border-gray-600 ${
+                      ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+                        ? 'print-time-column' 
+                        : 'print-content-column'
+                    }`}
+                    style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                  >
+                    <div className="truncate">
+                      {column.name}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-400 dark:bg-gray-900 dark:divide-gray-700">
@@ -238,7 +272,10 @@ const SharedRundownTable = ({
                   `}
                   style={{ backgroundColor: item.color !== '#ffffff' && item.color && !isFloated && !isShowcallerCurrent ? item.color : undefined }}
                 >
-                  <td className="px-2 py-1 whitespace-nowrap text-sm border-r border-gray-200 print:border-gray-400 print-row-number dark:border-gray-600">
+                  <td 
+                    className="px-2 py-1 whitespace-nowrap text-sm border-r border-gray-200 print:border-gray-400 print-row-number dark:border-gray-600"
+                    style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
+                  >
                     <div className="flex items-center">
                       {/* Blue play icon for current segment */}
                       {isShowcallerCurrent && (
@@ -254,6 +291,7 @@ const SharedRundownTable = ({
                   </td>
                   
                   {visibleColumns.map((column) => {
+                    const columnWidth = getColumnWidth(column);
                     // Check if this is the current segment and this is the segment name column
                     const isCurrentSegmentName = isShowcallerCurrent && 
                       (column.key === 'segmentName' || column.key === 'name');
@@ -263,29 +301,45 @@ const SharedRundownTable = ({
                       if (column.key === 'segmentName' || column.key === 'name') {
                         // Show the header name for both segmentName and name columns
                         return (
-                          <td key={column.id} className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column dark:border-gray-600">
-                            <div className="break-words whitespace-pre-wrap dark:text-gray-300">{item.name || ''}</div>
+                          <td 
+                            key={column.id} 
+                            className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column dark:border-gray-600"
+                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                          >
+                            <div className="break-words whitespace-pre-wrap overflow-hidden dark:text-gray-300">{item.name || ''}</div>
                           </td>
                         );
                       } else if (column.key === 'duration') {
                         // Show the calculated header duration (excluding floated items)
                         return (
-                          <td key={column.id} className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print-time-column dark:text-gray-400 dark:border-gray-600">
-                            <div className="break-words whitespace-pre-wrap">({calculateHeaderDuration(index)})</div>
+                          <td 
+                            key={column.id} 
+                            className="px-2 py-1 text-sm text-gray-600 border-r border-gray-200 print:border-gray-400 print-time-column dark:text-gray-400 dark:border-gray-600"
+                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                          >
+                            <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
                           </td>
                         );
                       } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
                         // Don't show time fields for headers
                         return (
-                          <td key={column.id} className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-time-column dark:border-gray-600">
-                            <div className="break-words whitespace-pre-wrap"></div>
+                          <td 
+                            key={column.id} 
+                            className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-time-column dark:border-gray-600"
+                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                          >
+                            <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
                           </td>
                         );
                       } else {
                         // For other columns, show empty cell for headers
                         return (
-                          <td key={column.id} className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column dark:border-gray-600">
-                            <div className="break-words whitespace-pre-wrap"></div>
+                          <td 
+                            key={column.id} 
+                            className="px-2 py-1 text-sm border-r border-gray-200 print:border-gray-400 print-content-column dark:border-gray-600"
+                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                          >
+                            <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
                           </td>
                         );
                       }
@@ -302,8 +356,9 @@ const SharedRundownTable = ({
                         } ${isFloated ? 'text-white' : 'text-gray-900 dark:text-gray-300'} ${
                           isCurrentSegmentName ? 'bg-blue-500 text-white' : ''
                         }`}
+                        style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
                       >
-                        <div className="break-words whitespace-pre-wrap">
+                        <div className="break-words whitespace-pre-wrap overflow-hidden">
                           {renderCellContent(item, column, calculatedStartTime)}
                         </div>
                       </td>
