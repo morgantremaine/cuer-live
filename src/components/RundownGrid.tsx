@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -143,10 +144,9 @@ const RundownGrid = () => {
         console.log('🎯 Showcaller is playing - jumping and continuing playback');
         play(segmentId);
       } else {
-        // If paused, jump but stay paused
-        console.log('🎯 Showcaller is paused - jumping but staying paused');
+        // If paused, just update the item statuses without starting playback
+        console.log('🎯 Showcaller is paused - updating statuses only');
         
-        // Update the segments status without starting playback
         const selectedIndex = items.findIndex(item => item.id === segmentId);
         items.forEach((item, index) => {
           if (item.type === 'regular') {
@@ -163,13 +163,7 @@ const RundownGrid = () => {
           }
         });
         
-        // Update the showcaller state to point to the new segment but keep it paused
-        // This will require accessing the showcaller state manager directly
-        // For now, we'll call play and then immediately pause to set the segment
-        play(segmentId);
-        setTimeout(() => {
-          pause();
-        }, 50);
+        console.log('🎯 Updated item statuses without starting playback');
       }
       
       // Check state after operation
