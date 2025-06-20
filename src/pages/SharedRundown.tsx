@@ -237,14 +237,14 @@ const SharedRundown = () => {
 
   if (layoutLoading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading layout...</div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+    <div className={`flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
