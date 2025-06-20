@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Clock, RotateCcw } from 'lucide-react';
+import { Clock, Target } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import ShowcallerTimingIndicator from '../showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -128,9 +127,13 @@ const HeaderBottomSection = ({
           isVisible={isVisible}
         />
         
-        {/* Compact Autoscroll Toggle */}
-        <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-          <RotateCcw className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+        {/* Compact Autoscroll Toggle with improved styling */}
+        <div className={`flex items-center space-x-1.5 px-2 py-1 rounded-md border transition-colors ${
+          autoScrollEnabled 
+            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' 
+            : 'bg-gray-50 dark:bg-gray-750 border-gray-300 dark:border-gray-600'
+        }`}>
+          <Target className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-500'}`} />
           <Switch
             checked={autoScrollEnabled}
             onCheckedChange={handleToggleAutoScroll}
