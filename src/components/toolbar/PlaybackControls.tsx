@@ -96,7 +96,9 @@ const PlaybackControls = ({
 
       {/* Autoscroll Toggle */}
       {onToggleAutoScroll && (
-        <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 ml-2">
+        <div className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ml-2 ${
+          size === 'sm' ? 'h-9' : 'h-10'
+        }`}>
           <Target className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
           <Switch
             checked={autoScrollEnabled}
