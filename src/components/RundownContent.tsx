@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import RundownTableHeader from './RundownTableHeader';
@@ -42,6 +41,7 @@ interface RundownContentProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToHere?: (segmentId: string) => void;
 }
 
 const RundownContent = ({
@@ -79,7 +79,8 @@ const RundownContent = ({
   onPasteRows,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  onJumpToHere
 }: RundownContentProps) => {
 
   return (
@@ -135,6 +136,7 @@ const RundownContent = ({
             onClearSelection={onClearSelection || (() => {})}
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
+            onJumpToHere={onJumpToHere || (() => {})}
           />
         </div>
         <ScrollBar orientation="horizontal" />
