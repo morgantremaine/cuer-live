@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RefreshCw, FileText, Clock, Calendar } from 'lucide-react';
 import AddListDialog from './AddListDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BlueprintHeaderProps {
   rundown: {
@@ -28,19 +29,20 @@ const BlueprintHeader = ({
   onRefreshAll
 }: BlueprintHeaderProps) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   return (
-    <div className="flex items-start justify-between mb-8">
-      <div>
+    <div className="mb-8">
+      <div className="mb-4">
         <div className="flex items-center space-x-3 mb-2">
           <div>
-            <h1 className="text-3xl font-bold text-white">{rundown.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white break-words">{rundown.title}</h1>
             <p className="text-gray-400">Blueprint</p>
           </div>
         </div>
         
         {/* Start Time and Date Section */}
-        <div className="flex items-center space-x-6 mb-4">
+        <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center space-x-6'} mb-4`}>
           {rundown.startTime && (
             <div className="flex items-center space-x-2 text-gray-300">
               <Clock className="h-4 w-4" />
@@ -60,14 +62,14 @@ const BlueprintHeader = ({
           </div>
         </div>
         
-        <div className="flex gap-2 justify-between">
-          <div className="flex gap-2">
+        <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'gap-2 justify-between'}`}>
+          <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'gap-2'}`}>
             <AddListDialog
               availableColumns={availableColumns}
               onAddList={onAddList}
             />
           </div>
-          <div className="flex gap-2">
+          <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'gap-2'}`}>
             <Button
               variant="outline"
               onClick={onRefreshAll}
