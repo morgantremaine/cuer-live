@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Clock, RotateCcw } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -102,9 +101,9 @@ const HeaderBottomSection = ({
     }
   };
 
-  // Handle autoscroll toggle with debugging
-  const handleToggleAutoScroll = () => {
-    console.log('🔄 HeaderBottomSection: Toggle autoscroll clicked!', {
+  // Handle autoscroll toggle with proper Switch component integration
+  const handleToggleAutoScroll = (checked: boolean) => {
+    console.log('🔄 HeaderBottomSection: Toggle autoscroll called with checked:', checked, {
       currentState: autoScrollEnabled,
       hasFunction: !!onToggleAutoScroll
     });
