@@ -39,6 +39,7 @@ interface RegularRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToHere?: (segmentId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -62,6 +63,7 @@ const RegularRow = (props: RegularRowProps) => {
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onJumpToHere,
     isDragging
   } = props;
 
@@ -159,6 +161,7 @@ const RegularRow = (props: RegularRowProps) => {
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
+      itemType="regular"
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
@@ -168,6 +171,7 @@ const RegularRow = (props: RegularRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
+      onJumpToHere={onJumpToHere}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}

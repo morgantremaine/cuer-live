@@ -1,6 +1,5 @@
-
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,6 +17,7 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
+  itemType?: 'regular' | 'header';
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -28,6 +28,7 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onJumpToHere?: (segmentId: string) => void;
 }
 
 const RundownContextMenu = memo(({
@@ -38,6 +39,7 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
+  itemType = 'regular',
   onCopy,
   onDelete,
   onToggleFloat,
@@ -47,7 +49,8 @@ const RundownContextMenu = memo(({
   onPaste,
   onClearSelection,
   onAddRow,
-  onAddHeader
+  onAddHeader,
+  onJumpToHere
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -87,6 +90,12 @@ const RundownContextMenu = memo(({
     }
   };
 
+  const handleJumpToHere = () => {
+    if (onJumpToHere && itemType === 'regular') {
+      onJumpToHere(itemId);
+    }
+  };
+
   return (
     <>
       <ContextMenu>
@@ -115,6 +124,20 @@ const RundownContextMenu = memo(({
           )}
           
           {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
+          
+          {/* Jump to here - only show for regular segments and single selection */}
+          {onJumpToHere && itemType === 'regular' && !isMultipleSelection && (
+            <>
+              <ContextMenuItem 
+                onClick={handleJumpToHere} 
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <Navigation className="mr-2 h-4 w-4" />
+                Jump to here
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
           
           <ContextMenuItem 
             onClick={onCopy} 

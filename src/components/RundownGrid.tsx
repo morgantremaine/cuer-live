@@ -122,6 +122,12 @@ const RundownGrid = () => {
     interactions.handleDrop(e, targetIndex);
   };
 
+  // Create jump to here handler that uses the existing play function
+  const handleJumpToHere = (segmentId: string) => {
+    console.log('🎯 Jumping to segment:', segmentId);
+    play(segmentId);
+  };
+
   return (
     <RundownTable
       items={items}
@@ -162,6 +168,7 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
+      onJumpToHere={handleJumpToHere}
     />
   );
 };
