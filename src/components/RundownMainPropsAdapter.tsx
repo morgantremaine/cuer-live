@@ -79,7 +79,16 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
+    autoScrollEnabled,
+    onToggleAutoScroll
   } = props;
+
+  // Debug logging for prop passing
+  console.log('🔄 RundownMainPropsAdapter: Received autoscroll props:', {
+    autoScrollEnabled,
+    hasToggleFunction: !!onToggleAutoScroll,
+    toggleFunctionType: typeof onToggleAutoScroll
+  });
 
   // Create rundown data for CSV export
   const rundownData: CSVExportData = {
@@ -129,6 +138,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         rundownData={rundownData}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
       />
 
       {/* Main Content */}

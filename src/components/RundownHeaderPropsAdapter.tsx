@@ -34,6 +34,13 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     onToggleAutoScroll
   } = props;
 
+  // Debug logging for prop passing
+  console.log('🔄 RundownHeaderPropsAdapter: Received props:', {
+    autoScrollEnabled,
+    hasToggleFunction: !!onToggleAutoScroll,
+    toggleFunctionType: typeof onToggleAutoScroll
+  });
+
   return (
     <RundownHeader
       currentTime={currentTime}
