@@ -206,29 +206,54 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       <style>
         {`
           @media print {
-            /* Force print to use full page height and remove overflow constraints */
-            body, html {
-              height: auto !important;
+            /* Force print to use full page and remove ALL overflow constraints */
+            * {
               overflow: visible !important;
+              max-height: none !important;
+              height: auto !important;
             }
             
-            /* Make the container take full available space */
-            .print-container {
+            body, html {
               height: auto !important;
               max-height: none !important;
               overflow: visible !important;
+            }
+            
+            /* Make ALL containers take full available space without constraints */
+            .print-container,
+            .print-scroll-container,
+            .print-table,
+            .print-table tbody,
+            .print-table thead {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+              display: block !important;
             }
             
             .print-table {
               width: 100% !important;
               table-layout: auto !important;
               font-size: 10px !important;
-              height: auto !important;
-              overflow: visible !important;
+              border-collapse: collapse !important;
+            }
+            
+            .print-table thead {
+              display: table-header-group !important;
+            }
+            
+            .print-table tbody {
+              display: table-row-group !important;
+            }
+            
+            .print-table tr {
+              display: table-row !important;
+              page-break-inside: avoid !important;
             }
             
             .print-table th,
             .print-table td {
+              display: table-cell !important;
               padding: 3px 4px !important;
               font-size: 10px !important;
               line-height: 1.3 !important;
@@ -240,6 +265,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               /* Force light mode colors for printing */
               color: #000 !important;
               background: #fff !important;
+              overflow: visible !important;
+              max-height: none !important;
+              height: auto !important;
             }
             
             .print-table th {
@@ -299,22 +327,20 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               white-space: normal !important;
             }
             
-            /* Remove any height constraints that prevent full printing */
-            .print-scroll-container {
-              height: auto !important;
-              max-height: none !important;
-              overflow: visible !important;
+            /* Ensure sticky headers don't interfere with printing */
+            .sticky {
+              position: static !important;
             }
           }
         `}
       </style>
       <div 
-        className={`print-container border rounded-lg print:border-gray-400 print:overflow-visible print:h-auto print:max-h-none ${
+        className={`print-container border rounded-lg print:border-gray-400 ${
           isDark ? 'border-gray-700 h-full' : 'border-gray-200 h-full'
         }`} 
         ref={ref}
       >
-        <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
+        <div className="print-scroll-container h-full overflow-auto">
           <table className="w-full print:text-xs print-table table-fixed">
             <thead className={`sticky top-0 z-10 print:static ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
