@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { useTeam } from '@/hooks/useTeam';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { mapDatabaseToRundown, mapRundownToDatabase, mapRundownsFromDatabase } from './useRundownStorage/dataMapper';
 import { SavedRundown } from './useRundownStorage/types';
@@ -10,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
+  const { team } = useTeam();
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -239,6 +241,14 @@ export const useRundownStorage = () => {
   useEffect(() => {
     loadRundowns();
   }, [loadRundowns]);
+
+  // Also reload rundowns when team changes (important for team invite flow)
+  useEffect(() => {
+    if (user && team) {
+      console.log('Team changed, reloading rundowns for team:', team.name);
+      loadRundowns();
+    }
+  }, [user, team?.id, loadRundowns]);
 
   return {
     savedRundowns,

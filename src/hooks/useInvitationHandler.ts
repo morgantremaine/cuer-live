@@ -52,15 +52,21 @@ export const useInvitationHandler = () => {
         if (!stillPending) {
           // Force reload rundowns after successful team join
           console.log('Invitation processed successfully, reloading rundowns...');
-          await loadRundowns();
+          
+          // Add a small delay to ensure team data is fully loaded before reloading rundowns
+          setTimeout(async () => {
+            await loadRundowns();
+          }, 500);
           
           toast({
             title: 'Success',
-            description: 'Successfully joined the team!',
+            description: 'Successfully joined the team! Your team rundowns are now available.',
           });
           
-          // Navigate to dashboard after successful join
-          navigate('/dashboard');
+          // Navigate to dashboard after successful join if not already there
+          if (location.pathname !== '/dashboard') {
+            navigate('/dashboard');
+          }
         } else {
           // Token is still there, which might mean the invitation failed or is invalid
           console.log('Invitation token still present, checking validity...');
