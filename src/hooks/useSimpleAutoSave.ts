@@ -22,6 +22,7 @@ export const useSimpleAutoSave = (
   const showcallerUpdateTimeoutRef = useRef<NodeJS.Timeout>();
   const ownUpdateTimestamps = useRef<Set<string>>(new Set());
   const pendingSaveRef = useRef(false);
+  const lastShowcallerActivityRef = useRef<number>(0);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -47,9 +48,12 @@ export const useSimpleAutoSave = (
 
   // Enhanced showcaller update detection - prevents saves during showcaller updates
   const setShowcallerUpdate = useCallback((isUpdate: boolean) => {
+    const now = Date.now();
     showcallerUpdateRef.current = isUpdate;
     
     if (isUpdate) {
+      lastShowcallerActivityRef.current = now;
+      
       // Clear existing timeout
       if (showcallerUpdateTimeoutRef.current) {
         clearTimeout(showcallerUpdateTimeoutRef.current);
@@ -58,7 +62,7 @@ export const useSimpleAutoSave = (
       // Extended timeout to cover all showcaller operations
       showcallerUpdateTimeoutRef.current = setTimeout(() => {
         showcallerUpdateRef.current = false;
-      }, 5000); // 5 seconds to cover showcaller state changes
+      }, 15000); // 15 seconds to cover showcaller state changes
     }
   }, []);
 
@@ -84,8 +88,21 @@ export const useSimpleAutoSave = (
     }, 15000);
   }, []);
 
-  // Enhanced content signature that excludes showcaller fields
+  // Enhanced showcaller activity detection
+  const isRecentShowcallerActivity = useCallback(() => {
+    const now = Date.now();
+    const timeSinceLastActivity = now - lastShowcallerActivityRef.current;
+    return timeSinceLastActivity < 15000; // 15 seconds
+  }, []);
+
+  // Enhanced content signature that excludes showcaller fields and checks for recent showcaller activity
   const createContentSignature = useCallback(() => {
+    // If there's recent showcaller activity, return the last saved signature to prevent saves
+    if (isRecentShowcallerActivity()) {
+      console.log('🚫 Skipping signature creation due to recent showcaller activity');
+      return lastSavedRef.current;
+    }
+
     return JSON.stringify({
       items: state.items?.map(item => ({
         id: item.id,
@@ -113,7 +130,7 @@ export const useSimpleAutoSave = (
       startTime: state.startTime,
       timezone: state.timezone
     });
-  }, [state.items, state.title, state.startTime, state.timezone]);
+  }, [state.items, state.title, state.startTime, state.timezone, isRecentShowcallerActivity]);
 
   useEffect(() => {
     // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, showcaller is updating, or we're already saving
@@ -121,24 +138,25 @@ export const useSimpleAutoSave = (
         undoActiveRef.current || 
         userTypingRef.current || 
         showcallerUpdateRef.current ||
-        pendingSaveRef.current) {
+        pendingSaveRef.current ||
+        isRecentShowcallerActivity()) {
       return;
     }
 
     // Create a signature of the current state - EXCLUDE showcaller data completely
     const currentSignature = createContentSignature();
 
-    // Only save if state actually changed
+    // Only save if state actually changed (and it's not the same as last saved due to showcaller activity)
     if (currentSignature === lastSavedRef.current) {
       return;
     }
 
-    // Rate limiting: don't save more than once every 2 seconds
+    // Rate limiting: don't save more than once every 3 seconds (increased from 2)
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 2000;
+    const minSaveInterval = 3000;
     
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 3000 : 1500;
+    const debounceTime = timeSinceLastSave < minSaveInterval ? 5000 : 2000; // Increased debounce times
 
     // Clear any existing timeout
     if (saveTimeoutRef.current) {
@@ -147,12 +165,14 @@ export const useSimpleAutoSave = (
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
-      // Triple-check conditions when timeout executes
+      // Triple-check conditions when timeout executes, including showcaller activity
       if (isSaving || 
           undoActiveRef.current || 
           userTypingRef.current || 
           showcallerUpdateRef.current ||
-          pendingSaveRef.current) {
+          pendingSaveRef.current ||
+          isRecentShowcallerActivity()) {
+        console.log('🚫 Save cancelled at execution - showcaller activity or other blocking condition');
         return;
       }
       
@@ -244,7 +264,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, isRecentShowcallerActivity]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {

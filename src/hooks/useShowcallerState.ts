@@ -43,6 +43,7 @@ export const useShowcallerState = ({
   const lastSyncedStateRef = useRef<string | null>(null);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const showcallerUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const showcallerOperationInProgressRef = useRef(false);
   
   // Keep callback ref updated
   stateChangeCallbackRef.current = onShowcallerStateChange;
@@ -90,20 +91,26 @@ export const useShowcallerState = ({
     return null;
   }, [items]);
 
-  // Enhanced showcaller update marking with longer duration
-  const markAsShowcallerUpdate = useCallback(() => {
+  // Enhanced showcaller operation marking - prevents autosave during showcaller operations
+  const markShowcallerOperation = useCallback((isStarting: boolean) => {
     if (setShowcallerUpdate) {
-      setShowcallerUpdate(true);
+      showcallerOperationInProgressRef.current = isStarting;
+      setShowcallerUpdate(isStarting);
       
-      // Clear any existing timeout
-      if (showcallerUpdateTimeoutRef.current) {
-        clearTimeout(showcallerUpdateTimeoutRef.current);
+      if (isStarting) {
+        // Clear any existing timeout
+        if (showcallerUpdateTimeoutRef.current) {
+          clearTimeout(showcallerUpdateTimeoutRef.current);
+        }
+        
+        // Set timeout to clear the operation flag
+        showcallerUpdateTimeoutRef.current = setTimeout(() => {
+          showcallerOperationInProgressRef.current = false;
+          if (setShowcallerUpdate) {
+            setShowcallerUpdate(false);
+          }
+        }, 20000); // 20 seconds to ensure all related operations complete
       }
-      
-      // Extended timeout to ensure the flag stays active during all related operations
-      showcallerUpdateTimeoutRef.current = setTimeout(() => {
-        setShowcallerUpdate(false);
-      }, 8000); // 8 seconds to cover all related database operations and prevent autosave
     }
   }, [setShowcallerUpdate]);
 
@@ -123,10 +130,10 @@ export const useShowcallerState = ({
     }, 150);
   }, [trackOwnUpdate]);
 
-  // Update showcaller state with enhanced change tracking exclusion
+  // Update showcaller state with enhanced change tracking prevention
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
-    // Mark as showcaller update with extended duration
-    markAsShowcallerUpdate();
+    // Mark as showcaller operation at the start
+    markShowcallerOperation(true);
 
     const updatedState = {
       ...showcallerState,
@@ -139,21 +146,23 @@ export const useShowcallerState = ({
     if (shouldSync && stateChangeCallbackRef.current) {
       debouncedSync(updatedState);
     }
-  }, [showcallerState, debouncedSync, markAsShowcallerUpdate]);
+  }, [showcallerState, debouncedSync, markShowcallerOperation]);
 
-  // Clear current status from all items with showcaller update marking
+  // Clear current status from all items with showcaller operation marking
   const clearCurrentStatus = useCallback(() => {
-    markAsShowcallerUpdate();
+    markShowcallerOperation(true);
+    console.log('📺 Clearing current status from all items');
 
     items.forEach(item => {
       if (item.status === 'current') {
+        console.log('📺 Clearing current status from:', item.id);
         updateItem(item.id, 'status', 'completed');
       }
     });
-  }, [items, updateItem, markAsShowcallerUpdate]);
+  }, [items, updateItem, markShowcallerOperation]);
 
   const setCurrentSegment = useCallback((segmentId: string) => {
-    markAsShowcallerUpdate();
+    markShowcallerOperation(true);
 
     clearCurrentStatus();
     const segment = items.find(item => item.id === segmentId);
@@ -169,9 +178,9 @@ export const useShowcallerState = ({
         controllerId: userId
       }, true);
     }
-  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId, markAsShowcallerUpdate]);
+  }, [items, updateItem, clearCurrentStatus, timeToSeconds, updateShowcallerState, userId, markShowcallerOperation]);
 
-  // Timer logic
+  // Timer logic with enhanced showcaller operation marking
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -184,7 +193,7 @@ export const useShowcallerState = ({
         if (prevState.timeRemaining <= 1) {
           // Only controller handles segment advancement
           if (isActiveController && prevState.currentSegmentId) {
-            markAsShowcallerUpdate();
+            markShowcallerOperation(true);
 
             updateItem(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
@@ -257,7 +266,7 @@ export const useShowcallerState = ({
         return newState;
       });
     }, 1000);
-  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate, markAsShowcallerUpdate]);
+  }, [isController, updateItem, getNextSegment, timeToSeconds, trackOwnUpdate, markShowcallerOperation]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -266,11 +275,12 @@ export const useShowcallerState = ({
     }
   }, []);
 
-  // Control functions with enhanced showcaller update marking
+  // Control functions with enhanced showcaller operation marking
   const play = useCallback((selectedSegmentId?: string) => {
     const playbackStartTime = Date.now();
     
-    markAsShowcallerUpdate();
+    markShowcallerOperation(true);
+    console.log('📺 Play called with segmentId:', selectedSegmentId, 'by user:', userId);
     
     if (selectedSegmentId) {
       // Mark segments before selected as completed, after as upcoming
@@ -306,9 +316,12 @@ export const useShowcallerState = ({
     }, true);
     
     startTimer();
-  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer, markAsShowcallerUpdate]);
+  }, [items, updateItem, setCurrentSegment, updateShowcallerState, showcallerState.currentSegmentId, userId, startTimer, markShowcallerOperation]);
 
   const pause = useCallback(() => {
+    markShowcallerOperation(true);
+    console.log('📺 Pause called by user:', userId);
+    
     stopTimer();
     
     updateShowcallerState({ 
@@ -316,15 +329,17 @@ export const useShowcallerState = ({
       playbackStartTime: null,
       controllerId: userId
     }, true);
-  }, [updateShowcallerState, stopTimer, userId]);
+  }, [updateShowcallerState, stopTimer, userId, markShowcallerOperation]);
 
   // Enhanced forward/backward with better coordination
   const forward = useCallback(() => {
-    markAsShowcallerUpdate();
+    markShowcallerOperation(true);
+    console.log('📺 Forward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
 
     if (showcallerState.currentSegmentId) {
       const nextSegment = getNextSegment(showcallerState.currentSegmentId);
       if (nextSegment) {
+        console.log('📺 Moving to next segment:', nextSegment.id);
         // Batch the operations to reduce conflicts
         updateItem(showcallerState.currentSegmentId, 'status', 'completed');
         updateItem(nextSegment.id, 'status', 'current');
@@ -344,14 +359,16 @@ export const useShowcallerState = ({
         }
       }
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markAsShowcallerUpdate]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getNextSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markShowcallerOperation]);
 
   const backward = useCallback(() => {
-    markAsShowcallerUpdate();
+    markShowcallerOperation(true);
+    console.log('📺 Backward called by user:', userId, 'current segment:', showcallerState.currentSegmentId);
 
     if (showcallerState.currentSegmentId) {
       const prevSegment = getPreviousSegment(showcallerState.currentSegmentId);
       if (prevSegment) {
+        console.log('📺 Moving to previous segment:', prevSegment.id);
         // Batch the operations to reduce conflicts
         updateItem(showcallerState.currentSegmentId, 'status', 'upcoming');
         updateItem(prevSegment.id, 'status', 'current');
@@ -371,7 +388,7 @@ export const useShowcallerState = ({
         }
       }
     }
-  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markAsShowcallerUpdate]);
+  }, [showcallerState.currentSegmentId, showcallerState.isPlaying, getPreviousSegment, updateItem, timeToSeconds, userId, updateShowcallerState, startTimer, markShowcallerOperation]);
 
   // External state application
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
@@ -380,7 +397,8 @@ export const useShowcallerState = ({
     }
     lastSyncedStateRef.current = externalState.lastUpdate;
     
-    markAsShowcallerUpdate();
+    markShowcallerOperation(true);
+    console.log('📺 Applying external showcaller state from controller:', externalState.controllerId);
     
     stopTimer();
     clearCurrentStatus();
@@ -402,6 +420,8 @@ export const useShowcallerState = ({
         const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000);
         const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
         
+        console.log('📺 Synchronized time remaining:', syncedTimeRemaining, 'from elapsed:', elapsedTime);
+        
         synchronizedState = {
           ...externalState,
           timeRemaining: syncedTimeRemaining
@@ -412,15 +432,17 @@ export const useShowcallerState = ({
     setShowcallerState(synchronizedState);
     
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
+      console.log('📺 Restarting timer after sync');
       setTimeout(() => startTimer(), 100);
     }
-  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer, markAsShowcallerUpdate]);
+  }, [stopTimer, clearCurrentStatus, items, updateItem, timeToSeconds, startTimer, markShowcallerOperation]);
 
   // Initialize current segment on mount if none exists
   useEffect(() => {
     if (!hasInitialized.current && !showcallerState.currentSegmentId && items.length > 0) {
       const firstSegment = items.find(item => item.type === 'regular');
       if (firstSegment) {
+        console.log('📺 Initializing with first segment:', firstSegment.id);
         const duration = timeToSeconds(firstSegment.duration || '00:00');
         setShowcallerState(prev => ({
           ...prev,
