@@ -1,3 +1,4 @@
+
 import React, { forwardRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -202,14 +203,28 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 
   return (
     <>
-      {/* ... keep existing code (print styles) */}
       <style>
         {`
           @media print {
+            /* Force print to use full page height and remove overflow constraints */
+            body, html {
+              height: auto !important;
+              overflow: visible !important;
+            }
+            
+            /* Make the container take full available space */
+            .print-container {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            
             .print-table {
               width: 100% !important;
               table-layout: auto !important;
               font-size: 10px !important;
+              height: auto !important;
+              overflow: visible !important;
             }
             
             .print-table th,
@@ -222,6 +237,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               white-space: normal !important;
               border: 0.5px solid #666 !important;
               vertical-align: top !important;
+              /* Force light mode colors for printing */
+              color: #000 !important;
+              background: #fff !important;
             }
             
             .print-table th {
@@ -237,6 +255,30 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               background: #e5e5e5 !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              color: #000 !important;
+            }
+            
+            .print-header-row td {
+              background: #e5e5e5 !important;
+              color: #000 !important;
+              font-weight: bold !important;
+            }
+            
+            /* Force colored rows to print with their colors but ensure text is readable */
+            .print-colored-row {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .print-floated-row {
+              background: #dc2626 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .print-floated-row td {
+              background: #dc2626 !important;
+              color: #fff !important;
             }
             
             .print-row-number {
@@ -256,16 +298,23 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               overflow-wrap: break-word !important;
               white-space: normal !important;
             }
+            
+            /* Remove any height constraints that prevent full printing */
+            .print-scroll-container {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
           }
         `}
       </style>
       <div 
-        className={`h-full border rounded-lg print:border-gray-400 print:overflow-visible ${
-          isDark ? 'border-gray-700' : 'border-gray-200'
+        className={`print-container border rounded-lg print:border-gray-400 print:overflow-visible print:h-auto print:max-h-none ${
+          isDark ? 'border-gray-700 h-full' : 'border-gray-200 h-full'
         }`} 
         ref={ref}
       >
-        <div className="h-full overflow-auto print:overflow-visible">
+        <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
           <table className="w-full print:text-xs print-table table-fixed">
             <thead className={`sticky top-0 z-10 print:static ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
@@ -318,15 +367,19 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 // Determine row background color
                 let rowBackgroundColor = undefined;
                 let textColor = isDark ? '#ffffff' : '#000000'; // Default text colors
+                let printRowClass = '';
                 
                 if (item.type === 'header') {
                   rowBackgroundColor = isDark ? '#374151' : '#f3f4f6'; // gray-700 : gray-100
+                  printRowClass = 'print-header-row';
                 } else if (isFloated) {
                   rowBackgroundColor = '#dc2626'; // red-600
                   textColor = '#ffffff';
+                  printRowClass = 'print-floated-row';
                 } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF') {
                   rowBackgroundColor = item.color;
                   textColor = getContrastTextColor(item.color);
+                  printRowClass = 'print-colored-row';
                 }
                 
                 return (
@@ -334,7 +387,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     key={item.id}
                     data-item-id={item.id}
                     className={`
-                      ${item.type === 'header' ? 'font-semibold print:bg-gray-200' : ''}
+                      ${item.type === 'header' ? 'font-semibold' : ''}
+                      ${printRowClass}
                       print:break-inside-avoid print:border-0
                     `}
                     style={{ 
@@ -356,7 +410,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           />
                         )}
                         {isFloated && (
-                          <span className="text-yellow-400 mr-1 print:mr-0.5">🛟</span>
+                          <span className="text-yellow-400 mr-1 print:mr-0.5 print:text-yellow-600">🛟</span>
                         )}
                         <span>{getRowNumber(index, items)}</span>
                       </div>
