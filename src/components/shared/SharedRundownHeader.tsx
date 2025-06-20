@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Clock } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
+import { Clock, Moon, Sun } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface SharedRundownHeaderProps {
   title: string;
@@ -45,7 +45,18 @@ export const SharedRundownHeader = ({
         {/* Dark mode toggle - only visible when not printing */}
         {onToggleTheme && (
           <div className="print:hidden">
-            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleTheme}
+              className="h-9 w-9"
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         )}
       </div>
