@@ -125,7 +125,24 @@ const RundownGrid = () => {
   // Create jump to here handler that uses the existing play function
   const handleJumpToHere = (segmentId: string) => {
     console.log('🎯 Jumping to segment:', segmentId);
-    play(segmentId);
+    console.log('🎯 Current segment before jump:', currentSegmentId);
+    console.log('🎯 Available items:', items.map(item => ({ id: item.id, title: item.title, type: item.type })));
+    
+    // Find the segment to make sure it exists
+    const targetSegment = items.find(item => item.id === segmentId);
+    console.log('🎯 Target segment found:', targetSegment);
+    
+    if (targetSegment) {
+      console.log('🎯 Calling play with segment ID:', segmentId);
+      play(segmentId);
+      
+      // Add a timeout to check if the jump worked
+      setTimeout(() => {
+        console.log('🎯 Current segment after jump attempt:', currentSegmentId);
+      }, 100);
+    } else {
+      console.error('🎯 Target segment not found:', segmentId);
+    }
   };
 
   return (
