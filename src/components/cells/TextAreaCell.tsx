@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 
 interface TextAreaCellProps {
@@ -39,12 +40,6 @@ const TextAreaCell = ({
     
     // Get the current width of the textarea
     const textareaWidth = textarea.getBoundingClientRect().width;
-    
-    // Only recalculate if width changed or content changed
-    if (textareaWidth === currentWidth && calculatedHeight > 38) {
-      return;
-    }
-    
     setCurrentWidth(textareaWidth);
     
     // Copy textarea styles to measurement div
@@ -78,18 +73,18 @@ const TextAreaCell = ({
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
     
-    if (newHeight !== calculatedHeight) {
-      setCalculatedHeight(newHeight);
-    }
+    // Always update height to ensure proper resizing (both up and down)
+    setCalculatedHeight(newHeight);
   };
 
-  // Recalculate height when value changes
+  // Recalculate height when value changes - with immediate execution
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Use requestAnimationFrame to ensure DOM has updated
+    const frame = requestAnimationFrame(() => {
       calculateHeight();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [value]);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [value]); // This will trigger every time value changes
 
   // Recalculate height when textarea width changes (column resize)
   useEffect(() => {
@@ -98,10 +93,11 @@ const TextAreaCell = ({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const newWidth = entry.contentRect.width;
-        if (newWidth !== currentWidth) {
-          const timer = setTimeout(() => {
+        if (newWidth !== currentWidth && newWidth > 0) {
+          // Use requestAnimationFrame to ensure proper timing
+          requestAnimationFrame(() => {
             calculateHeight();
-          }, 0);
+          });
         }
       }
     });
@@ -112,6 +108,14 @@ const TextAreaCell = ({
       resizeObserver.disconnect();
     };
   }, [currentWidth]);
+
+  // Initial height calculation when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      calculateHeight();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Simple key navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -126,7 +130,7 @@ const TextAreaCell = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onUpdateValue(e.target.value);
-    // Height will be recalculated by useEffect
+    // Height will be recalculated by useEffect watching value changes
   };
 
   // Enhanced mouse down handler to prevent row dragging when selecting text
