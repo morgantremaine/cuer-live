@@ -31,6 +31,13 @@ const SharedRundown = () => {
   // Get rundownId from the rundownData instead of useParams
   const rundownId = rundownData?.id;
 
+  // Helper function to format time remaining from seconds to string
+  const formatTimeRemaining = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   // Load the shared layout for this rundown - updated to work for anonymous users
   useEffect(() => {
     const loadSharedLayout = async () => {
@@ -238,7 +245,7 @@ const SharedRundown = () => {
           layoutName={layoutName}
           currentSegmentId={currentSegmentId}
           isPlaying={isPlaying}
-          timeRemaining={timeRemaining}
+          timeRemaining={timeRemaining ? formatTimeRemaining(timeRemaining) : null}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
