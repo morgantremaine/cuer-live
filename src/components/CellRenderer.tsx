@@ -158,7 +158,7 @@ const CellRenderer = ({
   if (isCurrentSegmentName) {
     return (
       <div 
-        className="absolute inset-0 flex items-center px-3 py-1"
+        className="absolute inset-0 flex items-center px-3 py-1 rounded-md"
         style={{ 
           backgroundColor: showcallerBackgroundColor,
           color: showcallerTextColor,
