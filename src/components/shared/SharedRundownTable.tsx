@@ -259,10 +259,10 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
           }
         `}
       </style>
-      <div className={`relative border rounded-lg print:border-gray-400 print:overflow-visible ${
+      <div className={`h-full flex flex-col border rounded-lg print:border-gray-400 print:overflow-visible ${
         isDark ? 'border-gray-700' : 'border-gray-200'
       }`} ref={ref}>
-        <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
+        <div className="flex-1 overflow-auto print:overflow-visible">
           <table className="w-full print:text-xs print-table table-fixed">
             <thead className={`sticky top-0 z-50 print:static ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
