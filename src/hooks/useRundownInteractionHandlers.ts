@@ -21,8 +21,7 @@ export const useRundownInteractionHandlers = (
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void,
   addRowAtIndex: (insertIndex: number) => void,
-  addHeaderAtIndex: (insertIndex: number) => void,
-  jumpToSegment?: (segmentId: string) => void
+  addHeaderAtIndex: (insertIndex: number) => void
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
@@ -54,8 +53,7 @@ export const useRundownInteractionHandlers = (
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange,
-    handleJumpToHere
+    handleTitleChange
   } = useRundownGridHandlers({
     updateItem,
     addRow,
@@ -78,8 +76,7 @@ export const useRundownInteractionHandlers = (
     items,
     setRundownTitle,
     addRowAtIndex,
-    addHeaderAtIndex,
-    jumpToSegment
+    addHeaderAtIndex
   });
 
   return {
@@ -107,7 +104,6 @@ export const useRundownInteractionHandlers = (
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange,
-    handleJumpToHere
+    handleTitleChange
   };
 };

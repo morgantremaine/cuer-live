@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -381,44 +382,6 @@ export const useShowcallerVisualState = ({
     }
   }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startTimer]);
 
-  // Jump to specific segment
-  const jumpToSegment = useCallback((segmentId: string) => {
-    console.log('📺 Visual jumpToSegment called with segmentId:', segmentId);
-    
-    const segment = items.find(item => item.id === segmentId);
-    if (!segment || segment.type !== 'regular') {
-      console.warn('⚠️ Invalid segment for jump:', segmentId);
-      return;
-    }
-    
-    const newStatuses = new Map();
-    const selectedIndex = items.findIndex(item => item.id === segmentId);
-    
-    // Mark segments before selected as completed, after as upcoming
-    items.forEach((item, index) => {
-      if (item.type === 'regular') {
-        if (index < selectedIndex) {
-          newStatuses.set(item.id, 'completed');
-        } else if (index === selectedIndex) {
-          newStatuses.set(item.id, 'current');
-        }
-      }
-    });
-    
-    const duration = timeToSeconds(segment.duration || '00:00');
-    
-    updateVisualState({
-      currentSegmentId: segmentId,
-      timeRemaining: duration,
-      playbackStartTime: null, // Don't auto-start playback on jump
-      isPlaying: false,
-      controllerId: userId,
-      currentItemStatuses: newStatuses
-    }, true);
-    
-    stopTimer(); // Stop any current timer
-  }, [items, timeToSeconds, userId, updateVisualState, stopTimer]);
-
   // Apply external visual state with proper filtering
   const applyExternalVisualState = useCallback((externalState: any) => {
     // Skip if this is our own update
@@ -510,7 +473,6 @@ export const useShowcallerVisualState = ({
     pause,
     forward,
     backward,
-    jumpToSegment,
     applyExternalVisualState,
     isPlaying: visualState.isPlaying,
     currentSegmentId: visualState.currentSegmentId,

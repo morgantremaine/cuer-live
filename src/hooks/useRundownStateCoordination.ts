@@ -81,16 +81,6 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // Create a wrapper for jumpToSegment that uses the showcaller's jumpToSegment function
-  const jumpToSegment = (segmentId: string) => {
-    console.log('🎯 StateCoordination jumpToSegment called with segmentId:', segmentId);
-    if (showcallerVisual.jumpToSegment) {
-      showcallerVisual.jumpToSegment(segmentId);
-    } else {
-      console.warn('⚠️ jumpToSegment not available in showcaller visual state');
-    }
-  };
-
   // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
     simplifiedState.items,
@@ -121,8 +111,7 @@ export const useRundownStateCoordination = () => {
     },
     simplifiedState.setTitle,
     addRowAtIndex,
-    addHeaderAtIndex,
-    jumpToSegment
+    addHeaderAtIndex
   );
 
   // Get UI state with enhanced navigation
@@ -201,7 +190,6 @@ export const useRundownStateCoordination = () => {
       pause: showcallerVisual.pause,
       forward: showcallerVisual.forward,
       backward: showcallerVisual.backward,
-      jumpToSegment,
       
       // Undo functionality
       undo: simplifiedState.undo,
