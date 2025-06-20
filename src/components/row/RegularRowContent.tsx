@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -18,6 +17,7 @@ interface RegularRowContentProps {
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
+  currentSegmentId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -34,6 +34,7 @@ const RegularRowContent = ({
   isCurrentlyPlaying = false,
   isDraggingMultiple = false,
   isSelected = false,
+  currentSegmentId,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -78,6 +79,7 @@ const RegularRowContent = ({
               cellRefs={cellRefs}
               textColor={textColor}
               backgroundColor={backgroundColor}
+              currentSegmentId={currentSegmentId}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
@@ -91,4 +93,3 @@ const RegularRowContent = ({
 };
 
 export default RegularRowContent;
-

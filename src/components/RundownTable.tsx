@@ -145,6 +145,7 @@ const RundownTable = ({
                   selectedRows={selectedRows}
                   headerDuration={headerDuration}
                   hasClipboardData={hasClipboardData}
+                  currentSegmentId={currentSegmentId}
                   isDragging={isDragging}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}

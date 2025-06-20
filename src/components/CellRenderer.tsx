@@ -18,6 +18,7 @@ interface CellRendererProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
+  currentSegmentId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -30,6 +31,7 @@ const CellRenderer = ({
   cellRefs,
   textColor,
   backgroundColor,
+  currentSegmentId,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -82,13 +84,29 @@ const CellRenderer = ({
     column.key === 'endTime' || 
     column.key === 'elapsedTime';
 
+  // Check if this is the current segment and segment name column for showcaller highlighting
+  const isCurrentSegmentName = currentSegmentId === item.id && 
+    (column.key === 'segmentName' || column.key === 'name');
+
+  // Override colors for showcaller highlighting
+  const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
+  const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
+
+  console.log('🎯 CellRenderer debug:', {
+    itemId: item.id,
+    currentSegmentId,
+    columnKey: column.key,
+    isCurrentSegmentName,
+    showcallerBackgroundColor
+  });
+
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
       <TimeDisplayCell 
         value={value} 
-        backgroundColor={backgroundColor} 
-        textColor={textColor}
+        backgroundColor={showcallerBackgroundColor} 
+        textColor={showcallerTextColor}
       />
     );
   }
@@ -104,8 +122,8 @@ const CellRenderer = ({
         itemId={item.id}
         cellRefKey={column.key}
         cellRefs={cellRefs}
-        textColor={textColor}
-        backgroundColor={backgroundColor}
+        textColor={showcallerTextColor}
+        backgroundColor={showcallerBackgroundColor}
         onUpdateValue={(newValue) => {
           console.log('🖼️ ImageCell updating value:', newValue, 'for item:', item.id);
           // Always use 'images' as the field name for the images column
@@ -127,7 +145,7 @@ const CellRenderer = ({
         itemId={item.id}
         cellRefKey={column.key}
         cellRefs={cellRefs}
-        textColor={textColor}
+        textColor={showcallerTextColor}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -143,8 +161,8 @@ const CellRenderer = ({
       itemId={item.id}
       cellRefKey={column.key}
       cellRefs={cellRefs}
-      textColor={textColor}
-      backgroundColor={backgroundColor}
+      textColor={showcallerTextColor}
+      backgroundColor={showcallerBackgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields

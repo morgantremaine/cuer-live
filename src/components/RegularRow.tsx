@@ -21,6 +21,7 @@ interface RegularRowProps {
   isDraggingMultiple?: boolean;
   showColorPicker: string | null;
   hasClipboardData?: boolean;
+  currentSegmentId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -55,6 +56,7 @@ const RegularRow = (props: RegularRowProps) => {
     isDraggingMultiple = false,
     showColorPicker,
     hasClipboardData = false,
+    currentSegmentId,
     onToggleFloat,
     onColorSelect,
     onClearSelection,
@@ -189,6 +191,7 @@ const RegularRow = (props: RegularRowProps) => {
           isCurrentlyPlaying={isCurrentlyPlaying}
           isDraggingMultiple={isDraggingMultiple}
           isSelected={isSelected}
+          currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
