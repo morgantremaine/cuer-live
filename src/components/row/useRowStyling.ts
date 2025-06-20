@@ -1,3 +1,4 @@
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -37,8 +38,8 @@ export const useRowStyling = ({
     rowClass = 'border-l-4 border-red-600';
     backgroundColorOverride = '#ef4444'; // Full red background
   } else if (color && color !== '#FFFFFF' && color !== '#ffffff') {
-    // For colored rows, don't add any hover effect to preserve borders
-    rowClass = '';
+    // For colored rows, use a subtle box-shadow hover effect that doesn't affect layout
+    rowClass = 'hover:shadow-sm';
   } else {
     rowClass = 'bg-background hover:bg-muted/50';
   }
