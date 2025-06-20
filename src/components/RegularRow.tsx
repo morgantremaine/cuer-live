@@ -85,7 +85,8 @@ const RegularRow = (props: RegularRowProps) => {
     handleContextMenuDelete,
     handleContextMenuColor,
     handleContextMenuPaste,
-    handleContextMenuFloat
+    handleContextMenuFloat,
+    handleJumpToHere
   } = useRowEventHandlers({
     item,
     index,
@@ -99,7 +100,8 @@ const RegularRow = (props: RegularRowProps) => {
     onToggleFloat,
     selectedRows,
     onPasteRows: props.onPasteRows,
-    onClearSelection
+    onClearSelection,
+    onJumpToHere
   });
 
   // Enhanced drag start handler that prevents dragging when selecting text
@@ -171,7 +173,7 @@ const RegularRow = (props: RegularRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
-      onJumpToHere={onJumpToHere}
+      onJumpToHere={handleJumpToHere}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
