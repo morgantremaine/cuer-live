@@ -61,7 +61,7 @@ const RundownRow = (props: RundownRowProps) => {
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
-        onJumpToHere={props.onJumpToHere}
+        // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
     );
   }
