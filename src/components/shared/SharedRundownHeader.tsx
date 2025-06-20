@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,17 +36,24 @@ export const SharedRundownHeader = ({
         <div className="flex flex-col space-y-3 print:space-y-1">
           {/* Title and Controls Row */}
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className={`text-xl font-bold print:text-base ${
-                isDark ? 'text-white' : 'text-gray-900'
-              }`}>
-                {title}
-              </h1>
-              <p className={`text-sm print:text-xs ${
-                isDark ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                This is a read-only view of the rundown. Updates appear live.
-              </p>
+            <div className="flex items-center space-x-4">
+              <img 
+                src={isDark ? "/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" : "/lovable-uploads/c651349b-4259-451e-8648-9e8a329145c6.png"}
+                alt="Cuer Logo" 
+                className="h-8 w-auto"
+              />
+              <div>
+                <h1 className={`text-xl font-bold print:text-base ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {title}
+                </h1>
+                <p className={`text-sm print:text-xs ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  This is a read-only view of the rundown. Updates appear live.
+                </p>
+              </div>
             </div>
             
             <div className="flex items-center space-x-2 print:hidden">
