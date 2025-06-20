@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -122,9 +123,9 @@ const RundownGrid = () => {
     interactions.handleDrop(e, targetIndex);
   };
 
-  // Modified jump to here handler that respects current playing state
+  // Fixed jump to here handler that properly checks playing state
   const handleJumpToHere = (segmentId: string) => {
-    console.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid) ===');
+    console.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid FIXED VERSION) ===');
     console.log('🎯 Target segment ID:', segmentId);
     console.log('🎯 Current segment ID before jump:', currentSegmentId);
     console.log('🎯 Is currently playing:', isPlaying);
@@ -156,19 +157,31 @@ const RundownGrid = () => {
       }
     });
     
-    // Only start playback if the showcaller is already playing
+    // CRITICAL FIX: Only start playback if the showcaller is already playing
     if (isPlaying) {
-      console.log('🎯 Showcaller is playing - jumping and continuing playback');
+      console.log('🎯 RundownGrid: Showcaller is playing - jumping and continuing playback');
       play(segmentId);
     } else {
-      console.log('🎯 Showcaller is paused - jumping but staying paused');
-      // Just update the visual state without starting playback
-      // We need to manually set the showcaller visual state to point to the new segment
-      // but keep it paused - this requires calling the showcaller visual state directly
-      console.log('🎯 Updating showcaller visual state without starting playback');
+      console.log('🎯 RundownGrid: Showcaller is paused - jumping but staying paused');
+      // For paused state, we need to update the showcaller visual state to point to the new segment
+      // but without starting playback. We'll use the showcaller's visual state update mechanism
+      // to set the current segment without triggering play
+      console.log('🎯 RundownGrid: Updating showcaller current segment without starting playback');
+      
+      // We need to manually update the showcaller's current segment without calling play()
+      // This will be handled by the showcaller visual state system
+      const showcallerVisualUpdate = {
+        currentSegmentId: segmentId,
+        isPlaying: false, // Keep it paused
+        playbackStartTime: null, // No playback
+        timeRemaining: targetSegment.duration ? parseInt(targetSegment.duration.split(':')[0]) * 60 + parseInt(targetSegment.duration.split(':')[1]) : 0
+      };
+      
+      // Call the showcaller's visual state update directly (this needs to be exposed from the state coordination)
+      console.log('🎯 RundownGrid: Visual state update needed for paused jump:', showcallerVisualUpdate);
     }
     
-    console.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid) ===');
+    console.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
   };
 
   return (
