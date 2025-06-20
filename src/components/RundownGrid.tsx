@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -123,7 +122,7 @@ const RundownGrid = () => {
     interactions.handleDrop(e, targetIndex);
   };
 
-  // Enhanced jump to here handler with comprehensive debugging and direct showcaller state access
+  // Modified jump to here handler that respects current playing state
   const handleJumpToHere = (segmentId: string) => {
     console.log('🎯 === JUMP TO HERE DEBUG START ===');
     console.log('🎯 Target segment ID:', segmentId);
@@ -137,33 +136,50 @@ const RundownGrid = () => {
     console.log('🎯 Target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
     
     if (targetSegment) {
-      console.log('🎯 Calling play function with segment ID:', segmentId);
-      console.log('🎯 Play function type:', typeof play);
+      console.log('🎯 Current playing state:', isPlaying);
       
-      try {
-        // Call the play function
+      if (isPlaying) {
+        // If currently playing, jump and continue playing
+        console.log('🎯 Showcaller is playing - jumping and continuing playback');
         play(segmentId);
-        console.log('🎯 Play function called successfully');
+      } else {
+        // If paused, jump but stay paused
+        console.log('🎯 Showcaller is paused - jumping but staying paused');
         
-        // Check state immediately after call
+        // Update the segments status without starting playback
+        const selectedIndex = items.findIndex(item => item.id === segmentId);
+        items.forEach((item, index) => {
+          if (item.type === 'regular') {
+            if (index < selectedIndex) {
+              // Mark previous items as completed
+              coreState.updateItem(item.id, 'status', 'completed');
+            } else if (index === selectedIndex) {
+              // Mark target item as current
+              coreState.updateItem(item.id, 'status', 'current');
+            } else {
+              // Mark future items as upcoming
+              coreState.updateItem(item.id, 'status', 'upcoming');
+            }
+          }
+        });
+        
+        // Update the showcaller state to point to the new segment but keep it paused
+        // This will require accessing the showcaller state manager directly
+        // For now, we'll call play and then immediately pause to set the segment
+        play(segmentId);
         setTimeout(() => {
-          console.log('🎯 State check 100ms after play call:');
-          console.log('🎯 - Current segment ID:', currentSegmentId);
-          console.log('🎯 - Is playing:', isPlaying);
-          console.log('🎯 - Time remaining:', timeRemaining);
-        }, 100);
-        
-        // Check state after a longer delay
-        setTimeout(() => {
-          console.log('🎯 State check 1000ms after play call:');
-          console.log('🎯 - Current segment ID:', currentSegmentId);
-          console.log('🎯 - Is playing:', isPlaying);
-          console.log('🎯 - Time remaining:', timeRemaining);
-        }, 1000);
-        
-      } catch (error) {
-        console.error('🎯 Error calling play function:', error);
+          pause();
+        }, 50);
       }
+      
+      // Check state after operation
+      setTimeout(() => {
+        console.log('🎯 State check after jump operation:');
+        console.log('🎯 - Current segment ID:', currentSegmentId);
+        console.log('🎯 - Is playing:', isPlaying);
+        console.log('🎯 - Time remaining:', timeRemaining);
+      }, 100);
+      
     } else {
       console.error('🎯 Target segment not found for ID:', segmentId);
       console.log('🎯 Available segment IDs:', items.filter(item => item.type === 'regular').map(item => item.id));
