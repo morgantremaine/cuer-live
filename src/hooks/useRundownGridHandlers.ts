@@ -24,7 +24,6 @@ interface UseRundownGridHandlersProps {
   setRundownTitle: (title: string) => void;
   addRowAtIndex: (insertIndex: number) => void;
   addHeaderAtIndex: (insertIndex: number) => void;
-  jumpToSegment?: (segmentId: string) => void;
 }
 
 export const useRundownGridHandlers = ({
@@ -49,8 +48,7 @@ export const useRundownGridHandlers = ({
   items,
   setRundownTitle,
   addRowAtIndex,
-  addHeaderAtIndex,
-  jumpToSegment
+  addHeaderAtIndex
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -176,15 +174,6 @@ export const useRundownGridHandlers = ({
     setRundownTitle(title);
   }, [setRundownTitle]);
 
-  const handleJumpToHere = useCallback((segmentId: string) => {
-    console.log('🎯 Grid handlers: handleJumpToHere called with segmentId:', segmentId);
-    if (jumpToSegment) {
-      jumpToSegment(segmentId);
-    } else {
-      console.warn('jumpToSegment function not provided to grid handlers');
-    }
-  }, [jumpToSegment]);
-
   return {
     handleUpdateItem,
     handleAddRow,
@@ -197,7 +186,6 @@ export const useRundownGridHandlers = ({
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange,
-    handleJumpToHere
+    handleTitleChange
   };
 };

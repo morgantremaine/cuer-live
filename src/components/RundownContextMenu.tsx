@@ -1,5 +1,6 @@
+
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Target } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -17,7 +18,6 @@ interface RundownContextMenuProps {
   hasClipboardData?: boolean;
   showColorPicker?: string | null;
   itemId: string;
-  isHeader?: boolean;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -28,7 +28,6 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: (segmentId: string) => void;
 }
 
 const RundownContextMenu = memo(({
@@ -39,7 +38,6 @@ const RundownContextMenu = memo(({
   hasClipboardData = false,
   showColorPicker,
   itemId,
-  isHeader = false,
   onCopy,
   onDelete,
   onToggleFloat,
@@ -49,20 +47,9 @@ const RundownContextMenu = memo(({
   onPaste,
   onClearSelection,
   onAddRow,
-  onAddHeader,
-  onJumpToHere
+  onAddHeader
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
-
-  // Handle jump to here
-  const handleJumpToHere = () => {
-    console.log('🎯 Context menu jump to here called for itemId:', itemId);
-    if (onJumpToHere) {
-      onJumpToHere(itemId);
-    } else {
-      console.warn('onJumpToHere not provided to context menu');
-    }
-  };
 
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
@@ -149,20 +136,6 @@ const RundownContextMenu = memo(({
           
           <ContextMenuSeparator />
           
-          {!isHeader && onJumpToHere && (
-            <>
-              <ContextMenuItem 
-                onClick={handleJumpToHere} 
-                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Target className="mr-2 h-4 w-4" />
-                Jump to here
-              </ContextMenuItem>
-              
-              <ContextMenuSeparator />
-            </>
-          )}
-          
           <ContextMenuItem 
             onClick={handleContextMenuFloat} 
             className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -215,7 +188,7 @@ const RundownContextMenu = memo(({
             itemId={itemId}
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
-            onColorSelect={onColorSelect}
+            onColorSelect={handleColorSelect}
           />
         </div>
       )}

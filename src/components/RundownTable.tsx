@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -39,7 +40,6 @@ interface RundownTableProps {
   onClearSelection: () => void;
   onAddRow: () => void;
   onAddHeader: () => void;
-  onJumpToHere?: (segmentId: string) => void;
 }
 
 const RundownTable = ({
@@ -77,8 +77,7 @@ const RundownTable = ({
   onPasteRows,
   onClearSelection,
   onAddRow,
-  onAddHeader,
-  onJumpToHere
+  onAddHeader
 }: RundownTableProps) => {
 
   // Handler for drag over events on the table container
@@ -159,7 +158,6 @@ const RundownTable = ({
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
                   getColumnWidth={getColumnWidth}
-                  onJumpToHere={onJumpToHere}
                 />
                 
                 {/* Show drop indicator line AFTER the last row if it's the drop target */}

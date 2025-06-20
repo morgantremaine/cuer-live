@@ -1,3 +1,4 @@
+
 import { useMultiRowSelection } from './useMultiRowSelection';
 import { useDragAndDrop } from './useDragAndDrop';
 import { useClipboard } from './useClipboard';
@@ -20,8 +21,7 @@ export const useRundownInteractionHandlers = (
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void,
   addRowAtIndex: (insertIndex: number) => void,
-  addHeaderAtIndex: (insertIndex: number) => void,
-  jumpToSegment?: (segmentId: string) => void // Add jumpToSegment parameter
+  addHeaderAtIndex: (insertIndex: number) => void
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
@@ -53,8 +53,7 @@ export const useRundownInteractionHandlers = (
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange,
-    handleJumpToHere
+    handleTitleChange
   } = useRundownGridHandlers({
     updateItem,
     addRow,
@@ -77,8 +76,7 @@ export const useRundownInteractionHandlers = (
     items,
     setRundownTitle,
     addRowAtIndex,
-    addHeaderAtIndex,
-    jumpToSegment // Pass jumpToSegment to grid handlers
+    addHeaderAtIndex
   });
 
   return {
@@ -106,7 +104,6 @@ export const useRundownInteractionHandlers = (
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange,
-    handleJumpToHere
+    handleTitleChange
   };
 };

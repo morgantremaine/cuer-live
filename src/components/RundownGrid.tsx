@@ -44,8 +44,7 @@ const RundownGrid = () => {
     handleAddRow,
     handleAddHeader,
     handleRowSelection: handleMultiRowSelection,
-    hasClipboardData,
-    handleJumpToHere
+    hasClipboardData
   } = interactions;
 
   const { 
@@ -163,7 +162,6 @@ const RundownGrid = () => {
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
-      onJumpToHere={handleJumpToHere}
     />
   );
 };
