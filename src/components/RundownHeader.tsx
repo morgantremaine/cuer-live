@@ -144,8 +144,6 @@ const RundownHeader = ({
           isPlaying={isPlaying}
           currentSegmentId={currentSegmentId}
           timeRemaining={timeRemaining}
-          autoScrollEnabled={autoScrollEnabled}
-          onToggleAutoScroll={onToggleAutoScroll}
         />
       </div>
 
@@ -189,8 +187,6 @@ const RundownHeader = ({
           isPlaying={isPlaying}
           currentSegmentId={currentSegmentId}
           timeRemaining={timeRemaining}
-          autoScrollEnabled={autoScrollEnabled}
-          onToggleAutoScroll={onToggleAutoScroll}
         />
       </div>
     </div>
