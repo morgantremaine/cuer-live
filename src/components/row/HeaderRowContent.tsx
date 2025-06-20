@@ -39,12 +39,12 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-3 py-3 text-base font-mono font-semibold align-middle border border-border min-h-[56px]"
+        className="px-3 py-3 text-xl font-mono font-bold align-middle border border-border min-h-[56px]"
         style={{ 
           backgroundColor,
           width: '64px',
           minWidth: '64px', 
-          maxWidth: '64px' // Ensure exact width matching
+          maxWidth: '64px' 
         }}
       >
         <span style={{ color: textColor }}>{rowNumber}</span>
@@ -52,38 +52,45 @@ const HeaderRowContent = ({
       {/* Dynamic columns */}
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
-        const widthValue = parseInt(columnWidth.replace('px', ''));
         
         // Special handling for headers - only show specific fields
         if (column.key === 'segmentName' || column.key === 'name') {
-          // Show the header name - this is the editable field for headers
+          // Show the header name - this is the editable field for headers with larger text and no wrapping
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px]"
+              className="align-middle border border-border min-h-[56px] relative"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
+                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
-              <CellRenderer
-                column={column}
-                item={item}
-                cellRefs={cellRefs}
-                textColor={textColor}
-                backgroundColor={backgroundColor}
-                currentSegmentId={currentSegmentId}
-                onUpdateItem={onUpdateItem}
-                onCellClick={onCellClick}
-                onKeyDown={onKeyDown}
-                width={columnWidth}
-              />
+              <div 
+                className="px-3 py-3 text-xl font-bold whitespace-nowrap overflow-visible"
+                style={{ 
+                  color: textColor,
+                  minWidth: 'max-content'
+                }}
+              >
+                <CellRenderer
+                  column={column}
+                  item={item}
+                  cellRefs={cellRefs}
+                  textColor={textColor}
+                  backgroundColor={backgroundColor}
+                  currentSegmentId={currentSegmentId}
+                  onUpdateItem={onUpdateItem}
+                  onCellClick={onCellClick}
+                  onKeyDown={onKeyDown}
+                  width={columnWidth}
+                />
+              </div>
             </td>
           );
         } else if (column.key === 'duration') {
-          // Show the calculated header duration in parentheses - remove overflow hidden to prevent truncation
+          // Show the calculated header duration in parentheses
           return (
             <td
               key={column.id}
@@ -91,11 +98,11 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
+                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
+              <div className="text-base font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
                 ({headerDuration})
               </div>
             </td>
@@ -109,7 +116,7 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
+                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
@@ -125,7 +132,7 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
+                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
