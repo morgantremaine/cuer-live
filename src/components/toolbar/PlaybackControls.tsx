@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Play, Pause, SkipForward, SkipBack, RotateCcw, Navigation } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, RotateCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 
@@ -99,7 +98,7 @@ const PlaybackControls = ({
         <div className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ml-2 ${
           size === 'sm' ? 'h-9' : 'h-10'
         }`}>
-          <Navigation className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+          <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
           <Switch
             checked={autoScrollEnabled}
             onCheckedChange={handleToggleAutoScroll}
