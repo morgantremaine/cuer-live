@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation } from 'lucide-react';
 import {
@@ -91,8 +92,12 @@ const RundownContextMenu = memo(({
   };
 
   const handleJumpToHere = () => {
+    console.log('🎯 Context menu Jump to here clicked for item:', itemId);
     if (onJumpToHere && itemType === 'regular') {
+      console.log('🎯 Calling onJumpToHere with segmentId:', itemId);
       onJumpToHere(itemId);
+    } else {
+      console.log('🎯 Jump to here not available - onJumpToHere:', !!onJumpToHere, 'itemType:', itemType);
     }
   };
 
