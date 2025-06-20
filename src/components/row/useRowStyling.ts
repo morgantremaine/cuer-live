@@ -1,4 +1,5 @@
 
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -38,8 +39,9 @@ export const useRowStyling = ({
     rowClass = 'border-l-4 border-red-600';
     backgroundColorOverride = '#ef4444'; // Full red background
   } else if (color && color !== '#FFFFFF' && color !== '#ffffff') {
-    // For colored rows, use a more subtle hover that preserves borders
-    rowClass = 'hover:brightness-95';
+    // For colored rows, use a hover effect that maintains border visibility
+    // Use a subtle overlay approach instead of brightness/opacity filters
+    rowClass = 'relative hover:before:absolute hover:before:inset-0 hover:before:bg-black hover:before:bg-opacity-5 hover:before:pointer-events-none';
   } else {
     rowClass = 'bg-background hover:bg-muted/50';
   }
@@ -67,3 +69,4 @@ export const useRowStyling = ({
 
   return { rowClass, backgroundColorOverride };
 };
+
