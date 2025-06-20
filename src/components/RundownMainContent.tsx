@@ -52,7 +52,7 @@ const RundownMainContent = ({
           onReorderColumns={handleReorderColumns}
           onDeleteColumn={handleDeleteColumnWithCleanup}
           onRenameColumn={handleRenameColumn}
-          onToggleVisibility={handleToggleColumnVisibility}
+          onToggleColumnVisibility={handleToggleColumnVisibility}
           onLoadLayout={handleLoadLayout}
         />
       )}
