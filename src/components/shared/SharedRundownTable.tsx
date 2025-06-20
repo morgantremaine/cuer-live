@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -58,12 +59,13 @@ const SharedRundownTable = ({
             isDark ? 'divide-gray-700' : 'divide-gray-200'
           }`}>
             {items.map((item, index) => {
-              const rowStatus = getRowStatus(item, new Date(), rundownStartTime);
+              const rowStatus = getRowStatus(item, rundownStartTime);
               const isCurrentSegment = currentSegmentId === item.id;
               
               return (
                 <tr
                   key={item.id}
+                  data-item-id={item.id}
                   className={`
                     ${isCurrentSegment && isPlaying ? (
                       isDark ? 'bg-blue-900 border-blue-600' : 'bg-blue-50 border-blue-200'
@@ -82,7 +84,7 @@ const SharedRundownTable = ({
           
                     switch (column.key) {
                       case 'segmentName':
-                        cellContent = item.segmentName;
+                        cellContent = item.segmentName || item.name;
                         break;
                       case 'duration':
                         cellContent = item.duration;
@@ -94,7 +96,7 @@ const SharedRundownTable = ({
                         cellContent = formatTime(item.endTime || '00:00');
                         break;
                       case 'description':
-                        cellContent = item.description;
+                        cellContent = item.notes;
                         break;
                       default:
                         cellContent = item[column.key] || '';
