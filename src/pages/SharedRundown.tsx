@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -6,7 +7,6 @@ import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useTheme } from '@/hooks/useTheme';
 
 // Default columns to use when rundown has no columns defined
 const DEFAULT_COLUMNS = [
@@ -22,7 +22,6 @@ const SharedRundown = () => {
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
-  const { isDark } = useTheme();
   
   // Prevent duplicate layout loads
   const layoutLoadedRef = useRef(false);
@@ -30,13 +29,6 @@ const SharedRundown = () => {
 
   // Get rundownId from the rundownData instead of useParams
   const rundownId = rundownData?.id;
-
-  // Helper function to format time remaining from seconds to string
-  const formatTimeRemaining = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
 
   // Load the shared layout for this rundown - updated to work for anonymous users
   useEffect(() => {
@@ -177,19 +169,19 @@ const SharedRundown = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-lg text-muted-foreground">Loading rundown...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-lg text-gray-600">Loading rundown...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="text-lg text-destructive mb-2">Error loading rundown</div>
-          <div className="text-sm text-muted-foreground">{error}</div>
-          <div className="text-xs text-muted-foreground mt-4">
+          <div className="text-lg text-red-600 mb-2">Error loading rundown</div>
+          <div className="text-sm text-gray-600">{error}</div>
+          <div className="text-xs text-gray-500 mt-4">
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -199,10 +191,10 @@ const SharedRundown = () => {
 
   if (!rundownData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="text-lg text-muted-foreground mb-2">Rundown not found</div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-lg text-gray-600 mb-2">Rundown not found</div>
+          <div className="text-sm text-gray-500">
             This rundown may be private or the link may be incorrect.
           </div>
         </div>
@@ -229,14 +221,14 @@ const SharedRundown = () => {
 
   if (layoutLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-lg text-muted-foreground">Loading layout...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-lg text-gray-600">Loading layout...</div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors ${isDark ? 'dark bg-background' : 'bg-background'}`}>
+    <div className="min-h-screen flex flex-col bg-white">
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
@@ -245,7 +237,7 @@ const SharedRundown = () => {
           layoutName={layoutName}
           currentSegmentId={currentSegmentId}
           isPlaying={isPlaying}
-          timeRemaining={timeRemaining ? formatTimeRemaining(timeRemaining) : null}
+          timeRemaining={timeRemaining}
         />
 
         <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
