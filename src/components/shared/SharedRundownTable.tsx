@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { calculateRundownItemTimes } from '@/utils/rundownCalculations';
+import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
 import SharedCellRenderer from './SharedCellRenderer';
 
 interface SharedRundownTableProps {
@@ -21,7 +20,7 @@ const SharedRundownTable = ({
   rundownStartTime 
 }: SharedRundownTableProps) => {
   // Calculate all timing information for items
-  const itemsWithTimes = calculateRundownItemTimes(items, rundownStartTime);
+  const itemsWithTimes = calculateItemsWithTiming(items, rundownStartTime);
 
   const getRowNumber = (index: number) => {
     let rowCount = 1;
