@@ -45,7 +45,7 @@ export const useSimpleAutoSave = (
     }
   }, []);
 
-  // Function to set showcaller update state - prevents saves during showcaller updates
+  // Enhanced showcaller update detection - prevents saves during showcaller updates
   const setShowcallerUpdate = useCallback((isUpdate: boolean) => {
     showcallerUpdateRef.current = isUpdate;
     
@@ -55,10 +55,10 @@ export const useSimpleAutoSave = (
         clearTimeout(showcallerUpdateTimeoutRef.current);
       }
       
-      // Set a timeout to clear showcaller update state
+      // Extended timeout to cover all showcaller operations
       showcallerUpdateTimeoutRef.current = setTimeout(() => {
         showcallerUpdateRef.current = false;
-      }, 1000); // 1 second after showcaller update
+      }, 5000); // 5 seconds to cover showcaller state changes
     }
   }, []);
 
@@ -84,18 +84,9 @@ export const useSimpleAutoSave = (
     }, 15000);
   }, []);
 
-  useEffect(() => {
-    // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, showcaller is updating, or we're already saving
-    if (!state.hasUnsavedChanges || 
-        undoActiveRef.current || 
-        userTypingRef.current || 
-        showcallerUpdateRef.current ||
-        pendingSaveRef.current) {
-      return;
-    }
-
-    // Create a signature of the current state - EXCLUDE showcaller data completely
-    const currentSignature = JSON.stringify({
+  // Enhanced content signature that excludes showcaller fields
+  const createContentSignature = useCallback(() => {
+    return JSON.stringify({
       items: state.items?.map(item => ({
         id: item.id,
         type: item.type,
@@ -107,7 +98,7 @@ export const useSimpleAutoSave = (
         script: item.script,
         gfx: item.gfx,
         video: item.video,
-        images: item.images, // CRITICAL: Make sure images are included
+        images: item.images,
         notes: item.notes,
         color: item.color,
         isFloating: item.isFloating,
@@ -116,12 +107,26 @@ export const useSimpleAutoSave = (
         segmentName: item.segmentName,
         elapsedTime: item.elapsedTime,
         rowNumber: item.rowNumber
-        // Explicitly exclude: status, currentSegmentId and any other showcaller fields
+        // Explicitly exclude: status (showcaller field)
       })) || [],
       title: state.title,
       startTime: state.startTime,
       timezone: state.timezone
     });
+  }, [state.items, state.title, state.startTime, state.timezone]);
+
+  useEffect(() => {
+    // Enhanced conditions - Don't save if no changes, undo is active, user is actively typing, showcaller is updating, or we're already saving
+    if (!state.hasUnsavedChanges || 
+        undoActiveRef.current || 
+        userTypingRef.current || 
+        showcallerUpdateRef.current ||
+        pendingSaveRef.current) {
+      return;
+    }
+
+    // Create a signature of the current state - EXCLUDE showcaller data completely
+    const currentSignature = createContentSignature();
 
     // Only save if state actually changed
     if (currentSignature === lastSavedRef.current) {
@@ -152,32 +157,7 @@ export const useSimpleAutoSave = (
       }
       
       // Check if state changed again during debounce
-      const finalSignature = JSON.stringify({
-        items: state.items?.map(item => ({
-          id: item.id,
-          type: item.type,
-          name: item.name,
-          duration: item.duration,
-          startTime: item.startTime,
-          endTime: item.endTime,
-          talent: item.talent,
-          script: item.script,
-          gfx: item.gfx,
-          video: item.video,
-          images: item.images, // CRITICAL: Make sure images are included
-          notes: item.notes,
-          color: item.color,
-          isFloating: item.isFloating,
-          isFloated: item.isFloated,
-          customFields: item.customFields,
-          segmentName: item.segmentName,
-          elapsedTime: item.elapsedTime,
-          rowNumber: item.rowNumber
-        })) || [],
-        title: state.title,
-        startTime: state.startTime,
-        timezone: state.timezone
-      });
+      const finalSignature = createContentSignature();
       
       if (finalSignature === lastSavedRef.current) {
         return;
@@ -264,7 +244,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, state.items, state.title, state.startTime, state.timezone, isSaving, navigate, trackMyUpdate]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {

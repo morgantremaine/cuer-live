@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 
@@ -99,10 +100,10 @@ export const useShowcallerState = ({
         clearTimeout(showcallerUpdateTimeoutRef.current);
       }
       
-      // Set a longer timeout to ensure the flag stays active during all related operations
+      // Extended timeout to ensure the flag stays active during all related operations
       showcallerUpdateTimeoutRef.current = setTimeout(() => {
         setShowcallerUpdate(false);
-      }, 3000); // 3 seconds to cover all related database operations
+      }, 8000); // 8 seconds to cover all related database operations and prevent autosave
     }
   }, [setShowcallerUpdate]);
 
@@ -140,7 +141,7 @@ export const useShowcallerState = ({
     }
   }, [showcallerState, debouncedSync, markAsShowcallerUpdate]);
 
-  // Clear current status from all items
+  // Clear current status from all items with showcaller update marking
   const clearCurrentStatus = useCallback(() => {
     markAsShowcallerUpdate();
 
@@ -265,7 +266,7 @@ export const useShowcallerState = ({
     }
   }, []);
 
-  // Control functions
+  // Control functions with enhanced showcaller update marking
   const play = useCallback((selectedSegmentId?: string) => {
     const playbackStartTime = Date.now();
     
