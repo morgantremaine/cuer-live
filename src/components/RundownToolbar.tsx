@@ -31,6 +31,9 @@ interface RundownToolbarProps {
   rundownTitle?: string;
   // Rundown data for CSV export
   rundownData?: CSVExportData;
+  // Autoscroll functionality
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const RundownToolbar = ({
@@ -52,7 +55,9 @@ const RundownToolbar = ({
   canUndo,
   lastAction,
   rundownTitle,
-  rundownData
+  rundownData,
+  autoScrollEnabled,
+  onToggleAutoScroll
 }: RundownToolbarProps) => {
   const isMobile = useIsMobile();
 
@@ -75,7 +80,9 @@ const RundownToolbar = ({
     onBackward,
     onReset,
     rundownTitle,
-    rundownData
+    rundownData,
+    autoScrollEnabled,
+    onToggleAutoScroll
   };
 
   if (isMobile) {

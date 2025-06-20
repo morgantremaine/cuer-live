@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Clock, Target } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { Clock } from 'lucide-react';
 import ShowcallerTimingIndicator from '../showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { RundownItem } from '@/types/rundown';
@@ -13,8 +13,6 @@ interface HeaderBottomSectionProps {
   isPlaying?: boolean;
   currentSegmentId?: string | null;
   timeRemaining?: number;
-  autoScrollEnabled?: boolean;
-  onToggleAutoScroll?: () => void;
 }
 
 const HeaderBottomSection = ({
@@ -24,9 +22,7 @@ const HeaderBottomSection = ({
   items = [],
   isPlaying = false,
   currentSegmentId = null,
-  timeRemaining = 0,
-  autoScrollEnabled = false,
-  onToggleAutoScroll
+  timeRemaining = 0
 }: HeaderBottomSectionProps) => {
   // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
@@ -90,13 +86,6 @@ const HeaderBottomSection = ({
     }
   };
 
-  // Handle autoscroll toggle with proper Switch component integration
-  const handleToggleAutoScroll = (checked: boolean) => {
-    if (onToggleAutoScroll) {
-      onToggleAutoScroll();
-    }
-  };
-
   // Display calculated total runtime with proper formatting
   const displayRuntime = totalRuntime && totalRuntime !== '00:00:00' ? totalRuntime : '00:00:00';
 
@@ -126,16 +115,6 @@ const HeaderBottomSection = ({
           timeDifference={timeDifference}
           isVisible={isVisible}
         />
-        
-        {/* Compact Autoscroll Toggle */}
-        <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-          <Target className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
-          <Switch
-            checked={autoScrollEnabled}
-            onCheckedChange={handleToggleAutoScroll}
-            className="scale-75"
-          />
-        </div>
       </div>
     </div>
   );

@@ -32,6 +32,8 @@ interface MobileToolbarProps {
   onReset: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const MobileToolbar = ({
@@ -53,7 +55,9 @@ const MobileToolbar = ({
   onBackward,
   onReset,
   rundownTitle,
-  rundownData
+  rundownData,
+  autoScrollEnabled,
+  onToggleAutoScroll
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -102,6 +106,8 @@ const MobileToolbar = ({
             onBackward={onBackward}
             onReset={onReset}
             size="sm"
+            autoScrollEnabled={autoScrollEnabled}
+            onToggleAutoScroll={onToggleAutoScroll}
           />
           <ThemeToggle />
         </div>

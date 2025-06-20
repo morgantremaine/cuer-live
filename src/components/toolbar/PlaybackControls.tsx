@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Play, Pause, SkipForward, SkipBack, TimerReset } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, RotateCcw, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 
 interface PlaybackControlsProps {
   selectedRowId: string | null;
@@ -14,6 +15,8 @@ interface PlaybackControlsProps {
   onBackward: () => void;
   onReset: () => void;
   size?: 'sm' | 'default';
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const PlaybackControls = ({
@@ -26,86 +29,82 @@ const PlaybackControls = ({
   onForward,
   onBackward,
   onReset,
-  size = 'sm'
+  size = 'default',
+  autoScrollEnabled = false,
+  onToggleAutoScroll
 }: PlaybackControlsProps) => {
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      onPause();
+  const handlePlay = () => {
+    if (selectedRowId) {
+      onPlay(selectedRowId);
     } else {
-      // If a row is selected, play that row, otherwise play current segment or first
-      if (selectedRowId) {
-        onPlay(selectedRowId);
-      } else {
-        onPlay();
-      }
+      onPlay();
     }
   };
 
-  const handleForward = () => {
-    onForward();
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleBackward = () => {
-    onBackward();
-  };
-
-  const handleReset = () => {
-    onReset();
+  const handleToggleAutoScroll = (checked: boolean) => {
+    if (onToggleAutoScroll) {
+      onToggleAutoScroll();
+    }
   };
 
   return (
     <div className="flex items-center space-x-1">
-      {/* Always show timer when there's a current segment with valid time */}
-      {currentSegmentId && timeRemaining >= 0 && (
-        <div className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-2 py-1 rounded font-mono text-xs border min-w-[50px] text-center">
-          {formatTime(timeRemaining)}
-        </div>
-      )}
-      
       <Button
-        onClick={handleBackward}
+        onClick={onBackward}
         variant="outline"
         size={size}
-        disabled={!currentSegmentId}
-        title="Previous segment"
+        className="flex items-center space-x-1"
       >
         <SkipBack className="h-4 w-4" />
       </Button>
       
       <Button
-        onClick={handleReset}
+        onClick={isPlaying ? onPause : handlePlay}
         variant="outline"
         size={size}
-        disabled={!currentSegmentId}
-        title="Reset timer to full duration"
+        className="flex items-center space-x-1"
       >
-        <TimerReset className="h-4 w-4" />
+        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        {timeRemaining > 0 && (
+          <span className="text-xs font-mono">{formatTime(timeRemaining)}</span>
+        )}
       </Button>
       
       <Button
-        onClick={handlePlayPause}
+        onClick={onForward}
         variant="outline"
         size={size}
-        title={isPlaying ? "Pause" : "Play"}
-      >
-        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-blue-500" />}
-      </Button>
-      
-      <Button
-        onClick={handleForward}
-        variant="outline"
-        size={size}
-        disabled={!currentSegmentId}
-        title="Next segment"
+        className="flex items-center space-x-1"
       >
         <SkipForward className="h-4 w-4" />
       </Button>
+      
+      <Button
+        onClick={onReset}
+        variant="outline"
+        size={size}
+        className="flex items-center space-x-1"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+
+      {/* Autoscroll Toggle */}
+      {onToggleAutoScroll && (
+        <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 ml-2">
+          <Target className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+          <Switch
+            checked={autoScrollEnabled}
+            onCheckedChange={handleToggleAutoScroll}
+            className="scale-75"
+          />
+        </div>
+      )}
     </div>
   );
 };

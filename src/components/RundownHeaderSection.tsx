@@ -112,8 +112,6 @@ const RundownHeaderSection = ({
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}
@@ -135,6 +133,8 @@ const RundownHeaderSection = ({
         lastAction={lastAction}
         rundownTitle={rundownTitle}
         rundownData={rundownData}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
       />
     </div>
   );

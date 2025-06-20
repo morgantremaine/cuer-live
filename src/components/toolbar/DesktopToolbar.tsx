@@ -25,6 +25,8 @@ interface DesktopToolbarProps {
   onReset: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const DesktopToolbar = ({
@@ -46,7 +48,9 @@ const DesktopToolbar = ({
   onBackward,
   onReset,
   rundownTitle,
-  rundownData
+  rundownData,
+  autoScrollEnabled,
+  onToggleAutoScroll
 }: DesktopToolbarProps) => {
   return (
     <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -81,6 +85,8 @@ const DesktopToolbar = ({
             onBackward={onBackward}
             onReset={onReset}
             size="sm"
+            autoScrollEnabled={autoScrollEnabled}
+            onToggleAutoScroll={onToggleAutoScroll}
           />
         </div>
 
