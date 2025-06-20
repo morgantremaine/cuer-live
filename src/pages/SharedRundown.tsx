@@ -8,6 +8,7 @@ import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/hooks/useTheme';
+import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 
 // Default columns to use when rundown has no columns defined
 const DEFAULT_COLUMNS = [
@@ -23,6 +24,7 @@ const SharedRundown = () => {
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const { isDark, toggleTheme } = useTheme();
   
   // Better refs to prevent duplicate loads
@@ -31,6 +33,18 @@ const SharedRundown = () => {
 
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
+
+  // Determine if showcaller is playing and use the real-time calculated time remaining
+  const showcallerState = rundownData?.showcallerState;
+  const isPlaying = showcallerState?.isPlaying || false;
+
+  // Initialize autoscroll functionality
+  const { scrollContainerRef } = useRundownAutoscroll({
+    currentSegmentId,
+    isPlaying,
+    autoScrollEnabled,
+    items: rundownData?.items || []
+  });
 
   // Helper function to format time remaining from seconds to string
   const formatTimeRemaining = (seconds: number): string => {
@@ -45,6 +59,10 @@ const SharedRundown = () => {
     } else {
       return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
+  };
+
+  const handleToggleAutoScroll = () => {
+    setAutoScrollEnabled(!autoScrollEnabled);
   };
 
   // Much more efficient layout loading
@@ -189,12 +207,8 @@ const SharedRundown = () => {
   const columnsToUse = layoutColumns || rundownData.columns || DEFAULT_COLUMNS;
   const visibleColumns = getVisibleColumns(columnsToUse);
 
-  // Determine if showcaller is playing and use the real-time calculated time remaining
-  const showcallerState = rundownData.showcallerState;
-  const isPlaying = showcallerState?.isPlaying || false;
-
   return (
-    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`} ref={scrollContainerRef}>
       <div className="p-4 print:p-2">
         <SharedRundownHeader
           title={rundownData.title}
@@ -206,6 +220,8 @@ const SharedRundown = () => {
           timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
           isDark={isDark}
           onToggleTheme={toggleTheme}
+          autoScrollEnabled={autoScrollEnabled}
+          onToggleAutoScroll={handleToggleAutoScroll}
         />
 
         <SharedRundownTable

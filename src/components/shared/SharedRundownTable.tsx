@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -14,14 +13,14 @@ interface SharedRundownTableProps {
   isDark?: boolean;
 }
 
-const SharedRundownTable = ({ 
+const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>(({ 
   items, 
   visibleColumns, 
   currentSegmentId, 
   isPlaying = false,
   rundownStartTime = '09:00:00',
   isDark = false
-}: SharedRundownTableProps) => {
+}, ref) => {
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
@@ -262,7 +261,7 @@ const SharedRundownTable = ({
       </style>
       <div className={`relative border rounded-lg print:border-gray-400 print:overflow-visible ${
         isDark ? 'border-gray-700' : 'border-gray-200'
-      }`}>
+      }`} ref={ref}>
         <div className="overflow-auto max-h-[calc(100vh-220px)] print:overflow-visible print:max-h-none">
           <table className="w-full print:text-xs print-table table-fixed">
             <thead className={`sticky top-0 z-50 print:static ${
@@ -330,6 +329,7 @@ const SharedRundownTable = ({
                 return (
                   <tr
                     key={item.id}
+                    data-item-id={item.id}
                     className={`
                       ${item.type === 'header' ? 'font-semibold print:bg-gray-200' : ''}
                       print:break-inside-avoid print:border-0
@@ -464,6 +464,8 @@ const SharedRundownTable = ({
       </div>
     </>
   );
-};
+});
+
+SharedRundownTable.displayName = 'SharedRundownTable';
 
 export default SharedRundownTable;
