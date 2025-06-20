@@ -33,6 +33,14 @@ const HeaderBottomSection = ({
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
   const [isFocused, setIsFocused] = useState(false);
 
+  // Debug logging
+  console.log('🔄 HeaderBottomSection render:', {
+    autoScrollEnabled,
+    hasToggleFunction: !!onToggleAutoScroll,
+    isPlaying,
+    currentSegmentId
+  });
+
   // Get timing status from the showcaller timing hook
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
     items,
@@ -116,18 +124,19 @@ const HeaderBottomSection = ({
         </div>
       </div>
       <div className="flex items-center space-x-4">
-        {/* Autoscroll Toggle */}
-        {onToggleAutoScroll && (
-          <div className="flex items-center space-x-2">
-            <RotateCcw className="h-4 w-4 opacity-75" />
-            <span className="opacity-75 text-xs">Auto-scroll:</span>
-            <Switch
-              checked={autoScrollEnabled}
-              onCheckedChange={onToggleAutoScroll}
-              className="scale-75"
-            />
-          </div>
-        )}
+        {/* Autoscroll Toggle - Always show for debugging */}
+        <div className="flex items-center space-x-2 bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded">
+          <RotateCcw className="h-4 w-4 opacity-75" />
+          <span className="opacity-75 text-xs">Auto-scroll:</span>
+          <Switch
+            checked={autoScrollEnabled}
+            onCheckedChange={onToggleAutoScroll || (() => console.log('No toggle function!'))}
+            className="scale-75"
+          />
+          <span className="text-xs opacity-50">
+            {onToggleAutoScroll ? '✓' : '✗'}
+          </span>
+        </div>
         <ShowcallerTimingIndicator
           isOnTime={isOnTime}
           isAhead={isAhead}
