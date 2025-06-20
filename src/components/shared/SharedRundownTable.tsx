@@ -235,12 +235,12 @@ const SharedRundownTable = ({
       }`}>
         <div className="overflow-auto max-h-screen print:overflow-visible print:max-h-none">
           <table className="w-full print:text-xs print-table table-fixed">
-            <thead className={`sticky top-0 z-30 print:static ${
+            <thead className={`sticky top-0 z-50 print:static ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
             }`}>
               <tr className="print-header-row">
                 <th 
-                  className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number ${
+                  className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number sticky top-0 z-50 ${
                     isDark 
                       ? 'text-gray-300 border-gray-600 bg-gray-800' 
                       : 'text-gray-500 border-gray-200 bg-gray-50'
@@ -254,7 +254,7 @@ const SharedRundownTable = ({
                   return (
                     <th
                       key={column.id}
-                      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
+                      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 sticky top-0 z-50 ${
                         isDark 
                           ? 'text-gray-300 border-gray-600 bg-gray-800' 
                           : 'text-gray-500 border-gray-200 bg-gray-50'
