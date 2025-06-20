@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -26,6 +27,7 @@ interface UseRealtimeRundownProps {
   isProcessingRealtimeUpdate?: boolean;
   trackOwnUpdate?: (timestamp: string) => void;
   onShowcallerActivity?: (active: boolean) => void;
+  onShowcallerStateReceived?: (state: any) => void; // Add this callback
 }
 
 export const useRealtimeRundown = ({
@@ -37,13 +39,15 @@ export const useRealtimeRundown = ({
   hasUnsavedChanges = false,
   isProcessingRealtimeUpdate = false,
   trackOwnUpdate,
-  onShowcallerActivity
+  onShowcallerActivity,
+  onShowcallerStateReceived
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const onShowcallerActivityRef = useRef(onShowcallerActivity);
+  const onShowcallerStateReceivedRef = useRef(onShowcallerStateReceived);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -54,6 +58,7 @@ export const useRealtimeRundown = ({
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
   onShowcallerActivityRef.current = onShowcallerActivity;
+  onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
   // Signal activity
@@ -178,6 +183,8 @@ export const useRealtimeRundown = ({
 
     // If it's showcaller-only, handle it specially
     if (isShowcallerOnly) {
+      console.log('📺 Received external showcaller visual state');
+      
       // Signal showcaller activity with extended timeout
       if (onShowcallerActivityRef.current) {
         onShowcallerActivityRef.current(true);
@@ -193,6 +200,11 @@ export const useRealtimeRundown = ({
             onShowcallerActivityRef.current(false);
           }
         }, 12000); // 12 seconds for showcaller activity
+      }
+      
+      // Pass showcaller state to the callback if available
+      if (onShowcallerStateReceivedRef.current && payload.new?.showcaller_state) {
+        onShowcallerStateReceivedRef.current(payload.new.showcaller_state);
       }
       
       lastProcessedUpdateRef.current = updateData.timestamp;

@@ -35,6 +35,8 @@ export const useShowcallerVisualState = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
+  const lastProcessedUpdateRef = useRef<string | null>(null);
 
   // Helper function to convert time string to seconds
   const timeToSeconds = useCallback((timeStr: string) => {
@@ -51,12 +53,25 @@ export const useShowcallerVisualState = ({
     return 0;
   }, []);
 
+  // Track our own updates to prevent feedback loops
+  const trackOwnUpdate = useCallback((timestamp: string) => {
+    ownUpdateTrackingRef.current.add(timestamp);
+    
+    // Clean up old tracked updates after 10 seconds
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(timestamp);
+    }, 10000);
+  }, []);
+
   // Save showcaller visual state to database (completely separate from main rundown)
   const saveShowcallerVisualState = useCallback(async (state: ShowcallerVisualState) => {
     if (!rundownId) return;
 
     try {
       const { supabase } = await import('@/lib/supabase');
+      
+      // Track this update as our own before saving
+      trackOwnUpdate(state.lastUpdate);
       
       // Convert Map to plain object for storage
       const stateToSave = {
@@ -80,7 +95,7 @@ export const useShowcallerVisualState = ({
     } catch (error) {
       console.error('❌ Error saving showcaller visual state:', error);
     }
-  }, [rundownId]);
+  }, [rundownId, trackOwnUpdate]);
 
   // Debounced save to prevent rapid database updates
   const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState) => {
@@ -367,8 +382,22 @@ export const useShowcallerVisualState = ({
     }
   }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startTimer]);
 
-  // Apply external visual state
+  // Apply external visual state with proper filtering
   const applyExternalVisualState = useCallback((externalState: any) => {
+    // Skip if this is our own update
+    if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
+      console.log('⏭️ Skipping own showcaller update');
+      return;
+    }
+
+    // Skip duplicate updates
+    if (externalState.lastUpdate === lastProcessedUpdateRef.current) {
+      console.log('⏭️ Skipping duplicate showcaller update');
+      return;
+    }
+
+    lastProcessedUpdateRef.current = externalState.lastUpdate;
+    
     console.log('📺 Applying external visual state from controller:', externalState.controllerId);
     
     stopTimer();
@@ -448,6 +477,7 @@ export const useShowcallerVisualState = ({
     isPlaying: visualState.isPlaying,
     currentSegmentId: visualState.currentSegmentId,
     timeRemaining: visualState.timeRemaining,
-    isController: visualState.controllerId === userId
+    isController: visualState.controllerId === userId,
+    trackOwnUpdate
   };
 };

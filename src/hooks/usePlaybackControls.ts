@@ -1,9 +1,8 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { useShowcallerState } from './useShowcallerState';
-import { useShowcallerPersistence } from './useShowcallerPersistence';
-import { useShowcallerRealtime } from './useShowcallerRealtime';
+import { useShowcallerVisualState } from './useShowcallerVisualState';
+import { useRealtimeRundown } from './useRealtimeRundown';
 import { useAuth } from './useAuth';
 
 export const usePlaybackControls = (
@@ -11,60 +10,49 @@ export const usePlaybackControls = (
   updateItem: (id: string, field: string, value: string) => void,
   rundownId?: string,
   onShowcallerActivity?: (active: boolean) => void,
-  setShowcallerUpdate?: (isUpdate: boolean) => void // Add this to prevent change tracking
+  setShowcallerUpdate?: (isUpdate: boolean) => void,
+  currentContentHash?: string,
+  isEditing?: boolean,
+  hasUnsavedChanges?: boolean,
+  isProcessingRealtimeUpdate?: boolean
 ) => {
   const { user } = useAuth();
   const hasLoadedInitialState = useRef(false);
 
-  // Initialize showcaller state management with user ID and change tracking prevention
+  // Initialize showcaller visual state management
   const {
-    showcallerState,
+    visualState,
     play,
     pause,
     forward,
     backward,
-    applyShowcallerState,
+    applyExternalVisualState,
     isPlaying,
     currentSegmentId,
     timeRemaining,
-    isController
-  } = useShowcallerState({
+    isController,
+    trackOwnUpdate
+  } = useShowcallerVisualState({
     items,
-    updateItem,
-    userId: user?.id,
-    setShowcallerUpdate, // Pass this to prevent change tracking
-    onShowcallerStateChange: (state) => {
-      // Only save if this user is the controller
-      if (isController) {
-        // Signal that this is a showcaller update to prevent auto-save conflicts
-        if (setShowcallerUpdate) {
-          setShowcallerUpdate(true);
-        }
-        // Track the update before saving to prevent our own update from triggering conflicts
-        trackOwnShowcallerUpdate(state.lastUpdate);
-        saveShowcallerState(state);
-      }
-    }
+    rundownId,
+    userId: user?.id
   });
 
-  // Initialize persistence
-  const { saveShowcallerState, loadShowcallerState } = useShowcallerPersistence({
+  // Initialize realtime synchronization with showcaller state handling
+  const { isConnected } = useRealtimeRundown({
     rundownId,
-    trackOwnUpdate: (timestamp) => {
-      // Track our own updates to prevent conflicts
-      trackOwnShowcallerUpdate(timestamp);
-    }
-  });
-
-  // Initialize realtime synchronization with tracking and activity callback
-  const { trackOwnUpdate: trackOwnShowcallerUpdate } = useShowcallerRealtime({
-    rundownId,
-    onShowcallerStateReceived: applyShowcallerState,
+    onRundownUpdate: () => {}, // We only care about showcaller state here
     enabled: !!rundownId,
-    onShowcallerActivity
+    currentContentHash,
+    isEditing,
+    hasUnsavedChanges,
+    isProcessingRealtimeUpdate,
+    trackOwnUpdate,
+    onShowcallerActivity,
+    onShowcallerStateReceived: applyExternalVisualState
   });
 
-  // Load initial showcaller state when rundown changes - with proper memoization
+  // Load initial showcaller state when rundown changes
   const loadInitialState = useCallback(async () => {
     if (!rundownId || hasLoadedInitialState.current) {
       return;
@@ -73,14 +61,26 @@ export const usePlaybackControls = (
     hasLoadedInitialState.current = true;
     
     try {
-      const state = await loadShowcallerState();
-      if (state) {
-        applyShowcallerState(state);
+      const { supabase } = await import('@/lib/supabase');
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('showcaller_state')
+        .eq('id', rundownId)
+        .single();
+
+      if (error) {
+        console.error('Error loading initial showcaller state:', error);
+        return;
+      }
+
+      if (data?.showcaller_state) {
+        console.log('📺 Loading initial showcaller state');
+        applyExternalVisualState(data.showcaller_state);
       }
     } catch (error) {
       console.error('Error loading initial state:', error);
     }
-  }, [rundownId]); // Only depend on rundownId
+  }, [rundownId, applyExternalVisual State]);
 
   // Reset the loading flag when rundownId changes
   useEffect(() => {
