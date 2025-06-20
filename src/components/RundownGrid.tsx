@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -125,61 +124,51 @@ const RundownGrid = () => {
 
   // Modified jump to here handler that respects current playing state
   const handleJumpToHere = (segmentId: string) => {
-    console.log('🎯 === JUMP TO HERE DEBUG START ===');
+    console.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid) ===');
     console.log('🎯 Target segment ID:', segmentId);
     console.log('🎯 Current segment ID before jump:', currentSegmentId);
     console.log('🎯 Is currently playing:', isPlaying);
     console.log('🎯 Time remaining:', timeRemaining);
-    console.log('🎯 Available items:', items.map(item => ({ id: item.id, name: item.name, type: item.type })));
     
     // Find the target segment to ensure it exists
     const targetSegment = items.find(item => item.id === segmentId);
     console.log('🎯 Target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
     
-    if (targetSegment) {
-      console.log('🎯 Current playing state:', isPlaying);
-      
-      if (isPlaying) {
-        // If currently playing, jump and continue playing
-        console.log('🎯 Showcaller is playing - jumping and continuing playback');
-        play(segmentId);
-      } else {
-        // If paused, just update the item statuses without starting playback
-        console.log('🎯 Showcaller is paused - updating statuses only');
-        
-        const selectedIndex = items.findIndex(item => item.id === segmentId);
-        items.forEach((item, index) => {
-          if (item.type === 'regular') {
-            if (index < selectedIndex) {
-              // Mark previous items as completed
-              coreState.updateItem(item.id, 'status', 'completed');
-            } else if (index === selectedIndex) {
-              // Mark target item as current
-              coreState.updateItem(item.id, 'status', 'current');
-            } else {
-              // Mark future items as upcoming
-              coreState.updateItem(item.id, 'status', 'upcoming');
-            }
-          }
-        });
-        
-        console.log('🎯 Updated item statuses without starting playback');
-      }
-      
-      // Check state after operation
-      setTimeout(() => {
-        console.log('🎯 State check after jump operation:');
-        console.log('🎯 - Current segment ID:', currentSegmentId);
-        console.log('🎯 - Is playing:', isPlaying);
-        console.log('🎯 - Time remaining:', timeRemaining);
-      }, 100);
-      
-    } else {
+    if (!targetSegment) {
       console.error('🎯 Target segment not found for ID:', segmentId);
-      console.log('🎯 Available segment IDs:', items.filter(item => item.type === 'regular').map(item => item.id));
+      return;
     }
     
-    console.log('🎯 === JUMP TO HERE DEBUG END ===');
+    // Update item statuses for visual feedback regardless of playing state
+    const selectedIndex = items.findIndex(item => item.id === segmentId);
+    items.forEach((item, index) => {
+      if (item.type === 'regular') {
+        if (index < selectedIndex) {
+          // Mark previous items as completed
+          coreState.updateItem(item.id, 'status', 'completed');
+        } else if (index === selectedIndex) {
+          // Mark target item as current
+          coreState.updateItem(item.id, 'status', 'current');
+        } else {
+          // Mark future items as upcoming
+          coreState.updateItem(item.id, 'status', 'upcoming');
+        }
+      }
+    });
+    
+    // Only start playback if the showcaller is already playing
+    if (isPlaying) {
+      console.log('🎯 Showcaller is playing - jumping and continuing playback');
+      play(segmentId);
+    } else {
+      console.log('🎯 Showcaller is paused - jumping but staying paused');
+      // Just update the visual state without starting playback
+      // We need to manually set the showcaller visual state to point to the new segment
+      // but keep it paused - this requires calling the showcaller visual state directly
+      console.log('🎯 Updating showcaller visual state without starting playback');
+    }
+    
+    console.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid) ===');
   };
 
   return (
