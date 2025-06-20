@@ -177,8 +177,11 @@ export const useRundownGridHandlers = ({
   }, [setRundownTitle]);
 
   const handleJumpToHere = useCallback((segmentId: string) => {
+    console.log('🎯 Grid handlers: handleJumpToHere called with segmentId:', segmentId);
     if (jumpToSegment) {
       jumpToSegment(segmentId);
+    } else {
+      console.warn('jumpToSegment function not provided to grid handlers');
     }
   }, [jumpToSegment]);
 

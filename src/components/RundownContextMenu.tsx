@@ -28,7 +28,7 @@ interface RundownContextMenuProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: () => void;
+  onJumpToHere?: (segmentId: string) => void;
 }
 
 const RundownContextMenu = memo(({
@@ -53,6 +53,16 @@ const RundownContextMenu = memo(({
   onJumpToHere
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
+
+  // Handle jump to here
+  const handleJumpToHere = () => {
+    console.log('🎯 Context menu jump to here called for itemId:', itemId);
+    if (onJumpToHere) {
+      onJumpToHere(itemId);
+    } else {
+      console.warn('onJumpToHere not provided to context menu');
+    }
+  };
 
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
@@ -142,7 +152,7 @@ const RundownContextMenu = memo(({
           {!isHeader && onJumpToHere && (
             <>
               <ContextMenuItem 
-                onClick={onJumpToHere} 
+                onClick={handleJumpToHere} 
                 className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <Target className="mr-2 h-4 w-4" />
@@ -205,7 +215,7 @@ const RundownContextMenu = memo(({
             itemId={itemId}
             showColorPicker={showColorPicker}
             onToggle={onColorPicker}
-            onColorSelect={handleColorSelect}
+            onColorSelect={onColorSelect}
           />
         </div>
       )}

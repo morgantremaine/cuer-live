@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -111,7 +110,8 @@ export const useRundownStateCoordination = () => {
     },
     simplifiedState.setTitle,
     addRowAtIndex,
-    addHeaderAtIndex
+    addHeaderAtIndex,
+    showcallerVisual.jumpToSegment
   );
 
   // Get UI state with enhanced navigation
@@ -190,6 +190,7 @@ export const useRundownStateCoordination = () => {
       pause: showcallerVisual.pause,
       forward: showcallerVisual.forward,
       backward: showcallerVisual.backward,
+      jumpToSegment: showcallerVisual.jumpToSegment,
       
       // Undo functionality
       undo: simplifiedState.undo,
