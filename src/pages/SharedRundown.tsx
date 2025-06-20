@@ -161,7 +161,7 @@ const SharedRundown = () => {
 
   if (loading) {
     return (
-      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading rundown...</div>
       </div>
     );
@@ -169,7 +169,7 @@ const SharedRundown = () => {
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
           <div className={`text-lg text-red-600 mb-2`}>Error loading rundown</div>
           <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{error}</div>
@@ -183,7 +183,7 @@ const SharedRundown = () => {
 
   if (!rundownData) {
     return (
-      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
           <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>Rundown not found</div>
           <div className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -196,7 +196,7 @@ const SharedRundown = () => {
 
   if (layoutLoading) {
     return (
-      <div className={`flex items-center justify-center p-8 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading layout...</div>
       </div>
     );
@@ -207,31 +207,35 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(columnsToUse);
 
   return (
-    <div ref={scrollContainerRef}>
-      <SharedRundownHeader
-        title={rundownData.title}
-        startTime={rundownData.startTime || '09:00:00'}
-        timezone={rundownData.timezone || 'UTC'}
-        layoutName={layoutName}
-        currentSegmentId={currentSegmentId}
-        isPlaying={isPlaying}
-        timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={handleToggleAutoScroll}
-      />
+    <div className={`h-screen overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className="h-full flex flex-col">
+        <SharedRundownHeader
+          title={rundownData.title}
+          startTime={rundownData.startTime || '09:00:00'}
+          timezone={rundownData.timezone || 'UTC'}
+          layoutName={layoutName}
+          currentSegmentId={currentSegmentId}
+          isPlaying={isPlaying}
+          timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          autoScrollEnabled={autoScrollEnabled}
+          onToggleAutoScroll={handleToggleAutoScroll}
+        />
 
-      <SharedRundownTable
-        items={rundownData.items}
-        visibleColumns={visibleColumns}
-        currentSegmentId={currentSegmentId}
-        isPlaying={isPlaying}
-        rundownStartTime={rundownData.startTime || '09:00:00'}
-        isDark={isDark}
-      />
+        <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
+          <SharedRundownTable
+            items={rundownData.items}
+            visibleColumns={visibleColumns}
+            currentSegmentId={currentSegmentId}
+            isPlaying={isPlaying}
+            rundownStartTime={rundownData.startTime || '09:00:00'}
+            isDark={isDark}
+          />
 
-      <SharedRundownFooter />
+          <SharedRundownFooter />
+        </div>
+      </div>
     </div>
   );
 };
