@@ -112,9 +112,9 @@ const DashboardRundownGrid = ({
       segmentCount: headers.length,
       itemCount: contentItems.length,
       totalDuration: calculateTotalDuration(items),
-      firstItems: headers.slice(0, 3).map(header => {
+      firstItems: headers.slice(0, 2).map(header => {
         if (header.name && header.name.trim()) return header.name.trim()
-        if (header.script && header.script.trim()) return header.script.trim().substring(0, 50) + (header.script.trim().length > 50 ? '...' : '')
+        if (header.script && header.script.trim()) return header.script.trim().substring(0, 40) + (header.script.trim().length > 40 ? '...' : '')
         if (header.notes && header.notes.trim()) return header.notes.trim()
         return 'Untitled Header'
       })
@@ -190,9 +190,9 @@ const DashboardRundownGrid = ({
                 
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pr-2">
                       <CardTitle 
-                        className="text-white text-base truncate cursor-pointer hover:text-blue-300 transition-colors"
+                        className="text-white text-base cursor-pointer hover:text-blue-300 transition-colors leading-tight break-words"
                         onClick={() => onOpen(rundown.id)}
                       >
                         {rundown.title}
@@ -210,7 +210,7 @@ const DashboardRundownGrid = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                         >
                           <MoreVertical className="h-3 w-3" />
                         </Button>
@@ -299,10 +299,10 @@ const DashboardRundownGrid = ({
               
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="flex items-start gap-2 mb-1">
                       <CardTitle 
-                        className="text-white text-lg truncate cursor-pointer hover:text-blue-300 transition-colors"
+                        className="text-white text-lg cursor-pointer hover:text-blue-300 transition-colors leading-tight break-words flex-1"
                         onClick={() => onOpen(rundown.id)}
                       >
                         {rundown.title}
@@ -328,7 +328,7 @@ const DashboardRundownGrid = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
@@ -411,22 +411,22 @@ const DashboardRundownGrid = ({
                   </div>
                 </div>
 
-                {/* Content Preview */}
+                {/* Content Preview - Condensed */}
                 {preview.firstItems.length > 0 && (
-                  <div className="bg-gray-700/30 rounded-lg p-3">
-                    <div className="text-gray-300 text-xs font-medium mb-2 flex items-center gap-1">
+                  <div className="bg-gray-700/30 rounded-lg p-2">
+                    <div className="text-gray-300 text-xs font-medium mb-1 flex items-center gap-1">
                       <FileText className="h-3 w-3" />
                       Headers Preview
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {preview.firstItems.map((item, index) => (
                         <div key={index} className="text-gray-400 text-xs truncate">
                           • {item}
                         </div>
                       ))}
-                      {preview.segmentCount > 3 && (
+                      {preview.segmentCount > 2 && (
                         <div className="text-gray-500 text-xs">
-                          +{preview.segmentCount - 3} more headers...
+                          +{preview.segmentCount - 2} more headers...
                         </div>
                       )}
                     </div>
