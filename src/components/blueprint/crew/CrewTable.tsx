@@ -2,6 +2,7 @@
 import React from 'react';
 import { CrewMember } from '@/types/crew';
 import CrewMemberRow from './CrewMemberRow';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CrewTableProps {
   crewMembers: CrewMember[];
@@ -26,6 +27,86 @@ const CrewTable = ({
   onDrop,
   onDragEnd
 }: CrewTableProps) => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {crewMembers.map((member, index) => (
+          <div key={member.id} className="relative">
+            {dropTargetIndex === index && draggedRowId && (
+              <div className="h-1 bg-blue-500 rounded-full mb-2 animate-pulse" />
+            )}
+            <div 
+              className={`bg-gray-700 rounded-lg p-4 border border-gray-600 ${
+                draggedRowId === member.id ? 'opacity-50' : ''
+              }`}
+              draggable
+              onDragStart={(e) => onDragStart(e, member.id)}
+              onDragOver={(e) => onDragOver(e, index)}
+              onDrop={(e) => onDrop(e, index)}
+              onDragEnd={onDragEnd}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Role</label>
+                  <input
+                    type="text"
+                    value={member.role}
+                    onChange={(e) => onUpdate(member.id, 'role', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Role"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={member.name}
+                    onChange={(e) => onUpdate(member.id, 'name', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={member.phone}
+                    onChange={(e) => onUpdate(member.id, 'phone', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Phone Number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={member.email}
+                    onChange={(e) => onUpdate(member.id, 'email', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Email"
+                  />
+                </div>
+              </div>
+              {crewMembers.length > 1 && (
+                <button
+                  onClick={() => onDelete(member.id)}
+                  className="absolute top-2 right-2 text-red-400 hover:text-red-300 text-sm"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+        {dropTargetIndex === crewMembers.length && draggedRowId && (
+          <div className="h-1 bg-blue-500 rounded-full animate-pulse" />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">

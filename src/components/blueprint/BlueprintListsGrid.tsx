@@ -39,7 +39,7 @@ const BlueprintListsGrid = ({
 }: BlueprintListsGridProps) => {
   return (
     <div 
-      className="columns-2 gap-6 relative"
+      className="columns-1 lg:columns-2 gap-6 relative"
       data-drop-container
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
