@@ -54,10 +54,39 @@ const SharedRundownTable = ({
       url.includes('photos') ||
       url.includes('imgur') ||
       url.includes('unsplash') ||
+      url.includes('drive.google.com') ||
       url.includes('gstatic.com') ||
       url.includes('amazonaws.com') ||
       url.includes('cloudinary.com')
     );
+  };
+
+  // Helper function to convert Google Drive links to direct image URLs
+  const convertGoogleDriveUrl = (url: string): string => {
+    // Check for different Google Drive link formats
+    let fileId = null;
+    
+    // Format 1: https://drive.google.com/file/d/FILE_ID/view (with or without query params)
+    const viewMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/);
+    if (viewMatch) {
+      fileId = viewMatch[1];
+    }
+    
+    // Format 2: https://drive.google.com/file/d/FILE_ID (without /view)
+    if (!fileId) {
+      const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileMatch) {
+        fileId = fileMatch[1];
+      }
+    }
+    
+    // If we found a file ID, convert to direct image URL using thumbnail API
+    if (fileId) {
+      const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h300`;
+      return convertedUrl;
+    }
+    
+    return url;
   };
 
   // Helper function to get balanced column width
@@ -102,10 +131,11 @@ const SharedRundownTable = ({
     
     // Special handling for images column - render as image if it's a valid URL
     if ((column.key === 'images' || column.id === 'images') && value && isLikelyImageUrl(value)) {
+      const displayUrl = convertGoogleDriveUrl(value);
       return (
         <div className="flex items-center justify-center h-16">
           <img
-            src={value}
+            src={displayUrl}
             alt="Rundown image"
             className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
             onError={(e) => {
@@ -114,7 +144,7 @@ const SharedRundownTable = ({
               target.style.display = 'none';
               const parent = target.parentElement;
               if (parent) {
-                parent.innerHTML = `<span class="text-xs text-gray-500">${value}</span>`;
+                parent.innerHTML = `<span class="text-xs text-gray-500 truncate">${value}</span>`;
               }
             }}
           />
