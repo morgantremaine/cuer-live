@@ -30,17 +30,17 @@ const BlueprintHeader = ({
   const navigate = useNavigate();
 
   return (
-    <div className="flex items-start justify-between mb-8">
+    <div className="flex flex-col space-y-6 mb-8">
       <div>
         <div className="flex items-center space-x-3 mb-2">
           <div>
-            <h1 className="text-3xl font-bold text-white">{rundown.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white break-words">{rundown.title}</h1>
             <p className="text-gray-400">Blueprint</p>
           </div>
         </div>
         
         {/* Start Time and Date Section */}
-        <div className="flex items-center space-x-6 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-6 mb-4">
           {rundown.startTime && (
             <div className="flex items-center space-x-2 text-gray-300">
               <Clock className="h-4 w-4" />
@@ -60,14 +60,14 @@ const BlueprintHeader = ({
           </div>
         </div>
         
-        <div className="flex gap-2 justify-between">
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-4 sm:justify-between">
+          <div className="flex flex-col sm:flex-row gap-2">
             <AddListDialog
               availableColumns={availableColumns}
               onAddList={onAddList}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               onClick={onRefreshAll}
