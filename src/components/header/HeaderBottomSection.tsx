@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Clock, RotateCcw } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -31,15 +32,6 @@ const HeaderBottomSection = ({
   // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
   const [isFocused, setIsFocused] = useState(false);
-
-  // Debug logging
-  console.log('🔄 HeaderBottomSection render:', {
-    autoScrollEnabled,
-    hasToggleFunction: !!onToggleAutoScroll,
-    isPlaying,
-    currentSegmentId,
-    toggleFunctionType: typeof onToggleAutoScroll
-  });
 
   // Get timing status from the showcaller timing hook
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
@@ -77,7 +69,6 @@ const HeaderBottomSection = ({
 
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartTime = e.target.value;
-    console.log('⏰ HeaderBottomSection: Start time input change:', { from: localStartTime, to: newStartTime });
     setLocalStartTime(newStartTime);
   };
 
@@ -88,7 +79,6 @@ const HeaderBottomSection = ({
   const handleBlur = () => {
     setIsFocused(false);
     const validatedTime = validateTimeInput(localStartTime);
-    console.log('⏰ HeaderBottomSection: Start time blur - submitting:', { input: localStartTime, validated: validatedTime });
     
     // Always call the parent handler with validated time
     onRundownStartTimeChange(validatedTime);
@@ -103,16 +93,8 @@ const HeaderBottomSection = ({
 
   // Handle autoscroll toggle with proper Switch component integration
   const handleToggleAutoScroll = (checked: boolean) => {
-    console.log('🔄 HeaderBottomSection: Toggle autoscroll called with checked:', checked, {
-      currentState: autoScrollEnabled,
-      hasFunction: !!onToggleAutoScroll
-    });
-    
     if (onToggleAutoScroll) {
-      console.log('🔄 HeaderBottomSection: Calling onToggleAutoScroll function');
       onToggleAutoScroll();
-    } else {
-      console.error('🔄 HeaderBottomSection: No onToggleAutoScroll function provided!');
     }
   };
 
@@ -138,26 +120,23 @@ const HeaderBottomSection = ({
           />
         </div>
       </div>
-      <div className="flex items-center space-x-4">
-        {/* Autoscroll Toggle - Always show for debugging */}
-        <div className="flex items-center space-x-2 bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded">
-          <RotateCcw className="h-4 w-4 opacity-75" />
-          <span className="opacity-75 text-xs">Auto-scroll:</span>
-          <Switch
-            checked={autoScrollEnabled}
-            onCheckedChange={handleToggleAutoScroll}
-            className="scale-75"
-          />
-          <span className="text-xs opacity-50">
-            {onToggleAutoScroll ? '✓' : '✗'} | {autoScrollEnabled ? 'ON' : 'OFF'}
-          </span>
-        </div>
+      <div className="flex items-center space-x-3">
         <ShowcallerTimingIndicator
           isOnTime={isOnTime}
           isAhead={isAhead}
           timeDifference={timeDifference}
           isVisible={isVisible}
         />
+        
+        {/* Compact Autoscroll Toggle */}
+        <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <RotateCcw className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+          <Switch
+            checked={autoScrollEnabled}
+            onCheckedChange={handleToggleAutoScroll}
+            className="scale-75"
+          />
+        </div>
       </div>
     </div>
   );
