@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, TimerReset } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PlaybackControlsProps {
@@ -12,6 +12,7 @@ interface PlaybackControlsProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onReset: () => void;
   size?: 'sm' | 'default';
 }
 
@@ -24,6 +25,7 @@ const PlaybackControls = ({
   onPause,
   onForward,
   onBackward,
+  onReset,
   size = 'sm'
 }: PlaybackControlsProps) => {
   const formatTime = (seconds: number) => {
@@ -53,6 +55,10 @@ const PlaybackControls = ({
     onBackward();
   };
 
+  const handleReset = () => {
+    onReset();
+  };
+
   return (
     <div className="flex items-center space-x-1">
       {/* Always show timer when there's a current segment with valid time */}
@@ -79,6 +85,16 @@ const PlaybackControls = ({
         title={isPlaying ? "Pause" : "Play"}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-blue-500" />}
+      </Button>
+      
+      <Button
+        onClick={handleReset}
+        variant="outline"
+        size={size}
+        disabled={!currentSegmentId}
+        title="Reset timer to full duration"
+      >
+        <TimerReset className="h-4 w-4" />
       </Button>
       
       <Button

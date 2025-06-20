@@ -52,6 +52,7 @@ export interface RundownContainerProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onReset: () => void;
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;

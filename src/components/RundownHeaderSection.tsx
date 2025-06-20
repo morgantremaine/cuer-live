@@ -26,6 +26,7 @@ interface RundownHeaderSectionProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onReset: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   rundownTitle: string;
@@ -66,6 +67,7 @@ const RundownHeaderSection = ({
   onPause,
   onForward,
   onBackward,
+  onReset,
   hasUnsavedChanges,
   isSaving,
   rundownTitle,
@@ -119,6 +121,7 @@ const RundownHeaderSection = ({
         onPause={onPause}
         onForward={onForward}
         onBackward={onBackward}
+        onReset={onReset}
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
         onUndo={onUndo}

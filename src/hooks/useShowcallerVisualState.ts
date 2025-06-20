@@ -382,6 +382,29 @@ export const useShowcallerVisualState = ({
     }
   }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startTimer]);
 
+  // Reset function - resets timer to full duration of current segment
+  const reset = useCallback(() => {
+    console.log('📺 Visual reset called');
+    
+    if (visualState.currentSegmentId) {
+      const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
+      if (currentSegment) {
+        const duration = timeToSeconds(currentSegment.duration || '00:00');
+        
+        updateVisualState({
+          timeRemaining: duration,
+          playbackStartTime: visualState.isPlaying ? Date.now() : null,
+          controllerId: userId
+        }, true);
+        
+        // If currently playing, restart the timer with the reset time
+        if (visualState.isPlaying) {
+          startTimer();
+        }
+      }
+    }
+  }, [visualState, items, timeToSeconds, userId, updateVisualState, startTimer]);
+
   // Apply external visual state with proper filtering
   const applyExternalVisualState = useCallback((externalState: any) => {
     // Skip if this is our own update
@@ -473,6 +496,7 @@ export const useShowcallerVisualState = ({
     pause,
     forward,
     backward,
+    reset,
     applyExternalVisualState,
     isPlaying: visualState.isPlaying,
     currentSegmentId: visualState.currentSegmentId,

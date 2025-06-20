@@ -34,6 +34,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onPause,
     onForward,
     onBackward,
+    onReset,
     hasUnsavedChanges,
     isSaving,
     rundownTitle,
@@ -111,6 +112,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onPause={onPause}
         onForward={onForward}
         onBackward={onBackward}
+        onReset={onReset}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
         rundownTitle={rundownTitle}

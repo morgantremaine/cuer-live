@@ -18,6 +18,7 @@ interface RundownToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onReset: () => void;
   // Share functionality
   rundownId: string | undefined;
   // Teleprompter functionality
@@ -44,6 +45,7 @@ const RundownToolbar = ({
   onPause,
   onForward,
   onBackward,
+  onReset,
   rundownId,
   onOpenTeleprompter,
   onUndo,
@@ -71,6 +73,7 @@ const RundownToolbar = ({
     onPause,
     onForward,
     onBackward,
+    onReset,
     rundownTitle,
     rundownData
   };

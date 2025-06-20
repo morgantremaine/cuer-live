@@ -22,6 +22,7 @@ interface DesktopToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onReset: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
 }
@@ -43,6 +44,7 @@ const DesktopToolbar = ({
   onPause,
   onForward,
   onBackward,
+  onReset,
   rundownTitle,
   rundownData
 }: DesktopToolbarProps) => {
@@ -77,6 +79,7 @@ const DesktopToolbar = ({
             onPause={onPause}
             onForward={onForward}
             onBackward={onBackward}
+            onReset={onReset}
             size="sm"
           />
         </div>

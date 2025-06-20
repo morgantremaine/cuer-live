@@ -29,6 +29,7 @@ interface MobileToolbarProps {
   onPause: () => void;
   onForward: () => void;
   onBackward: () => void;
+  onReset: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
 }
@@ -50,6 +51,7 @@ const MobileToolbar = ({
   onPause,
   onForward,
   onBackward,
+  onReset,
   rundownTitle,
   rundownData
 }: MobileToolbarProps) => {
@@ -98,6 +100,7 @@ const MobileToolbar = ({
             onPause={onPause}
             onForward={onForward}
             onBackward={onBackward}
+            onReset={onReset}
             size="sm"
           />
           <ThemeToggle />

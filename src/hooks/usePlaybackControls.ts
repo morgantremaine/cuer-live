@@ -26,6 +26,7 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
+    reset,
     applyExternalVisualState,
     isPlaying,
     currentSegmentId,
@@ -98,6 +99,7 @@ export const usePlaybackControls = (
     pause,
     forward,
     backward,
+    reset,
     isController
   };
 };
