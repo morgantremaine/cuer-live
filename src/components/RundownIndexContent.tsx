@@ -132,10 +132,10 @@ const RundownIndexContent = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Create the handleJumpToHere function that connects to showcaller play
+  // Create the handleJumpToHere function that respects current playing state
   const handleJumpToHere = (segmentId: string) => {
-    console.log('🎯 IndexContent: handleJumpToHere called with segmentId:', segmentId);
-    console.log('🎯 IndexContent: play function exists:', !!play);
+    console.log('🎯 === FIXED IndexContent: handleJumpToHere called ===');
+    console.log('🎯 IndexContent: segmentId:', segmentId);
     console.log('🎯 IndexContent: current segment ID before jump:', currentSegmentId);
     console.log('🎯 IndexContent: is currently playing:', isPlaying);
     
@@ -143,21 +143,32 @@ const RundownIndexContent = () => {
     const targetSegment = items.find(item => item.id === segmentId);
     console.log('🎯 IndexContent: target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
     
-    if (targetSegment && play) {
-      console.log('🎯 IndexContent: Calling play function with segment ID:', segmentId);
-      try {
+    if (!targetSegment) {
+      console.error('🎯 IndexContent: Cannot jump - target segment not found');
+      return;
+    }
+    
+    // CRITICAL FIX: Check current playing state and act accordingly
+    if (isPlaying) {
+      console.log('🎯 IndexContent: Showcaller is playing - jumping and continuing playback');
+      if (play) {
         play(segmentId);
         console.log('🎯 IndexContent: Play function called successfully');
-        
-        // Clear the selection after jumping, like other context menu actions
-        clearSelection();
-        console.log('🎯 IndexContent: Selection cleared after jump');
-      } catch (error) {
-        console.error('🎯 IndexContent: Error calling play function:', error);
       }
     } else {
-      console.error('🎯 IndexContent: Cannot jump - target segment not found or play function unavailable');
+      console.log('🎯 IndexContent: Showcaller is paused - jumping but staying paused');
+      if (coreState.jumpToSegment) {
+        coreState.jumpToSegment(segmentId);
+        console.log('🎯 IndexContent: jumpToSegment function called successfully');
+      } else {
+        console.error('🎯 IndexContent: jumpToSegment function not available');
+      }
     }
+    
+    // Clear the selection after jumping, like other context menu actions
+    clearSelection();
+    console.log('🎯 IndexContent: Selection cleared after jump');
+    console.log('🎯 === FIXED IndexContent: handleJumpToHere completed ===');
   };
 
   // Create wrapper for cell click to match signature

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
@@ -182,6 +181,43 @@ export const useShowcallerVisualState = ({
     }
     return null;
   }, [items]);
+
+  // New function to jump to a segment without starting playback
+  const jumpToSegment = useCallback((segmentId: string) => {
+    console.log('📺 Visual jumpToSegment called with segmentId:', segmentId);
+    
+    const targetSegment = items.find(item => item.id === segmentId);
+    if (!targetSegment) {
+      console.error('📺 Target segment not found for jump:', segmentId);
+      return;
+    }
+    
+    const newStatuses = new Map();
+    
+    // Mark segments before selected as completed, after as upcoming (skip floated items)
+    const selectedIndex = items.findIndex(item => item.id === segmentId);
+    items.forEach((item, index) => {
+      if (item.type === 'regular' && !isFloated(item)) {
+        if (index < selectedIndex) {
+          newStatuses.set(item.id, 'completed');
+        } else if (index === selectedIndex) {
+          newStatuses.set(item.id, 'current');
+        }
+      }
+    });
+    
+    const duration = timeToSeconds(targetSegment.duration || '00:00');
+    
+    updateVisualState({
+      currentSegmentId: segmentId,
+      timeRemaining: duration,
+      currentItemStatuses: newStatuses,
+      // Keep current playing state - don't change it
+      controllerId: userId
+    }, true);
+    
+    console.log('📺 Visual jumpToSegment completed - staying in current playback state');
+  }, [items, timeToSeconds, userId, updateVisualState]);
 
   // Timer management
   const startTimer = useCallback(() => {
@@ -500,6 +536,7 @@ export const useShowcallerVisualState = ({
     forward,
     backward,
     reset,
+    jumpToSegment,
     applyExternalVisualState,
     isPlaying: visualState.isPlaying,
     currentSegmentId: visualState.currentSegmentId,

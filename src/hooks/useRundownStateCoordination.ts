@@ -221,6 +221,7 @@ export const useRundownStateCoordination = () => {
       forward: showcallerVisual.forward,
       backward: showcallerVisual.backward,
       reset: showcallerVisual.reset,
+      jumpToSegment: showcallerVisual.jumpToSegment, // Add the new function
       
       // Undo functionality
       undo: simplifiedState.undo,
