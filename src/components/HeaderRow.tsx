@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -19,6 +18,7 @@ interface HeaderRowProps {
   isSelected?: boolean;
   showColorPicker: string | null;
   hasClipboardData?: boolean;
+  currentSegmentId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -49,6 +49,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     isSelected = false,
     showColorPicker,
     hasClipboardData = false,
+    currentSegmentId,
     onColorSelect,
     onClearSelection,
     onAddRow,
@@ -174,6 +175,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           headerDuration={props.headerDuration}
           rowNumber={rowNumber}
           backgroundColor={backgroundColor}
+          currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}

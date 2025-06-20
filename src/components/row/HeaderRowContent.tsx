@@ -11,6 +11,7 @@ interface HeaderRowContentProps {
   headerDuration: string;
   rowNumber: string;
   backgroundColor?: string;
+  currentSegmentId?: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -24,6 +25,7 @@ const HeaderRowContent = ({
   headerDuration,
   rowNumber,
   backgroundColor,
+  currentSegmentId,
   cellRefs,
   onUpdateItem,
   onCellClick,
@@ -72,6 +74,7 @@ const HeaderRowContent = ({
                 cellRefs={cellRefs}
                 textColor={textColor}
                 backgroundColor={backgroundColor}
+                currentSegmentId={currentSegmentId}
                 onUpdateItem={onUpdateItem}
                 onCellClick={onCellClick}
                 onKeyDown={onKeyDown}
