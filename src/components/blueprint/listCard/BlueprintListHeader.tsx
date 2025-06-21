@@ -73,8 +73,8 @@ const BlueprintListHeader = ({
     : `${itemCount} items`;
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex-1 min-w-0">
+    <div className="flex items-center justify-between w-full">
+      <div className="flex-1 min-w-0 pr-2">
         {isEditing ? (
           <div className="flex items-center gap-2">
             <Input
@@ -130,7 +130,7 @@ const BlueprintListHeader = ({
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0"
+            className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 flex-shrink-0"
           >
             <MoreVertical className="h-3 w-3" />
           </Button>

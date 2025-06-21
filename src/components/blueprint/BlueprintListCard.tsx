@@ -117,29 +117,34 @@ const BlueprintListCard = ({
         isDragging ? 'opacity-50 transform rotate-2' : ''
       }`}
     >
-      <CardHeader className="pb-3 relative">
-        {/* Drag Handle */}
-        <div 
-          className="absolute top-2 right-2 cursor-move p-1 rounded hover:bg-gray-700 transition-colors"
-          draggable
-          onDragStart={handleDragStart}
-          onDragEnter={(e) => onDragEnterContainer?.(e, index)}
-          onDragEnd={onDragEnd}
-        >
-          <Grip className="h-4 w-4 text-gray-400" />
+      <CardHeader className="pb-3">
+        <div className="flex items-start gap-2">
+          {/* Drag Handle - positioned on the left like other components */}
+          <div 
+            className="cursor-move p-1 rounded hover:bg-gray-700 transition-colors flex-shrink-0 mt-1"
+            draggable
+            onDragStart={handleDragStart}
+            onDragEnter={(e) => onDragEnterContainer?.(e, index)}
+            onDragEnd={onDragEnd}
+          >
+            <Grip className="h-4 w-4 text-gray-400" />
+          </div>
+          
+          {/* List Header - takes up remaining space */}
+          <div className="flex-1 min-w-0">
+            <BlueprintListHeader
+              listName={list.name}
+              sourceColumn={list.sourceColumn}
+              itemCount={list.items.length}
+              uniqueItemCount={uniqueItems.length}
+              showUniqueOnly={list.showUniqueOnly}
+              onRename={(newName) => onRename(list.id, newName)}
+              onCopy={copyToClipboard}
+              onDelete={() => onDelete(list.id)}
+              onToggleUnique={uniqueItems.length !== list.items.length ? handleToggleUnique : undefined}
+            />
+          </div>
         </div>
-        
-        <BlueprintListHeader
-          listName={list.name}
-          sourceColumn={list.sourceColumn}
-          itemCount={list.items.length}
-          uniqueItemCount={uniqueItems.length}
-          showUniqueOnly={list.showUniqueOnly}
-          onRename={(newName) => onRename(list.id, newName)}
-          onCopy={copyToClipboard}
-          onDelete={() => onDelete(list.id)}
-          onToggleUnique={uniqueItems.length !== list.items.length ? handleToggleUnique : undefined}
-        />
       </CardHeader>
       <CardContent>
         <div className="space-y-2 max-h-96 overflow-y-auto">
