@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play, Pause, SkipForward, SkipBack, RotateCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,15 @@ const PlaybackControls = ({
       </Button>
       
       <Button
+        onClick={onReset}
+        variant="outline"
+        size={size}
+        className="flex items-center space-x-1"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+      
+      <Button
         onClick={isPlaying ? onPause : handlePlay}
         variant="outline"
         size={size}
@@ -82,15 +92,6 @@ const PlaybackControls = ({
         className="flex items-center space-x-1"
       >
         <SkipForward className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        onClick={onReset}
-        variant="outline"
-        size={size}
-        className="flex items-center space-x-1"
-      >
-        <RotateCcw className="h-4 w-4" />
       </Button>
 
       {/* Autoscroll Toggle */}
