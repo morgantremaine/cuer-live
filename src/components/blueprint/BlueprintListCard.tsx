@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Grip } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useToast } from '@/hooks/use-toast';
@@ -127,7 +127,7 @@ const BlueprintListCard = ({
             onDragEnter={(e) => onDragEnterContainer?.(e, index)}
             onDragEnd={onDragEnd}
           >
-            <Grip className="h-4 w-4 text-gray-400" />
+            <GripVertical className="h-4 w-4 text-gray-400" />
           </div>
           
           {/* List Header - takes up remaining space */}
