@@ -1,17 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
-import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
+import { Play, Pause, RotateCcw, Clock, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getRowNumber } from '@/utils/sharedRundownUtils';
 import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const ADView = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
   const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
   const [stopwatchRunning, setStopwatchRunning] = useState(false);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [showColumnSelector, setShowColumnSelector] = useState(false);
   const stopwatchInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Available columns that can be displayed
+  const availableColumns = [
+    { key: 'talent', name: 'Talent' },
+    { key: 'script', name: 'Script' },
+    { key: 'gfx', name: 'GFX' },
+    { key: 'video', name: 'Video' },
+    { key: 'images', name: 'Images' },
+    { key: 'notes', name: 'Notes' },
+    { key: 'duration', name: 'Duration' },
+    { key: 'startTime', name: 'Start Time' },
+    { key: 'endTime', name: 'End Time' }
+  ];
 
   // Filter out header items for timing-based navigation
   const timedItems = rundownData?.items?.filter(item => item.type !== 'header') || [];
@@ -109,9 +131,14 @@ const ADView = () => {
     };
   })();
 
-  // Get segment display info with row numbers and colors
+  // Get segment display info with row numbers, colors, and additional column data
   const getSegmentInfo = (segment: any) => {
-    if (!segment || !rundownData?.items) return { name: '--', rowNumber: '', color: '' };
+    if (!segment || !rundownData?.items) return { 
+      name: '--', 
+      rowNumber: '', 
+      color: '', 
+      columnData: {} 
+    };
     
     // Find the original index in the full items array (including headers)
     const originalIndex = rundownData.items.findIndex(item => item.id === segment.id);
@@ -119,15 +146,54 @@ const ADView = () => {
     const name = segment.name || segment.segmentName || '--';
     const color = segment.color || '';
     
-    return { name, rowNumber, color };
+    // Extract data for selected columns
+    const columnData: { [key: string]: string } = {};
+    selectedColumns.forEach(columnKey => {
+      const value = segment[columnKey] || '';
+      columnData[columnKey] = value;
+    });
+    
+    return { name, rowNumber, color, columnData };
   };
 
   // Get info for all segments
-  const prev2Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', color: '' };
-  const prev1Info = previousSegments[1] ? getSegmentInfo(previousSegments[1]) : { name: '--', rowNumber: '', color: '' };
-  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', color: '' };
-  const next1Info = nextSegments[0] ? getSegmentInfo(nextSegments[0]) : { name: '--', rowNumber: '', color: '' };
-  const next2Info = nextSegments[1] ? getSegmentInfo(nextSegments[1]) : { name: '--', rowNumber: '', color: '' };
+  const prev2Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', color: '', columnData: {} };
+  const prev1Info = previousSegments[1] ? getSegmentInfo(previousSegments[1]) : { name: '--', rowNumber: '', color: '', columnData: {} };
+  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', color: '', columnData: {} };
+  const next1Info = nextSegments[0] ? getSegmentInfo(nextSegments[0]) : { name: '--', rowNumber: '', color: '', columnData: {} };
+  const next2Info = nextSegments[1] ? getSegmentInfo(nextSegments[1]) : { name: '--', rowNumber: '', color: '', columnData: {} };
+
+  // Add a column to display
+  const addColumn = (columnKey: string) => {
+    if (!selectedColumns.includes(columnKey)) {
+      setSelectedColumns([...selectedColumns, columnKey]);
+    }
+    setShowColumnSelector(false);
+  };
+
+  // Remove a column from display
+  const removeColumn = (columnKey: string) => {
+    setSelectedColumns(selectedColumns.filter(key => key !== columnKey));
+  };
+
+  // Get available columns that aren't already selected
+  const availableUnselectedColumns = availableColumns.filter(
+    col => !selectedColumns.includes(col.key)
+  );
+
+  // Render additional column data for a segment
+  const renderColumnData = (columnData: { [key: string]: string }) => {
+    return selectedColumns.map(columnKey => {
+      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+      const value = columnData[columnKey] || '--';
+      
+      return (
+        <div key={columnKey} className="text-xs text-gray-400 mt-1">
+          <span className="font-semibold">{columnName}:</span> {value}
+        </div>
+      );
+    });
+  };
 
   // Stopwatch controls
   const startStopwatch = () => {
@@ -267,6 +333,62 @@ const ADView = () => {
 
             {/* Center - Segments Display */}
             <div className="col-span-6 flex flex-col justify-center space-y-3">
+              {/* Column Controls */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="text-sm text-gray-400">Additional Columns:</div>
+                  {selectedColumns.map(columnKey => {
+                    const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                    return (
+                      <div key={columnKey} className="flex items-center bg-gray-700 rounded px-2 py-1 text-xs">
+                        <span>{columnName}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-1 h-4 w-4 p-0 text-gray-400 hover:text-white"
+                          onClick={() => removeColumn(columnKey)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {availableUnselectedColumns.length > 0 && (
+                  <div className="relative">
+                    {!showColumnSelector ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowColumnSelector(true)}
+                        className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Column
+                      </Button>
+                    ) : (
+                      <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
+                        <SelectTrigger className="w-48 bg-gray-800 border-gray-600 text-white">
+                          <SelectValue placeholder="Select column..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-600">
+                          {availableUnselectedColumns.map(column => (
+                            <SelectItem 
+                              key={column.key} 
+                              value={column.key}
+                              className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                            >
+                              {column.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Previous Segment 2 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-40"
@@ -279,6 +401,7 @@ const ADView = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-base font-medium text-gray-400">{prev2Info.name}</div>
+                    {renderColumnData(prev2Info.columnData)}
                   </div>
                 </div>
               </div>
@@ -295,6 +418,7 @@ const ADView = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-lg font-semibold text-gray-300">{prev1Info.name}</div>
+                    {renderColumnData(prev1Info.columnData)}
                   </div>
                 </div>
               </div>
@@ -311,6 +435,18 @@ const ADView = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-2xl font-bold text-green-100">{currInfo.name}</div>
+                    <div className="mt-2">
+                      {selectedColumns.map(columnKey => {
+                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                        const value = currInfo.columnData[columnKey] || '--';
+                        
+                        return (
+                          <div key={columnKey} className="text-sm text-green-200 mt-1">
+                            <span className="font-semibold">{columnName}:</span> {value}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -327,6 +463,7 @@ const ADView = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-lg font-semibold text-gray-300">{next1Info.name}</div>
+                    {renderColumnData(next1Info.columnData)}
                   </div>
                 </div>
               </div>
@@ -343,6 +480,7 @@ const ADView = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-base font-medium text-gray-400">{next2Info.name}</div>
+                    {renderColumnData(next2Info.columnData)}
                   </div>
                 </div>
               </div>
