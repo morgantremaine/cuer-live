@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { Play, Pause, RotateCcw, Clock, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,18 +22,35 @@ const ADView = () => {
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const stopwatchInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Available columns that can be displayed
-  const availableColumns = [
-    { key: 'talent', name: 'Talent' },
-    { key: 'script', name: 'Script' },
-    { key: 'gfx', name: 'GFX' },
-    { key: 'video', name: 'Video' },
-    { key: 'images', name: 'Images' },
-    { key: 'notes', name: 'Notes' },
-    { key: 'duration', name: 'Duration' },
-    { key: 'startTime', name: 'Start Time' },
-    { key: 'endTime', name: 'End Time' }
-  ];
+  // Dynamically generate available columns based on rundown data
+  const availableColumns = useMemo(() => {
+    const columns = [
+      { key: 'talent', name: 'Talent' },
+      { key: 'script', name: 'Script' },
+      { key: 'gfx', name: 'GFX' },
+      { key: 'video', name: 'Video' },
+      { key: 'images', name: 'Images' },
+      { key: 'notes', name: 'Notes' },
+      { key: 'duration', name: 'Duration' },
+      { key: 'startTime', name: 'Start Time' },
+      { key: 'endTime', name: 'End Time' }
+    ];
+
+    // Add custom columns from rundown data
+    if (rundownData?.columns) {
+      rundownData.columns.forEach(col => {
+        // Only add custom columns that aren't already in the default list
+        if (col.isCustom && !columns.find(c => c.key === col.key)) {
+          columns.push({
+            key: col.key,
+            name: col.name
+          });
+        }
+      });
+    }
+
+    return columns;
+  }, [rundownData?.columns]);
 
   // Filter out header items for timing-based navigation
   const timedItems = rundownData?.items?.filter(item => item.type !== 'header') || [];
