@@ -49,31 +49,31 @@ const RundownIndex = () => {
           isDraggingMultiple={interactions.isDraggingMultiple}
           dropTargetIndex={interactions.dropTargetIndex}
           currentSegmentId={coreState.currentSegmentId}
-          hasClipboardData={interactions.hasClipboardData}
+          hasClipboardData={interactions.hasClipboardData()}
           selectedRowId={coreState.selectedRowId}
           isPlaying={coreState.isPlaying}
           autoScrollEnabled={coreState.autoScrollEnabled}
           onToggleAutoScroll={coreState.toggleAutoScroll}
           getColumnWidth={uiState.getColumnWidth}
-          updateColumnWidth={coreState.updateColumnWidth}
+          updateColumnWidth={(columnId: string, width: number) => coreState.updateColumnWidth(columnId, width.toString())}
           getRowNumber={coreState.getRowNumber}
-          getRowStatus={coreState.getItemVisualStatus}
+          getRowStatus={(item) => coreState.getItemVisualStatus(item.id)}
           calculateHeaderDuration={coreState.calculateHeaderDuration}
           onUpdateItem={coreState.updateItem}
-          onCellClick={uiState.handleCellClick}
-          onKeyDown={uiState.handleCellKeyDown}
-          onToggleColorPicker={uiState.toggleColorPicker}
+          onCellClick={(itemId: string, field: string) => uiState.handleCellClick(itemId, field, {} as React.MouseEvent)}
+          onKeyDown={uiState.handleKeyDown}
+          onToggleColorPicker={uiState.handleToggleColorPicker}
           onColorSelect={interactions.handleColorSelect}
           onDeleteRow={coreState.deleteRow}
           onToggleFloat={coreState.toggleFloatRow}
-          onRowSelect={interactions.handleRowSelect}
+          onRowSelect={interactions.handleRowSelection}
           onDragStart={interactions.handleDragStart}
           onDragOver={interactions.handleDragOver}
           onDragLeave={interactions.handleDragLeave}
           onDrop={interactions.handleDrop}
-          onCopySelectedRows={interactions.copySelectedRows}
-          onDeleteSelectedRows={interactions.deleteSelectedRows}
-          onPasteRows={interactions.pasteRows}
+          onCopySelectedRows={interactions.handleCopySelectedRows}
+          onDeleteSelectedRows={interactions.handleDeleteSelectedRows}
+          onPasteRows={interactions.handlePasteRows}
           onClearSelection={interactions.clearSelection}
           onAddRow={coreState.addRow}
           onAddHeader={coreState.addHeader}
@@ -82,9 +82,7 @@ const RundownIndex = () => {
 
         {/* Footer */}
         <RundownFooter
-          totalRuntime={coreState.totalRuntime}
-          itemCount={coreState.items.length}
-          selectedCount={interactions.selectedRows.size}
+          totalSegments={coreState.items.length}
         />
       </RundownLayoutWrapper>
     </ErrorBoundary>
