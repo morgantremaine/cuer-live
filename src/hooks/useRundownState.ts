@@ -38,7 +38,7 @@ const initialState: RundownState = {
   items: [],
   columns: [],
   title: RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_TITLE,
-  startTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
+  startTime: RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_START_TIME,
   timezone: RUNDOWN_DEFAULTS.DEFAULT_TIMEZONE,
   currentSegmentId: null,
   isPlaying: false,

@@ -1,9 +1,9 @@
-
 import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
 import { RundownItem } from '@/types/rundown';
+import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -61,7 +61,7 @@ export const useRundownDataLoader = ({
     setTimezoneDirectly(timezoneToLoad);
     
     // Load start time - use saved value or fallback to default
-    const startTimeToLoad = rundown.start_time || '09:00:00';
+    const startTimeToLoad = rundown.start_time || RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_START_TIME;
     console.log('⏰ Loading start time directly:', startTimeToLoad);
     setRundownStartTimeDirectly(startTimeToLoad);
     
