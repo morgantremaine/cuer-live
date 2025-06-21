@@ -34,15 +34,11 @@ export const useRundownAutoscroll = ({
       );
 
       if (targetElement) {
-        // Calculate positioning to place element in upper-middle area (about 30% from top)
-        const containerRect = scrollContainerRef.current.getBoundingClientRect();
-        const elementRect = targetElement.getBoundingClientRect();
-        const containerScrollTop = scrollContainerRef.current.scrollTop;
-        
-        // Calculate the target scroll position
-        const elementOffsetFromTop = elementRect.top - containerRect.top;
-        const desiredPositionFromTop = containerRect.height * 0.3; // 30% from top
-        const targetScrollTop = containerScrollTop + elementOffsetFromTop - desiredPositionFromTop;
+        // Calculate positioning to place element at about 25% from top (higher than center)
+        const containerHeight = scrollContainerRef.current.clientHeight;
+        const elementOffsetTop = (targetElement as HTMLElement).offsetTop;
+        const desiredPositionFromTop = containerHeight * 0.25; // 25% from top
+        const targetScrollTop = elementOffsetTop - desiredPositionFromTop;
         
         scrollContainerRef.current.scrollTo({
           top: Math.max(0, targetScrollTop),
