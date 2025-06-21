@@ -359,9 +359,17 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }
             
             /* Remove showcaller highlighting from current segment name in print */
-            .print-remove-showcaller-highlight {
+            .showcaller-highlight {
               background: transparent !important;
               color: #000 !important;
+            }
+          }
+          
+          /* Screen-only styles for showcaller highlighting */
+          @media screen {
+            .showcaller-highlight {
+              background-color: #3b82f6 !important;
+              color: #ffffff !important;
             }
           }
         `}
@@ -599,16 +607,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         }
                       }
                       
-                      // For regular items, render content with special highlighting for current segment name
-                      let cellBackgroundColor = rowBackgroundColor;
-                      let cellTextColor = textColor;
-                      
-                      // Apply blue background highlighting to current segment name
-                      if (isCurrentSegmentName) {
-                        cellBackgroundColor = '#3b82f6'; // blue-500
-                        cellTextColor = '#ffffff';
-                      }
-                      
+                      // For regular items, render content with showcaller highlighting class
                       return (
                         <td
                           key={column.id}
@@ -617,15 +616,15 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                               ? 'print-time-column' 
                               : 'print-content-column'
                           } ${isDark ? 'border-gray-600' : 'border-gray-200'} ${
-                            isCurrentSegmentName ? 'print-remove-showcaller-highlight' : ''
+                            isCurrentSegmentName ? 'showcaller-highlight' : ''
                           }`}
                           style={{ 
                             width: columnWidth, 
                             minWidth: columnWidth, 
                             maxWidth: columnWidth,
-                            backgroundColor: cellBackgroundColor,
-                            color: cellTextColor,
-                            ...(itemHasCustomColor || isCurrentSegmentName ? {
+                            ...(itemHasCustomColor && !isCurrentSegmentName ? {
+                              backgroundColor: rowBackgroundColor,
+                              color: textColor,
                               WebkitPrintColorAdjust: 'exact',
                               printColorAdjust: 'exact'
                             } : {})
