@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -26,12 +25,14 @@ const SharedRundown = () => {
   const [layoutName, setLayoutName] = useState('Default Layout');
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [realtimeShowcallerState, setRealtimeShowcallerState] = useState(null);
+  const [currentTimeRemaining, setCurrentTimeRemaining] = useState(null);
   const { isDark, toggleTheme } = useTheme();
   
   // Better refs to prevent duplicate loads
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
   const realtimeChannelRef = useRef<any>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
@@ -40,8 +41,8 @@ const SharedRundown = () => {
   const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
 
-  // Calculate time remaining from showcaller state
-  const timeRemaining = showcallerState?.timeRemaining || null;
+  // Calculate synchronized time remaining
+  const timeRemaining = currentTimeRemaining !== null ? currentTimeRemaining : (showcallerState?.timeRemaining || null);
 
   // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
@@ -50,6 +51,59 @@ const SharedRundown = () => {
     autoScrollEnabled,
     items: rundownData?.items || []
   });
+
+  // Real-time timer for showcaller synchronization
+  useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (isPlaying && showcallerState?.playbackStartTime && showcallerState?.currentSegmentId) {
+      // Find the current segment to get its duration
+      const currentSegment = rundownData?.items?.find(item => item.id === showcallerState.currentSegmentId);
+      if (currentSegment) {
+        // Convert duration to seconds
+        const timeToSeconds = (timeStr: string) => {
+          if (!timeStr) return 0;
+          const parts = timeStr.split(':').map(Number);
+          if (parts.length === 2) {
+            return parts[0] * 60 + parts[1];
+          } else if (parts.length === 3) {
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+          }
+          return 0;
+        };
+
+        const segmentDuration = timeToSeconds(currentSegment.duration || '00:00');
+        const playbackStartTime = showcallerState.playbackStartTime;
+
+        // Start a timer to update time remaining in real-time
+        timerRef.current = setInterval(() => {
+          const now = Date.now();
+          const elapsedSeconds = Math.floor((now - playbackStartTime) / 1000);
+          const remainingSeconds = Math.max(0, segmentDuration - elapsedSeconds);
+          setCurrentTimeRemaining(remainingSeconds);
+        }, 1000);
+
+        // Set initial time remaining
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - playbackStartTime) / 1000);
+        const remainingSeconds = Math.max(0, segmentDuration - elapsedSeconds);
+        setCurrentTimeRemaining(remainingSeconds);
+      }
+    } else {
+      // Not playing, use the stored time remaining
+      setCurrentTimeRemaining(showcallerState?.timeRemaining || null);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isPlaying, showcallerState?.playbackStartTime, showcallerState?.currentSegmentId, showcallerState?.timeRemaining, rundownData?.items]);
 
   // Set up real-time subscription for showcaller state changes
   useEffect(() => {
@@ -210,6 +264,15 @@ const SharedRundown = () => {
       loadSharedLayout();
     }
   }, [rundownId, rundownData]); // Simplified dependencies
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
