@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import HeaderLogo from './header/HeaderLogo';
 import HeaderTitle from './header/HeaderTitle';
 import HeaderControls from './header/HeaderControls';
@@ -30,6 +32,8 @@ interface RundownHeaderProps {
   timeRemaining?: number;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 const RundownHeader = ({ 
@@ -54,7 +58,9 @@ const RundownHeader = ({
   currentSegmentId = null,
   timeRemaining = 0,
   autoScrollEnabled = false,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  showBackButton = false,
+  onBack
 }: RundownHeaderProps) => {
   const formatTime = (time: Date, tz: string) => {
     try {
@@ -73,12 +79,24 @@ const RundownHeader = ({
       {/* Mobile layout: Compact single column - only for screens smaller than 640px */}
       <div className="block sm:hidden">
         <div className="mb-1">
-          <HeaderTitle
-            title={title}
-            onTitleChange={onTitleChange}
-            hasUnsavedChanges={hasUnsavedChanges}
-            isSaving={isSaving}
-          />
+          <div className="flex items-center space-x-2 mb-1">
+            {showBackButton && onBack && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="p-1 h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <HeaderTitle
+              title={title}
+              onTitleChange={onTitleChange}
+              hasUnsavedChanges={hasUnsavedChanges}
+              isSaving={isSaving}
+            />
+          </div>
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1 flex items-center gap-2">
             {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
               <RealtimeStatusIndicator
@@ -100,9 +118,19 @@ const RundownHeader = ({
 
       {/* Tablet layout: Optimized for tablet screens 640px - 1024px */}
       <div className="hidden sm:block lg:hidden">
-        {/* Top row: Logo and Title */}
+        {/* Top row: Back button, Logo and Title */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-3 flex-1 min-w-0">
+            {showBackButton && onBack && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="p-1 h-8 w-8 flex-shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
             <HeaderLogo />
             <div className="flex-1 min-w-0">
               <HeaderTitle
@@ -147,10 +175,20 @@ const RundownHeader = ({
         />
       </div>
 
-      {/* Desktop layout: Logo, title, and controls in a row - for screens 1024px and larger */}
+      {/* Desktop layout: Back button, Logo, title, and controls in a row - for screens 1024px and larger */}
       <div className="hidden lg:block">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center space-x-4">
+            {showBackButton && onBack && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="p-1 h-8 w-8 flex-shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
             <HeaderLogo />
             <HeaderTitle
               title={title}

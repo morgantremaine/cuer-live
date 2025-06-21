@@ -40,11 +40,20 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     onToggleAutoScroll
   } = props;
 
+  // Show back button when we're on a specific rundown page (has an ID)
+  const showBackButton = !!id && id !== 'new';
+
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
+
   // Debug logging for prop passing
   console.log('🔄 RundownHeaderPropsAdapter: Received props:', {
     autoScrollEnabled,
     hasToggleFunction: !!onToggleAutoScroll,
-    toggleFunctionType: typeof onToggleAutoScroll
+    toggleFunctionType: typeof onToggleAutoScroll,
+    showBackButton,
+    rundownId: id
   });
 
   return (
@@ -71,6 +80,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       timeRemaining={timeRemaining}
       autoScrollEnabled={autoScrollEnabled}
       onToggleAutoScroll={onToggleAutoScroll}
+      showBackButton={showBackButton}
+      onBack={handleBack}
     />
   );
 };
