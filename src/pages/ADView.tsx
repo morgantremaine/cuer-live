@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
@@ -13,13 +14,23 @@ const ADView = () => {
   const [stopwatchRunning, setStopwatchRunning] = useState(false);
   const stopwatchInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Find current, previous, and next segments
-  const currentSegment = rundownData?.items?.find(item => item.id === currentSegmentId);
-  const currentIndex = rundownData?.items?.findIndex(item => item.id === currentSegmentId) ?? -1;
-  const previousSegment = currentIndex > 0 ? rundownData?.items?.[currentIndex - 1] : null;
-  const nextSegment = currentIndex >= 0 && currentIndex < (rundownData?.items?.length ?? 0) - 1 
-    ? rundownData?.items?.[currentIndex + 1] 
-    : null;
+  // Filter out header items for timing-based navigation
+  const timedItems = rundownData?.items?.filter(item => item.type !== 'header') || [];
+  
+  // Find current segment and its index in the timed items
+  const currentSegment = timedItems.find(item => item.id === currentSegmentId);
+  const currentTimedIndex = timedItems.findIndex(item => item.id === currentSegmentId);
+  
+  // Get previous 2 and next 2 segments (non-header items only)
+  const previousSegments = currentTimedIndex >= 0 ? [
+    currentTimedIndex >= 2 ? timedItems[currentTimedIndex - 2] : null,
+    currentTimedIndex >= 1 ? timedItems[currentTimedIndex - 1] : null
+  ] : [null, null];
+  
+  const nextSegments = currentTimedIndex >= 0 ? [
+    currentTimedIndex < timedItems.length - 1 ? timedItems[currentTimedIndex + 1] : null,
+    currentTimedIndex < timedItems.length - 2 ? timedItems[currentTimedIndex + 2] : null
+  ] : [null, null];
 
   // Calculate show elapsed time based on current showcaller item start time + playback elapsed
   const showElapsedTime = (() => {
@@ -75,11 +86,11 @@ const ADView = () => {
     // Calculate actual elapsed time
     const actualElapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
     
-    // Calculate expected elapsed time based on rundown
+    // Calculate expected elapsed time based on rundown (only non-header items)
     let expectedElapsed = 0;
-    for (let i = 0; i < currentIndex; i++) {
-      const item = rundownData.items[i];
-      if (item.duration && item.type !== 'header') {
+    for (let i = 0; i < currentTimedIndex; i++) {
+      const item = timedItems[i];
+      if (item.duration) {
         const [mins, secs] = item.duration.split(':').map(Number);
         expectedElapsed += (mins * 60) + (secs || 0);
       }
@@ -100,19 +111,24 @@ const ADView = () => {
   })();
 
   // Get segment display info with row numbers and colors
-  const getSegmentInfo = (segment: any, index: number) => {
+  const getSegmentInfo = (segment: any) => {
     if (!segment || !rundownData?.items) return { name: '--', rowNumber: '', color: '' };
     
-    const rowNumber = getRowNumber(index, rundownData.items);
+    // Find the original index in the full items array (including headers)
+    const originalIndex = rundownData.items.findIndex(item => item.id === segment.id);
+    const rowNumber = getRowNumber(originalIndex, rundownData.items);
     const name = segment.name || segment.segmentName || '--';
     const color = segment.color || '';
     
     return { name, rowNumber, color };
   };
 
-  const prevInfo = previousSegment ? getSegmentInfo(previousSegment, currentIndex - 1) : { name: '--', rowNumber: '', color: '' };
-  const currInfo = currentSegment ? getSegmentInfo(currentSegment, currentIndex) : { name: '--', rowNumber: '', color: '' };
-  const nextInfo = nextSegment ? getSegmentInfo(nextSegment, currentIndex + 1) : { name: '--', rowNumber: '', color: '' };
+  // Get info for all segments
+  const prev2Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', color: '' };
+  const prev1Info = previousSegments[1] ? getSegmentInfo(previousSegments[1]) : { name: '--', rowNumber: '', color: '' };
+  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', color: '' };
+  const next1Info = nextSegments[0] ? getSegmentInfo(nextSegments[0]) : { name: '--', rowNumber: '', color: '' };
+  const next2Info = nextSegments[1] ? getSegmentInfo(nextSegments[1]) : { name: '--', rowNumber: '', color: '' };
 
   // Stopwatch controls
   const startStopwatch = () => {
@@ -251,19 +267,35 @@ const ADView = () => {
             </div>
 
             {/* Center - Segments Display */}
-            <div className="col-span-6 flex flex-col justify-center space-y-4">
-              {/* Previous Segment */}
+            <div className="col-span-6 flex flex-col justify-center space-y-3">
+              {/* Previous Segment 2 */}
               <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-60"
-                style={{ backgroundColor: prevInfo.color ? `${prevInfo.color}20` : undefined }}
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-40"
+                style={{ backgroundColor: prev2Info.color ? `${prev2Info.color}15` : undefined }}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-gray-500">PREV</div>
+                    <div className="text-sm font-mono text-gray-400">{prev2Info.rowNumber}</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-base font-medium text-gray-400">{prev2Info.name}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Previous Segment 1 */}
+              <div 
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-60"
+                style={{ backgroundColor: prev1Info.color ? `${prev1Info.color}20` : undefined }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
                     <div className="text-xs text-gray-400">PREV</div>
-                    <div className="text-sm font-mono text-gray-300">{prevInfo.rowNumber}</div>
+                    <div className="text-sm font-mono text-gray-300">{prev1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-lg font-semibold text-gray-300">{prevInfo.name}</div>
+                    <div className="text-lg font-semibold text-gray-300">{prev1Info.name}</div>
                   </div>
                 </div>
               </div>
@@ -275,7 +307,7 @@ const ADView = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
-                    <div className="text-xs text-green-300">NOW</div>
+                    <div className="text-xs text-green-300">ON AIR</div>
                     <div className="text-lg font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
@@ -284,18 +316,34 @@ const ADView = () => {
                 </div>
               </div>
 
-              {/* Next Segment */}
+              {/* Next Segment 1 */}
               <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-80"
-                style={{ backgroundColor: nextInfo.color ? `${nextInfo.color}20` : undefined }}
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-80"
+                style={{ backgroundColor: next1Info.color ? `${next1Info.color}20` : undefined }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
                     <div className="text-xs text-gray-400">NEXT</div>
-                    <div className="text-sm font-mono text-gray-300">{nextInfo.rowNumber}</div>
+                    <div className="text-sm font-mono text-gray-300">{next1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-lg font-semibold text-gray-300">{nextInfo.name}</div>
+                    <div className="text-lg font-semibold text-gray-300">{next1Info.name}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Next Segment 2 */}
+              <div 
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-60"
+                style={{ backgroundColor: next2Info.color ? `${next2Info.color}15` : undefined }}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-gray-500">NEXT</div>
+                    <div className="text-sm font-mono text-gray-400">{next2Info.rowNumber}</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-base font-medium text-gray-400">{next2Info.name}</div>
                   </div>
                 </div>
               </div>
