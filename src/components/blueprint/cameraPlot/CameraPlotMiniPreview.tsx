@@ -36,10 +36,10 @@ const CameraPlotMiniPreview = ({
       maxY = Math.max(maxY, bottom);
     });
 
-    // Add padding proportional to the scene size
+    // Add generous padding to show context around elements
     const sceneWidth = maxX - minX;
     const sceneHeight = maxY - minY;
-    const padding = Math.max(sceneWidth * 0.15, sceneHeight * 0.15, 30);
+    const padding = Math.max(sceneWidth * 0.3, sceneHeight * 0.3, 50);
     
     return {
       minX: minX - padding,
@@ -53,10 +53,10 @@ const CameraPlotMiniPreview = ({
   const sceneWidth = bounds.maxX - bounds.minX;
   const sceneHeight = bounds.maxY - bounds.minY;
   
-  // Calculate scale to fit the scene in the preview container
-  const scaleX = containerWidth / sceneWidth;
-  const scaleY = containerHeight / sceneHeight;
-  const scale = Math.min(scaleX, scaleY); // Remove the 1 limit to allow proper scaling
+  // Calculate scale to fit the scene in the preview container with some margin
+  const scaleX = (containerWidth * 0.9) / sceneWidth;
+  const scaleY = (containerHeight * 0.9) / sceneHeight;
+  const scale = Math.min(scaleX, scaleY, 0.5); // Limit max scale to prevent over-zooming
 
   // Calculate offset to center the scaled content
   const scaledWidth = sceneWidth * scale;
@@ -67,8 +67,8 @@ const CameraPlotMiniPreview = ({
   const renderElement = (element: CameraElement) => {
     const x = (element.x - bounds.minX) * scale + offsetX;
     const y = (element.y - bounds.minY) * scale + offsetY;
-    const width = element.width * scale;
-    const height = element.height * scale;
+    const width = Math.max(element.width * scale, 4); // Minimum 4px width
+    const height = Math.max(element.height * scale, 4); // Minimum 4px height
     const rotation = element.rotation || 0;
 
     const commonStyle = {
@@ -97,8 +97,8 @@ const CameraPlotMiniPreview = ({
               src="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
               alt="Camera"
               style={{
-                width: Math.max(width * 0.6, 8),
-                height: Math.max(height * 0.6, 8),
+                width: Math.max(width * 0.8, 6),
+                height: Math.max(height * 0.8, 6),
                 objectFit: 'contain'
               }}
             />
@@ -120,8 +120,8 @@ const CameraPlotMiniPreview = ({
               src="/lovable-uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
               alt="Person"
               style={{
-                width: Math.max(width * 0.8, 10),
-                height: Math.max(height * 0.8, 10),
+                width: Math.max(width * 0.8, 6),
+                height: Math.max(height * 0.8, 6),
                 objectFit: 'contain'
               }}
             />
@@ -135,7 +135,7 @@ const CameraPlotMiniPreview = ({
             style={{
               ...commonStyle,
               backgroundColor: '#374151',
-              border: `${Math.max(1 * scale, 0.5)}px solid #6b7280`
+              border: `${Math.max(0.5, scale)}px solid #6b7280`
             }}
           />
         );
@@ -156,7 +156,7 @@ const CameraPlotMiniPreview = ({
               ...commonStyle,
               backgroundColor: furnitureColor,
               borderRadius: isRound ? '50%' : '0',
-              border: `${Math.max(1 * scale, 0.5)}px solid #000000`
+              border: `${Math.max(0.5, scale)}px solid #000000`
             }}
           />
         );
@@ -168,7 +168,7 @@ const CameraPlotMiniPreview = ({
             style={{
               ...commonStyle,
               backgroundColor: '#6b7280',
-              border: `${Math.max(1 * scale, 0.5)}px solid #000000`
+              border: `${Math.max(0.5, scale)}px solid #000000`
             }}
           />
         );
@@ -184,7 +184,13 @@ const CameraPlotMiniPreview = ({
         minHeight: '60px'
       }}
     >
-      {elements.map(renderElement)}
+      {elements.length === 0 ? (
+        <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+          No elements
+        </div>
+      ) : (
+        elements.map(renderElement)
+      )}
     </div>
   );
 };
