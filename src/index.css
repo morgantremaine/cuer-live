@@ -114,17 +114,46 @@
 
 /* Print styles */
 @media print {
-  /* Force all backgrounds to white except for explicitly marked elements */
-  * {
+  /* Force app-level backgrounds to white but allow custom row colors */
+  body,
+  html,
+  #root,
+  .min-h-screen {
     background-color: white !important;
     background-image: none !important;
-    color: black !important;
     -webkit-print-color-adjust: auto !important;
     print-color-adjust: auto !important;
   }
   
-  /* Override for elements that should preserve custom colors */
-  .print-preserve-color,
+  /* Force all Tailwind background classes to white (but not inline styles) */
+  [class*="bg-gray"],
+  [class*="bg-blue"],
+  [class*="bg-slate"],
+  [class*="bg-zinc"],
+  [class*="bg-neutral"],
+  [class*="bg-stone"],
+  [class*="bg-red"]:not(.print-custom-colored-row):not(.print-floated-row),
+  [class*="bg-orange"],
+  [class*="bg-amber"],
+  [class*="bg-yellow"],
+  [class*="bg-lime"],
+  [class*="bg-green"],
+  [class*="bg-emerald"],
+  [class*="bg-teal"],
+  [class*="bg-cyan"],
+  [class*="bg-sky"],
+  [class*="bg-indigo"],
+  [class*="bg-violet"],
+  [class*="bg-purple"],
+  [class*="bg-fuchsia"],
+  [class*="bg-pink"],
+  [class*="bg-rose"] {
+    background-color: white !important;
+    background-image: none !important;
+    color: black !important;
+  }
+  
+  /* Preserve custom colors for specific elements that have inline styles */
   .print-custom-colored-row,
   .print-custom-colored-row *,
   .print-header-row,
@@ -135,26 +164,21 @@
     print-color-adjust: exact !important;
   }
   
-  /* Specific styling for preserved color elements */
+  /* Specific styling for header rows */
   .print-header-row,
   .print-header-row * {
     background-color: #f0f0f0 !important;
     color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   
+  /* Specific styling for floated rows */
   .print-floated-row,
   .print-floated-row * {
     background-color: #dc2626 !important;
     color: #ffffff !important;
-  }
-  
-  /* Ensure body and main containers have clean white background */
-  body,
-  html,
-  #root,
-  .min-h-screen,
-  [class*="bg-"] {
-    background-color: white !important;
-    background-image: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
