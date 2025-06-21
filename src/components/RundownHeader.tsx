@@ -146,24 +146,22 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - with larger title that can wrap
+  // Desktop layout - with properly sized title that can wrap
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-start justify-between gap-6">
-        <div className="flex items-start space-x-6 flex-1 min-w-0">
-          <div className="flex-shrink-0 mt-2">
-            <HeaderLogo />
-          </div>
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex items-center space-x-4 flex-1 min-w-0">
+          <HeaderLogo />
           <div className="flex-1 min-w-0">
             <textarea
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
-              className="text-3xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              className="text-xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Untitled Rundown"
               rows={1}
               style={{ 
-                minHeight: '3rem',
-                lineHeight: '1.2'
+                minHeight: '1.5rem',
+                lineHeight: '1.3'
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
@@ -182,7 +180,7 @@ const RundownHeader = ({
           </div>
         </div>
         
-        <div className="flex items-center space-x-4 flex-shrink-0 mt-2">
+        <div className="flex items-center space-x-4 flex-shrink-0">
           <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
           <TimezoneSelector
             currentTimezone={timezone}
