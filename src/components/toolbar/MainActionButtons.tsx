@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
+import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface MainActionButtonsProps {
@@ -23,6 +24,15 @@ interface MainActionButtonsProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  // Playback controls props for mobile
+  isPlaying?: boolean;
+  currentSegmentId?: string | null;
+  timeRemaining?: number;
+  onPlay?: (selectedSegmentId?: string) => void;
+  onPause?: () => void;
+  onForward?: () => void;
+  onBackward?: () => void;
+  onReset?: () => void;
 }
 
 const MainActionButtons = ({
@@ -39,7 +49,15 @@ const MainActionButtons = ({
   rundownTitle = 'Untitled Rundown',
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  isPlaying,
+  currentSegmentId,
+  timeRemaining,
+  onPlay,
+  onPause,
+  onForward,
+  onBackward,
+  onReset
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -83,33 +101,46 @@ const MainActionButtons = ({
   if (isMobile) {
     // Mobile layout - stacked buttons in dropdown
     return (
-      <div className="grid grid-cols-2 gap-2 w-full">
-        <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-          <Plus className="h-4 w-4" />
-          <span>Add Segment</span>
-        </Button>
-        <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-          <Plus className="h-4 w-4" />
-          <span>Add Header</span>
-        </Button>
-        <Button 
-          onClick={onUndo} 
-          variant="outline" 
-          size={buttonSize}
-          disabled={!canUndo}
-          title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
-          className="flex items-center justify-start gap-2"
-        >
-          <Undo className="h-4 w-4" />
-          <span>Undo</span>
-        </Button>
-        <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-          <Settings className="h-4 w-4" />
-          <span>Columns</span>
-        </Button>
-        
+      <div className="space-y-3">
+        {/* Main action buttons */}
+        <div className="grid grid-cols-2 gap-2 w-full">
+          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+            <Plus className="h-4 w-4" />
+            <span>Add Segment</span>
+          </Button>
+          <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+            <Plus className="h-4 w-4" />
+            <span>Add Header</span>
+          </Button>
+          <Button 
+            onClick={onUndo} 
+            variant="outline" 
+            size={buttonSize}
+            disabled={!canUndo}
+            title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
+            className="flex items-center justify-start gap-2"
+          >
+            <Undo className="h-4 w-4" />
+            <span>Undo</span>
+          </Button>
+          <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+            <Settings className="h-4 w-4" />
+            <span>Columns</span>
+          </Button>
+          
+          <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+            <Monitor className="h-4 w-4" />
+            <span>Teleprompter</span>
+          </Button>
+          <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+            <FileText className="h-4 w-4" />
+            <span>Blueprint</span>
+          </Button>
+        </div>
+
+        {/* Share menu */}
         {rundownId && (
-          <div className="col-span-2">
+          <div className="w-full">
             <ShareRundownMenu 
               rundownId={rundownId} 
               rundownTitle={rundownTitle}
@@ -117,27 +148,41 @@ const MainActionButtons = ({
             />
           </div>
         )}
-        
-        <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-          <Monitor className="h-4 w-4" />
-          <span>Teleprompter</span>
-        </Button>
-        <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-          <FileText className="h-4 w-4" />
-          <span>Blueprint</span>
-        </Button>
+
+        {/* Playback controls - only in mobile view */}
+        {isPlaying !== undefined && onPlay && onPause && onForward && onBackward && onReset && (
+          <div className="border-t pt-3">
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Playback Controls</div>
+            <div className="flex justify-center">
+              <PlaybackControls
+                selectedRowId={selectedRowId}
+                isPlaying={isPlaying}
+                currentSegmentId={currentSegmentId}
+                timeRemaining={timeRemaining || 0}
+                onPlay={onPlay}
+                onPause={onPause}
+                onForward={onForward}
+                onBackward={onBackward}
+                onReset={onReset}
+                size="sm"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Autoscroll Toggle - only in mobile view */}
         {onToggleAutoScroll && (
-          <div className="col-span-2 flex items-center justify-between p-2 rounded-md border border-input bg-background">
-            <div className="flex items-center gap-2">
-              <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
-              <span className="text-sm">Auto-scroll</span>
+          <div className="border-t pt-3">
+            <div className="flex items-center justify-between p-2 rounded-md border border-input bg-background">
+              <div className="flex items-center gap-2">
+                <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+                <span className="text-sm">Auto-scroll</span>
+              </div>
+              <Switch
+                checked={autoScrollEnabled}
+                onCheckedChange={handleToggleAutoScroll}
+              />
             </div>
-            <Switch
-              checked={autoScrollEnabled}
-              onCheckedChange={handleToggleAutoScroll}
-            />
           </div>
         )}
       </div>

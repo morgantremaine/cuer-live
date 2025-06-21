@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
-import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface MobileToolbarProps {
@@ -63,8 +62,8 @@ const MobileToolbar = ({
 
   return (
     <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
-      {/* Top row - Actions dropdown and theme toggle */}
-      <div className="flex items-center justify-between gap-2 mb-2">
+      {/* Single row - Actions dropdown and theme toggle */}
+      <div className="flex items-center justify-between gap-2">
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
@@ -93,28 +92,21 @@ const MobileToolbar = ({
                 rundownData={rundownData}
                 autoScrollEnabled={autoScrollEnabled}
                 onToggleAutoScroll={onToggleAutoScroll}
+                // Pass playback controls for mobile
+                isPlaying={isPlaying}
+                currentSegmentId={currentSegmentId}
+                timeRemaining={timeRemaining}
+                onPlay={onPlay}
+                onPause={onPause}
+                onForward={onForward}
+                onBackward={onBackward}
+                onReset={onReset}
               />
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <ThemeToggle />
-      </div>
-
-      {/* Bottom row - Playback controls centered */}
-      <div className="flex justify-center">
-        <PlaybackControls
-          selectedRowId={selectedRowId}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          onReset={onReset}
-          size="sm"
-        />
       </div>
     </div>
   );
