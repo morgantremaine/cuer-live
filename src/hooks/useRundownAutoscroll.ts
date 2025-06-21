@@ -62,7 +62,7 @@ export const useRundownAutoscroll = ({
         console.log('🔄 useRundownAutoscroll: Scrolling to element');
         targetElement.scrollIntoView({
           behavior: 'smooth',
-          block: 'start',
+          block: 'center',
           inline: 'nearest'
         });
         lastScrolledSegmentRef.current = currentSegmentId;
