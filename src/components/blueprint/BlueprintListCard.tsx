@@ -113,20 +113,18 @@ const BlueprintListCard = ({
 
   return (
     <Card 
-      className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 ${
+      className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 cursor-move ${
         isDragging ? 'opacity-50 transform rotate-2' : ''
       }`}
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnter={(e) => onDragEnterContainer?.(e, index)}
+      onDragEnd={onDragEnd}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start gap-2">
           {/* Drag Handle - positioned on the left like other components */}
-          <div 
-            className="cursor-move p-1 rounded hover:bg-gray-700 transition-colors flex-shrink-0 mt-1"
-            draggable
-            onDragStart={handleDragStart}
-            onDragEnter={(e) => onDragEnterContainer?.(e, index)}
-            onDragEnd={onDragEnd}
-          >
+          <div className="p-1 rounded flex-shrink-0 mt-1">
             <GripVertical className="h-4 w-4 text-gray-400" />
           </div>
           
