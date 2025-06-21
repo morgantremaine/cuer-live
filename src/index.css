@@ -111,3 +111,50 @@
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
   }
 }
+
+/* Print styles */
+@media print {
+  /* Force all backgrounds to white except for explicitly marked elements */
+  * {
+    background-color: white !important;
+    background-image: none !important;
+    color: black !important;
+    -webkit-print-color-adjust: auto !important;
+    print-color-adjust: auto !important;
+  }
+  
+  /* Override for elements that should preserve custom colors */
+  .print-preserve-color,
+  .print-custom-colored-row,
+  .print-custom-colored-row *,
+  .print-header-row,
+  .print-header-row *,
+  .print-floated-row,
+  .print-floated-row * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Specific styling for preserved color elements */
+  .print-header-row,
+  .print-header-row * {
+    background-color: #f0f0f0 !important;
+    color: #000000 !important;
+  }
+  
+  .print-floated-row,
+  .print-floated-row * {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+  }
+  
+  /* Ensure body and main containers have clean white background */
+  body,
+  html,
+  #root,
+  .min-h-screen,
+  [class*="bg-"] {
+    background-color: white !important;
+    background-image: none !important;
+  }
+}
