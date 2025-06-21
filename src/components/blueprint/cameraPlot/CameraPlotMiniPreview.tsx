@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CameraElement } from '@/hooks/cameraPlot/core/useCameraPlotData';
 
@@ -36,7 +35,7 @@ const CameraPlotMiniPreview = ({
       maxY = Math.max(maxY, bottom);
     });
 
-    // Add minimal padding to show just around elements
+    // Add padding around elements to show context
     const sceneWidth = maxX - minX;
     const sceneHeight = maxY - minY;
     const padding = Math.max(sceneWidth * 0.1, sceneHeight * 0.1, 20);
@@ -53,7 +52,7 @@ const CameraPlotMiniPreview = ({
   const sceneWidth = bounds.maxX - bounds.minX;
   const sceneHeight = bounds.maxY - bounds.minY;
   
-  // Calculate scale to fit the scene in the preview container with margin
+  // Calculate scale to fit the scene in the preview container
   const scaleX = (containerWidth * 0.9) / sceneWidth;
   const scaleY = (containerHeight * 0.9) / sceneHeight;
   const scale = Math.min(scaleX, scaleY);
@@ -134,7 +133,7 @@ const CameraPlotMiniPreview = ({
             key={element.id}
             style={{
               ...commonStyle,
-              backgroundColor: '#6b7280',
+              backgroundColor: '#111827',
               borderRadius: '2px'
             }}
           />
