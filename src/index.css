@@ -111,3 +111,109 @@
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
   }
 }
+
+/* COMPREHENSIVE PRINT STYLES */
+@media print {
+  /* Force light theme for ALL elements in print */
+  *, *::before, *::after {
+    background-color: white !important;
+    color: black !important;
+    border-color: #666 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  
+  /* Override ALL CSS variables to light theme values for print */
+  :root, .dark {
+    --background: 0 0% 100% !important;
+    --foreground: 0 0% 0% !important;
+    --card: 0 0% 100% !important;
+    --card-foreground: 0 0% 0% !important;
+    --popover: 0 0% 100% !important;
+    --popover-foreground: 0 0% 0% !important;
+    --primary: 0 0% 0% !important;
+    --primary-foreground: 0 0% 100% !important;
+    --secondary: 0 0% 96% !important;
+    --secondary-foreground: 0 0% 0% !important;
+    --muted: 0 0% 96% !important;
+    --muted-foreground: 0 0% 40% !important;
+    --accent: 0 0% 96% !important;
+    --accent-foreground: 0 0% 0% !important;
+    --border: 0 0% 40% !important;
+    --input: 0 0% 90% !important;
+    --ring: 0 0% 0% !important;
+  }
+  
+  /* Force body and html to white background */
+  html, body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Print page setup */
+  @page {
+    margin: 0.5in;
+    size: auto;
+  }
+  
+  /* Force all containers to be printable */
+  * {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+  
+  /* Remove flex constraints */
+  .flex-1, [class*="h-"], [class*="max-h-"], [class*="overflow-"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Hide print-hidden elements */
+  .print-hidden, .print\\:hidden {
+    display: none !important;
+  }
+  
+  /* Show print-only elements */
+  .print-block, .print\\:block {
+    display: block !important;
+  }
+  
+  /* Custom row colors - only show when background graphics are enabled */
+  .print-custom-color-row {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ensure custom colored rows preserve their colors */
+  .print-custom-color-row[style*="background-color"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Default rows should be white with black text */
+  .print-default-row {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Header rows get light gray background */
+  .print-header-row {
+    background-color: #f5f5f5 !important;
+    color: black !important;
+    font-weight: bold !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Floated rows get red background (always preserve) */
+  .print-floated-row {
+    background-color: #dc2626 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
