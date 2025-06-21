@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -190,7 +189,6 @@ const RundownHeader = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
               <span className="text-sm font-mono">{format(currentTime, 'HH:mm:ss')}</span>
             </div>
             <TimezoneSelector
