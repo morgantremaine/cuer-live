@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -8,6 +9,8 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/hooks/useTheme';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { logger } from '@/utils/logger';
 
 // Default columns to use when rundown has no columns defined
 const DEFAULT_COLUMNS = [
@@ -28,11 +31,12 @@ const SharedRundown = () => {
   const [currentTimeRemaining, setCurrentTimeRemaining] = useState(null);
   const { isDark, toggleTheme } = useTheme();
   
-  // Better refs to prevent duplicate loads
+  // Better refs to prevent duplicate loads and ensure cleanup
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
   const realtimeChannelRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
@@ -52,8 +56,9 @@ const SharedRundown = () => {
     items: rundownData?.items || []
   });
 
-  // Real-time timer for showcaller synchronization
+  // Enhanced timer cleanup for showcaller synchronization
   useEffect(() => {
+    // Clear existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -80,6 +85,15 @@ const SharedRundown = () => {
 
         // Start a timer to update time remaining in real-time
         timerRef.current = setInterval(() => {
+          // Check if component is still mounted before updating state
+          if (!isMountedRef.current) {
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            return;
+          }
+          
           const now = Date.now();
           const elapsedSeconds = Math.floor((now - playbackStartTime) / 1000);
           const remainingSeconds = Math.max(0, segmentDuration - elapsedSeconds);
@@ -105,7 +119,7 @@ const SharedRundown = () => {
     };
   }, [isPlaying, showcallerState?.playbackStartTime, showcallerState?.currentSegmentId, showcallerState?.timeRemaining, rundownData?.items]);
 
-  // Set up real-time subscription for showcaller state changes
+  // Enhanced real-time subscription cleanup
   useEffect(() => {
     // Clean up existing subscription
     if (realtimeChannelRef.current) {
@@ -113,12 +127,12 @@ const SharedRundown = () => {
       realtimeChannelRef.current = null;
     }
 
-    // Only set up subscription if we have a rundown ID
-    if (!rundownId) {
+    // Only set up subscription if we have a rundown ID and component is mounted
+    if (!rundownId || !isMountedRef.current) {
       return;
     }
 
-    console.log('📺 Setting up real-time subscription for showcaller state:', rundownId);
+    logger.log('📺 Setting up real-time subscription for showcaller state:', rundownId);
 
     const channel = supabase
       .channel(`shared-showcaller-${rundownId}`)
@@ -131,23 +145,26 @@ const SharedRundown = () => {
           filter: `id=eq.${rundownId}`
         },
         (payload) => {
-          console.log('📺 Received showcaller update:', payload);
+          // Check if component is still mounted before updating state
+          if (!isMountedRef.current) return;
+          
+          logger.log('📺 Received showcaller update:', payload);
           // Only update if showcaller_state changed
           if (payload.new?.showcaller_state) {
-            console.log('📺 Updating showcaller state:', payload.new.showcaller_state);
+            logger.log('📺 Updating showcaller state:', payload.new.showcaller_state);
             setRealtimeShowcallerState(payload.new.showcaller_state);
           }
         }
       )
       .subscribe((status) => {
-        console.log('📺 Subscription status:', status);
+        logger.log('📺 Subscription status:', status);
       });
 
     realtimeChannelRef.current = channel;
 
     return () => {
       if (realtimeChannelRef.current) {
-        console.log('📺 Cleaning up subscription');
+        logger.log('📺 Cleaning up subscription');
         supabase.removeChannel(realtimeChannelRef.current);
         realtimeChannelRef.current = null;
       }
@@ -173,11 +190,11 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Much more efficient layout loading
+  // Enhanced layout loading with better error handling and cleanup
   useEffect(() => {
     const loadSharedLayout = async () => {
       // Only load if we have rundown data and haven't loaded this layout yet
-      if (!rundownId || !rundownData || isLayoutLoadingRef.current) {
+      if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
         return;
       }
       
@@ -198,8 +215,11 @@ const SharedRundown = () => {
           .eq('rundown_id', rundownId)
           .maybeSingle();
 
+        // Check if component is still mounted before updating state
+        if (!isMountedRef.current) return;
+
         if (sharedError) {
-          console.error('❌ Error loading shared layout config:', sharedError);
+          logger.error('❌ Error loading shared layout config:', sharedError);
           // Fallback to rundown's own columns
           if (rundownData.columns && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
@@ -219,8 +239,11 @@ const SharedRundown = () => {
             .eq('id', sharedLayoutData.layout_id)
             .maybeSingle();
 
+          // Check if component is still mounted before updating state
+          if (!isMountedRef.current) return;
+
           if (layoutError || !layoutData) {
-            console.error('❌ Error loading layout:', layoutError);
+            logger.error('❌ Error loading layout:', layoutError);
             // Fallback to rundown's own columns
             if (rundownData.columns && rundownData.columns.length > 0) {
               setLayoutColumns(rundownData.columns);
@@ -244,7 +267,9 @@ const SharedRundown = () => {
           }
         }
       } catch (error) {
-        console.error('💥 Failed to load shared layout:', error);
+        if (!isMountedRef.current) return;
+        
+        logger.error('💥 Failed to load shared layout:', error);
         // Final fallback
         if (rundownData.columns && rundownData.columns.length > 0) {
           setLayoutColumns(rundownData.columns);
@@ -254,8 +279,10 @@ const SharedRundown = () => {
           setLayoutName('Default Layout');
         }
       } finally {
-        setLayoutLoading(false);
-        isLayoutLoadingRef.current = false;
+        if (isMountedRef.current) {
+          setLayoutLoading(false);
+          isLayoutLoadingRef.current = false;
+        }
       }
     };
 
@@ -263,13 +290,24 @@ const SharedRundown = () => {
     if (rundownData && rundownId && layoutLoadedRef.current !== rundownId) {
       loadSharedLayout();
     }
-  }, [rundownId, rundownData]); // Simplified dependencies
+  }, [rundownId, rundownData]);
 
-  // Cleanup timer on unmount
+  // Enhanced cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true;
+    
     return () => {
+      isMountedRef.current = false;
+      
+      // Clean up all timers and subscriptions
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
       }
     };
   }, []);
@@ -322,40 +360,42 @@ const SharedRundown = () => {
   const visibleColumns = getVisibleColumns(columnsToUse);
 
   return (
-    <div className={`h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <SharedRundownHeader
-          title={rundownData.title}
-          startTime={rundownData.startTime || '09:00:00'}
-          timezone={rundownData.timezone || 'UTC'}
-          layoutName={layoutName}
-          currentSegmentId={currentSegmentId}
-          isPlaying={isPlaying}
-          timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          autoScrollEnabled={autoScrollEnabled}
-          onToggleAutoScroll={handleToggleAutoScroll}
-          items={rundownData.items || []}
-        />
-
-        <div className="flex-1 min-h-0 p-4 print:p-2">
-          <SharedRundownTable
-            ref={scrollContainerRef}
-            items={rundownData.items}
-            visibleColumns={visibleColumns}
+    <ErrorBoundary fallbackTitle="Shared Rundown Error">
+      <div className={`h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <SharedRundownHeader
+            title={rundownData.title}
+            startTime={rundownData.startTime || '09:00:00'}
+            timezone={rundownData.timezone || 'UTC'}
+            layoutName={layoutName}
             currentSegmentId={currentSegmentId}
             isPlaying={isPlaying}
-            rundownStartTime={rundownData.startTime || '09:00:00'}
+            timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
             isDark={isDark}
+            onToggleTheme={toggleTheme}
+            autoScrollEnabled={autoScrollEnabled}
+            onToggleAutoScroll={handleToggleAutoScroll}
+            items={rundownData.items || []}
           />
-        </div>
 
-        <div className="print:block hidden">
-          <SharedRundownFooter />
+          <div className="flex-1 min-h-0 p-4 print:p-2">
+            <SharedRundownTable
+              ref={scrollContainerRef}
+              items={rundownData.items}
+              visibleColumns={visibleColumns}
+              currentSegmentId={currentSegmentId}
+              isPlaying={isPlaying}
+              rundownStartTime={rundownData.startTime || '09:00:00'}
+              isDark={isDark}
+            />
+          </div>
+
+          <div className="print:block hidden">
+            <SharedRundownFooter />
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
 

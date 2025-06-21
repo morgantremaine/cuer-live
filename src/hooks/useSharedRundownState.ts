@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
+import { logger } from '@/utils/logger';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -24,31 +25,56 @@ export const useSharedRundownState = () => {
   const [error, setError] = useState<string | null>(null);
   const [calculatedTimeRemaining, setCalculatedTimeRemaining] = useState(0);
 
-  // Refs to prevent excessive polling
+  // Enhanced refs to prevent excessive polling and ensure cleanup
   const lastUpdateTimestamp = useRef<string | null>(null);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const showcallerPollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null);
+  const countdownInterval = useRef<NodeJS.Timeout | null>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
 
-  // Update current time every second
+  // Enhanced time update with proper cleanup
   useEffect(() => {
-    const timer = setInterval(() => {
+    // Clear existing timer
+    if (timeUpdateInterval.current) {
+      clearInterval(timeUpdateInterval.current);
+    }
+    
+    timeUpdateInterval.current = setInterval(() => {
       if (mountedRef.current) {
         setCurrentTime(new Date());
       }
     }, 1000);
-    return () => clearInterval(timer);
+    
+    return () => {
+      if (timeUpdateInterval.current) {
+        clearInterval(timeUpdateInterval.current);
+        timeUpdateInterval.current = null;
+      }
+    };
   }, []);
 
-  // Calculate real-time countdown when showcaller is playing
+  // Enhanced real-time countdown with proper cleanup
   useEffect(() => {
+    // Clear existing timer
+    if (countdownInterval.current) {
+      clearInterval(countdownInterval.current);
+      countdownInterval.current = null;
+    }
+
     if (!rundownData?.showcallerState?.isPlaying || !rundownData.showcallerState.currentSegmentId) {
       return;
     }
 
-    const timer = setInterval(() => {
-      if (!mountedRef.current) return;
+    countdownInterval.current = setInterval(() => {
+      if (!mountedRef.current) {
+        if (countdownInterval.current) {
+          clearInterval(countdownInterval.current);
+          countdownInterval.current = null;
+        }
+        return;
+      }
       
       const showcallerState = rundownData.showcallerState;
       const currentItem = rundownData.items.find(item => item.id === showcallerState.currentSegmentId);
@@ -72,16 +98,21 @@ export const useSharedRundownState = () => {
       }
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (countdownInterval.current) {
+        clearInterval(countdownInterval.current);
+        countdownInterval.current = null;
+      }
+    };
   }, [rundownData?.showcallerState?.isPlaying, rundownData?.showcallerState?.currentSegmentId, rundownData?.showcallerState?.playbackStartTime, rundownData?.items]);
 
-  // Optimized load function with better caching
+  // Optimized load function with better caching and error handling
   const loadRundownData = useCallback(async () => {
     if (!rundownId || isLoadingRef.current || !mountedRef.current) {
       return;
     }
 
-    console.log('📊 Loading rundown data for ID:', rundownId);
+    logger.log('📊 Loading rundown data for ID:', rundownId);
     isLoadingRef.current = true;
 
     try {
@@ -117,7 +148,7 @@ export const useSharedRundownState = () => {
             visibility: data.visibility || 'private'
           };
           
-          console.log('✅ Successfully loaded rundown data:', newRundownData.title);
+          logger.log('✅ Successfully loaded rundown data:', newRundownData.title);
           setRundownData(newRundownData);
           lastUpdateTimestamp.current = data.updated_at;
         }
@@ -128,7 +159,7 @@ export const useSharedRundownState = () => {
       }
     } catch (error) {
       if (!mountedRef.current) return;
-      console.error('💥 Network error loading rundown:', error);
+      logger.error('💥 Network error loading rundown:', error);
       setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setRundownData(null);
     }
@@ -146,34 +177,48 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId, loadRundownData]);
 
-  // Dual polling system - fast for showcaller, slow for everything else
+  // Enhanced dual polling system with proper cleanup
   useEffect(() => {
     if (!rundownId || loading || !rundownData) return;
     
     // Clear any existing intervals
     if (pollingInterval.current) {
       clearInterval(pollingInterval.current);
+      pollingInterval.current = null;
     }
     if (showcallerPollingInterval.current) {
       clearInterval(showcallerPollingInterval.current);
+      showcallerPollingInterval.current = null;
     }
     
     const isPlaying = rundownData?.showcallerState?.isPlaying;
     
     if (isPlaying) {
       // Fast polling for showcaller updates (every 2 seconds when playing)
-      console.log('🚀 Starting fast showcaller polling (2s interval)');
+      logger.log('🚀 Starting fast showcaller polling (2s interval)');
       showcallerPollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
+        } else {
+          // Component unmounted, clear interval
+          if (showcallerPollingInterval.current) {
+            clearInterval(showcallerPollingInterval.current);
+            showcallerPollingInterval.current = null;
+          }
         }
       }, 2000);
     } else {
       // Slower polling for general updates (every 30 seconds when not playing)
-      console.log('🐌 Starting slow general polling (30s interval)');
+      logger.log('🐌 Starting slow general polling (30s interval)');
       pollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
+        } else {
+          // Component unmounted, clear interval
+          if (pollingInterval.current) {
+            clearInterval(pollingInterval.current);
+            pollingInterval.current = null;
+          }
         }
       }, 30000);
     }
@@ -181,22 +226,38 @@ export const useSharedRundownState = () => {
     return () => {
       if (pollingInterval.current) {
         clearInterval(pollingInterval.current);
+        pollingInterval.current = null;
       }
       if (showcallerPollingInterval.current) {
         clearInterval(showcallerPollingInterval.current);
+        showcallerPollingInterval.current = null;
       }
     };
   }, [rundownId, loading, rundownData?.showcallerState?.isPlaying, loadRundownData]);
 
-  // Cleanup on unmount
+  // Enhanced cleanup on unmount
   useEffect(() => {
+    mountedRef.current = true;
+    
     return () => {
       mountedRef.current = false;
+      
+      // Clear all intervals
       if (pollingInterval.current) {
         clearInterval(pollingInterval.current);
+        pollingInterval.current = null;
       }
       if (showcallerPollingInterval.current) {
         clearInterval(showcallerPollingInterval.current);
+        showcallerPollingInterval.current = null;
+      }
+      if (timeUpdateInterval.current) {
+        clearInterval(timeUpdateInterval.current);
+        timeUpdateInterval.current = null;
+      }
+      if (countdownInterval.current) {
+        clearInterval(countdownInterval.current);
+        countdownInterval.current = null;
       }
     };
   }, []);

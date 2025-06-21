@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/utils/logger';
 
 interface UseShowcallerRealtimeSyncProps {
   rundownId: string | null;
@@ -19,11 +20,12 @@ export const useShowcallerRealtimeSync = ({
   const onExternalVisualStateReceivedRef = useRef(onExternalVisualStateReceived);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
   
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
 
-  // Debounced update handler for showcaller visual state only
+  // Simplified update handler for showcaller visual state only
   const handleShowcallerVisualUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -47,21 +49,30 @@ export const useShowcallerRealtimeSync = ({
       return;
     }
 
-    // Debounce rapid updates
+    // Clear any existing processing timeout to prevent race conditions
     if (processingTimeoutRef.current) {
       clearTimeout(processingTimeoutRef.current);
+      processingTimeoutRef.current = null;
     }
 
+    // Simplified processing without excessive debouncing
     processingTimeoutRef.current = setTimeout(() => {
+      // Check if component is still mounted
+      if (!isMountedRef.current) {
+        return;
+      }
+      
       lastProcessedUpdateRef.current = showcallerVisualState.lastUpdate;
       
       try {
-        console.log('📺 Received external showcaller visual state');
+        logger.log('📺 Received external showcaller visual state');
         onExternalVisualStateReceivedRef.current(showcallerVisualState);
       } catch (error) {
-        console.error('Error processing showcaller visual update:', error);
+        logger.error('Error processing showcaller visual update:', error);
       }
-    }, 50); // Shorter debounce for visual updates
+      
+      processingTimeoutRef.current = null;
+    }, 100); // Reduced debounce time for better responsiveness
     
   }, [rundownId]);
 
@@ -76,6 +87,8 @@ export const useShowcallerRealtimeSync = ({
   }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
     // Clear any existing subscription
     if (subscriptionRef.current) {
       supabase.removeChannel(subscriptionRef.current);
@@ -102,15 +115,18 @@ export const useShowcallerRealtimeSync = ({
       .subscribe();
 
     subscriptionRef.current = channel;
-    console.log('📺 Subscribed to showcaller visual state updates for rundown:', rundownId);
+    logger.log('📺 Subscribed to showcaller visual state updates for rundown:', rundownId);
 
     return () => {
+      isMountedRef.current = false;
+      
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
       if (processingTimeoutRef.current) {
         clearTimeout(processingTimeoutRef.current);
+        processingTimeoutRef.current = null;
       }
     };
   }, [rundownId, user, enabled, handleShowcallerVisualUpdate]);
