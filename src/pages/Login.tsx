@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [resetEmail, setResetEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
@@ -55,9 +57,20 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate invite code
+    if (inviteCode !== 'cuer2025') {
+      toast({
+        title: 'Invalid Invite Code',
+        description: 'Please enter a valid invite code to create an account.',
+        variant: 'destructive',
+      })
+      return
+    }
+    
     setLoading(true)
     
-    const { error } = await signUp(email, password, fullName)
+    const { error } = await signUp(email, password, fullName, inviteCode)
     
     if (error) {
       toast({
@@ -290,6 +303,19 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="new-password"
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-invite-code" className="text-gray-300">Invite Code</Label>
+                    <Input
+                      id="signup-invite-code"
+                      name="inviteCode"
+                      type="text"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
+                      placeholder="Enter invite code"
                       required
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
                     />
