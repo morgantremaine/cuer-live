@@ -293,9 +293,16 @@ const ADView = () => {
                 {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">{rundownData.title}</div>
-              <div className="text-sm text-gray-400">AD View</div>
+            <div className="text-center flex items-center space-x-4">
+              <img 
+                src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
+                alt="Cuer Logo" 
+                className="h-8 w-auto"
+              />
+              <div>
+                <div className="text-2xl font-bold text-white">{rundownData.title}</div>
+                <div className="text-sm text-gray-400">AD View</div>
+              </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-400 mb-1">TIMING STATUS</div>
@@ -316,12 +323,12 @@ const ADView = () => {
         <div className="flex-1 max-w-7xl mx-auto p-8 w-full">
           <div className="grid grid-cols-12 gap-8 h-full">
             {/* Left Side - Timing and Stopwatch */}
-            <div className="col-span-3 space-y-6">
+            <div className="col-span-2 space-y-6">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-4 text-center">
                   <div className="text-xs text-gray-400 mb-2">SHOW ELAPSED</div>
-                  <div className="text-2xl font-mono font-bold text-blue-400">
+                  <div className="text-xl font-mono font-bold text-blue-400">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -331,7 +338,7 @@ const ADView = () => {
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-4 text-center">
                   <div className="text-xs text-gray-400 mb-2">ITEM ELAPSED</div>
-                  <div className="text-2xl font-mono font-bold text-green-400">
+                  <div className="text-xl font-mono font-bold text-green-400">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -340,8 +347,8 @@ const ADView = () => {
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-4 text-center">
-                  <div className="text-xs text-gray-400 mb-2">TIME REMAINING</div>
-                  <div className="text-2xl font-mono font-bold text-yellow-400">
+                  <div className="text-xs text-gray-400 mb-2">ITEM TIME REMAINING</div>
+                  <div className="text-xl font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
@@ -349,22 +356,22 @@ const ADView = () => {
 
               {/* Stopwatch */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6">
-                  <div className="text-xs text-gray-400 mb-4 text-center">STOPWATCH</div>
-                  <div className="text-3xl font-mono font-bold text-center mb-6 text-white">
+                <CardContent className="p-4">
+                  <div className="text-xs text-gray-400 mb-3 text-center">STOPWATCH</div>
+                  <div className="text-2xl font-mono font-bold text-center mb-4 text-white">
                     {formatStopwatchTime(stopwatchSeconds)}
                   </div>
                   <div className="flex justify-center space-x-2">
                     {!stopwatchRunning ? (
-                      <Button onClick={startStopwatch} className="bg-green-600 hover:bg-green-700">
+                      <Button onClick={startStopwatch} className="bg-green-600 hover:bg-green-700" size="sm">
                         <Play className="h-4 w-4" />
                       </Button>
                     ) : (
-                      <Button onClick={pauseStopwatch} className="bg-yellow-600 hover:bg-yellow-700">
+                      <Button onClick={pauseStopwatch} className="bg-yellow-600 hover:bg-yellow-700" size="sm">
                         <Pause className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button onClick={resetStopwatch} variant="outline" className="border-gray-600">
+                    <Button onClick={resetStopwatch} variant="outline" className="border-gray-600" size="sm">
                       <RotateCcw className="h-4 w-4" />
                     </Button>
                   </div>
@@ -373,63 +380,7 @@ const ADView = () => {
             </div>
 
             {/* Center - Segments Display */}
-            <div className="col-span-6 flex flex-col justify-center space-y-3">
-              {/* Column Controls */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="text-sm text-gray-400">Additional Columns:</div>
-                  {selectedColumns.map(columnKey => {
-                    const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                    return (
-                      <div key={columnKey} className="flex items-center bg-gray-700 rounded px-2 py-1 text-xs">
-                        <span>{columnName}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-1 h-4 w-4 p-0 text-gray-400 hover:text-white"
-                          onClick={() => removeColumn(columnKey)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {availableUnselectedColumns.length > 0 && (
-                  <div className="relative">
-                    {!showColumnSelector ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowColumnSelector(true)}
-                        className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Column
-                      </Button>
-                    ) : (
-                      <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
-                        <SelectTrigger className="w-48 bg-gray-800 border-gray-600 text-white">
-                          <SelectValue placeholder="Select column..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-600">
-                          {availableUnselectedColumns.map(column => (
-                            <SelectItem 
-                              key={column.key} 
-                              value={column.key}
-                              className="text-white hover:bg-gray-700 focus:bg-gray-700"
-                            >
-                              {column.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                )}
-              </div>
-
+            <div className="col-span-7 flex flex-col justify-center space-y-3">
               {/* Previous Segment 2 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-40"
@@ -524,6 +475,62 @@ const ADView = () => {
                     {renderColumnData(next2Info.columnData)}
                   </div>
                 </div>
+              </div>
+
+              {/* Column Controls - Moved to bottom */}
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-700">
+                <div className="flex items-center space-x-2">
+                  <div className="text-sm text-gray-400">Additional Columns:</div>
+                  {selectedColumns.map(columnKey => {
+                    const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                    return (
+                      <div key={columnKey} className="flex items-center bg-gray-700 rounded px-2 py-1 text-xs">
+                        <span>{columnName}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-1 h-4 w-4 p-0 text-gray-400 hover:text-white"
+                          onClick={() => removeColumn(columnKey)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {availableUnselectedColumns.length > 0 && (
+                  <div className="relative">
+                    {!showColumnSelector ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowColumnSelector(true)}
+                        className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Column
+                      </Button>
+                    ) : (
+                      <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
+                        <SelectTrigger className="w-48 bg-gray-800 border-gray-600 text-white">
+                          <SelectValue placeholder="Select column..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-600">
+                          {availableUnselectedColumns.map(column => (
+                            <SelectItem 
+                              key={column.key} 
+                              value={column.key}
+                              className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                            >
+                              {column.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
