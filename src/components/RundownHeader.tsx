@@ -27,6 +27,8 @@ interface RundownHeaderProps {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const RundownHeader = ({
@@ -44,7 +46,9 @@ const RundownHeader = ({
   isProcessingRealtimeUpdate,
   isPlaying,
   currentSegmentId,
-  timeRemaining
+  timeRemaining,
+  autoScrollEnabled,
+  onToggleAutoScroll
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 
@@ -116,9 +120,8 @@ const RundownHeader = ({
               <span className="text-sm">{format(currentTime, 'HH:mm:ss')}</span>
             </div>
             <TimezoneSelector
-              value={timezone}
-              onChange={onTimezoneChange}
-              className="text-sm"
+              currentTimezone={timezone}
+              onTimezoneChange={onTimezoneChange}
             />
           </div>
           
@@ -162,8 +165,8 @@ const RundownHeader = ({
           </div>
           
           <TimezoneSelector
-            value={timezone}
-            onChange={onTimezoneChange}
+            currentTimezone={timezone}
+            onTimezoneChange={onTimezoneChange}
           />
           
           <Input
