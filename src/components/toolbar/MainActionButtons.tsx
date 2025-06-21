@@ -120,41 +120,189 @@ const MainActionButtons = ({
   };
 
   const handlePrint = () => {
-    // Create a temporary print header
-    const existingPrintHeader = document.querySelector('.print-header');
-    if (existingPrintHeader) {
-      existingPrintHeader.remove();
+    if (!rundownData?.items) {
+      toast({
+        title: "Cannot print",
+        description: "No rundown data available to print.",
+        variant: "destructive"
+      });
+      return;
     }
 
-    // Create print header with rundown info
-    const printHeader = document.createElement('div');
-    printHeader.className = 'print-header';
-    printHeader.style.display = 'none'; // Hidden on screen, shown in print
+    // Store original body content
+    const originalBodyContent = document.body.innerHTML;
     
+    // Create clean print content
     const currentTime = new Date();
-    const defaultStartTime = '12:00 PM'; // Default start time
+    const defaultStartTime = '12:00 PM';
     const totalRuntime = calculateTotalRuntime();
     
-    printHeader.innerHTML = `
-      <img src="/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" alt="Cuer Logo" />
-      <h1>${rundownTitle}</h1>
-      <div class="print-info">Start Time: ${defaultStartTime}</div>
-      <div class="print-info">Total Runtime: ${totalRuntime}</div>
-      <div class="print-info">Printed: ${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}</div>
+    // Generate table rows
+    const tableRows = rundownData.items.map((item, index) => {
+      const rowNumber = index + 1;
+      const isHeader = item.type === 'header';
+      const isFloated = item.isFloating || item.isFloated;
+      const hasCustomColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff';
+      
+      let rowClass = '';
+      let rowStyle = '';
+      
+      if (isHeader) {
+        rowClass = 'print-header-row';
+      } else if (isFloated) {
+        rowClass = 'print-floated-row';
+      } else if (hasCustomColor) {
+        rowClass = 'print-custom-colored-row';
+        rowStyle = `background-color: ${item.color} !important;`;
+      }
+      
+      return `
+        <tr class="${rowClass}" style="${rowStyle}">
+          <td style="width: 40px; text-align: center; font-weight: bold; padding: 6px; border: 1px solid #666;">${rowNumber}</td>
+          <td style="padding: 6px; border: 1px solid #666;">${item.segmentName || item.name || ''}</td>
+          <td style="padding: 6px; border: 1px solid #666; width: 80px;">${item.duration || ''}</td>
+          <td style="padding: 6px; border: 1px solid #666;">${item.talent || ''}</td>
+          <td style="padding: 6px; border: 1px solid #666;">${item.notes || ''}</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Create the print HTML
+    const printHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Print - ${rundownTitle}</title>
+        <style>
+          @page {
+            margin: 0.75in;
+            size: letter;
+          }
+          
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: black;
+            background: white;
+          }
+          
+          .print-header {
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 16px;
+            page-break-inside: avoid;
+          }
+          
+          .print-header img {
+            height: 32px;
+            width: auto;
+            margin-bottom: 12px;
+          }
+          
+          .print-header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+            line-height: 1.2;
+          }
+          
+          .print-info {
+            font-size: 11px;
+            margin: 4px 0;
+          }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 10px;
+          }
+          
+          th {
+            background: #f5f5f5;
+            font-weight: bold;
+            padding: 8px 6px;
+            border: 1px solid #333;
+            font-size: 9px;
+            text-align: left;
+          }
+          
+          td {
+            padding: 6px;
+            border: 1px solid #666;
+            vertical-align: top;
+            word-wrap: break-word;
+          }
+          
+          tr {
+            background: white;
+            page-break-inside: avoid;
+          }
+          
+          .print-header-row td {
+            background: #e8e8e8 !important;
+            font-weight: bold !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          .print-floated-row td {
+            background: #dc2626 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          .print-custom-colored-row td {
+            color: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <img src="/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" alt="Cuer Logo" />
+          <h1>${rundownTitle}</h1>
+          <div class="print-info">Start Time: ${defaultStartTime}</div>
+          <div class="print-info">Total Runtime: ${totalRuntime}</div>
+          <div class="print-info">Printed: ${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}</div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th>Segment Name</th>
+              <th style="width: 80px;">Duration</th>
+              <th>Talent</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </body>
+      </html>
     `;
+
+    // Replace body content with print content
+    document.body.innerHTML = printHTML.match(/<body[^>]*>([\s\S]*)<\/body>/)?.[1] || '';
     
-    // Insert at the beginning of the body
-    document.body.insertBefore(printHeader, document.body.firstChild);
+    // Add the print styles to head
+    const printStyles = document.createElement('style');
+    printStyles.textContent = printHTML.match(/<style[^>]*>([\s\S]*)<\/style>/)?.[1] || '';
+    document.head.appendChild(printStyles);
     
-    // Print the current page
+    // Print
     window.print();
     
-    // Clean up the print header after printing
+    // Restore original content after printing
     setTimeout(() => {
-      const headerToRemove = document.querySelector('.print-header');
-      if (headerToRemove) {
-        headerToRemove.remove();
-      }
+      document.body.innerHTML = originalBodyContent;
+      document.head.removeChild(printStyles);
     }, 1000);
   };
 
