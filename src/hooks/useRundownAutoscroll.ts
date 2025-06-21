@@ -45,20 +45,29 @@ export const useRundownAutoscroll = ({
       console.log('🔄 Target element found:', !!targetElement);
 
       if (targetElement) {
-        const rect = targetElement.getBoundingClientRect();
-        const containerRect = scrollContainerRef.current.getBoundingClientRect();
+        const container = scrollContainerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = targetElement.getBoundingClientRect();
         
-        console.log('🔄 Element position:', {
-          elementTop: rect.top,
-          containerTop: containerRect.top,
-          containerHeight: containerRect.height
+        // Calculate the current scroll position
+        const currentScrollTop = container.scrollTop;
+        
+        // Calculate where the element currently is relative to the container
+        const elementTop = elementRect.top - containerRect.top + currentScrollTop;
+        
+        // Position element at 20% from the top of the viewport for better visibility
+        const targetPosition = elementTop - (containerRect.height * 0.2);
+        
+        console.log('🔄 Scroll calculation:', {
+          elementTop,
+          containerHeight: containerRect.height,
+          targetPosition,
+          currentScrollTop
         });
 
-        // Simple scroll into view with block: 'center' for better positioning
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
+        container.scrollTo({
+          top: Math.max(0, targetPosition),
+          behavior: 'smooth'
         });
         
         lastScrolledSegmentRef.current = currentSegmentId;
