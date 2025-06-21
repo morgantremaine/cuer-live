@@ -147,27 +147,29 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - simplified header with logo next to title
+  // Desktop layout - simplified header with logo next to title with proper spacing
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-6 flex-1 min-w-0">
           <HeaderLogo />
-          <Input
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            className="text-2xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
-            placeholder="Untitled Rundown"
-          />
+          <div className="flex-1 min-w-0 max-w-md">
+            <Input
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              className="text-2xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:border-none w-full"
+              placeholder="Untitled Rundown"
+            />
+          </div>
           
           {hasUnsavedChanges && (
-            <span className="text-sm text-orange-500 dark:text-orange-400">
+            <span className="text-sm text-orange-500 dark:text-orange-400 whitespace-nowrap">
               {isSaving ? 'Saving...' : 'Unsaved changes'}
             </span>
           )}
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-shrink-0">
           <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
           <TimezoneSelector
             currentTimezone={timezone}
