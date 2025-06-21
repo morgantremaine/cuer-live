@@ -13,7 +13,7 @@ export const useRundownBasicState = () => {
   const [timezone, setTimezone] = useState('America/New_York');
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
-  const [rundownStartTime, setRundownStartTime] = useState(RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_START_TIME);
+  const [rundownStartTime, setRundownStartTime] = useState<string>(RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_START_TIME);
   
   // Single initialization flag per app session
   const initRef = useRef<{ [key: string]: boolean }>({});
