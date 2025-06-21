@@ -34,11 +34,19 @@ export const useRundownAutoscroll = ({
       );
 
       if (targetElement) {
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
+        // Calculate scroll position to place element in upper third of viewport
+        const containerRect = scrollContainerRef.current.getBoundingClientRect();
+        const elementRect = targetElement.getBoundingClientRect();
+        const containerTop = scrollContainerRef.current.scrollTop;
+        
+        // Position the element at about 1/3 from the top of the container
+        const targetPosition = containerTop + elementRect.top - containerRect.top - (containerRect.height * 0.33);
+        
+        scrollContainerRef.current.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
         });
+        
         lastScrolledSegmentRef.current = currentSegmentId;
       }
     } catch (error) {
