@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Help from "./pages/Help";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SharedRundown from "./pages/SharedRundown";
+import ADView from "./pages/ADView";
 import Teleprompter from "./pages/Teleprompter";
 import Blueprint from "./pages/Blueprint";
 import CameraPlotEditor from "./pages/CameraPlotEditor";
@@ -46,6 +47,7 @@ const AppRoutes = () => {
       {/* Public routes */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+      <Route path="/ad-view/:id" element={<ADView />} />
       <Route path="/join-team/:token" element={<JoinTeam />} />
       <Route path="/help" element={<Help />} />
       
