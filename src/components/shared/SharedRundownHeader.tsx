@@ -68,17 +68,16 @@ export const SharedRundownHeader = ({
   const totalRuntime = calculateTotalRuntime();
 
   return (
-    <div className={`${isDark ? 'bg-gray-900' : 'bg-white'} print:bg-white`}>
-      <div className="px-4 py-3 print:px-2 print:py-2">
-        <div className="flex flex-col space-y-3 print:space-y-2">
+    <div className={`${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+      <div className="px-4 py-3 print:px-2 print:py-1">
+        <div className="flex flex-col space-y-3 print:space-y-1">
           {/* Title and Controls Row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 print:space-x-2">
-              {/* Logo - smaller in print view */}
+            <div className="flex items-center space-x-4">
               <img 
                 src="/lovable-uploads/c651349b-4259-451e-8648-9e8a329145c6.png"
                 alt="Cuer Logo" 
-                className="h-8 w-auto print:h-5 hidden print:block"
+                className="h-8 w-auto print:block hidden"
               />
               <img 
                 src={isDark ? "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png" : "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png"}
@@ -86,13 +85,12 @@ export const SharedRundownHeader = ({
                 className="h-8 w-auto print:hidden"
               />
               <div>
-                <h1 className={`text-xl font-bold print:text-lg print:text-black ${
+                <h1 className={`text-xl font-bold print:text-base ${
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}>
                   {title}
                 </h1>
-                {/* Hide the read-only notice in print */}
-                <p className={`text-sm print:hidden ${
+                <p className={`text-sm print:text-xs print:hidden ${
                   isDark ? 'text-gray-400' : 'text-gray-600'
                 }`}>
                   This is a read-only view of the rundown. Updates appear live.
@@ -100,7 +98,6 @@ export const SharedRundownHeader = ({
               </div>
             </div>
             
-            {/* Hide all interactive controls in print */}
             <div className="flex items-center space-x-2 print:hidden">
               {/* Autoscroll Toggle */}
               {onToggleAutoScroll && (
@@ -144,29 +141,24 @@ export const SharedRundownHeader = ({
             </div>
           </div>
 
-          {/* Essential Information Row - visible in print */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 print:flex-row print:justify-between print:space-y-0">
-            <div className="flex items-center space-x-4 text-sm print:text-xs print:text-black">
+          {/* Status Information Row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+            <div className="flex items-center space-x-4 text-sm print:text-xs print:hidden">
               <div className={`flex items-center space-x-1 ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
-              } print:text-black`}>
-                <Play className="h-4 w-4 print:h-3 print:w-3" />
+              }`}>
+                <Play className="h-4 w-4" />
                 <span>Start: {startTime}</span>
               </div>
               <div className={`flex items-center space-x-1 ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
-              } print:text-black`}>
-                <Clock className="h-4 w-4 print:h-3 print:w-3" />
+              }`}>
+                <Clock className="h-4 w-4" />
                 <span>Runtime: {totalRuntime}</span>
-              </div>
-              <div className={`flex items-center space-x-1 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              } print:text-black`}>
-                <span>Timezone: {timezone}</span>
               </div>
             </div>
             
-            {/* Playback Status - hide in print */}
+            {/* Playback Status */}
             <div className="flex items-center space-x-3 print:hidden">
               {isPlaying && (
                 <div className="flex items-center space-x-2">
