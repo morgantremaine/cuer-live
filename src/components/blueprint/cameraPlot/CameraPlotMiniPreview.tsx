@@ -134,8 +134,8 @@ const CameraPlotMiniPreview = ({
             key={element.id}
             style={{
               ...commonStyle,
-              backgroundColor: '#374151',
-              border: `${Math.max(1, scale)}px solid #6b7280`
+              backgroundColor: '#6b7280',
+              borderRadius: '2px'
             }}
           />
         );

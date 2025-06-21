@@ -51,7 +51,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
     case 'wall':
       return (
         <div 
-          className="bg-gray-800 border border-gray-600"
+          className="bg-gray-600 rounded-sm"
           style={{
             transform: `scale(${scale})`,
             transformOrigin: 'center',
