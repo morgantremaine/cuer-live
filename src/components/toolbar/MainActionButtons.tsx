@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Plus, Settings, Monitor, FileText, Undo, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -91,8 +90,42 @@ const MainActionButtons = ({
   };
 
   const handlePrint = () => {
-    // Print the current main rundown page directly
+    // Create a temporary print header
+    const existingPrintHeader = document.querySelector('.print-header');
+    if (existingPrintHeader) {
+      existingPrintHeader.remove();
+    }
+
+    // Create print header with rundown info
+    const printHeader = document.createElement('div');
+    printHeader.className = 'print-header';
+    printHeader.style.display = 'none'; // Hidden on screen, shown in print
+    
+    const currentTime = new Date();
+    const startTime = rundownData?.startTime || '12:00 PM';
+    const totalRuntime = rundownData?.totalRuntime || '00:00:00';
+    
+    printHeader.innerHTML = `
+      <img src="/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" alt="Cuer Logo" />
+      <h1>${rundownTitle}</h1>
+      <div class="print-info">Start Time: ${startTime}</div>
+      <div class="print-info">Total Runtime: ${totalRuntime}</div>
+      <div class="print-info">Printed: ${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}</div>
+    `;
+    
+    // Insert at the beginning of the body
+    document.body.insertBefore(printHeader, document.body.firstChild);
+    
+    // Print the current page
     window.print();
+    
+    // Clean up the print header after printing
+    setTimeout(() => {
+      const headerToRemove = document.querySelector('.print-header');
+      if (headerToRemove) {
+        headerToRemove.remove();
+      }
+    }, 1000);
   };
 
   const handleToggleAutoScroll = (checked: boolean) => {
