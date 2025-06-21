@@ -81,7 +81,7 @@ const BlueprintListHeader = ({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleKeyPress}
-              className="text-sm bg-gray-700 border-gray-600 text-white"
+              className="text-base bg-gray-700 border-gray-600 text-white"
               autoFocus
             />
             <Button
@@ -102,7 +102,7 @@ const BlueprintListHeader = ({
           </div>
         ) : (
           <div>
-            <h3 className="text-white font-medium text-sm truncate">{listName}</h3>
+            <h3 className="text-white font-medium text-base truncate">{listName}</h3>
             <p className="text-gray-400 text-xs">
               {countLabel}
             </p>
