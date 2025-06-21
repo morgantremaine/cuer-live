@@ -39,9 +39,14 @@ export const SharedRundownHeader = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <img 
+                src="/lovable-uploads/c651349b-4259-451e-8648-9e8a329145c6.png"
+                alt="Cuer Logo" 
+                className="h-8 w-auto print:block hidden"
+              />
+              <img 
                 src={isDark ? "/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" : "/lovable-uploads/c651349b-4259-451e-8648-9e8a329145c6.png"}
                 alt="Cuer Logo" 
-                className="h-8 w-auto"
+                className="h-8 w-auto print:hidden"
               />
               <div>
                 <h1 className={`text-xl font-bold print:text-base ${
@@ -102,7 +107,7 @@ export const SharedRundownHeader = ({
 
           {/* Status Information Row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-            <div className="flex items-center space-x-4 text-sm print:text-xs">
+            <div className="flex items-center space-x-4 text-sm print:text-xs print:hidden">
               <div className={`flex items-center space-x-1 ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>
