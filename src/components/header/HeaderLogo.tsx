@@ -25,7 +25,7 @@ const HeaderLogo = () => {
         <ArrowLeft className="h-5 w-5" />
       </Button>
       <img 
-        src={isDark ? "/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" : "/lovable-uploads/c651349b-4259-451e-8648-9e8a329145c6.png"}
+        src={isDark ? "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" : "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"}
         alt="Cuer Logo" 
         className="h-8 w-auto"
       />
