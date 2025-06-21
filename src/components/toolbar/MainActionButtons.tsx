@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Monitor, FileText, Undo, MapPin } from 'lucide-react';
+import { Plus, Settings, Monitor, FileText, Undo, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -90,6 +90,10 @@ const MainActionButtons = ({
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
       onToggleAutoScroll();
@@ -128,6 +132,10 @@ const MainActionButtons = ({
             <span>Columns</span>
           </Button>
           
+          <Button onClick={handlePrint} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+            <Printer className="h-4 w-4" />
+            <span>Print</span>
+          </Button>
           <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
             <Monitor className="h-4 w-4" />
             <span>Teleprompter</span>
@@ -225,6 +233,10 @@ const MainActionButtons = ({
         />
       )}
       
+      <Button onClick={handlePrint} variant="outline" size={buttonSize} className={buttonClass}>
+        <Printer className="h-4 w-4" />
+        <span>Print</span>
+      </Button>
       <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
         <Monitor className="h-4 w-4" />
         <span>Teleprompter</span>
