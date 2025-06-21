@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,11 +12,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
   const renumberItems = useCallback((items: RundownItem[]) => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
-    // Check if there are regular rows before the first header
-    const firstHeaderIndex = items.findIndex(item => item.type === 'header');
-    const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
-    
-    let headerIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
+    let headerIndex = 0; // Always start at A (0)
     
     return items.map(item => {
       if (item.type === 'header') {
@@ -189,7 +184,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Change back to useCallback but force re-calculation by making it depend on items
+  // Simplified getRowNumber function - first header is always A
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
@@ -197,10 +192,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
     if (!item) return '';
     
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    
-    // Check if there are regular rows before the first header
-    const firstHeaderIndex = items.findIndex(item => item.type === 'header');
-    const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
     
     // For headers, count how many headers we've seen so far
     if (item.type === 'header') {
@@ -210,15 +201,15 @@ export const useRundownItems = (markAsChanged: () => void) => {
           headerCount++;
         }
       }
-      // Adjust header numbering based on whether there are rows before first header
-      const headerIndex = hasRowsBeforeFirstHeader ? headerCount : headerCount - 1;
+      // First header is always A (index 0)
+      const headerIndex = headerCount - 1;
       return letters[headerIndex] || 'A';
     }
     
     // For regular items, find which segment they belong to
     let currentSegmentLetter = 'A';
     let itemCountInSegment = 0;
-    let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start from A or B
+    let segmentHeaderCount = 0;
     
     // Go through items up to current index
     for (let i = 0; i <= index; i++) {
