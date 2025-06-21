@@ -262,15 +262,21 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               const isFloated = item.isFloating || item.isFloated;
               const itemHasCustomColor = hasCustomColor(item);
               
-              // Determine row styling classes
+              // Determine row styling
               let printRowClass = '';
-              let rowStyles: React.CSSProperties = {};
+              let inlineStyles: React.CSSProperties = {};
               
               if (item.type === 'header') {
                 printRowClass = 'print-header-row';
+                inlineStyles = {
+                  backgroundColor: '#f5f5f5',
+                  color: 'black',
+                  WebkitPrintColorAdjust: 'exact',
+                  printColorAdjust: 'exact'
+                };
               } else if (isFloated) {
-                printRowClass = 'print-floated-row print-custom-color-row';
-                rowStyles = {
+                printRowClass = 'print-floated-row';
+                inlineStyles = {
                   backgroundColor: '#dc2626',
                   color: '#ffffff',
                   WebkitPrintColorAdjust: 'exact',
@@ -280,7 +286,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 printRowClass = 'print-custom-color-row';
                 const bgColor = item.color || '#ffffff';
                 const textColor = getContrastTextColor(bgColor);
-                rowStyles = {
+                inlineStyles = {
                   backgroundColor: bgColor,
                   color: textColor,
                   WebkitPrintColorAdjust: 'exact',
@@ -288,6 +294,10 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 };
               } else {
                 printRowClass = 'print-default-row';
+                inlineStyles = {
+                  backgroundColor: 'white',
+                  color: 'black'
+                };
               }
               
               return (
@@ -299,17 +309,17 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     ${printRowClass}
                     print:break-inside-avoid
                   `}
-                  style={rowStyles}
+                  style={inlineStyles}
                 >
                   <td 
-                    className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print:text-black ${
+                    className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 ${
                       isDark ? 'border-gray-600' : 'border-gray-200'
                     }`}
                     style={{ 
                       width: '60px', 
                       minWidth: '60px', 
                       maxWidth: '60px',
-                      ...(itemHasCustomColor ? rowStyles : {})
+                      ...inlineStyles
                     }}
                   >
                     <div className="flex items-center">
@@ -338,13 +348,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         return (
                           <td 
                             key={column.id} 
-                            className={`px-2 py-1 text-sm border-r print:border-gray-400 print:text-black ${
+                            className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
                               isDark ? 'border-gray-600' : 'border-gray-200'
                             }`}
                             style={{ 
                               width: columnWidth, 
                               minWidth: columnWidth, 
-                              maxWidth: columnWidth
+                              maxWidth: columnWidth,
+                              ...inlineStyles
                             }}
                           >
                             <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
@@ -354,7 +365,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         return (
                           <td 
                             key={column.id} 
-                            className={`px-2 py-1 text-sm border-r print:border-gray-400 print:text-gray-600 ${
+                            className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
                               isDark 
                                 ? 'text-gray-400 border-gray-600' 
                                 : 'text-gray-600 border-gray-200'
@@ -362,7 +373,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             style={{ 
                               width: columnWidth, 
                               minWidth: columnWidth, 
-                              maxWidth: columnWidth
+                              maxWidth: columnWidth,
+                              ...inlineStyles,
+                              color: 'gray' // Override for duration in headers
                             }}
                           >
                             <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
@@ -378,7 +391,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             style={{ 
                               width: columnWidth, 
                               minWidth: columnWidth, 
-                              maxWidth: columnWidth
+                              maxWidth: columnWidth,
+                              ...inlineStyles
                             }}
                           >
                             <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
@@ -394,7 +408,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             style={{ 
                               width: columnWidth, 
                               minWidth: columnWidth, 
-                              maxWidth: columnWidth
+                              maxWidth: columnWidth,
+                              ...inlineStyles
                             }}
                           >
                             <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
@@ -404,19 +419,31 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     }
                     
                     // For regular items, render content with proper styling
+                    let cellStyles = { ...inlineStyles };
+                    let cellClass = `px-2 py-1 text-sm border-r print:border-gray-400 ${
+                      isDark ? 'border-gray-600' : 'border-gray-200'
+                    }`;
+                    
+                    // Override for current segment name highlighting
+                    if (isCurrentSegmentName) {
+                      cellClass += ' bg-blue-500 text-white print:bg-blue-500 print:text-white';
+                      cellStyles = {
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        WebkitPrintColorAdjust: 'exact',
+                        printColorAdjust: 'exact'
+                      };
+                    }
+                    
                     return (
                       <td
                         key={column.id}
-                        className={`px-2 py-1 text-sm border-r print:border-gray-400 print:text-black ${
-                          isDark ? 'border-gray-600' : 'border-gray-200'
-                        } ${
-                          isCurrentSegmentName ? 'bg-blue-500 text-white print:bg-blue-500 print:text-white' : ''
-                        }`}
+                        className={cellClass}
                         style={{ 
                           width: columnWidth, 
                           minWidth: columnWidth, 
                           maxWidth: columnWidth,
-                          ...(itemHasCustomColor && !isCurrentSegmentName ? rowStyles : {})
+                          ...cellStyles
                         }}
                       >
                         <div className="break-words whitespace-pre-wrap overflow-hidden">

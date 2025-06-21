@@ -114,9 +114,8 @@
 
 /* COMPREHENSIVE PRINT STYLES */
 @media print {
-  /* Force light theme for ALL elements in print */
+  /* Force light theme for most elements */
   *, *::before, *::after {
-    background-color: white !important;
     color: black !important;
     border-color: #666 !important;
     box-shadow: none !important;
@@ -182,16 +181,14 @@
     display: block !important;
   }
   
-  /* Custom row colors - only show when background graphics are enabled */
-  .print-custom-color-row {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  /* Default white background for all elements unless specifically overridden */
+  * {
+    background-color: white !important;
   }
   
-  /* Ensure custom colored rows preserve their colors */
-  .print-custom-color-row[style*="background-color"] {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  /* Custom row colors - only show when background graphics are enabled */
+  .print-custom-color-row {
+    /* This will be overridden by inline styles when background graphics are enabled */
   }
   
   /* Default rows should be white with black text */

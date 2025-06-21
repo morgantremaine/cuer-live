@@ -74,11 +74,11 @@ export const SharedRundownHeader = ({
           {/* Title and Controls Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 print:space-x-2">
-              {/* Logo - show appropriate version for print */}
+              {/* Logo - smaller in print view */}
               <img 
                 src="/lovable-uploads/c651349b-4259-451e-8648-9e8a329145c6.png"
                 alt="Cuer Logo" 
-                className="h-8 w-auto print:block hidden print:h-6"
+                className="h-8 w-auto print:h-5 hidden print:block"
               />
               <img 
                 src={isDark ? "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png" : "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png"}
