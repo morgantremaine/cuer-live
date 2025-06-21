@@ -5,6 +5,8 @@ import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { getRowNumber } from '@/utils/sharedRundownUtils';
+import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
 
 const ADView = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
@@ -20,32 +22,45 @@ const ADView = () => {
     ? rundownData?.items?.[currentIndex + 1] 
     : null;
 
-  // Calculate show elapsed time
+  // Calculate show elapsed time based on showcaller state
   const showElapsedTime = (() => {
-    if (!rundownData?.startTime) return '00:00:00';
+    if (!rundownData?.showcallerState?.playbackStartTime || !rundownData?.startTime) {
+      return '00:00:00';
+    }
     
-    const startTime = new Date();
-    const [hours, minutes, seconds] = rundownData.startTime.split(':').map(Number);
-    startTime.setHours(hours, minutes, seconds || 0, 0);
+    const elapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
+    return secondsToTime(elapsed);
+  })();
+
+  // Calculate current item elapsed time
+  const currentItemElapsed = (() => {
+    if (!currentSegment?.duration || !rundownData?.showcallerState?.playbackStartTime) {
+      return '00:00:00';
+    }
     
-    const now = new Date();
-    const elapsed = Math.max(0, Math.floor((now.getTime() - startTime.getTime()) / 1000));
+    const durationParts = currentSegment.duration.split(':').map(Number);
+    let totalSeconds = 0;
     
-    const h = Math.floor(elapsed / 3600);
-    const m = Math.floor((elapsed % 3600) / 60);
-    const s = elapsed % 60;
+    if (durationParts.length === 2) {
+      totalSeconds = durationParts[0] * 60 + durationParts[1];
+    } else if (durationParts.length === 3) {
+      totalSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
+    }
     
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    const elapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
+    const itemElapsed = Math.min(elapsed, totalSeconds);
+    
+    return secondsToTime(itemElapsed);
   })();
 
   // Calculate timing status
   const timingStatus = (() => {
-    if (!currentSegment || !rundownData?.items) return { status: 'on-time', difference: '00:00' };
+    if (!rundownData?.showcallerState?.playbackStartTime || !rundownData?.startTime) {
+      return { status: 'on-time', difference: '00:00' };
+    }
     
-    // This is a simplified calculation - in a real implementation you'd want more sophisticated timing logic
-    const elapsedSeconds = showElapsedTime.split(':').reduce((acc, time, index) => {
-      return acc + (parseInt(time) * Math.pow(60, 2 - index));
-    }, 0);
+    // Calculate actual elapsed time
+    const actualElapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
     
     // Calculate expected elapsed time based on rundown
     let expectedElapsed = 0;
@@ -57,8 +72,8 @@ const ADView = () => {
       }
     }
     
-    const difference = Math.abs(elapsedSeconds - expectedElapsed);
-    const isAhead = elapsedSeconds < expectedElapsed;
+    const difference = Math.abs(actualElapsed - expectedElapsed);
+    const isAhead = actualElapsed < expectedElapsed;
     const isOnTime = difference <= 30; // Within 30 seconds is "on time"
     
     const diffMins = Math.floor(difference / 60);
@@ -70,6 +85,21 @@ const ADView = () => {
       difference: diffString
     };
   })();
+
+  // Get segment display info with row numbers and colors
+  const getSegmentInfo = (segment: any, index: number) => {
+    if (!segment || !rundownData?.items) return { name: '--', rowNumber: '', color: '' };
+    
+    const rowNumber = getRowNumber(index, rundownData.items);
+    const name = segment.name || segment.segmentName || '--';
+    const color = segment.color || '';
+    
+    return { name, rowNumber, color };
+  };
+
+  const prevInfo = previousSegment ? getSegmentInfo(previousSegment, currentIndex - 1) : { name: '--', rowNumber: '', color: '' };
+  const currInfo = currentSegment ? getSegmentInfo(currentSegment, currentIndex) : { name: '--', rowNumber: '', color: '' };
+  const nextInfo = nextSegment ? getSegmentInfo(nextSegment, currentIndex + 1) : { name: '--', rowNumber: '', color: '' };
 
   // Stopwatch controls
   const startStopwatch = () => {
@@ -142,109 +172,128 @@ const ADView = () => {
 
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
-      <div className="min-h-screen bg-gray-900 text-white p-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2">{rundownData.title}</h1>
-            <div className="text-xl text-gray-300">AD View</div>
+      <div className="min-h-screen bg-gray-900 text-white">
+        {/* Top Priority Section - Time of Day */}
+        <div className="bg-gray-800 border-b border-gray-700 p-6">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <div className="text-center">
+              <div className="text-sm text-gray-400 mb-1">TIME OF DAY</div>
+              <div className="text-4xl font-mono font-bold text-blue-400">
+                {currentTime.toLocaleTimeString()}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white">{rundownData.title}</div>
+              <div className="text-sm text-gray-400">AD View</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-400 mb-1">TIMING STATUS</div>
+              <div className={`text-2xl font-bold ${
+                timingStatus.status === 'on-time' ? 'text-green-400' :
+                timingStatus.status === 'ahead' ? 'text-yellow-400' :
+                'text-red-400'
+              }`}>
+                {timingStatus.status === 'on-time' ? 'ON TIME' :
+                 timingStatus.status === 'ahead' ? `AHEAD ${timingStatus.difference}` :
+                 `BEHIND ${timingStatus.difference}`}
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Time Information */}
-            <div className="space-y-6">
-              {/* Current Time */}
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto p-8">
+          <div className="grid grid-cols-12 gap-8">
+            {/* Left Side Information */}
+            <div className="col-span-3 space-y-6">
+              {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-2">TIME OF DAY</div>
-                  <div className="text-3xl font-mono font-bold">
-                    {currentTime.toLocaleTimeString()}
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2">SHOW ELAPSED</div>
+                  <div className="text-2xl font-mono font-bold text-blue-400">
+                    {showElapsedTime}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Show Elapsed Time */}
+              {/* Current Item Elapsed */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-2">SHOW ELAPSED</div>
-                  <div className="text-3xl font-mono font-bold text-blue-400">
-                    {showElapsedTime}
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2">ITEM ELAPSED</div>
+                  <div className="text-2xl font-mono font-bold text-green-400">
+                    {currentItemElapsed}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-2">TIME REMAINING</div>
-                  <div className="text-3xl font-mono font-bold text-yellow-400">
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2">TIME REMAINING</div>
+                  <div className="text-2xl font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Center Column - Segments */}
-            <div className="space-y-6">
+            {/* Center - Segments Display */}
+            <div className="col-span-6 flex flex-col justify-center space-y-4">
               {/* Previous Segment */}
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-2">PREVIOUS</div>
-                  <div className="text-xl font-semibold text-gray-300">
-                    {previousSegment?.name || '--'}
+              <div 
+                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-60"
+                style={{ backgroundColor: prevInfo.color ? `${prevInfo.color}20` : undefined }}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-gray-400">PREV</div>
+                    <div className="text-sm font-mono text-gray-300">{prevInfo.rowNumber}</div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex-1">
+                    <div className="text-lg font-semibold text-gray-300">{prevInfo.name}</div>
+                  </div>
+                </div>
+              </div>
 
               {/* Current Segment */}
-              <Card className="bg-green-900 border-green-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-green-300 mb-2">CURRENT</div>
-                  <div className="text-2xl font-bold text-green-100">
-                    {currentSegment?.name || '--'}
+              <div 
+                className="bg-green-900 border-2 border-green-600 rounded-lg p-6 shadow-lg"
+                style={{ backgroundColor: currInfo.color ? `${currInfo.color}40` : undefined }}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-green-300">NOW</div>
+                    <div className="text-lg font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex-1">
+                    <div className="text-2xl font-bold text-green-100">{currInfo.name}</div>
+                  </div>
+                </div>
+              </div>
 
               {/* Next Segment */}
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-2">NEXT</div>
-                  <div className="text-xl font-semibold text-gray-300">
-                    {nextSegment?.name || '--'}
+              <div 
+                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-80"
+                style={{ backgroundColor: nextInfo.color ? `${nextInfo.color}20` : undefined }}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-gray-400">NEXT</div>
+                    <div className="text-sm font-mono text-gray-300">{nextInfo.rowNumber}</div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex-1">
+                    <div className="text-lg font-semibold text-gray-300">{nextInfo.name}</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Right Column - Status & Tools */}
-            <div className="space-y-6">
-              {/* Timing Status */}
-              <Card className={`border-2 ${
-                timingStatus.status === 'on-time' ? 'bg-green-900 border-green-600' :
-                timingStatus.status === 'ahead' ? 'bg-yellow-900 border-yellow-600' :
-                'bg-red-900 border-red-600'
-              }`}>
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-300 mb-2">TIMING</div>
-                  <div className={`text-2xl font-bold ${
-                    timingStatus.status === 'on-time' ? 'text-green-200' :
-                    timingStatus.status === 'ahead' ? 'text-yellow-200' :
-                    'text-red-200'
-                  }`}>
-                    {timingStatus.status === 'on-time' ? 'ON TIME' :
-                     timingStatus.status === 'ahead' ? `AHEAD ${timingStatus.difference}` :
-                     `BEHIND ${timingStatus.difference}`}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Stopwatch */}
+            {/* Right Side - Stopwatch */}
+            <div className="col-span-3">
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-6">
-                  <div className="text-sm text-gray-400 mb-4 text-center">STOPWATCH</div>
-                  <div className="text-2xl font-mono font-bold text-center mb-4">
+                  <div className="text-xs text-gray-400 mb-4 text-center">STOPWATCH</div>
+                  <div className="text-3xl font-mono font-bold text-center mb-6 text-white">
                     {formatStopwatchTime(stopwatchSeconds)}
                   </div>
                   <div className="flex justify-center space-x-2">
