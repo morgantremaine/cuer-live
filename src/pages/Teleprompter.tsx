@@ -7,6 +7,7 @@ import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import { useAuth } from '@/hooks/useAuth';
+import { getRowNumber as getUnifiedRowNumber } from '@/utils/rowNumbering';
 
 const Teleprompter = () => {
   const { user } = useAuth();
@@ -264,27 +265,10 @@ const Teleprompter = () => {
     };
   }, [rundownId, loading, user]);
 
+  // Replace the custom getRowNumber with the unified one
   const getRowNumber = (index: number) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let letterIndex = 0;
-    let numberIndex = 0;
-    
-    for (let i = 0; i <= index; i++) {
-      if (rundownData?.items[i]?.type === 'header') {
-        letterIndex++;
-        numberIndex = 0;
-      } else {
-        numberIndex++;
-      }
-    }
-    
-    const currentItem = rundownData?.items[index];
-    if (currentItem?.type === 'header') {
-      return letters[letterIndex - 1] || 'A';
-    } else {
-      const letter = letters[letterIndex - 1] || 'A';
-      return `${letter}${numberIndex}`;
-    }
+    if (!rundownData?.items) return '';
+    return getUnifiedRowNumber(index, rundownData.items);
   };
 
   if (loading) {
