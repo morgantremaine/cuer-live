@@ -1,4 +1,3 @@
-
 import React, { forwardRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -252,9 +251,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               white-space: normal !important;
               border: 0.5px solid #666 !important;
               vertical-align: top !important;
-              /* Force light mode colors for printing */
-              color: #000 !important;
-              background: #fff !important;
               height: auto !important;
               max-height: none !important;
               overflow: visible !important;
@@ -273,7 +269,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               background: #e5e5e5 !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
-              color: #000 !important;
             }
             
             .print-header-row td {
@@ -282,7 +277,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               font-weight: bold !important;
             }
             
-            /* Force colored rows to print with their colors but ensure text is readable */
+            /* Preserve custom row colors for printing */
             .print-colored-row {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
@@ -426,14 +421,25 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     `}
                     style={{ 
                       backgroundColor: rowBackgroundColor,
-                      color: textColor
+                      color: textColor,
+                      // Ensure colors are preserved in print
+                      WebkitPrintColorAdjust: 'exact',
+                      printColorAdjust: 'exact'
                     }}
                   >
                     <td 
                       className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
                         isDark ? 'border-gray-600' : 'border-gray-200'
                       }`}
-                      style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
+                      style={{ 
+                        width: '60px', 
+                        minWidth: '60px', 
+                        maxWidth: '60px',
+                        backgroundColor: rowBackgroundColor,
+                        color: textColor,
+                        WebkitPrintColorAdjust: 'exact',
+                        printColorAdjust: 'exact'
+                      }}
                     >
                       <div className="flex items-center">
                         {/* Blue play icon for current segment */}
@@ -465,7 +471,15 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                               className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
                                 isDark ? 'border-gray-600' : 'border-gray-200'
                               }`}
-                              style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                backgroundColor: rowBackgroundColor,
+                                color: textColor,
+                                WebkitPrintColorAdjust: 'exact',
+                                printColorAdjust: 'exact'
+                              }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
                             </td>
@@ -480,7 +494,15 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                   ? 'text-gray-400 border-gray-600' 
                                   : 'text-gray-600 border-gray-200'
                               }`}
-                              style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                backgroundColor: rowBackgroundColor,
+                                color: textColor,
+                                WebkitPrintColorAdjust: 'exact',
+                                printColorAdjust: 'exact'
+                              }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
                             </td>
@@ -493,7 +515,15 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                               className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column print:h-auto print:max-h-none print:overflow-visible ${
                                 isDark ? 'border-gray-600' : 'border-gray-200'
                               }`}
-                              style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                backgroundColor: rowBackgroundColor,
+                                color: textColor,
+                                WebkitPrintColorAdjust: 'exact',
+                                printColorAdjust: 'exact'
+                              }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
                             </td>
@@ -506,7 +536,15 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                               className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
                                 isDark ? 'border-gray-600' : 'border-gray-200'
                               }`}
-                              style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                backgroundColor: rowBackgroundColor,
+                                color: textColor,
+                                WebkitPrintColorAdjust: 'exact',
+                                printColorAdjust: 'exact'
+                              }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
                             </td>
@@ -515,7 +553,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       }
                       
                       // For regular items, render content with special highlighting for current segment name
-                      let cellBackgroundColor = undefined;
+                      let cellBackgroundColor = rowBackgroundColor;
                       let cellTextColor = textColor;
                       
                       if (isCurrentSegmentName) {
@@ -536,7 +574,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             minWidth: columnWidth, 
                             maxWidth: columnWidth,
                             backgroundColor: cellBackgroundColor,
-                            color: cellTextColor
+                            color: cellTextColor,
+                            WebkitPrintColorAdjust: 'exact',
+                            printColorAdjust: 'exact'
                           }}
                         >
                           <div className="break-words whitespace-pre-wrap overflow-hidden">
