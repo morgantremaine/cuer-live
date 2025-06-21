@@ -5,8 +5,8 @@ import { format } from 'date-fns';
 const SharedRundownFooter = () => {
   return (
     <>
-      {/* Print footer */}
-      <div className="mt-4 text-gray-500 text-sm text-center hidden print:block">
+      {/* Print footer - now hidden */}
+      <div className="mt-4 text-gray-500 text-sm text-center hidden">
         Generated from {window.location.hostname} • {format(new Date(), 'yyyy-MM-dd HH:mm')}
       </div>
     </>
