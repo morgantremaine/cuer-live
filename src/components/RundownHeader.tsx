@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -60,17 +59,14 @@ const RundownHeader = ({
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
     
-    // Format as HH:MM:SS
+    // Format as HH:MM
     if (value.length >= 2) {
       value = value.substring(0, 2) + ':' + value.substring(2);
     }
-    if (value.length >= 6) {
-      value = value.substring(0, 5) + ':' + value.substring(5, 7);
-    }
     
-    // Limit to 8 characters (HH:MM:SS)
-    if (value.length > 8) {
-      value = value.substring(0, 8);
+    // Limit to 5 characters (HH:MM)
+    if (value.length > 5) {
+      value = value.substring(0, 5);
     }
     
     onRundownStartTimeChange(value);
@@ -80,24 +76,22 @@ const RundownHeader = ({
     const value = e.target.value;
     
     // Validate and format the time
-    const timeRegex = /^(\d{1,2}):?(\d{0,2}):?(\d{0,2})$/;
+    const timeRegex = /^(\d{1,2}):?(\d{0,2})$/;
     const match = value.match(timeRegex);
     
     if (match) {
-      let [, hours, minutes, seconds] = match;
+      let [, hours, minutes] = match;
       
       // Pad with zeros and validate ranges
       hours = hours.padStart(2, '0');
       minutes = (minutes || '00').padStart(2, '0');
-      seconds = (seconds || '00').padStart(2, '0');
       
       // Validate ranges
       const h = parseInt(hours);
       const m = parseInt(minutes);
-      const s = parseInt(seconds);
       
-      if (h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59) {
-        const formattedTime = `${hours}:${minutes}:${seconds}`;
+      if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+        const formattedTime = `${hours}:${minutes}`;
         onRundownStartTimeChange(formattedTime);
       }
     }
@@ -207,8 +201,8 @@ const RundownHeader = ({
                 value={rundownStartTime}
                 onChange={handleTimeInputChange}
                 onBlur={handleTimeInputBlur}
-                placeholder="HH:MM:SS"
-                className="w-20 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono"
+                placeholder="HH:MM"
+                className="w-16 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
             <span>Runtime: {totalRuntime}</span>
@@ -266,8 +260,8 @@ const RundownHeader = ({
               value={rundownStartTime}
               onChange={handleTimeInputChange}
               onBlur={handleTimeInputBlur}
-              placeholder="HH:MM:SS"
-              className="w-24 bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
+              placeholder="HH:MM"
+              className="w-20 bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
             />
           </div>
           
