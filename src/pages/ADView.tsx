@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { Play, Pause, RotateCcw, Clock, Plus, X } from 'lucide-react';
@@ -21,6 +22,37 @@ const ADView = () => {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const stopwatchInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Get storage key based on rundown ID
+  const getStorageKey = () => {
+    return rundownData?.id ? `ad-view-columns-${rundownData.id}` : 'ad-view-columns-default';
+  };
+
+  // Load selected columns from localStorage on mount and when rundown changes
+  useEffect(() => {
+    if (rundownData?.id) {
+      const storageKey = getStorageKey();
+      const savedColumns = localStorage.getItem(storageKey);
+      if (savedColumns) {
+        try {
+          const parsedColumns = JSON.parse(savedColumns);
+          if (Array.isArray(parsedColumns)) {
+            setSelectedColumns(parsedColumns);
+          }
+        } catch (error) {
+          console.error('Error parsing saved columns:', error);
+        }
+      }
+    }
+  }, [rundownData?.id]);
+
+  // Save selected columns to localStorage whenever they change
+  useEffect(() => {
+    if (rundownData?.id && selectedColumns.length > 0) {
+      const storageKey = getStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify(selectedColumns));
+    }
+  }, [selectedColumns, rundownData?.id]);
 
   // Dynamically generate available columns based on rundown data
   const availableColumns = useMemo(() => {
@@ -298,7 +330,7 @@ const ADView = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-xl">Loading AD View...</div>
+        <div className="text-xl">Loading...</div>
       </div>
     );
   }
