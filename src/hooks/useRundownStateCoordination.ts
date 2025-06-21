@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -61,7 +60,7 @@ export const useRundownStateCoordination = () => {
       totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
     }
     if (durationParts.length >= 2) {
-      totalSeconds += durationParts[0] *Ì 60 + durationParts[1];
+      totalSeconds += durationParts[0] * 60 + durationParts[1];
     }
     
     const hours = Math.floor(totalSeconds / 3600);
