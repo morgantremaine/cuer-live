@@ -209,189 +209,441 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   const itemsWithTimes = calculateItemTimes();
 
   return (
-    <div 
-      className={`border rounded-lg print:border-gray-400 ${
-        isDark ? 'border-gray-700' : 'border-gray-200'
-      }`} 
-      ref={ref}
-    >
-      <div className="overflow-auto">
-        <table className="w-full table-fixed print-table">
-          <thead className={`sticky top-0 z-10 print:static ${
-            isDark ? 'bg-gray-800' : 'bg-gray-50'
-          }`}>
-            <tr className="print-table-header">
-              <th 
-                className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
-                  isDark 
-                    ? 'text-gray-300 border-gray-600 bg-gray-800' 
-                    : 'text-gray-500 border-gray-200 bg-gray-50'
-                }`}
-                style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
-              >
-                #
-              </th>
-              {visibleColumns.map((column) => {
-                const columnWidth = getColumnWidth(column);
+    <>
+      <style>
+        {`
+          @media print {
+            /* Force print to use full page height and remove ALL overflow constraints */
+            * {
+              overflow: visible !important;
+            }
+            
+            body, html {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            
+            /* Make ALL containers take full available space */
+            .print-container,
+            .print-scroll-container {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+              min-height: auto !important;
+            }
+            
+            /* Remove flex constraints that might limit height */
+            .flex-1 {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            
+            .print-table {
+              width: 100% !important;
+              table-layout: auto !important;
+              font-size: 10px !important;
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            
+            .print-table th,
+            .print-table td {
+              padding: 3px 4px !important;
+              font-size: 10px !important;
+              line-height: 1.3 !important;
+              word-break: normal !important;
+              overflow-wrap: break-word !important;
+              white-space: normal !important;
+              border: 0.5px solid #666 !important;
+              vertical-align: top !important;
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            
+            .print-table th {
+              font-size: 9px !important;
+              font-weight: bold !important;
+              background: #f0f0f0 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color: #000 !important;
+            }
+            
+            .print-header-row {
+              background: #e5e5e5 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .print-header-row td {
+              background: #e5e5e5 !important;
+              color: #000 !important;
+              font-weight: bold !important;
+            }
+            
+            /* Only preserve colors for rows that actually have custom colors */
+            .print-custom-colored-row {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .print-floated-row {
+              background: #dc2626 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .print-floated-row td {
+              background: #dc2626 !important;
+              color: #fff !important;
+            }
+            
+            /* Default rows should not preserve colors - let browser handle them normally */
+            .print-default-row {
+              background: transparent !important;
+              color: #000 !important;
+            }
+            
+            .print-default-row td {
+              background: transparent !important;
+              color: #000 !important;
+            }
+            
+            .print-row-number {
+              width: 40px !important;
+              min-width: 40px !important;
+              max-width: 40px !important;
+            }
+            
+            .print-time-column {
+              width: 80px !important;
+              min-width: 80px !important;
+              max-width: 80px !important;
+            }
+            
+            .print-content-column {
+              word-break: normal !important;
+              overflow-wrap: break-word !important;
+              white-space: normal !important;
+            }
+            
+            /* Force sticky elements to be static for printing */
+            .print-sticky-header {
+              position: static !important;
+              top: auto !important;
+            }
+            
+            /* Force table body and rows to be visible */
+            tbody, tr {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            
+            /* Remove any height constraints on the main container */
+            [class*="h-full"],
+            [class*="max-h-"],
+            [class*="overflow-"] {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+
+            /* Hide showcaller indicators in print */
+            .print-hide-showcaller {
+              display: none !important;
+            }
+            
+            /* Remove showcaller highlighting from current segment name in print */
+            .showcaller-highlight {
+              background: transparent !important;
+              color: #000 !important;
+            }
+          }
+          
+          /* Screen-only styles for showcaller highlighting */
+          @media screen {
+            .showcaller-highlight {
+              background-color: #3b82f6 !important;
+              color: #ffffff !important;
+            }
+          }
+        `}
+      </style>
+      <div 
+        className={`print-container border rounded-lg print:border-gray-400 print:overflow-visible print:h-auto print:max-h-none ${
+          isDark ? 'border-gray-700 h-full print:h-auto' : 'border-gray-200 h-full print:h-auto'
+        }`} 
+        ref={ref}
+      >
+        <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
+          <table className="w-full print:text-xs print-table table-fixed print:h-auto print:max-h-none">
+            <thead className={`sticky top-0 z-10 print:static print-sticky-header ${
+              isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
+            }`}>
+              <tr className="print-header-row">
+                <th 
+                  className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number ${
+                    isDark 
+                      ? 'text-gray-300 border-gray-600 bg-gray-800' 
+                      : 'text-gray-500 border-gray-200 bg-gray-50'
+                  }`}
+                  style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
+                >
+                  #
+                </th>
+                {visibleColumns.map((column) => {
+                  const columnWidth = getColumnWidth(column);
+                  return (
+                    <th
+                      key={column.id}
+                      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
+                        isDark 
+                          ? 'text-gray-300 border-gray-600 bg-gray-800' 
+                          : 'text-gray-500 border-gray-200 bg-gray-50'
+                      } ${
+                        ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+                          ? 'print-time-column' 
+                          : 'print-content-column'
+                      }`}
+                      style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                    >
+                      <div className="truncate">
+                        {column.name}
+                      </div>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody className={`divide-y print:divide-gray-400 print:h-auto print:max-h-none print:overflow-visible ${
+              isDark 
+                ? 'bg-gray-900 divide-gray-700' 
+                : 'bg-white divide-gray-200'
+            }`}>
+              {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
+                const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
+                const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
+                const isFloated = item.isFloating || item.isFloated;
+                const itemHasCustomColor = hasCustomColor(item);
+                
+                // Determine row background color and print class
+                let rowBackgroundColor = undefined;
+                let textColor = isDark ? '#ffffff' : '#000000'; // Default text colors
+                let printRowClass = '';
+                
+                if (item.type === 'header') {
+                  rowBackgroundColor = isDark ? '#374151' : '#f3f4f6'; // gray-700 : gray-100
+                  printRowClass = 'print-header-row';
+                } else if (isFloated) {
+                  rowBackgroundColor = '#dc2626'; // red-600
+                  textColor = '#ffffff';
+                  printRowClass = 'print-floated-row';
+                } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '') {
+                  rowBackgroundColor = item.color;
+                  textColor = getContrastTextColor(item.color);
+                  printRowClass = 'print-custom-colored-row';
+                } else {
+                  // Default row - don't preserve colors in print
+                  printRowClass = 'print-default-row';
+                }
+                
+                // Determine inline styles - only apply for custom colored rows
+                const rowStyles: React.CSSProperties = {};
+                if (itemHasCustomColor) {
+                  rowStyles.backgroundColor = rowBackgroundColor;
+                  rowStyles.color = textColor;
+                  rowStyles.WebkitPrintColorAdjust = 'exact';
+                  rowStyles.printColorAdjust = 'exact';
+                }
+                
                 return (
-                  <th
-                    key={column.id}
-                    className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
-                      isDark 
-                        ? 'text-gray-300 border-gray-600 bg-gray-800' 
-                        : 'text-gray-500 border-gray-200 bg-gray-50'
-                    }`}
-                    style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                  <tr
+                    key={item.id}
+                    data-item-id={item.id}
+                    className={`
+                      ${item.type === 'header' ? 'font-semibold' : ''}
+                      ${printRowClass}
+                      print:break-inside-avoid print:border-0 print:h-auto print:max-h-none print:overflow-visible
+                    `}
+                    style={rowStyles}
                   >
-                    <div className="truncate">
-                      {column.name}
-                    </div>
-                  </th>
+                    <td 
+                      className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
+                        isDark ? 'border-gray-600' : 'border-gray-200'
+                      }`}
+                      style={{ 
+                        width: '60px', 
+                        minWidth: '60px', 
+                        maxWidth: '60px',
+                        ...(itemHasCustomColor ? {
+                          backgroundColor: rowBackgroundColor,
+                          color: textColor,
+                          WebkitPrintColorAdjust: 'exact',
+                          printColorAdjust: 'exact'
+                        } : {})
+                      }}
+                    >
+                      <div className="flex items-center">
+                        {/* Blue play icon for current segment - hidden in print */}
+                        {isShowcallerCurrent && (
+                          <Play 
+                            className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print-hide-showcaller" 
+                          />
+                        )}
+                        {isFloated && (
+                          <span className="text-yellow-400 mr-1 print:mr-0.5 print:text-yellow-600 print-hide-showcaller">🛟</span>
+                        )}
+                        <span>{getRowNumber(index, items)}</span>
+                      </div>
+                    </td>
+                    
+                    {visibleColumns.map((column) => {
+                      const columnWidth = getColumnWidth(column);
+                      // Check if this is the current segment and this is the segment name column
+                      const isCurrentSegmentName = isShowcallerCurrent && 
+                        (column.key === 'segmentName' || column.key === 'name');
+                      
+                      // For headers, handle special cases
+                      if (item.type === 'header') {
+                        if (column.key === 'segmentName' || column.key === 'name') {
+                          // Show the header name for both segmentName and name columns
+                          return (
+                            <td 
+                              key={column.id} 
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
+                                isDark ? 'border-gray-600' : 'border-gray-200'
+                              }`}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
+                              }}
+                            >
+                              <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
+                            </td>
+                          );
+                        } else if (column.key === 'duration') {
+                          // Show the calculated header duration (excluding floated items)
+                          return (
+                            <td 
+                              key={column.id} 
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column print:h-auto print:max-h-none print:overflow-visible ${
+                                isDark 
+                                  ? 'text-gray-400 border-gray-600' 
+                                  : 'text-gray-600 border-gray-200'
+                              }`}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
+                              }}
+                            >
+                              <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
+                            </td>
+                          );
+                        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+                          // Don't show time fields for headers
+                          return (
+                            <td 
+                              key={column.id} 
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column print:h-auto print:max-h-none print:overflow-visible ${
+                                isDark ? 'border-gray-600' : 'border-gray-200'
+                              }`}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
+                              }}
+                            >
+                              <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
+                            </td>
+                          );
+                        } else {
+                          // For other columns, show empty cell for headers
+                          return (
+                            <td 
+                              key={column.id} 
+                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
+                                isDark ? 'border-gray-600' : 'border-gray-200'
+                              }`}
+                              style={{ 
+                                width: columnWidth, 
+                                minWidth: columnWidth, 
+                                maxWidth: columnWidth,
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
+                              }}
+                            >
+                              <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
+                            </td>
+                          );
+                        }
+                      }
+                      
+                      // For regular items, render content with showcaller highlighting class
+                      return (
+                        <td
+                          key={column.id}
+                          className={`px-2 py-1 text-sm border-r print:border-gray-400 print:h-auto print:max-h-none print:overflow-visible ${
+                            ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+                              ? 'print-time-column' 
+                              : 'print-content-column'
+                          } ${isDark ? 'border-gray-600' : 'border-gray-200'} ${
+                            isCurrentSegmentName ? 'showcaller-highlight' : ''
+                          }`}
+                          style={{ 
+                            width: columnWidth, 
+                            minWidth: columnWidth, 
+                            maxWidth: columnWidth,
+                            ...(itemHasCustomColor && !isCurrentSegmentName ? {
+                              backgroundColor: rowBackgroundColor,
+                              color: textColor,
+                              WebkitPrintColorAdjust: 'exact',
+                              printColorAdjust: 'exact'
+                            } : {})
+                          }}
+                        >
+                          <div className="break-words whitespace-pre-wrap overflow-hidden">
+                            {renderCellContent(item, column, calculatedStartTime)}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
                 );
               })}
-            </tr>
-          </thead>
-          <tbody className={`divide-y ${
-            isDark 
-              ? 'bg-gray-900 divide-gray-700' 
-              : 'bg-white divide-gray-200'
-          }`}>
-            {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
-              const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
-              const isFloated = item.isFloating || item.isFloated;
-              
-              // Determine print class and styling
-              let printClass = 'print-default-row';
-              let inlineStyles: React.CSSProperties = {};
-              
-              if (item.type === 'header') {
-                printClass = 'print-table-header';
-                inlineStyles = {
-                  backgroundColor: isDark ? '#374151' : '#f3f4f6',
-                  color: isDark ? '#ffffff' : '#000000'
-                };
-              } else if (isFloated) {
-                printClass = 'print-floated-row';
-                inlineStyles = {
-                  backgroundColor: '#dc2626',
-                  color: '#ffffff'
-                };
-              } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '') {
-                printClass = 'print-custom-row';
-                inlineStyles = {
-                  backgroundColor: item.color,
-                  color: getContrastTextColor(item.color)
-                };
-              }
-              
-              return (
-                <tr
-                  key={item.id}
-                  data-item-id={item.id}
-                  className={`${item.type === 'header' ? 'font-semibold' : ''} ${printClass}`}
-                  style={inlineStyles}
-                >
-                  <td 
-                    className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 ${
-                      isDark ? 'border-gray-600' : 'border-gray-200'
-                    }`}
-                    style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
-                  >
-                    <div className="flex items-center">
-                      {/* Blue play icon for current segment - hidden in print */}
-                      {isShowcallerCurrent && (
-                        <Play className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print-hide" />
-                      )}
-                      {isFloated && (
-                        <span className="text-yellow-400 mr-1 print-hide">🛟</span>
-                      )}
-                      <span>{getRowNumber(index, items)}</span>
-                    </div>
-                  </td>
-                  
-                  {visibleColumns.map((column) => {
-                    const columnWidth = getColumnWidth(column);
-                    // Check if this is the current segment and this is the segment name column
-                    const isCurrentSegmentName = isShowcallerCurrent && 
-                      (column.key === 'segmentName' || column.key === 'name');
-                    
-                    // For headers, handle special cases
-                    if (item.type === 'header') {
-                      if (column.key === 'segmentName' || column.key === 'name') {
-                        return (
-                          <td 
-                            key={column.id} 
-                            className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
-                              isDark ? 'border-gray-600' : 'border-gray-200'
-                            }`}
-                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-                          >
-                            <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
-                          </td>
-                        );
-                      } else if (column.key === 'duration') {
-                        return (
-                          <td 
-                            key={column.id} 
-                            className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
-                              isDark 
-                                ? 'text-gray-400 border-gray-600' 
-                                : 'text-gray-600 border-gray-200'
-                            }`}
-                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-                          >
-                            <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
-                          </td>
-                        );
-                      } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
-                        return (
-                          <td 
-                            key={column.id} 
-                            className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
-                              isDark ? 'border-gray-600' : 'border-gray-200'
-                            }`}
-                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-                          >
-                            <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
-                          </td>
-                        );
-                      } else {
-                        return (
-                          <td 
-                            key={column.id} 
-                            className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
-                              isDark ? 'border-gray-600' : 'border-gray-200'
-                            }`}
-                            style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-                          >
-                            <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
-                          </td>
-                        );
-                      }
-                    }
-                    
-                    // For regular items, render content with showcaller highlighting class
-                    return (
-                      <td
-                        key={column.id}
-                        className={`px-2 py-1 text-sm border-r print:border-gray-400 ${
-                          isDark ? 'border-gray-600' : 'border-gray-200'
-                        } ${isCurrentSegmentName ? 'showcaller-highlight print:bg-transparent print:text-black' : ''}`}
-                        style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-                      >
-                        <div className="break-words whitespace-pre-wrap overflow-hidden">
-                          {renderCellContent(item, column, calculatedStartTime)}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </>
   );
 });
 
