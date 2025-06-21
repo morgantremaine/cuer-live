@@ -36,21 +36,43 @@ const ADView = () => {
       { key: 'endTime', name: 'End Time' }
     ];
 
-    // Add custom columns from rundown data
-    if (rundownData?.columns) {
-      rundownData.columns.forEach(col => {
-        // Only add custom columns that aren't already in the default list
-        if (col.isCustom && !columns.find(c => c.key === col.key)) {
-          columns.push({
-            key: col.key,
-            name: col.name
+    // Add custom columns from rundown data - check both columns array and actual item properties
+    if (rundownData) {
+      // First check the columns definition
+      if (rundownData.columns) {
+        rundownData.columns.forEach(col => {
+          if (col.isCustom && !columns.find(c => c.key === col.key)) {
+            columns.push({
+              key: col.key,
+              name: col.name
+            });
+          }
+        });
+      }
+
+      // Also check actual items for any custom properties not in the columns definition
+      if (rundownData.items && rundownData.items.length > 0) {
+        const standardKeys = ['id', 'name', 'segmentName', 'type', 'rowNumber', 'talent', 'script', 'gfx', 'video', 'images', 'notes', 'duration', 'startTime', 'endTime', 'color'];
+        
+        rundownData.items.forEach(item => {
+          Object.keys(item).forEach(key => {
+            if (!standardKeys.includes(key) && !columns.find(c => c.key === key)) {
+              // Check if this custom field has meaningful content
+              const hasContent = rundownData.items.some(i => i[key] && String(i[key]).trim() !== '');
+              if (hasContent) {
+                columns.push({
+                  key: key,
+                  name: key.charAt(0).toUpperCase() + key.slice(1)
+                });
+              }
+            }
           });
-        }
-      });
+        });
+      }
     }
 
     return columns;
-  }, [rundownData?.columns]);
+  }, [rundownData?.columns, rundownData?.items]);
 
   // Filter out header items for timing-based navigation
   const timedItems = rundownData?.items?.filter(item => item.type !== 'header') || [];
@@ -300,11 +322,9 @@ const ADView = () => {
                   alt="Cuer Logo" 
                   className="h-8 w-auto"
                 />
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{rundownData.title}</div>
-                  <div className="text-sm text-gray-400">AD View</div>
-                </div>
+                <div className="text-2xl font-bold text-white">{rundownData.title}</div>
               </div>
+              <div className="text-sm text-gray-400 mt-8 text-center">AD View</div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-400 mb-1">TIMING STATUS</div>
