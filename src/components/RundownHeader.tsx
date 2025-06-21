@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -132,11 +133,12 @@ const RundownHeader = ({
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <span>Start:</span>
-              <Input
+              <input
                 type="time"
                 value={rundownStartTime}
                 onChange={(e) => onRundownStartTimeChange(e.target.value)}
-                className="w-auto text-sm"
+                className="w-auto text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500"
+                step="1"
               />
             </div>
             <span>Runtime: {totalRuntime}</span>
@@ -189,11 +191,12 @@ const RundownHeader = ({
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
-            <Input
+            <input
               type="time"
               value={rundownStartTime}
               onChange={(e) => onRundownStartTimeChange(e.target.value)}
-              className="w-auto"
+              className="w-auto bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500"
+              step="1"
             />
           </div>
           
