@@ -25,12 +25,14 @@ export const useSharedRundownState = () => {
   const [error, setError] = useState<string | null>(null);
   const [calculatedTimeRemaining, setCalculatedTimeRemaining] = useState(0);
 
-  // Enhanced refs to prevent excessive polling and ensure cleanup
+  // Enhanced refs for better real-time handling
   const lastUpdateTimestamp = useRef<string | null>(null);
+  const lastShowcallerTimestamp = useRef<string | null>(null);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const showcallerPollingInterval = useRef<NodeJS.Timeout | null>(null);
   const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null);
   const countdownInterval = useRef<NodeJS.Timeout | null>(null);
+  const realtimeSubscription = useRef<any>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -106,8 +108,8 @@ export const useSharedRundownState = () => {
     };
   }, [rundownData?.showcallerState?.isPlaying, rundownData?.showcallerState?.currentSegmentId, rundownData?.showcallerState?.playbackStartTime, rundownData?.items]);
 
-  // Optimized load function with better caching and error handling
-  const loadRundownData = useCallback(async () => {
+  // Optimized load function with better showcaller change detection
+  const loadRundownData = useCallback(async (forceReload = false) => {
     if (!rundownId || isLoadingRef.current || !mountedRef.current) {
       return;
     }
@@ -134,8 +136,11 @@ export const useSharedRundownState = () => {
         }
         setRundownData(null);
       } else if (data) {
-        // Only update if data has actually changed (compare timestamps)
-        if (lastUpdateTimestamp.current !== data.updated_at) {
+        // Check if we need to update based on timestamps
+        const showcallerChanged = lastShowcallerTimestamp.current !== JSON.stringify(data.showcaller_state);
+        const contentChanged = lastUpdateTimestamp.current !== data.updated_at;
+        
+        if (forceReload || contentChanged || showcallerChanged) {
           const newRundownData = {
             id: data.id,
             title: data.title || 'Untitled Rundown',
@@ -148,9 +153,10 @@ export const useSharedRundownState = () => {
             visibility: data.visibility || 'private'
           };
           
-          logger.log('✅ Successfully loaded rundown data:', newRundownData.title);
+          logger.log('✅ Updated rundown data:', newRundownData.title, showcallerChanged ? '(showcaller changed)' : '(content changed)');
           setRundownData(newRundownData);
           lastUpdateTimestamp.current = data.updated_at;
+          lastShowcallerTimestamp.current = JSON.stringify(data.showcaller_state);
         }
         setError(null);
       } else {
@@ -170,14 +176,66 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Initial load - only once
+  // Real-time subscription for immediate showcaller updates
+  useEffect(() => {
+    if (!rundownId || !mountedRef.current) return;
+
+    // Clear existing subscription
+    if (realtimeSubscription.current) {
+      supabase.removeChannel(realtimeSubscription.current);
+      realtimeSubscription.current = null;
+    }
+
+    logger.log('📺 Setting up real-time subscription for showcaller updates');
+
+    const channel = supabase
+      .channel(`shared-showcaller-${rundownId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rundowns',
+          filter: `id=eq.${rundownId}`
+        },
+        (payload) => {
+          if (!mountedRef.current) return;
+          
+          logger.log('📺 Received real-time update:', payload);
+          
+          // Immediately update if showcaller state changed
+          if (payload.new?.showcaller_state) {
+            const newShowcallerState = JSON.stringify(payload.new.showcaller_state);
+            if (newShowcallerState !== lastShowcallerTimestamp.current) {
+              logger.log('📺 Showcaller state changed via real-time, updating immediately');
+              loadRundownData(true);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        logger.log('📺 Real-time subscription status:', status);
+      });
+
+    realtimeSubscription.current = channel;
+
+    return () => {
+      if (realtimeSubscription.current) {
+        logger.log('📺 Cleaning up real-time subscription');
+        supabase.removeChannel(realtimeSubscription.current);
+        realtimeSubscription.current = null;
+      }
+    };
+  }, [rundownId, loadRundownData]);
+
+  // Initial load
   useEffect(() => {
     if (rundownId && mountedRef.current) {
       loadRundownData();
     }
   }, [rundownId, loadRundownData]);
 
-  // Enhanced dual polling system with proper cleanup
+  // Enhanced polling system with much faster showcaller updates
   useEffect(() => {
     if (!rundownId || loading || !rundownData) return;
     
@@ -194,33 +252,31 @@ export const useSharedRundownState = () => {
     const isPlaying = rundownData?.showcallerState?.isPlaying;
     
     if (isPlaying) {
-      // Fast polling for showcaller updates (every 2 seconds when playing)
-      logger.log('🚀 Starting fast showcaller polling (2s interval)');
+      // Very fast polling for showcaller updates when playing (every 500ms)
+      logger.log('🚀 Starting ultra-fast showcaller polling (500ms interval)');
       showcallerPollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
         } else {
-          // Component unmounted, clear interval
           if (showcallerPollingInterval.current) {
             clearInterval(showcallerPollingInterval.current);
             showcallerPollingInterval.current = null;
           }
         }
-      }, 2000);
+      }, 500); // Much faster for playing state
     } else {
-      // Slower polling for general updates (every 30 seconds when not playing)
-      logger.log('🐌 Starting slow general polling (30s interval)');
+      // Moderate polling for general updates when not playing (every 5 seconds)
+      logger.log('📡 Starting moderate general polling (5s interval)');
       pollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
         } else {
-          // Component unmounted, clear interval
           if (pollingInterval.current) {
             clearInterval(pollingInterval.current);
             pollingInterval.current = null;
           }
         }
-      }, 30000);
+      }, 5000); // Faster than before even when not playing
     }
 
     return () => {
@@ -242,7 +298,7 @@ export const useSharedRundownState = () => {
     return () => {
       mountedRef.current = false;
       
-      // Clear all intervals
+      // Clear all intervals and subscriptions
       if (pollingInterval.current) {
         clearInterval(pollingInterval.current);
         pollingInterval.current = null;
@@ -258,6 +314,10 @@ export const useSharedRundownState = () => {
       if (countdownInterval.current) {
         clearInterval(countdownInterval.current);
         countdownInterval.current = null;
+      }
+      if (realtimeSubscription.current) {
+        supabase.removeChannel(realtimeSubscription.current);
+        realtimeSubscription.current = null;
       }
     };
   }, []);
