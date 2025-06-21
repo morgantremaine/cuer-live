@@ -1,7 +1,8 @@
+
 import React, { forwardRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
-import { calculateRundownTimes } from '@/utils/rundownCalculations';
+import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -21,7 +22,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   isDark = false
 }, ref) => {
   // Calculate times using the unified calculation system
-  const calculatedItems = calculateRundownTimes(items, rundownStartTime);
+  const calculatedItems = calculateItemsWithTiming(items, rundownStartTime);
 
   return (
     <div ref={ref} className="overflow-auto">
