@@ -91,6 +91,8 @@ const MobileToolbar = ({
                 isMobile={true}
                 rundownTitle={rundownTitle}
                 rundownData={rundownData}
+                autoScrollEnabled={autoScrollEnabled}
+                onToggleAutoScroll={onToggleAutoScroll}
               />
             </div>
           </DropdownMenuContent>
@@ -112,8 +114,6 @@ const MobileToolbar = ({
           onBackward={onBackward}
           onReset={onReset}
           size="sm"
-          autoScrollEnabled={autoScrollEnabled}
-          onToggleAutoScroll={onToggleAutoScroll}
         />
       </div>
     </div>

@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Plus, Settings, Monitor, FileText, Undo } from 'lucide-react';
+import { Plus, Settings, Monitor, FileText, Undo, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -20,6 +21,8 @@ interface MainActionButtonsProps {
   isMobile?: boolean;
   rundownTitle?: string;
   rundownData?: CSVExportData;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const MainActionButtons = ({
@@ -34,7 +37,9 @@ const MainActionButtons = ({
   selectedRowId,
   isMobile = false,
   rundownTitle = 'Untitled Rundown',
-  rundownData
+  rundownData,
+  autoScrollEnabled,
+  onToggleAutoScroll
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -65,6 +70,12 @@ const MainActionButtons = ({
     // Open teleprompter in a new window
     const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleToggleAutoScroll = (checked: boolean) => {
+    if (onToggleAutoScroll) {
+      onToggleAutoScroll();
+    }
   };
 
   const buttonSize = 'sm';
@@ -115,6 +126,20 @@ const MainActionButtons = ({
           <FileText className="h-4 w-4" />
           <span>Blueprint</span>
         </Button>
+
+        {/* Autoscroll Toggle - only in mobile view */}
+        {onToggleAutoScroll && (
+          <div className="col-span-2 flex items-center justify-between p-2 rounded-md border border-input bg-background">
+            <div className="flex items-center gap-2">
+              <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+              <span className="text-sm">Auto-scroll</span>
+            </div>
+            <Switch
+              checked={autoScrollEnabled}
+              onCheckedChange={handleToggleAutoScroll}
+            />
+          </div>
+        )}
       </div>
     );
   }
