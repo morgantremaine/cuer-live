@@ -1,32 +1,76 @@
 
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import DashboardHeader from './DashboardHeader';
+import RundownHeader from './RundownHeader';
+import { RundownContainerProps } from '@/types/rundownContainer';
 import { useAuth } from '@/hooks/useAuth';
 
-const RundownHeaderPropsAdapter = () => {
+interface RundownHeaderPropsAdapterProps {
+  props: RundownContainerProps;
+}
+
+const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { id } = useParams();
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-  };
+  const {
+    currentTime,
+    timezone,
+    onTimezoneChange,
+    totalRuntime,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId,
+    hasUnsavedChanges,
+    isSaving,
+    onUndo,
+    canUndo,
+    lastAction,
+    items,
+    visibleColumns,
+    isConnected,
+    isProcessingRealtimeUpdate,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    autoScrollEnabled,
+    onToggleAutoScroll
+  } = props;
 
-  const handleBack = () => {
-    navigate('/dashboard');
-  };
-
-  // Show back button when we're on a specific rundown page (has an ID)
-  const showBackButton = !!id && id !== 'new';
+  // Debug logging for prop passing
+  console.log('🔄 RundownHeaderPropsAdapter: Received props:', {
+    autoScrollEnabled,
+    hasToggleFunction: !!onToggleAutoScroll,
+    toggleFunctionType: typeof onToggleAutoScroll
+  });
 
   return (
-    <DashboardHeader 
-      userEmail={user?.email}
-      onSignOut={handleSignOut}
-      showBackButton={showBackButton}
-      onBack={handleBack}
+    <RundownHeader
+      currentTime={currentTime}
+      timezone={timezone}
+      onTimezoneChange={onTimezoneChange}
+      totalRuntime={totalRuntime}
+      hasUnsavedChanges={hasUnsavedChanges}
+      isSaving={isSaving}
+      title={rundownTitle}
+      onTitleChange={onTitleChange}
+      rundownStartTime={rundownStartTime}
+      onRundownStartTimeChange={onRundownStartTimeChange}
+      items={items}
+      visibleColumns={visibleColumns}
+      onUndo={onUndo}
+      canUndo={canUndo}
+      lastAction={lastAction}
+      isConnected={isConnected}
+      isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+      isPlaying={isPlaying}
+      currentSegmentId={currentSegmentId}
+      timeRemaining={timeRemaining}
+      autoScrollEnabled={autoScrollEnabled}
+      onToggleAutoScroll={onToggleAutoScroll}
     />
   );
 };
