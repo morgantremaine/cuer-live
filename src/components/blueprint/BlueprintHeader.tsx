@@ -60,31 +60,27 @@ const BlueprintHeader = ({
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 sm:justify-between">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <AddListDialog
-              availableColumns={availableColumns}
-              onAddList={onAddList}
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={onRefreshAll}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh All
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/rundown/${rundown.id}`)}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Rundown
-            </Button>
-          </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <AddListDialog
+            availableColumns={availableColumns}
+            onAddList={onAddList}
+          />
+          <Button
+            variant="outline"
+            onClick={onRefreshAll}
+            className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh All
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/rundown/${rundown.id}`)}
+            className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Rundown
+          </Button>
         </div>
       </div>
     </div>
