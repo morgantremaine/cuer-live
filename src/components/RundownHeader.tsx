@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -124,24 +123,26 @@ const RundownHeader = ({
       <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         {/* Top row - Title */}
         <div className="mb-3">
-          {isEditingTitle ? (
-            <Input
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              onBlur={handleTitleSubmit}
-              onKeyDown={handleTitleKeyPress}
-              className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
-              placeholder="Untitled Rundown"
-              autoFocus
-            />
-          ) : (
-            <span 
-              onClick={handleTitleEdit}
-              className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
-            >
-              {title || "Untitled Rundown"}
-            </span>
-          )}
+          <div className="flex-1 min-w-0">
+            {isEditingTitle ? (
+              <Input
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                onBlur={handleTitleSubmit}
+                onKeyDown={handleTitleKeyPress}
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+                placeholder="Untitled Rundown"
+                autoFocus
+              />
+            ) : (
+              <span 
+                onClick={handleTitleEdit}
+                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
+              >
+                {title || "Untitled Rundown"}
+              </span>
+            )}
+          </div>
         </div>
         
         {/* Bottom row - Compact info */}
@@ -175,34 +176,36 @@ const RundownHeader = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <HeaderLogo />
-            {isEditingTitle ? (
-              <textarea
-                value={title}
-                onChange={(e) => onTitleChange(e.target.value)}
-                onBlur={handleTitleSubmit}
-                onKeyDown={handleTitleKeyPress}
-                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
-                placeholder="Untitled Rundown"
-                rows={1}
-                style={{ 
-                  minHeight: 'auto',
-                  lineHeight: '1.25'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = target.scrollHeight + 'px';
-                }}
-                autoFocus
-              />
-            ) : (
-              <span 
-                onClick={handleTitleEdit}
-                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
-              >
-                {title || "Untitled Rundown"}
-              </span>
-            )}
+            <div className="flex-1 min-w-0">
+              {isEditingTitle ? (
+                <textarea
+                  value={title}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  onBlur={handleTitleSubmit}
+                  onKeyDown={handleTitleKeyPress}
+                  className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                  placeholder="Untitled Rundown"
+                  rows={1}
+                  style={{ 
+                    minHeight: 'auto',
+                    lineHeight: '1.25'
+                  }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = target.scrollHeight + 'px';
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span 
+                  onClick={handleTitleEdit}
+                  className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+                >
+                  {title || "Untitled Rundown"}
+                </span>
+              )}
+            </div>
             
             {hasUnsavedChanges && (
               <div className="flex-shrink-0">
@@ -261,34 +264,36 @@ const RundownHeader = ({
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <HeaderLogo />
-          {isEditingTitle ? (
-            <textarea
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              onBlur={handleTitleSubmit}
-              onKeyDown={handleTitleKeyPress}
-              className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
-              placeholder="Untitled Rundown"
-              rows={1}
-              style={{ 
-                minHeight: 'auto',
-                lineHeight: '1.25'
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = target.scrollHeight + 'px';
-              }}
-              autoFocus
-            />
-          ) : (
-            <span 
-              onClick={handleTitleEdit}
-              className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
-            >
-              {title || "Untitled Rundown"}
-            </span>
-          )}
+          <div className="flex-1 min-w-0">
+            {isEditingTitle ? (
+              <textarea
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                onBlur={handleTitleSubmit}
+                onKeyDown={handleTitleKeyPress}
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                placeholder="Untitled Rundown"
+                rows={1}
+                style={{ 
+                  minHeight: 'auto',
+                  lineHeight: '1.25'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
+                autoFocus
+              />
+            ) : (
+              <span 
+                onClick={handleTitleEdit}
+                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+              >
+                {title || "Untitled Rundown"}
+              </span>
+            )}
+          </div>
           
           {hasUnsavedChanges && (
             <div className="flex-shrink-0">
