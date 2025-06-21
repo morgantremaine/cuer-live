@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Clock, Wifi, WifiOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
@@ -136,22 +135,12 @@ const RundownHeader = ({
               autoFocus
             />
           ) : (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleTitleEdit}
-                className="p-1 h-auto hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                <Pencil className="h-4 w-4 text-gray-500" />
-              </Button>
-              <span 
-                onClick={handleTitleEdit}
-                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {title || "Untitled Rundown"}
-              </span>
-            </div>
+            <span 
+              onClick={handleTitleEdit}
+              className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
+            >
+              {title || "Untitled Rundown"}
+            </span>
           )}
         </div>
         
@@ -207,22 +196,12 @@ const RundownHeader = ({
                 autoFocus
               />
             ) : (
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleTitleEdit}
-                  className="p-1 h-auto hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
-                >
-                  <Pencil className="h-4 w-4 text-gray-500" />
-                </Button>
-                <span 
-                  onClick={handleTitleEdit}
-                  className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate"
-                >
-                  {title || "Untitled Rundown"}
-                </span>
-              </div>
+              <span 
+                onClick={handleTitleEdit}
+                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+              >
+                {title || "Untitled Rundown"}
+              </span>
             )}
             
             {hasUnsavedChanges && (
@@ -303,22 +282,12 @@ const RundownHeader = ({
               autoFocus
             />
           ) : (
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleTitleEdit}
-                className="p-1 h-auto hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
-              >
-                <Pencil className="h-4 w-4 text-gray-500" />
-              </Button>
-              <span 
-                onClick={handleTitleEdit}
-                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate"
-              >
-                {title || "Untitled Rundown"}
-              </span>
-            </div>
+            <span 
+              onClick={handleTitleEdit}
+              className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+            >
+              {title || "Untitled Rundown"}
+            </span>
           )}
           
           {hasUnsavedChanges && (
