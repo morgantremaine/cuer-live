@@ -1,7 +1,7 @@
 
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 640  // Changed from 768 to match sm: breakpoint
+const MOBILE_BREAKPOINT = 768  // Changed back to 768 for better tablet detection
 const TABLET_BREAKPOINT = 1024
 
 export function useIsMobile() {
@@ -13,14 +13,13 @@ export function useIsMobile() {
       const height = window.innerHeight
       
       // Consider it mobile if:
-      // 1. Width is less than 640px (mobile breakpoint)
-      // 2. OR if it's a touch device with width less than 700px and in portrait
+      // 1. Width is less than 768px (mobile/tablet breakpoint)
+      // 2. OR if it's a touch device with width less than 900px
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-      const isPortrait = height > width
       
       const shouldUseMobileLayout = 
         width < MOBILE_BREAKPOINT || 
-        (isTouchDevice && isPortrait && width < 700)
+        (isTouchDevice && width < 900)
       
       setIsMobile(shouldUseMobileLayout)
     }

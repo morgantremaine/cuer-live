@@ -62,34 +62,37 @@ const MobileToolbar = ({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="p-1 border-b bg-gray-50 dark:bg-gray-700">
-      <div className="flex items-center justify-between">
+    <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
+      <div className="flex items-center justify-between gap-2">
         {/* Dropdown Menu for Actions */}
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              Actions
-              <ChevronDown className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
+              <span className="text-sm">Actions</span>
+              <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="start" 
-            className="w-64 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
+            className="w-72 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
+            sideOffset={4}
           >
-            <MainActionButtons
-              onAddRow={onAddRow}
-              onAddHeader={onAddHeader}
-              onShowColumnManager={onShowColumnManager}
-              onUndo={onUndo}
-              canUndo={canUndo}
-              lastAction={lastAction}
-              rundownId={rundownId}
-              onOpenTeleprompter={onOpenTeleprompter}
-              selectedRowId={selectedRowId}
-              isMobile={true}
-              rundownTitle={rundownTitle}
-              rundownData={rundownData}
-            />
+            <div className="space-y-2">
+              <MainActionButtons
+                onAddRow={onAddRow}
+                onAddHeader={onAddHeader}
+                onShowColumnManager={onShowColumnManager}
+                onUndo={onUndo}
+                canUndo={canUndo}
+                lastAction={lastAction}
+                rundownId={rundownId}
+                onOpenTeleprompter={onOpenTeleprompter}
+                selectedRowId={selectedRowId}
+                isMobile={true}
+                rundownTitle={rundownTitle}
+                rundownData={rundownData}
+              />
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
