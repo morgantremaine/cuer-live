@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -142,17 +143,40 @@ const RundownHeader = ({
   if (isTablet) {
     return (
       <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        {/* Top row - Title and connection status */}
+        {/* Top row - Logo, Title, and connection status */}
         <div className="flex items-center justify-between mb-3">
-          <Input
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            className="text-xl font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none flex-1 mr-4"
-            placeholder="Untitled Rundown"
-          />
+          <div className="flex items-center space-x-4 flex-1 min-w-0">
+            <HeaderLogo />
+            <div className="flex-1 min-w-0 flex items-center">
+              <textarea
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                placeholder="Untitled Rundown"
+                rows={1}
+                style={{ 
+                  minHeight: 'auto',
+                  lineHeight: '1.25'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
+              />
+            </div>
+            
+            {hasUnsavedChanges && (
+              <div className="flex-shrink-0">
+                <span className="text-sm text-orange-500 dark:text-orange-400">
+                  {isSaving ? 'Saving...' : 'Unsaved changes'}
+                </span>
+              </div>
+            )}
+          </div>
           
           {isConnected !== undefined && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {isConnected ? (
                 <Wifi className="h-5 w-5 text-green-500" />
               ) : (
@@ -167,7 +191,7 @@ const RundownHeader = ({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span className="text-sm">{format(currentTime, 'HH:mm:ss')}</span>
+              <span className="text-sm font-mono">{format(currentTime, 'HH:mm:ss')}</span>
             </div>
             <TimezoneSelector
               currentTimezone={timezone}
