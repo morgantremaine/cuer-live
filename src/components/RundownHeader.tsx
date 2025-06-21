@@ -1,6 +1,7 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff } from 'lucide-react';
+import { Clock, Wifi, WifiOff, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TimezoneSelector from './TimezoneSelector';
@@ -55,6 +56,7 @@ const RundownHeader = ({
   onToggleAutoScroll
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
@@ -102,17 +104,50 @@ const RundownHeader = ({
     }
   };
 
+  const handleTitleEdit = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleSave = () => {
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      setIsEditingTitle(false);
+    }
+  };
+
   if (isMobile) {
     return (
       <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         {/* Top row - Title */}
         <div className="mb-3">
-          <Input
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
-            placeholder="Untitled Rundown"
-          />
+          {isEditingTitle ? (
+            <Input
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              onBlur={handleTitleSave}
+              onKeyDown={handleTitleKeyPress}
+              className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+              placeholder="Untitled Rundown"
+              autoFocus
+            />
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleTitleEdit}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
         
         {/* Bottom row - Compact info */}
@@ -147,22 +182,39 @@ const RundownHeader = ({
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <HeaderLogo />
             <div className="flex-1 min-w-0 flex items-center">
-              <textarea
-                value={title}
-                onChange={(e) => onTitleChange(e.target.value)}
-                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
-                placeholder="Untitled Rundown"
-                rows={1}
-                style={{ 
-                  minHeight: 'auto',
-                  lineHeight: '1.25'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = target.scrollHeight + 'px';
-                }}
-              />
+              {isEditingTitle ? (
+                <textarea
+                  value={title}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={handleTitleKeyPress}
+                  className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                  placeholder="Untitled Rundown"
+                  rows={1}
+                  style={{ 
+                    minHeight: 'auto',
+                    lineHeight: '1.25'
+                  }}
+                  autoFocus
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = target.scrollHeight + 'px';
+                  }}
+                />
+              ) : (
+                <div className="flex items-center gap-2 flex-1">
+                  <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleTitleEdit}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
             
             {hasUnsavedChanges && (
@@ -223,22 +275,39 @@ const RundownHeader = ({
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <HeaderLogo />
           <div className="flex-1 min-w-0 flex items-center">
-            <textarea
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
-              placeholder="Untitled Rundown"
-              rows={1}
-              style={{ 
-                minHeight: 'auto',
-                lineHeight: '1.25'
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = target.scrollHeight + 'px';
-              }}
-            />
+            {isEditingTitle ? (
+              <textarea
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                onBlur={handleTitleSave}
+                onKeyDown={handleTitleKeyPress}
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                placeholder="Untitled Rundown"
+                rows={1}
+                style={{ 
+                  minHeight: 'auto',
+                  lineHeight: '1.25'
+                }}
+                autoFocus
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
+              />
+            ) : (
+              <div className="flex items-center gap-2 flex-1">
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleTitleEdit}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
           
           {hasUnsavedChanges && (
