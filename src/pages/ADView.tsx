@@ -46,35 +46,32 @@ const ADView = () => {
       });
     }
 
-    // Also check actual items for any custom properties not in the columns definition
-    // But exclude timing-related and system fields
+    // Extract custom fields from the customFields objects in rundown items
     if (rundownData?.items && rundownData.items.length > 0) {
-      const standardKeys = [
-        'id', 'name', 'segmentName', 'type', 'rowNumber', 'talent', 'script', 
-        'gfx', 'video', 'images', 'notes', 'duration', 'startTime', 'endTime', 
-        'color', 'actualStart', 'actualEnd', 'actualDuration', 'timeRemaining',
-        'showElapsed', 'itemElapsed', 'timingStatus', 'isActive', 'isNext'
-      ];
+      const customFieldKeys = new Set<string>();
       
       rundownData.items.forEach(item => {
-        Object.keys(item).forEach(key => {
-          if (!standardKeys.includes(key) && !columns.find(c => c.key === key)) {
-            // Check if this custom field has meaningful content and isn't a timing calculation
-            const hasContent = rundownData.items.some(i => i[key] && String(i[key]).trim() !== '');
-            // Exclude fields that look like timing calculations (contain "time", "elapsed", etc.)
-            const isTimingField = key.toLowerCase().includes('time') || 
-                                key.toLowerCase().includes('elapsed') || 
-                                key.toLowerCase().includes('remaining') ||
-                                key.toLowerCase().includes('duration');
-            
-            if (hasContent && !isTimingField) {
-              columns.push({
-                key: key,
-                name: key.charAt(0).toUpperCase() + key.slice(1)
-              });
+        if (item.customFields && typeof item.customFields === 'object') {
+          Object.keys(item.customFields).forEach(key => {
+            // Only include fields that have meaningful content in at least one item
+            const hasContent = rundownData.items.some(i => 
+              i.customFields?.[key] && String(i.customFields[key]).trim() !== ''
+            );
+            if (hasContent) {
+              customFieldKeys.add(key);
             }
-          }
-        });
+          });
+        }
+      });
+
+      // Add custom field columns
+      customFieldKeys.forEach(key => {
+        if (!columns.find(c => c.key === key)) {
+          columns.push({
+            key: key,
+            name: key.charAt(0).toUpperCase() + key.slice(1)
+          });
+        }
       });
     }
 
@@ -195,7 +192,14 @@ const ADView = () => {
     // Extract data for selected columns
     const columnData: { [key: string]: string } = {};
     selectedColumns.forEach(columnKey => {
-      const value = segment[columnKey] || '';
+      // First check if it's a standard field
+      let value = segment[columnKey] || '';
+      
+      // If not found in standard fields, check customFields
+      if (!value && segment.customFields && segment.customFields[columnKey]) {
+        value = segment.customFields[columnKey];
+      }
+      
       columnData[columnKey] = value;
     });
     
