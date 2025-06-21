@@ -90,14 +90,9 @@ const MainActionButtons = ({
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handlePrint = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Ensure we're printing the current page, not opening any new windows
-    setTimeout(() => {
-      window.print();
-    }, 100);
+  const handlePrint = () => {
+    // Print the current main rundown page directly
+    window.print();
   };
 
   const handleToggleAutoScroll = (checked: boolean) => {

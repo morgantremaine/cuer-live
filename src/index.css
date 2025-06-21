@@ -112,53 +112,252 @@
   }
 }
 
-/* Print styles for main rundown view */
+/* Comprehensive Print Styles */
 @media print {
-  /* Hide non-essential elements during printing */
-  .print\\:hidden {
-    display: none !important;
+  /* Force all elements to be visible and remove height constraints */
+  * {
+    overflow: visible !important;
+    max-height: none !important;
   }
   
-  /* Ensure proper page layout */
+  /* Basic page setup */
   body {
     background: white !important;
     color: black !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
   }
   
-  /* Table styling for print */
+  html, body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Hide all non-essential UI elements */
+  .print\\:hidden,
+  [class*="toolbar"],
+  [class*="button"],
+  [class*="dropdown"],
+  [class*="tooltip"],
+  [class*="popover"],
+  [class*="modal"],
+  [class*="dialog"],
+  button,
+  .showcaller-highlight,
+  .print-hide-showcaller {
+    display: none !important;
+  }
+  
+  /* Show only essential print content */
+  .print\\:block {
+    display: block !important;
+  }
+  
+  .print\\:table {
+    display: table !important;
+  }
+  
+  /* Print header styling */
+  .print-header {
+    display: block !important;
+    margin-bottom: 20px !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .print-header h1 {
+    font-size: 18px !important;
+    font-weight: bold !important;
+    color: black !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .print-header .print-info {
+    font-size: 12px !important;
+    color: black !important;
+    margin-bottom: 4px !important;
+  }
+  
+  /* Logo styling */
+  .print-header img {
+    height: 30px !important;
+    width: auto !important;
+    margin-bottom: 10px !important;
+  }
+  
+  /* Table container styling */
+  .print-container,
+  .print-scroll-container {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    min-height: auto !important;
+  }
+  
+  /* Remove flex constraints */
+  .flex-1 {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Table styling */
+  .print-table,
   table {
     width: 100% !important;
+    table-layout: auto !important;
+    font-size: 10px !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     border-collapse: collapse !important;
+    page-break-inside: auto !important;
   }
   
+  /* Table cell styling */
+  .print-table th,
+  .print-table td,
   th, td {
-    border: 1px solid #ccc !important;
-    padding: 8px !important;
-    text-align: left !important;
+    padding: 3px 4px !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    border: 0.5px solid #666 !important;
+    vertical-align: top !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
   }
   
-  /* Header styling */
+  /* Header row styling */
+  .print-table th,
   th {
-    background-color: #f5f5f5 !important;
+    font-size: 9px !important;
     font-weight: bold !important;
-  }
-  
-  /* Ensure text is readable */
-  * {
-    color: black !important;
-    background: transparent !important;
-  }
-  
-  /* Exception for cells with data-color attribute (custom colors) */
-  [data-color]:not([data-color=""]) {
-    print-color-adjust: exact !important;
+    background: #f0f0f0 !important;
     -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: #000 !important;
   }
   
-  /* Floated rows styling */
-  .floated-row {
-    background-color: #ffebee !important;
-    print-color-adjust: exact !important;
+  /* Default row styling - WHITE BACKGROUND with BLACK TEXT */
+  .print-default-row,
+  .print-default-row td,
+  tr:not(.print-custom-colored-row):not(.print-header-row):not(.print-floated-row),
+  tr:not(.print-custom-colored-row):not(.print-header-row):not(.print-floated-row) td {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: auto !important;
+    print-color-adjust: auto !important;
+  }
+  
+  /* Header row styling */
+  .print-header-row,
+  .print-header-row td {
+    background: #e5e5e5 !important;
+    color: #000 !important;
+    font-weight: bold !important;
     -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Custom colored rows - PRESERVE COLORS with WHITE TEXT */
+  .print-custom-colored-row,
+  .print-custom-colored-row td {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: #ffffff !important;
+  }
+  
+  /* Floated rows - RED BACKGROUND with WHITE TEXT */
+  .print-floated-row,
+  .print-floated-row td {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Column width constraints */
+  .print-row-number {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+  
+  .print-time-column {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+  }
+  
+  .print-content-column {
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+  }
+  
+  /* Force sticky elements to be static */
+  .print-sticky-header {
+    position: static !important;
+    top: auto !important;
+  }
+  
+  /* Ensure table body and rows are visible */
+  tbody, tr {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Remove height constraints on containers */
+  [class*="h-full"],
+  [class*="max-h-"],
+  [class*="overflow-"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Ensure images print correctly */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Page break rules */
+  .page-break-before {
+    page-break-before: always !important;
+  }
+  
+  .page-break-after {
+    page-break-after: always !important;
+  }
+  
+  .page-break-inside-avoid {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Avoid breaking table rows */
+  tr {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Ensure proper margins */
+  @page {
+    margin: 0.5in;
+    size: auto;
+  }
+  
+  /* Main content area */
+  .print-main-content {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
