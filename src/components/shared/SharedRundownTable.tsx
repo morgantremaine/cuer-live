@@ -154,6 +154,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     return value;
   };
 
+  // Helper function to determine if a row has a custom color that should be preserved in print
+  const hasCustomColor = (item: RundownItem): boolean => {
+    if (item.type === 'header') return true; // Headers always have custom styling
+    if (item.isFloating || item.isFloated) return true; // Floated rows always have custom styling
+    if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '') return true;
+    return false;
+  };
+
   // Calculate start times for all items based on their position and durations
   const calculateItemTimes = () => {
     let currentTime = rundownStartTime;
@@ -277,8 +285,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               font-weight: bold !important;
             }
             
-            /* Preserve custom row colors for printing */
-            .print-colored-row {
+            /* Only preserve colors for rows that actually have custom colors */
+            .print-custom-colored-row {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
@@ -292,6 +300,17 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             .print-floated-row td {
               background: #dc2626 !important;
               color: #fff !important;
+            }
+            
+            /* Default rows should not preserve colors - let browser handle them normally */
+            .print-default-row {
+              background: transparent !important;
+              color: #000 !important;
+            }
+            
+            .print-default-row td {
+              background: transparent !important;
+              color: #000 !important;
             }
             
             .print-row-number {
@@ -391,8 +410,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
                 const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
                 const isFloated = item.isFloating || item.isFloated;
+                const itemHasCustomColor = hasCustomColor(item);
                 
-                // Determine row background color
+                // Determine row background color and print class
                 let rowBackgroundColor = undefined;
                 let textColor = isDark ? '#ffffff' : '#000000'; // Default text colors
                 let printRowClass = '';
@@ -404,10 +424,22 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                   rowBackgroundColor = '#dc2626'; // red-600
                   textColor = '#ffffff';
                   printRowClass = 'print-floated-row';
-                } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF') {
+                } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '') {
                   rowBackgroundColor = item.color;
                   textColor = getContrastTextColor(item.color);
-                  printRowClass = 'print-colored-row';
+                  printRowClass = 'print-custom-colored-row';
+                } else {
+                  // Default row - don't preserve colors in print
+                  printRowClass = 'print-default-row';
+                }
+                
+                // Determine inline styles - only apply for custom colored rows
+                const rowStyles: React.CSSProperties = {};
+                if (itemHasCustomColor) {
+                  rowStyles.backgroundColor = rowBackgroundColor;
+                  rowStyles.color = textColor;
+                  rowStyles.WebkitPrintColorAdjust = 'exact';
+                  rowStyles.printColorAdjust = 'exact';
                 }
                 
                 return (
@@ -419,13 +451,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       ${printRowClass}
                       print:break-inside-avoid print:border-0 print:h-auto print:max-h-none print:overflow-visible
                     `}
-                    style={{ 
-                      backgroundColor: rowBackgroundColor,
-                      color: textColor,
-                      // Ensure colors are preserved in print
-                      WebkitPrintColorAdjust: 'exact',
-                      printColorAdjust: 'exact'
-                    }}
+                    style={rowStyles}
                   >
                     <td 
                       className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
@@ -435,10 +461,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         width: '60px', 
                         minWidth: '60px', 
                         maxWidth: '60px',
-                        backgroundColor: rowBackgroundColor,
-                        color: textColor,
-                        WebkitPrintColorAdjust: 'exact',
-                        printColorAdjust: 'exact'
+                        ...(itemHasCustomColor ? {
+                          backgroundColor: rowBackgroundColor,
+                          color: textColor,
+                          WebkitPrintColorAdjust: 'exact',
+                          printColorAdjust: 'exact'
+                        } : {})
                       }}
                     >
                       <div className="flex items-center">
@@ -475,10 +503,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 width: columnWidth, 
                                 minWidth: columnWidth, 
                                 maxWidth: columnWidth,
-                                backgroundColor: rowBackgroundColor,
-                                color: textColor,
-                                WebkitPrintColorAdjust: 'exact',
-                                printColorAdjust: 'exact'
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
                               }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
@@ -498,10 +528,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 width: columnWidth, 
                                 minWidth: columnWidth, 
                                 maxWidth: columnWidth,
-                                backgroundColor: rowBackgroundColor,
-                                color: textColor,
-                                WebkitPrintColorAdjust: 'exact',
-                                printColorAdjust: 'exact'
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
                               }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
@@ -519,10 +551,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 width: columnWidth, 
                                 minWidth: columnWidth, 
                                 maxWidth: columnWidth,
-                                backgroundColor: rowBackgroundColor,
-                                color: textColor,
-                                WebkitPrintColorAdjust: 'exact',
-                                printColorAdjust: 'exact'
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
                               }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
@@ -540,10 +574,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 width: columnWidth, 
                                 minWidth: columnWidth, 
                                 maxWidth: columnWidth,
-                                backgroundColor: rowBackgroundColor,
-                                color: textColor,
-                                WebkitPrintColorAdjust: 'exact',
-                                printColorAdjust: 'exact'
+                                ...(itemHasCustomColor ? {
+                                  backgroundColor: rowBackgroundColor,
+                                  color: textColor,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
+                                } : {})
                               }}
                             >
                               <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
@@ -555,10 +591,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       // For regular items, render content with special highlighting for current segment name
                       let cellBackgroundColor = rowBackgroundColor;
                       let cellTextColor = textColor;
+                      let cellHasCustomColor = itemHasCustomColor;
                       
                       if (isCurrentSegmentName) {
                         cellBackgroundColor = '#3b82f6'; // blue-500
                         cellTextColor = '#ffffff';
+                        cellHasCustomColor = true; // Current segment name should always preserve color
                       }
                       
                       return (
@@ -573,10 +611,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             width: columnWidth, 
                             minWidth: columnWidth, 
                             maxWidth: columnWidth,
-                            backgroundColor: cellBackgroundColor,
-                            color: cellTextColor,
-                            WebkitPrintColorAdjust: 'exact',
-                            printColorAdjust: 'exact'
+                            ...(cellHasCustomColor ? {
+                              backgroundColor: cellBackgroundColor,
+                              color: cellTextColor,
+                              WebkitPrintColorAdjust: 'exact',
+                              printColorAdjust: 'exact'
+                            } : {})
                           }}
                         >
                           <div className="break-words whitespace-pre-wrap overflow-hidden">
