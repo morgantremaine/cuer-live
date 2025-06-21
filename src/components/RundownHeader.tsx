@@ -137,7 +137,6 @@ const RundownHeader = ({
             />
           ) : (
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
               <Button
                 variant="ghost"
                 size="sm"
@@ -146,6 +145,7 @@ const RundownHeader = ({
               >
                 <Pencil className="h-4 w-4" />
               </Button>
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
             </div>
           )}
         </div>
@@ -204,7 +204,6 @@ const RundownHeader = ({
                 />
               ) : (
                 <div className="flex items-center gap-2 flex-1">
-                  <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -213,6 +212,7 @@ const RundownHeader = ({
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
+                  <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
                 </div>
               )}
             </div>
@@ -297,7 +297,6 @@ const RundownHeader = ({
               />
             ) : (
               <div className="flex items-center gap-2 flex-1">
-                <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -306,6 +305,7 @@ const RundownHeader = ({
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">{title || 'Untitled Rundown'}</h1>
               </div>
             )}
           </div>
