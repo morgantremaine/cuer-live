@@ -17,10 +17,11 @@ const HeaderLogo = () => {
   };
 
   // Use useMemo to ensure logo src is recalculated when theme changes
+  // Swapped the logos: light logo for dark mode, dark logo for light mode
   const logoSrc = useMemo(() => {
     const src = isDark 
-      ? "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" 
-      : "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png";
+      ? "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"  // Light logo for dark mode
+      : "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png"; // Dark logo for light mode
     
     console.log('🖼️ HeaderLogo computed logo for isDark =', isDark, ':', src);
     return src;
