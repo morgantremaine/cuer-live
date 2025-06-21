@@ -112,59 +112,86 @@
   }
 }
 
-/* Print styles */
+/* Print styles - simplified approach */
 @media print {
-  /* Force main app container backgrounds to white but preserve content */
+  /* Force main app backgrounds to white */
   body,
   html,
   #root {
     background-color: white !important;
     background-image: none !important;
-    -webkit-print-color-adjust: auto !important;
-    print-color-adjust: auto !important;
-  }
-  
-  /* Force problematic Tailwind background classes to white (but not inline styles or header content) */
-  .min-h-screen:not(.print-preserve-header),
-  [class*="bg-gray"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
-  [class*="bg-blue"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
-  [class*="bg-slate"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
-  [class*="bg-zinc"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
-  [class*="bg-neutral"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
-  [class*="bg-stone"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row) {
-    background-color: white !important;
-    background-image: none !important;
     color: black !important;
   }
   
-  /* Preserve custom colors for specific elements that have inline styles */
-  .print-custom-colored-row,
-  .print-custom-colored-row *,
-  .print-header-row,
-  .print-header-row *,
-  .print-floated-row,
-  .print-floated-row *,
-  .print-preserve-header,
-  .print-preserve-header * {
+  /* Header should always be white background with black text */
+  .print-header {
+    background-color: white !important;
+    background-image: none !important;
+    color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   
-  /* Specific styling for header rows */
-  .print-header-row,
-  .print-header-row * {
+  .print-header * {
+    background-color: transparent !important;
+    color: black !important;
+  }
+  
+  /* Table header rows - light gray background */
+  .print-table-header {
     background-color: #f0f0f0 !important;
-    color: #000000 !important;
+    color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   
-  /* Specific styling for floated rows */
-  .print-floated-row,
-  .print-floated-row * {
-    background-color: #dc2626 !important;
-    color: #ffffff !important;
+  /* Custom colored rows - preserve their colors */
+  .print-custom-row {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+  
+  /* Floated rows - red background */
+  .print-floated-row {
+    background-color: #dc2626 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Default rows - let browser handle based on background graphics setting */
+  .print-default-row {
+    /* No explicit styling - browser will handle */
+  }
+  
+  /* Hide showcaller indicators in print */
+  .print-hide {
+    display: none !important;
+  }
+  
+  /* Table styling */
+  .print-table {
+    width: 100% !important;
+    font-size: 10px !important;
+    border-collapse: collapse !important;
+  }
+  
+  .print-table th,
+  .print-table td {
+    padding: 3px 4px !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    border: 0.5px solid #666 !important;
+    vertical-align: top !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+  }
+}
+
+/* Screen-only styles for showcaller highlighting */
+@media screen {
+  .showcaller-highlight {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
   }
 }
