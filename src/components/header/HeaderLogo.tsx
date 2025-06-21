@@ -9,9 +9,6 @@ const HeaderLogo = () => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
-  // Debug logging to track theme changes
-  console.log('🎨 HeaderLogo render - isDark:', isDark, 'type:', typeof isDark);
-
   const handleBackToDashboard = () => {
     navigate('/dashboard');
   };
@@ -23,7 +20,6 @@ const HeaderLogo = () => {
       ? "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"  // Light logo for dark mode
       : "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png"; // Dark logo for light mode
     
-    console.log('🖼️ HeaderLogo computed logo for isDark =', isDark, ':', src);
     return src;
   }, [isDark]);
 
