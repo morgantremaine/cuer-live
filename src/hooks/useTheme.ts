@@ -32,11 +32,14 @@ export const useTheme = () => {
     
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     console.log('🎨 Theme saved to localStorage:', isDark ? 'dark' : 'light');
+    
+    // Force a re-render by dispatching a custom event
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark } }));
   }, [isDark]);
 
   const toggleTheme = () => {
     console.log('🎨 Theme toggle triggered - current:', isDark, 'new:', !isDark);
-    setIsDark(!isDark);
+    setIsDark(prev => !prev);
   };
 
   return { isDark, toggleTheme };
