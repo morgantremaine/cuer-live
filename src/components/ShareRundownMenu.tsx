@@ -11,7 +11,7 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check, Download } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
@@ -53,6 +53,25 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       toast({
         title: 'Failed to copy',
         description: 'Please copy the link manually',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handlePrint = () => {
+    // Open the shared rundown in a new window for printing
+    const printWindow = window.open(permanentUrl, '_blank');
+    if (printWindow) {
+      // Wait for the page to load, then trigger print
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 1000); // Give it a moment to fully render
+      };
+    } else {
+      toast({
+        title: 'Print failed',
+        description: 'Please allow popups and try again',
         variant: 'destructive',
       });
     }
@@ -124,6 +143,11 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         <DropdownMenuItem onClick={handleExportCSV}>
           <Download className="h-4 w-4 mr-2" />
           Export as CSV
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handlePrint}>
+          <Printer className="h-4 w-4 mr-2" />
+          Print View
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
