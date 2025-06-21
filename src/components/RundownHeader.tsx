@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -9,7 +10,6 @@ import { format } from 'date-fns';
 interface RundownHeaderProps {
   currentTime: Date;
   timezone: string;
-  onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
@@ -34,7 +34,6 @@ interface RundownHeaderProps {
 const RundownHeader = ({
   currentTime,
   timezone,
-  onTimezoneChange,
   totalRuntime,
   hasUnsavedChanges,
   isSaving,
@@ -176,7 +175,7 @@ const RundownHeader = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <HeaderLogo />
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 flex items-center">
               {isEditingTitle ? (
                 <textarea
                   value={title}
@@ -208,7 +207,7 @@ const RundownHeader = ({
             </div>
             
             {hasUnsavedChanges && (
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex items-center">
                 <span className="text-sm text-orange-500 dark:text-orange-400">
                   {isSaving ? 'Saving...' : 'Unsaved changes'}
                 </span>
@@ -235,7 +234,7 @@ const RundownHeader = ({
             </div>
             <TimezoneSelector
               currentTimezone={timezone}
-              onTimezoneChange={onTimezoneChange}
+              onTimezoneChange={() => {}}
             />
           </div>
           
@@ -264,7 +263,7 @@ const RundownHeader = ({
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <HeaderLogo />
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center">
             {isEditingTitle ? (
               <textarea
                 value={title}
@@ -296,7 +295,7 @@ const RundownHeader = ({
           </div>
           
           {hasUnsavedChanges && (
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex items-center">
               <span className="text-sm text-orange-500 dark:text-orange-400">
                 {isSaving ? 'Saving...' : 'Unsaved changes'}
               </span>
@@ -308,7 +307,7 @@ const RundownHeader = ({
           <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
           <TimezoneSelector
             currentTimezone={timezone}
-            onTimezoneChange={onTimezoneChange}
+            onTimezoneChange={() => {}}
           />
           
           <div className="flex items-center space-x-2">
