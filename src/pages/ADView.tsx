@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
@@ -105,7 +104,7 @@ const ADView = () => {
     const diffString = `${diffMins.toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
     
     return {
-      status: isOnTime ? 'on-time' : (isAhead ? 'ahead' : 'behind'),
+      status: isOnTime ? 'on-time' : (isAhead ? 'under' : 'over'),
       difference: diffString
     };
   })();
@@ -219,12 +218,12 @@ const ADView = () => {
               <div className="text-sm text-gray-400 mb-1">TIMING STATUS</div>
               <div className={`text-2xl font-bold ${
                 timingStatus.status === 'on-time' ? 'text-green-400' :
-                timingStatus.status === 'ahead' ? 'text-yellow-400' :
+                timingStatus.status === 'under' ? 'text-yellow-400' :
                 'text-red-400'
               }`}>
                 {timingStatus.status === 'on-time' ? 'ON TIME' :
-                 timingStatus.status === 'ahead' ? `AHEAD ${timingStatus.difference}` :
-                 `BEHIND ${timingStatus.difference}`}
+                 timingStatus.status === 'under' ? `-${timingStatus.difference} UNDER` :
+                 `+${timingStatus.difference} OVER`}
               </div>
             </div>
           </div>
