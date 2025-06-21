@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -148,13 +147,13 @@ export const SharedRundownHeader = ({
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 <Clock className="h-4 w-4" />
-                <span>Runtime: {totalRuntime}</span>
+                <span>Start: {startTime}</span>
               </div>
               <div className={`flex items-center space-x-1 ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 <Clock className="h-4 w-4" />
-                <span>Start: {startTime}</span>
+                <span>Runtime: {totalRuntime}</span>
               </div>
             </div>
             
