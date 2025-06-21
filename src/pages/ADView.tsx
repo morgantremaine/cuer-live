@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
@@ -22,14 +21,28 @@ const ADView = () => {
     ? rundownData?.items?.[currentIndex + 1] 
     : null;
 
-  // Calculate show elapsed time based on showcaller state
+  // Calculate show elapsed time based on current showcaller item start time + playback elapsed
   const showElapsedTime = (() => {
-    if (!rundownData?.showcallerState?.playbackStartTime || !rundownData?.startTime) {
+    if (!currentSegment?.startTime || !rundownData?.showcallerState?.playbackStartTime) {
       return '00:00:00';
     }
     
-    const elapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
-    return secondsToTime(elapsed);
+    // Get the current item's start time in seconds from midnight
+    const startTimeParts = currentSegment.startTime.split(':').map(Number);
+    let startTimeSeconds = 0;
+    if (startTimeParts.length === 2) {
+      startTimeSeconds = startTimeParts[0] * 60 + startTimeParts[1];
+    } else if (startTimeParts.length === 3) {
+      startTimeSeconds = startTimeParts[0] * 3600 + startTimeParts[1] * 60 + startTimeParts[2];
+    }
+    
+    // Calculate how long showcaller has been running on this item
+    const playbackElapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
+    
+    // Add the playback elapsed to the start time
+    const currentShowTime = startTimeSeconds + playbackElapsed;
+    
+    return secondsToTime(currentShowTime);
   })();
 
   // Calculate current item elapsed time
@@ -172,7 +185,7 @@ const ADView = () => {
 
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-gray-900 text-white flex flex-col">
         {/* Top Priority Section - Time of Day */}
         <div className="bg-gray-800 border-b border-gray-700 p-6">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -202,8 +215,8 @@ const ADView = () => {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="grid grid-cols-12 gap-8">
+        <div className="flex-1 max-w-7xl mx-auto p-8 w-full">
+          <div className="grid grid-cols-12 gap-8 h-full">
             {/* Left Side Information */}
             <div className="col-span-3 space-y-6">
               {/* Show Elapsed Time */}
@@ -312,6 +325,18 @@ const ADView = () => {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Script Section */}
+        <div className="bg-gray-800 border-t border-gray-700 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-xs text-gray-400 mb-2">CURRENT SCRIPT</div>
+            <div className="bg-gray-900 rounded-lg p-4 min-h-[80px] max-h-40 overflow-y-auto">
+              <div className="text-white whitespace-pre-wrap">
+                {currentSegment?.script || 'No script available for current segment'}
+              </div>
             </div>
           </div>
         </div>
