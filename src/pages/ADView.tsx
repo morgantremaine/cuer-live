@@ -31,44 +31,51 @@ const ADView = () => {
       { key: 'video', name: 'Video' },
       { key: 'images', name: 'Images' },
       { key: 'notes', name: 'Notes' },
-      { key: 'duration', name: 'Duration' },
-      { key: 'startTime', name: 'Start Time' },
-      { key: 'endTime', name: 'End Time' }
+      { key: 'duration', name: 'Duration' }
     ];
 
-    // Add custom columns from rundown data - check both columns array and actual item properties
-    if (rundownData) {
-      // First check the columns definition
-      if (rundownData.columns) {
-        rundownData.columns.forEach(col => {
-          if (col.isCustom && !columns.find(c => c.key === col.key)) {
-            columns.push({
-              key: col.key,
-              name: col.name
-            });
+    // Add custom columns from rundown data - prioritize the columns definition
+    if (rundownData?.columns) {
+      rundownData.columns.forEach(col => {
+        if (col.isCustom && !columns.find(c => c.key === col.key)) {
+          columns.push({
+            key: col.key,
+            name: col.name
+          });
+        }
+      });
+    }
+
+    // Also check actual items for any custom properties not in the columns definition
+    // But exclude timing-related and system fields
+    if (rundownData?.items && rundownData.items.length > 0) {
+      const standardKeys = [
+        'id', 'name', 'segmentName', 'type', 'rowNumber', 'talent', 'script', 
+        'gfx', 'video', 'images', 'notes', 'duration', 'startTime', 'endTime', 
+        'color', 'actualStart', 'actualEnd', 'actualDuration', 'timeRemaining',
+        'showElapsed', 'itemElapsed', 'timingStatus', 'isActive', 'isNext'
+      ];
+      
+      rundownData.items.forEach(item => {
+        Object.keys(item).forEach(key => {
+          if (!standardKeys.includes(key) && !columns.find(c => c.key === key)) {
+            // Check if this custom field has meaningful content and isn't a timing calculation
+            const hasContent = rundownData.items.some(i => i[key] && String(i[key]).trim() !== '');
+            // Exclude fields that look like timing calculations (contain "time", "elapsed", etc.)
+            const isTimingField = key.toLowerCase().includes('time') || 
+                                key.toLowerCase().includes('elapsed') || 
+                                key.toLowerCase().includes('remaining') ||
+                                key.toLowerCase().includes('duration');
+            
+            if (hasContent && !isTimingField) {
+              columns.push({
+                key: key,
+                name: key.charAt(0).toUpperCase() + key.slice(1)
+              });
+            }
           }
         });
-      }
-
-      // Also check actual items for any custom properties not in the columns definition
-      if (rundownData.items && rundownData.items.length > 0) {
-        const standardKeys = ['id', 'name', 'segmentName', 'type', 'rowNumber', 'talent', 'script', 'gfx', 'video', 'images', 'notes', 'duration', 'startTime', 'endTime', 'color'];
-        
-        rundownData.items.forEach(item => {
-          Object.keys(item).forEach(key => {
-            if (!standardKeys.includes(key) && !columns.find(c => c.key === key)) {
-              // Check if this custom field has meaningful content
-              const hasContent = rundownData.items.some(i => i[key] && String(i[key]).trim() !== '');
-              if (hasContent) {
-                columns.push({
-                  key: key,
-                  name: key.charAt(0).toUpperCase() + key.slice(1)
-                });
-              }
-            }
-          });
-        });
-      }
+      });
     }
 
     return columns;
@@ -324,7 +331,6 @@ const ADView = () => {
                 />
                 <div className="text-2xl font-bold text-white">{rundownData.title}</div>
               </div>
-              <div className="text-sm text-gray-400 mt-8 text-center">AD View</div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-400 mb-1">TIMING STATUS</div>
