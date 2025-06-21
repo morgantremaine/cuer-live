@@ -208,7 +208,7 @@ const ADView = () => {
             <div className="text-center">
               <div className="text-sm text-gray-400 mb-1">TIME OF DAY</div>
               <div className="text-4xl font-mono font-bold text-blue-400">
-                {currentTime.toLocaleTimeString()}
+                {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
               </div>
             </div>
             <div className="text-center">
