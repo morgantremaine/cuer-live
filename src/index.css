@@ -112,38 +112,9 @@
   }
 }
 
-/* COMPREHENSIVE PRINT STYLES */
+/* COMPREHENSIVE PRINT STYLES - Only apply during actual printing */
 @media print {
-  /* Force light theme for most elements */
-  *, *::before, *::after {
-    color: black !important;
-    border-color: #666 !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-  
-  /* Override ALL CSS variables to light theme values for print */
-  :root, .dark {
-    --background: 0 0% 100% !important;
-    --foreground: 0 0% 0% !important;
-    --card: 0 0% 100% !important;
-    --card-foreground: 0 0% 0% !important;
-    --popover: 0 0% 100% !important;
-    --popover-foreground: 0 0% 0% !important;
-    --primary: 0 0% 0% !important;
-    --primary-foreground: 0 0% 100% !important;
-    --secondary: 0 0% 96% !important;
-    --secondary-foreground: 0 0% 0% !important;
-    --muted: 0 0% 96% !important;
-    --muted-foreground: 0 0% 40% !important;
-    --accent: 0 0% 96% !important;
-    --accent-foreground: 0 0% 0% !important;
-    --border: 0 0% 40% !important;
-    --input: 0 0% 90% !important;
-    --ring: 0 0% 0% !important;
-  }
-  
-  /* Force body and html to white background */
+  /* Force body and html to white background with black text */
   html, body {
     background: white !important;
     color: black !important;
@@ -181,20 +152,13 @@
     display: block !important;
   }
   
-  /* Default white background for all elements unless specifically overridden */
+  /* Default white background for most elements */
   * {
     background-color: white !important;
-  }
-  
-  /* Custom row colors - only show when background graphics are enabled */
-  .print-custom-color-row {
-    /* This will be overridden by inline styles when background graphics are enabled */
-  }
-  
-  /* Default rows should be white with black text */
-  .print-default-row {
-    background-color: white !important;
     color: black !important;
+    border-color: #666 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
   
   /* Header rows get light gray background */
@@ -209,6 +173,27 @@
   /* Floated rows get red background (always preserve) */
   .print-floated-row {
     background-color: #dc2626 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Custom color rows - will show colors only if background graphics are enabled */
+  .print-custom-color-row {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    /* Background color is set via inline styles in the component */
+  }
+  
+  /* Default rows should be white with black text */
+  .print-default-row {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Current segment highlighting */
+  .bg-blue-500 {
+    background-color: #3b82f6 !important;
     color: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
