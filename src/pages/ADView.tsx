@@ -293,15 +293,17 @@ const ADView = () => {
                 {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
               </div>
             </div>
-            <div className="text-center flex items-center space-x-4">
-              <img 
-                src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
-                alt="Cuer Logo" 
-                className="h-8 w-auto"
-              />
-              <div>
-                <div className="text-2xl font-bold text-white">{rundownData.title}</div>
-                <div className="text-sm text-gray-400">AD View</div>
+            <div className="flex items-center justify-center flex-1">
+              <div className="flex items-center space-x-4">
+                <img 
+                  src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
+                  alt="Cuer Logo" 
+                  className="h-8 w-auto"
+                />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{rundownData.title}</div>
+                  <div className="text-sm text-gray-400">AD View</div>
+                </div>
               </div>
             </div>
             <div className="text-center">
