@@ -91,16 +91,7 @@ const RundownContent = ({
   onJumpToHere
 }: RundownContentProps) => {
 
-  // Debug autoscroll props
-  console.log('🔄 RundownContent: Autoscroll debug:', {
-    autoScrollEnabled,
-    currentSegmentId,
-    isPlaying,
-    itemCount: items.length,
-    hasToggleFunction: !!onToggleAutoScroll
-  });
-
-  // Initialize autoscroll functionality with enhanced debugging
+  // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
     currentSegmentId,
     isPlaying,

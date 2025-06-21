@@ -1,3 +1,4 @@
+
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -19,7 +20,6 @@ export const useRundownStateCoordination = () => {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('rundown-autoscroll-enabled');
-      console.log('🔄 StateCoordination: Loading autoscroll from localStorage:', saved);
       return saved ? JSON.parse(saved) : false;
     }
     return false;
@@ -28,21 +28,12 @@ export const useRundownStateCoordination = () => {
   // Persist autoscroll preference
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('🔄 StateCoordination: Saving autoscroll to localStorage:', autoScrollEnabled);
       localStorage.setItem('rundown-autoscroll-enabled', JSON.stringify(autoScrollEnabled));
     }
   }, [autoScrollEnabled]);
 
   const toggleAutoScroll = () => {
-    console.log('🔄 StateCoordination: toggleAutoScroll called!', {
-      currentState: autoScrollEnabled,
-      newState: !autoScrollEnabled
-    });
-    setAutoScrollEnabled(prev => {
-      const newValue = !prev;
-      console.log('🔄 StateCoordination: Setting autoscroll to:', newValue);
-      return newValue;
-    });
+    setAutoScrollEnabled(prev => !prev);
   };
 
   // Completely separate showcaller visual state management
@@ -92,21 +83,17 @@ export const useRundownStateCoordination = () => {
 
   // Add the missing functions that simplifiedState should provide
   const addRowAtIndex = (insertIndex: number) => {
-    console.log('🚀 StateCoordination addRowAtIndex called with index:', insertIndex);
     if (simplifiedState.addRowAtIndex) {
       simplifiedState.addRowAtIndex(insertIndex);
     } else {
-      console.log('⚠️ addRowAtIndex not available, using fallback addRow');
       simplifiedState.addRow();
     }
   };
 
   const addHeaderAtIndex = (insertIndex: number) => {
-    console.log('🚀 StateCoordination addHeaderAtIndex called with index:', insertIndex);
     if (simplifiedState.addHeaderAtIndex) {
       simplifiedState.addHeaderAtIndex(insertIndex);
     } else {
-      console.log('⚠️ addHeaderAtIndex not available, using fallback addHeader');
       simplifiedState.addHeader();
     }
   };

@@ -26,14 +26,6 @@ const RundownMainContent = ({
   onToggleAutoScroll,
   ...contentProps
 }: RundownMainContentProps) => {
-  
-  // Debug autoscroll props passing
-  console.log('🔄 RundownMainContent: Autoscroll props:', {
-    autoScrollEnabled,
-    hasToggleFunction: !!onToggleAutoScroll,
-    currentSegmentId: contentProps.currentSegmentId,
-    isPlaying: contentProps.isPlaying
-  });
 
   return (
     <>

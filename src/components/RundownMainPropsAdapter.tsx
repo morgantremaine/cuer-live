@@ -83,13 +83,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onToggleAutoScroll
   } = props;
 
-  // Debug logging for prop passing
-  console.log('🔄 RundownMainPropsAdapter: Received autoscroll props:', {
-    autoScrollEnabled,
-    hasToggleFunction: !!onToggleAutoScroll,
-    toggleFunctionType: typeof onToggleAutoScroll
-  });
-
   // Create rundown data for CSV export
   const rundownData: CSVExportData = {
     items: items || [],
