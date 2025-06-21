@@ -16,6 +16,7 @@ interface SharedRundownHeaderProps {
   onToggleTheme: () => void;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  items?: any[]; // Add items prop for runtime calculation
 }
 
 export const SharedRundownHeader = ({
@@ -29,8 +30,43 @@ export const SharedRundownHeader = ({
   isDark,
   onToggleTheme,
   autoScrollEnabled = false,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  items = []
 }: SharedRundownHeaderProps) => {
+  // Calculate total runtime (excluding floated items)
+  const calculateTotalRuntime = () => {
+    const timeToSeconds = (timeStr: string) => {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        return parts[0] * 60 + parts[1];
+      } else if (parts.length === 3) {
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      }
+      return 0;
+    };
+
+    const totalSeconds = items.reduce((acc, item) => {
+      // Skip floated items - they don't count towards runtime
+      if (item.isFloating || item.isFloated) {
+        return acc;
+      }
+      return acc + timeToSeconds(item.duration || '00:00');
+    }, 0);
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  };
+
+  const totalRuntime = calculateTotalRuntime();
+
   return (
     <div className={`${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <div className="px-4 py-3 print:px-2 print:py-1">
@@ -108,6 +144,12 @@ export const SharedRundownHeader = ({
           {/* Status Information Row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="flex items-center space-x-4 text-sm print:text-xs print:hidden">
+              <div className={`flex items-center space-x-1 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                <Clock className="h-4 w-4" />
+                <span>Runtime: {totalRuntime}</span>
+              </div>
               <div className={`flex items-center space-x-1 ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>
