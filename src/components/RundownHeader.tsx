@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -196,22 +194,22 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - with properly sized title that can wrap
+  // Desktop layout - with properly centered title
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <HeaderLogo />
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center">
             <textarea
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
-              className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
               placeholder="Untitled Rundown"
               rows={1}
               style={{ 
-                minHeight: '1.25rem',
-                lineHeight: '1.3'
+                minHeight: 'auto',
+                lineHeight: '1.25'
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
@@ -219,15 +217,15 @@ const RundownHeader = ({
                 target.style.height = target.scrollHeight + 'px';
               }}
             />
-            
-            {hasUnsavedChanges && (
-              <div className="mt-1">
-                <span className="text-sm text-orange-500 dark:text-orange-400">
-                  {isSaving ? 'Saving...' : 'Unsaved changes'}
-                </span>
-              </div>
-            )}
           </div>
+          
+          {hasUnsavedChanges && (
+            <div className="flex-shrink-0">
+              <span className="text-sm text-orange-500 dark:text-orange-400">
+                {isSaving ? 'Saving...' : 'Unsaved changes'}
+              </span>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-4 flex-shrink-0">
@@ -269,4 +267,3 @@ const RundownHeader = ({
 };
 
 export default RundownHeader;
-
