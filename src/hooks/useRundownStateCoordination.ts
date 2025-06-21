@@ -6,7 +6,8 @@ import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { logger } from '@/utils/logger';
 
 export const useRundownStateCoordination = () => {
   // Get user ID from auth
@@ -50,8 +51,8 @@ export const useRundownStateCoordination = () => {
     enabled: !!simplifiedState.rundownId
   });
 
-  // Helper function to calculate end time
-  const calculateEndTime = (startTime: string, duration: string) => {
+  // Helper function to calculate end time - memoized for performance
+  const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
     const startParts = startTime.split(':').map(Number);
     const durationParts = duration.split(':').map(Number);
     
@@ -60,7 +61,7 @@ export const useRundownStateCoordination = () => {
       totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
     }
     if (durationParts.length >= 2) {
-      totalSeconds += durationParts[0] * 60 + durationParts[1];
+      totalSeconds += durationParts[0] *Ì 60 + durationParts[1];
     }
     
     const hours = Math.floor(totalSeconds / 3600);
@@ -68,7 +69,7 @@ export const useRundownStateCoordination = () => {
     const seconds = totalSeconds % 60;
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
   // Add the missing addMultipleRows function
   const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {

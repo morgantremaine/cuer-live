@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { useAuth } from './useAuth';
+import { logger } from '@/utils/logger';
 
 interface RealtimeUpdate {
   timestamp: string;
@@ -27,7 +28,31 @@ interface UseRealtimeRundownProps {
   isProcessingRealtimeUpdate?: boolean;
   trackOwnUpdate?: (timestamp: string) => void;
   onShowcallerActivity?: (active: boolean) => void;
-  onShowcallerStateReceived?: (state: any) => void; // Add this callback
+  onShowcallerStateReceived?: (state: any) => void;
+}
+
+// Centralized timeout management to prevent memory leaks
+class TimeoutManager {
+  private timeouts: Map<string, NodeJS.Timeout> = new Map();
+  
+  set(id: string, callback: () => void, delay: number): void {
+    this.clear(id);
+    const timeout = setTimeout(callback, delay);
+    this.timeouts.set(id, timeout);
+  }
+  
+  clear(id: string): void {
+    const timeout = this.timeouts.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.timeouts.delete(id);
+    }
+  }
+  
+  clearAll(): void {
+    this.timeouts.forEach(timeout => clearTimeout(timeout));
+    this.timeouts.clear();
+  }
 }
 
 export const useRealtimeRundown = ({
@@ -50,9 +75,7 @@ export const useRealtimeRundown = ({
   const onShowcallerStateReceivedRef = useRef(onShowcallerStateReceived);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
-  const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const showcallerActivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
   
   // Keep callback refs updated
@@ -61,18 +84,13 @@ export const useRealtimeRundown = ({
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Signal activity
+  // Signal activity with centralized timeout management
   const signalActivity = useCallback(() => {
     if (onShowcallerActivityRef.current) {
       onShowcallerActivityRef.current(true);
       
-      // Clear existing timeout
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-      }
-      
-      // Set timeout to clear activity after 8 seconds
-      activityTimeoutRef.current = setTimeout(() => {
+      // Use centralized timeout manager
+      timeoutManagerRef.current.set('activity', () => {
         if (onShowcallerActivityRef.current) {
           onShowcallerActivityRef.current(false);
         }
@@ -128,7 +146,7 @@ export const useRealtimeRundown = ({
     ownUpdateTrackingRef.current.add(timestamp);
     
     // Clean up old tracked updates after 10 seconds
-    setTimeout(() => {
+    timeoutManagerRef.current.set(`cleanup-${timestamp}`, () => {
       ownUpdateTrackingRef.current.delete(timestamp);
     }, 10000);
     
@@ -183,19 +201,14 @@ export const useRealtimeRundown = ({
 
     // If it's showcaller-only, handle it specially
     if (isShowcallerOnly) {
-      console.log('📺 Received external showcaller visual state');
+      logger.log('📺 Received external showcaller visual state');
       
       // Signal showcaller activity with extended timeout
       if (onShowcallerActivityRef.current) {
         onShowcallerActivityRef.current(true);
         
-        // Clear existing showcaller activity timeout
-        if (showcallerActivityTimeoutRef.current) {
-          clearTimeout(showcallerActivityTimeoutRef.current);
-        }
-        
-        // Set longer timeout for showcaller activity
-        showcallerActivityTimeoutRef.current = setTimeout(() => {
+        // Use centralized timeout manager for showcaller activity
+        timeoutManagerRef.current.set('showcaller-activity', () => {
           if (onShowcallerActivityRef.current) {
             onShowcallerActivityRef.current(false);
           }
@@ -211,12 +224,8 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
-    // Debounce rapid updates to prevent conflicts
-    if (processingTimeoutRef.current) {
-      clearTimeout(processingTimeoutRef.current);
-    }
-
-    processingTimeoutRef.current = setTimeout(() => {
+    // Debounce rapid updates to prevent conflicts using centralized timeout manager
+    timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
       
       signalActivity();
@@ -225,7 +234,7 @@ export const useRealtimeRundown = ({
         // Apply the rundown update (content changes only)
         onRundownUpdateRef.current(payload.new);
       } catch (error) {
-        console.error('Error processing realtime update:', error);
+        logger.error('Error processing realtime update:', error);
       }
     }, 150);
     
@@ -272,15 +281,8 @@ export const useRealtimeRundown = ({
         subscriptionRef.current = null;
         setIsConnected(false);
       }
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-      }
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
-      }
-      if (showcallerActivityTimeoutRef.current) {
-        clearTimeout(showcallerActivityTimeoutRef.current);
-      }
+      // Clean up all timeouts when component unmounts
+      timeoutManagerRef.current.clearAll();
     };
   }, [rundownId, user, enabled, handleRealtimeUpdate]);
 

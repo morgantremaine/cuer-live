@@ -2,6 +2,7 @@
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import { RundownContainerProps } from '@/types/rundownContainer';
+import { logger } from '@/utils/logger';
 
 interface RundownHeaderPropsAdapterProps {
   props: RundownContainerProps;
@@ -34,7 +35,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
   } = props;
 
   // Debug logging for prop passing
-  console.log('🔄 RundownHeaderPropsAdapter: Received props:', {
+  logger.log('🔄 RundownHeaderPropsAdapter: Received props:', {
     autoScrollEnabled,
     hasToggleFunction: !!onToggleAutoScroll,
     toggleFunctionType: typeof onToggleAutoScroll

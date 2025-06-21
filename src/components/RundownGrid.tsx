@@ -2,8 +2,9 @@
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
+import { logger } from '@/utils/logger';
 
-const RundownGrid = () => {
+const RundownGrid = React.memo(() => {
   const {
     coreState,
     interactions,
@@ -125,18 +126,18 @@ const RundownGrid = () => {
 
   // Fixed jump to here handler that properly checks playing state
   const handleJumpToHere = (segmentId: string) => {
-    console.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid FIXED VERSION) ===');
-    console.log('🎯 Target segment ID:', segmentId);
-    console.log('🎯 Current segment ID before jump:', currentSegmentId);
-    console.log('🎯 Is currently playing:', isPlaying);
-    console.log('🎯 Time remaining:', timeRemaining);
+    logger.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid FIXED VERSION) ===');
+    logger.log('🎯 Target segment ID:', segmentId);
+    logger.log('🎯 Current segment ID before jump:', currentSegmentId);
+    logger.log('🎯 Is currently playing:', isPlaying);
+    logger.log('🎯 Time remaining:', timeRemaining);
     
     // Find the target segment to ensure it exists
     const targetSegment = items.find(item => item.id === segmentId);
-    console.log('🎯 Target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
+    logger.log('🎯 Target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
     
     if (!targetSegment) {
-      console.error('🎯 Target segment not found for ID:', segmentId);
+      logger.error('🎯 Target segment not found for ID:', segmentId);
       return;
     }
     
@@ -159,14 +160,14 @@ const RundownGrid = () => {
     
     // CRITICAL FIX: Only start playback if the showcaller is already playing
     if (isPlaying) {
-      console.log('🎯 RundownGrid: Showcaller is playing - jumping and continuing playback');
+      logger.log('🎯 RundownGrid: Showcaller is playing - jumping and continuing playback');
       play(segmentId);
     } else {
-      console.log('🎯 RundownGrid: Showcaller is paused - jumping but staying paused');
+      logger.log('🎯 RundownGrid: Showcaller is paused - jumping but staying paused');
       // For paused state, we need to update the showcaller visual state to point to the new segment
       // but without starting playback. We'll use the showcaller's visual state update mechanism
       // to set the current segment without triggering play
-      console.log('🎯 RundownGrid: Updating showcaller current segment without starting playback');
+      logger.log('🎯 RundownGrid: Updating showcaller current segment without starting playback');
       
       // We need to manually update the showcaller's current segment without calling play()
       // This will be handled by the showcaller visual state system
@@ -178,10 +179,10 @@ const RundownGrid = () => {
       };
       
       // Call the showcaller's visual state update directly (this needs to be exposed from the state coordination)
-      console.log('🎯 RundownGrid: Visual state update needed for paused jump:', showcallerVisualUpdate);
+      logger.log('🎯 RundownGrid: Visual state update needed for paused jump:', showcallerVisualUpdate);
     }
     
-    console.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
+    logger.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
   };
 
   return (
@@ -227,6 +228,8 @@ const RundownGrid = () => {
       onJumpToHere={handleJumpToHere}
     />
   );
-};
+});
+
+RundownGrid.displayName = 'RundownGrid';
 
 export default RundownGrid;
