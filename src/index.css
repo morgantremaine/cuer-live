@@ -114,40 +114,24 @@
 
 /* Print styles */
 @media print {
-  /* Force app-level backgrounds to white but allow custom row colors */
+  /* Force main app container backgrounds to white but preserve content */
   body,
   html,
-  #root,
-  .min-h-screen {
+  #root {
     background-color: white !important;
     background-image: none !important;
     -webkit-print-color-adjust: auto !important;
     print-color-adjust: auto !important;
   }
   
-  /* Force all Tailwind background classes to white (but not inline styles) */
-  [class*="bg-gray"],
-  [class*="bg-blue"],
-  [class*="bg-slate"],
-  [class*="bg-zinc"],
-  [class*="bg-neutral"],
-  [class*="bg-stone"],
-  [class*="bg-red"]:not(.print-custom-colored-row):not(.print-floated-row),
-  [class*="bg-orange"],
-  [class*="bg-amber"],
-  [class*="bg-yellow"],
-  [class*="bg-lime"],
-  [class*="bg-green"],
-  [class*="bg-emerald"],
-  [class*="bg-teal"],
-  [class*="bg-cyan"],
-  [class*="bg-sky"],
-  [class*="bg-indigo"],
-  [class*="bg-violet"],
-  [class*="bg-purple"],
-  [class*="bg-fuchsia"],
-  [class*="bg-pink"],
-  [class*="bg-rose"] {
+  /* Force problematic Tailwind background classes to white (but not inline styles or header content) */
+  .min-h-screen:not(.print-preserve-header),
+  [class*="bg-gray"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
+  [class*="bg-blue"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
+  [class*="bg-slate"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
+  [class*="bg-zinc"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
+  [class*="bg-neutral"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row),
+  [class*="bg-stone"]:not(.print-preserve-header):not(.print-custom-colored-row):not(.print-floated-row) {
     background-color: white !important;
     background-image: none !important;
     color: black !important;
@@ -159,7 +143,9 @@
   .print-header-row,
   .print-header-row *,
   .print-floated-row,
-  .print-floated-row * {
+  .print-floated-row *,
+  .print-preserve-header,
+  .print-preserve-header * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
