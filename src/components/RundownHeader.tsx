@@ -1,11 +1,10 @@
-
 import React from 'react';
-import HeaderLogo from './header/HeaderLogo';
-import HeaderTitle from './header/HeaderTitle';
-import HeaderControls from './header/HeaderControls';
-import HeaderBottomSection from './header/HeaderBottomSection';
-import RealtimeStatusIndicator from './RealtimeStatusIndicator';
-import { RundownItem } from '@/types/rundown';
+import { useResponsiveLayout } from '@/hooks/use-mobile';
+import { Clock, Wifi, WifiOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import TimezoneSelector from './TimezoneSelector';
+import { format } from 'date-fns';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -18,24 +17,22 @@ interface RundownHeaderProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
-  items?: RundownItem[];
+  items?: any[];
   visibleColumns?: any[];
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
-  isPlaying?: boolean;
-  currentSegmentId?: string | null;
-  timeRemaining?: number;
-  autoScrollEnabled?: boolean;
-  onToggleAutoScroll?: () => void;
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
 }
 
-const RundownHeader = ({ 
-  currentTime, 
-  timezone, 
-  onTimezoneChange, 
+const RundownHeader = ({
+  currentTime,
+  timezone,
+  onTimezoneChange,
   totalRuntime,
   hasUnsavedChanges,
   isSaving,
@@ -43,151 +40,153 @@ const RundownHeader = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
-  items = [],
-  visibleColumns = [],
-  onUndo,
-  canUndo,
-  lastAction,
   isConnected,
   isProcessingRealtimeUpdate,
-  isPlaying = false,
-  currentSegmentId = null,
-  timeRemaining = 0,
-  autoScrollEnabled = false,
-  onToggleAutoScroll
+  isPlaying,
+  currentSegmentId,
+  timeRemaining
 }: RundownHeaderProps) => {
-  const formatTime = (time: Date, tz: string) => {
-    try {
-      const timeString = time.toLocaleTimeString('en-US', { 
-        hour12: false,
-        timeZone: tz
-      });
-      return timeString;
-    } catch {
-      return time.toLocaleTimeString('en-US', { hour12: false });
-    }
-  };
+  const { isMobile, isTablet } = useResponsiveLayout();
 
-  return (
-    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-2 border-b border-gray-200 dark:border-gray-700">
-      {/* Mobile layout: Compact single column - only for screens smaller than 640px */}
-      <div className="block sm:hidden">
-        <div className="mb-1">
-          <HeaderTitle
-            title={title}
-            onTitleChange={onTitleChange}
-            hasUnsavedChanges={hasUnsavedChanges}
-            isSaving={isSaving}
+  if (isMobile) {
+    return (
+      <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        {/* Top row - Title */}
+        <div className="mb-3">
+          <Input
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+            placeholder="Untitled Rundown"
           />
-          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1 flex items-center gap-2">
-            {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
-              <RealtimeStatusIndicator
-                isConnected={isConnected || false}
-                isProcessingUpdate={isProcessingRealtimeUpdate || false}
-              />
-            )}
-          </div>
-        </div>
-        <HeaderControls
-          currentTime={currentTime}
-          timezone={timezone}
-          onTimezoneChange={onTimezoneChange}
-          onUndo={onUndo}
-          canUndo={canUndo}
-          lastAction={lastAction}
-        />
-      </div>
-
-      {/* Tablet layout: Optimized for tablet screens 640px - 1024px */}
-      <div className="hidden sm:block lg:hidden">
-        {/* Top row: Logo and Title */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <HeaderLogo />
-            <div className="flex-1 min-w-0">
-              <HeaderTitle
-                title={title}
-                onTitleChange={onTitleChange}
-                hasUnsavedChanges={hasUnsavedChanges}
-                isSaving={isSaving}
-              />
-            </div>
-          </div>
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
-              <RealtimeStatusIndicator
-                isConnected={isConnected || false}
-                isProcessingUpdate={isProcessingRealtimeUpdate || false}
-              />
-            )}
-          </div>
         </div>
         
-        {/* Bottom row: Controls */}
-        <div className="flex justify-end">
-          <HeaderControls
-            currentTime={currentTime}
-            timezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-            onUndo={onUndo}
-            canUndo={canUndo}
-            lastAction={lastAction}
-          />
-        </div>
-
-        {/* Bottom section for tablet */}
-        <HeaderBottomSection
-          totalRuntime={totalRuntime}
-          rundownStartTime={rundownStartTime}
-          onRundownStartTimeChange={onRundownStartTimeChange}
-          items={items}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-        />
-      </div>
-
-      {/* Desktop layout: Logo, title, and controls in a row - for screens 1024px and larger */}
-      <div className="hidden lg:block">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center space-x-4">
-            <HeaderLogo />
-            <HeaderTitle
-              title={title}
-              onTitleChange={onTitleChange}
-              hasUnsavedChanges={hasUnsavedChanges}
-              isSaving={isSaving}
-            />
+        {/* Bottom row - Compact info */}
+        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <span>{format(currentTime, 'HH:mm:ss')}</span>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-              {(isConnected !== undefined || isProcessingRealtimeUpdate !== undefined) && (
-                <RealtimeStatusIndicator
-                  isConnected={isConnected || false}
-                  isProcessingUpdate={isProcessingRealtimeUpdate || false}
-                />
+          
+          <div className="flex items-center gap-2">
+            <span>Runtime: {totalRuntime}</span>
+            {isConnected !== undefined && (
+              <div className="flex items-center">
+                {isConnected ? (
+                  <Wifi className="h-4 w-4 text-green-500" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-red-500" />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isTablet) {
+    return (
+      <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        {/* Top row - Title and connection status */}
+        <div className="flex items-center justify-between mb-3">
+          <Input
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            className="text-xl font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none flex-1 mr-4"
+            placeholder="Untitled Rundown"
+          />
+          
+          {isConnected !== undefined && (
+            <div className="flex items-center gap-2">
+              {isConnected ? (
+                <Wifi className="h-5 w-5 text-green-500" />
+              ) : (
+                <WifiOff className="h-5 w-5 text-red-500" />
               )}
             </div>
-            <HeaderControls
-              currentTime={currentTime}
-              timezone={timezone}
-              onTimezoneChange={onTimezoneChange}
-              onUndo={onUndo}
-              canUndo={canUndo}
-              lastAction={lastAction}
+          )}
+        </div>
+        
+        {/* Bottom row - Time info */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm">{format(currentTime, 'HH:mm:ss')}</span>
+            </div>
+            <TimezoneSelector
+              value={timezone}
+              onChange={onTimezoneChange}
+              className="text-sm"
             />
           </div>
+          
+          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <Input
+              type="time"
+              value={rundownStartTime}
+              onChange={(e) => onRundownStartTimeChange(e.target.value)}
+              className="w-auto text-sm"
+            />
+            <span>Runtime: {totalRuntime}</span>
+          </div>
         </div>
+      </div>
+    );
+  }
 
-        <HeaderBottomSection
-          totalRuntime={totalRuntime}
-          rundownStartTime={rundownStartTime}
-          onRundownStartTimeChange={onRundownStartTimeChange}
-          items={items}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-        />
+  // Desktop layout - keep existing code
+  return (
+    <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Input
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            className="text-2xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+            placeholder="Untitled Rundown"
+          />
+          
+          {hasUnsavedChanges && (
+            <span className="text-sm text-orange-500 dark:text-orange-400">
+              {isSaving ? 'Saving...' : 'Unsaved changes'}
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Clock className="h-4 w-4" />
+            <span className="text-sm">{format(currentTime, 'HH:mm:ss')}</span>
+          </div>
+          
+          <TimezoneSelector
+            value={timezone}
+            onChange={onTimezoneChange}
+          />
+          
+          <Input
+            type="time"
+            value={rundownStartTime}
+            onChange={(e) => onRundownStartTimeChange(e.target.value)}
+            className="w-auto"
+          />
+          
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Runtime: {totalRuntime}
+          </span>
+          
+          {isConnected !== undefined && (
+            <div className="flex items-center space-x-2">
+              {isConnected ? (
+                <Wifi className="h-4 w-4 text-green-500" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-red-500" />
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

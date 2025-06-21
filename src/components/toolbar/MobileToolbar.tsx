@@ -63,8 +63,8 @@ const MobileToolbar = ({
 
   return (
     <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
-      <div className="flex items-center justify-between gap-2">
-        {/* Dropdown Menu for Actions */}
+      {/* Top row - Actions dropdown and theme toggle */}
+      <div className="flex items-center justify-between gap-2 mb-2">
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
@@ -74,7 +74,7 @@ const MobileToolbar = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="start" 
-            className="w-72 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
+            className="w-80 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg z-50"
             sideOffset={4}
           >
             <div className="space-y-2">
@@ -96,24 +96,25 @@ const MobileToolbar = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Playback Controls and Theme Toggle */}
-        <div className="flex items-center gap-1">
-          <PlaybackControls
-            selectedRowId={selectedRowId}
-            isPlaying={isPlaying}
-            currentSegmentId={currentSegmentId}
-            timeRemaining={timeRemaining}
-            onPlay={onPlay}
-            onPause={onPause}
-            onForward={onForward}
-            onBackward={onBackward}
-            onReset={onReset}
-            size="sm"
-            autoScrollEnabled={autoScrollEnabled}
-            onToggleAutoScroll={onToggleAutoScroll}
-          />
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
+      </div>
+
+      {/* Bottom row - Playback controls centered */}
+      <div className="flex justify-center">
+        <PlaybackControls
+          selectedRowId={selectedRowId}
+          isPlaying={isPlaying}
+          currentSegmentId={currentSegmentId}
+          timeRemaining={timeRemaining}
+          onPlay={onPlay}
+          onPause={onPause}
+          onForward={onForward}
+          onBackward={onBackward}
+          onReset={onReset}
+          size="sm"
+          autoScrollEnabled={autoScrollEnabled}
+          onToggleAutoScroll={onToggleAutoScroll}
+        />
       </div>
     </div>
   );

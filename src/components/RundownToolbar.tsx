@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useResponsiveLayout } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
+import TabletToolbar from './toolbar/TabletToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
 import { CSVExportData } from '@/utils/csvExport';
 
@@ -59,7 +60,7 @@ const RundownToolbar = ({
   autoScrollEnabled,
   onToggleAutoScroll
 }: RundownToolbarProps) => {
-  const isMobile = useIsMobile();
+  const { isMobile, isTablet } = useResponsiveLayout();
 
   const commonProps = {
     onAddRow,
@@ -87,6 +88,10 @@ const RundownToolbar = ({
 
   if (isMobile) {
     return <MobileToolbar {...commonProps} />;
+  }
+
+  if (isTablet) {
+    return <TabletToolbar {...commonProps} />;
   }
 
   return <DesktopToolbar {...commonProps} />;
