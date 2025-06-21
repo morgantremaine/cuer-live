@@ -91,7 +91,7 @@ const BlueprintContent = () => {
     setDraggedListId(itemId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', itemId);
-    e.currentTarget.classList.add('opacity-50');
+    // Don't add opacity class here as it's handled by the card component
   };
 
   const handleDragOver = (e: React.DragEvent) => {

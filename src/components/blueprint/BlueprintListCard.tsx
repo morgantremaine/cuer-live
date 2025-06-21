@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Grip } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useToast } from '@/hooks/use-toast';
@@ -101,6 +102,12 @@ const BlueprintListCard = ({
     }
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    if (onDragStart) {
+      onDragStart(e, list.id);
+    }
+  };
+
   // Enhanced logging for debugging checkbox state
   console.log('📋 BlueprintListCard: rendering list', list.name, 'with checkedItems:', list.checkedItems);
 
@@ -109,12 +116,19 @@ const BlueprintListCard = ({
       className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 ${
         isDragging ? 'opacity-50 transform rotate-2' : ''
       }`}
-      draggable
-      onDragStart={(e) => onDragStart?.(e, list.id)}
-      onDragEnter={(e) => onDragEnterContainer?.(e, index)}
-      onDragEnd={onDragEnd}
     >
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 relative">
+        {/* Drag Handle */}
+        <div 
+          className="absolute top-2 right-2 cursor-move p-1 rounded hover:bg-gray-700 transition-colors"
+          draggable
+          onDragStart={handleDragStart}
+          onDragEnter={(e) => onDragEnterContainer?.(e, index)}
+          onDragEnd={onDragEnd}
+        >
+          <Grip className="h-4 w-4 text-gray-400" />
+        </div>
+        
         <BlueprintListHeader
           listName={list.name}
           sourceColumn={list.sourceColumn}
