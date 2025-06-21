@@ -21,6 +21,15 @@ const RundownIndex = () => {
     );
   }
 
+  // Helper function to get row status
+  const getRowStatus = (item: any) => {
+    const status = coreState.getItemVisualStatus(item.id);
+    // Convert string status to the expected union type
+    if (status === 'current') return 'current';
+    if (status === 'completed') return 'completed';
+    return 'upcoming';
+  };
+
   return (
     <ErrorBoundary fallbackTitle="Rundown Error">
       <RundownLayoutWrapper>
@@ -57,11 +66,11 @@ const RundownIndex = () => {
           getColumnWidth={uiState.getColumnWidth}
           updateColumnWidth={(columnId: string, width: number) => coreState.updateColumnWidth(columnId, width.toString())}
           getRowNumber={coreState.getRowNumber}
-          getRowStatus={(item) => coreState.getItemVisualStatus(item.id)}
+          getRowStatus={getRowStatus}
           calculateHeaderDuration={coreState.calculateHeaderDuration}
           onUpdateItem={coreState.updateItem}
           onCellClick={(itemId: string, field: string) => uiState.handleCellClick(itemId, field, {} as React.MouseEvent)}
-          onKeyDown={uiState.handleKeyDown}
+          onKeyDown={(e: React.KeyboardEvent, itemId: string, field: string) => uiState.handleKeyDown(e, itemId, field)}
           onToggleColorPicker={uiState.handleToggleColorPicker}
           onColorSelect={interactions.handleColorSelect}
           onDeleteRow={coreState.deleteRow}

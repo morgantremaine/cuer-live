@@ -11,60 +11,26 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
   const {
     currentTime,
     timezone,
-    onTimezoneChange,
     totalRuntime,
     rundownTitle,
-    onTitleChange,
     rundownStartTime,
-    onRundownStartTimeChange,
-    rundownId,
-    hasUnsavedChanges,
-    isSaving,
-    onUndo,
-    canUndo,
-    lastAction,
     items,
-    visibleColumns,
-    isConnected,
-    isProcessingRealtimeUpdate,
     isPlaying,
     currentSegmentId,
-    timeRemaining,
-    autoScrollEnabled,
-    onToggleAutoScroll
+    timeRemaining
   } = props;
-
-  // Debug logging for prop passing
-  console.log('🔄 RundownHeaderPropsAdapter: Received props:', {
-    autoScrollEnabled,
-    hasToggleFunction: !!onToggleAutoScroll,
-    toggleFunctionType: typeof onToggleAutoScroll
-  });
 
   return (
     <RundownHeader
-      currentTime={currentTime}
-      timezone={timezone}
-      onTimezoneChange={onTimezoneChange}
-      totalRuntime={totalRuntime}
-      hasUnsavedChanges={hasUnsavedChanges}
-      isSaving={isSaving}
       title={rundownTitle}
-      onTitleChange={onTitleChange}
-      rundownStartTime={rundownStartTime}
-      onRundownStartTimeChange={onRundownStartTimeChange}
+      startTime={rundownStartTime}
+      timezone={timezone}
+      currentTime={currentTime}
+      totalRuntime={totalRuntime}
       items={items}
-      visibleColumns={visibleColumns}
-      onUndo={onUndo}
-      canUndo={canUndo}
-      lastAction={lastAction}
-      isConnected={isConnected}
-      isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-      isPlaying={isPlaying}
       currentSegmentId={currentSegmentId}
+      isPlaying={isPlaying}
       timeRemaining={timeRemaining}
-      autoScrollEnabled={autoScrollEnabled}
-      onToggleAutoScroll={onToggleAutoScroll}
     />
   );
 };

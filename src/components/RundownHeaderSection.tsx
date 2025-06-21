@@ -92,25 +92,14 @@ const RundownHeaderSection = ({
   return (
     <div>
       <RundownHeader
-        currentTime={currentTime}
-        timezone={timezone}
-        onTimezoneChange={onTimezoneChange}
-        totalRuntime={totalRuntime}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
         title={rundownTitle}
-        onTitleChange={onTitleChange}
-        rundownStartTime={rundownStartTime}
-        onRundownStartTimeChange={onRundownStartTimeChange}
+        startTime={rundownStartTime}
+        timezone={timezone}
+        currentTime={currentTime}
+        totalRuntime={totalRuntime}
         items={items}
-        visibleColumns={visibleColumns}
-        onUndo={onUndo}
-        canUndo={canUndo}
-        lastAction={lastAction}
-        isConnected={isConnected}
-        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
+        isPlaying={isPlaying}
         timeRemaining={timeRemaining}
       />
       <RundownToolbar
