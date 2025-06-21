@@ -1,4 +1,3 @@
-
 import React, { forwardRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -603,12 +602,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       // For regular items, render content with special highlighting for current segment name
                       let cellBackgroundColor = rowBackgroundColor;
                       let cellTextColor = textColor;
-                      let cellHasCustomColor = itemHasCustomColor;
                       
+                      // Apply blue background highlighting to current segment name
                       if (isCurrentSegmentName) {
                         cellBackgroundColor = '#3b82f6'; // blue-500
                         cellTextColor = '#ffffff';
-                        cellHasCustomColor = true; // Current segment name should always preserve color
                       }
                       
                       return (
@@ -625,9 +623,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             width: columnWidth, 
                             minWidth: columnWidth, 
                             maxWidth: columnWidth,
-                            ...(cellHasCustomColor && !isCurrentSegmentName ? {
-                              backgroundColor: cellBackgroundColor,
-                              color: cellTextColor,
+                            backgroundColor: cellBackgroundColor,
+                            color: cellTextColor,
+                            ...(itemHasCustomColor || isCurrentSegmentName ? {
                               WebkitPrintColorAdjust: 'exact',
                               printColorAdjust: 'exact'
                             } : {})
