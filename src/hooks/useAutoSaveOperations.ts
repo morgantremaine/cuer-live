@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from './useRundownStorage';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
-import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 export const useAutoSaveOperations = () => {
   const params = useParams<{ id: string }>();
@@ -44,7 +43,7 @@ export const useAutoSaveOperations = () => {
           items,
           columns: columns || [],
           timezone: timezone || 'America/New_York',
-          start_time: startTime || RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_START_TIME,
+          start_time: startTime || '09:00:00',
           user_id: '', // Will be set by saveRundown
           team_id: '', // Will be set by saveRundown
           created_at: new Date().toISOString(),
@@ -79,3 +78,4 @@ export const useAutoSaveOperations = () => {
     performSave
   };
 };
+
