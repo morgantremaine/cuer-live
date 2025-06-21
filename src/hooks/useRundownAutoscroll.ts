@@ -60,21 +60,11 @@ export const useRundownAutoscroll = ({
 
       if (targetElement) {
         console.log('🔄 useRundownAutoscroll: Scrolling to element');
-        
-        // Custom scroll positioning - slightly above center (around 35% from top)
-        const containerRect = scrollContainerRef.current.getBoundingClientRect();
-        const elementRect = targetElement.getBoundingClientRect();
-        const containerScrollTop = scrollContainerRef.current.scrollTop;
-        
-        // Calculate the desired scroll position (35% from top of container)
-        const desiredOffset = containerRect.height * 0.35;
-        const targetScrollTop = containerScrollTop + elementRect.top - containerRect.top - desiredOffset;
-        
-        scrollContainerRef.current.scrollTo({
-          top: targetScrollTop,
-          behavior: 'smooth'
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
         });
-        
         lastScrolledSegmentRef.current = currentSegmentId;
         console.log('🔄 useRundownAutoscroll: Scroll completed');
       } else {
