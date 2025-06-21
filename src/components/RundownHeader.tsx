@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
+import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
+import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { format } from 'date-fns';
 
 interface RundownHeaderProps {
@@ -50,10 +51,20 @@ const RundownHeader = ({
   currentSegmentId,
   timeRemaining,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  items = []
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+
+  // Get showcaller timing status
+  const timingStatus = useShowcallerTiming({
+    items,
+    rundownStartTime,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining
+  });
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
@@ -152,6 +163,9 @@ const RundownHeader = ({
           </div>
           
           <div className="flex items-center gap-2">
+            <ShowcallerTimingIndicator
+              {...timingStatus}
+            />
             <span>Runtime: {totalRuntime}</span>
             {isConnected !== undefined && (
               <div className="flex items-center">
@@ -213,6 +227,10 @@ const RundownHeader = ({
                 </span>
               </div>
             )}
+            
+            <ShowcallerTimingIndicator
+              {...timingStatus}
+            />
           </div>
           
           {isConnected !== undefined && (
@@ -257,7 +275,7 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - with properly centered title
+  // Desktop layout - with properly centered title and timing indicator
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
@@ -301,6 +319,10 @@ const RundownHeader = ({
               </span>
             </div>
           )}
+          
+          <ShowcallerTimingIndicator
+            {...timingStatus}
+          />
         </div>
         
         <div className="flex items-center space-x-4 flex-shrink-0">
