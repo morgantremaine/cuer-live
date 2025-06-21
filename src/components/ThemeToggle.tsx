@@ -7,11 +7,16 @@ import { useTheme } from '@/hooks/useTheme';
 const ThemeToggle = () => {
   const { isDark, toggleTheme } = useTheme();
 
+  const handleToggle = () => {
+    console.log('🌙 ThemeToggle clicked - current theme:', isDark ? 'dark' : 'light');
+    toggleTheme();
+  };
+
   return (
     <Button
       variant="ghost"
       size="sm"
-      onClick={toggleTheme}
+      onClick={handleToggle}
       className="h-9 w-9"
     >
       {isDark ? (

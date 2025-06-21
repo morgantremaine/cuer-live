@@ -9,9 +9,18 @@ const HeaderLogo = () => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
+  // Debug logging to track theme changes
+  console.log('🎨 HeaderLogo theme state:', { isDark });
+
   const handleBackToDashboard = () => {
     navigate('/dashboard');
   };
+
+  const logoSrc = isDark 
+    ? "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" 
+    : "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png";
+
+  console.log('🖼️ HeaderLogo using logo:', logoSrc);
 
   return (
     <div className="flex items-center space-x-4">
@@ -25,7 +34,7 @@ const HeaderLogo = () => {
         <ArrowLeft className="h-5 w-5" />
       </Button>
       <img 
-        src={isDark ? "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" : "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"}
+        src={logoSrc}
         alt="Cuer Logo" 
         className="h-8 w-auto"
       />
