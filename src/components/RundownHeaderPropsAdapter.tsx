@@ -11,7 +11,6 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
   const {
     currentTime,
     timezone,
-    onTimezoneChange,
     totalRuntime,
     rundownTitle,
     onTitleChange,
@@ -45,7 +44,6 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     <RundownHeader
       currentTime={currentTime}
       timezone={timezone}
-      onTimezoneChange={onTimezoneChange}
       totalRuntime={totalRuntime}
       hasUnsavedChanges={hasUnsavedChanges}
       isSaving={isSaving}

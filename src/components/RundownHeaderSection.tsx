@@ -94,7 +94,6 @@ const RundownHeaderSection = ({
       <RundownHeader
         currentTime={currentTime}
         timezone={timezone}
-        onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
