@@ -1,9 +1,12 @@
+
 import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TimezoneSelector from './TimezoneSelector';
+import HeaderLogo from './header/HeaderLogo';
+import HeaderControls from './header/HeaderControls';
 import { format } from 'date-fns';
 
 interface RundownHeaderProps {
@@ -42,6 +45,9 @@ const RundownHeader = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
+  onUndo,
+  canUndo,
+  lastAction,
   isConnected,
   isProcessingRealtimeUpdate,
   isPlaying,
@@ -126,12 +132,15 @@ const RundownHeader = ({
           </div>
           
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-            <Input
-              type="time"
-              value={rundownStartTime}
-              onChange={(e) => onRundownStartTimeChange(e.target.value)}
-              className="w-auto text-sm"
-            />
+            <div className="flex items-center gap-2">
+              <span>Start:</span>
+              <Input
+                type="time"
+                value={rundownStartTime}
+                onChange={(e) => onRundownStartTimeChange(e.target.value)}
+                className="w-auto text-sm"
+              />
+            </div>
             <span>Runtime: {totalRuntime}</span>
           </div>
         </div>
@@ -139,56 +148,65 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - keep existing code
+  // Desktop layout - full header with logo, back button, and user controls
   return (
-    <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Input
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            className="text-2xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
-            placeholder="Untitled Rundown"
-          />
-          
-          {hasUnsavedChanges && (
-            <span className="text-sm text-orange-500 dark:text-orange-400">
-              {isSaving ? 'Saving...' : 'Unsaved changes'}
-            </span>
-          )}
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4" />
-            <span className="text-sm">{format(currentTime, 'HH:mm:ss')}</span>
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      {/* Top header with logo and user controls */}
+      <div className="px-4 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+        <HeaderLogo />
+        <HeaderControls
+          currentTime={currentTime}
+          timezone={timezone}
+          onTimezoneChange={onTimezoneChange}
+          onUndo={onUndo}
+          canUndo={canUndo}
+          lastAction={lastAction}
+        />
+      </div>
+      
+      {/* Bottom header with rundown info */}
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Input
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              className="text-2xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+              placeholder="Untitled Rundown"
+            />
+            
+            {hasUnsavedChanges && (
+              <span className="text-sm text-orange-500 dark:text-orange-400">
+                {isSaving ? 'Saving...' : 'Unsaved changes'}
+              </span>
+            )}
           </div>
           
-          <TimezoneSelector
-            currentTimezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-          />
-          
-          <Input
-            type="time"
-            value={rundownStartTime}
-            onChange={(e) => onRundownStartTimeChange(e.target.value)}
-            className="w-auto"
-          />
-          
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Runtime: {totalRuntime}
-          </span>
-          
-          {isConnected !== undefined && (
+          <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              {isConnected ? (
-                <Wifi className="h-4 w-4 text-green-500" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-red-500" />
-              )}
+              <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
+              <Input
+                type="time"
+                value={rundownStartTime}
+                onChange={(e) => onRundownStartTimeChange(e.target.value)}
+                className="w-auto"
+              />
             </div>
-          )}
+            
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Runtime: {totalRuntime}
+            </span>
+            
+            {isConnected !== undefined && (
+              <div className="flex items-center space-x-2">
+                {isConnected ? (
+                  <Wifi className="h-4 w-4 text-green-500" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-red-500" />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
