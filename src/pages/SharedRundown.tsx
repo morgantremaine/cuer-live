@@ -20,7 +20,7 @@ const DEFAULT_COLUMNS = [
 ];
 
 const SharedRundown = () => {
-  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
+  const { rundownData, currentTime, currentSegmentId, loading, error } = useSharedRundownState();
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
@@ -39,6 +39,9 @@ const SharedRundown = () => {
   // Use real-time showcaller state if available, otherwise fall back to stored state
   const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
+
+  // Calculate time remaining from showcaller state
+  const timeRemaining = showcallerState?.timeRemaining || null;
 
   // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
@@ -61,6 +64,8 @@ const SharedRundown = () => {
       return;
     }
 
+    console.log('📺 Setting up real-time subscription for showcaller state:', rundownId);
+
     const channel = supabase
       .channel(`shared-showcaller-${rundownId}`)
       .on(
@@ -72,18 +77,23 @@ const SharedRundown = () => {
           filter: `id=eq.${rundownId}`
         },
         (payload) => {
+          console.log('📺 Received showcaller update:', payload);
           // Only update if showcaller_state changed
           if (payload.new?.showcaller_state) {
+            console.log('📺 Updating showcaller state:', payload.new.showcaller_state);
             setRealtimeShowcallerState(payload.new.showcaller_state);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📺 Subscription status:', status);
+      });
 
     realtimeChannelRef.current = channel;
 
     return () => {
       if (realtimeChannelRef.current) {
+        console.log('📺 Cleaning up subscription');
         supabase.removeChannel(realtimeChannelRef.current);
         realtimeChannelRef.current = null;
       }
