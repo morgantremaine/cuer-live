@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router-dom'
-import HeaderLogo from './header/HeaderLogo'
 
 interface DashboardHeaderProps {
   userEmail?: string
@@ -41,7 +40,11 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
               </Button>
             )}
             <div className="flex items-center">
-              <HeaderLogo />
+              <img 
+                src="/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" 
+                alt="Cuer Logo" 
+                className="h-8 w-auto"
+              />
             </div>
           </div>
           

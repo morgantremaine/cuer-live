@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
@@ -44,8 +45,6 @@ interface RundownHeaderSectionProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  showBackButton?: boolean;
-  onBack?: () => void;
 }
 
 const RundownHeaderSection = ({
@@ -88,9 +87,7 @@ const RundownHeaderSection = ({
   isProcessingRealtimeUpdate,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll,
-  showBackButton,
-  onBack
+  onToggleAutoScroll
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -115,8 +112,6 @@ const RundownHeaderSection = ({
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
-        showBackButton={showBackButton}
-        onBack={onBack}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}
