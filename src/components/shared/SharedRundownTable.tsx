@@ -352,6 +352,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               max-height: none !important;
               overflow: visible !important;
             }
+
+            /* Hide showcaller indicators in print */
+            .print-hide-showcaller {
+              display: none !important;
+            }
           }
         `}
       </style>
@@ -470,14 +475,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       }}
                     >
                       <div className="flex items-center">
-                        {/* Blue play icon for current segment */}
+                        {/* Blue play icon for current segment - hidden in print */}
                         {isShowcallerCurrent && (
                           <Play 
-                            className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print:hidden" 
+                            className="h-5 w-5 text-blue-500 fill-blue-500 mr-2 print-hide-showcaller" 
                           />
                         )}
                         {isFloated && (
-                          <span className="text-yellow-400 mr-1 print:mr-0.5 print:text-yellow-600">🛟</span>
+                          <span className="text-yellow-400 mr-1 print:mr-0.5 print:text-yellow-600 print-hide-showcaller">🛟</span>
                         )}
                         <span>{getRowNumber(index, items)}</span>
                       </div>

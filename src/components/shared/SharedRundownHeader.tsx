@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ export const SharedRundownHeader = ({
                 }`}>
                   {title}
                 </h1>
-                <p className={`text-sm print:text-xs ${
+                <p className={`text-sm print:text-xs print:hidden ${
                   isDark ? 'text-gray-400' : 'text-gray-600'
                 }`}>
                   This is a read-only view of the rundown. Updates appear live.
