@@ -1,3 +1,4 @@
+
 import React, { forwardRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -357,6 +358,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             .print-hide-showcaller {
               display: none !important;
             }
+            
+            /* Remove showcaller highlighting from current segment name in print */
+            .print-remove-showcaller-highlight {
+              background: transparent !important;
+              color: #000 !important;
+            }
           }
         `}
       </style>
@@ -611,12 +618,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
                               ? 'print-time-column' 
                               : 'print-content-column'
-                          } ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
+                          } ${isDark ? 'border-gray-600' : 'border-gray-200'} ${
+                            isCurrentSegmentName ? 'print-remove-showcaller-highlight' : ''
+                          }`}
                           style={{ 
                             width: columnWidth, 
                             minWidth: columnWidth, 
                             maxWidth: columnWidth,
-                            ...(cellHasCustomColor ? {
+                            ...(cellHasCustomColor && !isCurrentSegmentName ? {
                               backgroundColor: cellBackgroundColor,
                               color: cellTextColor,
                               WebkitPrintColorAdjust: 'exact',
