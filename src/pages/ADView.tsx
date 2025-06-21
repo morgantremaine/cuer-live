@@ -222,8 +222,8 @@ const ADView = () => {
                 'text-red-400'
               }`}>
                 {timingStatus.status === 'on-time' ? 'ON TIME' :
-                 timingStatus.status === 'under' ? `-${timingStatus.difference} UNDER` :
-                 `+${timingStatus.difference} OVER`}
+                 timingStatus.status === 'under' ? `UNDER ${timingStatus.difference}` :
+                 `OVER ${timingStatus.difference}`}
               </div>
             </div>
           </div>
