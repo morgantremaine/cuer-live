@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -24,17 +25,19 @@ const SharedRundown = () => {
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
+  const [realtimeShowcallerState, setRealtimeShowcallerState] = useState(null);
   const { isDark, toggleTheme } = useTheme();
   
   // Better refs to prevent duplicate loads
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
+  const realtimeChannelRef = useRef<any>(null);
 
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
 
-  // Determine if showcaller is playing and use the real-time calculated time remaining
-  const showcallerState = rundownData?.showcallerState;
+  // Use real-time showcaller state if available, otherwise fall back to stored state
+  const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
 
   // Initialize autoscroll functionality
@@ -44,6 +47,48 @@ const SharedRundown = () => {
     autoScrollEnabled,
     items: rundownData?.items || []
   });
+
+  // Set up real-time subscription for showcaller state changes
+  useEffect(() => {
+    // Clean up existing subscription
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
+    }
+
+    // Only set up subscription if we have a rundown ID
+    if (!rundownId) {
+      return;
+    }
+
+    const channel = supabase
+      .channel(`shared-showcaller-${rundownId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rundowns',
+          filter: `id=eq.${rundownId}`
+        },
+        (payload) => {
+          // Only update if showcaller_state changed
+          if (payload.new?.showcaller_state) {
+            setRealtimeShowcallerState(payload.new.showcaller_state);
+          }
+        }
+      )
+      .subscribe();
+
+    realtimeChannelRef.current = channel;
+
+    return () => {
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+    };
+  }, [rundownId]);
 
   // Helper function to format time remaining from seconds to string
   const formatTimeRemaining = (seconds: number): string => {
@@ -76,8 +121,6 @@ const SharedRundown = () => {
       if (layoutLoadedRef.current === rundownId) {
         return;
       }
-      
-      console.log('🔄 Loading shared layout for rundown:', rundownId);
       
       setLayoutLoading(true);
       isLayoutLoadingRef.current = true;
@@ -123,7 +166,6 @@ const SharedRundown = () => {
               setLayoutName('Default Layout');
             }
           } else {
-            console.log('✅ Successfully loaded shared layout:', layoutData.name);
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
           }
