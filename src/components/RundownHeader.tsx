@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -147,29 +146,43 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - simplified header with logo next to title with proper spacing
+  // Desktop layout - with larger title that can wrap
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-6 flex-1 min-w-0">
-          <HeaderLogo />
-          <div className="flex-1 min-w-0 max-w-md">
-            <Input
+      <div className="flex items-start justify-between gap-6">
+        <div className="flex items-start space-x-6 flex-1 min-w-0">
+          <div className="flex-shrink-0 mt-2">
+            <HeaderLogo />
+          </div>
+          <div className="flex-1 min-w-0">
+            <textarea
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
-              className="text-2xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:border-none w-full"
+              className="text-3xl font-bold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Untitled Rundown"
+              rows={1}
+              style={{ 
+                minHeight: '3rem',
+                lineHeight: '1.2'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = target.scrollHeight + 'px';
+              }}
             />
+            
+            {hasUnsavedChanges && (
+              <div className="mt-1">
+                <span className="text-sm text-orange-500 dark:text-orange-400">
+                  {isSaving ? 'Saving...' : 'Unsaved changes'}
+                </span>
+              </div>
+            )}
           </div>
-          
-          {hasUnsavedChanges && (
-            <span className="text-sm text-orange-500 dark:text-orange-400 whitespace-nowrap">
-              {isSaving ? 'Saving...' : 'Unsaved changes'}
-            </span>
-          )}
         </div>
         
-        <div className="flex items-center space-x-4 flex-shrink-0">
+        <div className="flex items-center space-x-4 flex-shrink-0 mt-2">
           <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
           <TimezoneSelector
             currentTimezone={timezone}
