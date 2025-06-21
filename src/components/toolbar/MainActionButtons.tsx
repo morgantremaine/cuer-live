@@ -89,6 +89,36 @@ const MainActionButtons = ({
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   };
 
+  // Calculate total runtime from rundown items
+  const calculateTotalRuntime = () => {
+    if (!rundownData?.items) return '00:00:00';
+    
+    const timeToSeconds = (timeStr: string) => {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        return parts[0] * 60 + parts[1];
+      } else if (parts.length === 3) {
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      }
+      return 0;
+    };
+
+    const totalSeconds = rundownData.items.reduce((acc, item) => {
+      // Skip floated items - they don't count towards runtime
+      if (item.isFloating || item.isFloated) {
+        return acc;
+      }
+      return acc + timeToSeconds(item.duration || '00:00');
+    }, 0);
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
   const handlePrint = () => {
     // Create a temporary print header
     const existingPrintHeader = document.querySelector('.print-header');
@@ -102,13 +132,13 @@ const MainActionButtons = ({
     printHeader.style.display = 'none'; // Hidden on screen, shown in print
     
     const currentTime = new Date();
-    const startTime = rundownData?.startTime || '12:00 PM';
-    const totalRuntime = rundownData?.totalRuntime || '00:00:00';
+    const defaultStartTime = '12:00 PM'; // Default start time
+    const totalRuntime = calculateTotalRuntime();
     
     printHeader.innerHTML = `
       <img src="/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png" alt="Cuer Logo" />
       <h1>${rundownTitle}</h1>
-      <div class="print-info">Start Time: ${startTime}</div>
+      <div class="print-info">Start Time: ${defaultStartTime}</div>
       <div class="print-info">Total Runtime: ${totalRuntime}</div>
       <div class="print-info">Printed: ${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}</div>
     `;
