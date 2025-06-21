@@ -18,21 +18,12 @@ export const useRundownAutoscroll = ({
   const lastScrolledSegmentRef = useRef<string | null>(null);
 
   const scrollToCurrentSegment = useCallback(() => {
-    console.log('🔄 scrollToCurrentSegment called:', {
-      hasContainer: !!scrollContainerRef.current,
-      currentSegmentId,
-      autoScrollEnabled,
-      isPlaying
-    });
-
     if (!scrollContainerRef.current || !currentSegmentId || !autoScrollEnabled) {
-      console.log('🔄 Early return - missing requirements');
       return;
     }
 
     // Don't scroll if we've already scrolled to this segment
     if (lastScrolledSegmentRef.current === currentSegmentId) {
-      console.log('🔄 Already scrolled to this segment');
       return;
     }
 
@@ -42,44 +33,13 @@ export const useRundownAutoscroll = ({
         `[data-item-id="${currentSegmentId}"]`
       );
 
-      console.log('🔄 Target element found:', !!targetElement);
-
       if (targetElement) {
-        const container = scrollContainerRef.current;
-        const containerRect = container.getBoundingClientRect();
-        const elementRect = targetElement.getBoundingClientRect();
-        
-        // Calculate the current scroll position
-        const currentScrollTop = container.scrollTop;
-        
-        // Calculate where the element currently is relative to the container
-        const elementTop = elementRect.top - containerRect.top + currentScrollTop;
-        
-        // Position element at 20% from the top of the viewport for better visibility
-        const targetPosition = elementTop - (containerRect.height * 0.2);
-        
-        console.log('🔄 Scroll calculation:', {
-          elementTop,
-          containerHeight: containerRect.height,
-          targetPosition,
-          currentScrollTop
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
         });
-
-        container.scrollTo({
-          top: Math.max(0, targetPosition),
-          behavior: 'smooth'
-        });
-        
         lastScrolledSegmentRef.current = currentSegmentId;
-        console.log('🔄 Scrolled to segment:', currentSegmentId);
-      } else {
-        console.warn('🔄 Target element not found for ID:', currentSegmentId);
-        
-        // List all elements with data-item-id for debugging
-        const allElements = scrollContainerRef.current.querySelectorAll('[data-item-id]');
-        console.log('🔄 Available data-item-id elements:', 
-          Array.from(allElements).map(el => el.getAttribute('data-item-id'))
-        );
       }
     } catch (error) {
       console.warn('🔄 useRundownAutoscroll: Scroll failed:', error);
@@ -88,12 +48,6 @@ export const useRundownAutoscroll = ({
 
   // Scroll when current segment changes and we're playing
   useEffect(() => {
-    console.log('🔄 useEffect triggered:', {
-      isPlaying,
-      autoScrollEnabled,
-      currentSegmentId
-    });
-
     if (isPlaying && autoScrollEnabled && currentSegmentId) {
       // Small delay to ensure DOM is updated
       const timeoutId = setTimeout(() => {
@@ -108,7 +62,6 @@ export const useRundownAutoscroll = ({
   useEffect(() => {
     if (!autoScrollEnabled) {
       lastScrolledSegmentRef.current = null;
-      console.log('🔄 Reset scroll tracking - autoscroll disabled');
     }
   }, [autoScrollEnabled]);
 
