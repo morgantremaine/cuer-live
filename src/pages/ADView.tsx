@@ -357,7 +357,7 @@ const ADView = () => {
                 {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
               </div>
             </div>
-            <div className="flex items-center justify-start flex-1 ml-8">
+            <div className="flex items-center justify-start flex-1 ml-16">
               <div className="flex items-center space-x-4">
                 <img 
                   src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
