@@ -1,5 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
@@ -52,26 +59,43 @@ const TabletToolbar = ({
   autoScrollEnabled,
   onToggleAutoScroll
 }: TabletToolbarProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
-      {/* Top row - Main actions */}
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex flex-wrap gap-1">
-          <MainActionButtons
-            onAddRow={onAddRow}
-            onAddHeader={onAddHeader}
-            onShowColumnManager={onShowColumnManager}
-            onUndo={onUndo}
-            canUndo={canUndo}
-            lastAction={lastAction}
-            rundownId={rundownId}
-            onOpenTeleprompter={onOpenTeleprompter}
-            selectedRowId={selectedRowId}
-            isMobile={false}
-            rundownTitle={rundownTitle}
-            rundownData={rundownData}
-          />
-        </div>
+      {/* Top row - Actions dropdown and theme toggle */}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
+              <span className="text-sm">Actions</span>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="start" 
+            className="w-80 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg z-50"
+            sideOffset={4}
+          >
+            <div className="space-y-2">
+              <MainActionButtons
+                onAddRow={onAddRow}
+                onAddHeader={onAddHeader}
+                onShowColumnManager={onShowColumnManager}
+                onUndo={onUndo}
+                canUndo={canUndo}
+                lastAction={lastAction}
+                rundownId={rundownId}
+                onOpenTeleprompter={onOpenTeleprompter}
+                selectedRowId={selectedRowId}
+                isMobile={true}
+                rundownTitle={rundownTitle}
+                rundownData={rundownData}
+              />
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <ThemeToggle />
       </div>
       
