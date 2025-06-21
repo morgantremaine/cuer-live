@@ -288,8 +288,8 @@ const ADView = () => {
                 'text-red-400'
               }`}>
                 {timingStatus.status === 'on-time' ? 'ON TIME' :
-                 timingStatus.status === 'under' ? `UNDER ${timingStatus.difference}` :
-                 `OVER ${timingStatus.difference}`}
+                 timingStatus.status === 'under' ? `UNDER +${timingStatus.difference}` :
+                 `OVER -${timingStatus.difference}`}
               </div>
             </div>
           </div>
@@ -298,7 +298,7 @@ const ADView = () => {
         {/* Main Content */}
         <div className="flex-1 max-w-7xl mx-auto p-8 w-full">
           <div className="grid grid-cols-12 gap-8 h-full">
-            {/* Left Side Information */}
+            {/* Left Side - Timing and Stopwatch */}
             <div className="col-span-3 space-y-6">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
@@ -326,6 +326,30 @@ const ADView = () => {
                   <div className="text-xs text-gray-400 mb-2">TIME REMAINING</div>
                   <div className="text-2xl font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Stopwatch */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-6">
+                  <div className="text-xs text-gray-400 mb-4 text-center">STOPWATCH</div>
+                  <div className="text-3xl font-mono font-bold text-center mb-6 text-white">
+                    {formatStopwatchTime(stopwatchSeconds)}
+                  </div>
+                  <div className="flex justify-center space-x-2">
+                    {!stopwatchRunning ? (
+                      <Button onClick={startStopwatch} className="bg-green-600 hover:bg-green-700">
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button onClick={pauseStopwatch} className="bg-yellow-600 hover:bg-yellow-700">
+                        <Pause className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button onClick={resetStopwatch} variant="outline" className="border-gray-600">
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -486,42 +510,18 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Stopwatch */}
+            {/* Right Side - Script */}
             <div className="col-span-3">
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6">
-                  <div className="text-xs text-gray-400 mb-4 text-center">STOPWATCH</div>
-                  <div className="text-3xl font-mono font-bold text-center mb-6 text-white">
-                    {formatStopwatchTime(stopwatchSeconds)}
-                  </div>
-                  <div className="flex justify-center space-x-2">
-                    {!stopwatchRunning ? (
-                      <Button onClick={startStopwatch} className="bg-green-600 hover:bg-green-700">
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button onClick={pauseStopwatch} className="bg-yellow-600 hover:bg-yellow-700">
-                        <Pause className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button onClick={resetStopwatch} variant="outline" className="border-gray-600">
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
+              <Card className="bg-gray-800 border-gray-700 h-full">
+                <CardContent className="p-4 h-full flex flex-col">
+                  <div className="text-xs text-gray-400 mb-3">CURRENT SCRIPT</div>
+                  <div className="flex-1 bg-gray-900 rounded-lg p-4 overflow-y-auto">
+                    <div className="text-white whitespace-pre-wrap text-sm leading-relaxed">
+                      {currentSegment?.script || 'No script available for current segment'}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Script Section */}
-        <div className="bg-gray-800 border-t border-gray-700 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-xs text-gray-400 mb-2">CURRENT SCRIPT</div>
-            <div className="bg-gray-900 rounded-lg p-4 min-h-[80px] max-h-40 overflow-y-auto">
-              <div className="text-white whitespace-pre-wrap">
-                {currentSegment?.script || 'No script available for current segment'}
-              </div>
             </div>
           </div>
         </div>
