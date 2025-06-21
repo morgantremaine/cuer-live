@@ -1,5 +1,5 @@
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -11,11 +11,6 @@ const HeaderLogo = () => {
 
   // Debug logging to track theme changes
   console.log('🎨 HeaderLogo render - isDark:', isDark, 'type:', typeof isDark);
-
-  // Add effect to track when theme changes
-  useEffect(() => {
-    console.log('🎨 HeaderLogo useEffect - theme changed to:', isDark);
-  }, [isDark]);
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');
