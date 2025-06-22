@@ -33,6 +33,14 @@ interface TeamInvitation {
   token: string;
 }
 
+interface TransferPreview {
+  member_email: string;
+  member_name: string | null;
+  rundown_count: number;
+  blueprint_count: number;
+  will_delete_account: boolean;
+}
+
 export const useTeam = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -540,6 +548,78 @@ export const useTeam = () => {
     }
   };
 
+  const removeTeamMemberWithTransfer = async (memberId: string) => {
+    if (!team || !user) {
+      return { error: 'No team or user found' };
+    }
+
+    try {
+      console.log('Removing team member with transfer:', memberId);
+      
+      const { data, error } = await supabase.rpc('remove_team_member_with_transfer', {
+        member_id: memberId,
+        admin_id: user.id,
+        team_id_param: team.id
+      });
+
+      if (error) {
+        console.error('Error removing team member:', error);
+        return { error: 'Failed to remove team member' };
+      }
+
+      if (data?.error) {
+        return { error: data.error };
+      }
+
+      console.log('Team member removed successfully:', data);
+
+      // Run cleanup and reload team members
+      await runFullCleanup();
+      await loadTeamMembers(team.id);
+
+      return { 
+        error: null, 
+        result: {
+          rundownsTransferred: data.rundowns_transferred,
+          blueprintsTransferred: data.blueprints_transferred,
+          userDeleted: data.user_deleted
+        }
+      };
+    } catch (error) {
+      console.error('Error removing team member:', error);
+      return { error: 'Failed to remove team member' };
+    }
+  };
+
+  const getTransferPreview = async (memberId: string): Promise<{ data: TransferPreview | null; error: string | null }> => {
+    if (!team) {
+      return { data: null, error: 'No team found' };
+    }
+
+    try {
+      console.log('Getting transfer preview for member:', memberId);
+      
+      const { data, error } = await supabase.rpc('get_member_transfer_preview', {
+        member_id: memberId,
+        team_id_param: team.id
+      });
+
+      if (error) {
+        console.error('Error getting transfer preview:', error);
+        return { data: null, error: 'Failed to get transfer preview' };
+      }
+
+      if (data?.error) {
+        return { data: null, error: data.error };
+      }
+
+      return { data: data as TransferPreview, error: null };
+    } catch (error) {
+      console.error('Error in getTransferPreview:', error);
+      return { data: null, error: 'Failed to get transfer preview' };
+    }
+  };
+
   const revokeInvitation = async (invitationId: string) => {
     try {
       console.log('Revoking invitation:', invitationId);
@@ -637,6 +717,8 @@ export const useTeam = () => {
     inviteTeamMember,
     acceptInvitation,
     removeTeamMember,
+    removeTeamMemberWithTransfer,
+    getTransferPreview,
     revokeInvitation,
     resendInvitation,
     loadTeamData

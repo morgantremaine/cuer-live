@@ -448,6 +448,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: undefined
       }
+      get_member_transfer_preview: {
+        Args: { member_id: string; team_id_param: string }
+        Returns: Json
+      }
       get_user_role_in_team: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string
@@ -499,6 +503,10 @@ export type Database = {
       is_user_team_member: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
+      }
+      remove_team_member_with_transfer: {
+        Args: { member_id: string; admin_id: string; team_id_param: string }
+        Returns: Json
       }
       update_rundown_presence: {
         Args: { rundown_uuid: string }

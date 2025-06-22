@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, RefreshCw } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, RefreshCw, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,10 +19,22 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+interface TransferPreview {
+  member_email: string;
+  member_name: string | null;
+  rundown_count: number;
+  blueprint_count: number;
+  will_delete_account: boolean;
+}
+
 const TeamManagement = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
   const [isResending, setIsResending] = useState<string | null>(null);
+  const [transferPreview, setTransferPreview] = useState<TransferPreview | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
   
   const {
     team,
@@ -31,7 +43,8 @@ const TeamManagement = () => {
     userRole,
     loading,
     inviteTeamMember,
-    removeTeamMember,
+    removeTeamMemberWithTransfer,
+    getTransferPreview,
     revokeInvitation,
     resendInvitation
   } = useTeam();
@@ -59,23 +72,6 @@ const TeamManagement = () => {
       setInviteEmail('');
     }
     setIsInviting(false);
-  };
-
-  const handleRemoveMember = async (memberId: string) => {
-    const { error } = await removeTeamMember(memberId);
-    
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Team member removed successfully!',
-      });
-    }
   };
 
   const handleRevokeInvitation = async (invitationId: string) => {
@@ -112,6 +108,67 @@ const TeamManagement = () => {
       });
     }
     setIsResending(null);
+  };
+
+  const handleRemoveMemberClick = async (memberId: string, memberName: string) => {
+    setMemberToRemove({ id: memberId, name: memberName });
+    setIsLoadingPreview(true);
+    
+    const { data, error } = await getTransferPreview(memberId);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+      setMemberToRemove(null);
+    } else {
+      setTransferPreview(data);
+    }
+    
+    setIsLoadingPreview(false);
+  };
+
+  const handleConfirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    
+    setIsRemoving(true);
+    const { error, result } = await removeTeamMemberWithTransfer(memberToRemove.id);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      const transferredItems = [];
+      if (result?.rundownsTransferred > 0) {
+        transferredItems.push(`${result.rundownsTransferred} rundown${result.rundownsTransferred > 1 ? 's' : ''}`);
+      }
+      if (result?.blueprintsTransferred > 0) {
+        transferredItems.push(`${result.blueprintsTransferred} blueprint${result.blueprintsTransferred > 1 ? 's' : ''}`);
+      }
+      
+      const transferMessage = transferredItems.length > 0 
+        ? ` ${transferredItems.join(' and ')} transferred to you.`
+        : '';
+      
+      toast({
+        title: 'Team member removed',
+        description: `${memberToRemove.name} has been removed from the team and their account deleted.${transferMessage}`,
+      });
+    }
+    
+    setIsRemoving(false);
+    setMemberToRemove(null);
+    setTransferPreview(null);
+  };
+
+  const handleCancelRemoveMember = () => {
+    setMemberToRemove(null);
+    setTransferPreview(null);
   };
 
   if (loading) {
@@ -287,30 +344,17 @@ const TeamManagement = () => {
                     {member.role}
                   </Badge>
                   {userRole === 'admin' && member.role !== 'admin' && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-gray-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-gray-800 border-gray-600 text-white">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="text-white">Remove Team Member</AlertDialogTitle>
-                          <AlertDialogDescription className="text-gray-300">
-                            Are you sure you want to remove {member.profiles?.full_name || member.profiles?.email} from the team?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500">Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleRemoveMember(member.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            Remove
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-gray-300 hover:text-white hover:bg-gray-600"
+                      onClick={() => handleRemoveMemberClick(
+                        member.id, 
+                        member.profiles?.full_name || member.profiles?.email || 'Unknown User'
+                      )}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   )}
                 </div>
               </div>
@@ -318,6 +362,75 @@ const TeamManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Enhanced Remove Member Dialog */}
+      <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && handleCancelRemoveMember()}>
+        <AlertDialogContent className="bg-gray-800 border-gray-600 text-white max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Remove Team Member
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300 space-y-3">
+              {isLoadingPreview ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading transfer details...
+                </div>
+              ) : transferPreview ? (
+                <div className="space-y-3">
+                  <p>
+                    <strong>⚠️ This action cannot be undone.</strong>
+                  </p>
+                  <p>
+                    You are about to remove <strong>{transferPreview.member_name || transferPreview.member_email}</strong> from the team.
+                  </p>
+                  
+                  <div className="bg-gray-700 p-3 rounded border-l-4 border-red-500">
+                    <p className="font-semibold text-red-400 mb-2">What will happen:</p>
+                    <ul className="space-y-1 text-sm">
+                      <li>• Their account will be permanently deleted</li>
+                      {transferPreview.rundown_count > 0 && (
+                        <li>• {transferPreview.rundown_count} rundown{transferPreview.rundown_count > 1 ? 's' : ''} will be transferred to you</li>
+                      )}
+                      {transferPreview.blueprint_count > 0 && (
+                        <li>• {transferPreview.blueprint_count} blueprint{transferPreview.blueprint_count > 1 ? 's' : ''} will be transferred to you</li>
+                      )}
+                      <li>• They will lose access to all team data</li>
+                    </ul>
+                  </div>
+                  
+                  <p className="text-sm text-gray-400">
+                    All their rundowns and blueprints will be safely transferred to you before their account is deleted.
+                  </p>
+                </div>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500"
+              disabled={isRemoving}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmRemoveMember}
+              disabled={isLoadingPreview || isRemoving || !transferPreview}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isRemoving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  Removing...
+                </>
+              ) : (
+                'Remove Member & Delete Account'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
