@@ -47,6 +47,7 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onOpenSearch?: () => void;
   searchProps?: {
     searchTerm: string;
     hasMatches: (itemId: string, field: string) => boolean;
@@ -94,6 +95,7 @@ const RundownContent = ({
   onAddRow,
   onAddHeader,
   onJumpToHere,
+  onOpenSearch,
   searchProps
 }: RundownContentProps) => {
 
@@ -159,6 +161,7 @@ const RundownContent = ({
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
             onJumpToHere={onJumpToHere}
+            onOpenSearch={onOpenSearch}
             searchProps={searchProps}
           />
         </div>

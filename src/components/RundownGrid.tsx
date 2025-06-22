@@ -213,13 +213,16 @@ const RundownGrid = React.memo(() => {
     logger.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
   };
 
+  // Convert showColorPicker from object to string format for RundownTable
+  const showColorPickerForTable = showColorPicker ? { [showColorPicker]: true } : {};
+
   return (
     <>
       <RundownTable
         items={items}
         visibleColumns={visibleColumns}
         currentTime={currentTime}
-        showColorPicker={showColorPicker}
+        showColorPicker={showColorPickerForTable}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}

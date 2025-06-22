@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export interface RundownContainerProps {
@@ -21,11 +22,11 @@ export interface RundownContainerProps {
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (item: any) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
-  calculateHeaderDuration: (headerId: string) => string;
+  calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onToggleColorPicker: (itemId: string, field: string, event: React.MouseEvent) => void;
+  onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
