@@ -1,14 +1,34 @@
 
-import { SavedRundown } from './types'
+import { SavedRundown } from './types';
+import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 
-export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
-  if (!data || !Array.isArray(data)) {
-    return []
-  }
+export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
+  return {
+    id: dbRundown.id,
+    user_id: dbRundown.user_id,
+    title: dbRundown.title,
+    items: dbRundown.items || [],
+    columns: dbRundown.columns,
+    timezone: dbRundown.timezone,
+    start_time: dbRundown.start_time,
+    icon: dbRundown.icon,
+    archived: dbRundown.archived || false,
+    created_at: dbRundown.created_at,
+    updated_at: dbRundown.updated_at,
+    undo_history: dbRundown.undo_history || [],
+    team_id: dbRundown.team_id,
+    visibility: dbRundown.visibility,
+    folder_id: dbRundown.folder_id || null,
+    teams: dbRundown.teams,
+    creator_profile: dbRundown.creator_profile
+  };
+};
 
-  return data.map(rundown => ({
+export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
+  return {
     id: rundown.id,
-    user_id: rundown.user_id,
+    user_id: userId,
     title: rundown.title,
     items: rundown.items || [],
     columns: rundown.columns,
@@ -16,69 +36,14 @@ export const mapRundownsFromDatabase = (data: any[]): SavedRundown[] => {
     start_time: rundown.start_time,
     icon: rundown.icon,
     archived: rundown.archived || false,
-    created_at: rundown.created_at,
-    updated_at: rundown.updated_at,
     undo_history: rundown.undo_history || [],
     team_id: rundown.team_id,
-    visibility: rundown.visibility,
-    teams: rundown.teams ? {
-      id: rundown.teams.id,
-      name: rundown.teams.name
-    } : null,
-    creator_profile: rundown.creator_profile ? {
-      full_name: rundown.creator_profile.full_name,
-      email: rundown.creator_profile.email
-    } : null
-  }))
-}
-
-export const mapDatabaseToRundown = (data: any): SavedRundown => {
-  return {
-    id: data.id,
-    user_id: data.user_id,
-    title: data.title,
-    items: data.items || [],
-    columns: data.columns,
-    timezone: data.timezone,
-    start_time: data.start_time,
-    icon: data.icon,
-    archived: data.archived || false,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    undo_history: data.undo_history || [],
-    team_id: data.team_id,
-    visibility: data.visibility,
-    teams: data.teams ? {
-      id: data.teams.id,
-      name: data.teams.name
-    } : null,
-    creator_profile: data.creator_profile ? {
-      full_name: data.creator_profile.full_name,
-      email: data.creator_profile.email
-    } : null
-  }
-}
-
-export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
-  const data: any = {
-    user_id: userId,
-    title: rundown.title,
-    items: rundown.items,
-    columns: rundown.columns,
-    timezone: rundown.timezone,
-    start_time: rundown.start_time,
-    icon: rundown.icon,
-    archived: rundown.archived || false,
-    undo_history: rundown.undo_history || [],
-    team_id: rundown.team_id,
-    visibility: rundown.visibility,
+    visibility: rundown.visibility || 'private',
+    folder_id: rundown.folder_id || null,
     updated_at: new Date().toISOString()
   };
+};
 
-  // Only include id if it exists and is not empty
-  if (rundown.id && rundown.id !== '') {
-    data.id = rundown.id;
-  }
-
-  return data;
-}
+export const mapRundownsFromDatabase = (dbRundowns: any[]): SavedRundown[] => {
+  return dbRundowns.map(mapDatabaseToRundown);
+};

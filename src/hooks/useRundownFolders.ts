@@ -141,16 +141,24 @@ export const useRundownFolders = (teamId?: string) => {
 
   const moveRundownToFolder = async (rundownId: string, folderId: string | null) => {
     try {
-      const { error } = await supabase
+      console.log('Moving rundown to folder:', { rundownId, folderId });
+      
+      const { data, error } = await supabase
         .from('rundowns')
         .update({ 
           folder_id: folderId,
           updated_at: new Date().toISOString()
         })
-        .eq('id', rundownId);
+        .eq('id', rundownId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error moving rundown:', error);
+        throw error;
+      }
       
+      console.log('Successfully moved rundown:', data);
       return true;
     } catch (error) {
       console.error('Error moving rundown to folder:', error);

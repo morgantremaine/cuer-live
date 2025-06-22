@@ -23,7 +23,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { teamId } = useTeamId();
-  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
@@ -182,11 +182,19 @@ const Dashboard = () => {
 
   const handleRundownDrop = async (rundownId: string, folderId: string | null) => {
     try {
-      await moveRundownToFolder(rundownId, folderId);
-      toast({
-        title: 'Rundown moved',
-        description: 'Rundown moved to folder successfully',
-      });
+      console.log('Dashboard handling rundown drop:', { rundownId, folderId });
+      
+      const success = await moveRundownToFolder(rundownId, folderId);
+      
+      if (success) {
+        // Reload rundowns to get updated data
+        await loadRundowns();
+        
+        toast({
+          title: 'Rundown moved',
+          description: 'Rundown moved to folder successfully',
+        });
+      }
     } catch (error) {
       console.error('Error moving rundown:', error);
       toast({
@@ -199,6 +207,8 @@ const Dashboard = () => {
 
   // Filter rundowns based on selected folder
   const getFilteredRundowns = () => {
+    console.log('Filtering rundowns:', { folderType, selectedFolder, totalRundowns: savedRundowns.length });
+    
     switch (folderType) {
       case 'all':
         return savedRundowns.filter(r => !r.archived);
@@ -210,7 +220,9 @@ const Dashboard = () => {
       case 'archived':
         return savedRundowns.filter(r => r.archived);
       case 'custom':
-        return savedRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
+        const filtered = savedRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
+        console.log('Custom folder filtered rundowns:', filtered);
+        return filtered;
       default:
         return savedRundowns.filter(r => !r.archived);
     }
