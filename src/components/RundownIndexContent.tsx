@@ -1,14 +1,20 @@
-import React, { useRef } from 'react';
+
+import React, { useRef, useState } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
+import SearchDialog from '@/components/SearchDialog';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+import { useRundownSearch } from '@/hooks/useRundownSearch';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  
+  // Search dialog state
+  const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   
   const {
     coreState,
@@ -53,6 +59,23 @@ const RundownIndexContent = () => {
     autoScrollEnabled,
     toggleAutoScroll
   } = coreState;
+
+  // Search functionality - navigate to specific cell when match is found
+  const handleNavigateToMatch = (itemId: string, field: string) => {
+    const cellKey = `${itemId}-${field}`;
+    const cell = cellRefs.current[cellKey];
+    if (cell) {
+      cell.focus();
+      cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  // Initialize search functionality
+  const searchState = useRundownSearch({
+    items,
+    updateItem,
+    onNavigateToMatch: handleNavigateToMatch
+  });
 
   // Use user column preferences for persistent column management
   const { 
@@ -110,7 +133,18 @@ const RundownIndexContent = () => {
   } = uiState;
 
   // State for column manager
-  const [showColumnManager, setShowColumnManager] = React.useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+
+  // Search handlers
+  const handleOpenSearch = () => {
+    console.log('🔍 Opening search dialog');
+    setIsSearchDialogOpen(true);
+  };
+
+  const handleCloseSearch = () => {
+    console.log('🔍 Closing search dialog');
+    setIsSearchDialogOpen(false);
+  };
 
   // Calculate end time helper
   const calculateEndTime = (startTime: string, duration: string) => {
@@ -399,6 +433,7 @@ const RundownIndexContent = () => {
         onRundownStartTimeChange={handleRundownStartTimeChange}
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
+        onOpenSearch={handleOpenSearch}
         onUndo={undo}
         canUndo={canUndo}
         lastAction={lastAction || ''}
@@ -407,6 +442,30 @@ const RundownIndexContent = () => {
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
+        searchProps={{
+          searchTerm: searchState.searchTerm,
+          hasMatches: searchState.hasMatches,
+          isCurrentMatch: searchState.isCurrentMatch
+        }}
+      />
+      
+      <SearchDialog
+        isOpen={isSearchDialogOpen}
+        onClose={handleCloseSearch}
+        searchTerm={searchState.searchTerm}
+        replaceTerm={searchState.replaceTerm}
+        matchCase={searchState.matchCase}
+        wholeWords={searchState.wholeWords}
+        currentMatch={searchState.currentMatch}
+        totalMatches={searchState.totalMatches}
+        onSearchChange={searchState.onSearchChange}
+        onReplaceChange={searchState.onReplaceChange}
+        onMatchCaseChange={searchState.onMatchCaseChange}
+        onWholeWordsChange={searchState.onWholeWordsChange}
+        onFindNext={searchState.onFindNext}
+        onFindPrevious={searchState.onFindPrevious}
+        onReplaceCurrent={searchState.onReplaceCurrent}
+        onReplaceAll={searchState.onReplaceAll}
       />
       
       <CuerChatButton rundownData={rundownData} />

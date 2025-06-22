@@ -94,17 +94,32 @@ const CellRenderer = ({
   const isCurrentSegmentName = currentSegmentId === item.id && 
     (column.key === 'segmentName' || column.key === 'name');
 
-  // Override colors for showcaller highlighting
-  const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
-  const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
+  // Check for search highlighting
+  const hasSearchMatch = searchProps?.hasMatches(item.id, column.key) || false;
+  const isCurrentSearchMatch = searchProps?.isCurrentMatch(item.id, column.key) || false;
+
+  // Override colors for showcaller highlighting and search highlighting
+  let finalBackgroundColor = backgroundColor;
+  let finalTextColor = textColor;
+
+  if (isCurrentSegmentName) {
+    finalBackgroundColor = '#3b82f6'; // bright blue for showcaller
+    finalTextColor = '#ffffff'; // white text
+  } else if (isCurrentSearchMatch) {
+    finalBackgroundColor = '#fbbf24'; // amber for current search match
+    finalTextColor = '#000000'; // black text for contrast
+  } else if (hasSearchMatch) {
+    finalBackgroundColor = '#fef3c7'; // light amber for other search matches
+    finalTextColor = '#000000'; // black text for contrast
+  }
 
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
       <TimeDisplayCell 
         value={value} 
-        backgroundColor={showcallerBackgroundColor} 
-        textColor={showcallerTextColor}
+        backgroundColor={finalBackgroundColor} 
+        textColor={finalTextColor}
       />
     );
   }
@@ -120,8 +135,8 @@ const CellRenderer = ({
         itemId={item.id}
         cellRefKey={column.key}
         cellRefs={cellRefs}
-        textColor={showcallerTextColor}
-        backgroundColor={showcallerBackgroundColor}
+        textColor={finalTextColor}
+        backgroundColor={finalBackgroundColor}
         onUpdateValue={(newValue) => {
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
@@ -142,7 +157,7 @@ const CellRenderer = ({
         itemId={item.id}
         cellRefKey={column.key}
         cellRefs={cellRefs}
-        textColor={showcallerTextColor}
+        textColor={finalTextColor}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -157,8 +172,8 @@ const CellRenderer = ({
       <div 
         className="absolute inset-0 flex items-center px-3 py-1"
         style={{ 
-          backgroundColor: showcallerBackgroundColor,
-          color: showcallerTextColor,
+          backgroundColor: finalBackgroundColor,
+          color: finalTextColor,
           minHeight: '100%',
           height: '100%'
         }}
@@ -168,7 +183,7 @@ const CellRenderer = ({
           itemId={item.id}
           cellRefKey={column.key}
           cellRefs={cellRefs}
-          textColor={showcallerTextColor}
+          textColor={finalTextColor}
           backgroundColor="transparent" // Make the TextAreaCell background transparent since we're handling it in the wrapper
           isDuration={column.key === 'duration'}
           onUpdateValue={(newValue) => {
@@ -197,8 +212,8 @@ const CellRenderer = ({
       itemId={item.id}
       cellRefKey={column.key}
       cellRefs={cellRefs}
-      textColor={showcallerTextColor}
-      backgroundColor={showcallerBackgroundColor}
+      textColor={finalTextColor}
+      backgroundColor={finalBackgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields

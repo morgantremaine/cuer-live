@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
@@ -43,6 +42,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onRundownStartTimeChange,
     rundownId,
     onOpenTeleprompter,
+    onOpenSearch,
     items,
     visibleColumns,
     onUndo,
@@ -93,46 +93,47 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     <div className="flex flex-col h-full">
       {/* Toolbar Section */}
       <RundownHeaderSection
-        currentTime={currentTime}
-        timezone={timezone}
-        onTimezoneChange={onTimezoneChange}
-        totalRuntime={totalRuntime}
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
-        onShowColumnManager={() => setShowColumnManager(true)}
-        selectedCount={selectedCount}
-        hasClipboardData={hasClipboardData}
-        onCopySelectedRows={onCopySelectedRows}
-        onPasteRows={onPasteRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onClearSelection={onClearSelection}
-        selectedRowId={selectedRowId}
-        isPlaying={isPlaying}
-        currentSegmentId={currentSegmentId}
-        timeRemaining={timeRemaining}
-        onPlay={onPlay}
-        onPause={onPause}
-        onForward={onForward}
-        onBackward={onBackward}
-        onReset={onReset}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
-        rundownTitle={rundownTitle}
-        onTitleChange={onTitleChange}
-        rundownStartTime={rundownStartTime}
-        onRundownStartTimeChange={onRundownStartTimeChange}
-        rundownId={rundownId}
-        onOpenTeleprompter={onOpenTeleprompter}
-        items={items}
-        visibleColumns={visibleColumns}
-        onUndo={onUndo}
-        canUndo={canUndo}
-        lastAction={lastAction}
-        isConnected={isConnected}
-        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        rundownData={rundownData}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
+        currentTime={props.currentTime}
+        timezone={props.timezone}
+        onTimezoneChange={props.onTimezoneChange}
+        totalRuntime={props.totalRuntime}
+        onAddRow={props.onAddRow}
+        onAddHeader={props.onAddHeader}
+        onShowColumnManager={() => props.setShowColumnManager(true)}
+        selectedCount={props.selectedCount}
+        hasClipboardData={props.hasClipboardData}
+        onCopySelectedRows={props.onCopySelectedRows}
+        onPasteRows={props.onPasteRows}
+        onDeleteSelectedRows={props.onDeleteSelectedRows}
+        onClearSelection={props.onClearSelection}
+        selectedRowId={props.selectedRowId}
+        isPlaying={props.isPlaying}
+        currentSegmentId={props.currentSegmentId}
+        timeRemaining={props.timeRemaining}
+        onPlay={props.onPlay}
+        onPause={props.onPause}
+        onForward={props.onForward}
+        onBackward={props.onBackward}
+        onReset={props.onReset}
+        hasUnsavedChanges={props.hasUnsavedChanges}
+        isSaving={props.isSaving}
+        rundownTitle={props.rundownTitle}
+        onTitleChange={props.onTitleChange}
+        rundownStartTime={props.rundownStartTime}
+        onRundownStartTimeChange={props.onRundownStartTimeChange}
+        rundownId={props.rundownId}
+        onOpenTeleprompter={props.onOpenTeleprompter}
+        onOpenSearch={props.onOpenSearch}
+        items={props.items}
+        visibleColumns={props.visibleColumns}
+        onUndo={props.onUndo}
+        canUndo={props.canUndo}
+        lastAction={props.lastAction}
+        isConnected={props.isConnected}
+        isProcessingRealtimeUpdate={props.isProcessingRealtimeUpdate}
+        rundownData={undefined}
+        autoScrollEnabled={props.autoScrollEnabled}
+        onToggleAutoScroll={props.onToggleAutoScroll}
       />
 
       {/* Main Content */}
