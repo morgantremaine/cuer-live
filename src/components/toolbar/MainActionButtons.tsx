@@ -1,12 +1,11 @@
 
 import React from 'react';
-import { Plus, Settings, Monitor, FileText, Undo, MapPin } from 'lucide-react';
+import { Plus, Settings, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
 import PlaybackControls from './PlaybackControls';
+import ToolsMenu from './ToolsMenu';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface MainActionButtonsProps {
@@ -59,36 +58,6 @@ const MainActionButtons = ({
   onBackward,
   onReset
 }: MainActionButtonsProps) => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const handleOpenBlueprint = () => {
-    if (!rundownId) {
-      toast({
-        title: "Cannot open blueprint",
-        description: "Save this rundown first before opening blueprint.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    navigate(`/blueprint/${rundownId}`);
-  };
-
-  const handleOpenTeleprompter = () => {
-    if (!rundownId) {
-      toast({
-        title: "Cannot open teleprompter",
-        description: "Save this rundown first before opening teleprompter.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Open teleprompter in a new window
-    const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
-    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
-  };
 
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
@@ -127,27 +96,19 @@ const MainActionButtons = ({
             <Settings className="h-4 w-4" />
             <span>Columns</span>
           </Button>
-          
-          <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-            <Monitor className="h-4 w-4" />
-            <span>Teleprompter</span>
-          </Button>
-          <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-            <FileText className="h-4 w-4" />
-            <span>Blueprint</span>
-          </Button>
         </div>
 
-        {/* Share menu */}
-        {rundownId && (
-          <div className="w-full">
+        {/* Tools and Share menus */}
+        <div className="grid grid-cols-2 gap-2 w-full">
+          <ToolsMenu rundownId={rundownId} rundownTitle={rundownTitle} />
+          {rundownId && (
             <ShareRundownMenu 
               rundownId={rundownId} 
               rundownTitle={rundownTitle}
               rundownData={rundownData}
             />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Playback controls - only in mobile view */}
         {isPlaying !== undefined && onPlay && onPause && onForward && onBackward && onReset && (
@@ -175,7 +136,6 @@ const MainActionButtons = ({
           <div className="border-t pt-3">
             <div className="flex items-center justify-between p-2 rounded-md border border-input bg-background">
               <div className="flex items-center gap-2">
-                <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
                 <span className="text-sm">Auto-scroll</span>
               </div>
               <Switch
@@ -217,6 +177,8 @@ const MainActionButtons = ({
         <span>Manage Columns</span>
       </Button>
       
+      <ToolsMenu rundownId={rundownId} rundownTitle={rundownTitle} />
+      
       {rundownId && (
         <ShareRundownMenu 
           rundownId={rundownId} 
@@ -224,15 +186,6 @@ const MainActionButtons = ({
           rundownData={rundownData}
         />
       )}
-      
-      <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
-        <Monitor className="h-4 w-4" />
-        <span>Teleprompter</span>
-      </Button>
-      <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className={buttonClass}>
-        <FileText className="h-4 w-4" />
-        <span>Blueprint</span>
-      </Button>
     </>
   );
 };
