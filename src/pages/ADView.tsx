@@ -146,53 +146,55 @@ const ADView = () => {
     currentTimedIndex < timedItems.length - 2 ? timedItems[currentTimedIndex + 2] : null
   ] : [null, null];
 
-  // Calculate show elapsed time based on current showcaller item start time + playback elapsed
+  // Calculate show elapsed time using the same logic as useShowcallerTiming
   const showElapsedTime = (() => {
-    if (!currentSegment?.startTime || !rundownData?.showcallerState?.playbackStartTime) {
+    if (!isShowcallerPlaying || !currentSegmentId || !rundownData?.items) {
       return '00:00:00';
     }
+
+    const currentSegmentIndex = rundownData.items.findIndex(item => item.id === currentSegmentId);
+    if (currentSegmentIndex === -1) {
+      return '00:00:00';
+    }
+
+    // Sum up durations of all completed segments
+    let showcallerElapsedSeconds = 0;
     
-    // Get the current item's start time in seconds from midnight
-    const startTimeParts = currentSegment.startTime.split(':').map(Number);
-    let startTimeSeconds = 0;
-    if (startTimeParts.length === 2) {
-      startTimeSeconds = startTimeParts[0] * 60 + startTimeParts[1];
-    } else if (startTimeParts.length === 3) {
-      startTimeSeconds = startTimeParts[0] * 3600 + startTimeParts[1] * 60 + startTimeParts[2];
+    for (let i = 0; i < currentSegmentIndex; i++) {
+      const item = rundownData.items[i];
+      if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
+        showcallerElapsedSeconds += timeToSeconds(item.duration || '00:00');
+      }
     }
     
-    // Calculate how long showcaller has been running on this item
-    const playbackElapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
-    
-    // Add the playback elapsed to the start time
-    const currentShowTime = startTimeSeconds + playbackElapsed;
-    
-    return secondsToTime(currentShowTime);
+    // Add elapsed time within current segment
+    const currentSegmentItem = rundownData.items[currentSegmentIndex];
+    if (currentSegmentItem?.duration) {
+      const currentSegmentDuration = timeToSeconds(currentSegmentItem.duration);
+      const elapsedInCurrentSegment = currentSegmentDuration - (timeRemaining || 0);
+      showcallerElapsedSeconds += Math.max(0, elapsedInCurrentSegment);
+    }
+
+    return secondsToTime(showcallerElapsedSeconds);
   })();
 
-  // Calculate show remaining time - time until the last item ends
+  // Calculate show remaining time based on total runtime minus elapsed
   const showRemainingTime = (() => {
-    if (!calculatedItems.length || !rundownData?.startTime) {
+    if (!isShowcallerPlaying || !rundownData?.items) {
       return '00:00:00';
     }
 
-    // Find the last non-header item with a calculated end time
-    const lastItem = [...calculatedItems].reverse().find(item => 
-      item.type !== 'header' && item.calculatedEndTime
-    );
-
-    if (!lastItem?.calculatedEndTime) {
-      return '00:00:00';
-    }
+    // Calculate total runtime (sum of all non-floated, non-header item durations)
+    const totalRuntimeSeconds = rundownData.items.reduce((acc, item) => {
+      if (item.type === 'header' || item.isFloating || item.isFloated) return acc;
+      return acc + timeToSeconds(item.duration || '00:00');
+    }, 0);
 
     // Get current show elapsed time in seconds
     const showElapsedSeconds = timeToSeconds(showElapsedTime);
     
-    // Get last item end time in seconds
-    const lastItemEndSeconds = timeToSeconds(lastItem.calculatedEndTime);
-    
     // Calculate remaining time
-    const remainingSeconds = Math.max(0, lastItemEndSeconds - showElapsedSeconds);
+    const remainingSeconds = Math.max(0, totalRuntimeSeconds - showElapsedSeconds);
     
     return secondsToTime(remainingSeconds);
   })();
