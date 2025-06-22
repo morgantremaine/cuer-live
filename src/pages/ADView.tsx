@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -169,6 +168,33 @@ const ADView = () => {
     const currentShowTime = startTimeSeconds + playbackElapsed;
     
     return secondsToTime(currentShowTime);
+  })();
+
+  // Calculate show remaining time - time until the last item ends
+  const showRemainingTime = (() => {
+    if (!calculatedItems.length || !rundownData?.startTime) {
+      return '00:00:00';
+    }
+
+    // Find the last non-header item with a calculated end time
+    const lastItem = [...calculatedItems].reverse().find(item => 
+      item.type !== 'header' && item.calculatedEndTime
+    );
+
+    if (!lastItem?.calculatedEndTime) {
+      return '00:00:00';
+    }
+
+    // Get current show elapsed time in seconds
+    const showElapsedSeconds = timeToSeconds(showElapsedTime);
+    
+    // Get last item end time in seconds
+    const lastItemEndSeconds = timeToSeconds(lastItem.calculatedEndTime);
+    
+    // Calculate remaining time
+    const remainingSeconds = Math.max(0, lastItemEndSeconds - showElapsedSeconds);
+    
+    return secondsToTime(remainingSeconds);
   })();
 
   // Calculate current item elapsed time
@@ -382,6 +408,16 @@ const ADView = () => {
                   <div className="text-xs text-gray-400 mb-2">SHOW ELAPSED</div>
                   <div className="text-xl font-mono font-bold text-blue-400">
                     {showElapsedTime}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Show Remaining Time */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2">SHOW REMAINING</div>
+                  <div className="text-xl font-mono font-bold text-orange-400">
+                    {showRemainingTime}
                   </div>
                 </CardContent>
               </Card>
