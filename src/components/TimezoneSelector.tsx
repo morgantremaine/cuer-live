@@ -47,6 +47,7 @@ const TimezoneSelector = ({ currentTimezone, onTimezoneChange }: TimezoneSelecto
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
         className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1"
+        title="Change timezone"
       >
         <Clock className="h-4 w-4 text-gray-900 dark:text-white" />
       </Button>

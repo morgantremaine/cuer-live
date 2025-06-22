@@ -35,6 +35,7 @@ interface RundownHeaderSectionProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
+  onOpenSearch?: () => void;
   items?: any[];
   visibleColumns?: any[];
   onUndo: () => void;
@@ -78,6 +79,7 @@ const RundownHeaderSection = ({
   onRundownStartTimeChange,
   rundownId,
   onOpenTeleprompter,
+  onOpenSearch,
   items = [],
   visibleColumns = [],
   onUndo,
@@ -111,6 +113,10 @@ const RundownHeaderSection = ({
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
+        onOpenTeleprompter={onOpenTeleprompter}
+        onOpenSearch={onOpenSearch}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}

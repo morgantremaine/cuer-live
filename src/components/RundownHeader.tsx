@@ -306,7 +306,7 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - with properly centered title and timing indicator
+  // Desktop layout - with properly positioned search button
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
@@ -358,7 +358,7 @@ const RundownHeader = ({
         
         <div className="flex items-center space-x-4 flex-shrink-0">
           <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <TimezoneSelector
               currentTimezone={timezone}
               onTimezoneChange={() => {}}
