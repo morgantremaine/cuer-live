@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Search } from 'lucide-react';
@@ -34,6 +33,7 @@ interface RundownHeaderProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   // Search props
+  onOpenTeleprompter?: () => void;
   onOpenSearch?: () => void;
 }
 
@@ -57,6 +57,7 @@ const RundownHeader = ({
   timeRemaining,
   autoScrollEnabled,
   onToggleAutoScroll,
+  onOpenTeleprompter,
   onOpenSearch,
   items = []
 }: RundownHeaderProps) => {

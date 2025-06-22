@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import { useRundownGridCore } from '@/hooks/useRundownGridCore';
@@ -64,6 +65,7 @@ const RundownHeaderPropsAdapter = ({
       timeRemaining={timeRemaining}
       autoScrollEnabled={autoScrollEnabled}
       onToggleAutoScroll={toggleAutoScroll}
+      onOpenTeleprompter={onOpenTeleprompter}
       onOpenSearch={onOpenSearch}
     />
   );
