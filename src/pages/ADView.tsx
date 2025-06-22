@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
+import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { Play, Pause, RotateCcw, Clock, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +22,15 @@ const ADView = () => {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const stopwatchInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Use the same timing hook as the main rundown
+  const timingStatus = useShowcallerTiming({
+    items: rundownData?.items || [],
+    rundownStartTime: rundownData?.startTime || '',
+    isPlaying: !!rundownData?.showcallerState?.playbackStartTime,
+    currentSegmentId: currentSegmentId || '',
+    timeRemaining: timeRemaining || 0
+  });
 
   // Get storage key based on rundown ID
   const getStorageKey = () => {
@@ -176,40 +186,6 @@ const ADView = () => {
     const itemElapsed = Math.min(elapsed, totalSeconds);
     
     return secondsToTime(itemElapsed);
-  })();
-
-  // Calculate timing status using the same method as main rundown
-  const timingStatus = (() => {
-    if (!rundownData?.showcallerState?.playbackStartTime || !rundownData?.startTime || !currentSegment) {
-      return { status: 'on-time', difference: '00:00' };
-    }
-    
-    // Find the current segment in calculated items to get its expected start time
-    const currentCalculatedItem = calculatedItems.find(item => item.id === currentSegmentId);
-    if (!currentCalculatedItem) {
-      return { status: 'on-time', difference: '00:00' };
-    }
-    
-    // Calculate actual elapsed time since show start
-    const actualElapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
-    
-    // Calculate expected elapsed time based on the calculated start time
-    const expectedStartTime = timeToSeconds(currentCalculatedItem.calculatedStartTime);
-    const rundownStartTime = timeToSeconds(rundownData.startTime);
-    const expectedElapsed = expectedStartTime - rundownStartTime;
-    
-    const difference = Math.abs(actualElapsed - expectedElapsed);
-    const isAhead = actualElapsed < expectedElapsed;
-    const isOnTime = difference <= 30; // Within 30 seconds is "on time"
-    
-    const diffMins = Math.floor(difference / 60);
-    const diffSecs = difference % 60;
-    const diffString = `${diffMins.toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
-    
-    return {
-      status: isOnTime ? 'on-time' : (isAhead ? 'under' : 'over'),
-      difference: diffString
-    };
   })();
 
   // Get segment display info with row numbers, colors, and additional column data
@@ -377,13 +353,13 @@ const ADView = () => {
             <div className="text-center">
               <div className="text-sm text-gray-400 mb-1">TIMING STATUS</div>
               <div className={`text-2xl font-bold ${
-                timingStatus.status === 'on-time' ? 'text-green-400' :
-                timingStatus.status === 'under' ? 'text-yellow-400' :
+                timingStatus.isOnTime ? 'text-green-400' :
+                timingStatus.isAhead ? 'text-yellow-400' :
                 'text-red-400'
               }`}>
-                {timingStatus.status === 'on-time' ? 'ON TIME' :
-                 timingStatus.status === 'under' ? `UNDER +${timingStatus.difference}` :
-                 `OVER -${timingStatus.difference}`}
+                {timingStatus.isOnTime ? 'ON TIME' :
+                 timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
+                 `Over +${timingStatus.timeDifference}`}
               </div>
             </div>
           </div>
