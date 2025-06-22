@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -40,8 +39,14 @@ interface RegularRowProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onOpenSearch?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  searchProps?: {
+    searchTerm: string;
+    hasMatches: (itemId: string, field: string) => boolean;
+    isCurrentMatch: (itemId: string, field: string) => boolean;
+  };
 }
 
 const RegularRow = (props: RegularRowProps) => {
@@ -64,7 +69,9 @@ const RegularRow = (props: RegularRowProps) => {
     onAddRow,
     onAddHeader,
     onJumpToHere,
-    isDragging
+    onOpenSearch,
+    isDragging,
+    searchProps
   } = props;
 
   const { rowClass, backgroundColorOverride } = useRowStyling({
@@ -204,6 +211,7 @@ const RegularRow = (props: RegularRowProps) => {
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
           getColumnWidth={props.getColumnWidth}
+          searchProps={searchProps}
         />
       </tr>
     </RundownContextMenu>
