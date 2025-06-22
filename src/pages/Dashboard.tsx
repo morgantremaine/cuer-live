@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -170,7 +168,7 @@ const Dashboard = () => {
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-blue-950">
       <DashboardHeader 
         userEmail={user?.email}
         onSignOut={handleSignOut}
@@ -235,4 +233,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
