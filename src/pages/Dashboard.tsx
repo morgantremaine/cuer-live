@@ -168,7 +168,7 @@ const Dashboard = () => {
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
 
   return (
-    <div className="min-h-screen bg-blue-950">
+    <div className="min-h-screen bg-gray-900">
       <DashboardHeader 
         userEmail={user?.email}
         onSignOut={handleSignOut}
