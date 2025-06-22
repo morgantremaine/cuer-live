@@ -435,7 +435,7 @@ const ADView = () => {
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-4 text-center">
-                  <div className="text-xs text-gray-400 mb-2">ITEM TIME REMAINING</div>
+                  <div className="text-xs text-gray-400 mb-2">ITEM REMAINING</div>
                   <div className="text-xl font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
