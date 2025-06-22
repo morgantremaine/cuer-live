@@ -7,9 +7,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
+import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText, User } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
+
+interface CreatorProfile {
+  full_name: string | null;
+  email: string;
+}
 
 interface SavedRundown {
   id: string
@@ -18,6 +23,7 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
+  creator_profile?: CreatorProfile | null
 }
 
 interface RundownCardProps {
@@ -28,6 +34,7 @@ interface RundownCardProps {
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   isArchived?: boolean
+  currentUserId?: string
 }
 
 const RundownCard = ({ 
@@ -37,7 +44,8 @@ const RundownCard = ({
   onArchive, 
   onUnarchive, 
   onDuplicate,
-  isArchived = false 
+  isArchived = false,
+  currentUserId
 }: RundownCardProps) => {
   const handleBlueprintClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -49,16 +57,31 @@ const RundownCard = ({
     onOpen(rundown.id)
   }
 
+  const getCreatorDisplayName = () => {
+    if (rundown.creator_profile) {
+      return rundown.creator_profile.full_name || rundown.creator_profile.email
+    }
+    return 'Unknown User'
+  }
+
   // Collapsed view for archived rundowns
   if (isArchived) {
     return (
       <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 opacity-75">
         <CardHeader className="py-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center text-white">
-              <Archive className="h-4 w-4 mr-2 text-gray-400" />
-              {rundown.title}
-            </CardTitle>
+            <div className="flex-1">
+              <CardTitle className="text-lg flex items-center text-white">
+                <Archive className="h-4 w-4 mr-2 text-gray-400" />
+                {rundown.title}
+              </CardTitle>
+              <CardDescription className="text-sm text-gray-400 mt-1">
+                <div className="flex items-center">
+                  <User className="h-3 w-3 mr-1" />
+                  Created by: {getCreatorDisplayName()}
+                </div>
+              </CardDescription>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -124,6 +147,10 @@ const RundownCard = ({
               {rundown.title}
             </CardTitle>
             <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
+              <div className="flex items-center">
+                <User className="h-4 w-4 mr-1" />
+                Created by: {getCreatorDisplayName()}
+              </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
                 Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
