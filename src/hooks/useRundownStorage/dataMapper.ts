@@ -4,7 +4,9 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
-  return {
+  console.log('Mapping database rundown:', dbRundown);
+  
+  const mapped = {
     id: dbRundown.id,
     user_id: dbRundown.user_id,
     title: dbRundown.title,
@@ -23,9 +25,14 @@ export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
     teams: dbRundown.teams,
     creator_profile: dbRundown.creator_profile
   };
+  
+  console.log('Mapped rundown folder_id:', mapped.folder_id);
+  return mapped;
 };
 
 export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
+  console.log('Mapping rundown to database, folder_id:', rundown.folder_id);
+  
   return {
     id: rundown.id,
     user_id: userId,
