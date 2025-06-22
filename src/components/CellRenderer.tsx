@@ -21,8 +21,13 @@ interface CellRendererProps {
   currentSegmentId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
-  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onKeyDown: (e: React.KeyEvent, itemId: string, field: string) => void;
   width?: string;
+  searchProps?: {
+    searchTerm: string;
+    hasMatches: (itemId: string, field: string) => boolean;
+    isCurrentMatch: (itemId: string, field: string) => boolean;
+  };
 }
 
 const CellRenderer = ({
@@ -35,7 +40,8 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  width
+  width,
+  searchProps
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
