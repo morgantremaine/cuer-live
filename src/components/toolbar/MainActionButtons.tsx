@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Plus, Undo, MapPin } from 'lucide-react';
+import { Plus, Undo, MapPin, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
