@@ -1,11 +1,10 @@
 
 import React from 'react';
-import { Plus, Settings, Monitor, FileText, Undo, MapPin } from 'lucide-react';
+import { Plus, Settings, Undo, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
+import { ToolsMenu } from './ToolsMenu';
 import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
 
@@ -59,37 +58,6 @@ const MainActionButtons = ({
   onBackward,
   onReset
 }: MainActionButtonsProps) => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const handleOpenBlueprint = () => {
-    if (!rundownId) {
-      toast({
-        title: "Cannot open blueprint",
-        description: "Save this rundown first before opening blueprint.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    navigate(`/blueprint/${rundownId}`);
-  };
-
-  const handleOpenTeleprompter = () => {
-    if (!rundownId) {
-      toast({
-        title: "Cannot open teleprompter",
-        description: "Save this rundown first before opening teleprompter.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Open teleprompter in a new window
-    const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
-    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
-  };
-
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
       onToggleAutoScroll();
@@ -127,27 +95,27 @@ const MainActionButtons = ({
             <Settings className="h-4 w-4" />
             <span>Columns</span>
           </Button>
-          
-          <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-            <Monitor className="h-4 w-4" />
-            <span>Teleprompter</span>
-          </Button>
-          <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-            <FileText className="h-4 w-4" />
-            <span>Blueprint</span>
-          </Button>
         </div>
 
-        {/* Share menu */}
-        {rundownId && (
+        {/* Tools and Share menus */}
+        <div className="grid grid-cols-2 gap-2 w-full">
           <div className="w-full">
-            <ShareRundownMenu 
-              rundownId={rundownId} 
-              rundownTitle={rundownTitle}
-              rundownData={rundownData}
+            <ToolsMenu 
+              rundownId={rundownId}
+              size={buttonSize}
+              className="w-full justify-start"
             />
           </div>
-        )}
+          {rundownId && (
+            <div className="w-full">
+              <ShareRundownMenu 
+                rundownId={rundownId} 
+                rundownTitle={rundownTitle}
+                rundownData={rundownData}
+              />
+            </div>
+          )}
+        </div>
 
         {/* Playback controls - only in mobile view */}
         {isPlaying !== undefined && onPlay && onPause && onForward && onBackward && onReset && (
@@ -217,6 +185,8 @@ const MainActionButtons = ({
         <span>Manage Columns</span>
       </Button>
       
+      <ToolsMenu rundownId={rundownId} size={buttonSize} />
+      
       {rundownId && (
         <ShareRundownMenu 
           rundownId={rundownId} 
@@ -224,15 +194,6 @@ const MainActionButtons = ({
           rundownData={rundownData}
         />
       )}
-      
-      <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
-        <Monitor className="h-4 w-4" />
-        <span>Teleprompter</span>
-      </Button>
-      <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className={buttonClass}>
-        <FileText className="h-4 w-4" />
-        <span>Blueprint</span>
-      </Button>
     </>
   );
 };
