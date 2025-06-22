@@ -472,7 +472,6 @@ const ADView = () => {
               {/* Previous Segment 2 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-40"
-                style={{ backgroundColor: prev2Info.color ? `${prev2Info.color}15` : undefined }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
@@ -489,7 +488,6 @@ const ADView = () => {
               {/* Previous Segment 1 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-60"
-                style={{ backgroundColor: prev1Info.color ? `${prev1Info.color}20` : undefined }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
@@ -506,7 +504,6 @@ const ADView = () => {
               {/* Current Segment */}
               <div 
                 className="bg-green-900 border-2 border-green-600 rounded-lg p-6 shadow-lg"
-                style={{ backgroundColor: currInfo.color ? `${currInfo.color}40` : undefined }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
@@ -534,7 +531,6 @@ const ADView = () => {
               {/* Next Segment 1 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-80"
-                style={{ backgroundColor: next1Info.color ? `${next1Info.color}20` : undefined }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
@@ -551,7 +547,6 @@ const ADView = () => {
               {/* Next Segment 2 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-60"
-                style={{ backgroundColor: next2Info.color ? `${next2Info.color}15` : undefined }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 text-center">
