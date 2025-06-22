@@ -17,6 +17,11 @@ interface HeaderRowContentProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   getColumnWidth: (column: Column) => string;
+  searchProps?: {
+    searchTerm: string;
+    hasMatches: (itemId: string, field: string) => boolean;
+    isCurrentMatch: (itemId: string, field: string) => boolean;
+  };
 }
 
 const HeaderRowContent = ({
@@ -30,7 +35,8 @@ const HeaderRowContent = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  getColumnWidth
+  getColumnWidth,
+  searchProps
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
@@ -86,6 +92,7 @@ const HeaderRowContent = ({
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
                   width={columnWidth}
+                  searchProps={searchProps}
                 />
               </div>
             </td>
