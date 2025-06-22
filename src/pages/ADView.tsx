@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -23,11 +24,14 @@ const ADView = () => {
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const stopwatchInterval = useRef<NodeJS.Timeout | null>(null);
 
+  // Check if showcaller is playing
+  const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
+
   // Use the same timing hook as the main rundown
   const timingStatus = useShowcallerTiming({
     items: rundownData?.items || [],
     rundownStartTime: rundownData?.startTime || '',
-    isPlaying: !!rundownData?.showcallerState?.playbackStartTime,
+    isPlaying: isShowcallerPlaying,
     currentSegmentId: currentSegmentId || '',
     timeRemaining: timeRemaining || 0
   });
@@ -353,11 +357,13 @@ const ADView = () => {
             <div className="text-center">
               <div className="text-sm text-gray-400 mb-1">TIMING STATUS</div>
               <div className={`text-2xl font-bold ${
+                !isShowcallerPlaying ? 'text-green-400' :
                 timingStatus.isOnTime ? 'text-green-400' :
                 timingStatus.isAhead ? 'text-yellow-400' :
                 'text-red-400'
               }`}>
-                {timingStatus.isOnTime ? 'ON TIME' :
+                {!isShowcallerPlaying ? 'PAUSED' :
+                 timingStatus.isOnTime ? 'ON TIME' :
                  timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
                  `Over +${timingStatus.timeDifference}`}
               </div>
