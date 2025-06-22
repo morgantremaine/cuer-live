@@ -65,6 +65,8 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
 
     const adViewUrl = `${window.location.origin}/ad-view/${rundownId}`;
     const adWindow = window.open(adViewUrl, '_blank', 'noopener,noreferrer');
+    
+    // Only show the popup blocker warning if window.open actually failed
     if (!adWindow) {
       toast({
         title: 'AD View failed to open',
