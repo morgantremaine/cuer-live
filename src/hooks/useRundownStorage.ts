@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,7 +49,6 @@ export const useRundownStorage = () => {
       }
       
       // Query rundowns from user's teams - include both archived and active
-      // Make sure to explicitly select folder_id
       const { data: rundownsData, error: rundownsError } = await supabase
         .from('rundowns')
         .select(`
@@ -67,8 +65,6 @@ export const useRundownStorage = () => {
         console.error('Database error loading rundowns:', rundownsError);
         throw rundownsError;
       }
-
-      console.log('Raw rundowns data from database:', rundownsData);
 
       // Get all unique user IDs from rundowns to fetch their profiles
       const userIds = [...new Set(rundownsData?.map(r => r.user_id) || [])];
@@ -106,7 +102,7 @@ export const useRundownStorage = () => {
           undo_history: rundown.undo_history || [],
           team_id: rundown.team_id,
           visibility: rundown.visibility,
-          folder_id: rundown.folder_id || null, // Ensure folder_id is properly mapped
+          folder_id: rundown.folder_id || null,
           teams: rundown.teams ? {
             id: rundown.teams.id,
             name: rundown.teams.name
@@ -117,7 +113,6 @@ export const useRundownStorage = () => {
           } : null
         };
         
-        console.log(`Mapped rundown ${mappedRundown.title} with folder_id: ${mappedRundown.folder_id}`);
         return mappedRundown;
       });
 

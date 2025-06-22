@@ -181,8 +181,6 @@ const Dashboard = () => {
 
   const handleRundownDrop = async (rundownId: string, folderId: string | null) => {
     try {
-      console.log('Dashboard handling rundown drop:', { rundownId, folderId });
-      
       const success = await moveRundownToFolder(rundownId, folderId);
       
       if (success) {
@@ -206,13 +204,6 @@ const Dashboard = () => {
 
   // Filter rundowns based on selected folder
   const getFilteredRundowns = () => {
-    console.log('Filtering rundowns:', { folderType, selectedFolder, totalRundowns: savedRundowns.length });
-    
-    // Log all rundowns with their folder_id values
-    savedRundowns.forEach((rundown, index) => {
-      console.log(`Rundown ${index}: ${rundown.title}, folder_id: ${rundown.folder_id}, archived: ${rundown.archived}`);
-    });
-    
     switch (folderType) {
       case 'all':
         return savedRundowns.filter(r => !r.archived);
@@ -224,12 +215,7 @@ const Dashboard = () => {
       case 'archived':
         return savedRundowns.filter(r => r.archived);
       case 'custom':
-        const filtered = savedRundowns.filter(r => {
-          console.log(`Checking rundown ${r.title}: folder_id=${r.folder_id}, selectedFolder=${selectedFolder}, archived=${r.archived}`);
-          return r.folder_id === selectedFolder && !r.archived;
-        });
-        console.log('Custom folder filtered rundowns:', filtered);
-        return filtered;
+        return savedRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
       default:
         return savedRundowns.filter(r => !r.archived);
     }
