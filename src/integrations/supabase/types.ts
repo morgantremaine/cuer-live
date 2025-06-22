@@ -130,6 +130,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rundown_folders: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          position: number
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          position?: number
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          position?: number
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rundown_presence: {
         Row: {
           created_at: string
@@ -160,6 +193,7 @@ export type Database = {
           columns: Json | null
           created_at: string | null
           external_notes: Json | null
+          folder_id: string | null
           icon: string | null
           id: string
           items: Json
@@ -179,6 +213,7 @@ export type Database = {
           columns?: Json | null
           created_at?: string | null
           external_notes?: Json | null
+          folder_id?: string | null
           icon?: string | null
           id?: string
           items: Json
@@ -198,6 +233,7 @@ export type Database = {
           columns?: Json | null
           created_at?: string | null
           external_notes?: Json | null
+          folder_id?: string | null
           icon?: string | null
           id?: string
           items?: Json
@@ -213,6 +249,13 @@ export type Database = {
           visibility?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "rundowns_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "rundown_folders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rundowns_team_id_fkey"
             columns: ["team_id"]

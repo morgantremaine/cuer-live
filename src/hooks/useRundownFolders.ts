@@ -1,0 +1,179 @@
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { useToast } from './use-toast';
+
+export interface RundownFolder {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+  team_id: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const useRundownFolders = (teamId?: string) => {
+  const [folders, setFolders] = useState<RundownFolder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const fetchFolders = async () => {
+    if (!teamId || !user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('rundown_folders')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('position', { ascending: true });
+
+      if (error) throw error;
+      setFolders(data || []);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load folders',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createFolder = async (name: string, color: string = '#6B7280') => {
+    if (!teamId || !user) return null;
+
+    try {
+      const maxPosition = Math.max(...folders.map(f => f.position), -1);
+      
+      const { data, error } = await supabase
+        .from('rundown_folders')
+        .insert({
+          name,
+          color,
+          position: maxPosition + 1,
+          team_id: teamId,
+          created_by: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setFolders(prev => [...prev, data]);
+      toast({
+        title: 'Folder created',
+        description: `"${name}" folder created successfully`,
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create folder',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
+  const updateFolder = async (id: string, updates: Partial<Pick<RundownFolder, 'name' | 'color'>>) => {
+    try {
+      const { data, error } = await supabase
+        .from('rundown_folders')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setFolders(prev => prev.map(f => f.id === id ? data : f));
+      toast({
+        title: 'Folder updated',
+        description: 'Folder updated successfully',
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update folder',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
+  const deleteFolder = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('rundown_folders')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setFolders(prev => prev.filter(f => f.id !== id));
+      toast({
+        title: 'Folder deleted',
+        description: 'Folder deleted successfully. Rundowns moved to All Rundowns.',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete folder',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
+  const moveRundownToFolder = async (rundownId: string, folderId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('rundowns')
+        .update({ 
+          folder_id: folderId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rundownId);
+
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error('Error moving rundown to folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move rundown to folder',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchFolders();
+  }, [teamId, user]);
+
+  return {
+    folders,
+    loading,
+    createFolder,
+    updateFolder,
+    deleteFolder,
+    moveRundownToFolder,
+    refetch: fetchFolders
+  };
+};

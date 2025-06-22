@@ -1,7 +1,10 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
+import DashboardSidebar from '@/components/DashboardSidebar';
+import DashboardFolderBreadcrumb from '@/components/DashboardFolderBreadcrumb';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import CSVImportDialog from '@/components/CSVImportDialog';
@@ -9,6 +12,8 @@ import { CSVImportResult } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { useRundownFolders } from '@/hooks/useRundownFolders';
+import { useTeamId } from '@/hooks/useTeamId';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { Button } from '@/components/ui/button';
@@ -17,9 +22,16 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { teamId } = useTeamId();
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown } = useRundownStorage();
+  const { moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
+  
+  // Sidebar state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [folderType, setFolderType] = useState<'all' | 'recent' | 'archived' | 'custom'>('all');
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
@@ -163,63 +175,111 @@ const Dashboard = () => {
     }
   };
 
-  // Filter rundowns - now show ALL team rundowns regardless of who created them
-  const activeRundowns = savedRundowns.filter(rundown => !rundown.archived);
-  const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
+  const handleFolderSelect = (folderId: string | null, folderType: 'all' | 'recent' | 'archived' | 'custom') => {
+    setSelectedFolder(folderId);
+    setFolderType(folderType);
+  };
+
+  const handleRundownDrop = async (rundownId: string, folderId: string | null) => {
+    try {
+      await moveRundownToFolder(rundown
+
+    } catch (error) {
+      console.error('Error moving rundown:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move rundown to folder',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Filter rundowns based on selected folder
+  const getFilteredRundowns = () => {
+    switch (folderType) {
+      case 'all':
+        return savedRundowns.filter(r => !r.archived);
+      case 'recent':
+        return savedRundowns.filter(r => {
+          const daysDiff = (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24);
+          return daysDiff <= 7 && !r.archived;
+        });
+      case 'archived':
+        return savedRundowns.filter(r => r.archived);
+      case 'custom':
+        return savedRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
+      default:
+        return savedRundowns.filter(r => !r.archived);
+    }
+  };
+
+  const filteredRundowns = getFilteredRundowns();
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <DashboardHeader 
-        userEmail={user?.email}
-        onSignOut={handleSignOut}
+    <div className="min-h-screen bg-gray-900 flex">
+      {/* Sidebar */}
+      <DashboardSidebar
+        selectedFolder={selectedFolder}
+        onFolderSelect={handleFolderSelect}
+        rundowns={savedRundowns}
+        teamId={teamId || undefined}
+        onRundownDrop={handleRundownDrop}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0 space-y-12">
-          {/* Create New and Import Buttons - Fixed alignment */}
-          <div className="flex items-center space-x-4">
-            <CreateNewButton onClick={handleCreateNew} />
-            <CSVImportDialog onImport={handleCSVImport}>
-              <Button 
-                size="lg" 
-                variant="outline"
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Import CSV
-              </Button>
-            </CSVImportDialog>
-          </div>
-          
-          {/* Active Rundowns Section */}
-          <DashboardRundownGrid 
-            title="Active Rundowns"
-            rundowns={activeRundowns}
-            loading={loading}
-            onOpen={handleOpenRundown}
-            onDelete={handleDeleteRundown}
-            onArchive={handleArchiveRundown}
-            onDuplicate={handleDuplicateRundown}
-            isArchived={false}
-            currentUserId={user?.id}
-          />
 
-          {/* Archived Rundowns Section - now shows ALL archived rundowns from teams */}
-          {archivedRundowns.length > 0 && (
-            <DashboardRundownGrid 
-              title="Archived Rundowns"
-              rundowns={archivedRundowns}
-              loading={false}
-              onOpen={handleOpenRundown}
-              onDelete={handleDeleteRundown}
-              onUnarchive={handleUnarchiveRundown}
-              onDuplicate={handleDuplicateRundown}
-              isArchived={true}
-              showEmptyState={false}
-              currentUserId={user?.id}
-            />
-          )}
-        </div>
-      </main>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <DashboardHeader 
+          userEmail={user?.email}
+          onSignOut={handleSignOut}
+        />
+        
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="px-4 py-6 sm:px-0 space-y-6">
+              {/* Breadcrumb */}
+              <DashboardFolderBreadcrumb
+                selectedFolder={selectedFolder}
+                folderType={folderType}
+                customFolders={[]} // Will be populated by the hook
+              />
+              
+              {/* Create New and Import Buttons */}
+              <div className="flex items-center space-x-4">
+                <CreateNewButton onClick={handleCreateNew} />
+                <CSVImportDialog onImport={handleCSVImport}>
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Import CSV
+                  </Button>
+                </CSVImportDialog>
+              </div>
+              
+              {/* Rundowns Grid */}
+              <DashboardRundownGrid 
+                title={folderType === 'all' ? 'All Rundowns' : 
+                       folderType === 'recent' ? 'Recently Active' :
+                       folderType === 'archived' ? 'Archived Rundowns' : 'Custom Folder'}
+                rundowns={filteredRundowns}
+                loading={loading}
+                onOpen={handleOpenRundown}
+                onDelete={handleDeleteRundown}
+                onArchive={handleArchiveRundown}
+                onUnarchive={handleUnarchiveRundown}
+                onDuplicate={handleDuplicateRundown}
+                isArchived={folderType === 'archived'}
+                showEmptyState={true}
+                currentUserId={user?.id}
+              />
+            </div>
+          </div>
+        </main>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog

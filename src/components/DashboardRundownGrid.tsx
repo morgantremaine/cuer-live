@@ -132,6 +132,12 @@ const DashboardRundownGrid = ({
     return { status: 'older', color: 'bg-gray-500', label: 'Older' }
   }
 
+  // Handle drag start for rundown cards
+  const handleDragStart = (e: React.DragEvent, rundownId: string) => {
+    e.dataTransfer.setData('text/plain', rundownId);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -183,7 +189,9 @@ const DashboardRundownGrid = ({
             return (
               <Card 
                 key={rundown.id} 
-                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden"
+                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
+                draggable
+                onDragStart={(e) => handleDragStart(e, rundown.id)}
               >
                 {/* Activity Status Indicator */}
                 <div className={`absolute top-0 left-0 w-full h-1 ${activity.color} opacity-50`} />
@@ -292,7 +300,9 @@ const DashboardRundownGrid = ({
           return (
             <Card 
               key={rundown.id} 
-              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden"
+              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden cursor-move"
+              draggable
+              onDragStart={(e) => handleDragStart(e, rundown.id)}
             >
               {/* Activity Status Indicator */}
               <div className={`absolute top-0 left-0 w-full h-1 ${activity.color}`} />
