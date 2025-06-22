@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import RundownTable from './RundownTable';
+import SearchDialog from './SearchDialog';
+import { useRundownSearch } from '@/hooks/useRundownSearch';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { logger } from '@/utils/logger';
 
@@ -21,6 +23,7 @@ const RundownGrid = React.memo(() => {
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
+    updateItem,
     // Showcaller controls - ensure these are properly passed through
     play,
     pause,
@@ -60,6 +63,31 @@ const RundownGrid = React.memo(() => {
     handleKeyDown,
     cellRefs
   } = uiState;
+
+  // Search state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Navigation callback for search
+  const handleNavigateToMatch = useCallback((itemId: string, field: string) => {
+    // Find the item and scroll to it
+    const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+    if (itemElement) {
+      itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Focus the specific field if possible
+    const fieldElement = cellRefs.current[`${itemId}-${field}`];
+    if (fieldElement) {
+      fieldElement.focus();
+    }
+  }, [cellRefs]);
+
+  // Initialize search hook
+  const searchProps = useRundownSearch({
+    items,
+    updateItem,
+    onNavigateToMatch: handleNavigateToMatch
+  });
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
@@ -186,47 +214,57 @@ const RundownGrid = React.memo(() => {
   };
 
   return (
-    <RundownTable
-      items={items}
-      visibleColumns={visibleColumns}
-      currentTime={currentTime}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      dropTargetIndex={dropTargetIndex}
-      currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData()}
-      selectedRowId={selectedRowId}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-      getRowNumber={getRowNumber}
-      getRowStatus={getRowStatusForTable}
-      getHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={coreState.updateItem}
-      onCellClick={handleCellClickWrapper}
-      onKeyDown={handleKeyDownWrapper}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
-      onDeleteRow={coreState.deleteRow}
-      onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStartWrapper}
-      onDragOver={handleDragOverWrapper}
-      onDragLeave={handleDragLeaveWrapper}
-      onDrop={handleDropWrapper}
-      onCopySelectedRows={handleCopySelectedRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
-      onPasteRows={handlePasteRows}
-      onClearSelection={() => {
-        clearSelection();
-        clearRowSelection();
-      }}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
-      onJumpToHere={handleJumpToHere}
-    />
+    <>
+      <RundownTable
+        items={items}
+        visibleColumns={visibleColumns}
+        currentTime={currentTime}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
+        hasClipboardData={hasClipboardData()}
+        selectedRowId={selectedRowId}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+        getRowNumber={getRowNumber}
+        getRowStatus={getRowStatusForTable}
+        getHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={coreState.updateItem}
+        onCellClick={handleCellClickWrapper}
+        onKeyDown={handleKeyDownWrapper}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={handleColorSelect}
+        onDeleteRow={coreState.deleteRow}
+        onToggleFloat={coreState.toggleFloatRow}
+        onRowSelect={handleEnhancedRowSelection}
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
+        onCopySelectedRows={handleCopySelectedRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
+        onPasteRows={handlePasteRows}
+        onClearSelection={() => {
+          clearSelection();
+          clearRowSelection();
+        }}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
+        onJumpToHere={handleJumpToHere}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        searchProps={searchProps}
+      />
+      
+      <SearchDialog
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        {...searchProps}
+      />
+    </>
   );
 });
 

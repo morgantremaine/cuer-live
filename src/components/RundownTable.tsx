@@ -41,6 +41,12 @@ interface RundownTableProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onOpenSearch?: () => void;
+  searchProps?: {
+    searchTerm: string;
+    hasMatches: (itemId: string, field: string) => boolean;
+    isCurrentMatch: (itemId: string, field: string) => boolean;
+  };
 }
 
 const RundownTable = ({
@@ -79,7 +85,9 @@ const RundownTable = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere
+  onJumpToHere,
+  onOpenSearch,
+  searchProps
 }: RundownTableProps) => {
 
   // Handler for drag over events on the table container
@@ -172,6 +180,8 @@ const RundownTable = ({
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
                   onJumpToHere={handleJumpToHereDebug}
+                  onOpenSearch={onOpenSearch}
+                  searchProps={searchProps}
                   getColumnWidth={getColumnWidth}
                 />
                 

@@ -39,8 +39,14 @@ interface RundownRowProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onOpenSearch?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  searchProps?: {
+    searchTerm: string;
+    hasMatches: (itemId: string, field: string) => boolean;
+    isCurrentMatch: (itemId: string, field: string) => boolean;
+  };
 }
 
 const RundownRow = (props: RundownRowProps) => {
@@ -59,10 +65,17 @@ const RundownRow = (props: RundownRowProps) => {
     }
   };
 
+  // Add data-item-id attribute for search navigation
+  const rowProps = {
+    ...props,
+    'data-item-id': props.item.id
+  };
+
   if (isHeaderItem(props.item)) {
     return (
       <HeaderRow 
         {...props} 
+        data-item-id={props.item.id}
         isSelected={isActuallySelected}
         headerDuration={props.headerDuration || ''}
         selectedRowsCount={props.selectedRowsCount || 1}
@@ -73,6 +86,8 @@ const RundownRow = (props: RundownRowProps) => {
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
+        onOpenSearch={props.onOpenSearch}
+        searchProps={props.searchProps}
         // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
     );
@@ -81,6 +96,7 @@ const RundownRow = (props: RundownRowProps) => {
   return (
     <RegularRow 
       {...props} 
+      data-item-id={props.item.id}
       isSelected={isActuallySelected}
       isCurrentlyPlaying={props.isCurrentlyPlaying}
       isDraggingMultiple={props.isDraggingMultiple}
@@ -94,6 +110,8 @@ const RundownRow = (props: RundownRowProps) => {
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
       onJumpToHere={handleJumpToHereDebug}
+      onOpenSearch={props.onOpenSearch}
+      searchProps={props.searchProps}
     />
   );
 };
