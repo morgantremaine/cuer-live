@@ -202,7 +202,7 @@ const ADView = () => {
   // Calculate current item elapsed time
   const currentItemElapsed = (() => {
     if (!currentSegment?.duration || !rundownData?.showcallerState?.playbackStartTime) {
-      return '00:00:00';
+      return '00:00';
     }
     
     const durationParts = currentSegment.duration.split(':').map(Number);
@@ -217,7 +217,10 @@ const ADView = () => {
     const elapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
     const itemElapsed = Math.min(elapsed, totalSeconds);
     
-    return secondsToTime(itemElapsed);
+    // Format as MM:SS instead of HH:MM:SS
+    const mins = Math.floor(itemElapsed / 60);
+    const secs = itemElapsed % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   })();
 
   // Get segment display info with row numbers and additional column data (removed color)
