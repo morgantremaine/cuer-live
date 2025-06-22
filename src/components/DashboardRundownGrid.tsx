@@ -1,5 +1,5 @@
 
-import { RundownCard } from '@/components/RundownCard'
+import RundownCard from '@/components/RundownCard'
 import { RundownItem } from '@/hooks/useRundownItems'
 
 interface CreatorProfile {
