@@ -11,7 +11,7 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer, Download, Monitor } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
@@ -71,6 +71,18 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     } else {
       toast({
         title: 'Print failed',
+        description: 'Please allow popups and try again',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleOpenADView = () => {
+    const adViewUrl = `${window.location.origin}/ad-view/${rundownId}`;
+    const adWindow = window.open(adViewUrl, '_blank', 'noopener,noreferrer');
+    if (!adWindow) {
+      toast({
+        title: 'AD View failed to open',
         description: 'Please allow popups and try again',
         variant: 'destructive',
       });
@@ -138,6 +150,11 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           <Copy className="h-4 w-4 mr-2" />
           Copy Read-Only Link
           {copied && <Check className="h-4 w-4 ml-auto text-green-600" />}
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handleOpenADView}>
+          <Monitor className="h-4 w-4 mr-2" />
+          Open AD View
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={handleExportCSV}>
