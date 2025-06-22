@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -168,7 +169,7 @@ const Dashboard = () => {
   const archivedRundowns = savedRundowns.filter(rundown => rundown.archived);
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: '#2b2b2b' }}>
       <DashboardHeader 
         userEmail={user?.email}
         onSignOut={handleSignOut}
