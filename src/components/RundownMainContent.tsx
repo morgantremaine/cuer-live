@@ -24,8 +24,14 @@ const RundownMainContent = ({
   totalDuration,
   autoScrollEnabled,
   onToggleAutoScroll,
+  calculateHeaderDuration,
   ...contentProps
 }: RundownMainContentProps) => {
+
+  // Create wrapper to match the expected signature for RundownContent
+  const calculateHeaderDurationWrapper = (index: number) => {
+    return calculateHeaderDuration(index.toString());
+  };
 
   return (
     <>
@@ -34,6 +40,7 @@ const RundownMainContent = ({
         visibleColumns={visibleColumns}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
+        calculateHeaderDuration={calculateHeaderDurationWrapper}
       />
       
       {showColumnManager && (

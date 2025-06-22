@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -344,13 +343,8 @@ const RundownIndexContent = () => {
   };
 
   // Fix the calculateHeaderDuration function signature
-  const calculateHeaderDurationWrapper = (headerId: string) => {
-    // Find the header item by ID and calculate its duration
-    const headerItem = items.find(item => item.id === headerId);
-    if (!headerItem) return '00:00:00';
-    
-    const headerIndex = items.findIndex(item => item.id === headerId);
-    return calculateHeaderDuration(headerIndex);
+  const calculateHeaderDurationWrapper = (index: number) => {
+    return calculateHeaderDuration(index);
   };
 
   // Fix the onRowSelect function signature
@@ -360,6 +354,9 @@ const RundownIndexContent = () => {
     const isCtrlClick = event.ctrlKey || event.metaKey;
     handleRowSelect(id, itemIndex, isShiftClick, isCtrlClick);
   };
+
+  // Convert showColorPicker from string to object format
+  const showColorPickerObject = showColorPicker ? { [showColorPicker]: true } : {};
 
   // Prepare rundown data for Cuer AI
   const rundownData = {
@@ -404,7 +401,7 @@ const RundownIndexContent = () => {
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}
-        showColorPicker={showColorPicker}
+        showColorPicker={showColorPickerObject}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}

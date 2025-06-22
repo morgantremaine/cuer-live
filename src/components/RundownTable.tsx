@@ -8,7 +8,7 @@ interface RundownTableProps {
   items: any[];
   visibleColumns: Column[];
   currentTime: Date;
-  showColorPicker: string | null;
+  showColorPicker: { [key: string]: boolean };
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
@@ -17,7 +17,7 @@ interface RundownTableProps {
   currentSegmentId: string | null;
   hasClipboardData: boolean;
   selectedRowId: string | null;
-  getColumnWidth: (column: Column) => string;
+  getColumnWidth: (columnId: string) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
@@ -118,6 +118,11 @@ const RundownTable = ({
     }
   };
 
+  // Create wrapper for getColumnWidth to match expected signature
+  const getColumnWidthWrapper = (column: Column) => {
+    return getColumnWidth(column.id);
+  };
+
   return (
     <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">
@@ -148,7 +153,7 @@ const RundownTable = ({
                   index={index}
                   rowNumber={rowNumber}
                   status={status}
-                  showColorPicker={showColorPicker}
+                  showColorPicker={showColorPicker[item.id] ? item.id : null}
                   cellRefs={cellRefs}
                   columns={visibleColumns}
                   isSelected={isActuallySelected}
@@ -182,7 +187,7 @@ const RundownTable = ({
                   onJumpToHere={handleJumpToHereDebug}
                   onOpenSearch={onOpenSearch}
                   searchProps={searchProps}
-                  getColumnWidth={getColumnWidth}
+                  getColumnWidth={getColumnWidthWrapper}
                 />
                 
                 {/* Show drop indicator line AFTER the last row if it's the drop target */}
