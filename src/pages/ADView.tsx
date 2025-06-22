@@ -220,12 +220,11 @@ const ADView = () => {
     return secondsToTime(itemElapsed);
   })();
 
-  // Get segment display info with row numbers, colors, and additional column data
+  // Get segment display info with row numbers and additional column data (removed color)
   const getSegmentInfo = (segment: any) => {
     if (!segment || !rundownData?.items) return { 
       name: '--', 
       rowNumber: '', 
-      color: '', 
       columnData: {} 
     };
     
@@ -233,7 +232,6 @@ const ADView = () => {
     const originalIndex = rundownData.items.findIndex(item => item.id === segment.id);
     const rowNumber = getRowNumber(originalIndex, rundownData.items);
     const name = segment.name || segment.segmentName || '--';
-    const color = segment.color || '';
     
     // Extract data for selected columns
     const columnData: { [key: string]: string } = {};
@@ -249,15 +247,15 @@ const ADView = () => {
       columnData[columnKey] = value;
     });
     
-    return { name, rowNumber, color, columnData };
+    return { name, rowNumber, columnData };
   };
 
   // Get info for all segments
-  const prev2Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', color: '', columnData: {} };
-  const prev1Info = previousSegments[1] ? getSegmentInfo(previousSegments[1]) : { name: '--', rowNumber: '', color: '', columnData: {} };
-  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', color: '', columnData: {} };
-  const next1Info = nextSegments[0] ? getSegmentInfo(nextSegments[0]) : { name: '--', rowNumber: '', color: '', columnData: {} };
-  const next2Info = nextSegments[1] ? getSegmentInfo(nextSegments[1]) : { name: '--', rowNumber: '', color: '', columnData: {} };
+  const prev2Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
+  const prev1Info = previousSegments[1] ? getSegmentInfo(previousSegments[1]) : { name: '--', rowNumber: '', columnData: {} };
+  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {} };
+  const next1Info = nextSegments[0] ? getSegmentInfo(nextSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
+  const next2Info = nextSegments[1] ? getSegmentInfo(nextSegments[1]) : { name: '--', rowNumber: '', columnData: {} };
 
   // Add a column to display
   const addColumn = (columnKey: string) => {
