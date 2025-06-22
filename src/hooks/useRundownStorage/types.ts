@@ -17,6 +17,7 @@ export interface SavedRundown {
   undo_history?: any[]
   team_id?: string
   visibility?: string
+  folder_id?: string | null
   teams?: {
     id: string
     name: string
