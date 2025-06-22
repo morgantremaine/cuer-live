@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getRowNumber } from '@/utils/sharedRundownUtils';
-import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
+import { timeToSeconds, secondsToTime, calculateItemsWithTiming } from '@/utils/rundownCalculations';
 import {
   Select,
   SelectContent,
@@ -52,6 +52,12 @@ const ADView = () => {
       localStorage.setItem(storageKey, JSON.stringify(selectedColumns));
     }
   }, [selectedColumns, rundownData?.id]);
+
+  // Calculate items with proper timing using the same method as main rundown
+  const calculatedItems = useMemo(() => {
+    if (!rundownData?.items || !rundownData?.startTime) return [];
+    return calculateItemsWithTiming(rundownData.items, rundownData.startTime);
+  }, [rundownData?.items, rundownData?.startTime]);
 
   // Dynamically generate available columns based on rundown data
   const availableColumns = useMemo(() => {
@@ -172,24 +178,25 @@ const ADView = () => {
     return secondsToTime(itemElapsed);
   })();
 
-  // Calculate timing status
+  // Calculate timing status using the same method as main rundown
   const timingStatus = (() => {
-    if (!rundownData?.showcallerState?.playbackStartTime || !rundownData?.startTime) {
+    if (!rundownData?.showcallerState?.playbackStartTime || !rundownData?.startTime || !currentSegment) {
       return { status: 'on-time', difference: '00:00' };
     }
     
-    // Calculate actual elapsed time
+    // Find the current segment in calculated items to get its expected start time
+    const currentCalculatedItem = calculatedItems.find(item => item.id === currentSegmentId);
+    if (!currentCalculatedItem) {
+      return { status: 'on-time', difference: '00:00' };
+    }
+    
+    // Calculate actual elapsed time since show start
     const actualElapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
     
-    // Calculate expected elapsed time based on rundown (only non-header items)
-    let expectedElapsed = 0;
-    for (let i = 0; i < currentTimedIndex; i++) {
-      const item = timedItems[i];
-      if (item.duration) {
-        const [mins, secs] = item.duration.split(':').map(Number);
-        expectedElapsed += (mins * 60) + (secs || 0);
-      }
-    }
+    // Calculate expected elapsed time based on the calculated start time
+    const expectedStartTime = timeToSeconds(currentCalculatedItem.calculatedStartTime);
+    const rundownStartTime = timeToSeconds(rundownData.startTime);
+    const expectedElapsed = expectedStartTime - rundownStartTime;
     
     const difference = Math.abs(actualElapsed - expectedElapsed);
     const isAhead = actualElapsed < expectedElapsed;
