@@ -336,6 +336,31 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
+  // Fix the getColumnWidth function signature
+  const getColumnWidthWrapper = (columnId: string) => {
+    // Find the column by ID and return its width
+    const column = userColumns.find(col => col.id === columnId);
+    return column?.width || '150px';
+  };
+
+  // Fix the calculateHeaderDuration function signature
+  const calculateHeaderDurationWrapper = (headerId: string) => {
+    // Find the header item by ID and calculate its duration
+    const headerItem = items.find(item => item.id === headerId);
+    if (!headerItem) return '00:00:00';
+    
+    const headerIndex = items.findIndex(item => item.id === headerId);
+    return calculateHeaderDuration(headerIndex);
+  };
+
+  // Fix the onRowSelect function signature
+  const handleRowSelectWrapper = (id: string, event: React.MouseEvent) => {
+    const itemIndex = items.findIndex(item => item.id === id);
+    const isShiftClick = event.shiftKey;
+    const isCtrlClick = event.ctrlKey || event.metaKey;
+    handleRowSelect(id, itemIndex, isShiftClick, isCtrlClick);
+  };
+
   // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
@@ -386,11 +411,11 @@ const RundownIndexContent = () => {
         isDraggingMultiple={isDraggingMultiple}
         dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
-        getColumnWidth={getColumnWidth}
+        getColumnWidth={getColumnWidthWrapper}
         updateColumnWidth={handleUpdateColumnWidthWrapper}
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusForContainer}
-        calculateHeaderDuration={calculateHeaderDuration}
+        calculateHeaderDuration={calculateHeaderDurationWrapper}
         onUpdateItem={updateItem}
         onCellClick={handleCellClickWrapper}
         onKeyDown={handleKeyDownWrapper}
@@ -398,7 +423,7 @@ const RundownIndexContent = () => {
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
-        onRowSelect={handleRowSelect}
+        onRowSelect={handleRowSelectWrapper}
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
