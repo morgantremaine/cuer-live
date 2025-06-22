@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -231,25 +230,27 @@ const Dashboard = () => {
   const filteredRundowns = getFilteredRundowns();
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
-      {/* Sidebar */}
-      <DashboardSidebar
-        selectedFolder={selectedFolder}
-        onFolderSelect={handleFolderSelect}
-        rundowns={savedRundowns}
-        teamId={teamId || undefined}
-        onRundownDrop={handleRundownDrop}
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+    <div className="min-h-screen bg-gray-900 flex flex-col">
+      {/* Full-width Header */}
+      <DashboardHeader 
+        userEmail={user?.email}
+        onSignOut={handleSignOut}
       />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <DashboardHeader 
-          userEmail={user?.email}
-          onSignOut={handleSignOut}
+      
+      {/* Content area with sidebar and main content */}
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <DashboardSidebar
+          selectedFolder={selectedFolder}
+          onFolderSelect={handleFolderSelect}
+          rundowns={savedRundowns}
+          teamId={teamId || undefined}
+          onRundownDrop={handleRundownDrop}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
-        
+
+        {/* Main Content */}
         <main className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div className="px-4 py-6 sm:px-0 space-y-6">
