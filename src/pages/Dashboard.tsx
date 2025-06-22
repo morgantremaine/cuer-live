@@ -182,8 +182,11 @@ const Dashboard = () => {
 
   const handleRundownDrop = async (rundownId: string, folderId: string | null) => {
     try {
-      await moveRundownToFolder(rundown
-
+      await moveRundownToFolder(rundownId, folderId);
+      toast({
+        title: 'Rundown moved',
+        description: 'Rundown moved to folder successfully',
+      });
     } catch (error) {
       console.error('Error moving rundown:', error);
       toast({
