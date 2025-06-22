@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Share2, Link, Download, Users } from 'lucide-react';
+import { Share2, Link, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { exportToCSV, CSVExportData } from '@/utils/csvExport';
+import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,7 +51,7 @@ export const ShareRundownMenu = ({ rundownId, rundownTitle = 'Untitled Rundown',
     }
 
     try {
-      exportToCSV(rundownData, rundownTitle);
+      exportRundownAsCSV(rundownData, rundownTitle);
       toast({
         title: "CSV exported successfully",
         description: `${rundownTitle}.csv has been downloaded.`,
@@ -64,12 +64,6 @@ export const ShareRundownMenu = ({ rundownId, rundownTitle = 'Untitled Rundown',
         variant: "destructive"
       });
     }
-  };
-
-  const handleOpenTeamManagement = () => {
-    // Open team management in a new window
-    const teamManagementUrl = `${window.location.origin}/team/${rundownId}`;
-    window.open(teamManagementUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -89,11 +83,6 @@ export const ShareRundownMenu = ({ rundownId, rundownTitle = 'Untitled Rundown',
         <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
           <Download className="h-4 w-4 mr-2" />
           Export as CSV
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleOpenTeamManagement} className="cursor-pointer">
-          <Users className="h-4 w-4 mr-2" />
-          Team Management
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
