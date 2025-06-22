@@ -23,11 +23,6 @@ interface CellRendererProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   width?: string;
-  searchProps?: {
-    searchTerm: string;
-    hasMatches: (itemId: string, field: string) => boolean;
-    isCurrentMatch: (itemId: string, field: string) => boolean;
-  };
 }
 
 const CellRenderer = ({
@@ -40,8 +35,7 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  width,
-  searchProps
+  width
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -94,32 +88,17 @@ const CellRenderer = ({
   const isCurrentSegmentName = currentSegmentId === item.id && 
     (column.key === 'segmentName' || column.key === 'name');
 
-  // Check for search highlighting
-  const hasSearchMatch = searchProps?.hasMatches(item.id, column.key) || false;
-  const isCurrentSearchMatch = searchProps?.isCurrentMatch(item.id, column.key) || false;
-
-  // Override colors for showcaller highlighting and search highlighting
-  let finalBackgroundColor = backgroundColor;
-  let finalTextColor = textColor;
-
-  if (isCurrentSegmentName) {
-    finalBackgroundColor = '#3b82f6'; // bright blue for showcaller
-    finalTextColor = '#ffffff'; // white text
-  } else if (isCurrentSearchMatch) {
-    finalBackgroundColor = '#fbbf24'; // amber for current search match
-    finalTextColor = '#000000'; // black text for contrast
-  } else if (hasSearchMatch) {
-    finalBackgroundColor = '#fef3c7'; // light amber for other search matches
-    finalTextColor = '#000000'; // black text for contrast
-  }
+  // Override colors for showcaller highlighting
+  const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
+  const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
 
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
       <TimeDisplayCell 
         value={value} 
-        backgroundColor={finalBackgroundColor} 
-        textColor={finalTextColor}
+        backgroundColor={showcallerBackgroundColor} 
+        textColor={showcallerTextColor}
       />
     );
   }
@@ -135,8 +114,8 @@ const CellRenderer = ({
         itemId={item.id}
         cellRefKey={column.key}
         cellRefs={cellRefs}
-        textColor={finalTextColor}
-        backgroundColor={finalBackgroundColor}
+        textColor={showcallerTextColor}
+        backgroundColor={showcallerBackgroundColor}
         onUpdateValue={(newValue) => {
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
@@ -157,7 +136,7 @@ const CellRenderer = ({
         itemId={item.id}
         cellRefKey={column.key}
         cellRefs={cellRefs}
-        textColor={finalTextColor}
+        textColor={showcallerTextColor}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -172,8 +151,8 @@ const CellRenderer = ({
       <div 
         className="absolute inset-0 flex items-center px-3 py-1"
         style={{ 
-          backgroundColor: finalBackgroundColor,
-          color: finalTextColor,
+          backgroundColor: showcallerBackgroundColor,
+          color: showcallerTextColor,
           minHeight: '100%',
           height: '100%'
         }}
@@ -183,7 +162,7 @@ const CellRenderer = ({
           itemId={item.id}
           cellRefKey={column.key}
           cellRefs={cellRefs}
-          textColor={finalTextColor}
+          textColor={showcallerTextColor}
           backgroundColor="transparent" // Make the TextAreaCell background transparent since we're handling it in the wrapper
           isDuration={column.key === 'duration'}
           onUpdateValue={(newValue) => {
@@ -212,8 +191,8 @@ const CellRenderer = ({
       itemId={item.id}
       cellRefKey={column.key}
       cellRefs={cellRefs}
-      textColor={finalTextColor}
-      backgroundColor={finalBackgroundColor}
+      textColor={showcallerTextColor}
+      backgroundColor={showcallerBackgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields

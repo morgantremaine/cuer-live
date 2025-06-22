@@ -8,7 +8,7 @@ interface RundownTableProps {
   items: any[];
   visibleColumns: Column[];
   currentTime: Date;
-  showColorPicker: { [key: string]: boolean };
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
@@ -17,7 +17,7 @@ interface RundownTableProps {
   currentSegmentId: string | null;
   hasClipboardData: boolean;
   selectedRowId: string | null;
-  getColumnWidth: (columnId: string) => string;
+  getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
@@ -41,12 +41,6 @@ interface RundownTableProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  onOpenSearch?: () => void;
-  searchProps?: {
-    searchTerm: string;
-    hasMatches: (itemId: string, field: string) => boolean;
-    isCurrentMatch: (itemId: string, field: string) => boolean;
-  };
 }
 
 const RundownTable = ({
@@ -85,9 +79,7 @@ const RundownTable = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere,
-  onOpenSearch,
-  searchProps
+  onJumpToHere
 }: RundownTableProps) => {
 
   // Handler for drag over events on the table container
@@ -116,11 +108,6 @@ const RundownTable = ({
     } else {
       console.log('🎯 RundownTable: onJumpToHere is undefined!');
     }
-  };
-
-  // Create wrapper for getColumnWidth to match expected signature
-  const getColumnWidthWrapper = (column: Column) => {
-    return getColumnWidth(column.id);
   };
 
   return (
@@ -153,7 +140,7 @@ const RundownTable = ({
                   index={index}
                   rowNumber={rowNumber}
                   status={status}
-                  showColorPicker={showColorPicker[item.id] ? item.id : null}
+                  showColorPicker={showColorPicker}
                   cellRefs={cellRefs}
                   columns={visibleColumns}
                   isSelected={isActuallySelected}
@@ -185,9 +172,7 @@ const RundownTable = ({
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
                   onJumpToHere={handleJumpToHereDebug}
-                  onOpenSearch={onOpenSearch}
-                  searchProps={searchProps}
-                  getColumnWidth={getColumnWidthWrapper}
+                  getColumnWidth={getColumnWidth}
                 />
                 
                 {/* Show drop indicator line AFTER the last row if it's the drop target */}

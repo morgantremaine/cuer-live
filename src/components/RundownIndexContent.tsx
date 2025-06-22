@@ -1,19 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
-import SearchDialog from '@/components/SearchDialog';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
-import { useRundownSearch } from '@/hooks/useRundownSearch';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
-  
-  // Search dialog state
-  const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   
   const {
     coreState,
@@ -58,23 +53,6 @@ const RundownIndexContent = () => {
     autoScrollEnabled,
     toggleAutoScroll
   } = coreState;
-
-  // Search functionality - navigate to specific cell when match is found
-  const handleNavigateToMatch = (itemId: string, field: string) => {
-    const cellKey = `${itemId}-${field}`;
-    const cell = cellRefs.current[cellKey];
-    if (cell) {
-      cell.focus();
-      cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
-  // Initialize search functionality
-  const searchState = useRundownSearch({
-    items,
-    updateItem,
-    onNavigateToMatch: handleNavigateToMatch
-  });
 
   // Use user column preferences for persistent column management
   const { 
@@ -132,18 +110,7 @@ const RundownIndexContent = () => {
   } = uiState;
 
   // State for column manager
-  const [showColumnManager, setShowColumnManager] = useState(false);
-
-  // Search handlers
-  const handleOpenSearch = () => {
-    console.log('🔍 Opening search dialog');
-    setIsSearchDialogOpen(true);
-  };
-
-  const handleCloseSearch = () => {
-    console.log('🔍 Closing search dialog');
-    setIsSearchDialogOpen(false);
-  };
+  const [showColumnManager, setShowColumnManager] = React.useState(false);
 
   // Calculate end time helper
   const calculateEndTime = (startTime: string, duration: string) => {
@@ -335,29 +302,6 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Fix the getColumnWidth function signature
-  const getColumnWidthWrapper = (columnId: string) => {
-    // Find the column by ID and return its width
-    const column = userColumns.find(col => col.id === columnId);
-    return column?.width || '150px';
-  };
-
-  // Fix the calculateHeaderDuration function signature
-  const calculateHeaderDurationWrapper = (index: number) => {
-    return calculateHeaderDuration(index);
-  };
-
-  // Fix the onRowSelect function signature
-  const handleRowSelectWrapper = (id: string, event: React.MouseEvent) => {
-    const itemIndex = items.findIndex(item => item.id === id);
-    const isShiftClick = event.shiftKey;
-    const isCtrlClick = event.ctrlKey || event.metaKey;
-    handleRowSelect(id, itemIndex, isShiftClick, isCtrlClick);
-  };
-
-  // Convert showColorPicker from string to object format
-  const showColorPickerObject = showColorPicker ? { [showColorPicker]: true } : {};
-
   // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
@@ -401,18 +345,18 @@ const RundownIndexContent = () => {
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}
-        showColorPicker={showColorPickerObject}
+        showColorPicker={showColorPicker}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}
         isDraggingMultiple={isDraggingMultiple}
         dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
-        getColumnWidth={getColumnWidthWrapper}
+        getColumnWidth={getColumnWidth}
         updateColumnWidth={handleUpdateColumnWidthWrapper}
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusForContainer}
-        calculateHeaderDuration={calculateHeaderDurationWrapper}
+        calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={updateItem}
         onCellClick={handleCellClickWrapper}
         onKeyDown={handleKeyDownWrapper}
@@ -420,7 +364,7 @@ const RundownIndexContent = () => {
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
-        onRowSelect={handleRowSelectWrapper}
+        onRowSelect={handleRowSelect}
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
@@ -455,7 +399,6 @@ const RundownIndexContent = () => {
         onRundownStartTimeChange={handleRundownStartTimeChange}
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
-        onOpenSearch={handleOpenSearch}
         onUndo={undo}
         canUndo={canUndo}
         lastAction={lastAction || ''}
@@ -464,30 +407,6 @@ const RundownIndexContent = () => {
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
-        searchProps={{
-          searchTerm: searchState.searchTerm,
-          hasMatches: searchState.hasMatches,
-          isCurrentMatch: searchState.isCurrentMatch
-        }}
-      />
-      
-      <SearchDialog
-        isOpen={isSearchDialogOpen}
-        onClose={handleCloseSearch}
-        searchTerm={searchState.searchTerm}
-        replaceTerm={searchState.replaceTerm}
-        matchCase={searchState.matchCase}
-        wholeWords={searchState.wholeWords}
-        currentMatch={searchState.currentMatch}
-        totalMatches={searchState.totalMatches}
-        onSearchChange={searchState.onSearchChange}
-        onReplaceChange={searchState.onReplaceChange}
-        onMatchCaseChange={searchState.onMatchCaseChange}
-        onWholeWordsChange={searchState.onWholeWordsChange}
-        onFindNext={searchState.onFindNext}
-        onFindPrevious={searchState.onFindPrevious}
-        onReplaceCurrent={searchState.onReplaceCurrent}
-        onReplaceAll={searchState.onReplaceAll}
       />
       
       <CuerChatButton rundownData={rundownData} />

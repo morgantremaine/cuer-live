@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff, Search } from 'lucide-react';
+import { Clock, Wifi, WifiOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
-import SearchDialog from './SearchDialog';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { format } from 'date-fns';
 
@@ -32,9 +30,6 @@ interface RundownHeaderProps {
   timeRemaining: number;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  // Search props
-  onOpenTeleprompter?: () => void;
-  onOpenSearch?: () => void;
 }
 
 const RundownHeader = ({
@@ -57,8 +52,6 @@ const RundownHeader = ({
   timeRemaining,
   autoScrollEnabled,
   onToggleAutoScroll,
-  onOpenTeleprompter,
-  onOpenSearch,
   items = []
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
@@ -167,17 +160,6 @@ const RundownHeader = ({
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span>{format(currentTime, 'HH:mm:ss')}</span>
-            {onOpenSearch && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onOpenSearch}
-                className="p-1 h-6 w-6"
-                title="Search rundown"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -268,23 +250,10 @@ const RundownHeader = ({
             <div className="flex items-center gap-2">
               <span className="text-sm font-mono">{format(currentTime, 'HH:mm:ss')}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <TimezoneSelector
-                currentTimezone={timezone}
-                onTimezoneChange={() => {}}
-              />
-              {onOpenSearch && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onOpenSearch}
-                  className="p-1"
-                  title="Search rundown"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            <TimezoneSelector
+              currentTimezone={timezone}
+              onTimezoneChange={() => {}}
+            />
           </div>
           
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -306,7 +275,7 @@ const RundownHeader = ({
     );
   }
 
-  // Desktop layout - with properly positioned search button
+  // Desktop layout - with properly centered title and timing indicator
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
@@ -358,23 +327,10 @@ const RundownHeader = ({
         
         <div className="flex items-center space-x-4 flex-shrink-0">
           <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
-          <div className="flex items-center gap-1">
-            <TimezoneSelector
-              currentTimezone={timezone}
-              onTimezoneChange={() => {}}
-            />
-            {onOpenSearch && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onOpenSearch}
-                className="p-1"
-                title="Search rundown"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+          <TimezoneSelector
+            currentTimezone={timezone}
+            onTimezoneChange={() => {}}
+          />
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>

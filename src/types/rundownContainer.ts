@@ -1,5 +1,6 @@
-
 import React from 'react';
+import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 
 export interface RundownContainerProps {
   currentTime: Date;
@@ -8,35 +9,35 @@ export interface RundownContainerProps {
   totalRuntime: string;
   showColumnManager: boolean;
   setShowColumnManager: (show: boolean) => void;
-  items: any[];
-  visibleColumns: any[];
-  columns: any[];
-  showColorPicker: { [key: string]: boolean };
+  items: RundownItem[];
+  visibleColumns: Column[];
+  columns: Column[];
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
-  getColumnWidth: (columnId: string) => string;
+  getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
-  getRowNumber: (item: any) => string;
-  getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
+  getRowNumber: (index: number) => string;
+  getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
-  onColorSelect: (itemId: string, color: string) => void;
+  onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onRowSelect: (id: string, event: React.MouseEvent) => void;
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, targetIndex: number) => void;
-  onAddRow: (selectedRowId?: string | null) => void;
-  onAddHeader: (selectedRowId?: string | null) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  onAddRow: () => void;
+  onAddHeader: () => void;
   selectedCount: number;
   hasClipboardData: boolean;
   onCopySelectedRows: () => void;
@@ -52,11 +53,11 @@ export interface RundownContainerProps {
   onBackward: () => void;
   onReset: () => void;
   handleAddColumn: (name: string) => void;
-  handleReorderColumns: (columns: any[]) => void;
+  handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
   handleRenameColumn: (columnId: string, newName: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
-  handleLoadLayout: (layoutColumns: any[]) => void;
+  handleLoadLayout: (layoutColumns: Column[]) => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   rundownTitle: string;
@@ -65,18 +66,19 @@ export interface RundownContainerProps {
   onRundownStartTimeChange: (startTime: string) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
-  onOpenSearch?: () => void;
+  // Undo functionality
   onUndo: () => void;
   canUndo: boolean;
-  lastAction: string;
+  lastAction: string | null;
+  
+  // Realtime collaboration props
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
-  onJumpToHere: (segmentId: string) => void;
+  
+  // Jump to here functionality
+  onJumpToHere?: (segmentId: string) => void;
+  
+  // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  searchProps?: {
-    searchTerm: string;
-    hasMatches: (itemId: string, field: string) => boolean;
-    isCurrentMatch: (itemId: string, field: string) => boolean;
-  };
 }

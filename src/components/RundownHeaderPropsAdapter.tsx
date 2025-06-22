@@ -1,46 +1,45 @@
 
 import React from 'react';
 import RundownHeader from './RundownHeader';
-import { useRundownGridCore } from '@/hooks/useRundownGridCore';
+import { RundownContainerProps } from '@/types/rundownContainer';
+import { logger } from '@/utils/logger';
 
 interface RundownHeaderPropsAdapterProps {
-  rundownId: string | undefined;
-  onOpenTeleprompter: () => void;
-  onOpenSearch?: () => void;
+  props: RundownContainerProps;
 }
 
-const RundownHeaderPropsAdapter = ({ 
-  rundownId, 
-  onOpenTeleprompter,
-  onOpenSearch
-}: RundownHeaderPropsAdapterProps) => {
-  const unifiedState = useRundownGridCore();
-
+const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
   const {
-    rundownTitle,
-    rundownStartTime,
-    timezone,
     currentTime,
+    timezone,
     totalRuntime,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId,
     hasUnsavedChanges,
     isSaving,
-    isConnected,
-    isProcessingRealtimeUpdate,
-    items,
-    visibleColumns,
-    setTitle,
-    setStartTime,
-    undo,
+    onUndo,
     canUndo,
     lastAction,
-    // Showcaller state
+    items,
+    visibleColumns,
+    isConnected,
+    isProcessingRealtimeUpdate,
     isPlaying,
     currentSegmentId,
     timeRemaining,
-    // Autoscroll state
     autoScrollEnabled,
-    toggleAutoScroll
-  } = unifiedState.coreState;
+    onToggleAutoScroll
+  } = props;
+
+  // Debug logging for prop passing
+  logger.log('🔄 RundownHeaderPropsAdapter: Received props:', {
+    autoScrollEnabled,
+    hasToggleFunction: !!onToggleAutoScroll,
+    toggleFunctionType: typeof onToggleAutoScroll
+  });
 
   return (
     <RundownHeader
@@ -50,12 +49,12 @@ const RundownHeaderPropsAdapter = ({
       hasUnsavedChanges={hasUnsavedChanges}
       isSaving={isSaving}
       title={rundownTitle}
-      onTitleChange={setTitle}
+      onTitleChange={onTitleChange}
       rundownStartTime={rundownStartTime}
-      onRundownStartTimeChange={setStartTime}
+      onRundownStartTimeChange={onRundownStartTimeChange}
       items={items}
       visibleColumns={visibleColumns}
-      onUndo={undo}
+      onUndo={onUndo}
       canUndo={canUndo}
       lastAction={lastAction}
       isConnected={isConnected}
@@ -64,9 +63,7 @@ const RundownHeaderPropsAdapter = ({
       currentSegmentId={currentSegmentId}
       timeRemaining={timeRemaining}
       autoScrollEnabled={autoScrollEnabled}
-      onToggleAutoScroll={toggleAutoScroll}
-      onOpenTeleprompter={onOpenTeleprompter}
-      onOpenSearch={onOpenSearch}
+      onToggleAutoScroll={onToggleAutoScroll}
     />
   );
 };

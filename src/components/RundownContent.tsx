@@ -11,7 +11,7 @@ interface RundownContentProps {
   items: RundownItem[];
   visibleColumns: Column[];
   currentTime: Date;
-  showColorPicker: { [key: string]: boolean };
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
@@ -23,7 +23,7 @@ interface RundownContentProps {
   isPlaying?: boolean;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  getColumnWidth: (columnId: string) => string;
+  getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
@@ -47,12 +47,6 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  onOpenSearch?: () => void;
-  searchProps?: {
-    searchTerm: string;
-    hasMatches: (itemId: string, field: string) => boolean;
-    isCurrentMatch: (itemId: string, field: string) => boolean;
-  };
 }
 
 const RundownContent = ({
@@ -94,9 +88,7 @@ const RundownContent = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere,
-  onOpenSearch,
-  searchProps
+  onJumpToHere
 }: RundownContentProps) => {
 
   // Initialize autoscroll functionality
@@ -161,8 +153,6 @@ const RundownContent = ({
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
             onJumpToHere={onJumpToHere}
-            onOpenSearch={onOpenSearch}
-            searchProps={searchProps}
           />
         </div>
         <ScrollBar orientation="horizontal" />

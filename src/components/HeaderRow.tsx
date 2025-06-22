@@ -35,14 +35,8 @@ interface HeaderRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onOpenSearch?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
-  searchProps?: {
-    searchTerm: string;
-    hasMatches: (itemId: string, field: string) => boolean;
-    isCurrentMatch: (itemId: string, field: string) => boolean;
-  };
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
@@ -60,9 +54,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     onClearSelection,
     onAddRow,
     onAddHeader,
-    onOpenSearch,
-    isDragging,
-    searchProps
+    isDragging
   } = props;
 
   const { rowClass } = useRowStyling({
@@ -190,7 +182,6 @@ const HeaderRow = (props: HeaderRowProps) => {
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
           getColumnWidth={props.getColumnWidth}
-          searchProps={searchProps}
         />
       </tr>
     </RundownContextMenu>
