@@ -95,7 +95,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
         
         <DropdownMenuItem onClick={handleOpenADView}>
           <Camera className="h-4 w-4 mr-2" />
-          Open AD View
+          AD View
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
