@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -567,6 +566,64 @@ export const useTeam = () => {
     }
   };
 
+  const resendInvitation = async (invitationId: string, email: string) => {
+    if (!team || !user) {
+      return { error: 'No team or user found' };
+    }
+
+    try {
+      console.log('Resending invitation to:', email);
+      
+      // First run cleanup to ensure clean state
+      await runFullCleanup();
+      
+      // Generate new invitation token
+      const newToken = crypto.randomUUID();
+      console.log('Generated new invitation token:', newToken);
+
+      // Update the existing invitation with new token and extended expiry
+      const { error: updateError } = await supabase
+        .from('team_invitations')
+        .update({
+          token: newToken,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+        })
+        .eq('id', invitationId);
+
+      if (updateError) {
+        console.error('Error updating invitation:', updateError);
+        return { error: 'Failed to update invitation' };
+      }
+
+      console.log('Invitation updated successfully, sending email with new token:', newToken);
+
+      // Send invitation email via edge function with new token
+      const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
+        body: {
+          email,
+          teamName: team.name,
+          inviterName: user.user_metadata?.full_name || user.email,
+          token: newToken
+        }
+      });
+
+      if (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        return { error: 'Invitation updated but email could not be sent' };
+      }
+
+      console.log('Invitation email resent successfully');
+
+      // Reload pending invitations to show updated expiry
+      await loadPendingInvitations(team.id);
+
+      return { error: null };
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      return { error: 'Failed to resend invitation' };
+    }
+  };
+
   useEffect(() => {
     loadTeamData();
   }, [user?.id]);
@@ -581,6 +638,7 @@ export const useTeam = () => {
     acceptInvitation,
     removeTeamMember,
     revokeInvitation,
+    resendInvitation,
     loadTeamData
   };
 };
