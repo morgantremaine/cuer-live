@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Share2, Link, Download } from 'lucide-react';
+import { Share2, Link, Download, Layout, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
 import {
@@ -66,6 +66,36 @@ export const ShareRundownMenu = ({ rundownId, rundownTitle = 'Untitled Rundown',
     }
   };
 
+  const handleManageSharedLayout = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot manage layout",
+        description: "Save this rundown first before managing shared layout.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Open shared layout management in a new window
+    const layoutUrl = `${window.location.origin}/shared-layout/${rundownId}`;
+    window.open(layoutUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handlePrintRundown = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot print",
+        description: "Save this rundown first before printing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Open print view in a new window
+    const printUrl = `${window.location.origin}/shared-rundown/${rundownId}?print=true`;
+    window.open(printUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -83,6 +113,15 @@ export const ShareRundownMenu = ({ rundownId, rundownTitle = 'Untitled Rundown',
         <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
           <Download className="h-4 w-4 mr-2" />
           Export as CSV
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleManageSharedLayout} className="cursor-pointer">
+          <Layout className="h-4 w-4 mr-2" />
+          Manage Shared Layout
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handlePrintRundown} className="cursor-pointer">
+          <Printer className="h-4 w-4 mr-2" />
+          Print Rundown
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
