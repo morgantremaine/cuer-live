@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -369,22 +368,6 @@ const ADView = () => {
         <div className="bg-gray-800 border-b border-gray-700 px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="text-center">
-              <div className="text-lg text-gray-400 mb-2 font-semibold">TIME OF DAY</div>
-              <div className="text-6xl font-mono font-bold text-blue-400">
-                {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
-              </div>
-            </div>
-            <div className="flex items-center justify-center flex-1">
-              <div className="flex items-center space-x-6">
-                <img 
-                  src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
-                  alt="Cuer Logo" 
-                  className="h-12 w-auto"
-                />
-                <div className="text-4xl font-bold text-white">{rundownData.title}</div>
-              </div>
-            </div>
-            <div className="text-center">
               <div className="text-lg text-gray-400 mb-2 font-semibold">TIMING STATUS</div>
               <div className={`text-3xl font-bold ${
                 !isShowcallerPlaying ? 'text-green-400' :
@@ -398,19 +381,35 @@ const ADView = () => {
                  `Over +${timingStatus.timeDifference}`}
               </div>
             </div>
+            <div className="flex items-center justify-center flex-1">
+              <div className="flex items-center space-x-6">
+                <img 
+                  src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
+                  alt="Cuer Logo" 
+                  className="h-12 w-auto"
+                />
+                <div className="text-4xl font-bold text-white">{rundownData.title}</div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg text-gray-400 mb-2 font-semibold">TIME OF DAY</div>
+              <div className="text-6xl font-mono font-bold text-blue-400">
+                {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Main Content - Fullscreen layout */}
-        <div className="flex-1 px-8 py-6">
-          <div className="grid grid-cols-12 gap-8 h-full">
+        <div className="flex-1 px-0 py-0">
+          <div className="grid grid-cols-12 gap-6 h-full p-6">
             {/* Left Side - Timing and Stopwatch - Larger cards */}
             <div className="col-span-2 space-y-4">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-6 text-center">
                   <div className="text-sm text-gray-400 mb-3 font-semibold">SHOW ELAPSED</div>
-                  <div className="text-2xl font-mono font-bold text-blue-400">
+                  <div className="text-3xl font-mono font-bold text-blue-400">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -420,7 +419,7 @@ const ADView = () => {
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-6 text-center">
                   <div className="text-sm text-gray-400 mb-3 font-semibold">SHOW REMAINING</div>
-                  <div className="text-2xl font-mono font-bold text-orange-400">
+                  <div className="text-3xl font-mono font-bold text-orange-400">
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -430,7 +429,7 @@ const ADView = () => {
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-6 text-center">
                   <div className="text-sm text-gray-400 mb-3 font-semibold">ITEM ELAPSED</div>
-                  <div className="text-2xl font-mono font-bold text-green-400">
+                  <div className="text-3xl font-mono font-bold text-green-400">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -440,7 +439,7 @@ const ADView = () => {
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-6 text-center">
                   <div className="text-sm text-gray-400 mb-3 font-semibold">ITEM REMAINING</div>
-                  <div className="text-2xl font-mono font-bold text-yellow-400">
+                  <div className="text-3xl font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
