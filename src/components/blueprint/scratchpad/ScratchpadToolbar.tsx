@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Bold, Italic, List, Underline } from 'lucide-react';
-import { strikethrough } from 'lucide-react';
+import { Bold, Italic, List, Underline, Strikethrough } from 'lucide-react';
 
 interface ScratchpadToolbarProps {
   isEditing: boolean;
@@ -61,7 +60,7 @@ const ScratchpadToolbar = ({
             className="p-2 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
             title="Strikethrough"
           >
-            <strikethrough className="h-4 w-4" />
+            <Strikethrough className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
