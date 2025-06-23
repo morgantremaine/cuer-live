@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -23,6 +24,7 @@ interface PendingInvitation {
   team_id: string;
   email: string;
   created_at: string;
+  expires_at: string;
 }
 
 interface TransferPreview {
