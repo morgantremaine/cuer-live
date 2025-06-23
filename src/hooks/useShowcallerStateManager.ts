@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -40,6 +39,7 @@ export const useShowcallerStateManager = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedStateRef = useRef<string | null>(null);
+  const hasRestoredFromDatabase = useRef(false);
 
   const { updateItemSilent, clearCurrentStatusSilent } = useShowcallerItemUpdates({
     items,
@@ -95,6 +95,36 @@ export const useShowcallerStateManager = ({
       saveShowcallerState(state);
     }, 500); // 500ms debounce for showcaller state saves
   }, [saveShowcallerState]);
+
+  // Load initial showcaller state from database
+  const loadInitialShowcallerState = useCallback(async () => {
+    if (!rundownId || hasRestoredFromDatabase.current) return;
+
+    console.log('📺 Loading initial showcaller state from database');
+    hasRestoredFromDatabase.current = true;
+
+    try {
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('showcaller_state')
+        .eq('id', rundownId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error loading showcaller state:', error);
+        return;
+      }
+
+      if (data?.showcaller_state) {
+        console.log('📺 Restoring showcaller state:', data.showcaller_state);
+        
+        // Apply the external state which will handle timing synchronization
+        applyShowcallerState(data.showcaller_state);
+      }
+    } catch (error) {
+      console.error('❌ Error loading showcaller state:', error);
+    }
+  }, [rundownId]);
 
   // Update showcaller state internally and optionally sync
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
@@ -152,7 +182,7 @@ export const useShowcallerStateManager = ({
     }
   }, [items, clearCurrentStatusSilent, updateItemSilent, timeToSeconds, updateShowcallerState, userId]);
 
-  // Timer management
+  // Enhanced timer management that preserves state across refreshes
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -210,7 +240,7 @@ export const useShowcallerStateManager = ({
           lastUpdate: new Date().toISOString()
         };
         
-        // Sync every 10 seconds to reduce database load
+        // Sync every 10 seconds to reduce database load but maintain persistence
         if (isController && prevState.timeRemaining % 10 === 0) {
           debouncedSaveShowcallerState(newState);
         }
@@ -326,7 +356,7 @@ export const useShowcallerStateManager = ({
     }
   }, [showcallerState, getPreviousSegment, updateItemSilent, timeToSeconds, userId, updateShowcallerState, startTimer]);
 
-  // Apply external showcaller state
+  // Enhanced external state application with proper timing synchronization
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
     if (lastSyncedStateRef.current === externalState.lastUpdate) {
       return;
@@ -364,14 +394,25 @@ export const useShowcallerStateManager = ({
     
     setShowcallerState(synchronizedState);
     
+    // Restart timer if playing and there's time remaining
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
+      console.log('📺 Restarting timer after external state application');
       setTimeout(() => startTimer(), 100);
     }
   }, [stopTimer, clearCurrentStatusSilent, items, updateItemSilent, timeToSeconds, startTimer]);
 
-  // Initialize current segment
+  // Load initial state when component mounts or rundown changes
   useEffect(() => {
-    if (!showcallerState.currentSegmentId && items.length > 0) {
+    if (rundownId && items.length > 0) {
+      // Reset the restoration flag when rundown changes
+      hasRestoredFromDatabase.current = false;
+      loadInitialShowcallerState();
+    }
+  }, [rundownId, items.length, loadInitialShowcallerState]);
+
+  // Initialize current segment only if no state was restored from database
+  useEffect(() => {
+    if (!showcallerState.currentSegmentId && items.length > 0 && hasRestoredFromDatabase.current) {
       const firstSegment = items.find(item => item.type === 'regular');
       if (firstSegment) {
         const duration = timeToSeconds(firstSegment.duration || '00:00');
