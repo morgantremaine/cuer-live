@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, List, Underline } from 'lucide-react';
+import { strikethrough } from 'lucide-react';
 
 interface ScratchpadToolbarProps {
   isEditing: boolean;
@@ -9,6 +10,7 @@ interface ScratchpadToolbarProps {
   onBold: () => void;
   onItalic: () => void;
   onUnderline: () => void;
+  onStrikethrough: () => void;
   onBulletList: () => void;
 }
 
@@ -18,6 +20,7 @@ const ScratchpadToolbar = ({
   onBold,
   onItalic,
   onUnderline,
+  onStrikethrough,
   onBulletList
 }: ScratchpadToolbarProps) => {
   return (
@@ -50,6 +53,15 @@ const ScratchpadToolbar = ({
             title="Underline"
           >
             <Underline className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onStrikethrough}
+            className="p-2 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+            title="Strikethrough"
+          >
+            <strikethrough className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"

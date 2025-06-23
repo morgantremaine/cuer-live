@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 
@@ -146,6 +145,23 @@ export const useScratchpadEditor = (
     }
   }, [saveNotes]);
 
+  const handleStrikethrough = useCallback(() => {
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = textarea.value.substring(start, end);
+      const newText = textarea.value.substring(0, start) + `~~${selectedText}~~` + textarea.value.substring(end);
+      setNotes(newText);
+      saveNotes(newText);
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + 2, end + 2);
+      }, 0);
+    }
+  }, [saveNotes]);
+
   const handleBulletList = useCallback(() => {
     if (textareaRef.current) {
       const textarea = textareaRef.current;
@@ -198,6 +214,7 @@ export const useScratchpadEditor = (
     handleBold,
     handleItalic,
     handleUnderline,
+    handleStrikethrough,
     handleBulletList
   };
 };
