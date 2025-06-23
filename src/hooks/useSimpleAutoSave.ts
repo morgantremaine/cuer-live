@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { RundownState } from './useRundownState';
 import { supabase } from '@/lib/supabase';
 
@@ -10,6 +10,7 @@ export const useSimpleAutoSave = (
   onSaved: () => void
 ) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
@@ -160,6 +161,10 @@ export const useSimpleAutoSave = (
             return;
           }
 
+          // Get folder ID from location state if available
+          const folderId = location.state?.folderId || null;
+          console.log('💾 Creating new rundown with folder ID:', folderId);
+
           const { data: newRundown, error: createError } = await supabase
             .from('rundowns')
             .insert({
@@ -169,6 +174,7 @@ export const useSimpleAutoSave = (
               timezone: state.timezone,
               team_id: teamData.team_id,
               user_id: (await supabase.auth.getUser()).data.user?.id,
+              folder_id: folderId,
               updated_at: updateTimestamp
             })
             .select()
@@ -178,7 +184,7 @@ export const useSimpleAutoSave = (
             console.error('❌ Save failed:', createError);
           } else {
             lastSavedRef.current = finalSignature;
-            console.log('✅ Successfully saved new rundown');
+            console.log('✅ Successfully saved new rundown with folder ID:', folderId);
             onSaved();
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
@@ -216,7 +222,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
