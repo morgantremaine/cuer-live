@@ -16,83 +16,26 @@ export const useUnifiedScratchpad = () => {
     updateNotes(value);
   }, [updateNotes]);
 
+  // Legacy formatting functions for backward compatibility
   const handleBold = useCallback(() => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selectedText = textarea.value.substring(start, end);
-      const newText = textarea.value.substring(0, start) + `**${selectedText}**` + textarea.value.substring(end);
-      updateNotes(newText);
-      
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + 2, end + 2);
-      }, 0);
-    }
-  }, [updateNotes]);
+    const element = textareaRef.current as any;
+    element?.applyBold?.();
+  }, []);
 
   const handleItalic = useCallback(() => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selectedText = textarea.value.substring(start, end);
-      const newText = textarea.value.substring(0, start) + `*${selectedText}*` + textarea.value.substring(end);
-      updateNotes(newText);
-      
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + 1, end + 1);
-      }, 0);
-    }
-  }, [updateNotes]);
+    const element = textareaRef.current as any;
+    element?.applyItalic?.();
+  }, []);
 
   const handleUnderline = useCallback(() => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selectedText = textarea.value.substring(start, end);
-      const newText = textarea.value.substring(0, start) + `<u>${selectedText}</u>` + textarea.value.substring(end);
-      updateNotes(newText);
-      
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + 3, end + 3);
-      }, 0);
-    }
-  }, [updateNotes]);
+    const element = textareaRef.current as any;
+    element?.applyUnderline?.();
+  }, []);
 
   const handleBulletList = useCallback(() => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const lines = textarea.value.split('\n');
-      let currentLine = 0;
-      let charCount = 0;
-      
-      for (let i = 0; i < lines.length; i++) {
-        if (charCount + lines[i].length >= start) {
-          currentLine = i;
-          break;
-        }
-        charCount += lines[i].length + 1;
-      }
-      
-      if (!lines[currentLine].trim().startsWith('•')) {
-        lines[currentLine] = '• ' + lines[currentLine];
-      }
-      
-      const newText = lines.join('\n');
-      updateNotes(newText);
-      
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + 2, start + 2);
-      }, 0);
-    }
-  }, [updateNotes]);
+    const element = textareaRef.current as any;
+    element?.insertBulletList?.();
+  }, []);
 
   return {
     notes: state.notes,

@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical } from 'lucide-react';
 import { useUnifiedScratchpad } from '@/hooks/blueprint/useUnifiedScratchpad';
-import ScratchpadToolbar from './scratchpad/ScratchpadToolbar';
-import ScratchpadContent from './scratchpad/ScratchpadContent';
+import ScratchpadEnhancedToolbar from './scratchpad/ScratchpadEnhancedToolbar';
+import ScratchpadRichEditor from './scratchpad/ScratchpadRichEditor';
+import ScratchpadEnhancedDisplay from './scratchpad/ScratchpadEnhancedDisplay';
 import SaveStatus from './scratchpad/SaveStatus';
 
 interface BlueprintScratchpadProps {
@@ -14,18 +15,72 @@ interface BlueprintScratchpadProps {
 
 const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [mode, setMode] = useState<'text' | 'table' | 'hybrid'>('text');
+  const [displayHeight, setDisplayHeight] = useState(300);
   
   const {
     notes,
     saveStatus,
     textareaRef,
     handleNotesChange,
-    handleBold,
-    handleItalic,
-    handleUnderline,
-    handleBulletList,
     isLoading
   } = useUnifiedScratchpad();
+
+  // Measure display height for consistent sizing
+  React.useEffect(() => {
+    if (!isEditing) {
+      const displayDiv = document.querySelector('[data-scratchpad-display]') as HTMLElement;
+      if (displayDiv) {
+        setTimeout(() => {
+          const height = displayDiv.scrollHeight;
+          setDisplayHeight(Math.max(height, 300));
+        }, 0);
+      }
+    }
+  }, [notes, isEditing]);
+
+  const handleFormatAction = (action: string, data?: any) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const element = textarea as any;
+    
+    switch (action) {
+      case 'bold':
+        element.applyBold?.();
+        break;
+      case 'italic':
+        element.applyItalic?.();
+        break;
+      case 'underline':
+        element.applyUnderline?.();
+        break;
+      case 'strikethrough':
+        element.applyStrikethrough?.();
+        break;
+      case 'header':
+        element.applyHeader?.(data);
+        break;
+      case 'bulletList':
+        element.insertBulletList?.();
+        break;
+      case 'numberedList':
+        element.insertNumberedList?.();
+        break;
+      case 'checkbox':
+        element.insertCheckbox?.();
+        break;
+      case 'link':
+        element.insertLink?.();
+        break;
+      case 'codeBlock':
+        element.insertCodeBlock?.();
+        break;
+      case 'table':
+        element.insertTable?.();
+        break;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -37,7 +92,6 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
     );
   }
 
-  // Ensure saveStatus is one of the allowed types
   const validSaveStatus: "error" | "saving" | "saved" = 
     saveStatus === 'error' || saveStatus === 'saving' || saveStatus === 'saved' 
       ? saveStatus 
@@ -49,27 +103,32 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
-            <CardTitle className="text-xl text-white">Show Scratchpad</CardTitle>
+            <CardTitle className="text-xl text-white">Enhanced Scratchpad</CardTitle>
             <SaveStatus status={validSaveStatus} />
           </div>
-          <ScratchpadToolbar
+          <ScratchpadEnhancedToolbar
             isEditing={isEditing}
+            mode={mode}
             onToggleEdit={() => setIsEditing(!isEditing)}
-            onBold={handleBold}
-            onItalic={handleItalic}
-            onUnderline={handleUnderline}
-            onBulletList={handleBulletList}
+            onToggleMode={() => setMode(mode === 'text' ? 'table' : 'text')}
+            onFormatAction={handleFormatAction}
           />
         </div>
       </CardHeader>
       <CardContent>
-        <ScratchpadContent
-          notes={notes}
-          isEditing={isEditing}
-          textareaRef={textareaRef}
-          onNotesChange={handleNotesChange}
-          onStartEditing={() => setIsEditing(true)}
-        />
+        {isEditing ? (
+          <ScratchpadRichEditor
+            content={notes}
+            onChange={handleNotesChange}
+            height={displayHeight}
+          />
+        ) : (
+          <ScratchpadEnhancedDisplay
+            content={notes}
+            onClick={() => setIsEditing(true)}
+            height={displayHeight}
+          />
+        )}
       </CardContent>
     </Card>
   );
