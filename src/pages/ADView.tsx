@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -319,37 +320,46 @@ const ADView = () => {
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
       <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
-        {/* Header - Slightly increased padding and font sizes */}
+        {/* Header - Using CSS Grid for stable layout */}
         <div className="bg-gray-800 border-b border-gray-700 px-7 py-5">
-          <div className="flex justify-between items-center">
-            <div className="text-center w-72">
-              <div className="text-sm text-gray-400 mb-1 font-semibold">TIMING STATUS</div>
-              <div className={`text-2xl font-bold font-mono min-h-[1.75rem] flex items-center justify-center ${
-                !isShowcallerPlaying ? 'text-green-400' :
-                timingStatus.isOnTime ? 'text-green-400' :
-                timingStatus.isAhead ? 'text-yellow-400' :
-                'text-red-400'
-              }`}>
-                {!isShowcallerPlaying ? 'PAUSED' :
-                 timingStatus.isOnTime ? 'ON TIME' :
-                 timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
-                 `Over +${timingStatus.timeDifference}`}
+          <div className="grid grid-cols-3 gap-4 items-center">
+            {/* Left Column - Timing Status */}
+            <div className="flex justify-start">
+              <div className="text-center min-w-[280px]">
+                <div className="text-sm text-gray-400 mb-1 font-semibold">TIMING STATUS</div>
+                <div className={`text-2xl font-bold font-mono min-h-[1.75rem] flex items-center justify-center truncate ${
+                  !isShowcallerPlaying ? 'text-green-400' :
+                  timingStatus.isOnTime ? 'text-green-400' :
+                  timingStatus.isAhead ? 'text-yellow-400' :
+                  'text-red-400'
+                }`}>
+                  {!isShowcallerPlaying ? 'PAUSED' :
+                   timingStatus.isOnTime ? 'ON TIME' :
+                   timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
+                   `Over +${timingStatus.timeDifference}`}
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-center flex-1">
+            
+            {/* Center Column - Logo and Title */}
+            <div className="flex items-center justify-center">
               <div className="flex items-center space-x-5">
                 <img 
                   src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
                   alt="Cuer Logo" 
                   className="h-9 w-auto"
                 />
-                <div className="text-3xl font-bold text-white">{rundownData.title}</div>
+                <div className="text-3xl font-bold text-white truncate max-w-md">{rundownData.title}</div>
               </div>
             </div>
-            <div className="text-center w-72">
-              <div className="text-sm text-gray-400 mb-1 font-semibold">TIME OF DAY</div>
-              <div className="text-4xl font-mono font-bold text-blue-400">
-                {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
+            
+            {/* Right Column - Time of Day */}
+            <div className="flex justify-end">
+              <div className="text-center min-w-[280px]">
+                <div className="text-sm text-gray-400 mb-1 font-semibold">TIME OF DAY</div>
+                <div className="text-4xl font-mono font-bold text-blue-400">
+                  {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
+                </div>
               </div>
             </div>
           </div>
