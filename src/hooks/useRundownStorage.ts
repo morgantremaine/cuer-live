@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
@@ -15,13 +15,30 @@ export const useRundownStorage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Use refs to prevent excessive re-renders and track loading states
+  const isLoadingRef = useRef(false);
+  const lastTeamIdRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Load rundowns from Supabase (team rundowns only, including archived ones)
   const loadRundowns = useCallback(async () => {
-    if (!user) {
+    if (!user || isLoadingRef.current) {
       setSavedRundowns([]);
       setLoading(false);
       return;
     }
+
+    // Cancel any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    isLoadingRef.current = true;
+    setLoading(true);
 
     try {
       console.log('Loading rundowns from database for user:', user.id);
@@ -30,12 +47,16 @@ export const useRundownStorage = () => {
       const { data: teamMemberships, error: teamError } = await supabase
         .from('team_members')
         .select('team_id')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .abortSignal(signal);
+
+      if (signal.aborted) return;
 
       if (teamError) {
         console.error('Error loading team memberships:', teamError);
         setSavedRundowns([]);
         setLoading(false);
+        isLoadingRef.current = false;
         return;
       }
 
@@ -45,6 +66,7 @@ export const useRundownStorage = () => {
         console.log('User is not a member of any teams');
         setSavedRundowns([]);
         setLoading(false);
+        isLoadingRef.current = false;
         return;
       }
       
@@ -59,7 +81,10 @@ export const useRundownStorage = () => {
           )
         `)
         .in('team_id', teamIds)
-        .order('updated_at', { ascending: false });
+        .order('updated_at', { ascending: false })
+        .abortSignal(signal);
+
+      if (signal.aborted) return;
 
       if (rundownsError) {
         console.error('Database error loading rundowns:', rundownsError);
@@ -74,7 +99,10 @@ export const useRundownStorage = () => {
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, full_name, email')
-          .in('id', userIds);
+          .in('id', userIds)
+          .abortSignal(signal);
+
+        if (signal.aborted) return;
 
         if (profilesError) {
           console.error('Error loading profiles:', profilesError);
@@ -118,13 +146,19 @@ export const useRundownStorage = () => {
 
       setSavedRundowns(rundowns);
       console.log('Loaded rundowns from database:', rundowns.length);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || signal.aborted) {
+        return;
+      }
       console.error('Error loading rundowns:', error);
       setSavedRundowns([]);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) {
+        setLoading(false);
+        isLoadingRef.current = false;
+      }
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id, not the entire user object
 
   // Save rundown to Supabase
   const saveRundown = useCallback(async (rundown: SavedRundown): Promise<string> => {
@@ -245,13 +279,25 @@ export const useRundownStorage = () => {
     loadRundowns();
   }, [loadRundowns]);
 
-  // Also reload rundowns when team changes (important for team invite flow)
+  // Optimized team change effect - only reload when team ID actually changes
   useEffect(() => {
-    if (user && team) {
+    if (user && team && team.id !== lastTeamIdRef.current) {
       console.log('Team changed, reloading rundowns for team:', team.name);
+      lastTeamIdRef.current = team.id;
+      // Reset loading state and reload
+      isLoadingRef.current = false;
       loadRundowns();
     }
   }, [user, team?.id, loadRundowns]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return {
     savedRundowns,

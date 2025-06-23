@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
 
@@ -41,18 +40,30 @@ export const useTeam = () => {
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Use refs to prevent unnecessary re-renders and track loading states
+  const isLoadingRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadTeamData = useCallback(async () => {
-    if (!user) {
-      setTeam(null);
-      setTeamMembers([]);
-      setPendingInvitations([]);
-      setUserRole(null);
-      setLoading(false);
+    if (!user || isLoadingRef.current || lastUserIdRef.current === user.id) {
       return;
     }
 
+    // Cancel any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    isLoadingRef.current = true;
+    lastUserIdRef.current = user.id;
     setLoading(true);
+    
     console.log('Loading team data for user:', user.id);
 
     try {
@@ -61,7 +72,10 @@ export const useTeam = () => {
         .from('team_members')
         .select('team_id, role')
         .eq('user_id', user.id)
+        .abortSignal(signal)
         .maybeSingle();
+
+      if (signal.aborted) return;
 
       if (membershipError) {
         console.error('Error fetching team membership:', membershipError);
@@ -70,6 +84,7 @@ export const useTeam = () => {
         setPendingInvitations([]);
         setUserRole(null);
         setLoading(false);
+        isLoadingRef.current = false;
         return;
       }
 
@@ -80,6 +95,7 @@ export const useTeam = () => {
         setPendingInvitations([]);
         setUserRole(null);
         setLoading(false);
+        isLoadingRef.current = false;
         return;
       }
 
@@ -88,7 +104,10 @@ export const useTeam = () => {
         .from('teams')
         .select('*')
         .eq('id', membership.team_id)
+        .abortSignal(signal)
         .single();
+
+      if (signal.aborted) return;
 
       if (teamError) {
         console.error('Error fetching team data:', teamError);
@@ -99,26 +118,35 @@ export const useTeam = () => {
       setTeam(teamData);
       setUserRole(membership.role);
 
-      // Load team members
-      await loadTeamMembers(teamData.id);
+      // Load team members and pending invitations in parallel
+      await Promise.all([
+        loadTeamMembers(teamData.id, signal),
+        loadPendingInvitations(teamData.id, signal)
+      ]);
 
-      // Load pending invitations
-      await loadPendingInvitations(teamData.id);
-
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || signal.aborted) {
+        return;
+      }
       console.error('Error loading team data:', error);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) {
+        setLoading(false);
+        isLoadingRef.current = false;
+      }
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id, not the entire user object
 
-  const loadTeamMembers = useCallback(async (teamId: string) => {
+  const loadTeamMembers = useCallback(async (teamId: string, signal?: AbortSignal) => {
     console.log('Loading team members for team:', teamId);
     try {
       const { data: teamMembersData, error: teamMembersError } = await supabase
         .from('team_members')
         .select('id, team_id, user_id, role')
-        .eq('team_id', teamId);
+        .eq('team_id', teamId)
+        .abortSignal(signal);
+
+      if (signal?.aborted) return;
 
       if (teamMembersError) {
         console.error('Error fetching team members:', teamMembersError);
@@ -136,7 +164,10 @@ export const useTeam = () => {
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
-        .in('id', userIds);
+        .in('id', userIds)
+        .abortSignal(signal);
+
+      if (signal?.aborted) return;
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
@@ -160,12 +191,15 @@ export const useTeam = () => {
       });
 
       setTeamMembers(membersWithProfiles);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || signal?.aborted) {
+        return;
+      }
       console.error('Error loading team members:', error);
     }
   }, []);
 
-  const loadPendingInvitations = useCallback(async (teamId?: string) => {
+  const loadPendingInvitations = useCallback(async (teamId?: string, signal?: AbortSignal) => {
     const currentTeamId = teamId || team?.id;
     if (!currentTeamId) {
       return;
@@ -177,7 +211,10 @@ export const useTeam = () => {
         .select('*')
         .eq('team_id', currentTeamId)
         .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString());
+        .gt('expires_at', new Date().toISOString())
+        .abortSignal(signal);
+
+      if (signal?.aborted) return;
 
       if (pendingInvitationsError) {
         console.error('Error fetching pending invitations:', pendingInvitationsError);
@@ -185,7 +222,10 @@ export const useTeam = () => {
       }
 
       setPendingInvitations(pendingInvitationsData || []);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || signal?.aborted) {
+        return;
+      }
       console.error('Error loading pending invitations:', error);
       setPendingInvitations([]);
     }
@@ -457,7 +497,9 @@ export const useTeam = () => {
         .update({ accepted: true })
         .eq('id', invitation.id);
 
-      // Reload team data
+      // Reset loading states and reload team data
+      isLoadingRef.current = false;
+      lastUserIdRef.current = null;
       await loadTeamData();
 
       return { error: null };
@@ -467,9 +509,29 @@ export const useTeam = () => {
     }
   };
 
+  // Debounced effect to prevent rapid successive calls
   useEffect(() => {
-    loadTeamData();
-  }, [user, loadTeamData]);
+    const timeoutId = setTimeout(() => {
+      loadTeamData();
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      // Cancel any ongoing requests when component unmounts or user changes
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [loadTeamData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return {
     team,

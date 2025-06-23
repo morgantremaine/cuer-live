@@ -495,6 +495,10 @@ export type Database = {
         Args: { member_id: string; team_id_param: string }
         Returns: Json
       }
+      get_user_email_safe: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       get_user_role_in_team: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string
