@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,6 @@ interface TransferPreview {
 const TeamManagement = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
-  const [isResending, setIsResending] = useState<string | null>(null);
   const [transferPreview, setTransferPreview] = useState<TransferPreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -45,8 +45,7 @@ const TeamManagement = () => {
     inviteTeamMember,
     removeTeamMemberWithTransfer,
     getTransferPreview,
-    revokeInvitation,
-    resendInvitation
+    revokeInvitation
   } = useTeam();
   
   const { toast } = useToast();
@@ -89,25 +88,6 @@ const TeamManagement = () => {
         description: 'Invitation revoked successfully!',
       });
     }
-  };
-
-  const handleResendInvitation = async (invitationId: string, email: string) => {
-    setIsResending(invitationId);
-    const { error } = await resendInvitation(invitationId, email);
-    
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Invitation resent successfully!',
-      });
-    }
-    setIsResending(null);
   };
 
   const handleRemoveMemberClick = async (memberId: string, memberName: string) => {
@@ -267,19 +247,6 @@ const TeamManagement = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="border-gray-500 text-gray-300">Pending</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleResendInvitation(invitation.id, invitation.email)}
-                      disabled={isResending === invitation.id}
-                      className="text-gray-300 hover:text-white hover:bg-gray-600"
-                    >
-                      {isResending === invitation.id ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-gray-600">
