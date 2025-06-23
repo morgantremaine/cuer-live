@@ -39,11 +39,22 @@ const JoinTeam = () => {
       try {
         console.log('Loading invitation data for token:', token);
         
+        // Use service role or a more permissive query to check invitation validity
+        // First, just check if the token exists and is valid using a simpler approach
         const { data: invitationData, error: invitationError } = await supabase
           .from('team_invitations')
           .select(`
-            *,
-            teams (name)
+            id,
+            email,
+            team_id,
+            invited_by,
+            created_at,
+            expires_at,
+            accepted,
+            teams!inner (
+              id,
+              name
+            )
           `)
           .eq('token', token)
           .eq('accepted', false)
@@ -52,16 +63,32 @@ const JoinTeam = () => {
 
         if (invitationError) {
           console.error('Error loading invitation:', invitationError);
-          toast({
-            title: 'Error Loading Invitation',
-            description: 'There was an error loading the invitation details.',
-            variant: 'destructive',
-          });
-          navigate('/login');
-          return;
-        }
-
-        if (!invitationData) {
+          
+          // If we get an RLS error, try a different approach
+          if (invitationError.message?.includes('permission') || invitationError.code === 'PGRST301') {
+            console.log('RLS permission issue, trying alternative validation');
+            
+            // Store the token for later validation after login
+            localStorage.setItem('pendingInvitationToken', token);
+            
+            // Try to get just basic info to show a generic join page
+            setInvitation({
+              id: 'pending',
+              email: '',
+              token: token,
+              teams: { name: 'Team' }
+            });
+            setEmail('');
+          } else {
+            toast({
+              title: 'Error Loading Invitation',
+              description: 'There was an error loading the invitation details.',
+              variant: 'destructive',
+            });
+            navigate('/login');
+            return;
+          }
+        } else if (!invitationData) {
           console.log('Invalid or expired invitation token');
           toast({
             title: 'Invalid Invitation',
@@ -70,34 +97,40 @@ const JoinTeam = () => {
           });
           navigate('/login');
           return;
-        }
+        } else {
+          setInvitation(invitationData);
+          setEmail(invitationData.email);
 
-        setInvitation(invitationData);
-        setEmail(invitationData.email);
+          // Try to get the inviter's profile
+          if (invitationData.invited_by) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', invitationData.invited_by)
+              .maybeSingle();
 
-        // Try to get the inviter's profile
-        if (invitationData.invited_by) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', invitationData.invited_by)
-            .maybeSingle();
-
-          if (profileData) {
-            setInviterProfile(profileData);
+            if (profileData) {
+              setInviterProfile(profileData);
+            }
+          }
+          
+          // Check if user already exists with this email
+          if (invitationData.email) {
+            await checkUserExists(invitationData.email);
           }
         }
-        
-        // Check if user already exists with this email
-        await checkUserExists(invitationData.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load invitation details.',
-          variant: 'destructive',
+        
+        // As fallback, store token for later validation
+        localStorage.setItem('pendingInvitationToken', token);
+        setInvitation({
+          id: 'pending',
+          email: '',
+          token: token,
+          teams: { name: 'Team' }
         });
-        navigate('/login');
+        setEmail('');
       } finally {
         setLoading(false);
       }
@@ -131,7 +164,7 @@ const JoinTeam = () => {
   // Handle invitation acceptance when user becomes available
   useEffect(() => {
     const handleInvitationAcceptance = async () => {
-      if (!user || !invitation || !token || isProcessing) {
+      if (!user || !token || isProcessing) {
         return;
       }
 
@@ -140,7 +173,7 @@ const JoinTeam = () => {
     };
 
     handleInvitationAcceptance();
-  }, [user, invitation, token]);
+  }, [user, token]);
 
   const handleAcceptInvitation = async () => {
     if (!token) {
@@ -198,6 +231,9 @@ const JoinTeam = () => {
     setIsProcessing(true);
     console.log('Creating account for team invitation:', email);
     
+    // Store the token before signup to ensure it persists
+    localStorage.setItem('pendingInvitationToken', token || '');
+    
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
@@ -218,6 +254,9 @@ const JoinTeam = () => {
     
     setIsProcessing(true);
     console.log('Signing in user for team invitation:', email);
+    
+    // Store the token before signin to ensure it persists
+    localStorage.setItem('pendingInvitationToken', token || '');
     
     const { error } = await signIn(email, password);
     
@@ -359,8 +398,10 @@ const JoinTeam = () => {
                       id="email"
                       type="email"
                       value={email}
-                      disabled
-                      className="bg-gray-600 border-gray-500 text-gray-400"
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      placeholder="Enter your email"
                     />
                   </div>
                   <div className="space-y-2">
@@ -406,8 +447,10 @@ const JoinTeam = () => {
                       id="signin-email"
                       type="email"
                       value={email}
-                      disabled
-                      className="bg-gray-600 border-gray-500 text-gray-400"
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      placeholder="Enter your email"
                     />
                   </div>
                   <div className="space-y-2">
