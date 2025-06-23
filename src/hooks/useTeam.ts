@@ -313,6 +313,10 @@ export const useTeam = () => {
   };
 
   const resendInvitation = async (invitationId: string, email: string) => {
+    if (!team?.id) {
+      return { error: 'No team available.' };
+    }
+
     try {
       console.log('Resending invitation to:', email);
       
@@ -327,7 +331,8 @@ export const useTeam = () => {
           token: newToken,
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         })
-        .eq('id', invitationId);
+        .eq('id', invitationId)
+        .eq('team_id', team.id); // Add team_id check for security
 
       if (updateError) {
         console.error('Error updating invitation:', updateError);
@@ -338,7 +343,7 @@ export const useTeam = () => {
       const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
         body: {
           email,
-          teamName: team?.name || 'Your Team',
+          teamName: team.name || 'Your Team',
           inviterName: user?.user_metadata?.full_name || user?.email || 'Team Admin',
           token: newToken
         }
