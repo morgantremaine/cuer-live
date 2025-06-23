@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -244,7 +245,6 @@ const Help = () => {
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
               <p>You can import rundown data from CSV files to quickly populate your rundowns:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Prepare your CSV:</strong> Ensure your CSV has headers that match rundown fields (Name, Duration, Script, etc.)</li>
                 <li><strong>Import process:</strong> Use the Import button in the rundown toolbar to upload your CSV file</li>
                 <li><strong>Column mapping:</strong> Map your CSV columns to the appropriate rundown fields during import</li>
                 <li><strong>Custom layouts:</strong> For best results, create and save a custom column layout that matches your CSV structure before importing</li>
