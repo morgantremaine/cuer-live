@@ -9,7 +9,7 @@ import InvitationRecovery from '@/components/InvitationRecovery';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
-  const { savedRundowns, loadRundowns, createRundown, deleteRundown, updateRundown, loading: loadingRundowns } = useRundownStorage();
+  const { savedRundowns, loadRundowns, createRundown, deleteRundown, updateRundown, duplicateRundown, archiveRundown, loading: loadingRundowns } = useRundownStorage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,6 +23,37 @@ const Dashboard = () => {
       loadRundowns();
     }
   }, [user, loadRundowns]);
+
+  const handleOpenRundown = (id: string) => {
+    navigate(`/rundown/${id}`);
+  };
+
+  const handleDeleteRundown = async (id: string, title: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
+      await deleteRundown(id);
+    }
+  };
+
+  const handleArchiveRundown = async (id: string, title: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to archive "${title}"?`)) {
+      await archiveRundown(id);
+    }
+  };
+
+  const handleUnarchiveRundown = async (id: string, title: string, items: any[], e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Implement unarchive logic if needed
+    console.log('Unarchive not implemented yet');
+  };
+
+  const handleDuplicateRundown = async (id: string, title: string, items: any[], e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (duplicateRundown) {
+      await duplicateRundown(id);
+    }
+  };
 
   if (loading) {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading...</div>;
@@ -49,8 +80,12 @@ const Dashboard = () => {
             <RundownCard
               key={rundown.id}
               rundown={rundown}
-              onDelete={deleteRundown}
-              onUpdate={updateRundown}
+              onOpen={handleOpenRundown}
+              onDelete={handleDeleteRundown}
+              onArchive={handleArchiveRundown}
+              onUnarchive={handleUnarchiveRundown}
+              onDuplicate={handleDuplicateRundown}
+              isArchived={rundown.archived}
             />
           ))}
         </div>
