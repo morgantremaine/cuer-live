@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -303,9 +304,9 @@ const ADView = () => {
     const textLength = scriptText.length;
     
     // Base height + additional height based on content
-    const baseHeight = 300; // minimum height
-    const additionalHeight = Math.floor(textLength / 100) * 50; // 50px per ~100 characters
-    const maxHeight = 800; // maximum height
+    const baseHeight = 400; // increased minimum height
+    const additionalHeight = Math.floor(textLength / 80) * 40; // 40px per ~80 characters (more responsive)
+    const maxHeight = 1000; // increased maximum height
     
     return Math.min(baseHeight + additionalHeight, maxHeight);
   };
@@ -379,11 +380,11 @@ const ADView = () => {
           </div>
         </div>
 
-        {/* Main Content - Updated grid layout */}
+        {/* Main Content - Updated grid layout with wider timing and script areas */}
         <div className="flex-1 px-0 py-0">
           <div className="grid grid-cols-12 gap-5 h-full p-5">
-            {/* Left Side - Timing Cards - Same width (2 columns) */}
-            <div className="col-span-2 space-y-4">
+            {/* Left Side - Timing Cards - Increased to 3 columns */}
+            <div className="col-span-3 space-y-4">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-5 text-center">
@@ -428,8 +429,8 @@ const ADView = () => {
               </Card>
             </div>
 
-            {/* Center - Segments Display - Increased to 8 columns to center better */}
-            <div className="col-span-8 flex flex-col justify-center space-y-4">
+            {/* Center - Segments Display - Reduced to 6 columns to accommodate wider sides */}
+            <div className="col-span-6 flex flex-col justify-center space-y-4">
               {/* Previous Segment 2 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-40"
@@ -578,13 +579,13 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script - Same width as timing blocks (2 columns) */}
-            <div className="col-span-2">
+            {/* Right Side - Script - Increased to 3 columns to match timing blocks */}
+            <div className="col-span-3">
               <Card className="bg-gray-800 border-gray-700" style={{ height: `${getScriptHeight()}px` }}>
                 <CardContent className="p-5 h-full flex flex-col">
                   <div className="text-sm text-gray-400 mb-4 font-semibold">CURRENT SCRIPT</div>
                   <div className="flex-1 bg-gray-900 rounded-lg p-5 overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap text-base leading-relaxed">
+                    <div className="text-white whitespace-pre-wrap text-base leading-relaxed break-words">
                       {currentSegment?.script || 'No script available for current segment'}
                     </div>
                   </div>
