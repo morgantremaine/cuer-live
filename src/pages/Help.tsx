@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -106,9 +107,8 @@ const Help = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Collaborative Features</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Collaboration Tools</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                    <li><strong>Crew Management:</strong> Maintain crew lists with roles and contact information</li>
                     <li><strong>Rich Text Scratchpad:</strong> Team collaboration space for notes and planning</li>
                     <li><strong>Show Date Tracking:</strong> Centralized date management across all blueprint components</li>
                   </ul>
@@ -128,32 +128,17 @@ const Help = () => {
               AD View (Assistant Director)
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>AD View provides essential show timing and status information for Assistant Directors and control room operations:</p>
+              <p>AD View provides essential timing information for Assistant Directors and control room operations:</p>
               
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Live Timing Display</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                    <li>Prominent show clock with timezone support</li>
-                    <li>Real-time segment countdown/countup</li>
-                    <li>Total show progress visualization</li>
-                    <li>Next segment preview for preparation</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Control Room Integration</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                    <li>Synchronized with main rundown playback controls</li>
-                    <li>Optimized for multiviewer display systems</li>
-                    <li>High contrast, easy-to-read interface</li>
-                    <li>No login required - dedicated URL per rundown</li>
-                  </ul>
-                </div>
-              </div>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Live Timing:</strong> Prominent show clock with real-time segment countdown</li>
+                <li><strong>Progress Tracking:</strong> Visual show progress and next segment preview</li>
+                <li><strong>Control Room Ready:</strong> Optimized for multiviewer displays with high contrast interface</li>
+                <li><strong>Easy Access:</strong> No login required - dedicated URL per rundown</li>
+              </ul>
 
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-4 mt-4">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Production Tip:</strong> Display AD View on a dedicated monitor or multiviewer window for constant timing visibility during live production.</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Production Tip:</strong> Display AD View on a dedicated monitor for constant timing visibility during live production.</p>
               </div>
             </div>
           </section>
@@ -317,25 +302,6 @@ const Help = () => {
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Space</kbd> - Pause/Resume scroll</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Esc</kbd> - Exit fullscreen</li>
                 </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* Advanced Features */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Advanced Features</h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Teleprompter</h3>
-                <p className="text-sm">Access the teleprompter view for on-air talent. Click the teleprompter button in the toolbar to launch fullscreen scrolling text.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Blueprint Mode</h3>
-                <p className="text-sm">Use blueprint mode for pre-production planning with lists, crew management, and camera plots.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Column Customization</h3>
-                <p className="text-sm">Customize which columns are visible and their order through the column manager in the header.</p>
               </div>
             </div>
           </section>
