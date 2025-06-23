@@ -59,90 +59,6 @@ const Help = () => {
             </div>
           </section>
 
-          {/* AI Helper */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Bot className="h-6 w-6 mr-2 text-purple-600" />
-              AI Helper (Cuer)
-            </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>Cuer includes an intelligent AI assistant to help streamline your rundown creation and management:</p>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Chat Interface:</strong> Click the chat icon in the rundown toolbar to open the AI assistant</li>
-                <li><strong>Rundown Analysis:</strong> Ask the AI to review your rundown for spelling, grammar, timing, or structural improvements</li>
-                <li><strong>Content Suggestions:</strong> Get help writing scripts, segment descriptions, or other rundown content</li>
-                <li><strong>Timing Assistance:</strong> Ask questions about duration calculations and scheduling</li>
-              </ul>
-            </div>
-          </section>
-
-          {/* Blueprints */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <FileText className="h-6 w-6 mr-2 text-indigo-600" />
-              Blueprints
-            </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>Blueprint mode transforms your rundown into a comprehensive pre-production planning tool:</p>
-              
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Dynamic Lists</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                    <li>Auto-generate checklists from rundown columns (talent, graphics, video assets)</li>
-                    <li>Check off items as complete to track progress</li>
-                    <li>Toggle unique items view to remove duplicates</li>
-                    <li>Real-time updates when rundown changes</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Camera Plot Editor</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                    <li>Visual set design with drag-and-drop elements</li>
-                    <li>Position cameras with precise angles and coverage areas</li>
-                    <li>Add set pieces like tables, chairs, monitors</li>
-                    <li>Create multiple scenes for different segments</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Collaboration Tools</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                    <li><strong>Rich Text Scratchpad:</strong> Team collaboration space for notes and planning</li>
-                    <li><strong>Show Date Tracking:</strong> Centralized date management across all blueprint components</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Blueprint data is saved separately from your rundown, allowing detailed production planning without cluttering your on-air view.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* AD View */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Eye className="h-6 w-6 mr-2 text-green-600" />
-              AD View (Assistant Director)
-            </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>AD View provides essential timing information for Assistant Directors and control room operations:</p>
-              
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Live Timing:</strong> Prominent show clock with real-time segment countdown</li>
-                <li><strong>Progress Tracking:</strong> Visual show progress and next segment preview</li>
-                <li><strong>Control Room Ready:</strong> Optimized for multiviewer displays with high contrast interface</li>
-                <li><strong>Easy Access:</strong> No login required - dedicated URL per rundown</li>
-              </ul>
-
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-4 mt-4">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Production Tip:</strong> Display AD View on a dedicated monitor for constant timing visibility during live production.</p>
-              </div>
-            </div>
-          </section>
-
           {/* Basic Operations */}
           <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -170,19 +86,52 @@ const Help = () => {
             </div>
           </section>
 
-          {/* CSV Import */}
+          {/* AI Helper */}
           <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Upload className="h-6 w-6 mr-2 text-blue-600" />
-              Importing CSV Files
+              <Bot className="h-6 w-6 mr-2 text-purple-600" />
+              AI Helper (Cuer)
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>You can import rundown data from CSV files to quickly populate your rundowns:</p>
+              <p>Cuer includes an intelligent AI assistant to help streamline your rundown creation and management:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Import process:</strong> Use the Import button in the rundown toolbar to upload your CSV file</li>
-                <li><strong>Column mapping:</strong> Map your CSV columns to the appropriate rundown fields during import</li>
-                <li><strong>Custom layouts:</strong> For best results, create and save a custom column layout that matches your CSV structure before importing</li>
+                <li><strong>Chat Interface:</strong> Click the chat icon in the rundown toolbar to open the AI assistant</li>
+                <li><strong>Rundown Analysis:</strong> Ask the AI to review your rundown for spelling, grammar, timing, or structural improvements</li>
+                <li><strong>Content Suggestions:</strong> Get help writing scripts, segment descriptions, or other rundown content</li>
+                <li><strong>Timing Assistance:</strong> Ask questions about duration calculations and scheduling</li>
               </ul>
+            </div>
+          </section>
+
+          {/* Blueprints */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <FileText className="h-6 w-6 mr-2 text-indigo-600" />
+              Blueprints
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>Blueprint mode transforms your rundown into a comprehensive pre-production planning tool:</p>
+              
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Dynamic Lists</h3>
+                  <p className="text-sm">Auto-generate checklists from rundown columns with real-time updates and progress tracking.</p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Camera Plot Editor</h3>
+                  <p className="text-sm">Visual set design with drag-and-drop elements, camera positioning, and scene management.</p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Collaboration Tools</h3>
+                  <p className="text-sm">Rich text scratchpad for team notes and centralized show date tracking.</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Blueprint data is saved separately from your rundown, allowing detailed production planning without cluttering your on-air view.</p>
+              </div>
             </div>
           </section>
 
@@ -203,6 +152,40 @@ const Help = () => {
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Note:</strong> You can update which layout is used for sharing at any time. This allows you to customize what information external viewers see without affecting your team's working view.</p>
               </div>
+            </div>
+          </section>
+
+          {/* AD View */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Eye className="h-6 w-6 mr-2 text-green-600" />
+              AD View (Assistant Director)
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>AD View provides essential timing information for Assistant Directors and control room operations:</p>
+              
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Live Timing:</strong> Prominent show clock with real-time segment countdown</li>
+                <li><strong>Progress Tracking:</strong> Visual show progress and next segment preview</li>
+                <li><strong>Control Room Ready:</strong> Optimized for multiviewer displays</li>
+                <li><strong>Easy Access:</strong> No login required - dedicated URL per rundown</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* CSV Import */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Upload className="h-6 w-6 mr-2 text-blue-600" />
+              Importing CSV Files
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>You can import rundown data from CSV files to quickly populate your rundowns:</p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Import process:</strong> Use the Import button in the rundown toolbar to upload your CSV file</li>
+                <li><strong>Column mapping:</strong> Map your CSV columns to the appropriate rundown fields during import</li>
+                <li><strong>Custom layouts:</strong> For best results, create and save a custom column layout that matches your CSV structure before importing</li>
+              </ul>
             </div>
           </section>
 
