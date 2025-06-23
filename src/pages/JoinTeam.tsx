@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,8 +130,8 @@ const JoinTeam = () => {
       console.log('User is ready for invitation acceptance, processing...');
       setIsProcessing(true);
       
-      // Wait a moment for any pending auth operations to complete
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait for auth to stabilize
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       await handleAcceptInvitation();
     };
@@ -166,13 +165,6 @@ const JoinTeam = () => {
           setTimeout(() => {
             navigate('/dashboard');
           }, 2000);
-        } else if (error.includes('verification failed')) {
-          toast({
-            title: 'Account Verification Error',
-            description: 'Please try signing out and back in to refresh your account.',
-            variant: 'destructive',
-          });
-          setIsProcessing(false);
         } else {
           toast({
             title: 'Error',
@@ -203,7 +195,7 @@ const JoinTeam = () => {
     }
   };
 
-  const handleCreateAccount = async (e: React.FormEvent) => {
+  async function handleCreateAccount(e: React.FormEvent) {
     e.preventDefault();
     
     if (password.length < 6) {
@@ -232,9 +224,9 @@ const JoinTeam = () => {
       console.log('Team invitation account created successfully');
       // Processing will continue in the useEffect when user becomes available
     }
-  };
+  }
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     
     setIsProcessing(true);
@@ -254,7 +246,7 @@ const JoinTeam = () => {
       console.log('Sign in successful, will process invitation');
       // Processing will continue in the useEffect when user becomes available
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -352,112 +344,139 @@ const JoinTeam = () => {
                 className="h-12 w-auto"
               />
             </div>
-            <CardTitle className="text-white">Join Team: {invitation.teams?.name || 'Team'}</CardTitle>
+            <CardTitle className="text-white">Join Team: {invitation?.teams?.name || 'Team'}</CardTitle>
             <CardDescription className="text-gray-400">
-              {getInviterDisplayName()} has invited you to join their team.
+              {invitation?.inviter?.full_name || invitation?.inviter?.email || 'A team member'} has invited you to join their team.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-gray-700">
-                <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
-                  Create Account
-                </TabsTrigger>
-                <TabsTrigger value="signin" className="text-gray-300 data-[state=active]:text-white">
-                  Sign In
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="signup" className="space-y-4 mt-4">
-                <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700 rounded">
-                  <p className="text-sm text-blue-300">
-                    ⓘ Account will be created and you'll join the team automatically
-                  </p>
-                </div>
-                <form onSubmit={handleCreateAccount} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your email"
-                    />
+            {loading ? (
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-300">Loading invitation...</p>
+              </div>
+            ) : validationError || !invitation ? (
+              <div className="text-center">
+                <p className="text-red-400 mb-4">{validationError || 'Invalid invitation'}</p>
+                <Button onClick={() => navigate('/login')} className="w-full">
+                  Go to Login
+                </Button>
+              </div>
+            ) : user && isProcessing ? (
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-300">Joining team...</p>
+              </div>
+            ) : user && !isProcessing ? (
+              <Button 
+                onClick={handleAcceptInvitation} 
+                className="w-full" 
+                disabled={isProcessing}
+              >
+                Accept Invitation
+              </Button>
+            ) : (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-700">
+                  <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
+                    Create Account
+                  </TabsTrigger>
+                  <TabsTrigger value="signin" className="text-gray-300 data-[state=active]:text-white">
+                    Sign In
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="signup" className="space-y-4 mt-4">
+                  <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700 rounded">
+                    <p className="text-sm text-blue-300">
+                      ⓘ Account will be created and you'll join the team automatically
+                    </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-gray-300">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Create a password"
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? 'Creating Account...' : 'Create Account & Join Team'}
-                  </Button>
-                </form>
-              </TabsContent>
+                  <form onSubmit={handleCreateAccount} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-300">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-gray-300">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Create a password"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Creating Account...' : 'Create Account & Join Team'}
+                    </Button>
+                  </form>
+                </TabsContent>
 
-              <TabsContent value="signin" className="space-y-4 mt-4">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-gray-300">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your email"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-gray-300">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your password"
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? 'Signing In...' : 'Sign In & Join Team'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="signin" className="space-y-4 mt-4">
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email" className="text-gray-300">Email</Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password" className="text-gray-300">Password</Label>
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Enter your password"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Signing In...' : 'Sign In & Join Team'}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>

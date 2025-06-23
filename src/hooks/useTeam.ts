@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -472,23 +473,24 @@ export const useTeam = () => {
       console.log('Accepting invitation with token:', token);
       console.log('Current user:', user.id, user.email);
 
-      // Wait a moment for profile to be created if needed
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for any auth operations to stabilize
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // First, verify the user has a profile
-      const { data: userProfile, error: profileError } = await supabase
+      // First, ensure the user has a profile - create one if needed
+      const { data: existingProfile, error: profileCheckError } = await supabase
         .from('profiles')
         .select('id, email')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (profileError) {
-        console.error('Error checking user profile:', profileError);
+      if (profileCheckError) {
+        console.error('Error checking user profile:', profileCheckError);
         return { error: 'Failed to verify user profile. Please try again.' };
       }
 
-      if (!userProfile) {
-        console.log('User profile not found, creating one...');
+      // Create profile if it doesn't exist
+      if (!existingProfile) {
+        console.log('Creating user profile...');
         const { error: createProfileError } = await supabase
           .from('profiles')
           .insert({
@@ -499,14 +501,17 @@ export const useTeam = () => {
 
         if (createProfileError) {
           console.error('Error creating user profile:', createProfileError);
-          return { error: 'Failed to create user profile. Please try again.' };
+          // Try to proceed anyway - the profile might have been created by the trigger
+          console.log('Profile creation failed, but continuing with invitation acceptance...');
+        } else {
+          console.log('Profile created successfully');
         }
         
         // Wait for profile creation to propagate
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      // Get invitation
+      // Get invitation details
       const { data: invitation, error: fetchError } = await supabase
         .from('team_invitations')
         .select('*')
@@ -548,7 +553,7 @@ export const useTeam = () => {
         return { error: 'You are already a member of this team.' };
       }
 
-      // Add user to team
+      // Add user to team with improved error handling
       console.log('Adding user to team:', {
         user_id: user.id,
         team_id: invitation.team_id,
@@ -575,9 +580,7 @@ export const useTeam = () => {
         });
         
         // Handle specific error cases
-        if (memberError.code === '23503') {
-          return { error: 'User account verification failed. Please try signing out and back in.' };
-        } else if (memberError.code === '23505') {
+        if (memberError.code === '23505') {
           // Unique constraint violation - user already exists
           console.log('User already in team (unique constraint), marking invitation as accepted');
           await supabase
