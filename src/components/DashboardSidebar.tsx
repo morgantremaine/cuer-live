@@ -157,7 +157,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-black border-r border-gray-700 flex flex-col items-center py-4">
+      <div className="w-12 bg-slate-950 border-r border-gray-700 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
@@ -186,7 +186,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-black border-r border-gray-700 flex flex-col">
+    <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
         <h2 className="text-white font-semibold">Folders</h2>
