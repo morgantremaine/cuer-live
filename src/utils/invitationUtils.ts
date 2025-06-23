@@ -3,20 +3,16 @@ import { supabase } from '@/lib/supabase';
 
 export const validateInvitationToken = async (token: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
-      .from('team_invitations')
-      .select('id')
-      .eq('token', token)
-      .eq('accepted', false)
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle();
+    const { data, error } = await supabase.rpc('validate_invitation_token', {
+      token_param: token
+    });
 
     if (error) {
       console.error('Error validating invitation token:', error);
       return false;
     }
 
-    return !!data;
+    return data?.valid === true;
   } catch (error) {
     console.error('Error in validateInvitationToken:', error);
     return false;

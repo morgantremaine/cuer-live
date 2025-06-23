@@ -74,7 +74,7 @@ export const useTeam = () => {
     console.log('Loading team data for user:', user.id);
 
     try {
-      // Fetch team membership with retry logic
+      // Fetch team membership with retry logic and proper headers
       let membership;
       let membershipError;
       let retryCount = 0;
@@ -86,7 +86,7 @@ export const useTeam = () => {
           .select('team_id, role')
           .eq('user_id', user.id)
           .abortSignal(signal)
-          .maybeSingle();
+          .single();
 
         membership = result.data;
         membershipError = result.error;
@@ -105,7 +105,7 @@ export const useTeam = () => {
         }
       }
 
-      if (membershipError) {
+      if (membershipError && membershipError.code !== 'PGRST116') {
         console.error('Error fetching team membership after retries:', membershipError);
         setTeam(null);
         setTeamMembers([]);

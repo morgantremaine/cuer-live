@@ -23,7 +23,6 @@ const JoinTeam = () => {
   const [fullName, setFullName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
-  const [userExists, setUserExists] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string>('');
   const { user, signUp, signIn } = useAuth();
@@ -110,15 +109,12 @@ const JoinTeam = () => {
         .maybeSingle();
       
       if (profileData) {
-        setUserExists(true);
         setActiveTab('signin');
       } else {
-        setUserExists(false);
         setActiveTab('signup');
       }
     } catch (error) {
       console.error('Error in checkUserExists:', error);
-      setUserExists(false);
       setActiveTab('signup');
     }
   };
