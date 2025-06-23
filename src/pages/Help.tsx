@@ -86,6 +86,24 @@ const Help = () => {
             </div>
           </section>
 
+          {/* Team Collaboration */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Users className="h-6 w-6 mr-2 text-purple-600" />
+              Team Collaboration
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>Work together seamlessly with your team:</p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Real-time Updates:</strong> See changes from teammates instantly</li>
+                <li><strong>Team Management:</strong> Invite team members from account settings</li>
+                <li><strong>Shared Access:</strong> All team members can edit the same rundown</li>
+                <li><strong>Auto-save:</strong> Changes are saved automatically to prevent data loss</li>
+                <li><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown</li>
+              </ul>
+            </div>
+          </section>
+
           {/* Showcaller */}
           <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -219,23 +237,6 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Time Management */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Clock className="h-6 w-6 mr-2 text-orange-600" />
-              Time Management
-            </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>Cuer provides powerful timing features for broadcast planning:</p>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Duration:</strong> Set how long each item should take</li>
-                <li><strong>Start Time:</strong> Automatically calculated based on durations</li>
-                <li><strong>Playback Controls:</strong> Use play/pause to track progress during broadcast</li>
-                <li><strong>Time Display:</strong> Current time shown in header with timezone support</li>
-              </ul>
-            </div>
-          </section>
-
           {/* Teleprompter Operation */}
           <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -271,24 +272,6 @@ const Help = () => {
                   </ul>
                 </div>
               </div>
-            </div>
-          </section>
-
-          {/* Collaboration */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Users className="h-6 w-6 mr-2 text-purple-600" />
-              Team Collaboration
-            </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>Work together seamlessly with your team:</p>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Real-time Updates:</strong> See changes from teammates instantly</li>
-                <li><strong>Team Management:</strong> Invite team members from account settings</li>
-                <li><strong>Shared Access:</strong> All team members can edit the same rundown</li>
-                <li><strong>Auto-save:</strong> Changes are saved automatically to prevent data loss</li>
-                <li><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown</li>
-              </ul>
             </div>
           </section>
 
