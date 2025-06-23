@@ -361,8 +361,8 @@ const Teleprompter = () => {
       {/* Keyboard Instructions - Only show when not fullscreen */}
       {!isFullscreen && (
         <div className="fixed bottom-4 left-4 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
-          <div>Arrow Keys: Adjust Speed | Space: Play/Pause | Esc: Exit Fullscreen</div>
-          <div>Click on script text to edit (editing pauses scrolling)</div>
+          <div>Enter Fullscreen for keyboard controls (Arrow Keys: Speed | Space: Play/Pause)</div>
+          <div>Click on script text to edit</div>
         </div>
       )}
     </div>

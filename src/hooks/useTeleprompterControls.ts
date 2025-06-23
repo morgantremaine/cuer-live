@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 
 export const useTeleprompterControls = () => {
@@ -14,19 +15,26 @@ export const useTeleprompterControls = () => {
   const speedSteps = [-5, -4.5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
   const [currentSpeedIndex, setCurrentSpeedIndex] = useState(12); // Start at 1x (index 12)
 
-  // Handle keyboard controls
+  // Handle keyboard controls - only when in fullscreen mode
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Prevent default behavior for our handled keys
+      // Only handle keyboard shortcuts in fullscreen mode
+      if (!isFullscreen) {
+        // Still handle Escape to exit fullscreen
+        if (event.key === 'Escape') {
+          setIsFullscreen(false);
+        }
+        return;
+      }
+
+      // Prevent default behavior for our handled keys when in fullscreen
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(event.key)) {
         event.preventDefault();
       }
 
       switch (event.key) {
         case 'Escape':
-          if (isFullscreen) {
-            setIsFullscreen(false);
-          }
+          setIsFullscreen(false);
           break;
         
         case ' ': // Spacebar for play/pause
