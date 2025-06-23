@@ -15,6 +15,7 @@ import { useRundownFolders } from '@/hooks/useRundownFolders';
 import { useTeamId } from '@/hooks/useTeamId';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -26,6 +27,7 @@ const Dashboard = () => {
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
+  const isMobile = useIsMobile();
   
   // Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -241,6 +243,9 @@ const Dashboard = () => {
   const filteredRundowns = getFilteredRundowns();
   const folderTitle = getFolderTitle();
 
+  // On mobile, when sidebar is expanded, hide main content
+  const showMainContent = !isMobile || sidebarCollapsed;
+
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Full-width Header */}
@@ -263,49 +268,51 @@ const Dashboard = () => {
           folderType={folderType}
         />
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0 space-y-6">
-              {/* Breadcrumb */}
-              <DashboardFolderBreadcrumb
-                selectedFolder={selectedFolder}
-                folderType={folderType}
-                customFolders={folders}
-              />
-              
-              {/* Create New and Import Buttons */}
-              <div className="flex items-center space-x-4">
-                <CreateNewButton onClick={handleCreateNew} />
-                <CSVImportDialog onImport={handleCSVImport}>
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Import CSV
-                  </Button>
-                </CSVImportDialog>
+        {/* Main Content - Hidden on mobile when sidebar is expanded */}
+        {showMainContent && (
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+              <div className="px-4 py-6 sm:px-0 space-y-6">
+                {/* Breadcrumb */}
+                <DashboardFolderBreadcrumb
+                  selectedFolder={selectedFolder}
+                  folderType={folderType}
+                  customFolders={folders}
+                />
+                
+                {/* Create New and Import Buttons */}
+                <div className="flex items-center space-x-4">
+                  <CreateNewButton onClick={handleCreateNew} />
+                  <CSVImportDialog onImport={handleCSVImport}>
+                    <Button 
+                      size="lg" 
+                      variant="outline"
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Import CSV
+                    </Button>
+                  </CSVImportDialog>
+                </div>
+                
+                {/* Rundowns Grid */}
+                <DashboardRundownGrid 
+                  title={folderTitle}
+                  rundowns={filteredRundowns}
+                  loading={loading}
+                  onOpen={handleOpenRundown}
+                  onDelete={handleDeleteRundown}
+                  onArchive={handleArchiveRundown}
+                  onUnarchive={handleUnarchiveRundown}
+                  onDuplicate={handleDuplicateRundown}
+                  isArchived={folderType === 'archived'}
+                  showEmptyState={true}
+                  currentUserId={user?.id}
+                />
               </div>
-              
-              {/* Rundowns Grid */}
-              <DashboardRundownGrid 
-                title={folderTitle}
-                rundowns={filteredRundowns}
-                loading={loading}
-                onOpen={handleOpenRundown}
-                onDelete={handleDeleteRundown}
-                onArchive={handleArchiveRundown}
-                onUnarchive={handleUnarchiveRundown}
-                onDuplicate={handleDuplicateRundown}
-                isArchived={folderType === 'archived'}
-                showEmptyState={true}
-                currentUserId={user?.id}
-              />
             </div>
-          </div>
-        </main>
+          </main>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}
