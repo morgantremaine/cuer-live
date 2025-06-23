@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -256,19 +257,26 @@ export const useTeam = () => {
     }
 
     try {
-      // Check if email already exists as a team member
-      const { data: existingMember } = await supabase
+      // Check if email already exists as a team member using separate queries
+      const { data: teamMembersData } = await supabase
         .from('team_members')
-        .select(`
-          id,
-          profiles!inner(email)
-        `)
-        .eq('team_id', team.id)
-        .eq('profiles.email', email)
-        .maybeSingle();
+        .select('user_id')
+        .eq('team_id', team.id);
 
-      if (existingMember) {
-        return { error: 'This email is already a team member.' };
+      if (teamMembersData && teamMembersData.length > 0) {
+        // Get user IDs and fetch their emails
+        const userIds = teamMembersData.map(member => member.user_id);
+        
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('email')
+          .in('id', userIds);
+
+        const existingEmails = profilesData?.map(profile => profile.email).filter(Boolean) || [];
+        
+        if (existingEmails.includes(email)) {
+          return { error: 'This email is already a team member.' };
+        }
       }
 
       // Check if there's already a pending invitation for this email

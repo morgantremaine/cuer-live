@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,6 +18,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
+  const [resendConfirmationEmail, setResendConfirmationEmail] = useState('')
   const { signIn, signUp, resetPassword, resendConfirmation } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -88,6 +88,9 @@ const Login = () => {
         title: 'Success',
         description: 'Account created successfully! Please check your email (including spam folder) to verify your account before signing in.',
       })
+      // Set the email for potential resend and show the resend option
+      setResendConfirmationEmail(email)
+      setShowResendConfirmation(true)
       // Don't navigate to dashboard, user needs to confirm email first
     }
     
@@ -121,12 +124,13 @@ const Login = () => {
   }
 
   const handleResendConfirmation = async () => {
-    if (loading || !email) return
+    const emailToUse = resendConfirmationEmail || email;
+    if (loading || !emailToUse) return
     
     setLoading(true)
     
     // This is for account verification emails, not team invitations
-    const { error } = await resendConfirmation(email)
+    const { error } = await resendConfirmation(emailToUse)
     
     if (error) {
       console.log('Resend confirmation error details:', error);
@@ -140,7 +144,6 @@ const Login = () => {
         title: 'Success',
         description: 'Confirmation email sent! Please check your inbox and spam folder.',
       })
-      setShowResendConfirmation(false)
     }
     
     setLoading(false)
@@ -268,12 +271,17 @@ const Login = () => {
                           <p>• Wait a few minutes for the email to arrive</p>
                           <p>• Or resend the verification email:</p>
                         </div>
+                        {resendConfirmationEmail && (
+                          <div className="mt-2 mb-3 text-xs text-gray-300">
+                            Resending to: {resendConfirmationEmail}
+                          </div>
+                        )}
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={handleResendConfirmation}
-                          disabled={loading || !email}
+                          disabled={loading || (!resendConfirmationEmail && !email)}
                           className="w-full mt-3 text-gray-300 border-gray-600 hover:bg-gray-600"
                         >
                           {loading ? 'Sending...' : 'Resend Verification Email'}
@@ -340,6 +348,26 @@ const Login = () => {
                   <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
                     {loading ? 'Creating Account...' : 'Sign Up'}
                   </Button>
+                  {showResendConfirmation && resendConfirmationEmail && (
+                    <div className="mt-4 p-3 bg-gray-700 rounded border">
+                      <p className="text-sm text-gray-300 mb-2">
+                        Account created! Didn't receive the verification email?
+                      </p>
+                      <p className="text-xs text-gray-400 mb-3">
+                        Check your spam folder or resend the verification email.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResendConfirmation}
+                        disabled={loading}
+                        className="w-full text-gray-300 border-gray-600 hover:bg-gray-600"
+                      >
+                        {loading ? 'Sending...' : 'Resend Verification Email'}
+                      </Button>
+                    </div>
+                  )}
                 </form>
               </TabsContent>
             </Tabs>
