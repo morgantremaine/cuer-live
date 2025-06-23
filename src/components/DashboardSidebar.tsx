@@ -177,7 +177,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 size="icon"
                 onClick={() => onFolderSelect(folder.id, folder.type)}
                 className={`text-gray-400 hover:text-white hover:bg-gray-800 ${
-                  isSelected ? 'bg-gray-800 text-white' : ''
+                  isSelected ? 'bg-blue-600 text-white' : ''
                 }`}
               >
                 <folder.icon className="h-4 w-4" />
@@ -226,16 +226,21 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 const isSelected = folderType === folder.type;
                 const isDragOver = dragOverFolder === folder.id;
                 
+                // Priority: drag-over > selected > default hover
+                let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
+                
+                if (isDragOver) {
+                  containerClasses += "bg-gray-700 text-white";
+                } else if (isSelected) {
+                  containerClasses += "bg-blue-600 text-white";
+                } else {
+                  containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+                }
+                
                 return (
                   <div
                     key={folder.id || 'all'}
-                    className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
-                      isDragOver
-                        ? 'bg-gray-700 text-white'
-                        : isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                    }`}
+                    className={containerClasses}
                     onClick={() => onFolderSelect(folder.id, folder.type)}
                     onDragOver={(e) => handleDragOver(e, folder.id)}
                     onDragLeave={handleDragLeave}
@@ -309,16 +314,21 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               const isSelected = folderType === 'custom' && selectedFolder === folder.id;
               const isDragOver = dragOverFolder === folder.id;
               
+              // Priority: drag-over > selected > default hover
+              let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
+              
+              if (isDragOver) {
+                containerClasses += "bg-gray-700 text-white";
+              } else if (isSelected) {
+                containerClasses += "bg-blue-600 text-white";
+              } else {
+                containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+              }
+              
               return (
                 <div
                   key={folder.id}
-                  className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
-                    isDragOver
-                      ? 'bg-gray-700 text-white'
-                      : isSelected
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
+                  className={containerClasses}
                   onClick={() => onFolderSelect(folder.id, 'custom')}
                   onDragOver={(e) => handleDragOver(e, folder.id)}
                   onDragLeave={handleDragLeave}
