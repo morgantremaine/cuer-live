@@ -119,29 +119,7 @@ const JoinTeam = () => {
     }
   };
 
-  // Handle invitation acceptance when user becomes available
-  useEffect(() => {
-    const handleInvitationAcceptance = async () => {
-      if (!user || !token || isProcessing) {
-        return;
-      }
-
-      console.log('User is ready for invitation acceptance, processing...');
-      setIsProcessing(true);
-      setProcessingStep('Preparing to join team...');
-      
-      // Wait for auth to stabilize
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      await handleAcceptInvitation();
-    };
-
-    // Only process if we have a user and haven't started processing yet
-    if (user && token && !isProcessing) {
-      handleInvitationAcceptance();
-    }
-  }, [user, token]);
-
+  // Enhanced invitation acceptance with better error handling
   const handleAcceptInvitation = async () => {
     if (!token) {
       console.error('No token available for invitation acceptance');
@@ -152,6 +130,10 @@ const JoinTeam = () => {
     try {
       setProcessingStep('Accepting team invitation...');
       console.log('Accepting invitation with token:', token);
+      console.log('Current user:', user?.id, user?.email);
+      
+      // Wait for auth to stabilize
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const { error } = await acceptInvitation(token);
       
@@ -174,8 +156,10 @@ const JoinTeam = () => {
             description: error,
             variant: 'destructive',
           });
-          setIsProcessing(false);
-          setProcessingStep('');
+          
+          // Try direct database approach as fallback
+          console.log('Trying direct database approach...');
+          await handleDirectInvitationAcceptance();
         }
       } else {
         console.log('Invitation accepted successfully');
@@ -191,15 +175,117 @@ const JoinTeam = () => {
       }
     } catch (error) {
       console.error('Error accepting invitation:', error);
+      
+      // Try direct database approach as fallback
+      console.log('Trying direct database approach as fallback...');
+      await handleDirectInvitationAcceptance();
+    }
+  };
+
+  // Direct database approach for invitation acceptance
+  const handleDirectInvitationAcceptance = async () => {
+    if (!user || !invitation) return;
+
+    try {
+      console.log('Direct invitation acceptance for user:', user.id, 'team:', invitation.team_id);
+      
+      // First ensure user has a profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || fullName || ''
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+      }
+
+      // Check if already a team member
+      const { data: existingMembership } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('team_id', invitation.team_id)
+        .maybeSingle();
+
+      if (existingMembership) {
+        console.log('User is already a team member');
+        toast({
+          title: 'Already a Member',
+          description: 'You are already a member of this team!',
+        });
+      } else {
+        // Add user to team
+        const { error: membershipError } = await supabase
+          .from('team_members')
+          .insert({
+            user_id: user.id,
+            team_id: invitation.team_id,
+            role: 'member'
+          });
+
+        if (membershipError) {
+          console.error('Error creating team membership:', membershipError);
+          throw membershipError;
+        }
+
+        console.log('Team membership created successfully');
+      }
+
+      // Mark invitation as accepted
+      const { error: invitationError } = await supabase
+        .from('team_invitations')
+        .update({ accepted: true })
+        .eq('token', token);
+
+      if (invitationError) {
+        console.error('Error marking invitation as accepted:', invitationError);
+      }
+
+      localStorage.removeItem('pendingInvitationToken');
+      setProcessingStep('Success! Redirecting to dashboard...');
+      toast({
+        title: 'Success',
+        description: 'Welcome to the team!',
+      });
+      
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error in direct invitation acceptance:', error);
       toast({
         title: 'Error',
-        description: 'Failed to join team. Please try again.',
+        description: 'Failed to join team. Please try again or contact support.',
         variant: 'destructive',
       });
       setIsProcessing(false);
       setProcessingStep('');
     }
   };
+
+  // Handle invitation acceptance when user becomes available
+  useEffect(() => {
+    const handleInvitationAcceptance = async () => {
+      if (!user || !token || isProcessing) {
+        return;
+      }
+
+      console.log('User is ready for invitation acceptance, processing...');
+      setIsProcessing(true);
+      setProcessingStep('Preparing to join team...');
+      
+      await handleAcceptInvitation();
+    };
+
+    // Only process if we have a user and haven't started processing yet
+    if (user && token && !isProcessing) {
+      handleInvitationAcceptance();
+    }
+  }, [user, token]);
 
   async function handleCreateAccount(e: React.FormEvent) {
     e.preventDefault();
