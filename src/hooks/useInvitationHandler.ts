@@ -15,7 +15,7 @@ export const useInvitationHandler = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Simple fallback handler - only process if not on JoinTeam page
+    // Only process fallback if not on JoinTeam page and user just authenticated
     if (location.pathname.startsWith('/join-team/')) {
       return;
     }
@@ -33,6 +33,9 @@ export const useInvitationHandler = () => {
       console.log('Processing pending invitation as fallback');
 
       try {
+        // Wait for any auth operations to stabilize
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
         await loadTeamData();
         
         // Small delay to ensure team data is loaded
@@ -53,10 +56,12 @@ export const useInvitationHandler = () => {
         }
       } catch (error) {
         console.error('Error processing pending invitation:', error);
+        // Don't clear token if processing failed
       }
     };
 
-    const timer = setTimeout(handlePendingInvitation, 2000);
+    // Only run after a delay to ensure auth state is stable
+    const timer = setTimeout(handlePendingInvitation, 3000);
     return () => clearTimeout(timer);
   }, [user, loadTeamData, loadRundowns, toast, navigate, location.pathname]);
 };

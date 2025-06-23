@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -49,7 +48,12 @@ export const useTeam = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadTeamData = useCallback(async () => {
-    if (!user || isLoadingRef.current || lastUserIdRef.current === user.id) {
+    if (!user || isLoadingRef.current) {
+      return;
+    }
+
+    // Only load if user has changed
+    if (lastUserIdRef.current === user.id) {
       return;
     }
 
@@ -69,18 +73,39 @@ export const useTeam = () => {
     console.log('Loading team data for user:', user.id);
 
     try {
-      // Fetch team membership
-      const { data: membership, error: membershipError } = await supabase
-        .from('team_members')
-        .select('team_id, role')
-        .eq('user_id', user.id)
-        .abortSignal(signal)
-        .maybeSingle();
+      // Fetch team membership with retry logic
+      let membership;
+      let membershipError;
+      let retryCount = 0;
+      const maxRetries = 3;
 
-      if (signal.aborted) return;
+      while (retryCount < maxRetries) {
+        const result = await supabase
+          .from('team_members')
+          .select('team_id, role')
+          .eq('user_id', user.id)
+          .abortSignal(signal)
+          .maybeSingle();
+
+        membership = result.data;
+        membershipError = result.error;
+
+        if (signal.aborted) return;
+
+        if (!membershipError) {
+          break;
+        }
+
+        console.warn(`Team membership query attempt ${retryCount + 1} failed:`, membershipError);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
+      }
 
       if (membershipError) {
-        console.error('Error fetching team membership:', membershipError);
+        console.error('Error fetching team membership after retries:', membershipError);
         setTeam(null);
         setTeamMembers([]);
         setPendingInvitations([]);
@@ -444,6 +469,11 @@ export const useTeam = () => {
         return { error: 'You must be logged in to accept an invitation.' };
       }
 
+      console.log('Accepting invitation with token:', token);
+
+      // Wait a moment for profile to be created if needed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Get invitation
       const { data: invitation, error: fetchError } = await supabase
         .from('team_invitations')
@@ -479,17 +509,36 @@ export const useTeam = () => {
         return { error: 'You are already a member of this team.' };
       }
 
-      // Add user to team
-      const { error: memberError } = await supabase
-        .from('team_members')
-        .insert({
-          user_id: user.id,
-          team_id: invitation.team_id,
-          role: 'member'
-        });
+      // Add user to team with retry logic
+      let memberError;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        const result = await supabase
+          .from('team_members')
+          .insert({
+            user_id: user.id,
+            team_id: invitation.team_id,
+            role: 'member'
+          });
+
+        memberError = result.error;
+
+        if (!memberError) {
+          break;
+        }
+
+        console.warn(`Team member insertion attempt ${retryCount + 1} failed:`, memberError);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
+      }
 
       if (memberError) {
-        console.error('Error adding team member:', memberError);
+        console.error('Error adding team member after retries:', memberError);
         return { error: 'Failed to join team. Please try again.' };
       }
 
@@ -498,6 +547,8 @@ export const useTeam = () => {
         .from('team_invitations')
         .update({ accepted: true })
         .eq('id', invitation.id);
+
+      console.log('Successfully joined team, reloading team data...');
 
       // Reset loading states and reload team data
       isLoadingRef.current = false;

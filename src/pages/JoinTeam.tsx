@@ -39,6 +39,9 @@ const JoinTeam = () => {
       try {
         console.log('Validating invitation token:', token);
         
+        // Store token for later use during signup
+        localStorage.setItem('pendingInvitationToken', token);
+        
         // Use the new database function to validate the token
         const { data: validationResult, error: validationError } = await supabase.rpc(
           'validate_invitation_token',
@@ -126,10 +129,18 @@ const JoinTeam = () => {
       }
 
       console.log('User is ready for invitation acceptance, processing...');
+      setIsProcessing(true);
+      
+      // Wait a moment for any pending auth operations to complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       await handleAcceptInvitation();
     };
 
-    handleInvitationAcceptance();
+    // Only process if we have a user and haven't started processing yet
+    if (user && token && !isProcessing) {
+      handleInvitationAcceptance();
+    }
   }, [user, token]);
 
   const handleAcceptInvitation = async () => {
@@ -138,8 +149,6 @@ const JoinTeam = () => {
       return;
     }
 
-    setIsProcessing(true);
-    
     try {
       console.log('Accepting invitation with token:', token);
       const { error } = await acceptInvitation(token);
@@ -154,6 +163,7 @@ const JoinTeam = () => {
         setIsProcessing(false);
       } else {
         console.log('Invitation accepted successfully');
+        localStorage.removeItem('pendingInvitationToken');
         toast({
           title: 'Success',
           description: 'Welcome to the team!',
@@ -200,6 +210,7 @@ const JoinTeam = () => {
       setIsProcessing(false);
     } else {
       console.log('Team invitation account created successfully');
+      // Processing will continue in the useEffect when user becomes available
     }
   };
 
@@ -221,6 +232,7 @@ const JoinTeam = () => {
       setIsProcessing(false);
     } else {
       console.log('Sign in successful, will process invitation');
+      // Processing will continue in the useEffect when user becomes available
     }
   };
 
@@ -337,9 +349,9 @@ const JoinTeam = () => {
               </TabsList>
               
               <TabsContent value="signup" className="space-y-4 mt-4">
-                <div className="mb-4 p-3 bg-green-900/20 border border-green-700 rounded">
-                  <p className="text-sm text-green-300">
-                    ✓ No email verification required for team invitations
+                <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700 rounded">
+                  <p className="text-sm text-blue-300">
+                    ⓘ Account will be created and you'll join the team automatically
                   </p>
                 </div>
                 <form onSubmit={handleCreateAccount} className="space-y-4">
