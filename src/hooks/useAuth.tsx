@@ -176,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const resendConfirmation = async (email: string) => {
+    console.log('Attempting to resend confirmation email to:', email);
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
@@ -183,6 +184,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: `${window.location.origin}/auth/callback`
       }
     })
+    
+    if (error) {
+      console.error('Resend confirmation error:', error);
+    } else {
+      console.log('Confirmation email resent successfully');
+    }
+    
     return { error }
   }
 

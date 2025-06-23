@@ -25,12 +25,15 @@ const Login = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
+    
     setLoading(true)
     
     const { error } = await signIn(email, password)
     
     if (error) {
-      if (error.message.includes('Email not confirmed')) {
+      console.log('Sign in error details:', error);
+      if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
         setShowResendConfirmation(true)
         toast({
           title: 'Email not confirmed',
@@ -57,6 +60,7 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
     
     // Validate invite code
     if (inviteCode !== 'cuer2025') {
@@ -73,6 +77,7 @@ const Login = () => {
     const { error } = await signUp(email, password, fullName, inviteCode)
     
     if (error) {
+      console.log('Sign up error details:', error);
       toast({
         title: 'Error',
         description: error.message,
@@ -91,6 +96,8 @@ const Login = () => {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
+    
     setLoading(true)
     
     const { error } = await resetPassword(resetEmail)
@@ -114,20 +121,23 @@ const Login = () => {
   }
 
   const handleResendConfirmation = async () => {
+    if (loading || !email) return
+    
     setLoading(true)
     
     const { error } = await resendConfirmation(email)
     
     if (error) {
+      console.log('Resend confirmation error details:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to resend confirmation email. Please try again.',
         variant: 'destructive',
       })
     } else {
       toast({
         title: 'Success',
-        description: 'Confirmation email sent! Please check your inbox.',
+        description: 'Confirmation email sent! Please check your inbox and spam folder.',
       })
       setShowResendConfirmation(false)
     }
@@ -243,6 +253,7 @@ const Login = () => {
                       type="button"
                       onClick={() => setShowResetForm(true)}
                       className="text-sm text-blue-400 hover:text-blue-300 underline"
+                      disabled={loading}
                     >
                       Forgot your password?
                     </button>
@@ -256,7 +267,7 @@ const Login = () => {
                           variant="outline"
                           size="sm"
                           onClick={handleResendConfirmation}
-                          disabled={loading}
+                          disabled={loading || !email}
                           className="text-gray-300 border-gray-600 hover:bg-gray-700"
                         >
                           {loading ? 'Sending...' : 'Resend Confirmation'}
