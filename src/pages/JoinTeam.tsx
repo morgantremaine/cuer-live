@@ -24,7 +24,6 @@ const JoinTeam = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
-  const [profileError, setProfileError] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
@@ -48,7 +47,6 @@ const JoinTeam = () => {
       try {
         console.log('Loading invitation data for token:', token);
         
-        // Get the invitation with team data
         const { data: invitationData, error: invitationError } = await supabase
           .from('team_invitations')
           .select(`
@@ -59,8 +57,6 @@ const JoinTeam = () => {
           .eq('accepted', false)
           .gt('expires_at', new Date().toISOString())
           .maybeSingle();
-
-        console.log('Invitation data loaded:', { invitationData, invitationError });
 
         if (invitationError) {
           console.error('Error loading invitation:', invitationError);
@@ -91,22 +87,14 @@ const JoinTeam = () => {
 
         // Try to get the inviter's profile
         if (invitationData.invited_by) {
-          try {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('full_name, email')
-              .eq('id', invitationData.invited_by)
-              .maybeSingle();
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', invitationData.invited_by)
+            .maybeSingle();
 
-            if (!profileError && profileData) {
-              setInviterProfile(profileData);
-            } else {
-              console.log('Could not load inviter profile, will use fallback display');
-              setProfileError(true);
-            }
-          } catch (error) {
-            console.log('Profile loading failed, using fallback:', error);
-            setProfileError(true);
+          if (profileData) {
+            setInviterProfile(profileData);
           }
         }
         
@@ -131,27 +119,16 @@ const JoinTeam = () => {
 
   const checkUserExists = async (emailToCheck: string) => {
     try {
-      console.log('Checking if user exists for email:', emailToCheck);
-      
-      const { data: profileData, error } = await supabase
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', emailToCheck)
         .maybeSingle();
       
-      if (error) {
-        console.error('Error checking user existence:', error);
-        setUserExists(false);
-        setActiveTab('signup');
-        return;
-      }
-      
       if (profileData) {
-        console.log('User exists, defaulting to sign in tab');
         setUserExists(true);
         setActiveTab('signin');
       } else {
-        console.log('User does not exist, defaulting to sign up tab');
         setUserExists(false);
         setActiveTab('signup');
       }
@@ -220,8 +197,9 @@ const JoinTeam = () => {
     }
 
     setIsProcessing(true);
-    console.log('Creating account for:', email);
+    console.log('Creating account for team invitation:', email);
     
+    // Team invitation signup - no email verification required
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
@@ -233,11 +211,8 @@ const JoinTeam = () => {
       });
       setIsProcessing(false);
     } else {
-      console.log('Account created successfully');
-      toast({
-        title: 'Account Created',
-        description: 'Please check your email to verify your account, then return to this page to join the team.',
-      });
+      console.log('Team invitation account created successfully');
+      // The useEffect will handle accepting the invitation once user state updates
     }
   };
 
@@ -245,7 +220,7 @@ const JoinTeam = () => {
     e.preventDefault();
     
     setIsProcessing(true);
-    console.log('Signing in user:', email);
+    console.log('Signing in user for team invitation:', email);
     
     const { error } = await signIn(email, password);
     
@@ -317,9 +292,6 @@ const JoinTeam = () => {
   }
 
   const getInviterDisplayName = () => {
-    if (profileError) {
-      return 'A team member';
-    }
     if (inviterProfile?.full_name) {
       return inviterProfile.full_name;
     }
@@ -358,6 +330,11 @@ const JoinTeam = () => {
               </TabsList>
               
               <TabsContent value="signup" className="space-y-4 mt-4">
+                <div className="mb-4 p-3 bg-green-900/20 border border-green-700 rounded">
+                  <p className="text-sm text-green-300">
+                    ✓ No email verification required for team invitations
+                  </p>
+                </div>
                 <form onSubmit={handleCreateAccount} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-300">Email</Label>

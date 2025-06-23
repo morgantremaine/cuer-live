@@ -34,9 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false)
       
       // Only clean up invalid tokens when there's actually a user session
-      // This prevents clearing tokens during initial auth state determination
       if (session?.user) {
-        // Use a small delay to prevent interference with auth flow
         setTimeout(() => clearInvalidTokens(), 100);
       }
     })
@@ -50,7 +48,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null)
       setLoading(false)
       
-      // Only clean up invalid tokens if there's a user
       if (session?.user) {
         setTimeout(() => clearInvalidTokens(), 100);
       }
@@ -77,9 +74,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, fullName?: string, inviteCode?: string) => {
     console.log('Attempting to sign up:', email);
     
+    // Check if this is a team invitation signup (no invite code validation needed)
+    const isTeamInviteSignup = localStorage.getItem('pendingInvitationToken');
+    
     // For normal signups (from login page), require invite code
-    // For team invitation signups, inviteCode will be undefined and we skip validation
-    if (inviteCode !== undefined && inviteCode !== 'cuer2025') {
+    if (!isTeamInviteSignup && inviteCode !== undefined && inviteCode !== 'cuer2025') {
       return { error: { message: 'Invalid invite code. Please enter a valid invite code to create an account.' } };
     }
     
@@ -90,11 +89,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           full_name: fullName,
-        }
+        },
+        // Skip email confirmation for team invitation signups
+        emailConfirm: !isTeamInviteSignup
       }
     })
 
-    // Create profile manually (restored from original working system)
+    // Create profile manually for team invites
     if (data.user && !error) {
       console.log('Creating profile for new user:', data.user.id);
       const { error: profileError } = await supabase
@@ -107,7 +108,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (profileError) {
         console.error('Error creating profile:', profileError)
-        // Don't return the profile error to avoid breaking the signup flow
       }
     }
 
