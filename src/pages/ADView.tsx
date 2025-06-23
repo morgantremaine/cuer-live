@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -303,17 +302,17 @@ const ADView = () => {
   const hasScript = currentSegment?.script && currentSegment.script.trim() !== '';
   const scriptLength = scriptContent.length;
   
-  // Determine grid columns based on script content
-  const getGridColumns = () => {
+  // Determine grid rows based on script content
+  const getGridRows = () => {
     if (!hasScript || scriptLength < 100) {
-      // Minimal or no script - make script area smaller
-      return 'grid-cols-[2fr_7fr_2fr]';
+      // Minimal or no script - script area gets less space
+      return 'grid-rows-[auto_1fr_200px]';
     } else if (scriptLength < 500) {
       // Medium script - balanced layout
-      return 'grid-cols-[2fr_6fr_3fr]';
+      return 'grid-rows-[auto_1fr_300px]';
     } else {
       // Long script - give more space to script
-      return 'grid-cols-[2fr_5fr_4fr]';
+      return 'grid-rows-[auto_1fr_400px]';
     }
   };
 
@@ -341,56 +340,54 @@ const ADView = () => {
       <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
         {/* Header - Using CSS Grid for stable layout */}
         <div className="bg-gray-800 border-b border-gray-700 px-7 py-5">
-          <div className="grid grid-cols-[1fr_3fr_1fr] gap-4 items-center">
-            {/* Left Column - Timing Status */}
-            <div className="flex justify-start">
-              <div className="text-center min-w-[280px]">
-                <div className="text-sm text-gray-400 mb-1 font-semibold">TIMING STATUS</div>
-                <div className={`text-2xl font-bold font-mono min-h-[1.75rem] flex items-center justify-center truncate ${
-                  !isShowcallerPlaying ? 'text-green-400' :
-                  timingStatus.isOnTime ? 'text-green-400' :
-                  timingStatus.isAhead ? 'text-yellow-400' :
-                  'text-red-400'
-                }`}>
-                  {!isShowcallerPlaying ? 'PAUSED' :
-                   timingStatus.isOnTime ? 'ON TIME' :
-                   timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
-                   `Over +${timingStatus.timeDifference}`}
-                </div>
+          {/* Left Column - Timing Status */}
+          <div className="flex justify-start">
+            <div className="text-center min-w-[280px]">
+              <div className="text-sm text-gray-400 mb-1 font-semibold">TIMING STATUS</div>
+              <div className={`text-2xl font-bold font-mono min-h-[1.75rem] flex items-center justify-center truncate ${
+                !isShowcallerPlaying ? 'text-green-400' :
+                timingStatus.isOnTime ? 'text-green-400' :
+                timingStatus.isAhead ? 'text-yellow-400' :
+                'text-red-400'
+              }`}>
+                {!isShowcallerPlaying ? 'PAUSED' :
+                 timingStatus.isOnTime ? 'ON TIME' :
+                 timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
+                 `Over +${timingStatus.timeDifference}`}
               </div>
             </div>
-            
-            {/* Center Column - Logo and Title (Even Wider) */}
-            <div className="flex items-center justify-center">
-              <div className="flex items-center space-x-5">
-                <img 
-                  src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
-                  alt="Cuer Logo" 
-                  className="h-9 w-auto flex-shrink-0"
-                />
-                <div className="text-3xl font-bold text-white text-center leading-tight">
-                  {rundownData.title}
-                </div>
+          </div>
+          
+          {/* Center Column - Logo and Title (Even Wider) */}
+          <div className="flex items-center justify-center">
+            <div className="flex items-center space-x-5">
+              <img 
+                src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
+                alt="Cuer Logo" 
+                className="h-9 w-auto flex-shrink-0"
+              />
+              <div className="text-3xl font-bold text-white text-center leading-tight">
+                {rundownData.title}
               </div>
             </div>
-            
-            {/* Right Column - Time of Day */}
-            <div className="flex justify-end">
-              <div className="text-center min-w-[280px]">
-                <div className="text-sm text-gray-400 mb-1 font-semibold">TIME OF DAY</div>
-                <div className="text-4xl font-mono font-bold text-blue-400">
-                  {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
-                </div>
+          </div>
+          
+          {/* Right Column - Time of Day */}
+          <div className="flex justify-end">
+            <div className="text-center min-w-[280px]">
+              <div className="text-sm text-gray-400 mb-1 font-semibold">TIME OF DAY</div>
+              <div className="text-4xl font-mono font-bold text-blue-400">
+                {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content - Dynamic grid based on script content */}
+        {/* Main Content - Dynamic vertical grid based on script content */}
         <div className="flex-1 px-0 py-0">
-          <div className={`grid ${getGridColumns()} gap-5 h-full p-5`}>
-            {/* Left Side - Timing Cards - Increased card sizes and font sizes */}
-            <div className="space-y-4">
+          <div className={`${getGridRows()} gap-5 h-full p-5`}>
+            {/* Top Row - Timing Cards in horizontal layout */}
+            <div className="grid grid-cols-4 gap-5">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-5 text-center">
@@ -410,8 +407,6 @@ const ADView = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              <div className="h-4"></div>
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-800 border-gray-700">
@@ -434,7 +429,7 @@ const ADView = () => {
               </Card>
             </div>
 
-            {/* Center - Segments Display - Increased segment sizes */}
+            {/* Middle Row - Segments Display */}
             <div className="flex flex-col justify-center space-y-4">
               {/* Previous Segment 2 */}
               <div 
@@ -584,7 +579,7 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script - Dynamic sizing based on content */}
+            {/* Bottom Row - Script - Dynamic sizing based on content */}
             <div className="flex flex-col">
               <Card className="bg-gray-800 border-gray-700 flex-1 flex flex-col">
                 <CardContent className="p-5 flex-1 flex flex-col">
