@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye } from 'lucide-react';
+import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -82,6 +82,36 @@ const Help = () => {
                   <li>Use Enter to save and move down</li>
                   <li>Right-click rows to color them or float/unfloat items</li>
                 </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* Showcaller */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Radio className="h-6 w-6 mr-2 text-red-600" />
+              Showcaller
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>The showcaller is Cuer's live show control system that helps you track timing and progress during broadcast:</p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Play/Pause Controls:</strong> Use the playback controls in the rundown toolbar to start and stop the show timer</li>
+                <li><strong>Live Timing:</strong> Shows countdown for current segment and tracks overall show progress</li>
+                <li><strong>Visual Indicators:</strong> Current segment is highlighted, with upcoming and completed segments clearly marked</li>
+                <li><strong>Easy Autoscroll:</strong> Toggle the autoscroll feature with one click to automatically follow the current segment</li>
+              </ul>
+              
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Integration with Other Views</h3>
+                <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+                  <li><strong>AD View:</strong> When you control the showcaller, the AD View automatically updates with live timing and progress</li>
+                  <li><strong>Shared Rundowns:</strong> External viewers see real-time updates of the current segment and timing status</li>
+                  <li><strong>Team Sync:</strong> All team members see the same showcaller state, ensuring everyone stays coordinated</li>
+                </ul>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Only one person needs to control the showcaller - everyone else will see the updates automatically. Use the autoscroll toggle to keep your view focused on the current segment.</p>
               </div>
             </div>
           </section>
