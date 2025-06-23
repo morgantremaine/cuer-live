@@ -190,10 +190,29 @@ export const useTeam = () => {
 
     console.log('Loading pending invitations for team:', currentTeamId);
     try {
+      // First get all team member emails to exclude them from pending invitations
+      const { data: teamMembersData } = await supabase
+        .from('team_members')
+        .select(`
+          user_id,
+          profiles!inner(email)
+        `)
+        .eq('team_id', currentTeamId);
+
+      const existingMemberEmails = teamMembersData?.map(member => 
+        member.profiles?.email
+      ).filter(Boolean) || [];
+
+      console.log('Existing member emails:', existingMemberEmails);
+
+      // Get pending invitations, excluding emails that already have team members
       const { data: pendingInvitationsData, error: pendingInvitationsError } = await supabase
         .from('team_invitations')
         .select('*')
-        .eq('team_id', currentTeamId);
+        .eq('team_id', currentTeamId)
+        .eq('accepted', false)
+        .gt('expires_at', new Date().toISOString())
+        .not('email', 'in', `(${existingMemberEmails.map(email => `"${email}"`).join(',')})`);
 
       if (pendingInvitationsError) {
         console.error('Error fetching pending invitations:', pendingInvitationsError);
@@ -206,10 +225,11 @@ export const useTeam = () => {
         return;
       }
 
-      console.log('Pending invitations query result:', pendingInvitationsData);
+      console.log('Filtered pending invitations:', pendingInvitationsData);
       setPendingInvitations(pendingInvitationsData);
     } catch (error) {
       console.error('Error loading pending invitations:', error);
+      setPendingInvitations([]);
     }
   }, [team?.id]);
 
@@ -219,6 +239,35 @@ export const useTeam = () => {
     }
 
     try {
+      // Check if email already exists as a team member
+      const { data: existingMember } = await supabase
+        .from('team_members')
+        .select(`
+          id,
+          profiles!inner(email)
+        `)
+        .eq('team_id', team.id)
+        .eq('profiles.email', email)
+        .maybeSingle();
+
+      if (existingMember) {
+        return { error: 'This email is already a team member.' };
+      }
+
+      // Check if there's already a pending invitation for this email
+      const { data: existingInvitation } = await supabase
+        .from('team_invitations')
+        .select('id')
+        .eq('team_id', team.id)
+        .eq('email', email)
+        .eq('accepted', false)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (existingInvitation) {
+        return { error: 'An invitation has already been sent to this email address.' };
+      }
+
       // Generate a unique token
       const token = crypto.randomUUID();
 
@@ -229,6 +278,7 @@ export const useTeam = () => {
           team_id: team.id,
           email: email,
           token: token,
+          invited_by: user?.id,
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Expires in 7 days
         });
 
@@ -349,6 +399,20 @@ export const useTeam = () => {
     try {
       console.log('Resending invitation to:', email);
       
+      // Verify the invitation exists and belongs to this team
+      const { data: invitation, error: fetchError } = await supabase
+        .from('team_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .eq('team_id', team.id)
+        .eq('accepted', false)
+        .single();
+
+      if (fetchError || !invitation) {
+        console.error('Invitation not found or invalid:', fetchError);
+        return { error: 'Invitation not found or already accepted.' };
+      }
+
       // Generate a new token for the invitation
       const newToken = crypto.randomUUID();
       console.log('Generated new invitation token:', newToken);

@@ -37,7 +37,7 @@ const Login = () => {
         setShowResendConfirmation(true)
         toast({
           title: 'Email not confirmed',
-          description: 'Please check your email and click the confirmation link, or resend the confirmation email.',
+          description: 'Please check your email and click the confirmation link, or resend the confirmation email below.',
           variant: 'destructive',
         })
       } else {
@@ -86,7 +86,7 @@ const Login = () => {
     } else {
       toast({
         title: 'Success',
-        description: 'Account created successfully! Please check your email to verify your account before signing in.',
+        description: 'Account created successfully! Please check your email (including spam folder) to verify your account before signing in.',
       })
       // Don't navigate to dashboard, user needs to confirm email first
     }
@@ -259,19 +259,24 @@ const Login = () => {
                       Forgot your password?
                     </button>
                     {showResendConfirmation && (
-                      <div>
-                        <p className="text-sm text-gray-400 mb-2">
-                          Haven't received the account verification email?
+                      <div className="mt-4 p-3 bg-gray-700 rounded border">
+                        <p className="text-sm text-gray-300 mb-3">
+                          Having trouble with email verification?
                         </p>
+                        <div className="space-y-2 text-xs text-gray-400">
+                          <p>• Check your spam/junk folder</p>
+                          <p>• Wait a few minutes for the email to arrive</p>
+                          <p>• Or resend the verification email:</p>
+                        </div>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={handleResendConfirmation}
                           disabled={loading || !email}
-                          className="text-gray-300 border-gray-600 hover:bg-gray-700"
+                          className="w-full mt-3 text-gray-300 border-gray-600 hover:bg-gray-600"
                         >
-                          {loading ? 'Sending...' : 'Resend Account Verification Email'}
+                          {loading ? 'Sending...' : 'Resend Verification Email'}
                         </Button>
                       </div>
                     )}
