@@ -215,12 +215,7 @@ const Dashboard = () => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       baseRundowns = savedRundowns.filter(rundown => 
-        rundown.title.toLowerCase().includes(query) ||
-        (rundown.items && rundown.items.some(item => 
-          item.name?.toLowerCase().includes(query) ||
-          item.script?.toLowerCase().includes(query) ||
-          item.notes?.toLowerCase().includes(query)
-        ))
+        rundown.title.toLowerCase().includes(query)
       );
       return baseRundowns;
     }
