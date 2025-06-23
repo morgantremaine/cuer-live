@@ -471,27 +471,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      accept_invitation_secure: {
-        Args: { invitation_token: string }
-        Returns: Json
-      }
-      accept_team_invitation: {
-        Args: { invitation_token: string; accepting_user_id: string }
-        Returns: Json
-      }
       can_read_inviter_profile: {
         Args: { profile_user_id: string }
         Returns: boolean
       }
       cleanup_accepted_invitations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_invitations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_invitations_auto: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -511,10 +495,6 @@ export type Database = {
         Args: { member_id: string; team_id_param: string }
         Returns: Json
       }
-      get_user_email_safe: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
       get_user_role_in_team: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string
@@ -524,10 +504,6 @@ export type Database = {
         Returns: string[]
       }
       get_user_team_ids_for_layouts: {
-        Args: { user_uuid: string }
-        Returns: string[]
-      }
-      get_user_team_ids_safe: {
         Args: { user_uuid: string }
         Returns: string[]
       }
@@ -548,10 +524,6 @@ export type Database = {
         Returns: boolean
       }
       is_team_admin_check: {
-        Args: { user_uuid: string; team_uuid: string }
-        Returns: boolean
-      }
-      is_team_admin_safe: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
       }
@@ -582,10 +554,6 @@ export type Database = {
       update_rundown_presence: {
         Args: { rundown_uuid: string }
         Returns: undefined
-      }
-      validate_invitation_token: {
-        Args: { token_param: string }
-        Returns: Json
       }
     }
     Enums: {

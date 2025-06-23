@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, RefreshCw, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, RefreshCw, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +30,7 @@ interface TransferPreview {
 const TeamManagement = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
-  const [inviteStatus, setInviteStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+  const [isResending, setIsResending] = useState<string | null>(null);
   const [transferPreview, setTransferPreview] = useState<TransferPreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -45,7 +45,8 @@ const TeamManagement = () => {
     inviteTeamMember,
     removeTeamMemberWithTransfer,
     getTransferPreview,
-    revokeInvitation
+    revokeInvitation,
+    resendInvitation
   } = useTeam();
   
   const { toast } = useToast();
@@ -55,23 +56,15 @@ const TeamManagement = () => {
     if (!inviteEmail.trim()) return;
 
     setIsInviting(true);
-    setInviteStatus({ type: null, message: '' });
-    
-    console.log('Attempting to invite:', inviteEmail.trim(), 'to team:', team?.id);
-    
     const { error } = await inviteTeamMember(inviteEmail.trim());
     
     if (error) {
-      console.error('Invitation failed:', error);
-      setInviteStatus({ type: 'error', message: error });
       toast({
         title: 'Error',
         description: error,
         variant: 'destructive',
       });
     } else {
-      console.log('Invitation sent successfully');
-      setInviteStatus({ type: 'success', message: 'Invitation sent successfully!' });
       toast({
         title: 'Success',
         description: 'Invitation sent successfully!',
@@ -96,6 +89,25 @@ const TeamManagement = () => {
         description: 'Invitation revoked successfully!',
       });
     }
+  };
+
+  const handleResendInvitation = async (invitationId: string, email: string) => {
+    setIsResending(invitationId);
+    const { error } = await resendInvitation(invitationId, email);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Invitation resent successfully!',
+      });
+    }
+    setIsResending(null);
   };
 
   const handleRemoveMemberClick = async (memberId: string, memberName: string) => {
@@ -215,42 +227,20 @@ const TeamManagement = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleInviteMember} className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="Enter email address"
-                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                    required
-                  />
-                </div>
-                <Button type="submit" disabled={isInviting} className="bg-blue-600 hover:bg-blue-700">
-                  {isInviting ? 'Inviting...' : 'Send Invite'}
-                </Button>
+            <form onSubmit={handleInviteMember} className="flex gap-4">
+              <div className="flex-1">
+                <Input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="Enter email address"
+                  className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                  required
+                />
               </div>
-              
-              {/* Status feedback */}
-              {inviteStatus.type && (
-                <div className={`flex items-center gap-2 p-3 rounded ${
-                  inviteStatus.type === 'success' 
-                    ? 'bg-green-900/20 border border-green-700 text-green-300' 
-                    : 'bg-red-900/20 border border-red-700 text-red-300'
-                }`}>
-                  {inviteStatus.type === 'success' ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <XCircle className="h-4 w-4" />
-                  )}
-                  <span className="text-sm">{inviteStatus.message}</span>
-                </div>
-              )}
-              
-              <div className="text-xs text-gray-400">
-                Debug info: Team ID: {team?.id}, User role: {userRole}
-              </div>
+              <Button type="submit" disabled={isInviting} className="bg-blue-600 hover:bg-blue-700">
+                {isInviting ? 'Inviting...' : 'Send Invite'}
+              </Button>
             </form>
           </CardContent>
         </Card>
@@ -262,7 +252,7 @@ const TeamManagement = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Mail className="h-5 w-5" />
-              Pending Invitations ({pendingInvitations.length})
+              Pending Invitations
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -273,15 +263,23 @@ const TeamManagement = () => {
                     <span className="font-medium text-white">{invitation.email}</span>
                     <p className="text-sm text-gray-400">
                       Invited {new Date(invitation.created_at).toLocaleDateString()}
-                      {invitation.expires_at && (
-                        <span className="ml-2">
-                          (Expires: {new Date(invitation.expires_at).toLocaleDateString()})
-                        </span>
-                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="border-gray-500 text-gray-300">Pending</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResendInvitation(invitation.id, invitation.email)}
+                      disabled={isResending === invitation.id}
+                      className="text-gray-300 hover:text-white hover:bg-gray-600"
+                    >
+                      {isResending === invitation.id ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-gray-600">

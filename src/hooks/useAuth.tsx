@@ -34,7 +34,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false)
       
       // Only clean up invalid tokens when there's actually a user session
+      // This prevents clearing tokens during initial auth state determination
       if (session?.user) {
+        // Use a small delay to prevent interference with auth flow
         setTimeout(() => clearInvalidTokens(), 100);
       }
     })
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null)
       setLoading(false)
       
+      // Only clean up invalid tokens if there's a user
       if (session?.user) {
         setTimeout(() => clearInvalidTokens(), 100);
       }
@@ -74,11 +77,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, fullName?: string, inviteCode?: string) => {
     console.log('Attempting to sign up:', email);
     
-    // Check if this is a team invitation signup (no invite code validation needed)
-    const isTeamInviteSignup = localStorage.getItem('pendingInvitationToken');
-    
     // For normal signups (from login page), require invite code
-    if (!isTeamInviteSignup && inviteCode !== undefined && inviteCode !== 'cuer2025') {
+    // For team invitation signups, inviteCode will be undefined and we skip validation
+    if (inviteCode !== undefined && inviteCode !== 'cuer2025') {
       return { error: { message: 'Invalid invite code. Please enter a valid invite code to create an account.' } };
     }
     
@@ -93,13 +94,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    // Profile will be created automatically by the database trigger
-    // No need for manual profile creation
+    // Create profile manually (restored from original working system)
+    if (data.user && !error) {
+      console.log('Creating profile for new user:', data.user.id);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          email,
+          full_name: fullName,
+        })
+      
+      if (profileError) {
+        console.error('Error creating profile:', profileError)
+        // Don't return the profile error to avoid breaking the signup flow
+      }
+    }
 
     if (error) {
       console.error('Sign up error:', error);
-    } else {
-      console.log('Sign up successful, profile will be created automatically');
     }
     return { error }
   }
@@ -163,7 +176,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const resendConfirmation = async (email: string) => {
-    console.log('Attempting to resend confirmation email to:', email);
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
@@ -171,13 +183,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: `${window.location.origin}/auth/callback`
       }
     })
-    
-    if (error) {
-      console.error('Resend confirmation error:', error);
-    } else {
-      console.log('Confirmation email resent successfully');
-    }
-    
     return { error }
   }
 

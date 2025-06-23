@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,26 +19,22 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
-  const [resendConfirmationEmail, setResendConfirmationEmail] = useState('')
   const { signIn, signUp, resetPassword, resendConfirmation } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (loading) return
-    
     setLoading(true)
     
     const { error } = await signIn(email, password)
     
     if (error) {
-      console.log('Sign in error details:', error);
-      if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+      if (error.message.includes('Email not confirmed')) {
         setShowResendConfirmation(true)
         toast({
           title: 'Email not confirmed',
-          description: 'Please check your email and click the confirmation link, or resend the confirmation email below.',
+          description: 'Please check your email and click the confirmation link, or resend the confirmation email.',
           variant: 'destructive',
         })
       } else {
@@ -60,7 +57,6 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (loading) return
     
     // Validate invite code
     if (inviteCode !== 'cuer2025') {
@@ -77,7 +73,6 @@ const Login = () => {
     const { error } = await signUp(email, password, fullName, inviteCode)
     
     if (error) {
-      console.log('Sign up error details:', error);
       toast({
         title: 'Error',
         description: error.message,
@@ -86,11 +81,8 @@ const Login = () => {
     } else {
       toast({
         title: 'Success',
-        description: 'Account created successfully! Please check your email (including spam folder) to verify your account before signing in.',
+        description: 'Account created successfully! Please check your email to verify your account before signing in.',
       })
-      // Set the email for potential resend and show the resend option
-      setResendConfirmationEmail(email)
-      setShowResendConfirmation(true)
       // Don't navigate to dashboard, user needs to confirm email first
     }
     
@@ -99,8 +91,6 @@ const Login = () => {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (loading) return
-    
     setLoading(true)
     
     const { error } = await resetPassword(resetEmail)
@@ -124,26 +114,22 @@ const Login = () => {
   }
 
   const handleResendConfirmation = async () => {
-    const emailToUse = resendConfirmationEmail || email;
-    if (loading || !emailToUse) return
-    
     setLoading(true)
     
-    // This is for account verification emails, not team invitations
-    const { error } = await resendConfirmation(emailToUse)
+    const { error } = await resendConfirmation(email)
     
     if (error) {
-      console.log('Resend confirmation error details:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to resend confirmation email. Please try again.',
+        description: error.message,
         variant: 'destructive',
       })
     } else {
       toast({
         title: 'Success',
-        description: 'Confirmation email sent! Please check your inbox and spam folder.',
+        description: 'Confirmation email sent! Please check your inbox.',
       })
+      setShowResendConfirmation(false)
     }
     
     setLoading(false)
@@ -257,34 +243,23 @@ const Login = () => {
                       type="button"
                       onClick={() => setShowResetForm(true)}
                       className="text-sm text-blue-400 hover:text-blue-300 underline"
-                      disabled={loading}
                     >
                       Forgot your password?
                     </button>
                     {showResendConfirmation && (
-                      <div className="mt-4 p-3 bg-gray-700 rounded border">
-                        <p className="text-sm text-gray-300 mb-3">
-                          Having trouble with email verification?
+                      <div>
+                        <p className="text-sm text-gray-400 mb-2">
+                          Haven't received the confirmation email?
                         </p>
-                        <div className="space-y-2 text-xs text-gray-400">
-                          <p>• Check your spam/junk folder</p>
-                          <p>• Wait a few minutes for the email to arrive</p>
-                          <p>• Or resend the verification email:</p>
-                        </div>
-                        {resendConfirmationEmail && (
-                          <div className="mt-2 mb-3 text-xs text-gray-300">
-                            Resending to: {resendConfirmationEmail}
-                          </div>
-                        )}
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={handleResendConfirmation}
-                          disabled={loading || (!resendConfirmationEmail && !email)}
-                          className="w-full mt-3 text-gray-300 border-gray-600 hover:bg-gray-600"
+                          disabled={loading}
+                          className="text-gray-300 border-gray-600 hover:bg-gray-700"
                         >
-                          {loading ? 'Sending...' : 'Resend Verification Email'}
+                          {loading ? 'Sending...' : 'Resend Confirmation'}
                         </Button>
                       </div>
                     )}
@@ -348,26 +323,6 @@ const Login = () => {
                   <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
                     {loading ? 'Creating Account...' : 'Sign Up'}
                   </Button>
-                  {showResendConfirmation && resendConfirmationEmail && (
-                    <div className="mt-4 p-3 bg-gray-700 rounded border">
-                      <p className="text-sm text-gray-300 mb-2">
-                        Account created! Didn't receive the verification email?
-                      </p>
-                      <p className="text-xs text-gray-400 mb-3">
-                        Check your spam folder or resend the verification email.
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleResendConfirmation}
-                        disabled={loading}
-                        className="w-full text-gray-300 border-gray-600 hover:bg-gray-600"
-                      >
-                        {loading ? 'Sending...' : 'Resend Verification Email'}
-                      </Button>
-                    </div>
-                  )}
                 </form>
               </TabsContent>
             </Tabs>

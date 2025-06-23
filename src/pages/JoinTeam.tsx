@@ -7,43 +7,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Footer from '@/components/Footer';
-import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-
-interface InvitationData {
-  id: string;
-  email: string;
-  team_id: string;
-  invited_by: string;
-  created_at: string;
-  expires_at: string;
-  token: string;
-  teams: {
-    id: string;
-    name: string;
-  };
-  inviter: {
-    full_name: string | null;
-    email: string | null;
-  };
-}
 
 const JoinTeam = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const [invitation, setInvitation] = useState<InvitationData | null>(null);
+  const [invitation, setInvitation] = useState<any>(null);
+  const [inviterProfile, setInviterProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [processingStep, setProcessingStep] = useState<string>('');
+  const [userExists, setUserExists] = useState(false);
+  const [profileError, setProfileError] = useState(false);
   const { user, signUp, signIn } = useAuth();
+  const { acceptInvitation } = useTeam();
   const { toast } = useToast();
+
+  // Store invitation token in localStorage when page loads
+  useEffect(() => {
+    if (token) {
+      console.log('Storing invitation token in localStorage:', token);
+      localStorage.setItem('pendingInvitationToken', token);
+    }
+  }, [token]);
 
   useEffect(() => {
     const loadInvitation = async () => {
@@ -54,146 +46,168 @@ const JoinTeam = () => {
       }
 
       try {
-        console.log('Validating invitation token:', token);
+        console.log('Loading invitation data for token:', token);
         
-        const { data: validationResult, error: validationError } = await supabase.rpc(
-          'validate_invitation_token',
-          { token_param: token }
-        );
+        // Get the invitation with team data
+        const { data: invitationData, error: invitationError } = await supabase
+          .from('team_invitations')
+          .select(`
+            *,
+            teams (name)
+          `)
+          .eq('token', token)
+          .eq('accepted', false)
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
 
-        if (validationError || !validationResult?.valid) {
-          console.error('Error validating invitation token:', validationError);
-          setValidationError(validationResult?.error || 'Invalid or expired invitation token');
-          setLoading(false);
+        console.log('Invitation data loaded:', { invitationData, invitationError });
+
+        if (invitationError) {
+          console.error('Error loading invitation:', invitationError);
+          toast({
+            title: 'Error Loading Invitation',
+            description: 'There was an error loading the invitation details.',
+            variant: 'destructive',
+          });
+          localStorage.removeItem('pendingInvitationToken');
+          navigate('/login');
           return;
         }
 
-        console.log('Validation result:', validationResult);
-
-        const invitationData: InvitationData = {
-          id: validationResult.invitation.id,
-          email: validationResult.invitation.email,
-          team_id: validationResult.invitation.team_id,
-          invited_by: validationResult.invitation.invited_by,
-          created_at: validationResult.invitation.created_at,
-          expires_at: validationResult.invitation.expires_at,
-          token: validationResult.invitation.token,
-          teams: {
-            id: validationResult.team.id,
-            name: validationResult.team.name
-          },
-          inviter: validationResult.inviter || {}
-        };
-
-        setInvitation(invitationData);
-        setEmail(invitationData.email || '');
-
-        // Check if user already exists with this email
-        if (invitationData.email) {
-          await checkUserExists(invitationData.email);
+        if (!invitationData) {
+          console.log('Invalid or expired invitation token');
+          toast({
+            title: 'Invalid Invitation',
+            description: 'This invitation link is invalid or has expired.',
+            variant: 'destructive',
+          });
+          localStorage.removeItem('pendingInvitationToken');
+          navigate('/login');
+          return;
         }
 
+        setInvitation(invitationData);
+        setEmail(invitationData.email);
+
+        // Try to get the inviter's profile
+        if (invitationData.invited_by) {
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', invitationData.invited_by)
+              .maybeSingle();
+
+            if (!profileError && profileData) {
+              setInviterProfile(profileData);
+            } else {
+              console.log('Could not load inviter profile, will use fallback display');
+              setProfileError(true);
+            }
+          } catch (error) {
+            console.log('Profile loading failed, using fallback:', error);
+            setProfileError(true);
+          }
+        }
+        
+        // Check if user already exists with this email
+        await checkUserExists(invitationData.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
-        setValidationError('Failed to load invitation. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Failed to load invitation details.',
+          variant: 'destructive',
+        });
+        localStorage.removeItem('pendingInvitationToken');
+        navigate('/login');
       } finally {
         setLoading(false);
       }
     };
 
     loadInvitation();
-  }, [token, navigate]);
+  }, [token, navigate, toast]);
 
   const checkUserExists = async (emailToCheck: string) => {
     try {
-      const { data: profileData } = await supabase
+      console.log('Checking if user exists for email:', emailToCheck);
+      
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', emailToCheck)
         .maybeSingle();
       
+      if (error) {
+        console.error('Error checking user existence:', error);
+        setUserExists(false);
+        setActiveTab('signup');
+        return;
+      }
+      
       if (profileData) {
+        console.log('User exists, defaulting to sign in tab');
+        setUserExists(true);
         setActiveTab('signin');
       } else {
+        console.log('User does not exist, defaulting to sign up tab');
+        setUserExists(false);
         setActiveTab('signup');
       }
     } catch (error) {
       console.error('Error in checkUserExists:', error);
+      setUserExists(false);
       setActiveTab('signup');
     }
   };
 
-  const acceptInvitation = async () => {
-    if (!token || !user) {
-      console.error('No token or user available for invitation acceptance');
-      return;
+  useEffect(() => {
+    // If user is already logged in and we have an invitation, accept it
+    if (user && invitation && !isProcessing) {
+      console.log('User is logged in, accepting invitation automatically');
+      handleAcceptInvitation();
     }
+  }, [user, invitation]);
 
+  const handleAcceptInvitation = async () => {
+    if (!token) return;
+
+    setIsProcessing(true);
+    
     try {
-      setProcessingStep('Accepting team invitation...');
-      console.log('Accepting invitation with secure function:', token);
+      console.log('Accepting invitation with token:', token);
+      const { error } = await acceptInvitation(token);
       
-      const { data: result, error } = await supabase.rpc('accept_invitation_secure', {
-        invitation_token: token
-      });
-
       if (error) {
-        console.error('Error calling accept_invitation_secure:', error);
-        throw new Error('Failed to accept invitation. Please try again.');
-      }
-
-      console.log('Invitation acceptance result:', result);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to accept invitation.');
-      }
-
-      console.log('Successfully joined team!');
-      setProcessingStep('Success! Redirecting to dashboard...');
-      
-      toast({
-        title: 'Success',
-        description: result.message || 'Welcome to the team!',
-      });
-      
-      // Clear any cached data and redirect
-      setTimeout(() => {
+        console.error('Failed to accept invitation:', error);
+        toast({
+          title: 'Error',
+          description: error,
+          variant: 'destructive',
+        });
+        setIsProcessing(false);
+      } else {
+        console.log('Invitation accepted successfully');
+        localStorage.removeItem('pendingInvitationToken');
+        toast({
+          title: 'Success',
+          description: 'Welcome to the team!',
+        });
         navigate('/dashboard');
-      }, 1500);
-
-    } catch (error: any) {
+      }
+    } catch (error) {
       console.error('Error accepting invitation:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to accept invitation. Please try again.',
+        description: 'Failed to join team. Please try again.',
         variant: 'destructive',
       });
       setIsProcessing(false);
-      setProcessingStep('');
     }
   };
 
-  // Handle invitation acceptance when user becomes available
-  useEffect(() => {
-    const handleInvitationAcceptance = async () => {
-      if (!user || !token || isProcessing) {
-        return;
-      }
-
-      console.log('User is ready for invitation acceptance, processing...');
-      setIsProcessing(true);
-      setProcessingStep('Preparing to join team...');
-      
-      await acceptInvitation();
-    };
-
-    // Only process if we have a user and haven't started processing yet
-    if (user && token && !isProcessing) {
-      handleInvitationAcceptance();
-    }
-  }, [user, token]);
-
-  async function handleCreateAccount(e: React.FormEvent) {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password.length < 6) {
@@ -206,8 +220,7 @@ const JoinTeam = () => {
     }
 
     setIsProcessing(true);
-    setProcessingStep('Creating your account...');
-    console.log('Creating account for team invitation:', email);
+    console.log('Creating account for:', email);
     
     const { error } = await signUp(email, password, fullName);
     
@@ -219,20 +232,20 @@ const JoinTeam = () => {
         variant: 'destructive',
       });
       setIsProcessing(false);
-      setProcessingStep('');
     } else {
-      console.log('Team invitation account created successfully');
-      setProcessingStep('Account created! Processing invitation...');
-      // Processing will continue in the useEffect when user becomes available
+      console.log('Account created successfully');
+      toast({
+        title: 'Account Created',
+        description: 'Please check your email to verify your account, then return to this page to join the team.',
+      });
     }
-  }
+  };
 
-  async function handleSignIn(e: React.FormEvent) {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
     setIsProcessing(true);
-    setProcessingStep('Signing you in...');
-    console.log('Signing in user for team invitation:', email);
+    console.log('Signing in user:', email);
     
     const { error } = await signIn(email, password);
     
@@ -244,36 +257,29 @@ const JoinTeam = () => {
         variant: 'destructive',
       });
       setIsProcessing(false);
-      setProcessingStep('');
-    } else {
-      console.log('Sign in successful, will process invitation');
-      setProcessingStep('Signed in! Processing invitation...');
-      // Processing will continue in the useEffect when user becomes available
     }
-  }
+    // If successful, the useEffect will handle accepting the invitation
+  };
 
   if (loading) {
     return (
       <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-300">Loading invitation...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-300">Loading invitation...</p>
         </div>
       </div>
     );
   }
 
-  if (validationError || !invitation) {
+  if (!invitation) {
     return (
       <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <AlertCircle className="h-12 w-12 text-red-500" />
-            </div>
             <CardTitle className="text-white">Invalid Invitation</CardTitle>
             <CardDescription className="text-gray-400">
-              {validationError || 'This invitation link is invalid or has expired.'}
+              This invitation link is invalid or has expired.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -286,37 +292,7 @@ const JoinTeam = () => {
     );
   }
 
-  if (user && isProcessing) {
-    return (
-      <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
-        <Card className="w-full max-w-md bg-gray-800 border-gray-700">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              {processingStep.includes('Success') ? (
-                <CheckCircle className="h-12 w-12 text-green-500" />
-              ) : (
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-              )}
-            </div>
-            <CardTitle className="text-white">Joining Team</CardTitle>
-            <CardDescription className="text-gray-400">
-              {invitation.teams?.name || 'the team'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-gray-300 mb-4">{processingStep}</p>
-            {!processingStep.includes('Success') && (
-              <div className="text-sm text-gray-500">
-                Please wait, this may take a few moments...
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (user && !isProcessing) {
+  if (user) {
     return (
       <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
@@ -328,7 +304,7 @@ const JoinTeam = () => {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={acceptInvitation} 
+              onClick={handleAcceptInvitation} 
               className="w-full" 
               disabled={isProcessing}
             >
@@ -341,11 +317,14 @@ const JoinTeam = () => {
   }
 
   const getInviterDisplayName = () => {
-    if (invitation.inviter?.full_name) {
-      return invitation.inviter.full_name;
+    if (profileError) {
+      return 'A team member';
     }
-    if (invitation.inviter?.email) {
-      return invitation.inviter.email;
+    if (inviterProfile?.full_name) {
+      return inviterProfile.full_name;
+    }
+    if (inviterProfile?.email) {
+      return inviterProfile.email;
     }
     return 'A team member';
   };
@@ -362,7 +341,7 @@ const JoinTeam = () => {
                 className="h-12 w-auto"
               />
             </div>
-            <CardTitle className="text-white">Join Team: {invitation?.teams?.name || 'Team'}</CardTitle>
+            <CardTitle className="text-white">Join Team: {invitation.teams?.name || 'Team'}</CardTitle>
             <CardDescription className="text-gray-400">
               {getInviterDisplayName()} has invited you to join their team.
             </CardDescription>
@@ -379,11 +358,6 @@ const JoinTeam = () => {
               </TabsList>
               
               <TabsContent value="signup" className="space-y-4 mt-4">
-                <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700 rounded">
-                  <p className="text-sm text-blue-300">
-                    ⓘ Account will be created and you'll join the team automatically
-                  </p>
-                </div>
                 <form onSubmit={handleCreateAccount} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-300">Email</Label>
@@ -391,10 +365,8 @@ const JoinTeam = () => {
                       id="email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your email"
+                      disabled
+                      className="bg-gray-600 border-gray-500 text-gray-400"
                     />
                   </div>
                   <div className="space-y-2">
@@ -427,14 +399,7 @@ const JoinTeam = () => {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
                     disabled={isProcessing}
                   >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating Account...
-                      </>
-                    ) : (
-                      'Create Account & Join Team'
-                    )}
+                    {isProcessing ? 'Creating Account...' : 'Create Account & Join Team'}
                   </Button>
                 </form>
               </TabsContent>
@@ -447,10 +412,8 @@ const JoinTeam = () => {
                       id="signin-email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your email"
+                      disabled
+                      className="bg-gray-600 border-gray-500 text-gray-400"
                     />
                   </div>
                   <div className="space-y-2">
@@ -470,14 +433,7 @@ const JoinTeam = () => {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
                     disabled={isProcessing}
                   >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing In...
-                      </>
-                    ) : (
-                      'Sign In & Join Team'
-                    )}
+                    {isProcessing ? 'Signing In...' : 'Sign In & Join Team'}
                   </Button>
                 </form>
               </TabsContent>
