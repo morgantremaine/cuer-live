@@ -507,6 +507,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string[]
       }
+      get_user_team_ids_safe: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
       get_user_team_memberships: {
         Args: { user_uuid: string }
         Returns: {
@@ -524,6 +528,10 @@ export type Database = {
         Returns: boolean
       }
       is_team_admin_check: {
+        Args: { user_uuid: string; team_uuid: string }
+        Returns: boolean
+      }
+      is_team_admin_safe: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
       }
