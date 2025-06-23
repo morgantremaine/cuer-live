@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
@@ -38,19 +37,13 @@ serve(async (req) => {
     const origin = req.headers.get('origin') || req.headers.get('referer');
     let siteUrl = 'https://cuer.live'; // Default fallback
     
-    // If we have an origin, use it; otherwise try to get from environment
+    // If we have an origin, use it; otherwise keep default
     if (origin) {
       try {
         const url = new URL(origin);
         siteUrl = `${url.protocol}//${url.host}`;
       } catch (e) {
         console.log('Could not parse origin, using default:', e);
-      }
-    } else {
-      // Try to construct from Supabase URL as fallback
-      const supabaseUrl = Deno.env.get('SUPABASE_URL');
-      if (supabaseUrl) {
-        siteUrl = supabaseUrl.replace('supabase.co', 'lovableproject.com');
       }
     }
     
