@@ -1,35 +1,71 @@
 
-import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle, useState } from 'react';
 import { ScratchpadNote } from '@/types/scratchpad';
 
 interface ScratchpadRichTextEditorProps {
   note: ScratchpadNote;
   onContentChange: (content: string) => void;
+  onFormatStateChange?: (formatStates: FormatStates) => void;
+}
+
+interface FormatStates {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strikethrough: boolean;
 }
 
 const ScratchpadRichTextEditor = forwardRef<HTMLDivElement, ScratchpadRichTextEditorProps>(({
   note,
-  onContentChange
+  onContentChange,
+  onFormatStateChange
 }, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const [formatStates, setFormatStates] = useState<FormatStates>({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false
+  });
 
   // Expose the editor ref to parent component
   useImperativeHandle(ref, () => editorRef.current!, []);
 
+  // Check current formatting state at cursor position
+  const updateFormatStates = useCallback(() => {
+    const states = {
+      bold: document.queryCommandState('bold'),
+      italic: document.queryCommandState('italic'),
+      underline: document.queryCommandState('underline'),
+      strikethrough: document.queryCommandState('strikeThrough')
+    };
+    setFormatStates(states);
+    onFormatStateChange?.(states);
+  }, [onFormatStateChange]);
+
   // Apply formatting to selected text
   const applyFormat = useCallback((command: string, value?: string) => {
+    editorRef.current?.focus();
     document.execCommand(command, false, value);
     if (editorRef.current) {
       onContentChange(editorRef.current.innerHTML);
+      // Update format states after applying formatting
+      setTimeout(updateFormatStates, 0);
     }
-  }, [onContentChange]);
+  }, [onContentChange, updateFormatStates]);
 
   // Handle content changes
   const handleInput = useCallback(() => {
     if (editorRef.current) {
       onContentChange(editorRef.current.innerHTML);
+      updateFormatStates();
     }
-  }, [onContentChange]);
+  }, [onContentChange, updateFormatStates]);
+
+  // Handle selection changes to update format states
+  const handleSelectionChange = useCallback(() => {
+    updateFormatStates();
+  }, [updateFormatStates]);
 
   // Set initial content
   useEffect(() => {
@@ -37,6 +73,14 @@ const ScratchpadRichTextEditor = forwardRef<HTMLDivElement, ScratchpadRichTextEd
       editorRef.current.innerHTML = note.content;
     }
   }, [note.content, note.id]);
+
+  // Add selection change listener
+  useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, [handleSelectionChange]);
 
   // Expose formatting functions for toolbar
   useEffect(() => {
@@ -90,7 +134,9 @@ const ScratchpadRichTextEditor = forwardRef<HTMLDivElement, ScratchpadRichTextEd
       contentEditable
       onInput={handleInput}
       onKeyDown={handleKeyDown}
-      className="flex-1 p-4 text-white bg-transparent outline-none text-base leading-relaxed min-h-[400px] overflow-auto"
+      onMouseUp={handleSelectionChange}
+      onKeyUp={handleSelectionChange}
+      className="flex-1 p-4 text-white bg-transparent outline-none text-base leading-relaxed min-h-[400px] overflow-auto scratchpad-editor"
       style={{ 
         wordWrap: 'break-word',
         whiteSpace: 'pre-wrap'

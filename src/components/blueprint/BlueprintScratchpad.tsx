@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical } from 'lucide-react';
 import ScratchpadEnhancedSidebar from './scratchpad/ScratchpadEnhancedSidebar';
@@ -8,6 +8,13 @@ import ScratchpadStreamlinedToolbar from './scratchpad/ScratchpadStreamlinedTool
 import SaveStatus from './scratchpad/SaveStatus';
 import { useScratchpadNotes } from '@/hooks/blueprint/useScratchpadNotes';
 
+interface FormatStates {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strikethrough: boolean;
+}
+
 interface BlueprintScratchpadProps {
   rundownId: string;
   rundownTitle: string;
@@ -15,6 +22,12 @@ interface BlueprintScratchpadProps {
 
 const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const [formatStates, setFormatStates] = useState<FormatStates>({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false
+  });
   
   const {
     notes,
@@ -45,13 +58,17 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
       case 'strikethrough':
         editor.applyStrikethrough?.();
         break;
-      case 'bullet':
+      case 'bulletList':
         editor.insertBulletList?.();
         break;
       case 'checkbox':
         editor.insertCheckbox?.();
         break;
     }
+  };
+
+  const handleFormatStateChange = (states: FormatStates) => {
+    setFormatStates(states);
   };
 
   return (
@@ -81,11 +98,15 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
           <div className="flex-1 flex flex-col">
             {activeNote && (
               <>
-                <ScratchpadStreamlinedToolbar onFormat={handleFormat} />
+                <ScratchpadStreamlinedToolbar 
+                  onFormat={handleFormat} 
+                  formatStates={formatStates}
+                />
                 <ScratchpadRichTextEditor
                   ref={editorRef}
                   note={activeNote}
                   onContentChange={updateNoteContent}
+                  onFormatStateChange={handleFormatStateChange}
                 />
               </>
             )}
