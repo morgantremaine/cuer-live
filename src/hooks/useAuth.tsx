@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -89,13 +88,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           full_name: fullName,
-        },
-        // Skip email confirmation for team invitation signups
-        emailConfirm: !isTeamInviteSignup
+        }
       }
     })
 
-    // Create profile manually for team invites
+    // Create profile manually for all signups
     if (data.user && !error) {
       console.log('Creating profile for new user:', data.user.id);
       const { error: profileError } = await supabase
