@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -322,7 +323,7 @@ const ADView = () => {
       <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
         {/* Header - Using CSS Grid for stable layout */}
         <div className="bg-gray-800 border-b border-gray-700 px-7 py-5">
-          <div className="grid grid-cols-3 gap-4 items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 items-center">
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
               <div className="text-center min-w-[280px]">
@@ -341,15 +342,17 @@ const ADView = () => {
               </div>
             </div>
             
-            {/* Center Column - Logo and Title */}
+            {/* Center Column - Logo and Title (Wider) */}
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-5">
                 <img 
                   src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
                   alt="Cuer Logo" 
-                  className="h-9 w-auto"
+                  className="h-9 w-auto flex-shrink-0"
                 />
-                <div className="text-3xl font-bold text-white truncate max-w-md">{rundownData.title}</div>
+                <div className="text-3xl font-bold text-white text-center leading-tight">
+                  {rundownData.title}
+                </div>
               </div>
             </div>
             
@@ -582,3 +585,4 @@ const ADView = () => {
 };
 
 export default ADView;
+
