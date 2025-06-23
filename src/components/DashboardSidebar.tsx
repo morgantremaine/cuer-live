@@ -218,28 +218,33 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           
           {expandedFolders.has('system') && (
             <div className="space-y-1">
-              {systemFolders.map((folder) => (
-                <div
-                  key={folder.id || 'all'}
-                  className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
-                    selectedFolder === folder.id
-                      ? 'bg-blue-600 text-white'
-                      : dragOverFolder === folder.id
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
-                  onClick={() => onFolderSelect(folder.id, folder.type)}
-                  onDragOver={(e) => handleDragOver(e, folder.id)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, folder.id)}
-                >
-                  <div className="flex items-center">
-                    <folder.icon className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{folder.name}</span>
+              {systemFolders.map((folder) => {
+                const isSelected = selectedFolder === folder.id;
+                const isDragOver = dragOverFolder === folder.id;
+                
+                return (
+                  <div
+                    key={folder.id || 'all'}
+                    className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
+                      isSelected && !isDragOver
+                        ? 'bg-blue-600 text-white'
+                        : isDragOver
+                        ? 'bg-gray-700 text-white'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    }`}
+                    onClick={() => onFolderSelect(folder.id, folder.type)}
+                    onDragOver={(e) => handleDragOver(e, folder.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, folder.id)}
+                  >
+                    <div className="flex items-center">
+                      <folder.icon className="h-4 w-4 mr-2" />
+                      <span className="text-sm">{folder.name}</span>
+                    </div>
+                    <span className="text-xs text-gray-400">{folder.count}</span>
                   </div>
-                  <span className="text-xs text-gray-400">{folder.count}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -296,83 +301,88 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           </div>
 
           <div className="space-y-1">
-            {folders.map((folder) => (
-              <div
-                key={folder.id}
-                className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
-                  selectedFolder === folder.id
-                    ? 'bg-blue-600 text-white'
-                    : dragOverFolder === folder.id
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                }`}
-                onClick={() => onFolderSelect(folder.id, 'custom')}
-                onDragOver={(e) => handleDragOver(e, folder.id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, folder.id)}
-              >
-                <div className="flex items-center flex-1">
-                  <Folder className="h-4 w-4 mr-2" style={{ color: folder.color }} />
-                  {editingFolder === folder.id ? (
-                    <Input
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
-                      onBlur={() => handleEditFolder(folder)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleEditFolder(folder);
-                        } else if (e.key === 'Escape') {
-                          setEditingFolder(null);
-                          setEditName('');
-                        }
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    <span className="text-sm">{folder.name}</span>
-                  )}
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span className="text-xs text-gray-400">{getFolderCount(folder.id)}</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVertical className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                      <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingFolder(folder.id);
-                          setEditName(folder.name);
+            {folders.map((folder) => {
+              const isSelected = selectedFolder === folder.id;
+              const isDragOver = dragOverFolder === folder.id;
+              
+              return (
+                <div
+                  key={folder.id}
+                  className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
+                    isSelected && !isDragOver
+                      ? 'bg-blue-600 text-white'
+                      : isDragOver
+                      ? 'bg-gray-700 text-white'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  }`}
+                  onClick={() => onFolderSelect(folder.id, 'custom')}
+                  onDragOver={(e) => handleDragOver(e, folder.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, folder.id)}
+                >
+                  <div className="flex items-center flex-1">
+                    <Folder className="h-4 w-4 mr-2" style={{ color: folder.color }} />
+                    {editingFolder === folder.id ? (
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
+                        onBlur={() => handleEditFolder(folder)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleEditFolder(folder);
+                          } else if (e.key === 'Escape') {
+                            setEditingFolder(null);
+                            setEditName('');
+                          }
                         }}
-                        className="text-gray-300 hover:text-white hover:bg-gray-700"
-                      >
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteFolder(folder);
-                        }}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="text-sm">{folder.name}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-xs text-gray-400">{getFolderCount(folder.id)}</span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingFolder(folder.id);
+                            setEditName(folder.name);
+                          }}
+                          className="text-gray-300 hover:text-white hover:bg-gray-700"
+                        >
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFolder(folder);
+                          }}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
