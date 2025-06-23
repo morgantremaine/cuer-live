@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -193,26 +192,44 @@ export const useTeam = () => {
       // First get all team member emails to exclude them from pending invitations
       const { data: teamMembersData } = await supabase
         .from('team_members')
-        .select(`
-          user_id,
-          profiles!inner(email)
-        `)
+        .select('user_id')
         .eq('team_id', currentTeamId);
 
-      const existingMemberEmails = teamMembersData?.map(member => 
-        member.profiles?.email
-      ).filter(Boolean) || [];
+      if (!teamMembersData) {
+        console.log('No team members found');
+        setPendingInvitations([]);
+        return;
+      }
+
+      // Get user IDs and then fetch their emails
+      const userIds = teamMembersData.map(member => member.user_id);
+      
+      let existingMemberEmails: string[] = [];
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('email')
+          .in('id', userIds);
+
+        existingMemberEmails = profilesData?.map(profile => profile.email).filter(Boolean) || [];
+      }
 
       console.log('Existing member emails:', existingMemberEmails);
 
       // Get pending invitations, excluding emails that already have team members
-      const { data: pendingInvitationsData, error: pendingInvitationsError } = await supabase
+      let query = supabase
         .from('team_invitations')
         .select('*')
         .eq('team_id', currentTeamId)
         .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString())
-        .not('email', 'in', `(${existingMemberEmails.map(email => `"${email}"`).join(',')})`);
+        .gt('expires_at', new Date().toISOString());
+
+      // Only add the not in filter if we have existing member emails
+      if (existingMemberEmails.length > 0) {
+        query = query.not('email', 'in', `(${existingMemberEmails.map(email => `"${email}"`).join(',')})`);
+      }
+
+      const { data: pendingInvitationsData, error: pendingInvitationsError } = await query;
 
       if (pendingInvitationsError) {
         console.error('Error fetching pending invitations:', pendingInvitationsError);
@@ -413,6 +430,36 @@ export const useTeam = () => {
         return { error: 'Invitation not found or already accepted.' };
       }
 
+      // Check if the email is already a team member
+      const { data: existingMember } = await supabase
+        .from('team_members')
+        .select('user_id')
+        .eq('team_id', team.id);
+
+      if (existingMember) {
+        const userIds = existingMember.map(member => member.user_id);
+        
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('email')
+            .in('id', userIds);
+
+          const existingEmails = profiles?.map(p => p.email).filter(Boolean) || [];
+          
+          if (existingEmails.includes(email)) {
+            // Delete the invitation since the user is already a team member
+            await supabase
+              .from('team_invitations')
+              .delete()
+              .eq('id', invitationId);
+            
+            await loadPendingInvitations();
+            return { error: 'This person is already a team member.' };
+          }
+        }
+      }
+
       // Generate a new token for the invitation
       const newToken = crypto.randomUUID();
       console.log('Generated new invitation token:', newToken);
@@ -488,6 +535,12 @@ export const useTeam = () => {
         .single();
 
       if (existingMembership) {
+        // Mark invitation as accepted and clean up
+        await supabase
+          .from('team_invitations')
+          .update({ accepted: true })
+          .eq('id', invitation.id);
+        
         return { error: 'You are already a member of this team.' };
       }
 
@@ -515,6 +568,9 @@ export const useTeam = () => {
         console.error('Error updating invitation status:', updateError);
         // Don't return error here as the user was successfully added to the team
       }
+
+      // Clear the pending token from localStorage
+      localStorage.removeItem('pendingInvitationToken');
 
       // Reload team data
       await loadTeamData();
