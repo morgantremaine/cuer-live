@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -83,31 +84,26 @@ export const useTeam = () => {
       if (pendingToken) {
         console.log('Found pending invitation token, checking if valid:', pendingToken);
         
-        // Validate the invitation exists and is valid
-        const { data: invitationData, error: invitationError } = await supabase
-          .from('team_invitations')
-          .select('id, email, team_id, expires_at, accepted')
-          .eq('token', pendingToken)
-          .eq('accepted', false)
-          .gt('expires_at', new Date().toISOString())
-          .maybeSingle();
+        // Use the new safe acceptance function
+        try {
+          const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_team_invitation_safe', {
+            invitation_token: pendingToken
+          });
 
-        if (!invitationError && invitationData && invitationData.email === user.email) {
-          console.log('Valid pending invitation found, processing acceptance...');
-          const acceptResult = await acceptInvitation(pendingToken);
-          if (!acceptResult.error) {
-            console.log('Invitation accepted successfully, reloading team data');
+          if (!acceptError && acceptResult?.success) {
+            console.log('Invitation accepted successfully:', acceptResult.message);
             localStorage.removeItem('pendingInvitationToken');
-            await runFullCleanup();
-            // Recursively call loadTeamData to load the correct team
-            await loadTeamData();
-            return;
+            toast({
+              title: 'Success',
+              description: acceptResult.message || 'Successfully joined the team!',
+            });
+            // Continue to load the team data below
           } else {
-            console.log('Failed to accept invitation:', acceptResult.error);
+            console.log('Failed to accept invitation or invitation invalid:', acceptResult?.error || acceptError);
             localStorage.removeItem('pendingInvitationToken');
           }
-        } else {
-          console.log('Invalid or expired invitation token, clearing from storage');
+        } catch (error) {
+          console.error('Error accepting invitation:', error);
           localStorage.removeItem('pendingInvitationToken');
         }
       }
@@ -413,81 +409,22 @@ export const useTeam = () => {
     try {
       console.log('Accepting invitation with token:', token);
       
-      // Get invitation details
-      const { data: invitation, error: invitationError } = await supabase
-        .from('team_invitations')
-        .select('*')
-        .eq('token', token)
-        .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
+      // Use the new safe acceptance function
+      const { data: result, error } = await supabase.rpc('accept_team_invitation_safe', {
+        invitation_token: token
+      });
 
-      if (invitationError || !invitation) {
-        console.error('Invalid or expired invitation:', invitationError);
-        return { error: 'Invalid or expired invitation' };
+      if (error) {
+        console.error('Error accepting invitation:', error);
+        return { error: 'Failed to accept invitation' };
       }
 
-      // Verify email matches
-      if (invitation.email !== user.email) {
-        return { error: 'Invitation email does not match your account' };
+      if (!result?.success) {
+        console.error('Invitation acceptance failed:', result?.error);
+        return { error: result?.error || 'Failed to accept invitation' };
       }
 
-      // Check if user is already a member
-      const { data: existingMember } = await supabase
-        .from('team_members')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('team_id', invitation.team_id)
-        .maybeSingle();
-
-      if (existingMember) {
-        // User is already a member, just mark invitation as accepted
-        console.log('User already a member, marking invitation as accepted');
-        try {
-          await supabase
-            .from('team_invitations')
-            .update({ accepted: true })
-            .eq('id', invitation.id);
-        } catch (updateError) {
-          console.log('Could not update invitation status, but user is already a member');
-        }
-        
-        await loadTeamData();
-        return { error: null };
-      }
-
-      // Add user to team
-      const { error: memberError } = await supabase
-        .from('team_members')
-        .insert({
-          user_id: user.id,
-          team_id: invitation.team_id,
-          role: 'member'
-        });
-
-      if (memberError) {
-        console.error('Error adding user to team:', memberError);
-        return { error: 'Failed to join team' };
-      }
-
-      // Mark invitation as accepted
-      try {
-        const { error: updateError } = await supabase
-          .from('team_invitations')
-          .update({ accepted: true })
-          .eq('id', invitation.id);
-
-        if (updateError) {
-          console.log('Could not update invitation status directly, will be cleaned up later:', updateError);
-        }
-      } catch (updateError) {
-        console.log('Could not update invitation status, will rely on cleanup function');
-      }
-
-      // Run cleanup to ensure invitation is marked as accepted
-      await runFullCleanup();
-
-      console.log('Invitation accepted successfully');
+      console.log('Invitation accepted successfully:', result.message);
       return { error: null };
     } catch (error) {
       console.error('Error accepting invitation:', error);
@@ -661,12 +598,12 @@ export const useTeam = () => {
       const newToken = crypto.randomUUID();
       console.log('Generated new invitation token:', newToken);
 
-      // Update the existing invitation with new token and extended expiry
+      // Update the invitation with new token and extended expiry
       const { error: updateError } = await supabase
         .from('team_invitations')
         .update({
           token: newToken,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         })
         .eq('id', invitationId);
 
@@ -675,9 +612,7 @@ export const useTeam = () => {
         return { error: 'Failed to update invitation' };
       }
 
-      console.log('Invitation updated successfully, sending email with new token:', newToken);
-
-      // Send invitation email via edge function with new token
+      // Send new invitation email
       const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
         body: {
           email,
@@ -688,13 +623,13 @@ export const useTeam = () => {
       });
 
       if (emailError) {
-        console.error('Error sending invitation email:', emailError);
-        return { error: 'Invitation updated but email could not be sent' };
+        console.error('Error resending invitation email:', emailError);
+        return { error: 'Failed to resend invitation email' };
       }
 
-      console.log('Invitation email resent successfully');
+      console.log('Invitation resent successfully');
 
-      // Reload pending invitations to show updated expiry
+      // Reload pending invitations
       await loadPendingInvitations(team.id);
 
       return { error: null };
@@ -706,7 +641,7 @@ export const useTeam = () => {
 
   useEffect(() => {
     loadTeamData();
-  }, [user?.id]);
+  }, [user]);
 
   return {
     team,
@@ -714,13 +649,13 @@ export const useTeam = () => {
     pendingInvitations,
     userRole,
     loading,
+    loadTeamData,
     inviteTeamMember,
     acceptInvitation,
     removeTeamMember,
     removeTeamMemberWithTransfer,
     getTransferPreview,
     revokeInvitation,
-    resendInvitation,
-    loadTeamData
+    resendInvitation
   };
 };
