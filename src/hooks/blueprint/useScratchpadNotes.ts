@@ -11,12 +11,17 @@ export const useScratchpadNotes = (rundownId: string) => {
     searchQuery: ''
   });
 
+  // Track manually renamed notes
+  const [manuallyRenamedNotes, setManuallyRenamedNotes] = useState<Set<string>>(new Set());
+
   // Auto-save debounce timer
   const [saveTimer, setSaveTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Load notes from localStorage on mount
   useEffect(() => {
     const savedNotes = localStorage.getItem(`scratchpad-notes-${rundownId}`);
+    const savedRenamedNotes = localStorage.getItem(`scratchpad-renamed-notes-${rundownId}`);
+    
     if (savedNotes) {
       try {
         const parsedState = JSON.parse(savedNotes);
@@ -25,6 +30,10 @@ export const useScratchpadNotes = (rundownId: string) => {
           notes: parsedState.notes || [],
           activeNoteId: parsedState.activeNoteId || null
         }));
+        
+        if (savedRenamedNotes) {
+          setManuallyRenamedNotes(new Set(JSON.parse(savedRenamedNotes)));
+        }
       } catch (error) {
         console.error('Error loading scratchpad notes:', error);
         createDefaultNote();
@@ -35,7 +44,7 @@ export const useScratchpadNotes = (rundownId: string) => {
   }, [rundownId]);
 
   // Save notes to localStorage with debouncing
-  const saveToStorage = useCallback((newState: ScratchpadState) => {
+  const saveToStorage = useCallback((newState: ScratchpadState, renamedNotes: Set<string>) => {
     if (saveTimer) {
       clearTimeout(saveTimer);
     }
@@ -45,6 +54,8 @@ export const useScratchpadNotes = (rundownId: string) => {
         notes: newState.notes,
         activeNoteId: newState.activeNoteId
       }));
+      
+      localStorage.setItem(`scratchpad-renamed-notes-${rundownId}`, JSON.stringify(Array.from(renamedNotes)));
       
       // Update blueprint context with active note content for backward compatibility
       const activeNote = newState.notes.find(note => note.id === newState.activeNoteId);
@@ -60,10 +71,10 @@ export const useScratchpadNotes = (rundownId: string) => {
   const updateState = useCallback((updater: (prev: ScratchpadState) => ScratchpadState) => {
     setState(prev => {
       const newState = updater(prev);
-      saveToStorage(newState);
+      saveToStorage(newState, manuallyRenamedNotes);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [saveToStorage, manuallyRenamedNotes]);
 
   const createDefaultNote = useCallback(() => {
     const defaultNote: ScratchpadNote = {
@@ -109,20 +120,30 @@ export const useScratchpadNotes = (rundownId: string) => {
 
     updateState(prev => ({
       ...prev,
-      notes: prev.notes.map(note =>
-        note.id === state.activeNoteId
-          ? {
-              ...note,
-              content,
-              title: extractTitleFromContent(content) || note.title,
-              updatedAt: new Date().toISOString()
-            }
-          : note
-      )
+      notes: prev.notes.map(note => {
+        if (note.id === state.activeNoteId) {
+          // Only auto-update title if note hasn't been manually renamed AND has no title or default title
+          const shouldAutoUpdateTitle = !manuallyRenamedNotes.has(note.id) && 
+            (!note.title || note.title.startsWith('Note ') || note.title === 'Show Notes');
+          
+          return {
+            ...note,
+            content,
+            title: shouldAutoUpdateTitle ? (extractTitleFromContent(content) || note.title) : note.title,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return note;
+      })
     }));
-  }, [state.activeNoteId, updateState]);
+  }, [state.activeNoteId, updateState, manuallyRenamedNotes]);
 
   const renameNote = useCallback((noteId: string, newTitle: string) => {
+    // Mark this note as manually renamed
+    const newManuallyRenamed = new Set(manuallyRenamedNotes);
+    newManuallyRenamed.add(noteId);
+    setManuallyRenamedNotes(newManuallyRenamed);
+
     updateState(prev => ({
       ...prev,
       notes: prev.notes.map(note =>
@@ -135,9 +156,19 @@ export const useScratchpadNotes = (rundownId: string) => {
           : note
       )
     }));
-  }, [updateState]);
+
+    // Save the updated manually renamed notes
+    setTimeout(() => {
+      saveToStorage(state, newManuallyRenamed);
+    }, 0);
+  }, [updateState, manuallyRenamedNotes, saveToStorage, state]);
 
   const deleteNote = useCallback((noteId: string) => {
+    // Remove from manually renamed notes if it exists
+    const newManuallyRenamed = new Set(manuallyRenamedNotes);
+    newManuallyRenamed.delete(noteId);
+    setManuallyRenamedNotes(newManuallyRenamed);
+
     updateState(prev => {
       const newNotes = prev.notes.filter(note => note.id !== noteId);
       const newActiveId = prev.activeNoteId === noteId 
@@ -150,7 +181,7 @@ export const useScratchpadNotes = (rundownId: string) => {
         activeNoteId: newActiveId
       };
     });
-  }, [updateState]);
+  }, [updateState, manuallyRenamedNotes]);
 
   const setSearchQuery = useCallback((query: string) => {
     setState(prev => ({

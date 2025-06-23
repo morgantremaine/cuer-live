@@ -74,16 +74,16 @@ const ScratchpadEnhancedSidebar = ({
 
   return (
     <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
-      <div className="p-4 border-b border-gray-700 space-y-4">
+      <div className="p-3 border-b border-gray-700 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">Notes</h3>
           <Button
             variant="ghost"
             size="sm"
             onClick={onCreateNote}
-            className="text-gray-300 hover:text-white"
+            className="text-gray-300 hover:text-white hover:bg-gray-600 gap-2"
           >
             <Plus className="h-4 w-4" />
+            New Note
           </Button>
         </div>
         

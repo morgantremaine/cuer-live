@@ -1,6 +1,5 @@
 
 import React, { useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical } from 'lucide-react';
 import ScratchpadEnhancedSidebar from './scratchpad/ScratchpadEnhancedSidebar';
 import ScratchpadRichTextEditor from './scratchpad/ScratchpadRichTextEditor';
@@ -72,54 +71,51 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
   };
 
   return (
-    <Card className="w-full mt-8 bg-gray-800 border-gray-700">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
-            <CardTitle className="text-xl text-white">Scratchpad</CardTitle>
-            <SaveStatus status="saved" />
-          </div>
+    <div className="w-full mt-8 bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center gap-2">
+          <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
+          <h2 className="text-xl font-semibold text-white">Notes</h2>
+          <SaveStatus status="saved" />
         </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="flex h-[600px]">
-          <ScratchpadEnhancedSidebar
-            notes={notes}
-            activeNoteId={activeNote?.id || null}
-            searchQuery={searchQuery}
-            onSelectNote={selectNote}
-            onCreateNote={createNote}
-            onDeleteNote={deleteNote}
-            onRenameNote={renameNote}
-            onSearchChange={setSearchQuery}
-          />
+      </div>
+      
+      <div className="flex h-[600px]">
+        <ScratchpadEnhancedSidebar
+          notes={notes}
+          activeNoteId={activeNote?.id || null}
+          searchQuery={searchQuery}
+          onSelectNote={selectNote}
+          onCreateNote={createNote}
+          onDeleteNote={deleteNote}
+          onRenameNote={renameNote}
+          onSearchChange={setSearchQuery}
+        />
+        
+        <div className="flex-1 flex flex-col">
+          {activeNote && (
+            <>
+              <ScratchpadStreamlinedToolbar 
+                onFormat={handleFormat} 
+                formatStates={formatStates}
+              />
+              <ScratchpadRichTextEditor
+                ref={editorRef}
+                note={activeNote}
+                onContentChange={updateNoteContent}
+                onFormatStateChange={handleFormatStateChange}
+              />
+            </>
+          )}
           
-          <div className="flex-1 flex flex-col">
-            {activeNote && (
-              <>
-                <ScratchpadStreamlinedToolbar 
-                  onFormat={handleFormat} 
-                  formatStates={formatStates}
-                />
-                <ScratchpadRichTextEditor
-                  ref={editorRef}
-                  note={activeNote}
-                  onContentChange={updateNoteContent}
-                  onFormatStateChange={handleFormatStateChange}
-                />
-              </>
-            )}
-            
-            {!activeNote && (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                <p>Select a note to start writing</p>
-              </div>
-            )}
-          </div>
+          {!activeNote && (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <p>Select a note to start writing</p>
+            </div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

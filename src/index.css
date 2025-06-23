@@ -72,7 +72,7 @@
 /* Enhanced scratchpad editor formatting styles */
 .scratchpad-editor b,
 .scratchpad-editor strong {
-  @apply font-bold text-yellow-300;
+  @apply font-bold text-white;
 }
 
 .scratchpad-editor i,
