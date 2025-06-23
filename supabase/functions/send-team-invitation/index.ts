@@ -54,7 +54,7 @@ serve(async (req) => {
     }
 
     const emailData = {
-      from: 'Cuer <onboarding@resend.dev>',
+      from: 'Cuer <noreply@cuer.live>',
       to: [email],
       subject: `You've been invited to join ${teamName} on Cuer`,
       html: `
