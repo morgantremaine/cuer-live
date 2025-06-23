@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -226,10 +225,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   <div
                     key={folder.id || 'all'}
                     className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
-                      isSelected && !isDragOver
-                        ? 'bg-blue-600 text-white'
-                        : isDragOver
+                      isDragOver
                         ? 'bg-gray-700 text-white'
+                        : isSelected
+                        ? 'bg-blue-600 text-white'
                         : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                     }`}
                     onClick={() => onFolderSelect(folder.id, folder.type)}
@@ -309,10 +308,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 <div
                   key={folder.id}
                   className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
-                    isSelected && !isDragOver
-                      ? 'bg-blue-600 text-white'
-                      : isDragOver
+                    isDragOver
                       ? 'bg-gray-700 text-white'
+                      : isSelected
+                      ? 'bg-blue-600 text-white'
                       : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }`}
                   onClick={() => onFolderSelect(folder.id, 'custom')}
