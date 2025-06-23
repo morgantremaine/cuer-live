@@ -131,7 +131,6 @@ const Help = () => {
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li><strong>Create share link:</strong> Use the Share button to generate a public, read-only link</li>
                 <li><strong>Custom layouts:</strong> Choose which saved column layout to use for the shared view</li>
-                <li><strong>Layout control:</strong> The shared rundown will display exactly as configured in your chosen layout</li>
                 <li><strong>Real-time updates:</strong> Shared rundowns reflect changes made to the original rundown in real-time</li>
                 <li><strong>No login required:</strong> Recipients can view the rundown without needing a Cuer account</li>
               </ul>
@@ -174,6 +173,14 @@ const Help = () => {
                     <li>Add colors by including the color name: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[Talent Name {"{red}"}]</code></li>
                     <li>Available colors: red, blue, green, yellow, purple, orange, pink, cyan</li>
                     <li>Example: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[John {"{blue}"}]</code> will display "John" in blue text</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Script Management</h3>
+                  <ul className="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>All Script View:</strong> Use the "All Script" button to display all segments with script content in the teleprompter</li>
+                    <li><strong>Inline Editing:</strong> When editing is enabled, you can click on any script text in the teleprompter to edit it directly - changes automatically update the script cells in the main rundown</li>
+                    <li><strong>Null Scripts:</strong> Put <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[null]</code> in a script cell to show the segment name in the teleprompter without any script content</li>
                   </ul>
                 </div>
                 <div>
