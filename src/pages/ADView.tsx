@@ -391,6 +391,9 @@ const ADView = () => {
                 </CardContent>
               </Card>
 
+              {/* Extra spacing before Item Elapsed */}
+              <div className="h-4"></div>
+
               {/* Current Item Elapsed */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-5 text-center">
