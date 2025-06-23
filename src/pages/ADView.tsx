@@ -364,12 +364,12 @@ const ADView = () => {
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
       <div className="min-h-screen bg-gray-900 text-white flex flex-col overflow-hidden">
-        {/* Full-width Header - Larger for broadcast use */}
-        <div className="bg-gray-800 border-b border-gray-700 px-8 py-8">
+        {/* Header - Reduced padding and font sizes */}
+        <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
           <div className="flex justify-between items-center">
-            <div className="text-center w-80">
-              <div className="text-lg text-gray-400 mb-2 font-semibold">TIMING STATUS</div>
-              <div className={`text-3xl font-bold font-mono min-h-[2.25rem] flex items-center justify-center ${
+            <div className="text-center w-64">
+              <div className="text-sm text-gray-400 mb-1 font-semibold">TIMING STATUS</div>
+              <div className={`text-xl font-bold font-mono min-h-[1.5rem] flex items-center justify-center ${
                 !isShowcallerPlaying ? 'text-green-400' :
                 timingStatus.isOnTime ? 'text-green-400' :
                 timingStatus.isAhead ? 'text-yellow-400' :
@@ -382,34 +382,34 @@ const ADView = () => {
               </div>
             </div>
             <div className="flex items-center justify-center flex-1">
-              <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
                 <img 
                   src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
                   alt="Cuer Logo" 
-                  className="h-12 w-auto"
+                  className="h-8 w-auto"
                 />
-                <div className="text-4xl font-bold text-white">{rundownData.title}</div>
+                <div className="text-2xl font-bold text-white">{rundownData.title}</div>
               </div>
             </div>
-            <div className="text-center w-80">
-              <div className="text-lg text-gray-400 mb-2 font-semibold">TIME OF DAY</div>
-              <div className="text-6xl font-mono font-bold text-blue-400">
+            <div className="text-center w-64">
+              <div className="text-sm text-gray-400 mb-1 font-semibold">TIME OF DAY</div>
+              <div className="text-3xl font-mono font-bold text-blue-400">
                 {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content - Fullscreen layout */}
+        {/* Main Content - Adjusted spacing */}
         <div className="flex-1 px-0 py-0">
-          <div className="grid grid-cols-12 gap-6 h-full p-6">
-            {/* Left Side - Timing and Stopwatch - Larger cards */}
-            <div className="col-span-2 space-y-4">
+          <div className="grid grid-cols-12 gap-4 h-full p-4">
+            {/* Left Side - Timing and Stopwatch - Reduced card sizes */}
+            <div className="col-span-2 space-y-3">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-3 font-semibold">SHOW ELAPSED</div>
-                  <div className="text-3xl font-mono font-bold text-blue-400">
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2 font-semibold">SHOW ELAPSED</div>
+                  <div className="text-xl font-mono font-bold text-blue-400">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -417,9 +417,9 @@ const ADView = () => {
 
               {/* Show Remaining Time */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-3 font-semibold">SHOW REMAINING</div>
-                  <div className="text-3xl font-mono font-bold text-orange-400">
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2 font-semibold">SHOW REMAINING</div>
+                  <div className="text-xl font-mono font-bold text-orange-400">
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -427,9 +427,9 @@ const ADView = () => {
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-3 font-semibold">ITEM ELAPSED</div>
-                  <div className="text-3xl font-mono font-bold text-green-400">
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2 font-semibold">ITEM ELAPSED</div>
+                  <div className="text-xl font-mono font-bold text-green-400">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -437,9 +437,9 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <div className="text-sm text-gray-400 mb-3 font-semibold">ITEM REMAINING</div>
-                  <div className="text-3xl font-mono font-bold text-yellow-400">
+                <CardContent className="p-4 text-center">
+                  <div className="text-xs text-gray-400 mb-2 font-semibold">ITEM REMAINING</div>
+                  <div className="text-xl font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
@@ -447,42 +447,42 @@ const ADView = () => {
 
               {/* Stopwatch */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6">
-                  <div className="text-sm text-gray-400 mb-4 text-center font-semibold">STOPWATCH</div>
-                  <div className="text-3xl font-mono font-bold text-center mb-6 text-white">
+                <CardContent className="p-4">
+                  <div className="text-xs text-gray-400 mb-2 text-center font-semibold">STOPWATCH</div>
+                  <div className="text-lg font-mono font-bold text-center mb-3 text-white">
                     {formatStopwatchTime(stopwatchSeconds)}
                   </div>
-                  <div className="flex justify-center space-x-3">
+                  <div className="flex justify-center space-x-2">
                     {!stopwatchRunning ? (
-                      <Button onClick={startStopwatch} className="bg-green-600 hover:bg-green-700" size="default">
-                        <Play className="h-5 w-5" />
+                      <Button onClick={startStopwatch} className="bg-green-600 hover:bg-green-700" size="sm">
+                        <Play className="h-4 w-4" />
                       </Button>
                     ) : (
-                      <Button onClick={pauseStopwatch} className="bg-yellow-600 hover:bg-yellow-700" size="default">
-                        <Pause className="h-5 w-5" />
+                      <Button onClick={pauseStopwatch} className="bg-yellow-600 hover:bg-yellow-700" size="sm">
+                        <Pause className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button onClick={resetStopwatch} variant="outline" className="border-gray-600" size="default">
-                      <RotateCcw className="h-5 w-5" />
+                    <Button onClick={resetStopwatch} variant="outline" className="border-gray-600" size="sm">
+                      <RotateCcw className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Center - Segments Display - Larger segments */}
-            <div className="col-span-7 flex flex-col justify-center space-y-4">
+            {/* Center - Segments Display - Reduced segment sizes */}
+            <div className="col-span-7 flex flex-col justify-center space-y-3">
               {/* Previous Segment 2 */}
               <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-40"
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-40"
               >
-                <div className="flex items-center space-x-6">
-                  <div className="w-16 text-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
                     <div className="text-xs text-gray-500 font-semibold">PREV</div>
-                    <div className="text-lg font-mono text-gray-400">{prev2Info.rowNumber}</div>
+                    <div className="text-sm font-mono text-gray-400">{prev2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-lg font-medium text-gray-400">{prev2Info.name}</div>
+                    <div className="text-sm font-medium text-gray-400">{prev2Info.name}</div>
                     {renderColumnData(prev2Info.columnData)}
                   </div>
                 </div>
@@ -490,38 +490,38 @@ const ADView = () => {
 
               {/* Previous Segment 1 */}
               <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-60"
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-60"
               >
-                <div className="flex items-center space-x-6">
-                  <div className="w-16 text-center">
-                    <div className="text-sm text-gray-400 font-semibold">PREV</div>
-                    <div className="text-lg font-mono text-gray-300">{prev1Info.rowNumber}</div>
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-gray-400 font-semibold">PREV</div>
+                    <div className="text-sm font-mono text-gray-300">{prev1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-xl font-semibold text-gray-300">{prev1Info.name}</div>
+                    <div className="text-base font-semibold text-gray-300">{prev1Info.name}</div>
                     {renderColumnData(prev1Info.columnData)}
                   </div>
                 </div>
               </div>
 
-              {/* Current Segment - Much larger */}
+              {/* Current Segment - Reduced size but still prominent */}
               <div 
-                className="bg-green-900 border-2 border-green-600 rounded-lg p-8 shadow-lg"
+                className="bg-green-900 border-2 border-green-600 rounded-lg p-5 shadow-lg"
               >
-                <div className="flex items-center space-x-6">
-                  <div className="w-16 text-center">
-                    <div className="text-sm text-green-300 font-bold">ON AIR</div>
-                    <div className="text-2xl font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-green-300 font-bold">ON AIR</div>
+                    <div className="text-lg font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-3xl font-bold text-green-100 mb-2">{currInfo.name}</div>
-                    <div className="mt-3">
+                    <div className="text-xl font-bold text-green-100 mb-1">{currInfo.name}</div>
+                    <div className="mt-2">
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                         const value = currInfo.columnData[columnKey] || '--';
                         
                         return (
-                          <div key={columnKey} className="text-base text-green-200 mt-2">
+                          <div key={columnKey} className="text-sm text-green-200 mt-1">
                             <span className="font-semibold">{columnName}:</span> {value}
                           </div>
                         );
@@ -533,15 +533,15 @@ const ADView = () => {
 
               {/* Next Segment 1 */}
               <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-80"
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-80"
               >
-                <div className="flex items-center space-x-6">
-                  <div className="w-16 text-center">
-                    <div className="text-sm text-gray-400 font-semibold">NEXT</div>
-                    <div className="text-lg font-mono text-gray-300">{next1Info.rowNumber}</div>
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs text-gray-400 font-semibold">NEXT</div>
+                    <div className="text-sm font-mono text-gray-300">{next1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-xl font-semibold text-gray-300">{next1Info.name}</div>
+                    <div className="text-base font-semibold text-gray-300">{next1Info.name}</div>
                     {renderColumnData(next1Info.columnData)}
                   </div>
                 </div>
@@ -549,36 +549,36 @@ const ADView = () => {
 
               {/* Next Segment 2 */}
               <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-60"
+                className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-60"
               >
-                <div className="flex items-center space-x-6">
-                  <div className="w-16 text-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 text-center">
                     <div className="text-xs text-gray-500 font-semibold">NEXT</div>
-                    <div className="text-lg font-mono text-gray-400">{next2Info.rowNumber}</div>
+                    <div className="text-sm font-mono text-gray-400">{next2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-lg font-medium text-gray-400">{next2Info.name}</div>
+                    <div className="text-sm font-medium text-gray-400">{next2Info.name}</div>
                     {renderColumnData(next2Info.columnData)}
                   </div>
                 </div>
               </div>
 
-              {/* Column Controls - Moved to bottom with better spacing */}
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="text-base text-gray-400 font-semibold">Additional Columns:</div>
+              {/* Column Controls - Reduced spacing */}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-700">
+                <div className="flex items-center space-x-2">
+                  <div className="text-sm text-gray-400 font-semibold">Additional Columns:</div>
                   {selectedColumns.map(columnKey => {
                     const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                     return (
-                      <div key={columnKey} className="flex items-center bg-gray-700 rounded px-3 py-2 text-sm">
+                      <div key={columnKey} className="flex items-center bg-gray-700 rounded px-2 py-1 text-sm">
                         <span>{columnName}</span>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="ml-2 h-5 w-5 p-0 text-gray-400 hover:text-white"
+                          className="ml-1 h-4 w-4 p-0 text-gray-400 hover:text-white"
                           onClick={() => removeColumn(columnKey)}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3" />
                         </Button>
                       </div>
                     );
@@ -590,16 +590,16 @@ const ADView = () => {
                     {!showColumnSelector ? (
                       <Button
                         variant="outline"
-                        size="default"
+                        size="sm"
                         onClick={() => setShowColumnSelector(true)}
                         className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="h-4 w-4 mr-1" />
                         Add Column
                       </Button>
                     ) : (
                       <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
-                        <SelectTrigger className="w-48 bg-gray-800 border-gray-600 text-white">
+                        <SelectTrigger className="w-40 bg-gray-800 border-gray-600 text-white">
                           <SelectValue placeholder="Select column..." />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-800 border-gray-600">
@@ -620,13 +620,13 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script - Larger */}
+            {/* Right Side - Script - Reduced size */}
             <div className="col-span-3">
               <Card className="bg-gray-800 border-gray-700 h-full">
-                <CardContent className="p-6 h-full flex flex-col">
-                  <div className="text-sm text-gray-400 mb-4 font-semibold">CURRENT SCRIPT</div>
-                  <div className="flex-1 bg-gray-900 rounded-lg p-6 overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap text-base leading-relaxed">
+                <CardContent className="p-4 h-full flex flex-col">
+                  <div className="text-xs text-gray-400 mb-3 font-semibold">CURRENT SCRIPT</div>
+                  <div className="flex-1 bg-gray-900 rounded-lg p-4 overflow-y-auto">
+                    <div className="text-white whitespace-pre-wrap text-sm leading-relaxed">
                       {currentSegment?.script || 'No script available for current segment'}
                     </div>
                   </div>
