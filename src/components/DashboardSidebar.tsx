@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +24,9 @@ import {
   Edit2,
   Trash2,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Search,
+  X
 } from 'lucide-react';
 import { useRundownFolders, RundownFolder } from '@/hooks/useRundownFolders';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
@@ -39,6 +40,8 @@ interface DashboardSidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   folderType: 'all' | 'recent' | 'archived' | 'custom';
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 type SystemFolder = {
@@ -58,7 +61,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   onRundownDrop,
   isCollapsed,
   onToggleCollapse,
-  folderType
+  folderType,
+  searchQuery,
+  onSearchChange
 }) => {
   const { folders, createFolder, updateFolder, deleteFolder } = useRundownFolders(teamId);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -166,6 +171,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     return rundowns.filter(r => r.folder_id === folderId && !r.archived).length;
   };
 
+  const clearSearch = () => {
+    onSearchChange('');
+  };
+
   if (isCollapsed) {
     return (
       <div className="w-12 bg-slate-950 border-r border-gray-700 flex flex-col items-center py-4">
@@ -201,9 +210,29 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   return (
     <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
-      {/* Header */}
+      {/* Header with Search */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-        <h2 className="text-white font-semibold">Rundowns</h2>
+        <div className="flex-1 mr-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search rundowns..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 pl-9 pr-8 h-8 text-sm"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={clearSearch}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -214,29 +243,118 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         </Button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2">
-        {/* System Folders */}
-        <div className="mb-4">
-          <div 
-            className="flex items-center px-2 py-1 mb-2 cursor-pointer"
-            onClick={() => toggleFolderExpansion('system')}
-          >
-            {expandedFolders.has('system') ? (
-              <ChevronDown className="h-3 w-3 text-gray-400 mr-1" />
-            ) : (
-              <ChevronRight className="h-3 w-3 text-gray-400 mr-1" />
+      {/* Content - Only show folders when not searching */}
+      {!searchQuery && (
+        <div className="flex-1 overflow-y-auto p-2">
+          {/* System Folders */}
+          <div className="mb-4">
+            <div 
+              className="flex items-center px-2 py-1 mb-2 cursor-pointer"
+              onClick={() => toggleFolderExpansion('system')}
+            >
+              {expandedFolders.has('system') ? (
+                <ChevronDown className="h-3 w-3 text-gray-400 mr-1" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-gray-400 mr-1" />
+              )}
+              <span className="text-xs text-gray-400 uppercase tracking-wide">System</span>
+            </div>
+            
+            {expandedFolders.has('system') && (
+              <div className="space-y-1">
+                {systemFolders.map((folder) => {
+                  const isSelected = folderType === folder.type;
+                  // For "All Rundowns" (id: null), check against 'all-rundowns'
+                  const dragId = folder.id === null ? 'all-rundowns' : folder.id;
+                  const isDragOver = dragOverFolder === dragId;
+                  
+                  // Priority: drag-over > selected > default hover
+                  let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
+                  
+                  if (isDragOver) {
+                    containerClasses += "bg-gray-700 text-white";
+                  } else if (isSelected) {
+                    containerClasses += "bg-blue-600 text-white";
+                  } else {
+                    containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+                  }
+                  
+                  return (
+                    <div
+                      key={folder.id || 'all'}
+                      className={containerClasses}
+                      onClick={() => onFolderSelect(folder.id, folder.type)}
+                      onDragOver={(e) => handleDragOver(e, folder.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, folder.id)}
+                    >
+                      <div className="flex items-center">
+                        <folder.icon className="h-4 w-4 mr-2" />
+                        <span className="text-sm">{folder.name}</span>
+                      </div>
+                      <span className="text-xs text-gray-400">{folder.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-            <span className="text-xs text-gray-400 uppercase tracking-wide">System</span>
           </div>
-          
-          {expandedFolders.has('system') && (
+
+          {/* Custom Folders */}
+          <div>
+            <div className="flex items-center justify-between px-2 py-1 mb-2">
+              <span className="text-xs text-gray-400 uppercase tracking-wide">Custom</span>
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-gray-400 hover:text-white hover:bg-gray-800"
+                  >
+                    <FolderPlus className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-gray-800 border-gray-700">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Create New Folder</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="Folder name"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleCreateFolder();
+                        }
+                      }}
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCreateDialog(false)}
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleCreateFolder}
+                        className="bg-blue-600 hover:bg-blue-700"
+                        disabled={!newFolderName.trim()}
+                      >
+                        Create
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
             <div className="space-y-1">
-              {systemFolders.map((folder) => {
-                const isSelected = folderType === folder.type;
-                // For "All Rundowns" (id: null), check against 'all-rundowns'
-                const dragId = folder.id === null ? 'all-rundowns' : folder.id;
-                const isDragOver = dragOverFolder === dragId;
+              {folders.map((folder) => {
+                const isSelected = folderType === 'custom' && selectedFolder === folder.id;
+                const isDragOver = dragOverFolder === folder.id;
                 
                 // Priority: drag-over > selected > default hover
                 let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
@@ -251,167 +369,95 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 
                 return (
                   <div
-                    key={folder.id || 'all'}
+                    key={folder.id}
                     className={containerClasses}
-                    onClick={() => onFolderSelect(folder.id, folder.type)}
+                    onClick={() => onFolderSelect(folder.id, 'custom')}
                     onDragOver={(e) => handleDragOver(e, folder.id)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, folder.id)}
                   >
-                    <div className="flex items-center">
-                      <folder.icon className="h-4 w-4 mr-2" />
-                      <span className="text-sm">{folder.name}</span>
+                    <div className="flex items-center flex-1">
+                      <Folder className="h-4 w-4 mr-2 text-white" />
+                      {editingFolder === folder.id ? (
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
+                          onBlur={() => handleEditFolder(folder)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleEditFolder(folder);
+                            } else if (e.key === 'Escape') {
+                              setEditingFolder(null);
+                              setEditName('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="text-sm">{folder.name}</span>
+                      )}
                     </div>
-                    <span className="text-xs text-gray-400">{folder.count}</span>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-xs text-gray-400">{getFolderCount(folder.id)}</span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingFolder(folder.id);
+                              setEditName(folder.name);
+                            }}
+                            className="text-gray-300 hover:text-white hover:bg-gray-700"
+                          >
+                            <Edit2 className="h-4 w-4 mr-2" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFolder(folder);
+                            }}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          )}
-        </div>
-
-        {/* Custom Folders */}
-        <div>
-          <div className="flex items-center justify-between px-2 py-1 mb-2">
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Custom</span>
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 text-gray-400 hover:text-white hover:bg-gray-800"
-                >
-                  <FolderPlus className="h-3 w-3" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-gray-800 border-gray-700">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Create New Folder</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Input
-                    placeholder="Folder name"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-white"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleCreateFolder();
-                      }
-                    }}
-                  />
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowCreateDialog(false)}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleCreateFolder}
-                      className="bg-blue-600 hover:bg-blue-700"
-                      disabled={!newFolderName.trim()}
-                    >
-                      Create
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="space-y-1">
-            {folders.map((folder) => {
-              const isSelected = folderType === 'custom' && selectedFolder === folder.id;
-              const isDragOver = dragOverFolder === folder.id;
-              
-              // Priority: drag-over > selected > default hover
-              let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
-              
-              if (isDragOver) {
-                containerClasses += "bg-gray-700 text-white";
-              } else if (isSelected) {
-                containerClasses += "bg-blue-600 text-white";
-              } else {
-                containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
-              }
-              
-              return (
-                <div
-                  key={folder.id}
-                  className={containerClasses}
-                  onClick={() => onFolderSelect(folder.id, 'custom')}
-                  onDragOver={(e) => handleDragOver(e, folder.id)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, folder.id)}
-                >
-                  <div className="flex items-center flex-1">
-                    <Folder className="h-4 w-4 mr-2 text-white" />
-                    {editingFolder === folder.id ? (
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
-                        onBlur={() => handleEditFolder(folder)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleEditFolder(folder);
-                          } else if (e.key === 'Escape') {
-                            setEditingFolder(null);
-                            setEditName('');
-                          }
-                        }}
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="text-sm">{folder.name}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <span className="text-xs text-gray-400">{getFolderCount(folder.id)}</span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreVertical className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingFolder(folder.id);
-                            setEditName(folder.name);
-                          }}
-                          className="text-gray-300 hover:text-white hover:bg-gray-700"
-                        >
-                          <Edit2 className="h-4 w-4 mr-2" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteFolder(folder);
-                          }}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Search Results Message */}
+      {searchQuery && (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center text-gray-400">
+            <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">
+              Searching for "{searchQuery}"
+            </p>
+            <p className="text-xs mt-1">
+              Results shown in main area
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

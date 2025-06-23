@@ -34,6 +34,9 @@ const Dashboard = () => {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [folderType, setFolderType] = useState<'all' | 'recent' | 'archived' | 'custom'>('all');
   
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
@@ -204,27 +207,49 @@ const Dashboard = () => {
     }
   };
 
-  // Filter rundowns based on selected folder
+  // Filter rundowns based on selected folder and search query
   const getFilteredRundowns = () => {
+    let baseRundowns = savedRundowns;
+
+    // If searching, filter by search query across all rundowns
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      baseRundowns = savedRundowns.filter(rundown => 
+        rundown.title.toLowerCase().includes(query) ||
+        (rundown.items && rundown.items.some(item => 
+          item.name?.toLowerCase().includes(query) ||
+          item.script?.toLowerCase().includes(query) ||
+          item.notes?.toLowerCase().includes(query)
+        ))
+      );
+      return baseRundowns;
+    }
+
+    // Otherwise, filter by folder type as before
     switch (folderType) {
       case 'all':
-        return savedRundowns.filter(r => !r.archived);
+        return baseRundowns.filter(r => !r.archived);
       case 'recent':
-        return savedRundowns.filter(r => {
+        return baseRundowns.filter(r => {
           const daysDiff = (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24);
           return daysDiff <= 7 && !r.archived;
         });
       case 'archived':
-        return savedRundowns.filter(r => r.archived);
+        return baseRundowns.filter(r => r.archived);
       case 'custom':
-        return savedRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
+        return baseRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
       default:
-        return savedRundowns.filter(r => !r.archived);
+        return baseRundowns.filter(r => !r.archived);
     }
   };
 
   // Get folder title for display
   const getFolderTitle = () => {
+    if (searchQuery.trim()) {
+      const resultCount = getFilteredRundowns().length;
+      return `Search Results (${resultCount})`;
+    }
+
     switch (folderType) {
       case 'all':
         return 'All Rundowns';
@@ -266,6 +291,8 @@ const Dashboard = () => {
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           folderType={folderType}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
         {/* Main Content - Hidden on mobile when sidebar is expanded */}
@@ -273,12 +300,14 @@ const Dashboard = () => {
           <main className="flex-1 overflow-auto">
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
               <div className="px-4 py-6 sm:px-0 space-y-6">
-                {/* Breadcrumb */}
-                <DashboardFolderBreadcrumb
-                  selectedFolder={selectedFolder}
-                  folderType={folderType}
-                  customFolders={folders}
-                />
+                {/* Breadcrumb - Hide when searching */}
+                {!searchQuery && (
+                  <DashboardFolderBreadcrumb
+                    selectedFolder={selectedFolder}
+                    folderType={folderType}
+                    customFolders={folders}
+                  />
+                )}
                 
                 {/* Create New and Import Buttons */}
                 <div className="flex items-center space-x-4">
