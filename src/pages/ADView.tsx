@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
-import { Play, Pause, RotateCcw, Clock, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -17,11 +18,8 @@ import {
 
 const ADView = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
-  const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
-  const [stopwatchRunning, setStopwatchRunning] = useState(false);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
-  const stopwatchInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Check if showcaller is playing
   const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
@@ -292,39 +290,6 @@ const ADView = () => {
     });
   };
 
-  // Stopwatch controls
-  const startStopwatch = () => {
-    setStopwatchRunning(true);
-    stopwatchInterval.current = setInterval(() => {
-      setStopwatchSeconds(prev => prev + 1);
-    }, 1000);
-  };
-
-  const pauseStopwatch = () => {
-    setStopwatchRunning(false);
-    if (stopwatchInterval.current) {
-      clearInterval(stopwatchInterval.current);
-      stopwatchInterval.current = null;
-    }
-  };
-
-  const resetStopwatch = () => {
-    setStopwatchSeconds(0);
-    setStopwatchRunning(false);
-    if (stopwatchInterval.current) {
-      clearInterval(stopwatchInterval.current);
-      stopwatchInterval.current = null;
-    }
-  };
-
-  // Format stopwatch time
-  const formatStopwatchTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
   // Format time remaining
   const formatTimeRemaining = (seconds: number | null) => {
     if (seconds === null || seconds === undefined) return '--:--';
@@ -332,15 +297,6 @@ const ADView = () => {
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (stopwatchInterval.current) {
-        clearInterval(stopwatchInterval.current);
-      }
-    };
-  }, []);
 
   if (loading) {
     return (
@@ -364,32 +320,16 @@ const ADView = () => {
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
       <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
-        {/* Header - Slightly increased padding and font sizes */}
+        {/* Header - Left-justified logo and title */}
         <div className="bg-gray-800 border-b border-gray-700 px-7 py-5">
           <div className="flex justify-between items-center">
-            <div className="text-center w-72">
-              <div className="text-sm text-gray-400 mb-1 font-semibold">TIMING STATUS</div>
-              <div className={`text-2xl font-bold font-mono min-h-[1.75rem] flex items-center justify-center ${
-                !isShowcallerPlaying ? 'text-green-400' :
-                timingStatus.isOnTime ? 'text-green-400' :
-                timingStatus.isAhead ? 'text-yellow-400' :
-                'text-red-400'
-              }`}>
-                {!isShowcallerPlaying ? 'PAUSED' :
-                 timingStatus.isOnTime ? 'ON TIME' :
-                 timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
-                 `Over +${timingStatus.timeDifference}`}
-              </div>
-            </div>
-            <div className="flex items-center justify-center flex-1">
-              <div className="flex items-center space-x-5">
-                <img 
-                  src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
-                  alt="Cuer Logo" 
-                  className="h-9 w-auto"
-                />
-                <div className="text-3xl font-bold text-white">{rundownData.title}</div>
-              </div>
+            <div className="flex items-center space-x-5">
+              <img 
+                src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
+                alt="Cuer Logo" 
+                className="h-9 w-auto"
+              />
+              <div className="text-3xl font-bold text-white">{rundownData.title}</div>
             </div>
             <div className="text-center w-72">
               <div className="text-sm text-gray-400 mb-1 font-semibold">TIME OF DAY</div>
@@ -403,8 +343,26 @@ const ADView = () => {
         {/* Main Content - Increased spacing and sizes */}
         <div className="flex-1 px-0 py-0">
           <div className="grid grid-cols-12 gap-5 h-full p-5">
-            {/* Left Side - Timing and Stopwatch - Increased card sizes and font sizes */}
+            {/* Left Side - Timing Cards */}
             <div className="col-span-2 space-y-4">
+              {/* Timing Status */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-5 text-center">
+                  <div className="text-sm text-gray-400 mb-2 font-semibold">TIMING STATUS</div>
+                  <div className={`text-2xl font-bold font-mono min-h-[1.75rem] flex items-center justify-center ${
+                    !isShowcallerPlaying ? 'text-green-400' :
+                    timingStatus.isOnTime ? 'text-green-400' :
+                    timingStatus.isAhead ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {!isShowcallerPlaying ? 'PAUSED' :
+                     timingStatus.isOnTime ? 'ON TIME' :
+                     timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
+                     `Over +${timingStatus.timeDifference}`}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-5 text-center">
@@ -441,30 +399,6 @@ const ADView = () => {
                   <div className="text-sm text-gray-400 mb-2 font-semibold">ITEM REMAINING</div>
                   <div className="text-3xl font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Stopwatch */}
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-5">
-                  <div className="text-sm text-gray-400 mb-3 text-center font-semibold">STOPWATCH</div>
-                  <div className="text-2xl font-mono font-bold text-center mb-4 text-white">
-                    {formatStopwatchTime(stopwatchSeconds)}
-                  </div>
-                  <div className="flex justify-center space-x-2">
-                    {!stopwatchRunning ? (
-                      <Button onClick={startStopwatch} className="bg-green-600 hover:bg-green-700" size="sm">
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button onClick={pauseStopwatch} className="bg-yellow-600 hover:bg-yellow-700" size="sm">
-                        <Pause className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button onClick={resetStopwatch} variant="outline" className="border-gray-600" size="sm">
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
