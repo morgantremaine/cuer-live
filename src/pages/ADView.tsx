@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -297,6 +298,25 @@ const ADView = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Determine script content and its characteristics
+  const scriptContent = currentSegment?.script || 'No script available for current segment';
+  const hasScript = currentSegment?.script && currentSegment.script.trim() !== '';
+  const scriptLength = scriptContent.length;
+  
+  // Determine grid columns based on script content
+  const getGridColumns = () => {
+    if (!hasScript || scriptLength < 100) {
+      // Minimal or no script - make script area smaller
+      return 'grid-cols-[2fr_7fr_2fr]';
+    } else if (scriptLength < 500) {
+      // Medium script - balanced layout
+      return 'grid-cols-[2fr_6fr_3fr]';
+    } else {
+      // Long script - give more space to script
+      return 'grid-cols-[2fr_5fr_4fr]';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
@@ -366,11 +386,11 @@ const ADView = () => {
           </div>
         </div>
 
-        {/* Main Content - Increased spacing and sizes */}
+        {/* Main Content - Dynamic grid based on script content */}
         <div className="flex-1 px-0 py-0">
-          <div className="grid grid-cols-12 gap-5 h-full p-5">
+          <div className={`grid ${getGridColumns()} gap-5 h-full p-5`}>
             {/* Left Side - Timing Cards - Increased card sizes and font sizes */}
-            <div className="col-span-2 space-y-4">
+            <div className="space-y-4">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-5 text-center">
@@ -390,6 +410,8 @@ const ADView = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              <div className="h-4"></div>
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-800 border-gray-700">
@@ -413,7 +435,7 @@ const ADView = () => {
             </div>
 
             {/* Center - Segments Display - Increased segment sizes */}
-            <div className="col-span-7 flex flex-col justify-center space-y-4">
+            <div className="flex flex-col justify-center space-y-4">
               {/* Previous Segment 2 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-40"
@@ -562,14 +584,18 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script - Increased size */}
-            <div className="col-span-3">
-              <Card className="bg-gray-800 border-gray-700 h-full">
-                <CardContent className="p-5 h-full flex flex-col">
+            {/* Right Side - Script - Dynamic sizing based on content */}
+            <div className="flex flex-col">
+              <Card className="bg-gray-800 border-gray-700 flex-1 flex flex-col">
+                <CardContent className="p-5 flex-1 flex flex-col">
                   <div className="text-sm text-gray-400 mb-4 font-semibold">CURRENT SCRIPT</div>
                   <div className="flex-1 bg-gray-900 rounded-lg p-5 overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap text-base leading-relaxed">
-                      {currentSegment?.script || 'No script available for current segment'}
+                    <div className={`text-white whitespace-pre-wrap leading-relaxed ${
+                      scriptLength < 200 ? 'text-lg' : 
+                      scriptLength < 500 ? 'text-base' : 
+                      'text-sm'
+                    }`}>
+                      {scriptContent}
                     </div>
                   </div>
                 </CardContent>
