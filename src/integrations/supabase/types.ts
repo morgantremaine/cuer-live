@@ -479,6 +479,10 @@ export type Database = {
         Args: { invitation_token: string; accepting_user_id: string }
         Returns: Json
       }
+      accept_team_invitation_safe: {
+        Args: { invitation_token: string }
+        Returns: Json
+      }
       can_read_inviter_profile: {
         Args: { profile_user_id: string }
         Returns: boolean
