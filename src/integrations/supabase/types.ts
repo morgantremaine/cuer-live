@@ -579,6 +579,10 @@ export type Database = {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
       }
+      is_team_member_for_member_view: {
+        Args: { target_team_id: string }
+        Returns: boolean
+      }
       is_team_member_simple: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
