@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -120,18 +121,10 @@ export const useTeam = () => {
   const loadTeamMembers = useCallback(async (teamId: string) => {
     console.log('Loading team members for team:', teamId);
     try {
+      // First, get team members
       const { data: teamMembersData, error: teamMembersError } = await supabase
         .from('team_members')
-        .select(`
-          id,
-          team_id,
-          user_id,
-          role,
-          profiles (
-            full_name,
-            email
-          )
-        `)
+        .select('id, team_id, user_id, role')
         .eq('team_id', teamId);
 
       if (teamMembersError) {
@@ -139,21 +132,50 @@ export const useTeam = () => {
         return;
       }
 
-      if (!teamMembersData) {
+      if (!teamMembersData || teamMembersData.length === 0) {
         console.log('No team members found for team ID:', teamId);
         setTeamMembers([]);
         return;
       }
 
-      console.log('Team members query result:', teamMembersData);
-      
-      // Fix the type issue - profiles comes as an array but we need a single object
-      const transformedMembers = teamMembersData.map(member => ({
-        ...member,
-        profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
-      }));
-      
-      setTeamMembers(transformedMembers);
+      console.log('Team members data:', teamMembersData);
+
+      // Get user IDs from team members
+      const userIds = teamMembersData.map(member => member.user_id);
+
+      // Fetch profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Still set team members even if profiles fail
+        const membersWithoutProfiles = teamMembersData.map(member => ({
+          ...member,
+          profiles: { full_name: 'Unknown User', email: 'unknown@email.com' }
+        }));
+        setTeamMembers(membersWithoutProfiles);
+        return;
+      }
+
+      console.log('Profiles data:', profilesData);
+
+      // Join the data
+      const membersWithProfiles = teamMembersData.map(member => {
+        const profile = profilesData?.find(p => p.id === member.user_id);
+        return {
+          ...member,
+          profiles: profile ? {
+            full_name: profile.full_name,
+            email: profile.email
+          } : { full_name: 'Unknown User', email: 'unknown@email.com' }
+        };
+      });
+
+      console.log('Final team members with profiles:', membersWithProfiles);
+      setTeamMembers(membersWithProfiles);
     } catch (error) {
       console.error('Error loading team members:', error);
     }
