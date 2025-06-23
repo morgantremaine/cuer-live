@@ -23,7 +23,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { teamId } = useTeamId();
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
-  const { moveRundownToFolder } = useRundownFolders(teamId || undefined);
+  const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
   
@@ -221,7 +221,25 @@ const Dashboard = () => {
     }
   };
 
+  // Get folder title for display
+  const getFolderTitle = () => {
+    switch (folderType) {
+      case 'all':
+        return 'All Rundowns';
+      case 'recent':
+        return 'Recently Active';
+      case 'archived':
+        return 'Archived Rundowns';
+      case 'custom':
+        const customFolder = folders.find(f => f.id === selectedFolder);
+        return customFolder?.name || 'Custom Folder';
+      default:
+        return 'All Rundowns';
+    }
+  };
+
   const filteredRundowns = getFilteredRundowns();
+  const folderTitle = getFolderTitle();
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
@@ -252,7 +270,7 @@ const Dashboard = () => {
               <DashboardFolderBreadcrumb
                 selectedFolder={selectedFolder}
                 folderType={folderType}
-                customFolders={[]} // Will be populated by the hook
+                customFolders={folders}
               />
               
               {/* Create New and Import Buttons */}
@@ -272,9 +290,7 @@ const Dashboard = () => {
               
               {/* Rundowns Grid */}
               <DashboardRundownGrid 
-                title={folderType === 'all' ? 'All Rundowns' : 
-                       folderType === 'recent' ? 'Recently Active' :
-                       folderType === 'archived' ? 'Archived Rundowns' : 'Custom Folder'}
+                title={folderTitle}
                 rundowns={filteredRundowns}
                 loading={loading}
                 onOpen={handleOpenRundown}
