@@ -57,7 +57,9 @@ const Dashboard = () => {
   };
 
   const handleCreateNew = () => {
-    navigate('/rundown/new');
+    // Pass current folder info to the new rundown creation
+    const targetFolder = folderType === 'custom' ? selectedFolder : null;
+    navigate('/rundown/new', { state: { folderId: targetFolder } });
   };
 
   const handleDeleteRundown = async (rundownId: string, title: string, e: React.MouseEvent) => {
@@ -159,7 +161,8 @@ const Dashboard = () => {
 
       // Create a new rundown with the imported data
       const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;
-      const rundownId = await createRundown(rundownTitle, result.items);
+      const targetFolder = folderType === 'custom' ? selectedFolder : null;
+      const rundownId = await createRundown(rundownTitle, result.items, targetFolder);
       
       toast({
         title: 'Import successful',

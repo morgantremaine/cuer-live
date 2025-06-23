@@ -192,7 +192,7 @@ export const useRundownStorage = () => {
     }
   }, [user]);
 
-  const createRundown = async (title: string, items: RundownItem[] = []) => {
+  const createRundown = async (title: string, items: RundownItem[] = [], folderId: string | null = null) => {
     if (!user) throw new Error('User not authenticated');
 
     try {
@@ -219,7 +219,8 @@ export const useRundownStorage = () => {
         created_at: now,
         updated_at: now,
         archived: false,
-        team_id: teamMemberships[0].team_id
+        team_id: teamMemberships[0].team_id,
+        folder_id: folderId
       };
 
       const { error } = await supabase
