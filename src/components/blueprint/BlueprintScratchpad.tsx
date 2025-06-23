@@ -2,9 +2,9 @@
 import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical } from 'lucide-react';
-import ScratchpadSidebar from './scratchpad/ScratchpadSidebar';
-import ScratchpadNoteEditor from './scratchpad/ScratchpadNoteEditor';
-import ScratchpadToolbar from './scratchpad/ScratchpadToolbar';
+import ScratchpadEnhancedSidebar from './scratchpad/ScratchpadEnhancedSidebar';
+import ScratchpadRichTextEditor from './scratchpad/ScratchpadRichTextEditor';
+import ScratchpadStreamlinedToolbar from './scratchpad/ScratchpadStreamlinedToolbar';
 import SaveStatus from './scratchpad/SaveStatus';
 import { useScratchpadNotes } from '@/hooks/blueprint/useScratchpadNotes';
 
@@ -14,17 +14,18 @@ interface BlueprintScratchpadProps {
 }
 
 const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadProps) => {
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   
   const {
     notes,
     activeNote,
-    isEditing,
+    searchQuery,
     createNote,
     selectNote,
     updateNoteContent,
+    renameNote,
     deleteNote,
-    toggleEditing
+    setSearchQuery
   } = useScratchpadNotes(rundownId);
 
   const handleFormat = (action: string) => {
@@ -66,35 +67,34 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
       </CardHeader>
       <CardContent className="p-0">
         <div className="flex h-[600px]">
-          <ScratchpadSidebar
+          <ScratchpadEnhancedSidebar
             notes={notes}
             activeNoteId={activeNote?.id || null}
+            searchQuery={searchQuery}
             onSelectNote={selectNote}
             onCreateNote={createNote}
             onDeleteNote={deleteNote}
+            onRenameNote={renameNote}
+            onSearchChange={setSearchQuery}
           />
           
           <div className="flex-1 flex flex-col">
-            <ScratchpadToolbar
-              isEditing={isEditing}
-              onToggleEdit={toggleEditing}
-              onFormat={handleFormat}
-            />
-            
-            <div className="flex-1 overflow-auto">
-              {activeNote ? (
-                <ScratchpadNoteEditor
+            {activeNote && (
+              <>
+                <ScratchpadStreamlinedToolbar onFormat={handleFormat} />
+                <ScratchpadRichTextEditor
+                  ref={editorRef}
                   note={activeNote}
-                  isEditing={isEditing}
                   onContentChange={updateNoteContent}
-                  onStartEditing={toggleEditing}
                 />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <p>Select a note to start writing</p>
-                </div>
-              )}
-            </div>
+              </>
+            )}
+            
+            {!activeNote && (
+              <div className="flex items-center justify-center h-full text-gray-400">
+                <p>Select a note to start writing</p>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

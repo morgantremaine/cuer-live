@@ -10,5 +10,5 @@ export interface ScratchpadNote {
 export interface ScratchpadState {
   notes: ScratchpadNote[];
   activeNoteId: string | null;
-  isEditing: boolean;
+  searchQuery: string;
 }

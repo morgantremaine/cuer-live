@@ -8,8 +8,11 @@ export const useScratchpadNotes = (rundownId: string) => {
   const [state, setState] = useState<ScratchpadState>({
     notes: [],
     activeNoteId: null,
-    isEditing: false
+    searchQuery: ''
   });
+
+  // Auto-save debounce timer
+  const [saveTimer, setSaveTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Load notes from localStorage on mount
   useEffect(() => {
@@ -17,7 +20,11 @@ export const useScratchpadNotes = (rundownId: string) => {
     if (savedNotes) {
       try {
         const parsedState = JSON.parse(savedNotes);
-        setState(parsedState);
+        setState(prev => ({
+          ...prev,
+          notes: parsedState.notes || [],
+          activeNoteId: parsedState.activeNoteId || null
+        }));
       } catch (error) {
         console.error('Error loading scratchpad notes:', error);
         createDefaultNote();
@@ -27,18 +34,36 @@ export const useScratchpadNotes = (rundownId: string) => {
     }
   }, [rundownId]);
 
-  // Save notes to localStorage whenever state changes
-  useEffect(() => {
-    if (state.notes.length > 0) {
-      localStorage.setItem(`scratchpad-notes-${rundownId}`, JSON.stringify(state));
+  // Save notes to localStorage with debouncing
+  const saveToStorage = useCallback((newState: ScratchpadState) => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+    
+    const timer = setTimeout(() => {
+      localStorage.setItem(`scratchpad-notes-${rundownId}`, JSON.stringify({
+        notes: newState.notes,
+        activeNoteId: newState.activeNoteId
+      }));
       
-      // Also update the blueprint context with the active note content for backward compatibility
-      const activeNote = state.notes.find(note => note.id === state.activeNoteId);
+      // Update blueprint context with active note content for backward compatibility
+      const activeNote = newState.notes.find(note => note.id === newState.activeNoteId);
       if (activeNote) {
         updateNotes(activeNote.content);
       }
-    }
-  }, [state, rundownId, updateNotes]);
+    }, 500); // 500ms debounce
+    
+    setSaveTimer(timer);
+  }, [saveTimer, rundownId, updateNotes]);
+
+  // Update state and trigger save
+  const updateState = useCallback((updater: (prev: ScratchpadState) => ScratchpadState) => {
+    setState(prev => {
+      const newState = updater(prev);
+      saveToStorage(newState);
+      return newState;
+    });
+  }, [saveToStorage]);
 
   const createDefaultNote = useCallback(() => {
     const defaultNote: ScratchpadNote = {
@@ -49,11 +74,11 @@ export const useScratchpadNotes = (rundownId: string) => {
       updatedAt: new Date().toISOString()
     };
 
-    setState({
+    setState(prev => ({
+      ...prev,
       notes: [defaultNote],
-      activeNoteId: defaultNote.id,
-      isEditing: false
-    });
+      activeNoteId: defaultNote.id
+    }));
   }, []);
 
   const createNote = useCallback(() => {
@@ -65,42 +90,55 @@ export const useScratchpadNotes = (rundownId: string) => {
       updatedAt: new Date().toISOString()
     };
 
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
       notes: [newNote, ...prev.notes],
-      activeNoteId: newNote.id,
-      isEditing: true
+      activeNoteId: newNote.id
     }));
-  }, [state.notes.length]);
+  }, [state.notes.length, updateState]);
 
   const selectNote = useCallback((noteId: string) => {
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
-      activeNoteId: noteId,
-      isEditing: false
+      activeNoteId: noteId
     }));
-  }, []);
+  }, [updateState]);
 
   const updateNoteContent = useCallback((content: string) => {
     if (!state.activeNoteId) return;
 
-    setState(prev => ({
+    updateState(prev => ({
       ...prev,
       notes: prev.notes.map(note =>
         note.id === state.activeNoteId
           ? {
               ...note,
               content,
-              title: content.split('\n')[0].substring(0, 30) || `Note ${prev.notes.indexOf(note) + 1}`,
+              title: extractTitleFromContent(content) || note.title,
               updatedAt: new Date().toISOString()
             }
           : note
       )
     }));
-  }, [state.activeNoteId]);
+  }, [state.activeNoteId, updateState]);
+
+  const renameNote = useCallback((noteId: string, newTitle: string) => {
+    updateState(prev => ({
+      ...prev,
+      notes: prev.notes.map(note =>
+        note.id === noteId
+          ? {
+              ...note,
+              title: newTitle,
+              updatedAt: new Date().toISOString()
+            }
+          : note
+      )
+    }));
+  }, [updateState]);
 
   const deleteNote = useCallback((noteId: string) => {
-    setState(prev => {
+    updateState(prev => {
       const newNotes = prev.notes.filter(note => note.id !== noteId);
       const newActiveId = prev.activeNoteId === noteId 
         ? (newNotes[0]?.id || null)
@@ -112,25 +150,44 @@ export const useScratchpadNotes = (rundownId: string) => {
         activeNoteId: newActiveId
       };
     });
-  }, []);
+  }, [updateState]);
 
-  const toggleEditing = useCallback(() => {
+  const setSearchQuery = useCallback((query: string) => {
     setState(prev => ({
       ...prev,
-      isEditing: !prev.isEditing
+      searchQuery: query
     }));
   }, []);
 
+  // Helper function to extract title from HTML content
+  const extractTitleFromContent = (htmlContent: string) => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    const firstLine = textContent.split('\n')[0].trim();
+    return firstLine.substring(0, 30) || null;
+  };
+
   const activeNote = state.notes.find(note => note.id === state.activeNoteId);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
+    };
+  }, [saveTimer]);
 
   return {
     notes: state.notes,
     activeNote,
-    isEditing: state.isEditing,
+    searchQuery: state.searchQuery,
     createNote,
     selectNote,
     updateNoteContent,
+    renameNote,
     deleteNote,
-    toggleEditing
+    setSearchQuery
   };
 };
