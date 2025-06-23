@@ -221,25 +221,20 @@ const TeleprompterItem = ({
       {/* Script with bracket parsing and editing capability */}
       <div className="leading-relaxed text-left whitespace-pre-wrap">
         {isEditing ? (
-          <div className="relative">
-            <textarea
-              ref={textareaRef}
-              value={editText}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              onBlur={handleScriptSave}
-              className="w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden"
-              style={{ 
-                fontSize: `${fontSize}px`,
-                lineHeight: '1.2',
-                minHeight: '100px'
-              }}
-              placeholder="Enter script content..."
-            />
-            <div className="absolute top-2 right-2 text-xs text-gray-400">
-              Ctrl+Enter to save, Esc to cancel
-            </div>
-          </div>
+          <textarea
+            ref={textareaRef}
+            value={editText}
+            onChange={handleTextareaChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleScriptSave}
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden"
+            style={{ 
+              fontSize: `${fontSize}px`,
+              lineHeight: '1.2',
+              minHeight: '100px'
+            }}
+            placeholder="Enter script content..."
+          />
         ) : (
           <div
             onClick={handleScriptClick}
