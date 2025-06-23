@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,11 +125,20 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   const handleDragOver = (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
-    setDragOverFolder(folderId);
+    // Use a special identifier for "All Rundowns" to avoid null confusion
+    const dragId = folderId === null ? 'all-rundowns' : folderId;
+    setDragOverFolder(dragId);
   };
 
-  const handleDragLeave = () => {
-    setDragOverFolder(null);
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear drag state if we're actually leaving the element
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverFolder(null);
+    }
   };
 
   const handleDrop = (e: React.DragEvent, folderId: string | null) => {
@@ -224,7 +234,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             <div className="space-y-1">
               {systemFolders.map((folder) => {
                 const isSelected = folderType === folder.type;
-                const isDragOver = dragOverFolder === folder.id;
+                // For "All Rundowns" (id: null), check against 'all-rundowns'
+                const dragId = folder.id === null ? 'all-rundowns' : folder.id;
+                const isDragOver = dragOverFolder === dragId;
                 
                 // Priority: drag-over > selected > default hover
                 let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
