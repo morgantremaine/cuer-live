@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, Users, FileText, Search, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image } from 'lucide-react';
+import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -202,23 +202,6 @@ const Help = () => {
                 <li><strong>Shared Access:</strong> All team members can edit the same rundown</li>
                 <li><strong>Auto-save:</strong> Changes are saved automatically to prevent data loss</li>
                 <li><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown</li>
-              </ul>
-            </div>
-          </section>
-
-          {/* Search & Navigation */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Search className="h-6 w-6 mr-2 text-red-600" />
-              Search & Find/Replace
-            </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>Quickly find and update content across your rundown:</p>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Search Bar:</strong> Use the search box in the header to find text</li>
-                <li><strong>Find & Replace:</strong> Use the replace feature to update multiple instances</li>
-                <li><strong>Navigation:</strong> Use arrow buttons to jump between search results</li>
-                <li><strong>Highlighting:</strong> Matching text is highlighted in yellow</li>
               </ul>
             </div>
           </section>
