@@ -146,7 +146,14 @@ export const useTeam = () => {
       }
 
       console.log('Team members query result:', teamMembersData);
-      setTeamMembers(teamMembersData);
+      
+      // Fix the type issue - profiles comes as an array but we need a single object
+      const transformedMembers = teamMembersData.map(member => ({
+        ...member,
+        profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+      }));
+      
+      setTeamMembers(transformedMembers);
     } catch (error) {
       console.error('Error loading team members:', error);
     }
@@ -364,6 +371,75 @@ export const useTeam = () => {
     }
   };
 
+  const acceptInvitation = async (token: string) => {
+    try {
+      console.log('Accepting invitation with token:', token);
+      
+      // Get the invitation details
+      const { data: invitation, error: fetchError } = await supabase
+        .from('team_invitations')
+        .select('*')
+        .eq('token', token)
+        .eq('accepted', false)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (fetchError || !invitation) {
+        console.error('Invalid or expired invitation:', fetchError);
+        return { error: 'Invalid or expired invitation link.' };
+      }
+
+      if (!user) {
+        return { error: 'You must be logged in to accept an invitation.' };
+      }
+
+      // Check if user is already a team member
+      const { data: existingMembership } = await supabase
+        .from('team_members')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('team_id', invitation.team_id)
+        .single();
+
+      if (existingMembership) {
+        return { error: 'You are already a member of this team.' };
+      }
+
+      // Add user to team
+      const { error: memberError } = await supabase
+        .from('team_members')
+        .insert({
+          user_id: user.id,
+          team_id: invitation.team_id,
+          role: 'member'
+        });
+
+      if (memberError) {
+        console.error('Error adding team member:', memberError);
+        return { error: 'Failed to join team. Please try again.' };
+      }
+
+      // Mark invitation as accepted
+      const { error: updateError } = await supabase
+        .from('team_invitations')
+        .update({ accepted: true })
+        .eq('id', invitation.id);
+
+      if (updateError) {
+        console.error('Error updating invitation status:', updateError);
+        // Don't return error here as the user was successfully added to the team
+      }
+
+      // Reload team data
+      await loadTeamData();
+
+      return { error: null };
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      return { error: 'Failed to accept invitation. Please try again.' };
+    }
+  };
+
   useEffect(() => {
     loadTeamData();
   }, [user, loadTeamData]);
@@ -374,10 +450,12 @@ export const useTeam = () => {
     pendingInvitations,
     userRole,
     loading,
+    loadTeamData,
     inviteTeamMember,
     removeTeamMemberWithTransfer,
     getTransferPreview,
     revokeInvitation,
-    resendInvitation
+    resendInvitation,
+    acceptInvitation
   };
 };

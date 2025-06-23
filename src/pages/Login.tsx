@@ -125,6 +125,7 @@ const Login = () => {
     
     setLoading(true)
     
+    // This is for account verification emails, not team invitations
     const { error } = await resendConfirmation(email)
     
     if (error) {
@@ -260,7 +261,7 @@ const Login = () => {
                     {showResendConfirmation && (
                       <div>
                         <p className="text-sm text-gray-400 mb-2">
-                          Haven't received the confirmation email?
+                          Haven't received the account verification email?
                         </p>
                         <Button
                           type="button"
@@ -270,7 +271,7 @@ const Login = () => {
                           disabled={loading || !email}
                           className="text-gray-300 border-gray-600 hover:bg-gray-700"
                         >
-                          {loading ? 'Sending...' : 'Resend Confirmation'}
+                          {loading ? 'Sending...' : 'Resend Account Verification Email'}
                         </Button>
                       </div>
                     )}
