@@ -470,9 +470,41 @@ export const useTeam = () => {
       }
 
       console.log('Accepting invitation with token:', token);
+      console.log('Current user:', user.id, user.email);
 
       // Wait a moment for profile to be created if needed
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // First, verify the user has a profile
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error checking user profile:', profileError);
+        return { error: 'Failed to verify user profile. Please try again.' };
+      }
+
+      if (!userProfile) {
+        console.log('User profile not found, creating one...');
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || null
+          });
+
+        if (createProfileError) {
+          console.error('Error creating user profile:', createProfileError);
+          return { error: 'Failed to create user profile. Please try again.' };
+        }
+        
+        // Wait for profile creation to propagate
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
 
       // Get invitation
       const { data: invitation, error: fetchError } = await supabase
@@ -492,15 +524,22 @@ export const useTeam = () => {
         return { error: 'Invalid or expired invitation link.' };
       }
 
+      console.log('Found invitation:', invitation);
+
       // Check if already a member
-      const { data: existingMembership } = await supabase
+      const { data: existingMembership, error: membershipCheckError } = await supabase
         .from('team_members')
         .select('id')
         .eq('user_id', user.id)
         .eq('team_id', invitation.team_id)
         .maybeSingle();
 
+      if (membershipCheckError) {
+        console.error('Error checking existing membership:', membershipCheckError);
+      }
+
       if (existingMembership) {
+        console.log('User is already a member, marking invitation as accepted');
         await supabase
           .from('team_invitations')
           .update({ accepted: true })
@@ -509,44 +548,59 @@ export const useTeam = () => {
         return { error: 'You are already a member of this team.' };
       }
 
-      // Add user to team with retry logic
-      let memberError;
-      let retryCount = 0;
-      const maxRetries = 3;
+      // Add user to team
+      console.log('Adding user to team:', {
+        user_id: user.id,
+        team_id: invitation.team_id,
+        role: 'member'
+      });
 
-      while (retryCount < maxRetries) {
-        const result = await supabase
-          .from('team_members')
-          .insert({
-            user_id: user.id,
-            team_id: invitation.team_id,
-            role: 'member'
-          });
-
-        memberError = result.error;
-
-        if (!memberError) {
-          break;
-        }
-
-        console.warn(`Team member insertion attempt ${retryCount + 1} failed:`, memberError);
-        retryCount++;
-        
-        if (retryCount < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-        }
-      }
+      const { data: insertResult, error: memberError } = await supabase
+        .from('team_members')
+        .insert({
+          user_id: user.id,
+          team_id: invitation.team_id,
+          role: 'member'
+        })
+        .select()
+        .single();
 
       if (memberError) {
-        console.error('Error adding team member after retries:', memberError);
+        console.error('Error adding team member:', memberError);
+        console.error('Error details:', {
+          code: memberError.code,
+          message: memberError.message,
+          details: memberError.details,
+          hint: memberError.hint
+        });
+        
+        // Handle specific error cases
+        if (memberError.code === '23503') {
+          return { error: 'User account verification failed. Please try signing out and back in.' };
+        } else if (memberError.code === '23505') {
+          // Unique constraint violation - user already exists
+          console.log('User already in team (unique constraint), marking invitation as accepted');
+          await supabase
+            .from('team_invitations')
+            .update({ accepted: true })
+            .eq('id', invitation.id);
+          return { error: 'You are already a member of this team.' };
+        }
+        
         return { error: 'Failed to join team. Please try again.' };
       }
 
+      console.log('Successfully added to team:', insertResult);
+
       // Mark invitation as accepted
-      await supabase
+      const { error: updateError } = await supabase
         .from('team_invitations')
         .update({ accepted: true })
         .eq('id', invitation.id);
+
+      if (updateError) {
+        console.error('Error marking invitation as accepted:', updateError);
+      }
 
       console.log('Successfully joined team, reloading team data...');
 

@@ -132,7 +132,7 @@ const JoinTeam = () => {
       setIsProcessing(true);
       
       // Wait a moment for any pending auth operations to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       await handleAcceptInvitation();
     };
@@ -155,12 +155,32 @@ const JoinTeam = () => {
       
       if (error) {
         console.error('Failed to accept invitation:', error);
-        toast({
-          title: 'Error',
-          description: error,
-          variant: 'destructive',
-        });
-        setIsProcessing(false);
+        
+        // Handle specific error cases with better user messaging
+        if (error.includes('already a member')) {
+          toast({
+            title: 'Already a Member',
+            description: 'You are already a member of this team. Redirecting to dashboard...',
+          });
+          localStorage.removeItem('pendingInvitationToken');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 2000);
+        } else if (error.includes('verification failed')) {
+          toast({
+            title: 'Account Verification Error',
+            description: 'Please try signing out and back in to refresh your account.',
+            variant: 'destructive',
+          });
+          setIsProcessing(false);
+        } else {
+          toast({
+            title: 'Error',
+            description: error,
+            variant: 'destructive',
+          });
+          setIsProcessing(false);
+        }
       } else {
         console.log('Invitation accepted successfully');
         localStorage.removeItem('pendingInvitationToken');
