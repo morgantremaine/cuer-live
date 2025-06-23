@@ -507,6 +507,14 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: undefined
       }
+      get_invitation_details_safe: {
+        Args: { invitation_token: string }
+        Returns: Json
+      }
+      get_inviter_profile_for_invitation: {
+        Args: { invitation_token: string }
+        Returns: Json
+      }
       get_member_transfer_preview: {
         Args: { member_id: string; team_id_param: string }
         Returns: Json

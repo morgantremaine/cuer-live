@@ -48,19 +48,13 @@ const JoinTeam = () => {
       try {
         console.log('Loading invitation data for token:', token);
         
-        // Get the invitation with team data
-        const { data: invitationData, error: invitationError } = await supabase
-          .from('team_invitations')
-          .select(`
-            *,
-            teams (name)
-          `)
-          .eq('token', token)
-          .eq('accepted', false)
-          .gt('expires_at', new Date().toISOString())
-          .maybeSingle();
+        // Use the new safe function to get all invitation details including inviter profile
+        const { data: invitationDetails, error: invitationError } = await supabase.rpc(
+          'get_invitation_details_safe',
+          { invitation_token: token }
+        );
 
-        console.log('Invitation data loaded:', { invitationData, invitationError });
+        console.log('Invitation details loaded:', { invitationDetails, invitationError });
 
         if (invitationError) {
           console.error('Error loading invitation:', invitationError);
@@ -74,11 +68,11 @@ const JoinTeam = () => {
           return;
         }
 
-        if (!invitationData) {
+        if (!invitationDetails || invitationDetails.error) {
           console.log('Invalid or expired invitation token');
           toast({
             title: 'Invalid Invitation',
-            description: 'This invitation link is invalid or has expired.',
+            description: invitationDetails?.error || 'This invitation link is invalid or has expired.',
             variant: 'destructive',
           });
           localStorage.removeItem('pendingInvitationToken');
@@ -86,32 +80,23 @@ const JoinTeam = () => {
           return;
         }
 
-        setInvitation(invitationData);
-        setEmail(invitationData.email);
+        // Set invitation and inviter profile from the function result
+        setInvitation({
+          ...invitationDetails.invitation,
+          teams: invitationDetails.team
+        });
+        setEmail(invitationDetails.invitation.email);
 
-        // Try to get the inviter's profile
-        if (invitationData.invited_by) {
-          try {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('full_name, email')
-              .eq('id', invitationData.invited_by)
-              .maybeSingle();
-
-            if (!profileError && profileData) {
-              setInviterProfile(profileData);
-            } else {
-              console.log('Could not load inviter profile, will use fallback display');
-              setProfileError(true);
-            }
-          } catch (error) {
-            console.log('Profile loading failed, using fallback:', error);
-            setProfileError(true);
-          }
+        if (invitationDetails.inviter) {
+          setInviterProfile(invitationDetails.inviter);
+          setProfileError(false);
+        } else {
+          console.log('No inviter profile found, using fallback display');
+          setProfileError(true);
         }
         
         // Check if user already exists with this email
-        await checkUserExists(invitationData.email);
+        await checkUserExists(invitationDetails.invitation.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
         toast({
