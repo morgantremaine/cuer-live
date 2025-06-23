@@ -37,7 +37,7 @@ const ScratchpadEnhancedToolbar = ({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {isEditing && mode === 'text' && (
+      {isEditing && (
         <>
           {/* Text formatting */}
           <div className="flex items-center gap-1 border-r border-gray-600 pr-2">
@@ -173,18 +173,6 @@ const ScratchpadEnhancedToolbar = ({
           </div>
         </>
       )}
-
-      {/* Mode toggle */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onToggleMode}
-        className={buttonClass}
-        title="Toggle Table Mode"
-      >
-        <TableProperties className="h-4 w-4" />
-        <span className="ml-1 text-xs">{mode === 'text' ? 'Table' : 'Text'}</span>
-      </Button>
 
       <Button
         variant={isEditing ? "default" : "outline"}

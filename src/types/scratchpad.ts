@@ -24,3 +24,9 @@ export interface ScratchpadTable {
   cells: ScratchpadCell[];
   headers: string[];
 }
+
+export interface TablePosition {
+  tableId: string;
+  row: number;
+  col: number;
+}
