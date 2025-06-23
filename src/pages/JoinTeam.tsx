@@ -7,16 +7,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Footer from '@/components/Footer';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
+interface InvitationData {
+  id: string;
+  email: string;
+  team_id: string;
+  invited_by: string;
+  created_at: string;
+  expires_at: string;
+  token: string;
+  teams: {
+    id: string;
+    name: string;
+  };
+  inviter: {
+    full_name: string | null;
+    email: string | null;
+  };
+}
+
 const JoinTeam = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const [invitation, setInvitation] = useState<any>(null);
+  const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +43,6 @@ const JoinTeam = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string>('');
   const { user, signUp, signIn } = useAuth();
-  const { acceptInvitation } = useTeam();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,33 +56,21 @@ const JoinTeam = () => {
       try {
         console.log('Validating invitation token:', token);
         
-        // Store token for later use during signup
-        localStorage.setItem('pendingInvitationToken', token);
-        
-        // Use the new database function to validate the token
         const { data: validationResult, error: validationError } = await supabase.rpc(
           'validate_invitation_token',
           { token_param: token }
         );
 
-        if (validationError) {
+        if (validationError || !validationResult?.valid) {
           console.error('Error validating invitation token:', validationError);
-          setValidationError('Failed to validate invitation. Please try again.');
+          setValidationError(validationResult?.error || 'Invalid or expired invitation token');
           setLoading(false);
           return;
         }
 
         console.log('Validation result:', validationResult);
 
-        if (!validationResult?.valid) {
-          console.log('Invalid invitation token:', validationResult?.error);
-          setValidationError(validationResult?.error || 'Invalid or expired invitation token');
-          setLoading(false);
-          return;
-        }
-
-        // Set invitation data from validation result
-        const invitationData = {
+        const invitationData: InvitationData = {
           id: validationResult.invitation.id,
           email: validationResult.invitation.email,
           team_id: validationResult.invitation.team_id,
@@ -78,7 +82,7 @@ const JoinTeam = () => {
             id: validationResult.team.id,
             name: validationResult.team.name
           },
-          inviter: validationResult.inviter
+          inviter: validationResult.inviter || {}
         };
 
         setInvitation(invitationData);
@@ -119,147 +123,49 @@ const JoinTeam = () => {
     }
   };
 
-  // Enhanced invitation acceptance with better error handling
-  const handleAcceptInvitation = async () => {
-    if (!token) {
-      console.error('No token available for invitation acceptance');
-      setIsProcessing(false);
+  const acceptInvitation = async () => {
+    if (!token || !user) {
+      console.error('No token or user available for invitation acceptance');
       return;
     }
 
     try {
       setProcessingStep('Accepting team invitation...');
-      console.log('Accepting invitation with token:', token);
-      console.log('Current user:', user?.id, user?.email);
+      console.log('Accepting invitation with secure function:', token);
       
-      // Wait for auth to stabilize
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const { error } = await acceptInvitation(token);
-      
+      const { data: result, error } = await supabase.rpc('accept_invitation_secure', {
+        invitation_token: token
+      });
+
       if (error) {
-        console.error('Failed to accept invitation:', error);
-        
-        // Handle specific error cases with better user messaging
-        if (error.includes('already a member')) {
-          toast({
-            title: 'Already a Member',
-            description: 'You are already a member of this team. Redirecting to dashboard...',
-          });
-          localStorage.removeItem('pendingInvitationToken');
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 2000);
-        } else {
-          toast({
-            title: 'Error',
-            description: error,
-            variant: 'destructive',
-          });
-          
-          // Try direct database approach as fallback
-          console.log('Trying direct database approach...');
-          await handleDirectInvitationAcceptance();
-        }
-      } else {
-        console.log('Invitation accepted successfully');
-        localStorage.removeItem('pendingInvitationToken');
-        setProcessingStep('Success! Redirecting to dashboard...');
-        toast({
-          title: 'Success',
-          description: 'Welcome to the team!',
-        });
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
-      }
-    } catch (error) {
-      console.error('Error accepting invitation:', error);
-      
-      // Try direct database approach as fallback
-      console.log('Trying direct database approach as fallback...');
-      await handleDirectInvitationAcceptance();
-    }
-  };
-
-  // Direct database approach for invitation acceptance
-  const handleDirectInvitationAcceptance = async () => {
-    if (!user || !invitation) return;
-
-    try {
-      console.log('Direct invitation acceptance for user:', user.id, 'team:', invitation.team_id);
-      
-      // First ensure user has a profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email || '',
-          full_name: user.user_metadata?.full_name || fullName || ''
-        });
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
+        console.error('Error calling accept_invitation_secure:', error);
+        throw new Error('Failed to accept invitation. Please try again.');
       }
 
-      // Check if already a team member
-      const { data: existingMembership } = await supabase
-        .from('team_members')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('team_id', invitation.team_id)
-        .maybeSingle();
+      console.log('Invitation acceptance result:', result);
 
-      if (existingMembership) {
-        console.log('User is already a team member');
-        toast({
-          title: 'Already a Member',
-          description: 'You are already a member of this team!',
-        });
-      } else {
-        // Add user to team
-        const { error: membershipError } = await supabase
-          .from('team_members')
-          .insert({
-            user_id: user.id,
-            team_id: invitation.team_id,
-            role: 'member'
-          });
-
-        if (membershipError) {
-          console.error('Error creating team membership:', membershipError);
-          throw membershipError;
-        }
-
-        console.log('Team membership created successfully');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to accept invitation.');
       }
 
-      // Mark invitation as accepted
-      const { error: invitationError } = await supabase
-        .from('team_invitations')
-        .update({ accepted: true })
-        .eq('token', token);
-
-      if (invitationError) {
-        console.error('Error marking invitation as accepted:', invitationError);
-      }
-
-      localStorage.removeItem('pendingInvitationToken');
+      console.log('Successfully joined team!');
       setProcessingStep('Success! Redirecting to dashboard...');
+      
       toast({
         title: 'Success',
-        description: 'Welcome to the team!',
+        description: result.message || 'Welcome to the team!',
       });
       
+      // Clear any cached data and redirect
       setTimeout(() => {
         navigate('/dashboard');
       }, 1500);
 
-    } catch (error) {
-      console.error('Error in direct invitation acceptance:', error);
+    } catch (error: any) {
+      console.error('Error accepting invitation:', error);
       toast({
         title: 'Error',
-        description: 'Failed to join team. Please try again or contact support.',
+        description: error.message || 'Failed to accept invitation. Please try again.',
         variant: 'destructive',
       });
       setIsProcessing(false);
@@ -278,7 +184,7 @@ const JoinTeam = () => {
       setIsProcessing(true);
       setProcessingStep('Preparing to join team...');
       
-      await handleAcceptInvitation();
+      await acceptInvitation();
     };
 
     // Only process if we have a user and haven't started processing yet
@@ -422,7 +328,7 @@ const JoinTeam = () => {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={handleAcceptInvitation} 
+              onClick={acceptInvitation} 
               className="w-full" 
               disabled={isProcessing}
             >

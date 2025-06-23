@@ -471,6 +471,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation_secure: {
+        Args: { invitation_token: string }
+        Returns: Json
+      }
       accept_team_invitation: {
         Args: { invitation_token: string; accepting_user_id: string }
         Returns: Json
@@ -484,6 +488,10 @@ export type Database = {
         Returns: undefined
       }
       cleanup_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_invitations_auto: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
