@@ -479,6 +479,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_presence: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -566,6 +570,10 @@ export type Database = {
       update_rundown_presence: {
         Args: { rundown_uuid: string }
         Returns: undefined
+      }
+      validate_invitation_token: {
+        Args: { token_param: string }
+        Returns: Json
       }
     }
     Enums: {

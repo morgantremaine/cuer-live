@@ -16,7 +16,6 @@ const JoinTeam = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const [invitation, setInvitation] = useState<any>(null);
-  const [inviterProfile, setInviterProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +23,7 @@ const JoinTeam = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
@@ -37,107 +37,64 @@ const JoinTeam = () => {
       }
 
       try {
-        console.log('Loading invitation data for token:', token);
+        console.log('Validating invitation token:', token);
         
-        // Use service role or a more permissive query to check invitation validity
-        // First, just check if the token exists and is valid using a simpler approach
-        const { data: invitationData, error: invitationError } = await supabase
-          .from('team_invitations')
-          .select(`
-            id,
-            email,
-            team_id,
-            invited_by,
-            created_at,
-            expires_at,
-            accepted,
-            teams!inner (
-              id,
-              name
-            )
-          `)
-          .eq('token', token)
-          .eq('accepted', false)
-          .gt('expires_at', new Date().toISOString())
-          .maybeSingle();
+        // Use the new database function to validate the token
+        const { data: validationResult, error: validationError } = await supabase.rpc(
+          'validate_invitation_token',
+          { token_param: token }
+        );
 
-        if (invitationError) {
-          console.error('Error loading invitation:', invitationError);
-          
-          // If we get an RLS error, try a different approach
-          if (invitationError.message?.includes('permission') || invitationError.code === 'PGRST301') {
-            console.log('RLS permission issue, trying alternative validation');
-            
-            // Store the token for later validation after login
-            localStorage.setItem('pendingInvitationToken', token);
-            
-            // Try to get just basic info to show a generic join page
-            setInvitation({
-              id: 'pending',
-              email: '',
-              token: token,
-              teams: { name: 'Team' }
-            });
-            setEmail('');
-          } else {
-            toast({
-              title: 'Error Loading Invitation',
-              description: 'There was an error loading the invitation details.',
-              variant: 'destructive',
-            });
-            navigate('/login');
-            return;
-          }
-        } else if (!invitationData) {
-          console.log('Invalid or expired invitation token');
-          toast({
-            title: 'Invalid Invitation',
-            description: 'This invitation link is invalid or has expired.',
-            variant: 'destructive',
-          });
-          navigate('/login');
+        if (validationError) {
+          console.error('Error validating invitation token:', validationError);
+          setValidationError('Failed to validate invitation. Please try again.');
+          setLoading(false);
           return;
-        } else {
-          setInvitation(invitationData);
-          setEmail(invitationData.email);
-
-          // Try to get the inviter's profile
-          if (invitationData.invited_by) {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('full_name, email')
-              .eq('id', invitationData.invited_by)
-              .maybeSingle();
-
-            if (profileData) {
-              setInviterProfile(profileData);
-            }
-          }
-          
-          // Check if user already exists with this email
-          if (invitationData.email) {
-            await checkUserExists(invitationData.email);
-          }
         }
+
+        console.log('Validation result:', validationResult);
+
+        if (!validationResult?.valid) {
+          console.log('Invalid invitation token:', validationResult?.error);
+          setValidationError(validationResult?.error || 'Invalid or expired invitation token');
+          setLoading(false);
+          return;
+        }
+
+        // Set invitation data from validation result
+        const invitationData = {
+          id: validationResult.invitation.id,
+          email: validationResult.invitation.email,
+          team_id: validationResult.invitation.team_id,
+          invited_by: validationResult.invitation.invited_by,
+          created_at: validationResult.invitation.created_at,
+          expires_at: validationResult.invitation.expires_at,
+          token: validationResult.invitation.token,
+          teams: {
+            id: validationResult.team.id,
+            name: validationResult.team.name
+          },
+          inviter: validationResult.inviter
+        };
+
+        setInvitation(invitationData);
+        setEmail(invitationData.email || '');
+
+        // Check if user already exists with this email
+        if (invitationData.email) {
+          await checkUserExists(invitationData.email);
+        }
+
       } catch (error) {
         console.error('Error loading invitation:', error);
-        
-        // As fallback, store token for later validation
-        localStorage.setItem('pendingInvitationToken', token);
-        setInvitation({
-          id: 'pending',
-          email: '',
-          token: token,
-          teams: { name: 'Team' }
-        });
-        setEmail('');
+        setValidationError('Failed to load invitation. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     loadInvitation();
-  }, [token, navigate, toast]);
+  }, [token, navigate]);
 
   const checkUserExists = async (emailToCheck: string) => {
     try {
@@ -231,9 +188,6 @@ const JoinTeam = () => {
     setIsProcessing(true);
     console.log('Creating account for team invitation:', email);
     
-    // Store the token before signup to ensure it persists
-    localStorage.setItem('pendingInvitationToken', token || '');
-    
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
@@ -254,9 +208,6 @@ const JoinTeam = () => {
     
     setIsProcessing(true);
     console.log('Signing in user for team invitation:', email);
-    
-    // Store the token before signin to ensure it persists
-    localStorage.setItem('pendingInvitationToken', token || '');
     
     const { error } = await signIn(email, password);
     
@@ -284,14 +235,14 @@ const JoinTeam = () => {
     );
   }
 
-  if (!invitation) {
+  if (validationError || !invitation) {
     return (
       <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
             <CardTitle className="text-white">Invalid Invitation</CardTitle>
             <CardDescription className="text-gray-400">
-              This invitation link is invalid or has expired.
+              {validationError || 'This invitation link is invalid or has expired.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -348,11 +299,11 @@ const JoinTeam = () => {
   }
 
   const getInviterDisplayName = () => {
-    if (inviterProfile?.full_name) {
-      return inviterProfile.full_name;
+    if (invitation.inviter?.full_name) {
+      return invitation.inviter.full_name;
     }
-    if (inviterProfile?.email) {
-      return inviterProfile.email;
+    if (invitation.inviter?.email) {
+      return invitation.inviter.email;
     }
     return 'A team member';
   };

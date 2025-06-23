@@ -1,7 +1,6 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Resend } from 'npm:resend@2.0.0'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,235 +8,143 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { email, inviterName, teamName, token } = await req.json()
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const { email, teamName, inviterName, token } = await req.json();
 
-    // Get Resend API key
-    const resendApiKey = Deno.env.get('RESEND_API_KEY')
-    if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY not configured')
+    console.log('Sending invitation email to:', email, 'for team:', teamName);
+
+    if (!email || !teamName || !token) {
+      console.error('Missing required fields:', { email, teamName, token });
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    const resend = new Resend(resendApiKey)
+    // Get the site URL from environment or use default
+    const siteUrl = Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovableproject.com') || 'https://khdiwrkgahsbjszlwnob.lovableproject.com';
+    const inviteUrl = `${siteUrl}/join-team/${token}`;
 
-    // Use the custom domain - prioritize SITE_URL env var, fallback to custom domain
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://cuer.live'
-    const inviteUrl = `${siteUrl}/join-team/${token}`
+    console.log('Generated invite URL:', inviteUrl);
 
-    // Send email using Resend - using cuer.live domain with improved styling
-    const emailResult = await resend.emails.send({
-      from: 'Cuer Team <noreply@cuer.live>',
+    // Send email using Resend
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY not found');
+      return new Response(
+        JSON.stringify({ error: 'Email service not configured' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const emailData = {
+      from: 'Cuer <noreply@cuerproduction.com>',
       to: [email],
-      subject: `You're invited to join ${teamName} on Cuer`,
+      subject: `You've been invited to join ${teamName} on Cuer`,
       html: `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Team Invitation - Cuer</title>
-            <style>
-              /* Reset styles */
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              
-              /* Force dark mode compatibility */
-              body, table, td, p, a, li, blockquote {
-                -webkit-text-size-adjust: 100%; 
-                -ms-text-size-adjust: 100%;
-                color: #333333 !important;
-              }
-              
-              /* Dark mode overrides */
-              @media (prefers-color-scheme: dark) {
-                body, .container, .content { 
-                  background-color: #ffffff !important; 
-                  color: #333333 !important;
-                }
-                .logo { color: #3b82f6 !important; }
-                .footer { color: #666666 !important; }
-              }
-              
-              body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                line-height: 1.6; 
-                color: #333333 !important;
-                background-color: #ffffff !important;
-                margin: 0;
-                padding: 0;
-              }
-              
-              .container { 
-                max-width: 600px; 
-                margin: 0 auto; 
-                padding: 20px;
-                background-color: #ffffff !important;
-              }
-              
-              .header { 
-                text-align: center; 
-                margin-bottom: 30px; 
-              }
-              
-              .logo { 
-                font-size: 28px; 
-                font-weight: bold; 
-                color: #3b82f6 !important;
-                text-decoration: none;
-                display: inline-block;
-                margin-bottom: 10px;
-              }
-              
-              h1 {
-                color: #333333 !important;
-                font-size: 24px;
-                font-weight: 600;
-                margin: 0;
-              }
-              
-              .content { 
-                background-color: #f8fafc !important;
-                padding: 30px; 
-                border-radius: 8px; 
-                margin: 20px 0;
-                border: 1px solid #e2e8f0;
-              }
-              
-              p { 
-                color: #333333 !important;
-                margin: 16px 0;
-                font-size: 16px;
-                line-height: 1.5;
-              }
-              
-              .highlight {
-                font-weight: 600;
-                color: #1e40af !important;
-              }
-              
-              .button-container {
-                text-align: center;
-                margin: 30px 0;
-              }
-              
-              .button { 
-                display: inline-block; 
-                background-color: #3b82f6 !important;
-                color: #ffffff !important; 
-                padding: 16px 32px; 
-                text-decoration: none; 
-                border-radius: 8px; 
-                font-weight: 600;
-                font-size: 16px;
-                border: none;
-                box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-              }
-              
-              .button:hover {
-                background-color: #2563eb !important;
-              }
-              
-              .link-fallback {
-                font-size: 14px;
-                color: #6b7280 !important;
-                margin-top: 20px;
-                word-break: break-all;
-                background-color: #f1f5f9;
-                padding: 12px;
-                border-radius: 4px;
-                border: 1px solid #e2e8f0;
-              }
-              
-              .footer { 
-                text-align: center; 
-                margin-top: 40px; 
-                color: #6b7280 !important;
-                font-size: 14px;
-                line-height: 1.4;
-              }
-              
-              /* Ensure links are visible */
-              a {
-                color: #3b82f6 !important;
-                text-decoration: none;
-              }
-              
-              /* Force text color in various email clients */
-              .content p,
-              .content span,
-              .content div {
-                color: #333333 !important;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">Cuer</div>
-                <h1>You've been invited to join a team!</h1>
-              </div>
-              
-              <div class="content">
-                <p>Hi there!</p>
-                
-                <p><span class="highlight">${inviterName}</span> has invited you to join their team on Cuer.</p>
-                
-                <p>Cuer is a powerful rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
-                
-                <p>Click the button below to accept the invitation and create your account:</p>
-                
-                <div class="button-container">
-                  <a href="${inviteUrl}" class="button">Accept Invitation</a>
-                </div>
-                
-                <div class="link-fallback">
-                  <strong>Having trouble with the button?</strong><br>
-                  Copy and paste this link into your browser:<br>
-                  ${inviteUrl}
-                </div>
-                
-                <p style="font-size: 14px; color: #6b7280 !important; margin-top: 20px;">
-                  This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
-                </p>
-              </div>
-              
-              <div class="footer">
-                <p>This email was sent by Cuer. If you didn't expect this invitation, you can safely ignore this email.</p>
-                <p style="margin-top: 10px;">
-                  <a href="https://cuer.live" style="color: #3b82f6 !important;">Visit Cuer</a>
-                </p>
-              </div>
-            </div>
-          </body>
-        </html>
-      `
-    })
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://khdiwrkgahsbjszlwnob.lovableproject.com/lovable-uploads/d3829867-67da-4acb-a6d3-66561a4e60e7.png" alt="Cuer" style="height: 60px;">
+          </div>
+          
+          <h1 style="color: #333; text-align: center; margin-bottom: 30px;">
+            You're invited to join ${teamName}!
+          </h1>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <p style="color: #666; font-size: 16px; line-height: 1.5; margin: 0;">
+              <strong>${inviterName || 'A team member'}</strong> has invited you to join <strong>${teamName}</strong> on Cuer, 
+              the professional rundown and production management platform.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteUrl}" 
+               style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              Accept Invitation
+            </a>
+          </div>
+          
+          <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+            <p style="color: #1e40af; margin: 0; font-size: 14px;">
+              <strong>What's next?</strong><br>
+              Click the button above to create your account or sign in, and you'll automatically be added to the team.
+              No email verification required for team invitations!
+            </p>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          
+          <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${inviteUrl}" style="color: #3b82f6; word-break: break-all;">${inviteUrl}</a>
+          </p>
+          
+          <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 20px 0 0 0;">
+            This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+    };
 
-    console.log('Email sent successfully:', emailResult)
+    console.log('Sending email with data:', { ...emailData, html: '[HTML content]' });
+
+    const emailResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    const emailResult = await emailResponse.json();
+    
+    if (!emailResponse.ok) {
+      console.error('Email sending failed:', emailResult);
+      return new Response(
+        JSON.stringify({ error: 'Failed to send invitation email', details: emailResult }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Email sent successfully:', emailResult);
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Invitation sent successfully' }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+      JSON.stringify({ success: true, emailId: emailResult.id }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
+
   } catch (error) {
-    console.error('Error sending team invitation:', error)
+    console.error('Error in send-team-invitation function:', error);
     return new Response(
-      JSON.stringify({ error: 'Failed to send invitation', details: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
   }
-})
+});
