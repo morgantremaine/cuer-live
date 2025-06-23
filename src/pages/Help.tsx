@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Blueprint, Eye } from 'lucide-react';
+import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -79,7 +78,7 @@ const Help = () => {
           {/* Blueprints */}
           <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Blueprint className="h-6 w-6 mr-2 text-indigo-600" />
+              <FileText className="h-6 w-6 mr-2 text-indigo-600" />
               Blueprints
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
@@ -311,8 +310,8 @@ const Help = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Script Management</h3>
                   <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>All Script View:</strong> Use the "All Script" button to display all segments with script content in the teleprompter</li>
-                    <li><strong>Inline Editing:</strong> When editing is enabled, you can click on any script text in the teleprompter to edit it directly - changes automatically update the script cells in the main rundown</li>
+                    <li><strong>All Script View:</strong> By default, the teleprompter shows only rows with script content. Select "All Script" to display all rows.</li>
+                    <li><strong>Inline Editing:</strong> Any new or updates to text is automatically saved to the script column of the corresponding segment. Combine with "All Script" view for fast and easy writing sessions.</li>
                     <li><strong>Null Scripts:</strong> Put <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">[null]</code> in a script cell to show the segment name in the teleprompter without any script content</li>
                   </ul>
                 </div>
