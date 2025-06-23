@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
+import { useShowcallerInitialState } from './useShowcallerInitialState';
+import { useShowcallerTimingSync } from './useShowcallerTimingSync';
 
 export interface ShowcallerVisualState {
   currentItemStatuses: Map<string, string>; // item id -> status
@@ -33,25 +35,14 @@ export const useShowcallerVisualState = ({
     controllerId: null
   });
 
+  const [isInitialized, setIsInitialized] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const lastProcessedUpdateRef = useRef<string | null>(null);
 
-  // Helper function to convert time string to seconds
-  const timeToSeconds = useCallback((timeStr: string) => {
-    if (!timeStr) return 0;
-    const parts = timeStr.split(':').map(Number);
-    
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
-    } else if (parts.length === 3) {
-      const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
-    }
-    return 0;
-  }, []);
+  // Use timing synchronization utility
+  const { calculateSynchronizedTimeRemaining, timeToSeconds } = useShowcallerTimingSync({ items });
 
   // Track our own updates to prevent feedback loops
   const trackOwnUpdate = useCallback((timestamp: string) => {
@@ -62,6 +53,48 @@ export const useShowcallerVisualState = ({
       ownUpdateTrackingRef.current.delete(timestamp);
     }, 10000);
   }, []);
+
+  // Handle initial state loading
+  const handleInitialStateLoaded = useCallback((loadedState: any) => {
+    console.log('📺 Applying loaded initial state');
+    
+    // Convert plain object back to Map for statuses
+    const statusMap = new Map();
+    if (loadedState.currentItemStatuses) {
+      Object.entries(loadedState.currentItemStatuses).forEach(([id, status]) => {
+        statusMap.set(id, status as string);
+      });
+    }
+
+    // Calculate synchronized timing for ongoing playback
+    const synchronizedState = calculateSynchronizedTimeRemaining({
+      ...loadedState,
+      currentItemStatuses: statusMap
+    });
+
+    setVisualState(synchronizedState);
+    setIsInitialized(true);
+
+    // If it was playing when saved, restart the timer
+    if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
+      console.log('📺 Restarting timer from saved state');
+      setTimeout(() => startTimer(), 100);
+    }
+  }, [calculateSynchronizedTimeRemaining]);
+
+  // Initialize state loading
+  const { hasLoaded } = useShowcallerInitialState({
+    rundownId,
+    onStateLoaded: handleInitialStateLoaded,
+    trackOwnUpdate
+  });
+
+  // Mark as initialized when either state loads or no state exists
+  useEffect(() => {
+    if (rundownId && !isInitialized && hasLoaded) {
+      setIsInitialized(true);
+    }
+  }, [rundownId, hasLoaded, isInitialized]);
 
   // Save showcaller visual state to database (completely separate from main rundown)
   const saveShowcallerVisualState = useCallback(async (state: ShowcallerVisualState) => {
@@ -444,7 +477,7 @@ export const useShowcallerVisualState = ({
     }
   }, [visualState, items, timeToSeconds, userId, updateVisualState, startTimer]);
 
-  // Apply external visual state with proper filtering
+  // Apply external visual state with proper filtering and timing sync
   const applyExternalVisualState = useCallback((externalState: any) => {
     // Skip if this is our own update
     if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
@@ -472,36 +505,22 @@ export const useShowcallerVisualState = ({
       });
     }
     
-    let synchronizedState = {
+    // Use timing synchronization utility
+    const synchronizedState = calculateSynchronizedTimeRemaining({
       ...externalState,
       currentItemStatuses: statusMap
-    };
-    
-    // Calculate synchronized time remaining if playing
-    if (externalState.isPlaying && externalState.playbackStartTime && externalState.currentSegmentId) {
-      const segment = items.find(item => item.id === externalState.currentSegmentId);
-      if (segment) {
-        const segmentDuration = timeToSeconds(segment.duration || '00:00');
-        const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000);
-        const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
-        
-        synchronizedState = {
-          ...synchronizedState,
-          timeRemaining: syncedTimeRemaining
-        };
-      }
-    }
+    });
     
     setVisualState(synchronizedState);
     
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
       setTimeout(() => startTimer(), 100);
     }
-  }, [stopTimer, items, timeToSeconds, startTimer]);
+  }, [stopTimer, calculateSynchronizedTimeRemaining, startTimer]);
 
-  // Initialize current segment - skip floated items
+  // Initialize current segment - skip floated items, but only after state is loaded
   useEffect(() => {
-    if (!visualState.currentSegmentId && items.length > 0) {
+    if (isInitialized && !visualState.currentSegmentId && items.length > 0) {
       const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
       if (firstSegment) {
         const duration = timeToSeconds(firstSegment.duration || '00:00');
@@ -512,7 +531,7 @@ export const useShowcallerVisualState = ({
         }));
       }
     }
-  }, [items.length, visualState.currentSegmentId, timeToSeconds]);
+  }, [isInitialized, items.length, visualState.currentSegmentId, timeToSeconds]);
 
   // Cleanup
   useEffect(() => {
@@ -542,6 +561,7 @@ export const useShowcallerVisualState = ({
     currentSegmentId: visualState.currentSegmentId,
     timeRemaining: visualState.timeRemaining,
     isController: visualState.controllerId === userId,
-    trackOwnUpdate
+    trackOwnUpdate,
+    isInitialized
   };
 };

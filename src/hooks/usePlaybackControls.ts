@@ -17,9 +17,8 @@ export const usePlaybackControls = (
   isProcessingRealtimeUpdate?: boolean
 ) => {
   const { user } = useAuth();
-  const hasLoadedInitialState = useRef(false);
 
-  // Initialize showcaller visual state management
+  // Initialize showcaller visual state management with proper initialization handling
   const {
     visualState,
     play,
@@ -27,12 +26,14 @@ export const usePlaybackControls = (
     forward,
     backward,
     reset,
+    jumpToSegment,
     applyExternalVisualState,
     isPlaying,
     currentSegmentId,
     timeRemaining,
     isController,
-    trackOwnUpdate
+    trackOwnUpdate,
+    isInitialized
   } = useShowcallerVisualState({
     items,
     rundownId,
@@ -43,7 +44,7 @@ export const usePlaybackControls = (
   const { isConnected } = useRealtimeRundown({
     rundownId,
     onRundownUpdate: () => {}, // We only care about showcaller state here
-    enabled: !!rundownId,
+    enabled: !!rundownId && isInitialized, // Only enable after initialization
     currentContentHash,
     isEditing,
     hasUnsavedChanges,
@@ -53,53 +54,20 @@ export const usePlaybackControls = (
     onShowcallerStateReceived: applyExternalVisualState
   });
 
-  // Load initial showcaller state when rundown changes
-  const loadInitialState = useCallback(async () => {
-    if (!rundownId || hasLoadedInitialState.current) {
-      return;
-    }
-
-    hasLoadedInitialState.current = true;
-    
-    try {
-      const { supabase } = await import('@/lib/supabase');
-      const { data, error } = await supabase
-        .from('rundowns')
-        .select('showcaller_state')
-        .eq('id', rundownId)
-        .single();
-
-      if (error) {
-        console.error('Error loading initial showcaller state:', error);
-        return;
-      }
-
-      if (data?.showcaller_state) {
-        console.log('📺 Loading initial showcaller state');
-        applyExternalVisualState(data.showcaller_state);
-      }
-    } catch (error) {
-      console.error('Error loading initial state:', error);
-    }
-  }, [rundownId, applyExternalVisualState]);
-
-  // Reset the loading flag when rundownId changes
-  useEffect(() => {
-    if (rundownId) {
-      hasLoadedInitialState.current = false;
-      loadInitialState();
-    }
-  }, [rundownId, loadInitialState]);
+  // Only expose controls after initialization is complete
+  const controlsReady = isInitialized;
 
   return {
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
-    reset,
-    isController
+    isPlaying: controlsReady ? isPlaying : false,
+    currentSegmentId: controlsReady ? currentSegmentId : null,
+    timeRemaining: controlsReady ? timeRemaining : 0,
+    play: controlsReady ? play : () => {},
+    pause: controlsReady ? pause : () => {},
+    forward: controlsReady ? forward : () => {},
+    backward: controlsReady ? backward : () => {},
+    reset: controlsReady ? reset : () => {},
+    jumpToSegment: controlsReady ? jumpToSegment : () => {},
+    isController: controlsReady ? isController : false,
+    isInitialized
   };
 };
