@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical } from 'lucide-react';
-import { useUnifiedScratchpad } from '@/hooks/blueprint/useUnifiedScratchpad';
-import ScratchpadEnhancedToolbar from './scratchpad/ScratchpadEnhancedToolbar';
-import ScratchpadRichEditor from './scratchpad/ScratchpadRichEditor';
-import ScratchpadEnhancedDisplay from './scratchpad/ScratchpadEnhancedDisplay';
+import ScratchpadSidebar from './scratchpad/ScratchpadSidebar';
+import ScratchpadNoteEditor from './scratchpad/ScratchpadNoteEditor';
+import ScratchpadToolbar from './scratchpad/ScratchpadToolbar';
 import SaveStatus from './scratchpad/SaveStatus';
+import { useScratchpadNotes } from '@/hooks/blueprint/useScratchpadNotes';
 
 interface BlueprintScratchpadProps {
   rundownId: string;
@@ -14,88 +14,44 @@ interface BlueprintScratchpadProps {
 }
 
 const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadProps) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [mode, setMode] = useState<'text' | 'table' | 'hybrid'>('text');
-  const [displayHeight, setDisplayHeight] = useState(300);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
   
   const {
     notes,
-    saveStatus,
-    textareaRef,
-    handleNotesChange,
-    isLoading
-  } = useUnifiedScratchpad();
+    activeNote,
+    isEditing,
+    createNote,
+    selectNote,
+    updateNoteContent,
+    deleteNote,
+    toggleEditing
+  } = useScratchpadNotes(rundownId);
 
-  // Measure display height for consistent sizing
-  React.useEffect(() => {
-    if (!isEditing) {
-      const displayDiv = document.querySelector('[data-scratchpad-display]') as HTMLElement;
-      if (displayDiv) {
-        setTimeout(() => {
-          const height = displayDiv.scrollHeight;
-          setDisplayHeight(Math.max(height, 300));
-        }, 0);
-      }
-    }
-  }, [notes, isEditing]);
+  const handleFormat = (action: string) => {
+    const editor = editorRef.current as any;
+    if (!editor) return;
 
-  const handleFormatAction = (action: string, data?: any) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const element = textarea as any;
-    
     switch (action) {
       case 'bold':
-        element.applyBold?.();
+        editor.applyBold?.();
         break;
       case 'italic':
-        element.applyItalic?.();
+        editor.applyItalic?.();
         break;
       case 'underline':
-        element.applyUnderline?.();
+        editor.applyUnderline?.();
         break;
       case 'strikethrough':
-        element.applyStrikethrough?.();
+        editor.applyStrikethrough?.();
         break;
-      case 'header':
-        element.applyHeader?.(data);
-        break;
-      case 'bulletList':
-        element.insertBulletList?.();
-        break;
-      case 'numberedList':
-        element.insertNumberedList?.();
+      case 'bullet':
+        editor.insertBulletList?.();
         break;
       case 'checkbox':
-        element.insertCheckbox?.();
-        break;
-      case 'link':
-        element.insertLink?.();
-        break;
-      case 'codeBlock':
-        element.insertCodeBlock?.();
-        break;
-      case 'table':
-        element.insertTable?.();
+        editor.insertCheckbox?.();
         break;
     }
   };
-
-  if (isLoading) {
-    return (
-      <Card className="w-full mt-8 bg-gray-800 border-gray-700">
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const validSaveStatus: "error" | "saving" | "saved" = 
-    saveStatus === 'error' || saveStatus === 'saving' || saveStatus === 'saved' 
-      ? saveStatus 
-      : 'saved';
 
   return (
     <Card className="w-full mt-8 bg-gray-800 border-gray-700">
@@ -103,32 +59,44 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
-            <CardTitle className="text-xl text-white">Enhanced Scratchpad</CardTitle>
-            <SaveStatus status={validSaveStatus} />
+            <CardTitle className="text-xl text-white">Scratchpad</CardTitle>
+            <SaveStatus status="saved" />
           </div>
-          <ScratchpadEnhancedToolbar
-            isEditing={isEditing}
-            mode={mode}
-            onToggleEdit={() => setIsEditing(!isEditing)}
-            onToggleMode={() => setMode(mode === 'text' ? 'table' : 'text')}
-            onFormatAction={handleFormatAction}
-          />
         </div>
       </CardHeader>
-      <CardContent>
-        {isEditing ? (
-          <ScratchpadRichEditor
-            content={notes}
-            onChange={handleNotesChange}
-            height={displayHeight}
+      <CardContent className="p-0">
+        <div className="flex h-[600px]">
+          <ScratchpadSidebar
+            notes={notes}
+            activeNoteId={activeNote?.id || null}
+            onSelectNote={selectNote}
+            onCreateNote={createNote}
+            onDeleteNote={deleteNote}
           />
-        ) : (
-          <ScratchpadEnhancedDisplay
-            content={notes}
-            onClick={() => setIsEditing(true)}
-            height={displayHeight}
-          />
-        )}
+          
+          <div className="flex-1 flex flex-col">
+            <ScratchpadToolbar
+              isEditing={isEditing}
+              onToggleEdit={toggleEditing}
+              onFormat={handleFormat}
+            />
+            
+            <div className="flex-1 overflow-auto">
+              {activeNote ? (
+                <ScratchpadNoteEditor
+                  note={activeNote}
+                  isEditing={isEditing}
+                  onContentChange={updateNoteContent}
+                  onStartEditing={toggleEditing}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  <p>Select a note to start writing</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
