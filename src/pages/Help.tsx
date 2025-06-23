@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -83,62 +82,41 @@ const Help = () => {
               Blueprints
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>Blueprint mode transforms your rundown into a comprehensive pre-production planning tool with specialized components for crew management, camera plots, and collaborative notes:</p>
+              <p>Blueprint mode transforms your rundown into a comprehensive pre-production planning tool:</p>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Dynamic Lists</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Auto-Generated Lists:</strong> Create checklists from any rundown column (talent, graphics, video assets, etc.)</li>
-                    <li><strong>Checkable Items:</strong> Mark items as complete with checkboxes to track progress</li>
-                    <li><strong>Unique Items View:</strong> Toggle to show only unique items, removing duplicates for cleaner lists</li>
-                    <li><strong>Real-time Updates:</strong> Lists automatically refresh when the rundown changes</li>
-                    <li><strong>Drag & Drop Organization:</strong> Reorder lists by dragging them to different positions</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Crew Management</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Crew Database:</strong> Maintain a comprehensive list of all crew members with roles and contact information</li>
-                    <li><strong>Assignment Tracking:</strong> Assign crew members to specific segments or roles within your rundown</li>
-                    <li><strong>Contact Information:</strong> Store phone numbers, emails, and other contact details for quick reference</li>
-                    <li><strong>Role Categories:</strong> Organize crew by departments (camera, audio, graphics, etc.)</li>
+                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
+                    <li>Auto-generate checklists from rundown columns (talent, graphics, video assets)</li>
+                    <li>Check off items as complete to track progress</li>
+                    <li>Toggle unique items view to remove duplicates</li>
+                    <li>Real-time updates when rundown changes</li>
                   </ul>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Camera Plot Editor</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Visual Set Design:</strong> Create detailed camera plots with drag-and-drop elements</li>
-                    <li><strong>Camera Positioning:</strong> Place and position cameras with precise angles and coverage areas</li>
-                    <li><strong>Set Elements:</strong> Add tables, chairs, desks, monitors, and other set pieces</li>
-                    <li><strong>Multiple Scenes:</strong> Create different camera plots for various segments or set changes</li>
-                    <li><strong>Export & Share:</strong> Save camera plots for distribution to camera operators and directors</li>
+                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
+                    <li>Visual set design with drag-and-drop elements</li>
+                    <li>Position cameras with precise angles and coverage areas</li>
+                    <li>Add set pieces like tables, chairs, monitors</li>
+                    <li>Create multiple scenes for different segments</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Collaborative Scratchpad</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Rich Text Editor:</strong> Full-featured text editor with formatting, lists, and styling options</li>
-                    <li><strong>Team Collaboration:</strong> Multiple users can edit notes simultaneously</li>
-                    <li><strong>Production Notes:</strong> Capture meeting notes, last-minute changes, and production details</li>
-                    <li><strong>Auto-save:</strong> All changes are automatically saved and synchronized across team members</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Show Date Management</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Date Tracking:</strong> Set and display the show date prominently in the blueprint</li>
-                    <li><strong>Timeline Coordination:</strong> All blueprint components reference the same show date for consistency</li>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Collaborative Features</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
+                    <li><strong>Crew Management:</strong> Maintain crew lists with roles and contact information</li>
+                    <li><strong>Rich Text Scratchpad:</strong> Team collaboration space for notes and planning</li>
+                    <li><strong>Show Date Tracking:</strong> Centralized date management across all blueprint components</li>
                   </ul>
                 </div>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-6">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Blueprint data is saved separately from your rundown, allowing you to maintain detailed production information that doesn't clutter your on-air rundown view. Switch between Blueprint and normal view as needed during different phases of production.</p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Blueprint data is saved separately from your rundown, allowing detailed production planning without cluttering your on-air view.</p>
               </div>
             </div>
           </section>
@@ -147,64 +125,35 @@ const Help = () => {
           <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Eye className="h-6 w-6 mr-2 text-green-600" />
-              AD View (Associate Director)
+              AD View (Assistant Director)
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>AD View is a specialized display designed for Associate Directors and broadcast control room operations, providing essential show timing and status information at a glance:</p>
+              <p>AD View provides essential show timing and status information for Assistant Directors and control room operations:</p>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Live Timing Display</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Show Clock:</strong> Prominent display of current time with timezone support</li>
-                    <li><strong>Segment Timing:</strong> Real-time countdown/countup for current segment</li>
-                    <li><strong>Total Show Progress:</strong> Visual progress bar showing how much of the show has elapsed</li>
-                    <li><strong>Next Segment Preview:</strong> Shows upcoming segment name and duration for preparation</li>
+                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
+                    <li>Prominent show clock with timezone support</li>
+                    <li>Real-time segment countdown/countup</li>
+                    <li>Total show progress visualization</li>
+                    <li>Next segment preview for preparation</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Playback Integration</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Show Control:</strong> Synchronized with the main rundown's play/pause controls</li>
-                    <li><strong>Status Indicators:</strong> Clear visual indication of whether the show is running or paused</li>
-                    <li><strong>Timing Synchronization:</strong> All timing calculations stay in sync with the master rundown</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Multiviewer Integration</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Broadcast Layout:</strong> Optimized design that fits well in broadcast multiviewer displays</li>
-                    <li><strong>High Contrast:</strong> Easy-to-read display even when viewed as a small window in a multiviewer</li>
-                    <li><strong>Essential Information Only:</strong> Streamlined interface showing only the most critical timing data</li>
-                    <li><strong>Always Visible:</strong> Designed to be displayed continuously throughout the broadcast</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Control Room Benefits</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Timing Awareness:</strong> Helps ADs keep track of show pacing and segment timing</li>
-                    <li><strong>Preparation Tool:</strong> Shows upcoming segments to help prepare graphics, cameras, and other elements</li>
-                    <li><strong>Show Flow Management:</strong> Visual cues help maintain proper show timing and transitions</li>
-                    <li><strong>Redundant Display:</strong> Provides backup timing information independent of the main production system</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Access & Usage</h3>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Dedicated URL:</strong> Each rundown has its own AD View link that can be bookmarked</li>
-                    <li><strong>No Login Required:</strong> Can be accessed without authentication for easy display setup</li>
-                    <li><strong>Real-time Updates:</strong> Automatically reflects changes made to the source rundown</li>
-                    <li><strong>Browser-based:</strong> Works on any device with a web browser, including multiviewer systems</li>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Control Room Integration</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
+                    <li>Synchronized with main rundown playback controls</li>
+                    <li>Optimized for multiviewer display systems</li>
+                    <li>High contrast, easy-to-read interface</li>
+                    <li>No login required - dedicated URL per rundown</li>
                   </ul>
                 </div>
               </div>
 
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-4 mt-6">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Production Tip:</strong> Display AD View on a dedicated monitor in your control room or as a window in your multiviewer system. This provides your AD and director with constant visibility of show timing without needing to access the full rundown interface during live production.</p>
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Production Tip:</strong> Display AD View on a dedicated monitor or multiviewer window for constant timing visibility during live production.</p>
               </div>
             </div>
           </section>
