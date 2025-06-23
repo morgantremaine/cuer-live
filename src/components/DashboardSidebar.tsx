@@ -347,7 +347,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   onDrop={(e) => handleDrop(e, folder.id)}
                 >
                   <div className="flex items-center flex-1">
-                    <Folder className="h-4 w-4 mr-2" style={{ color: folder.color }} />
+                    <Folder className="h-4 w-4 mr-2 text-white" />
                     {editingFolder === folder.id ? (
                       <Input
                         value={editName}
