@@ -131,10 +131,7 @@ const ScratchpadEnhancedSidebar = ({
                       <h4 className="font-medium truncate">{note.title}</h4>
                     )}
                   </div>
-                  <p className="text-sm opacity-75 line-clamp-2">
-                    {getPreview(note.content) || 'No content'}
-                  </p>
-                  <p className="text-xs opacity-50 mt-1">
+                  <p className="text-xs opacity-50">
                     {formatDate(note.updatedAt)}
                   </p>
                 </div>
