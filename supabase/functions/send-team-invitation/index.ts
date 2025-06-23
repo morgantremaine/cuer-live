@@ -34,8 +34,26 @@ serve(async (req) => {
       );
     }
 
-    // Get the site URL from environment or use default
-    const siteUrl = Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovableproject.com') || 'https://khdiwrkgahsbjszlwnob.lovableproject.com';
+    // Get the site URL from the request origin or use environment variable
+    const origin = req.headers.get('origin') || req.headers.get('referer');
+    let siteUrl = 'https://cuer.live'; // Default fallback
+    
+    // If we have an origin, use it; otherwise try to get from environment
+    if (origin) {
+      try {
+        const url = new URL(origin);
+        siteUrl = `${url.protocol}//${url.host}`;
+      } catch (e) {
+        console.log('Could not parse origin, using default:', e);
+      }
+    } else {
+      // Try to construct from Supabase URL as fallback
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      if (supabaseUrl) {
+        siteUrl = supabaseUrl.replace('supabase.co', 'lovableproject.com');
+      }
+    }
+    
     const inviteUrl = `${siteUrl}/join-team/${token}`;
 
     console.log('Generated invite URL:', inviteUrl);
