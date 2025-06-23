@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -323,7 +321,7 @@ const ADView = () => {
       <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
         {/* Header - Using CSS Grid for stable layout */}
         <div className="bg-gray-800 border-b border-gray-700 px-7 py-5">
-          <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 items-center">
+          <div className="grid grid-cols-[1fr_3fr_1fr] gap-4 items-center">
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
               <div className="text-center min-w-[280px]">
@@ -342,7 +340,7 @@ const ADView = () => {
               </div>
             </div>
             
-            {/* Center Column - Logo and Title (Wider) */}
+            {/* Center Column - Logo and Title (Even Wider) */}
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-5">
                 <img 
@@ -585,4 +583,3 @@ const ADView = () => {
 };
 
 export default ADView;
-
