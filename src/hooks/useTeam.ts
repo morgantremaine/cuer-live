@@ -477,13 +477,12 @@ export const useTeam = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Use the new secure database function
-      const { data: result, error } = await supabase.rpc('accept_team_invitation', {
-        invitation_token: token,
-        accepting_user_id: user.id
+      const { data: result, error } = await supabase.rpc('accept_invitation_secure', {
+        invitation_token: token
       });
 
       if (error) {
-        console.error('Error calling accept_team_invitation:', error);
+        console.error('Error calling accept_invitation_secure:', error);
         return { error: 'Failed to accept invitation. Please try again.' };
       }
 
