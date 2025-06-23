@@ -56,15 +56,24 @@ export const useTeam = () => {
     console.log('Loading team data for user:', user.id);
 
     try {
-      // Fetch team membership
+      // Fetch team membership with better error handling
       const { data: membership, error: membershipError } = await supabase
         .from('team_members')
         .select('team_id, role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (membershipError) {
         console.error('Error fetching team membership:', membershipError);
+        if (membershipError.code === '406' || membershipError.message?.includes('406')) {
+          console.log('RLS policy preventing access - user likely not a team member yet');
+          setTeam(null);
+          setTeamMembers([]);
+          setPendingInvitations([]);
+          setUserRole(null);
+          setLoading(false);
+          return;
+        }
         throw membershipError;
       }
 
@@ -516,33 +525,47 @@ export const useTeam = () => {
     try {
       console.log('Accepting invitation with token:', token);
       
-      // Get the invitation details
+      if (!user) {
+        console.error('No user available for invitation acceptance');
+        return { error: 'You must be logged in to accept an invitation.' };
+      }
+
+      // Get the invitation details with better error handling
       const { data: invitation, error: fetchError } = await supabase
         .from('team_invitations')
         .select('*')
         .eq('token', token)
         .eq('accepted', false)
         .gt('expires_at', new Date().toISOString())
-        .single();
+        .maybeSingle();
 
-      if (fetchError || !invitation) {
-        console.error('Invalid or expired invitation:', fetchError);
+      if (fetchError) {
+        console.error('Error fetching invitation:', fetchError);
+        return { error: 'Failed to validate invitation. Please try again.' };
+      }
+
+      if (!invitation) {
+        console.error('Invalid or expired invitation');
         return { error: 'Invalid or expired invitation link.' };
       }
 
-      if (!user) {
-        return { error: 'You must be logged in to accept an invitation.' };
-      }
+      console.log('Found valid invitation:', invitation);
 
       // Check if user is already a team member
-      const { data: existingMembership } = await supabase
+      const { data: existingMembership, error: membershipError } = await supabase
         .from('team_members')
         .select('id')
         .eq('user_id', user.id)
         .eq('team_id', invitation.team_id)
-        .single();
+        .maybeSingle();
+
+      // Ignore RLS errors when checking membership - they might not be a member yet
+      if (membershipError && membershipError.code !== '406') {
+        console.error('Error checking existing membership:', membershipError);
+      }
 
       if (existingMembership) {
+        console.log('User is already a team member, marking invitation as accepted');
         // Mark invitation as accepted and clean up
         await supabase
           .from('team_invitations')
@@ -551,6 +574,8 @@ export const useTeam = () => {
         
         return { error: 'You are already a member of this team.' };
       }
+
+      console.log('Adding user to team:', invitation.team_id);
 
       // Add user to team
       const { error: memberError } = await supabase
@@ -566,6 +591,8 @@ export const useTeam = () => {
         return { error: 'Failed to join team. Please try again.' };
       }
 
+      console.log('Successfully added user to team');
+
       // Mark invitation as accepted
       const { error: updateError } = await supabase
         .from('team_invitations')
@@ -577,10 +604,10 @@ export const useTeam = () => {
         // Don't return error here as the user was successfully added to the team
       }
 
-      // Clear the pending token from localStorage
-      localStorage.removeItem('pendingInvitationToken');
+      console.log('Invitation marked as accepted');
 
-      // Reload team data
+      // Reload team data to reflect the new membership
+      console.log('Reloading team data after successful invitation acceptance');
       await loadTeamData();
 
       return { error: null };

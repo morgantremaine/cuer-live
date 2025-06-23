@@ -24,6 +24,7 @@ const JoinTeam = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
+  const [userJustSignedUp, setUserJustSignedUp] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
@@ -139,16 +140,35 @@ const JoinTeam = () => {
     }
   };
 
+  // Handle invitation acceptance when user becomes available
   useEffect(() => {
-    // If user is already logged in and we have an invitation, accept it
-    if (user && invitation && !isProcessing) {
-      console.log('User is logged in, accepting invitation automatically');
-      handleAcceptInvitation();
-    }
-  }, [user, invitation]);
+    const handleInvitationAcceptance = async () => {
+      // Only proceed if we have a user, invitation, token, and we're not already processing
+      if (!user || !invitation || !token || isProcessing) {
+        console.log('Conditions not met for invitation acceptance:', {
+          hasUser: !!user,
+          hasInvitation: !!invitation,
+          hasToken: !!token,
+          isProcessing
+        });
+        return;
+      }
+
+      // Check if the user just signed up (to avoid processing for existing users)
+      if (userJustSignedUp || localStorage.getItem('pendingInvitationToken') === token) {
+        console.log('User is ready for invitation acceptance, processing...');
+        await handleAcceptInvitation();
+      }
+    };
+
+    handleInvitationAcceptance();
+  }, [user, invitation, token, userJustSignedUp]);
 
   const handleAcceptInvitation = async () => {
-    if (!token) return;
+    if (!token) {
+      console.error('No token available for invitation acceptance');
+      return;
+    }
 
     setIsProcessing(true);
     
@@ -166,12 +186,16 @@ const JoinTeam = () => {
         setIsProcessing(false);
       } else {
         console.log('Invitation accepted successfully');
+        // Only clear the token after successful acceptance
         localStorage.removeItem('pendingInvitationToken');
         toast({
           title: 'Success',
           description: 'Welcome to the team!',
         });
-        navigate('/dashboard');
+        // Small delay to ensure team data is loaded before navigation
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       }
     } catch (error) {
       console.error('Error accepting invitation:', error);
@@ -199,7 +223,7 @@ const JoinTeam = () => {
     setIsProcessing(true);
     console.log('Creating account for team invitation:', email);
     
-    // Team invitation signup - no email verification required
+    // Team invitation signup
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
@@ -212,7 +236,8 @@ const JoinTeam = () => {
       setIsProcessing(false);
     } else {
       console.log('Team invitation account created successfully');
-      // The useEffect will handle accepting the invitation once user state updates
+      setUserJustSignedUp(true);
+      // Don't clear isProcessing here - let the invitation acceptance handle it
     }
   };
 
@@ -232,8 +257,10 @@ const JoinTeam = () => {
         variant: 'destructive',
       });
       setIsProcessing(false);
+    } else {
+      console.log('Sign in successful, will process invitation');
+      // Don't clear isProcessing here - let the invitation acceptance handle it
     }
-    // If successful, the useEffect will handle accepting the invitation
   };
 
   if (loading) {
@@ -267,7 +294,26 @@ const JoinTeam = () => {
     );
   }
 
-  if (user) {
+  if (user && isProcessing) {
+    return (
+      <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
+        <Card className="w-full max-w-md bg-gray-800 border-gray-700">
+          <CardHeader className="text-center">
+            <CardTitle className="text-white">Joining Team</CardTitle>
+            <CardDescription className="text-gray-400">
+              Please wait while we add you to {invitation.teams?.name || 'the team'}...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-300">Processing your invitation...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user && !isProcessing) {
     return (
       <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">

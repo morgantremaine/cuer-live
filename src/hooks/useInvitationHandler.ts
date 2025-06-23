@@ -15,10 +15,10 @@ export const useInvitationHandler = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Don't run the invitation handler if we're on the JoinTeam page
-    // The JoinTeam page should handle its own invitation flow
+    // Only run as fallback if we're not on the JoinTeam page
+    // The JoinTeam page should handle its own invitation flow primarily
     if (location.pathname.startsWith('/join-team/')) {
-      console.log('On JoinTeam page, skipping invitation handler');
+      console.log('On JoinTeam page, letting JoinTeam handle invitation processing');
       return;
     }
 
@@ -40,27 +40,29 @@ export const useInvitationHandler = () => {
         return;
       }
 
-      console.log('Processing pending invitation for user:', user.email);
+      console.log('Processing pending invitation as fallback for user:', user.email);
 
       try {
-        // Let useTeam handle the invitation acceptance via loadTeamData
-        // This ensures proper team loading and prevents duplicate team creation
+        // Import the acceptInvitation function dynamically to avoid circular deps
+        const { useTeam } = await import('./useTeam');
+        
+        // This is a fallback mechanism - the main flow should happen in JoinTeam
+        // But if somehow a user ends up here with a pending token, we'll process it
         await loadTeamData();
         
         // Check if token was cleared (meaning invitation was processed)
         const stillPending = localStorage.getItem('pendingInvitationToken');
         if (!stillPending) {
-          // Force reload rundowns after successful team join
-          console.log('Invitation processed successfully, reloading rundowns...');
+          console.log('Invitation processed successfully via fallback, reloading rundowns...');
           
           // Add a small delay to ensure team data is fully loaded before reloading rundowns
           setTimeout(async () => {
             await loadRundowns();
-          }, 500);
+          }, 1000);
           
           toast({
             title: 'Success',
-            description: 'Successfully joined the team! Your team rundowns are now available.',
+            description: 'Successfully joined the team! Your team data is now available.',
           });
           
           // Navigate to dashboard after successful join if not already there
@@ -69,7 +71,7 @@ export const useInvitationHandler = () => {
           }
         } else {
           // Token is still there, which might mean the invitation failed or is invalid
-          console.log('Invitation token still present, checking validity...');
+          console.log('Invitation token still present after fallback processing, checking validity...');
           
           // Try to validate the token - if it's invalid, clear it
           try {
@@ -92,21 +94,15 @@ export const useInvitationHandler = () => {
           }
         }
       } catch (error) {
-        console.error('Error processing pending invitation:', error);
+        console.error('Error processing pending invitation in fallback:', error);
         
-        // Clear the token if there's an error to prevent infinite loops
-        localStorage.removeItem('pendingInvitationToken');
-        
-        toast({
-          title: 'Error',
-          description: 'Failed to process team invitation. Please try again or request a new invitation.',
-          variant: 'destructive',
-        });
+        // Don't clear the token here - let the user try again or use the proper JoinTeam flow
+        console.log('Fallback invitation processing failed, user should use JoinTeam page');
       }
     };
 
-    // Small delay to ensure auth state is fully established
-    const timer = setTimeout(handlePendingInvitation, 1000);
+    // Longer delay to ensure auth state is fully established and give JoinTeam page priority
+    const timer = setTimeout(handlePendingInvitation, 3000);
     return () => clearTimeout(timer);
   }, [user, loadTeamData, loadRundowns, toast, navigate, location.pathname]);
 };
