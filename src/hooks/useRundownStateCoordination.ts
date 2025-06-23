@@ -1,3 +1,4 @@
+
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -98,6 +99,23 @@ export const useRundownStateCoordination = () => {
     }
   };
 
+  // Helper function to get visual status for items (replaces the missing getItemVisualStatus)
+  const getItemVisualStatus = (item: any): 'upcoming' | 'current' | 'completed' | 'header' => {
+    if (item.type === 'header') return 'header';
+    
+    // Check if this item is the current segment in showcaller
+    if (showcallerVisual.currentSegmentId === item.id) {
+      return 'current';
+    }
+    
+    // Use the item's status if it exists
+    if (item.status) {
+      return item.status;
+    }
+    
+    return 'upcoming';
+  };
+
   // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
     simplifiedState.items,
@@ -167,7 +185,7 @@ export const useRundownStateCoordination = () => {
       showcallerActivity: false, // No longer interferes with main state
       
       // Visual status overlay function (doesn't touch main state)
-      getItemVisualStatus: showcallerVisual.getItemVisualStatus,
+      getItemVisualStatus,
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -208,7 +226,6 @@ export const useRundownStateCoordination = () => {
       forward: showcallerVisual.forward,
       backward: showcallerVisual.backward,
       reset: showcallerVisual.reset,
-      jumpToSegment: showcallerVisual.jumpToSegment, // Add the new function
       
       // Undo functionality
       undo: simplifiedState.undo,
