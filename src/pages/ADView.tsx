@@ -367,9 +367,9 @@ const ADView = () => {
         {/* Full-width Header - Larger for broadcast use */}
         <div className="bg-gray-800 border-b border-gray-700 px-8 py-8">
           <div className="flex justify-between items-center">
-            <div className="text-center">
+            <div className="text-center w-80">
               <div className="text-lg text-gray-400 mb-2 font-semibold">TIMING STATUS</div>
-              <div className={`text-3xl font-bold ${
+              <div className={`text-3xl font-bold font-mono min-h-[2.25rem] flex items-center justify-center ${
                 !isShowcallerPlaying ? 'text-green-400' :
                 timingStatus.isOnTime ? 'text-green-400' :
                 timingStatus.isAhead ? 'text-yellow-400' :
@@ -391,7 +391,7 @@ const ADView = () => {
                 <div className="text-4xl font-bold text-white">{rundownData.title}</div>
               </div>
             </div>
-            <div className="text-center">
+            <div className="text-center w-80">
               <div className="text-lg text-gray-400 mb-2 font-semibold">TIME OF DAY</div>
               <div className="text-6xl font-mono font-bold text-blue-400">
                 {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
