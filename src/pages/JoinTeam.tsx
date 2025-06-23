@@ -24,18 +24,9 @@ const JoinTeam = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
-  const [userJustSignedUp, setUserJustSignedUp] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
-
-  // Store invitation token in localStorage when page loads
-  useEffect(() => {
-    if (token) {
-      console.log('Storing invitation token in localStorage:', token);
-      localStorage.setItem('pendingInvitationToken', token);
-    }
-  }, [token]);
 
   useEffect(() => {
     const loadInvitation = async () => {
@@ -66,7 +57,6 @@ const JoinTeam = () => {
             description: 'There was an error loading the invitation details.',
             variant: 'destructive',
           });
-          localStorage.removeItem('pendingInvitationToken');
           navigate('/login');
           return;
         }
@@ -78,7 +68,6 @@ const JoinTeam = () => {
             description: 'This invitation link is invalid or has expired.',
             variant: 'destructive',
           });
-          localStorage.removeItem('pendingInvitationToken');
           navigate('/login');
           return;
         }
@@ -108,7 +97,6 @@ const JoinTeam = () => {
           description: 'Failed to load invitation details.',
           variant: 'destructive',
         });
-        localStorage.removeItem('pendingInvitationToken');
         navigate('/login');
       } finally {
         setLoading(false);
@@ -143,26 +131,16 @@ const JoinTeam = () => {
   // Handle invitation acceptance when user becomes available
   useEffect(() => {
     const handleInvitationAcceptance = async () => {
-      // Only proceed if we have a user, invitation, token, and we're not already processing
       if (!user || !invitation || !token || isProcessing) {
-        console.log('Conditions not met for invitation acceptance:', {
-          hasUser: !!user,
-          hasInvitation: !!invitation,
-          hasToken: !!token,
-          isProcessing
-        });
         return;
       }
 
-      // Check if the user just signed up (to avoid processing for existing users)
-      if (userJustSignedUp || localStorage.getItem('pendingInvitationToken') === token) {
-        console.log('User is ready for invitation acceptance, processing...');
-        await handleAcceptInvitation();
-      }
+      console.log('User is ready for invitation acceptance, processing...');
+      await handleAcceptInvitation();
     };
 
     handleInvitationAcceptance();
-  }, [user, invitation, token, userJustSignedUp]);
+  }, [user, invitation, token]);
 
   const handleAcceptInvitation = async () => {
     if (!token) {
@@ -186,13 +164,10 @@ const JoinTeam = () => {
         setIsProcessing(false);
       } else {
         console.log('Invitation accepted successfully');
-        // Only clear the token after successful acceptance
-        localStorage.removeItem('pendingInvitationToken');
         toast({
           title: 'Success',
           description: 'Welcome to the team!',
         });
-        // Small delay to ensure team data is loaded before navigation
         setTimeout(() => {
           navigate('/dashboard');
         }, 1000);
@@ -223,7 +198,6 @@ const JoinTeam = () => {
     setIsProcessing(true);
     console.log('Creating account for team invitation:', email);
     
-    // Team invitation signup
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
@@ -236,8 +210,6 @@ const JoinTeam = () => {
       setIsProcessing(false);
     } else {
       console.log('Team invitation account created successfully');
-      setUserJustSignedUp(true);
-      // Don't clear isProcessing here - let the invitation acceptance handle it
     }
   };
 
@@ -259,7 +231,6 @@ const JoinTeam = () => {
       setIsProcessing(false);
     } else {
       console.log('Sign in successful, will process invitation');
-      // Don't clear isProcessing here - let the invitation acceptance handle it
     }
   };
 
