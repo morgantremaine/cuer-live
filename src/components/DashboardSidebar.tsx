@@ -300,10 +300,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             )}
           </div>
 
-          {/* Custom Folders */}
+          {/* Custom Folders - Changed header from "Custom" to "Folders" */}
           <div>
             <div className="flex items-center justify-between px-2 py-1 mb-2">
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Custom</span>
+              <span className="text-xs text-gray-400 uppercase tracking-wide">Folders</span>
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
                   <Button
