@@ -297,6 +297,19 @@ const ADView = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Calculate dynamic height for script area based on content length
+  const getScriptHeight = () => {
+    const scriptText = currentSegment?.script || '';
+    const textLength = scriptText.length;
+    
+    // Base height + additional height based on content
+    const baseHeight = 300; // minimum height
+    const additionalHeight = Math.floor(textLength / 100) * 50; // 50px per ~100 characters
+    const maxHeight = 800; // maximum height
+    
+    return Math.min(baseHeight + additionalHeight, maxHeight);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
@@ -366,10 +379,10 @@ const ADView = () => {
           </div>
         </div>
 
-        {/* Main Content - Increased spacing and sizes */}
+        {/* Main Content - Updated grid layout */}
         <div className="flex-1 px-0 py-0">
           <div className="grid grid-cols-12 gap-5 h-full p-5">
-            {/* Left Side - Timing Cards - Increased card sizes and font sizes */}
+            {/* Left Side - Timing Cards - Same width (2 columns) */}
             <div className="col-span-2 space-y-4">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
@@ -415,8 +428,8 @@ const ADView = () => {
               </Card>
             </div>
 
-            {/* Center - Segments Display - Increased segment sizes */}
-            <div className="col-span-7 flex flex-col justify-center space-y-4">
+            {/* Center - Segments Display - Increased to 8 columns to center better */}
+            <div className="col-span-8 flex flex-col justify-center space-y-4">
               {/* Previous Segment 2 */}
               <div 
                 className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-40"
@@ -565,9 +578,9 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script - Increased size */}
-            <div className="col-span-3">
-              <Card className="bg-gray-800 border-gray-700 h-full">
+            {/* Right Side - Script - Same width as timing blocks (2 columns) */}
+            <div className="col-span-2">
+              <Card className="bg-gray-800 border-gray-700" style={{ height: `${getScriptHeight()}px` }}>
                 <CardContent className="p-5 h-full flex flex-col">
                   <div className="text-sm text-gray-400 mb-4 font-semibold">CURRENT SCRIPT</div>
                   <div className="flex-1 bg-gray-900 rounded-lg p-5 overflow-y-auto">
