@@ -64,22 +64,6 @@ export const useUnifiedScratchpad = () => {
     }
   }, [updateNotes]);
 
-  const handleStrikethrough = useCallback(() => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selectedText = textarea.value.substring(start, end);
-      const newText = textarea.value.substring(0, start) + `~~${selectedText}~~` + textarea.value.substring(end);
-      updateNotes(newText);
-      
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + 2, end + 2);
-      }, 0);
-    }
-  }, [updateNotes]);
-
   const handleBulletList = useCallback(() => {
     if (textareaRef.current) {
       const textarea = textareaRef.current;
@@ -118,7 +102,6 @@ export const useUnifiedScratchpad = () => {
     handleBold,
     handleItalic,
     handleUnderline,
-    handleStrikethrough,
     handleBulletList,
     isLoading: state.isLoading
   };

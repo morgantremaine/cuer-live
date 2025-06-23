@@ -10,83 +10,6 @@ interface ScratchpadContentProps {
   onStartEditing: () => void;
 }
 
-const renderMarkdownText = (text: string) => {
-  // Split text by lines to preserve line breaks
-  const lines = text.split('\n');
-  
-  return lines.map((line, lineIndex) => {
-    // Process markdown formatting in each line
-    const parts = [];
-    let currentIndex = 0;
-    let partIndex = 0;
-    
-    // Regular expression to match markdown patterns
-    const markdownRegex = /(\*\*([^*]+)\*\*|\*([^*]+)\*|<u>([^<]+)<\/u>|~~([^~]+)~~)/g;
-    let match;
-    
-    while ((match = markdownRegex.exec(line)) !== null) {
-      // Add text before the match
-      if (match.index > currentIndex) {
-        parts.push(
-          <span key={`text-${lineIndex}-${partIndex++}`}>
-            {line.substring(currentIndex, match.index)}
-          </span>
-        );
-      }
-      
-      // Add the formatted text
-      const fullMatch = match[0];
-      const boldText = match[2];
-      const italicText = match[3];
-      const underlineText = match[4];
-      const strikethroughText = match[5];
-      
-      if (boldText) {
-        parts.push(
-          <strong key={`bold-${lineIndex}-${partIndex++}`}>{boldText}</strong>
-        );
-      } else if (italicText) {
-        parts.push(
-          <em key={`italic-${lineIndex}-${partIndex++}`}>{italicText}</em>
-        );
-      } else if (underlineText) {
-        parts.push(
-          <u key={`underline-${lineIndex}-${partIndex++}`}>{underlineText}</u>
-        );
-      } else if (strikethroughText) {
-        parts.push(
-          <span key={`strikethrough-${lineIndex}-${partIndex++}`} className="line-through">
-            {strikethroughText}
-          </span>
-        );
-      }
-      
-      currentIndex = match.index + fullMatch.length;
-    }
-    
-    // Add remaining text
-    if (currentIndex < line.length) {
-      parts.push(
-        <span key={`text-${lineIndex}-${partIndex++}`}>
-          {line.substring(currentIndex)}
-        </span>
-      );
-    }
-    
-    // If no formatting found, just return the line
-    if (parts.length === 0) {
-      parts.push(<span key={`line-${lineIndex}`}>{line}</span>);
-    }
-    
-    return (
-      <div key={lineIndex}>
-        {parts}
-        {lineIndex < lines.length - 1 && <br />}
-      </div>
-    );
-  });
-};
-
 const ScratchpadContent = ({
   notes,
   isEditing,
@@ -109,14 +32,10 @@ const ScratchpadContent = ({
 
   return (
     <div 
-      className="min-h-[300px] p-3 border rounded-md bg-gray-900 border-gray-600 text-base leading-relaxed cursor-pointer text-white"
+      className="min-h-[300px] p-3 border rounded-md bg-gray-900 border-gray-600 whitespace-pre-wrap text-base leading-relaxed cursor-pointer text-white"
       onClick={onStartEditing}
     >
-      {notes ? (
-        <div className="whitespace-pre-wrap">
-          {renderMarkdownText(notes)}
-        </div>
-      ) : (
+      {notes || (
         <span className="text-gray-400 italic">
           Click to add your show notes, reminders, and scratchpad content...
         </span>

@@ -23,7 +23,6 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
     handleBold,
     handleItalic,
     handleUnderline,
-    handleStrikethrough,
     handleBulletList,
     isLoading
   } = useUnifiedScratchpad();
@@ -59,7 +58,6 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
             onBold={handleBold}
             onItalic={handleItalic}
             onUnderline={handleUnderline}
-            onStrikethrough={handleStrikethrough}
             onBulletList={handleBulletList}
           />
         </div>
