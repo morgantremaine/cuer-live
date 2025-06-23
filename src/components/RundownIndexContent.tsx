@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -148,21 +149,25 @@ const RundownIndexContent = () => {
       return;
     }
     
-    // CRITICAL FIX: Check current playing state and act accordingly
-    if (isPlaying) {
-      console.log('🎯 IndexContent: Showcaller is playing - jumping and continuing playback');
-      if (play) {
-        play(segmentId);
-        console.log('🎯 IndexContent: Play function called successfully');
+    // CRITICAL FIX: Always use play function to handle the jump
+    // The play function can handle both playing and paused states properly
+    if (play) {
+      console.log('🎯 IndexContent: Using play function to jump to segment');
+      play(segmentId);
+      console.log('🎯 IndexContent: Play function called successfully');
+      
+      // If we were previously paused, pause again after jumping
+      if (!isPlaying) {
+        console.log('🎯 IndexContent: Was paused before jump - pausing again');
+        setTimeout(() => {
+          if (pause) {
+            pause();
+            console.log('🎯 IndexContent: Paused after jump');
+          }
+        }, 50); // Small delay to ensure the jump completes first
       }
     } else {
-      console.log('🎯 IndexContent: Showcaller is paused - jumping but staying paused');
-      if (coreState.jumpToSegment) {
-        coreState.jumpToSegment(segmentId);
-        console.log('🎯 IndexContent: jumpToSegment function called successfully');
-      } else {
-        console.error('🎯 IndexContent: jumpToSegment function not available');
-      }
+      console.error('🎯 IndexContent: Play function not available');
     }
     
     // Clear the selection after jumping, like other context menu actions
