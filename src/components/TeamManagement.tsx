@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -340,7 +341,7 @@ const TeamManagement = () => {
             <AlertDialogDescription className="text-gray-300 space-y-3">
               {isLoadingPreview ? (
                 <div className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Loading transfer details...
                 </div>
               ) : transferPreview ? (
@@ -387,7 +388,7 @@ const TeamManagement = () => {
             >
               {isRemoving ? (
                 <>
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Removing...
                 </>
               ) : (
