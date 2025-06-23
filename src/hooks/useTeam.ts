@@ -379,9 +379,7 @@ export const useTeam = () => {
         body: {
           email,
           teamName: team.name || 'Your Team',
-          inviterName: user?.user_metadata?.full_name || user?.email || '
-
-Admin',
+          inviterName: user?.user_metadata?.full_name || user?.email || 'Team Admin',
           token: newToken
         }
       });
