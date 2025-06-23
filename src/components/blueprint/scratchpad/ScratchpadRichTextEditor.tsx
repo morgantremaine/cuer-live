@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { ScratchpadNote } from '@/types/scratchpad';
 
 interface ScratchpadRichTextEditorProps {
@@ -7,11 +7,14 @@ interface ScratchpadRichTextEditorProps {
   onContentChange: (content: string) => void;
 }
 
-const ScratchpadRichTextEditor = ({
+const ScratchpadRichTextEditor = forwardRef<HTMLDivElement, ScratchpadRichTextEditorProps>(({
   note,
   onContentChange
-}: ScratchpadRichTextEditorProps) => {
+}, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // Expose the editor ref to parent component
+  useImperativeHandle(ref, () => editorRef.current!, []);
 
   // Apply formatting to selected text
   const applyFormat = useCallback((command: string, value?: string) => {
@@ -96,6 +99,8 @@ const ScratchpadRichTextEditor = ({
       data-placeholder="Start writing your note..."
     />
   );
-};
+});
+
+ScratchpadRichTextEditor.displayName = 'ScratchpadRichTextEditor';
 
 export default ScratchpadRichTextEditor;
