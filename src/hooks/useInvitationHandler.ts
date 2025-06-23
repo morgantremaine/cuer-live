@@ -9,7 +9,7 @@ import { validateInvitationToken, clearInvalidTokens } from '@/utils/invitationU
 
 export const useInvitationHandler = () => {
   const { user } = useAuth();
-  const { loadTeamData } = useTeam();
+  const { loadTeamData, acceptInvitation } = useTeam();
   const { loadRundowns } = useRundownStorage();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -31,7 +31,8 @@ export const useInvitationHandler = () => {
         return;
       }
 
-      console.log('Processing pending invitation as fallback');
+      console.log('Processing pending invitation as fallback:', pendingToken);
+      console.log('Current user:', user.id, user.email);
 
       try {
         // Validate token before processing
@@ -42,9 +43,28 @@ export const useInvitationHandler = () => {
           return;
         }
 
-        // Wait for any auth operations to stabilize
+        // Wait for auth operations to stabilize
         await new Promise(resolve => setTimeout(resolve, 2000));
         
+        console.log('Attempting to accept invitation with token:', pendingToken);
+        
+        // Accept the invitation using the team hook
+        const { error: acceptError } = await acceptInvitation(pendingToken);
+        
+        if (acceptError) {
+          console.error('Failed to accept invitation:', acceptError);
+          toast({
+            title: 'Error',
+            description: acceptError,
+            variant: 'destructive',
+          });
+          // Don't clear the token if acceptance failed - we might retry
+          return;
+        }
+
+        console.log('Successfully accepted invitation, loading team data...');
+        
+        // Load team data and rundowns
         await loadTeamData();
         
         // Small delay to ensure team data is loaded
@@ -52,7 +72,7 @@ export const useInvitationHandler = () => {
           await loadRundowns();
         }, 1000);
         
-        // Clear the token after processing
+        // Clear the token after successful processing
         localStorage.removeItem('pendingInvitationToken');
         
         toast({
@@ -65,15 +85,14 @@ export const useInvitationHandler = () => {
         }
       } catch (error) {
         console.error('Error processing pending invitation:', error);
-        // Clear invalid token
-        localStorage.removeItem('pendingInvitationToken');
+        // Don't clear token on error - we might retry later
       }
     };
 
     // Only run after a delay to ensure auth state is stable
     const timer = setTimeout(handlePendingInvitation, 3000);
     return () => clearTimeout(timer);
-  }, [user, loadTeamData, loadRundowns, toast, navigate, location.pathname]);
+  }, [user, acceptInvitation, loadTeamData, loadRundowns, toast, navigate, location.pathname]);
 
   // Clean up invalid tokens on mount
   useEffect(() => {
