@@ -260,6 +260,7 @@ const Dashboard = () => {
           onRundownDrop={handleRundownDrop}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          folderType={folderType}
         />
 
         {/* Main Content */}

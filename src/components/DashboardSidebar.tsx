@@ -37,6 +37,7 @@ interface DashboardSidebarProps {
   onRundownDrop: (rundownId: string, folderId: string | null) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  folderType: 'all' | 'recent' | 'archived' | 'custom';
 }
 
 type SystemFolder = {
@@ -55,7 +56,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   teamId,
   onRundownDrop,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  folderType
 }) => {
   const { folders, createFolder, updateFolder, deleteFolder } = useRundownFolders(teamId);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -166,19 +168,22 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           <ChevronRight className="h-4 w-4" />
         </Button>
         <div className="mt-4 space-y-2">
-          {systemFolders.map((folder) => (
-            <Button
-              key={folder.id || 'all'}
-              variant="ghost"
-              size="icon"
-              onClick={() => onFolderSelect(folder.id, folder.type)}
-              className={`text-gray-400 hover:text-white hover:bg-gray-800 ${
-                selectedFolder === folder.id ? 'bg-gray-800 text-white' : ''
-              }`}
-            >
-              <folder.icon className="h-4 w-4" />
-            </Button>
-          ))}
+          {systemFolders.map((folder) => {
+            const isSelected = folderType === folder.type;
+            return (
+              <Button
+                key={folder.id || 'all'}
+                variant="ghost"
+                size="icon"
+                onClick={() => onFolderSelect(folder.id, folder.type)}
+                className={`text-gray-400 hover:text-white hover:bg-gray-800 ${
+                  isSelected ? 'bg-gray-800 text-white' : ''
+                }`}
+              >
+                <folder.icon className="h-4 w-4" />
+              </Button>
+            );
+          })}
         </div>
       </div>
     );
@@ -218,7 +223,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           {expandedFolders.has('system') && (
             <div className="space-y-1">
               {systemFolders.map((folder) => {
-                const isSelected = selectedFolder === folder.id;
+                const isSelected = folderType === folder.type;
                 const isDragOver = dragOverFolder === folder.id;
                 
                 return (
@@ -301,7 +306,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
           <div className="space-y-1">
             {folders.map((folder) => {
-              const isSelected = selectedFolder === folder.id;
+              const isSelected = folderType === 'custom' && selectedFolder === folder.id;
               const isDragOver = dragOverFolder === folder.id;
               
               return (
