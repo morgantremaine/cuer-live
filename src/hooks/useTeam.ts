@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -139,8 +138,8 @@ export const useTeam = () => {
         // Only create default team if there's no pending invitation
         const pendingToken = localStorage.getItem('pendingInvitationToken');
         if (!pendingToken) {
-          console.log('No pending invitation, creating default team');
-          await createDefaultTeam();
+          console.log('No pending invitation, creating or getting user team');
+          await createOrGetUserTeam();
         } else {
           console.log('Pending invitation exists, not creating default team');
           setLoading(false);
@@ -173,48 +172,28 @@ export const useTeam = () => {
     }
   };
 
-  const createDefaultTeam = async () => {
+  const createOrGetUserTeam = async () => {
     if (!user) return;
 
     try {
-      console.log('Creating default team for user:', user.id);
+      console.log('Creating or getting user team for user:', user.id);
       
-      // Create team
-      const { data: teamData, error: teamError } = await supabase
-        .from('teams')
-        .insert({
-          name: `${user.email?.split('@')[0] || 'User'}'s Team`
-        })
-        .select()
-        .single();
+      // Use the new database function that prevents duplicates
+      const { data: teamId, error } = await supabase.rpc('get_or_create_user_team', {
+        user_uuid: user.id
+      });
 
-      if (teamError) {
-        console.error('Error creating team:', teamError);
+      if (error) {
+        console.error('Error creating/getting user team:', error);
         return;
       }
 
-      console.log('Created team:', teamData);
-
-      // Add user as admin
-      const { error: memberError } = await supabase
-        .from('team_members')
-        .insert({
-          user_id: user.id,
-          team_id: teamData.id,
-          role: 'admin'
-        });
-
-      if (memberError) {
-        console.error('Error adding user to team:', memberError);
-        return;
-      }
-
-      console.log('Added user as admin to team');
+      console.log('Got team ID:', teamId);
 
       // Reload team data
       await loadTeamData();
     } catch (error) {
-      console.error('Error creating default team:', error);
+      console.error('Error in createOrGetUserTeam:', error);
     }
   };
 

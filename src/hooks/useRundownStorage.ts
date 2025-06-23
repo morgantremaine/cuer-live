@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -141,10 +142,19 @@ export const useRundownStorage = () => {
         .limit(1);
 
       if (!teamMemberships || teamMemberships.length === 0) {
-        throw new Error('User is not a member of any team. Cannot create rundown.');
-      }
+        // Use the new function to get or create a team
+        const { data: teamId, error: teamError } = await supabase.rpc('get_or_create_user_team', {
+          user_uuid: user.id
+        });
 
-      rundown.team_id = teamMemberships[0].team_id;
+        if (teamError || !teamId) {
+          throw new Error('Failed to get or create team for user. Cannot create rundown.');
+        }
+
+        rundown.team_id = teamId;
+      } else {
+        rundown.team_id = teamMemberships[0].team_id;
+      }
     }
 
     setIsSaving(true);
@@ -196,15 +206,28 @@ export const useRundownStorage = () => {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      // Get user's first team
+      // Get user's first team or create one using the new function
       const { data: teamMemberships } = await supabase
         .from('team_members')
         .select('team_id')
         .eq('user_id', user.id)
         .limit(1);
 
+      let teamId: string;
+
       if (!teamMemberships || teamMemberships.length === 0) {
-        throw new Error('User is not a member of any team. Cannot create rundown.');
+        // Use the new function to get or create a team
+        const { data: newTeamId, error: teamError } = await supabase.rpc('get_or_create_user_team', {
+          user_uuid: user.id
+        });
+
+        if (teamError || !newTeamId) {
+          throw new Error('Failed to get or create team for user. Cannot create rundown.');
+        }
+
+        teamId = newTeamId;
+      } else {
+        teamId = teamMemberships[0].team_id;
       }
 
       const rundownId = uuidv4();
@@ -219,7 +242,7 @@ export const useRundownStorage = () => {
         created_at: now,
         updated_at: now,
         archived: false,
-        team_id: teamMemberships[0].team_id,
+        team_id: teamId,
         folder_id: folderId
       };
 
