@@ -5,6 +5,7 @@ import { useTeam } from './useTeam';
 import { useRundownStorage } from './useRundownStorage';
 import { useToast } from './use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { validateInvitationToken, clearInvalidTokens } from '@/utils/invitationUtils';
 
 export const useInvitationHandler = () => {
   const { user } = useAuth();
@@ -33,6 +34,14 @@ export const useInvitationHandler = () => {
       console.log('Processing pending invitation as fallback');
 
       try {
+        // Validate token before processing
+        const isValid = await validateInvitationToken(pendingToken);
+        if (!isValid) {
+          console.log('Pending token is invalid, clearing it');
+          localStorage.removeItem('pendingInvitationToken');
+          return;
+        }
+
         // Wait for any auth operations to stabilize
         await new Promise(resolve => setTimeout(resolve, 2000));
         
@@ -56,7 +65,8 @@ export const useInvitationHandler = () => {
         }
       } catch (error) {
         console.error('Error processing pending invitation:', error);
-        // Don't clear token if processing failed
+        // Clear invalid token
+        localStorage.removeItem('pendingInvitationToken');
       }
     };
 
@@ -64,4 +74,9 @@ export const useInvitationHandler = () => {
     const timer = setTimeout(handlePendingInvitation, 3000);
     return () => clearTimeout(timer);
   }, [user, loadTeamData, loadRundowns, toast, navigate, location.pathname]);
+
+  // Clean up invalid tokens on mount
+  useEffect(() => {
+    clearInvalidTokens();
+  }, []);
 };

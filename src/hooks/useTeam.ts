@@ -470,139 +470,27 @@ export const useTeam = () => {
         return { error: 'You must be logged in to accept an invitation.' };
       }
 
-      console.log('Accepting invitation with token:', token);
+      console.log('Accepting invitation with secure function:', token);
       console.log('Current user:', user.id, user.email);
 
       // Wait for any auth operations to stabilize
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // First, ensure the user has a profile - create one if needed
-      const { data: existingProfile, error: profileCheckError } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileCheckError) {
-        console.error('Error checking user profile:', profileCheckError);
-        return { error: 'Failed to verify user profile. Please try again.' };
-      }
-
-      // Create profile if it doesn't exist
-      if (!existingProfile) {
-        console.log('Creating user profile...');
-        const { error: createProfileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            email: user.email || '',
-            full_name: user.user_metadata?.full_name || null
-          });
-
-        if (createProfileError) {
-          console.error('Error creating user profile:', createProfileError);
-          // Try to proceed anyway - the profile might have been created by the trigger
-          console.log('Profile creation failed, but continuing with invitation acceptance...');
-        } else {
-          console.log('Profile created successfully');
-        }
-        
-        // Wait for profile creation to propagate
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      // Get invitation details
-      const { data: invitation, error: fetchError } = await supabase
-        .from('team_invitations')
-        .select('*')
-        .eq('token', token)
-        .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-
-      if (fetchError) {
-        console.error('Error fetching invitation:', fetchError);
-        return { error: 'Failed to validate invitation. Please try again.' };
-      }
-
-      if (!invitation) {
-        return { error: 'Invalid or expired invitation link.' };
-      }
-
-      console.log('Found invitation:', invitation);
-
-      // Check if already a member
-      const { data: existingMembership, error: membershipCheckError } = await supabase
-        .from('team_members')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('team_id', invitation.team_id)
-        .maybeSingle();
-
-      if (membershipCheckError) {
-        console.error('Error checking existing membership:', membershipCheckError);
-      }
-
-      if (existingMembership) {
-        console.log('User is already a member, marking invitation as accepted');
-        await supabase
-          .from('team_invitations')
-          .update({ accepted: true })
-          .eq('id', invitation.id);
-        
-        return { error: 'You are already a member of this team.' };
-      }
-
-      // Add user to team with improved error handling
-      console.log('Adding user to team:', {
-        user_id: user.id,
-        team_id: invitation.team_id,
-        role: 'member'
+      // Use the new secure database function
+      const { data: result, error } = await supabase.rpc('accept_team_invitation', {
+        invitation_token: token,
+        accepting_user_id: user.id
       });
 
-      const { data: insertResult, error: memberError } = await supabase
-        .from('team_members')
-        .insert({
-          user_id: user.id,
-          team_id: invitation.team_id,
-          role: 'member'
-        })
-        .select()
-        .single();
-
-      if (memberError) {
-        console.error('Error adding team member:', memberError);
-        console.error('Error details:', {
-          code: memberError.code,
-          message: memberError.message,
-          details: memberError.details,
-          hint: memberError.hint
-        });
-        
-        // Handle specific error cases
-        if (memberError.code === '23505') {
-          // Unique constraint violation - user already exists
-          console.log('User already in team (unique constraint), marking invitation as accepted');
-          await supabase
-            .from('team_invitations')
-            .update({ accepted: true })
-            .eq('id', invitation.id);
-          return { error: 'You are already a member of this team.' };
-        }
-        
-        return { error: 'Failed to join team. Please try again.' };
+      if (error) {
+        console.error('Error calling accept_team_invitation:', error);
+        return { error: 'Failed to accept invitation. Please try again.' };
       }
 
-      console.log('Successfully added to team:', insertResult);
+      console.log('Invitation acceptance result:', result);
 
-      // Mark invitation as accepted
-      const { error: updateError } = await supabase
-        .from('team_invitations')
-        .update({ accepted: true })
-        .eq('id', invitation.id);
-
-      if (updateError) {
-        console.error('Error marking invitation as accepted:', updateError);
+      if (!result.success) {
+        return { error: result.error || 'Failed to accept invitation.' };
       }
 
       console.log('Successfully joined team, reloading team data...');
