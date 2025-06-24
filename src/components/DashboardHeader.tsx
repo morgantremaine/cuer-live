@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, User, LogOut, HelpCircle } from 'lucide-react'
 import {
@@ -41,7 +40,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
               </Button>
             )}
             <div className="flex items-center">
-              <CuerLogo />
+              <CuerLogo isDark={true} />
             </div>
           </div>
           
