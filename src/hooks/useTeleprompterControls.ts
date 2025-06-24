@@ -89,6 +89,21 @@ export const useTeleprompterControls = () => {
     };
   }, [isFullscreen, isScrolling]);
 
+  // Listen for browser fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      // If browser exits fullscreen, update our state
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   // Get current speed value and direction
   const getCurrentSpeed = () => speedSteps[currentSpeedIndex];
   const isReverse = () => getCurrentSpeed() < 0;
@@ -139,8 +154,30 @@ export const useTeleprompterControls = () => {
     }
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+  const toggleFullscreen = async () => {
+    if (!isFullscreen) {
+      // Enter fullscreen mode
+      try {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } catch (error) {
+        console.error('Error entering fullscreen:', error);
+        // Fallback to just UI fullscreen if browser fullscreen fails
+        setIsFullscreen(true);
+      }
+    } else {
+      // Exit fullscreen mode
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+        setIsFullscreen(false);
+      } catch (error) {
+        console.error('Error exiting fullscreen:', error);
+        // Fallback to just UI fullscreen toggle
+        setIsFullscreen(false);
+      }
+    }
   };
 
   const toggleUppercase = () => {
