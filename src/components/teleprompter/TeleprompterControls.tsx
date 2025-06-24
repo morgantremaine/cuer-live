@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type, Printer, List } from 'lucide-react';
 
@@ -49,7 +50,7 @@ const TeleprompterControls = ({
         <div className="flex items-center space-x-4">
           <button
             onClick={onToggleScrolling}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm w-24"
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm min-w-[90px]"
           >
             {isScrolling ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             <span>{getPlayButtonText()}</span>
