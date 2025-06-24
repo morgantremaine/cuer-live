@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -430,7 +429,7 @@ const ADView = () => {
                     <div className="text-[0.9vw] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.1vw] font-medium text-zinc-400">{prev2Info.name}</div>
+                    <div className="text-[1.4vw] font-medium text-zinc-400">{prev2Info.name}</div>
                     {renderColumnData(prev2Info.columnData)}
                   </div>
                 </div>
@@ -444,7 +443,7 @@ const ADView = () => {
                     <div className="text-[1.1vw] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.3vw] font-semibold text-zinc-300">{prev1Info.name}</div>
+                    <div className="text-[1.6vw] font-semibold text-zinc-300">{prev1Info.name}</div>
                     {renderColumnData(prev1Info.columnData)}
                   </div>
                 </div>
@@ -458,7 +457,7 @@ const ADView = () => {
                     <div className="text-[1.5vw] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.8vw] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
+                    <div className="text-[2.2vw] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
                     <div className="mt-[0.3vh]">
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
@@ -483,7 +482,7 @@ const ADView = () => {
                     <div className="text-[1.1vw] font-mono text-zinc-300">{next1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.3vw] font-semibold text-zinc-300">{next1Info.name}</div>
+                    <div className="text-[1.6vw] font-semibold text-zinc-300">{next1Info.name}</div>
                     {renderColumnData(next1Info.columnData)}
                   </div>
                 </div>
@@ -497,7 +496,7 @@ const ADView = () => {
                     <div className="text-[0.9vw] font-mono text-zinc-400">{next2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.1vw] font-medium text-zinc-400">{next2Info.name}</div>
+                    <div className="text-[1.4vw] font-medium text-zinc-400">{next2Info.name}</div>
                     {renderColumnData(next2Info.columnData)}
                   </div>
                 </div>
