@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -375,34 +376,34 @@ const ADView = () => {
 
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
-          <div className="grid grid-cols-12 gap-[0.5vw] h-full p-[0.5vw]">
+          <div className="grid grid-cols-12 gap-[0.3vw] h-full p-[0.3vw]">
             {/* Left Side - Timing Cards centered vertically */}
-            <div className="col-span-2 flex flex-col justify-center space-y-[0.5vh]">
+            <div className="col-span-2 flex flex-col justify-center">
               {/* Show Elapsed Time */}
-              <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW ELAPSED</div>
-                  <div className="text-[3vw] font-mono font-bold text-blue-400 flex items-center justify-center">
+              <Card className="bg-gray-900 border-zinc-700 mb-[0.3vh]">
+                <CardContent className="p-[0.3vw] text-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">SHOW ELAPSED</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-blue-400 flex items-center justify-center">
                     {showElapsedTime}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Show Remaining Time */}
-              <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW REMAINING</div>
-                  <div className="text-[3vw] font-mono font-bold text-orange-400 flex items-center justify-center">
+              <Card className="bg-gray-900 border-zinc-700 mb-[1vh]">
+                <CardContent className="p-[0.3vw] text-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">SHOW REMAINING</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-orange-400 flex items-center justify-center">
                     {showRemainingTime}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Current Item Elapsed */}
-              <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM ELAPSED</div>
-                  <div className="text-[3vw] font-mono font-bold text-green-400 flex items-center justify-center">
+              <Card className="bg-gray-900 border-zinc-700 mb-[0.3vh]">
+                <CardContent className="p-[0.3vw] text-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">ITEM ELAPSED</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-green-400 flex items-center justify-center">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -410,9 +411,9 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM REMAINING</div>
-                  <div className="text-[3vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
+                <CardContent className="p-[0.3vw] text-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">ITEM REMAINING</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
@@ -420,9 +421,9 @@ const ADView = () => {
             </div>
 
             {/* Center - Segments Display */}
-            <div className="col-span-6 flex flex-col justify-center space-y-[0.5vh]">
+            <div className="col-span-6 flex flex-col justify-center space-y-[0.3vh]">
               {/* Previous Segment 2 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-40">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-500 font-semibold">PREV</div>
@@ -436,7 +437,7 @@ const ADView = () => {
               </div>
 
               {/* Previous Segment 1 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-60">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-400 font-semibold">PREV</div>
@@ -450,7 +451,7 @@ const ADView = () => {
               </div>
 
               {/* Current Segment */}
-              <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.8vw] shadow-lg">
+              <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[1vw] text-green-300 font-bold">ON AIR</div>
@@ -475,7 +476,7 @@ const ADView = () => {
               </div>
 
               {/* Next Segment 1 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-80">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-80">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-400 font-semibold">NEXT</div>
@@ -489,7 +490,7 @@ const ADView = () => {
               </div>
 
               {/* Next Segment 2 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-60">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-500 font-semibold">NEXT</div>
@@ -503,7 +504,7 @@ const ADView = () => {
               </div>
 
               {/* Column Controls */}
-              <div className="flex items-center justify-between mt-[0.5vh] pt-[0.5vh] border-t border-zinc-700">
+              <div className="flex items-center justify-between mt-[0.3vh] pt-[0.3vh] border-t border-zinc-700">
                 <div className="flex items-center space-x-[0.3vw]">
                   <div className="text-[0.9vw] text-zinc-400 font-semibold">Additional Columns:</div>
                   {selectedColumns.map(columnKey => {
@@ -562,10 +563,10 @@ const ADView = () => {
             {/* Right Side - Script */}
             <div className="col-span-4">
               <Card className="bg-gray-900 border-zinc-700 h-full">
-                <CardContent className="p-[0.5vw] h-full flex flex-col">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.5vh] font-semibold">CURRENT SCRIPT</div>
-                  <div className="flex-1 bg-black rounded-lg p-[0.8vw] overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap text-[1.2vw] leading-relaxed break-words">
+                <CardContent className="p-[0.3vw] h-full flex flex-col">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
+                  <div className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-y-auto">
+                    <div className="text-white whitespace-pre-wrap text-[1.1vw] leading-relaxed break-words">
                       {(() => {
                         // Check if current segment has a script
                         if (!currentSegment?.script) {
