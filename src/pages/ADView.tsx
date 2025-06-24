@@ -300,7 +300,7 @@ const ADView = () => {
   if (loading) {
     return (
       <div className="h-screen w-screen bg-slate-950 text-white flex items-center justify-center">
-        <div className="text-2xl">Loading...</div>
+        <div className="text-[2vw]">Loading...</div>
       </div>
     );
   }
@@ -309,8 +309,8 @@ const ADView = () => {
     return (
       <div className="h-screen w-screen bg-slate-950 text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl text-red-400 mb-2">Error loading rundown</div>
-          <div className="text-lg text-gray-400">{error || 'Rundown not found'}</div>
+          <div className="text-[2vw] text-red-400 mb-[1vh]">Error loading rundown</div>
+          <div className="text-[1.5vw] text-gray-400">{error || 'Rundown not found'}</div>
         </div>
       </div>
     );
@@ -374,8 +374,8 @@ const ADView = () => {
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">SHOW ELAPSED</div>
-                  <div className="text-[2.2vw] font-mono font-bold text-blue-400">
+                  <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">SHOW ELAPSED</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-blue-400">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -384,8 +384,8 @@ const ADView = () => {
               {/* Show Remaining Time */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">SHOW REMAINING</div>
-                  <div className="text-[2.2vw] font-mono font-bold text-orange-400">
+                  <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">SHOW REMAINING</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-orange-400">
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -397,8 +397,8 @@ const ADView = () => {
               {/* Current Item Elapsed */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">ITEM ELAPSED</div>
-                  <div className="text-[2.2vw] font-mono font-bold text-green-400">
+                  <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">ITEM ELAPSED</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-green-400">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -407,8 +407,8 @@ const ADView = () => {
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">ITEM REMAINING</div>
-                  <div className="text-[2.2vw] font-mono font-bold text-yellow-400">
+                  <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">ITEM REMAINING</div>
+                  <div className="text-[2.5vw] font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
@@ -559,9 +559,9 @@ const ADView = () => {
             <div className="col-span-3">
               <Card className="bg-gray-800 border-gray-700 h-full">
                 <CardContent className="p-[1.5vw] h-full flex flex-col">
-                  <div className="text-[0.9vw] text-gray-400 mb-[1.5vh] font-semibold">CURRENT SCRIPT</div>
+                  <div className="text-[1.1vw] text-gray-400 mb-[1.5vh] font-semibold">CURRENT SCRIPT</div>
                   <div className="flex-1 bg-gray-900 rounded-lg p-[1.5vw] overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap text-[1vw] leading-relaxed break-words">
+                    <div className="text-white whitespace-pre-wrap text-[1.2vw] leading-relaxed break-words">
                       {currentSegment?.script || 'No script available for current segment'}
                     </div>
                   </div>
