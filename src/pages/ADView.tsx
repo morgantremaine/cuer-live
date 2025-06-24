@@ -1,9 +1,8 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
-import { Clock, Plus, X } from 'lucide-react';
+import { Clock, Plus, X, EyeOff, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -22,6 +21,7 @@ const ADView = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const [showScript, setShowScript] = useState(true);
 
   // Check if showcaller is playing
   const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
@@ -377,7 +377,7 @@ const ADView = () => {
 
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
-          <div className="grid grid-cols-12 gap-[0.3vw] h-full p-[0.3vw]">
+          <div className={`grid gap-[0.3vw] h-full p-[0.3vw] ${showScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
             {/* Left Side - Timing Cards centered vertically with more spacing and much taller cards */}
             <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
               {/* Show Elapsed Time */}
@@ -422,7 +422,7 @@ const ADView = () => {
             </div>
 
             {/* Center - Segments Display */}
-            <div className="col-span-6 flex flex-col justify-center space-y-[0.3vh]">
+            <div className={`${showScript ? 'col-span-6' : 'col-span-6'} flex flex-col justify-center space-y-[0.3vh]`}>
               {/* Previous Segment 2 */}
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
                 <div className="flex items-center space-x-[1vw]">
@@ -526,72 +526,87 @@ const ADView = () => {
                   })}
                 </div>
                 
-                {availableUnselectedColumns.length > 0 && (
-                  <div className="relative">
-                    {!showColumnSelector ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowColumnSelector(true)}
-                        className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
-                      >
-                        <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
-                        Add Column
-                      </Button>
-                    ) : (
-                      <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
-                        <SelectTrigger className="w-[12vw] bg-gray-900 border-zinc-600 text-white text-[0.8vw]">
-                          <SelectValue placeholder="Select column..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-zinc-600">
-                          {availableUnselectedColumns.map(column => (
-                            <SelectItem 
-                              key={column.key} 
-                              value={column.key}
-                              className="text-white hover:bg-zinc-700 focus:bg-zinc-700 text-[0.8vw]"
-                            >
-                              {column.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center space-x-[0.5vw]">
+                  {availableUnselectedColumns.length > 0 && (
+                    <div className="relative">
+                      {!showColumnSelector ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowColumnSelector(true)}
+                          className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
+                        >
+                          <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
+                          Add Column
+                        </Button>
+                      ) : (
+                        <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
+                          <SelectTrigger className="w-[12vw] bg-gray-900 border-zinc-600 text-white text-[0.8vw]">
+                            <SelectValue placeholder="Select column..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-900 border-zinc-600">
+                            {availableUnselectedColumns.map(column => (
+                              <SelectItem 
+                                key={column.key} 
+                                value={column.key}
+                                className="text-white hover:bg-zinc-700 focus:bg-zinc-700 text-[0.8vw]"
+                              >
+                                {column.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Script Toggle Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowScript(!showScript)}
+                    className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
+                  >
+                    {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
+                    {showScript ? 'Hide Script' : 'Show Script'}
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Right Side - Script */}
-            <div className="col-span-4">
-              <Card className="bg-gray-900 border-zinc-700 h-full">
-                <CardContent className="p-[0.3vw] h-full flex flex-col">
-                  <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
-                  <div className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap leading-relaxed break-words text-[1.3vw] min-h-full flex items-start">
-                      <div className="w-full" style={{ 
-                        fontSize: 'clamp(0.8vw, 1.3vw, 2vw)',
-                        lineHeight: '1.4'
-                      }}>
-                        {(() => {
-                          // Check if current segment has a script
-                          if (!currentSegment?.script) {
-                            return 'No script available for current segment';
-                          }
-                          
-                          // Check if script is [null] (case-insensitive)
-                          if (isNullScript(currentSegment.script)) {
-                            return ''; // Don't display anything for [null] scripts
-                          }
-                          
-                          // Display the actual script content
-                          return currentSegment.script;
-                        })()}
+            {/* Right Side - Script (conditionally rendered) */}
+            {showScript && (
+              <div className="col-span-4">
+                <Card className="bg-gray-900 border-zinc-700 h-full">
+                  <CardContent className="p-[0.3vw] h-full flex flex-col">
+                    <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
+                    <div className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-y-auto">
+                      <div className="text-white whitespace-pre-wrap leading-relaxed break-words text-[1.3vw] min-h-full flex items-start">
+                        <div className="w-full" style={{ 
+                          fontSize: 'clamp(0.8vw, 1.3vw, 2.5vw)',
+                          lineHeight: '1.4'
+                        }}>
+                          {(() => {
+                            // Check if current segment has a script
+                            if (!currentSegment?.script) {
+                              return 'No script available for current segment';
+                            }
+                            
+                            // Check if script is [null] (case-insensitive)
+                            if (isNullScript(currentSegment.script)) {
+                              return ''; // Don't display anything for [null] scripts
+                            }
+                            
+                            // Display the actual script content
+                            return currentSegment.script;
+                          })()}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -600,4 +615,3 @@ const ADView = () => {
 };
 
 export default ADView;
-
