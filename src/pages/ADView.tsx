@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -566,21 +567,26 @@ const ADView = () => {
                 <CardContent className="p-[0.3vw] h-full flex flex-col">
                   <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
                   <div className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap text-[1.1vw] leading-relaxed break-words">
-                      {(() => {
-                        // Check if current segment has a script
-                        if (!currentSegment?.script) {
-                          return 'No script available for current segment';
-                        }
-                        
-                        // Check if script is [null] (case-insensitive)
-                        if (isNullScript(currentSegment.script)) {
-                          return ''; // Don't display anything for [null] scripts
-                        }
-                        
-                        // Display the actual script content
-                        return currentSegment.script;
-                      })()}
+                    <div className="text-white whitespace-pre-wrap leading-relaxed break-words text-[1.3vw] min-h-full flex items-start">
+                      <div className="w-full" style={{ 
+                        fontSize: 'clamp(0.8vw, 1.3vw, 2vw)',
+                        lineHeight: '1.4'
+                      }}>
+                        {(() => {
+                          // Check if current segment has a script
+                          if (!currentSegment?.script) {
+                            return 'No script available for current segment';
+                          }
+                          
+                          // Check if script is [null] (case-insensitive)
+                          if (isNullScript(currentSegment.script)) {
+                            return ''; // Don't display anything for [null] scripts
+                          }
+                          
+                          // Display the actual script content
+                          return currentSegment.script;
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -594,3 +600,4 @@ const ADView = () => {
 };
 
 export default ADView;
+
