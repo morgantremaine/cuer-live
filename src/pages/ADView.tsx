@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -558,7 +557,7 @@ const ADView = () => {
 
             {/* Right Side - Script - Responsive height and sizing */}
             <div className="col-span-3">
-              <Card className="bg-gray-800 border-gray-700 h-[85vh]">
+              <Card className="bg-gray-800 border-gray-700 h-full">
                 <CardContent className="p-[1.5vw] h-full flex flex-col">
                   <div className="text-[0.9vw] text-gray-400 mb-[1.5vh] font-semibold">CURRENT SCRIPT</div>
                   <div className="flex-1 bg-gray-900 rounded-lg p-[1.5vw] overflow-y-auto">
