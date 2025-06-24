@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -151,16 +150,16 @@ const ADView = () => {
   const currentSegment = timedItems.find(item => item.id === currentSegmentId);
   const currentTimedIndex = timedItems.findIndex(item => item.id === currentSegmentId);
   
-  // Get previous 2 and next 2 segments (non-header items only)
+  // Get previous 1 and next 3 segments (non-header items only)
   const previousSegments = currentTimedIndex >= 0 ? [
-    currentTimedIndex >= 2 ? timedItems[currentTimedIndex - 2] : null,
     currentTimedIndex >= 1 ? timedItems[currentTimedIndex - 1] : null
-  ] : [null, null];
+  ] : [null];
   
   const nextSegments = currentTimedIndex >= 0 ? [
     currentTimedIndex < timedItems.length - 1 ? timedItems[currentTimedIndex + 1] : null,
-    currentTimedIndex < timedItems.length - 2 ? timedItems[currentTimedIndex + 2] : null
-  ] : [null, null];
+    currentTimedIndex < timedItems.length - 2 ? timedItems[currentTimedIndex + 2] : null,
+    currentTimedIndex < timedItems.length - 3 ? timedItems[currentTimedIndex + 3] : null
+  ] : [null, null, null];
 
   // Find the current header section based on the current segment
   const getCurrentHeaderInfo = () => {
@@ -322,11 +321,11 @@ const ADView = () => {
   };
 
   // Get info for all segments
-  const prev2Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
-  const prev1Info = previousSegments[1] ? getSegmentInfo(previousSegments[1]) : { name: '--', rowNumber: '', columnData: {} };
+  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
   const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {} };
   const next1Info = nextSegments[0] ? getSegmentInfo(nextSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
   const next2Info = nextSegments[1] ? getSegmentInfo(nextSegments[1]) : { name: '--', rowNumber: '', columnData: {} };
+  const next3Info = nextSegments[2] ? getSegmentInfo(nextSegments[2]) : { name: '--', rowNumber: '', columnData: {} };
 
   // Add a column to display
   const addColumn = (columnKey: string) => {
@@ -589,29 +588,6 @@ const ADView = () => {
 
               {/* Segments Display */}
               <div className="flex-1 flex flex-col justify-center space-y-[0.3vh]">
-                {/* Previous Segment 2 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">PREV</div>
-                      <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{prev2Info.name}</div>
-                      {selectedColumns.map(columnKey => {
-                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                        const value = prev2Info.columnData[columnKey] || '--';
-                        
-                        return (
-                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                            <span className="font-semibold">{columnName}:</span> {value}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Previous Segment 1 */}
                 <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
                   <div className="flex items-center space-x-[1vw]">
@@ -695,6 +671,29 @@ const ADView = () => {
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                         const value = next2Info.columnData[columnKey] || '--';
+                        
+                        return (
+                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
+                            <span className="font-semibold">{columnName}:</span> {value}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Segment 3 */}
+                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
+                  <div className="flex items-center space-x-[1vw]">
+                    <div className="w-[4vw] text-center">
+                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">NEXT</div>
+                      <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{next3Info.rowNumber}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{next3Info.name}</div>
+                      {selectedColumns.map(columnKey => {
+                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                        const value = next3Info.columnData[columnKey] || '--';
                         
                         return (
                           <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
