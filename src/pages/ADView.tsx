@@ -181,24 +181,35 @@ const ADView = () => {
       if (item.type === 'header') {
         // Extract header letter and name
         const headerText = item.name || '';
-        // Look for pattern like "A - Introduction" or "A-Introduction" or just "A"
-        const match = headerText.match(/^([A-Z])\s*-\s*(.+)$/);
-        if (match) {
+        
+        // The header structure should be like "A - TOP OF SHOW" where A is the letter
+        // But we need to look at the actual rundown structure to find the header letter
+        // Let's check if this header has a single letter prefix followed by content
+        
+        // First, try to find if there's a clear A, B, C pattern in the header name
+        const singleLetterMatch = headerText.match(/^([A-Z])\s*[-–]\s*(.+)$/);
+        if (singleLetterMatch) {
           return {
-            letter: match[1],
-            name: match[2].trim()
+            letter: singleLetterMatch[1],
+            name: singleLetterMatch[2].trim()
           };
         }
-        // If no dash pattern, check if it's just a single letter
-        if (headerText.match(/^[A-Z]$/)) {
-          return {
-            letter: headerText,
-            name: headerText
-          };
+        
+        // If the header text is just content like "TOP OF SHOW", we need to determine 
+        // the header letter based on its position in the rundown
+        // Count how many headers come before this one to determine A, B, C, etc.
+        let headerCount = 0;
+        for (let j = 0; j < i; j++) {
+          if (rundownData.items[j].type === 'header') {
+            headerCount++;
+          }
         }
-        // Fallback - use the first character as letter and full text as name
+        
+        // Convert header count to letter (0 = A, 1 = B, etc.)
+        const headerLetter = String.fromCharCode(65 + headerCount); // 65 is ASCII for 'A'
+        
         return {
-          letter: headerText.charAt(0).toUpperCase(),
+          letter: headerLetter,
           name: headerText
         };
       }
