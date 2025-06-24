@@ -662,7 +662,7 @@ const ADView = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => setShowColumnSelector(true)}
-                          className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
+                          className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
                         >
                           <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
                           Add Column
@@ -694,7 +694,7 @@ const ADView = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowScript(!showScript)}
-                      className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
+                      className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
                     >
                       {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
                       {showScript ? 'Hide Script' : 'Show Script'}
