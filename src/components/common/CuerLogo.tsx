@@ -13,8 +13,6 @@ const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo", isDark = true }
     ? "/lovable-uploads/cuer-logo-white.png"
     : "/lovable-uploads/cuer-logo-black.png";
 
-  console.log('CuerLogo rendering with isDark:', isDark, 'logoSrc:', logoSrc);
-
   return (
     <img 
       src={logoSrc}
@@ -23,12 +21,17 @@ const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo", isDark = true }
       onError={(e) => {
         console.error('Logo failed to load:', logoSrc);
         // Fallback to a simple text logo if image fails
-        e.currentTarget.style.display = 'none';
-        const textElement = document.createElement('div');
-        textElement.innerHTML = 'Cuer';
-        textElement.className = 'font-bold text-xl';
-        textElement.style.color = isDark ? 'white' : 'black';
-        e.currentTarget.parentNode?.appendChild(textElement);
+        const target = e.currentTarget;
+        target.style.display = 'none';
+        
+        // Only create fallback if it doesn't already exist
+        if (!target.nextSibling || target.nextSibling.textContent !== 'Cuer') {
+          const textElement = document.createElement('div');
+          textElement.innerHTML = 'Cuer';
+          textElement.className = 'font-bold text-xl';
+          textElement.style.color = isDark ? 'white' : 'black';
+          target.parentNode?.insertBefore(textElement, target.nextSibling);
+        }
       }}
     />
   );
