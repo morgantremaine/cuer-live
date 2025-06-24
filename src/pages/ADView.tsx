@@ -570,7 +570,7 @@ const ADView = () => {
               <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[1.2vw] text-green-300 font-bold">ON AIR</div>
+                    <div className="text-[1.2vw] text-green-300 font-bold">LIVE</div>
                     <div className="text-[1.8vw] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
