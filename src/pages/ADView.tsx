@@ -475,8 +475,8 @@ const ADView = () => {
               {/* Show Elapsed Time */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW ELAPSED</div>
-                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-blue-400 flex items-center justify-center leading-none">
+                  <div className="text-[clamp(1rem,1.5vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW ELAPSED</div>
+                  <div className="text-[clamp(1.8rem,3vw,4.5rem)] font-mono font-bold text-blue-400 flex items-center justify-center leading-none">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -485,8 +485,8 @@ const ADView = () => {
               {/* Show Remaining Time */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW REMAINING</div>
-                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-orange-400 flex items-center justify-center leading-none">
+                  <div className="text-[clamp(1rem,1.5vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW REMAINING</div>
+                  <div className="text-[clamp(1.8rem,3vw,4.5rem)] font-mono font-bold text-orange-400 flex items-center justify-center leading-none">
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -495,8 +495,8 @@ const ADView = () => {
               {/* Current Item Elapsed */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM ELAPSED</div>
-                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-green-400 flex items-center justify-center leading-none">
+                  <div className="text-[clamp(1rem,1.5vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM ELAPSED</div>
+                  <div className="text-[clamp(1.8rem,3vw,4.5rem)] font-mono font-bold text-green-400 flex items-center justify-center leading-none">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -505,8 +505,8 @@ const ADView = () => {
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM REMAINING</div>
-                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-yellow-400 flex items-center justify-center leading-none">
+                  <div className="text-[clamp(1rem,1.5vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM REMAINING</div>
+                  <div className="text-[clamp(1.8rem,3vw,4.5rem)] font-mono font-bold text-yellow-400 flex items-center justify-center leading-none">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
