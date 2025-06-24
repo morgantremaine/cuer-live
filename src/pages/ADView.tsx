@@ -470,43 +470,43 @@ const ADView = () => {
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
           <div className={`grid gap-[1.5vh] h-full p-[0.3vw] ${shouldShowScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
-            {/* Left Side - Timing Cards centered vertically with more spacing and much taller cards */}
+            {/* Left Side - Timing Cards centered vertically with better proportional sizing */}
             <div className="col-span-2 flex flex-col justify-center space-y-[2vh]">
               {/* Show Elapsed Time */}
-              <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
-                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW ELAPSED</div>
-                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-blue-400 flex items-center justify-center leading-none">
+              <Card className="bg-gray-900 border-zinc-700 flex-1">
+                <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
+                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW ELAPSED</div>
+                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-blue-400 flex items-center justify-center leading-none">
                     {showElapsedTime}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Show Remaining Time */}
-              <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
-                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW REMAINING</div>
-                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-orange-400 flex items-center justify-center leading-none">
+              <Card className="bg-gray-900 border-zinc-700 flex-1">
+                <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
+                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW REMAINING</div>
+                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-orange-400 flex items-center justify-center leading-none">
                     {showRemainingTime}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Current Item Elapsed */}
-              <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
-                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM ELAPSED</div>
-                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-green-400 flex items-center justify-center leading-none">
+              <Card className="bg-gray-900 border-zinc-700 flex-1">
+                <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
+                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM ELAPSED</div>
+                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-green-400 flex items-center justify-center leading-none">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Current Item Time Remaining */}
-              <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
-                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM REMAINING</div>
-                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-yellow-400 flex items-center justify-center leading-none">
+              <Card className="bg-gray-900 border-zinc-700 flex-1">
+                <CardContent className="p-[1vw] text-center h-full flex flex-col justify-center">
+                  <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM REMAINING</div>
+                  <div className="text-[clamp(1.2rem,2.2vw,3.5rem)] font-mono font-bold text-yellow-400 flex items-center justify-center leading-none">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
