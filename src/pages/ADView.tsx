@@ -583,7 +583,7 @@ const ADView = () => {
                     <div className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-y-auto">
                       <div className="text-white whitespace-pre-wrap leading-relaxed break-words text-[1.3vw] min-h-full flex items-start">
                         <div className="w-full" style={{ 
-                          fontSize: 'clamp(0.8vw, 1.3vw, 2.5vw)',
+                          fontSize: 'clamp(0.8vw, 1.3vw, 3vw)',
                           lineHeight: '1.4'
                         }}>
                           {(() => {
