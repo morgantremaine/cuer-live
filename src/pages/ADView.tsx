@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -351,7 +352,7 @@ const ADView = () => {
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-[1vw]">
                 <CuerLogo 
-                  className="h-[8vh] w-auto flex-shrink-0"
+                  className="h-[6vh] w-auto flex-shrink-0"
                   isDark={true}
                   alt="Cuer Logo"
                 />
