@@ -377,12 +377,12 @@ const ADView = () => {
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
           <div className="grid grid-cols-12 gap-[0.3vw] h-full p-[0.3vw]">
-            {/* Left Side - Timing Cards centered vertically */}
-            <div className="col-span-2 flex flex-col justify-center">
+            {/* Left Side - Timing Cards centered vertically with more spacing and taller cards */}
+            <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
               {/* Show Elapsed Time */}
-              <Card className="bg-gray-900 border-zinc-700 mb-[0.3vh]">
-                <CardContent className="p-[0.3vw] text-center">
-                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">SHOW ELAPSED</div>
+              <Card className="bg-gray-900 border-zinc-700">
+                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW ELAPSED</div>
                   <div className="text-[2.5vw] font-mono font-bold text-blue-400 flex items-center justify-center">
                     {showElapsedTime}
                   </div>
@@ -390,9 +390,9 @@ const ADView = () => {
               </Card>
 
               {/* Show Remaining Time */}
-              <Card className="bg-gray-900 border-zinc-700 mb-[1vh]">
-                <CardContent className="p-[0.3vw] text-center">
-                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">SHOW REMAINING</div>
+              <Card className="bg-gray-900 border-zinc-700">
+                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW REMAINING</div>
                   <div className="text-[2.5vw] font-mono font-bold text-orange-400 flex items-center justify-center">
                     {showRemainingTime}
                   </div>
@@ -400,9 +400,9 @@ const ADView = () => {
               </Card>
 
               {/* Current Item Elapsed */}
-              <Card className="bg-gray-900 border-zinc-700 mb-[0.3vh]">
-                <CardContent className="p-[0.3vw] text-center">
-                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">ITEM ELAPSED</div>
+              <Card className="bg-gray-900 border-zinc-700">
+                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM ELAPSED</div>
                   <div className="text-[2.5vw] font-mono font-bold text-green-400 flex items-center justify-center">
                     {currentItemElapsed}
                   </div>
@@ -411,8 +411,8 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.3vw] text-center">
-                  <div className="text-[0.8vw] text-zinc-400 mb-[0.2vh] font-semibold">ITEM REMAINING</div>
+                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                  <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM REMAINING</div>
                   <div className="text-[2.5vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
