@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -427,8 +426,8 @@ const ADView = () => {
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[0.9vw] text-zinc-400 mb-[0.2vh] font-semibold">TIMING STATUS</div>
-                <div className={`text-[1.6vw] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
+                <div className="text-[clamp(0.8rem,0.9vw,1.2rem)] text-zinc-400 mb-[0.2vh] font-semibold">TIMING STATUS</div>
+                <div className={`text-[clamp(1.2rem,1.6vw,2.5rem)] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
                   !isShowcallerPlaying ? 'text-green-400' :
                   timingStatus.isOnTime ? 'text-green-400' :
                   timingStatus.isAhead ? 'text-yellow-400' :
@@ -450,7 +449,7 @@ const ADView = () => {
                   isDark={true}
                   alt="Cuer Logo"
                 />
-                <div className="text-[1.8vw] font-bold text-white text-center leading-tight">
+                <div className="text-[clamp(1.2rem,1.8vw,3rem)] font-bold text-white text-center leading-tight">
                   {rundownData.title}
                 </div>
               </div>
@@ -459,8 +458,8 @@ const ADView = () => {
             {/* Right Column - Time of Day */}
             <div className="flex justify-end">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[0.9vw] text-zinc-400 mb-[0.2vh] font-semibold">TIME OF DAY</div>
-                <div className="text-[2.5vw] font-mono font-bold text-blue-400">
+                <div className="text-[clamp(0.8rem,0.9vw,1.2rem)] text-zinc-400 mb-[0.2vh] font-semibold">TIME OF DAY</div>
+                <div className="text-[clamp(1.5rem,2.5vw,4rem)] font-mono font-bold text-blue-400">
                   {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
                 </div>
               </div>
@@ -472,12 +471,12 @@ const ADView = () => {
         <div className="flex-1 px-0 py-0">
           <div className={`grid gap-[1.5vh] h-full p-[0.3vw] ${shouldShowScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
             {/* Left Side - Timing Cards centered vertically with more spacing and much taller cards */}
-            <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
+            <div className="col-span-2 flex flex-col justify-center space-y-[2vh]">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.8vw] text-center min-h-[18vh] flex flex-col justify-center">
-                  <div className="text-[1.2vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW ELAPSED</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-blue-400 flex items-center justify-center">
+                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
+                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW ELAPSED</div>
+                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-blue-400 flex items-center justify-center leading-none">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -485,9 +484,9 @@ const ADView = () => {
 
               {/* Show Remaining Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.8vw] text-center min-h-[18vh] flex flex-col justify-center">
-                  <div className="text-[1.2vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW REMAINING</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-orange-400 flex items-center justify-center">
+                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
+                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW REMAINING</div>
+                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-orange-400 flex items-center justify-center leading-none">
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -495,9 +494,9 @@ const ADView = () => {
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.8vw] text-center min-h-[18vh] flex flex-col justify-center">
-                  <div className="text-[1.2vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM ELAPSED</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-green-400 flex items-center justify-center">
+                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
+                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM ELAPSED</div>
+                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-green-400 flex items-center justify-center leading-none">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -505,9 +504,9 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.8vw] text-center min-h-[18vh] flex flex-col justify-center">
-                  <div className="text-[1.2vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM REMAINING</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
+                <CardContent className="p-[1vw] text-center min-h-[20vh] flex flex-col justify-center">
+                  <div className="text-[clamp(1rem,1.4vw,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM REMAINING</div>
+                  <div className="text-[clamp(2rem,3.5vw,5rem)] font-mono font-bold text-yellow-400 flex items-center justify-center leading-none">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
@@ -520,17 +519,17 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.9vw] text-zinc-500 font-semibold">PREV</div>
-                    <div className="text-[1.1vw] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
+                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">PREV</div>
+                    <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.4vw] font-medium text-zinc-400">{prev2Info.name}</div>
+                    <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{prev2Info.name}</div>
                     {selectedColumns.map(columnKey => {
                       const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                       const value = prev2Info.columnData[columnKey] || '--';
                       
                       return (
-                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
                           <span className="font-semibold">{columnName}:</span> {value}
                         </div>
                       );
@@ -543,17 +542,17 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.9vw] text-zinc-400 font-semibold">PREV</div>
-                    <div className="text-[1.3vw] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
+                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
+                    <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.6vw] font-semibold text-zinc-300">{prev1Info.name}</div>
+                    <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
                     {selectedColumns.map(columnKey => {
                       const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                       const value = prev1Info.columnData[columnKey] || '--';
                       
                       return (
-                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
                           <span className="font-semibold">{columnName}:</span> {value}
                         </div>
                       );
@@ -566,18 +565,18 @@ const ADView = () => {
               <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[1.2vw] text-green-300 font-bold">LIVE</div>
-                    <div className="text-[1.8vw] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
+                    <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-green-300 font-bold">LIVE</div>
+                    <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[2.2vw] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
+                    <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
                     <div className="mt-[0.3vh]">
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                         const value = currInfo.columnData[columnKey] || '--';
                         
                         return (
-                          <div key={columnKey} className="text-[1.3vw] text-green-200 mt-[0.2vh]">
+                          <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] text-green-200 mt-[0.2vh]">
                             <span className="font-semibold">{columnName}:</span> {value}
                           </div>
                         );
@@ -591,17 +590,17 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-80">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.9vw] text-zinc-400 font-semibold">NEXT</div>
-                    <div className="text-[1.3vw] font-mono text-zinc-300">{next1Info.rowNumber}</div>
+                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">NEXT</div>
+                    <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{next1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.6vw] font-semibold text-zinc-300">{next1Info.name}</div>
+                    <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{next1Info.name}</div>
                     {selectedColumns.map(columnKey => {
                       const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                       const value = next1Info.columnData[columnKey] || '--';
                       
                       return (
-                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
                           <span className="font-semibold">{columnName}:</span> {value}
                         </div>
                       );
@@ -614,17 +613,17 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.9vw] text-zinc-500 font-semibold">NEXT</div>
-                    <div className="text-[1.1vw] font-mono text-zinc-400">{next2Info.rowNumber}</div>
+                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">NEXT</div>
+                    <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{next2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.4vw] font-medium text-zinc-400">{next2Info.name}</div>
+                    <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{next2Info.name}</div>
                     {selectedColumns.map(columnKey => {
                       const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                       const value = next2Info.columnData[columnKey] || '--';
                       
                       return (
-                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
                           <span className="font-semibold">{columnName}:</span> {value}
                         </div>
                       );
@@ -636,11 +635,11 @@ const ADView = () => {
               {/* Column Controls */}
               <div className="flex items-center justify-between mt-[0.3vh] pt-[0.3vh] border-t border-zinc-700">
                 <div className="flex items-center space-x-[0.3vw]">
-                  <div className="text-[0.9vw] text-zinc-400 font-semibold">Additional Columns:</div>
+                  <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">Additional Columns:</div>
                   {selectedColumns.map(columnKey => {
                     const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                     return (
-                      <div key={columnKey} className="flex items-center bg-zinc-700 rounded px-[0.4vw] py-[0.1vh] text-[0.8vw]">
+                      <div key={columnKey} className="flex items-center bg-zinc-700 rounded px-[0.4vw] py-[0.1vh] text-[clamp(0.6rem,0.8vw,1rem)]">
                         <span>{columnName}</span>
                         <Button
                           variant="ghost"
@@ -663,14 +662,14 @@ const ADView = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => setShowColumnSelector(true)}
-                          className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
+                          className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
                         >
                           <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
                           Add Column
                         </Button>
                       ) : (
                         <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
-                          <SelectTrigger className="w-[12vw] bg-gray-900 border-zinc-600 text-white text-[0.8vw]">
+                          <SelectTrigger className="w-[12vw] bg-gray-900 border-zinc-600 text-white text-[clamp(0.6rem,0.8vw,1rem)]">
                             <SelectValue placeholder="Select column..." />
                           </SelectTrigger>
                           <SelectContent className="bg-gray-900 border-zinc-600">
@@ -678,7 +677,7 @@ const ADView = () => {
                               <SelectItem 
                                 key={column.key} 
                                 value={column.key}
-                                className="text-white hover:bg-zinc-700 focus:bg-zinc-700 text-[0.8vw]"
+                                className="text-white hover:bg-zinc-700 focus:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)]"
                               >
                                 {column.name}
                               </SelectItem>
@@ -695,7 +694,7 @@ const ADView = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowScript(!showScript)}
-                      className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
+                      className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
                     >
                       {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
                       {showScript ? 'Hide Script' : 'Show Script'}
@@ -710,7 +709,7 @@ const ADView = () => {
               <div className="col-span-4 flex flex-col h-full">
                 <Card className="bg-gray-900 border-zinc-700 flex-1 flex flex-col">
                   <CardContent className="p-[0.3vw] flex-1 flex flex-col">
-                    <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
+                    <div className="text-[clamp(0.6rem,0.8vw,1.1rem)] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
                     <div 
                       ref={scriptContainerRef}
                       className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-hidden min-h-0"
@@ -739,4 +738,3 @@ const ADView = () => {
 };
 
 export default ADView;
-
