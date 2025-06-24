@@ -33,11 +33,6 @@ const BlueprintHeader = ({
     <div className="flex flex-col space-y-6 mb-8">
       <div>
         <div className="flex items-center space-x-3 mb-2">
-          <img 
-            src="/lovable-uploads/75b7c01b-309c-489c-b2c2-89967cbb02ef.png"
-            alt="Cuer Logo" 
-            className="h-8 w-auto"
-          />
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white break-words">{rundown.title}</h1>
             <p className="text-gray-400">Blueprint</p>

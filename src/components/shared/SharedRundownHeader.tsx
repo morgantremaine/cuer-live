@@ -75,9 +75,14 @@ export const SharedRundownHeader = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <img 
-                src="/lovable-uploads/75b7c01b-309c-489c-b2c2-89967cbb02ef.png"
+                src="/lovable-uploads/c651349b-4259-451e-8648-9e8a329145c6.png"
                 alt="Cuer Logo" 
-                className="h-8 w-auto"
+                className="h-8 w-auto print:block hidden"
+              />
+              <img 
+                src={isDark ? "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png" : "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png"}
+                alt="Cuer Logo" 
+                className="h-8 w-auto print:hidden"
               />
               <div>
                 <h1 className={`text-xl font-bold print:text-base ${
