@@ -181,15 +181,22 @@ const ADView = () => {
       if (item.type === 'header') {
         // Extract header letter and name
         const headerText = item.name || '';
-        // Look for pattern like "A - Introduction" or just "A"
-        const match = headerText.match(/^([A-Z])\s*-?\s*(.*)$/);
+        // Look for pattern like "A - Introduction" or "A-Introduction" or just "A"
+        const match = headerText.match(/^([A-Z])\s*-\s*(.+)$/);
         if (match) {
           return {
             letter: match[1],
-            name: match[2].trim() || match[1]
+            name: match[2].trim()
           };
         }
-        // Fallback - just use the first character as letter
+        // If no dash pattern, check if it's just a single letter
+        if (headerText.match(/^[A-Z]$/)) {
+          return {
+            letter: headerText,
+            name: headerText
+          };
+        }
+        // Fallback - use the first character as letter and full text as name
         return {
           letter: headerText.charAt(0).toUpperCase(),
           name: headerText
