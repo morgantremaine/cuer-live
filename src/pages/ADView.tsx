@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -28,7 +30,7 @@ const ADView = () => {
   // Check if showcaller is playing
   const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
 
-  // Use the main timing hook for all timing calculations
+  // Use the same timing hook as the main rundown
   const timingStatus = useShowcallerTiming({
     items: rundownData?.items || [],
     rundownStartTime: rundownData?.startTime || '',
@@ -214,7 +216,7 @@ const ADView = () => {
     return secondsToTime(remainingSeconds);
   })();
 
-  // Use the proper current item elapsed time from the same calculation as main rundown
+  // Calculate current item elapsed time using the same logic as main showcaller system
   const currentItemElapsed = (() => {
     if (!currentSegment?.duration || !isShowcallerPlaying || timeRemaining === null || timeRemaining === undefined) {
       return '00:00';
@@ -737,3 +739,4 @@ const ADView = () => {
 };
 
 export default ADView;
+
