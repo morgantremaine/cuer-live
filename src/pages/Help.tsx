@@ -217,6 +217,7 @@ const Help = () => {
                 <li><strong>Progress Tracking:</strong> Visual show progress and next segment preview</li>
                 <li><strong>Control Room Ready:</strong> Optimized for multiviewer displays</li>
                 <li><strong>Easy Access:</strong> No login required - dedicated URL per rundown</li>
+                <li><strong>Auto-Sync:</strong> Automatically synchronizes with the rundown's showcaller function for real-time updates</li>
               </ul>
             </div>
           </section>
