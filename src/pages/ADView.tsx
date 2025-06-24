@@ -426,8 +426,8 @@ const ADView = () => {
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-zinc-400 font-semibold">TIMING STATUS</div>
-                <div className={`text-[clamp(1.5rem,3vw,4.5rem)] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
+                <div className="text-[clamp(0.9rem,1.1vw,1.6rem)] text-zinc-400 font-semibold">TIMING STATUS</div>
+                <div className={`text-[clamp(1.3rem,2.7vw,4rem)] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
                   !isShowcallerPlaying ? 'text-green-400' :
                   timingStatus.isOnTime ? 'text-green-400' :
                   timingStatus.isAhead ? 'text-yellow-400' :
@@ -458,8 +458,8 @@ const ADView = () => {
             {/* Right Column - Time of Day */}
             <div className="flex justify-end">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-zinc-400 font-semibold">TIME OF DAY</div>
-                <div className="text-[clamp(1.5rem,3.2vw,5rem)] font-mono font-bold text-blue-400">
+                <div className="text-[clamp(0.9rem,1.1vw,1.6rem)] text-zinc-400 font-semibold">TIME OF DAY</div>
+                <div className="text-[clamp(1.3rem,2.9vw,4.5rem)] font-mono font-bold text-blue-400">
                   {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
                 </div>
               </div>
@@ -475,8 +475,8 @@ const ADView = () => {
               {/* Show Elapsed Time */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.7rem,3vh,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW ELAPSED</div>
-                  <div className="text-[clamp(1.5rem,6vh,4rem)] font-mono font-bold text-blue-400 flex items-center justify-center leading-none">
+                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW ELAPSED</div>
+                  <div className={`font-mono font-bold text-blue-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -485,8 +485,8 @@ const ADView = () => {
               {/* Show Remaining Time */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.7rem,3vh,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">SHOW REMAINING</div>
-                  <div className="text-[clamp(1.5rem,6vh,4rem)] font-mono font-bold text-orange-400 flex items-center justify-center leading-none">
+                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW REMAINING</div>
+                  <div className={`font-mono font-bold text-orange-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -495,8 +495,8 @@ const ADView = () => {
               {/* Current Item Elapsed */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.7rem,3vh,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM ELAPSED</div>
-                  <div className="text-[clamp(1.5rem,6vh,4rem)] font-mono font-bold text-green-400 flex items-center justify-center leading-none">
+                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM ELAPSED</div>
+                  <div className={`font-mono font-bold text-green-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -505,8 +505,8 @@ const ADView = () => {
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
                 <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className="text-[clamp(0.7rem,3vh,2rem)] text-zinc-400 mb-[0.5vh] font-semibold tracking-wider">ITEM REMAINING</div>
-                  <div className="text-[clamp(1.5rem,6vh,4rem)] font-mono font-bold text-yellow-400 flex items-center justify-center leading-none">
+                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM REMAINING</div>
+                  <div className={`font-mono font-bold text-yellow-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
