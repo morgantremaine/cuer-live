@@ -43,6 +43,13 @@ const ADView = () => {
     return trimmed.toLowerCase() === '[null]';
   };
 
+  // Helper function to check if there's meaningful script content
+  const hasScriptContent = (script: string | undefined) => {
+    if (!script) return false;
+    const trimmed = script.trim();
+    return trimmed !== '' && !isNullScript(trimmed);
+  };
+
   // Get storage key based on rundown ID
   const getStorageKey = () => {
     return rundownData?.id ? `ad-view-columns-${rundownData.id}` : 'ad-view-columns-default';
@@ -308,17 +315,20 @@ const ADView = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Determine if script should be shown based on content availability
+  const shouldShowScript = showScript && currentSegment && hasScriptContent(currentSegment.script);
+
   // Calculate dynamic font size for script based on content and container height
   useEffect(() => {
-    if (!showScript || !scriptContainerRef.current || !scriptContentRef.current || !currentSegment?.script) {
+    if (!shouldShowScript || !scriptContainerRef.current || !scriptContentRef.current || !currentSegment?.script) {
       return;
     }
 
     const container = scriptContainerRef.current;
     const script = currentSegment.script;
     
-    // Skip scaling for [null] scripts
-    if (isNullScript(script)) {
+    // Skip scaling for [null] scripts or empty content
+    if (isNullScript(script) || !hasScriptContent(script)) {
       setScriptFontSize('1.3vw');
       return;
     }
@@ -376,12 +386,12 @@ const ADView = () => {
     const vwSize = (optimalSize / window.innerWidth) * 100;
     setScriptFontSize(`${Math.max(0.8, vwSize).toFixed(2)}vw`); // Ensure minimum readable size
     
-  }, [showScript, currentSegment?.script, scriptContainerRef.current?.clientHeight, scriptContainerRef.current?.clientWidth]);
+  }, [shouldShowScript, currentSegment?.script, scriptContainerRef.current?.clientHeight, scriptContainerRef.current?.clientWidth]);
 
   // Recalculate font size on window resize
   useEffect(() => {
     const handleResize = () => {
-      if (showScript && currentSegment?.script && scriptContainerRef.current) {
+      if (shouldShowScript && currentSegment?.script && scriptContainerRef.current) {
         // Small delay to ensure container dimensions are updated
         setTimeout(() => {
           setScriptFontSize(prev => prev); // Trigger recalculation
@@ -391,7 +401,7 @@ const ADView = () => {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [showScript, currentSegment?.script]);
+  }, [shouldShowScript, currentSegment?.script]);
 
   if (loading) {
     return (
@@ -464,7 +474,7 @@ const ADView = () => {
 
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
-          <div className={`grid gap-[0.3vw] h-full p-[0.3vw] ${showScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
+          <div className={`grid gap-[0.3vw] h-full p-[0.3vw] ${shouldShowScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
             {/* Left Side - Timing Cards centered vertically with more spacing and much taller cards */}
             <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
               {/* Show Elapsed Time */}
@@ -509,7 +519,7 @@ const ADView = () => {
             </div>
 
             {/* Center - Segments Display */}
-            <div className={`${showScript ? 'col-span-6' : 'col-span-6'} flex flex-col justify-center space-y-[0.3vh]`}>
+            <div className={`${shouldShowScript ? 'col-span-6' : 'col-span-6'} flex flex-col justify-center space-y-[0.3vh]`}>
               {/* Previous Segment 2 */}
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
                 <div className="flex items-center space-x-[1vw]">
@@ -683,22 +693,24 @@ const ADView = () => {
                     </div>
                   )}
                   
-                  {/* Script Toggle Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowScript(!showScript)}
-                    className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
-                  >
-                    {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
-                    {showScript ? 'Hide Script' : 'Show Script'}
-                  </Button>
+                  {/* Script Toggle Button - only show if there's meaningful script content */}
+                  {currentSegment && hasScriptContent(currentSegment.script) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowScript(!showScript)}
+                      className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
+                    >
+                      {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
+                      {showScript ? 'Hide Script' : 'Show Script'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Right Side - Script (conditionally rendered) */}
-            {showScript && (
+            {/* Right Side - Script (conditionally rendered only when there's meaningful content) */}
+            {shouldShowScript && (
               <div className="col-span-4 flex flex-col h-full">
                 <Card className="bg-gray-900 border-zinc-700 flex-1 flex flex-col">
                   <CardContent className="p-[0.3vw] flex-1 flex flex-col">
@@ -706,6 +718,7 @@ const ADView = () => {
                     <div 
                       ref={scriptContainerRef}
                       className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-hidden min-h-0"
+                      style={{ height: 'calc(100% - 2rem)' }}
                     >
                       <div 
                         ref={scriptContentRef}
@@ -715,20 +728,7 @@ const ADView = () => {
                           lineHeight: '1.4'
                         }}
                       >
-                        {(() => {
-                          // Check if current segment has a script
-                          if (!currentSegment?.script) {
-                            return 'No script available for current segment';
-                          }
-                          
-                          // Check if script is [null] (case-insensitive)
-                          if (isNullScript(currentSegment.script)) {
-                            return ''; // Don't display anything for [null] scripts
-                          }
-                          
-                          // Display the actual script content
-                          return currentSegment.script;
-                        })()}
+                        {currentSegment.script}
                       </div>
                     </div>
                   </CardContent>
