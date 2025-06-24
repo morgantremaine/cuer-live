@@ -298,22 +298,9 @@ const ADView = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate dynamic height for script area based on content length
-  const getScriptHeight = () => {
-    const scriptText = currentSegment?.script || '';
-    const textLength = scriptText.length;
-    
-    // Base height + additional height based on content
-    const baseHeight = 400; // increased minimum height
-    const additionalHeight = Math.floor(textLength / 80) * 40; // 40px per ~80 characters (more responsive)
-    const maxHeight = 1000; // increased maximum height
-    
-    return Math.min(baseHeight + additionalHeight, maxHeight);
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="h-screen w-screen bg-slate-950 text-white flex items-center justify-center">
         <div className="text-2xl">Loading...</div>
       </div>
     );
@@ -321,7 +308,7 @@ const ADView = () => {
 
   if (error || !rundownData) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="h-screen w-screen bg-slate-950 text-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-2xl text-red-400 mb-2">Error loading rundown</div>
           <div className="text-lg text-gray-400">{error || 'Rundown not found'}</div>
@@ -332,15 +319,15 @@ const ADView = () => {
 
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
-        {/* Header - Using CSS Grid for stable layout */}
-        <div className="bg-gray-800 border-b border-gray-700 px-7 py-5">
-          <div className="grid grid-cols-[1fr_3fr_1fr] gap-4 items-center">
+      <div className="h-screen w-screen bg-slate-950 text-white flex flex-col overflow-hidden">
+        {/* Header - Using viewport-based sizing */}
+        <div className="bg-gray-800 border-b border-gray-700 px-[2vw] py-[1.5vh]">
+          <div className="grid grid-cols-[1fr_3fr_1fr] gap-[2vw] items-center">
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
-              <div className="text-center min-w-[280px]">
-                <div className="text-sm text-gray-400 mb-1 font-semibold">TIMING STATUS</div>
-                <div className={`text-2xl font-bold font-mono min-h-[1.75rem] flex items-center justify-center truncate ${
+              <div className="text-center min-w-[20vw]">
+                <div className="text-[1vw] text-gray-400 mb-[0.5vh] font-semibold">TIMING STATUS</div>
+                <div className={`text-[1.8vw] font-bold font-mono min-h-[2.5vh] flex items-center justify-center truncate ${
                   !isShowcallerPlaying ? 'text-green-400' :
                   timingStatus.isOnTime ? 'text-green-400' :
                   timingStatus.isAhead ? 'text-yellow-400' :
@@ -354,15 +341,15 @@ const ADView = () => {
               </div>
             </div>
             
-            {/* Center Column - Logo and Title (Even Wider) */}
+            {/* Center Column - Logo and Title */}
             <div className="flex items-center justify-center">
-              <div className="flex items-center space-x-5">
+              <div className="flex items-center space-x-[1.5vw]">
                 <img 
                   src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
                   alt="Cuer Logo" 
-                  className="h-9 w-auto flex-shrink-0"
+                  className="h-[4vh] w-auto flex-shrink-0"
                 />
-                <div className="text-3xl font-bold text-white text-center leading-tight">
+                <div className="text-[2.2vw] font-bold text-white text-center leading-tight">
                   {rundownData.title}
                 </div>
               </div>
@@ -370,9 +357,9 @@ const ADView = () => {
             
             {/* Right Column - Time of Day */}
             <div className="flex justify-end">
-              <div className="text-center min-w-[280px]">
-                <div className="text-sm text-gray-400 mb-1 font-semibold">TIME OF DAY</div>
-                <div className="text-4xl font-mono font-bold text-blue-400">
+              <div className="text-center min-w-[20vw]">
+                <div className="text-[1vw] text-gray-400 mb-[0.5vh] font-semibold">TIME OF DAY</div>
+                <div className="text-[3vw] font-mono font-bold text-blue-400">
                   {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
                 </div>
               </div>
@@ -380,16 +367,16 @@ const ADView = () => {
           </div>
         </div>
 
-        {/* Main Content - Updated grid layout with wider timing and script areas */}
+        {/* Main Content - Viewport-based grid layout */}
         <div className="flex-1 px-0 py-0">
-          <div className="grid grid-cols-12 gap-5 h-full p-5">
-            {/* Left Side - Timing Cards - Increased to 3 columns */}
-            <div className="col-span-3 space-y-4">
+          <div className="grid grid-cols-12 gap-[1.5vw] h-full p-[1.5vw]">
+            {/* Left Side - Timing Cards */}
+            <div className="col-span-3 space-y-[1.5vh]">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-5 text-center">
-                  <div className="text-sm text-gray-400 mb-2 font-semibold">SHOW ELAPSED</div>
-                  <div className="text-3xl font-mono font-bold text-blue-400">
+                <CardContent className="p-[1.5vw] text-center">
+                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">SHOW ELAPSED</div>
+                  <div className="text-[2.2vw] font-mono font-bold text-blue-400">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -397,22 +384,22 @@ const ADView = () => {
 
               {/* Show Remaining Time */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-5 text-center">
-                  <div className="text-sm text-gray-400 mb-2 font-semibold">SHOW REMAINING</div>
-                  <div className="text-3xl font-mono font-bold text-orange-400">
+                <CardContent className="p-[1.5vw] text-center">
+                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">SHOW REMAINING</div>
+                  <div className="text-[2.2vw] font-mono font-bold text-orange-400">
                     {showRemainingTime}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Extra spacing before Item Elapsed */}
-              <div className="h-4"></div>
+              <div className="h-[2vh]"></div>
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-5 text-center">
-                  <div className="text-sm text-gray-400 mb-2 font-semibold">ITEM ELAPSED</div>
-                  <div className="text-3xl font-mono font-bold text-green-400">
+                <CardContent className="p-[1.5vw] text-center">
+                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">ITEM ELAPSED</div>
+                  <div className="text-[2.2vw] font-mono font-bold text-green-400">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -420,67 +407,61 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-5 text-center">
-                  <div className="text-sm text-gray-400 mb-2 font-semibold">ITEM REMAINING</div>
-                  <div className="text-3xl font-mono font-bold text-yellow-400">
+                <CardContent className="p-[1.5vw] text-center">
+                  <div className="text-[0.9vw] text-gray-400 mb-[1vh] font-semibold">ITEM REMAINING</div>
+                  <div className="text-[2.2vw] font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Center - Segments Display - Reduced to 6 columns to accommodate wider sides */}
-            <div className="col-span-6 flex flex-col justify-center space-y-4">
+            {/* Center - Segments Display */}
+            <div className="col-span-6 flex flex-col justify-center space-y-[1.5vh]">
               {/* Previous Segment 2 */}
-              <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-40"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-14 text-center">
-                    <div className="text-xs text-gray-500 font-semibold">PREV</div>
-                    <div className="text-sm font-mono text-gray-400">{prev2Info.rowNumber}</div>
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-40">
+                <div className="flex items-center space-x-[1vw]">
+                  <div className="w-[4vw] text-center">
+                    <div className="text-[0.7vw] text-gray-500 font-semibold">PREV</div>
+                    <div className="text-[0.9vw] font-mono text-gray-400">{prev2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-base font-medium text-gray-400">{prev2Info.name}</div>
+                    <div className="text-[1.1vw] font-medium text-gray-400">{prev2Info.name}</div>
                     {renderColumnData(prev2Info.columnData)}
                   </div>
                 </div>
               </div>
 
               {/* Previous Segment 1 */}
-              <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-60"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-14 text-center">
-                    <div className="text-xs text-gray-400 font-semibold">PREV</div>
-                    <div className="text-base font-mono text-gray-300">{prev1Info.rowNumber}</div>
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-60">
+                <div className="flex items-center space-x-[1vw]">
+                  <div className="w-[4vw] text-center">
+                    <div className="text-[0.7vw] text-gray-400 font-semibold">PREV</div>
+                    <div className="text-[1.1vw] font-mono text-gray-300">{prev1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-lg font-semibold text-gray-300">{prev1Info.name}</div>
+                    <div className="text-[1.3vw] font-semibold text-gray-300">{prev1Info.name}</div>
                     {renderColumnData(prev1Info.columnData)}
                   </div>
                 </div>
               </div>
 
-              {/* Current Segment - Increased size */}
-              <div 
-                className="bg-green-900 border-2 border-green-600 rounded-lg p-6 shadow-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-14 text-center">
-                    <div className="text-sm text-green-300 font-bold">ON AIR</div>
-                    <div className="text-xl font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
+              {/* Current Segment - Larger and more prominent */}
+              <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[2vw] shadow-lg">
+                <div className="flex items-center space-x-[1vw]">
+                  <div className="w-[4vw] text-center">
+                    <div className="text-[1vw] text-green-300 font-bold">ON AIR</div>
+                    <div className="text-[1.5vw] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-2xl font-bold text-green-100 mb-2">{currInfo.name}</div>
-                    <div className="mt-2">
+                    <div className="text-[1.8vw] font-bold text-green-100 mb-[1vh]">{currInfo.name}</div>
+                    <div className="mt-[1vh]">
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                         const value = currInfo.columnData[columnKey] || '--';
                         
                         return (
-                          <div key={columnKey} className="text-base text-green-200 mt-1">
+                          <div key={columnKey} className="text-[1.1vw] text-green-200 mt-[0.5vh]">
                             <span className="font-semibold">{columnName}:</span> {value}
                           </div>
                         );
@@ -491,53 +472,49 @@ const ADView = () => {
               </div>
 
               {/* Next Segment 1 */}
-              <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-80"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-14 text-center">
-                    <div className="text-xs text-gray-400 font-semibold">NEXT</div>
-                    <div className="text-base font-mono text-gray-300">{next1Info.rowNumber}</div>
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-80">
+                <div className="flex items-center space-x-[1vw]">
+                  <div className="w-[4vw] text-center">
+                    <div className="text-[0.7vw] text-gray-400 font-semibold">NEXT</div>
+                    <div className="text-[1.1vw] font-mono text-gray-300">{next1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-lg font-semibold text-gray-300">{next1Info.name}</div>
+                    <div className="text-[1.3vw] font-semibold text-gray-300">{next1Info.name}</div>
                     {renderColumnData(next1Info.columnData)}
                   </div>
                 </div>
               </div>
 
               {/* Next Segment 2 */}
-              <div 
-                className="bg-gray-800 border border-gray-600 rounded-lg p-4 opacity-60"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-14 text-center">
-                    <div className="text-xs text-gray-500 font-semibold">NEXT</div>
-                    <div className="text-sm font-mono text-gray-400">{next2Info.rowNumber}</div>
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-60">
+                <div className="flex items-center space-x-[1vw]">
+                  <div className="w-[4vw] text-center">
+                    <div className="text-[0.7vw] text-gray-500 font-semibold">NEXT</div>
+                    <div className="text-[0.9vw] font-mono text-gray-400">{next2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-base font-medium text-gray-400">{next2Info.name}</div>
+                    <div className="text-[1.1vw] font-medium text-gray-400">{next2Info.name}</div>
                     {renderColumnData(next2Info.columnData)}
                   </div>
                 </div>
               </div>
 
-              {/* Column Controls - Increased spacing */}
-              <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-700">
-                <div className="flex items-center space-x-2">
-                  <div className="text-sm text-gray-400 font-semibold">Additional Columns:</div>
+              {/* Column Controls - Responsive sizing */}
+              <div className="flex items-center justify-between mt-[2vh] pt-[2vh] border-t border-gray-700">
+                <div className="flex items-center space-x-[0.5vw]">
+                  <div className="text-[0.9vw] text-gray-400 font-semibold">Additional Columns:</div>
                   {selectedColumns.map(columnKey => {
                     const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                     return (
-                      <div key={columnKey} className="flex items-center bg-gray-700 rounded px-3 py-1 text-sm">
+                      <div key={columnKey} className="flex items-center bg-gray-700 rounded px-[0.8vw] py-[0.3vh] text-[0.8vw]">
                         <span>{columnName}</span>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="ml-1 h-4 w-4 p-0 text-gray-400 hover:text-white"
+                          className="ml-[0.3vw] h-[1.2vw] w-[1.2vw] p-0 text-gray-400 hover:text-white"
                           onClick={() => removeColumn(columnKey)}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-[0.8vw] w-[0.8vw]" />
                         </Button>
                       </div>
                     );
@@ -551,14 +528,14 @@ const ADView = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowColumnSelector(true)}
-                        className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
+                        className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 text-[0.8vw] px-[1vw] py-[0.5vh]"
                       >
-                        <Plus className="h-4 w-4 mr-1" />
+                        <Plus className="h-[1vw] w-[1vw] mr-[0.3vw]" />
                         Add Column
                       </Button>
                     ) : (
                       <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
-                        <SelectTrigger className="w-44 bg-gray-800 border-gray-600 text-white">
+                        <SelectTrigger className="w-[12vw] bg-gray-800 border-gray-600 text-white text-[0.8vw]">
                           <SelectValue placeholder="Select column..." />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-800 border-gray-600">
@@ -566,7 +543,7 @@ const ADView = () => {
                             <SelectItem 
                               key={column.key} 
                               value={column.key}
-                              className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                              className="text-white hover:bg-gray-700 focus:bg-gray-700 text-[0.8vw]"
                             >
                               {column.name}
                             </SelectItem>
@@ -579,13 +556,13 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script - Increased to 3 columns to match timing blocks */}
+            {/* Right Side - Script - Responsive height and sizing */}
             <div className="col-span-3">
-              <Card className="bg-gray-800 border-gray-700" style={{ height: `${getScriptHeight()}px` }}>
-                <CardContent className="p-5 h-full flex flex-col">
-                  <div className="text-sm text-gray-400 mb-4 font-semibold">CURRENT SCRIPT</div>
-                  <div className="flex-1 bg-gray-900 rounded-lg p-5 overflow-y-auto">
-                    <div className="text-white whitespace-pre-wrap text-base leading-relaxed break-words">
+              <Card className="bg-gray-800 border-gray-700 h-[85vh]">
+                <CardContent className="p-[1.5vw] h-full flex flex-col">
+                  <div className="text-[0.9vw] text-gray-400 mb-[1.5vh] font-semibold">CURRENT SCRIPT</div>
+                  <div className="flex-1 bg-gray-900 rounded-lg p-[1.5vw] overflow-y-auto">
+                    <div className="text-white whitespace-pre-wrap text-[1vw] leading-relaxed break-words">
                       {currentSegment?.script || 'No script available for current segment'}
                     </div>
                   </div>
