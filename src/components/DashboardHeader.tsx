@@ -41,7 +41,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
             )}
             <div className="flex items-center">
               <img 
-                src="/lovable-uploads/cuer-logo-new.png" 
+                src="/lovable-uploads/75b7c01b-309c-489c-b2c2-89967cbb02ef.png" 
                 alt="Cuer Logo" 
                 className="h-8 w-auto"
               />
