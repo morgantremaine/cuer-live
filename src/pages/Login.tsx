@@ -143,7 +143,7 @@ const Login = () => {
             <CardHeader className="text-center">
               <div className="flex justify-center mb-2">
                 <img 
-                  src="/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" 
+                  src="/lovable-uploads/cuer-logo-new.png" 
                   alt="Cuer Logo" 
                   className="h-12 w-auto"
                 />
@@ -194,7 +194,7 @@ const Login = () => {
           <CardHeader className="text-center">
             <div className="flex justify-center mb-2">
               <img 
-                src="/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" 
+                src="/lovable-uploads/cuer-logo-new.png" 
                 alt="Cuer Logo" 
                 className="h-12 w-auto"
               />
