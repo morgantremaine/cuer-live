@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getRowNumber } from '@/utils/sharedRundownUtils';
 import { timeToSeconds, secondsToTime, calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import CuerLogo from '@/components/common/CuerLogo';
 import {
   Select,
   SelectContent,
@@ -343,10 +344,10 @@ const ADView = () => {
             {/* Center Column - Logo and Title */}
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-[1.5vw]">
-                <img 
-                  src="/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"
-                  alt="Cuer Logo" 
+                <CuerLogo 
                   className="h-[4vh] w-auto flex-shrink-0"
+                  isDark={true}
+                  alt="Cuer Logo"
                 />
                 <div className="text-[2.2vw] font-bold text-white text-center leading-tight">
                   {rundownData.title}
