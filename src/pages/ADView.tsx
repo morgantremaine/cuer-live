@@ -426,8 +426,8 @@ const ADView = () => {
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[clamp(0.8rem,0.9vw,1.2rem)] text-zinc-400 mb-[0.2vh] font-semibold">TIMING STATUS</div>
-                <div className={`text-[clamp(1.2rem,1.6vw,2.5rem)] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
+                <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-zinc-400 mb-[0.2vh] font-semibold">TIMING STATUS</div>
+                <div className={`text-[clamp(1.5rem,2.5vw,4rem)] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
                   !isShowcallerPlaying ? 'text-green-400' :
                   timingStatus.isOnTime ? 'text-green-400' :
                   timingStatus.isAhead ? 'text-yellow-400' :
@@ -458,8 +458,8 @@ const ADView = () => {
             {/* Right Column - Time of Day */}
             <div className="flex justify-end">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[clamp(0.8rem,0.9vw,1.2rem)] text-zinc-400 mb-[0.2vh] font-semibold">TIME OF DAY</div>
-                <div className="text-[clamp(1.5rem,2.5vw,4rem)] font-mono font-bold text-blue-400">
+                <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-zinc-400 mb-[0.2vh] font-semibold">TIME OF DAY</div>
+                <div className="text-[clamp(1.5rem,2.8vw,4.5rem)] font-mono font-bold text-blue-400">
                   {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
                 </div>
               </div>
