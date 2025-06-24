@@ -9,9 +9,10 @@ interface CuerLogoProps {
 
 const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo", isDark = true }: CuerLogoProps) => {
   // Default to white logo (isDark=true) for always-dark pages like login, dashboard
+  // Using v2 files to avoid cached corrupted versions
   const logoSrc = isDark 
-    ? "/lovable-uploads/cuer-logo-white.png"
-    : "/lovable-uploads/cuer-logo-black.png";
+    ? "/lovable-uploads/cuer-logo-white-v2.png?v=2"
+    : "/lovable-uploads/cuer-logo-black-v2.png?v=2";
 
   return (
     <img 
