@@ -162,6 +162,46 @@ const ADView = () => {
     currentTimedIndex < timedItems.length - 2 ? timedItems[currentTimedIndex + 2] : null
   ] : [null, null];
 
+  // Find the current header section based on the current segment
+  const getCurrentHeaderInfo = () => {
+    if (!currentSegmentId || !rundownData?.items || rundownData.items.length === 0) {
+      return { letter: '', name: '' };
+    }
+
+    // Find the index of the current segment in the full items array
+    const currentSegmentIndex = rundownData.items.findIndex(item => item.id === currentSegmentId);
+    
+    if (currentSegmentIndex === -1) {
+      return { letter: '', name: '' };
+    }
+
+    // Look backwards from the current segment to find the most recent header
+    for (let i = currentSegmentIndex; i >= 0; i--) {
+      const item = rundownData.items[i];
+      if (item.type === 'header') {
+        // Extract header letter and name
+        const headerText = item.name || '';
+        // Look for pattern like "A - Introduction" or just "A"
+        const match = headerText.match(/^([A-Z])\s*-?\s*(.*)$/);
+        if (match) {
+          return {
+            letter: match[1],
+            name: match[2].trim() || match[1]
+          };
+        }
+        // Fallback - just use the first character as letter
+        return {
+          letter: headerText.charAt(0).toUpperCase(),
+          name: headerText
+        };
+      }
+    }
+
+    return { letter: '', name: '' };
+  };
+
+  const currentHeaderInfo = getCurrentHeaderInfo();
+
   // Calculate show elapsed time using the same logic as useShowcallerTiming
   const showElapsedTime = (() => {
     if (!isShowcallerPlaying || !currentSegmentId || !rundownData?.items) {
@@ -513,70 +553,39 @@ const ADView = () => {
               </Card>
             </div>
 
-            {/* Center - Segments Display */}
-            <div className={`${shouldShowScript ? 'col-span-6' : 'col-span-6'} flex flex-col justify-center space-y-[0.3vh]`}>
-              {/* Previous Segment 2 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
-                <div className="flex items-center space-x-[1vw]">
-                  <div className="w-[4vw] text-center">
-                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">PREV</div>
-                    <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{prev2Info.name}</div>
-                    {selectedColumns.map(columnKey => {
-                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                      const value = prev2Info.columnData[columnKey] || '--';
-                      
-                      return (
-                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                          <span className="font-semibold">{columnName}:</span> {value}
-                        </div>
-                      );
-                    })}
+            {/* Center - Current Header Banner and Segments Display */}
+            <div className={`${shouldShowScript ? 'col-span-6' : 'col-span-6'} flex flex-col space-y-[0.5vh]`}>
+              {/* Current Header Section Banner */}
+              {currentHeaderInfo.letter && (
+                <div className="bg-gray-700 border border-zinc-600 rounded-lg px-[1vw] py-[0.3vh]">
+                  <div className="flex items-center space-x-[0.8vw]">
+                    <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-bold text-white">
+                      {currentHeaderInfo.letter}
+                    </div>
+                    <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-200">
+                      {currentHeaderInfo.name}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Previous Segment 1 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
-                <div className="flex items-center space-x-[1vw]">
-                  <div className="w-[4vw] text-center">
-                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
-                    <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
-                    {selectedColumns.map(columnKey => {
-                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                      const value = prev1Info.columnData[columnKey] || '--';
-                      
-                      return (
-                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                          <span className="font-semibold">{columnName}:</span> {value}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Current Segment */}
-              <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
-                <div className="flex items-center space-x-[1vw]">
-                  <div className="w-[4vw] text-center">
-                    <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-green-300 font-bold">LIVE</div>
-                    <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
-                    <div className="mt-[0.3vh]">
+              {/* Segments Display */}
+              <div className="flex-1 flex flex-col justify-center space-y-[0.3vh]">
+                {/* Previous Segment 2 */}
+                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
+                  <div className="flex items-center space-x-[1vw]">
+                    <div className="w-[4vw] text-center">
+                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">PREV</div>
+                      <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{prev2Info.name}</div>
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                        const value = currInfo.columnData[columnKey] || '--';
+                        const value = prev2Info.columnData[columnKey] || '--';
                         
                         return (
-                          <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] text-green-200 mt-[0.2vh]">
+                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
                             <span className="font-semibold">{columnName}:</span> {value}
                           </div>
                         );
@@ -584,122 +593,170 @@ const ADView = () => {
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Next Segment 1 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-80">
-                <div className="flex items-center space-x-[1vw]">
-                  <div className="w-[4vw] text-center">
-                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">NEXT</div>
-                    <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{next1Info.rowNumber}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{next1Info.name}</div>
-                    {selectedColumns.map(columnKey => {
-                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                      const value = next1Info.columnData[columnKey] || '--';
-                      
-                      return (
-                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                          <span className="font-semibold">{columnName}:</span> {value}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Next Segment 2 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
-                <div className="flex items-center space-x-[1vw]">
-                  <div className="w-[4vw] text-center">
-                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">NEXT</div>
-                    <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{next2Info.rowNumber}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{next2Info.name}</div>
-                    {selectedColumns.map(columnKey => {
-                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                      const value = next2Info.columnData[columnKey] || '--';
-                      
-                      return (
-                        <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                          <span className="font-semibold">{columnName}:</span> {value}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Column Controls */}
-              <div className="flex items-center justify-between mt-[0.3vh] pt-[0.3vh] border-t border-zinc-700">
-                <div className="flex items-center space-x-[0.3vw]">
-                  <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">Additional Columns:</div>
-                  {selectedColumns.map(columnKey => {
-                    const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                    return (
-                      <div key={columnKey} className="flex items-center bg-zinc-700 rounded px-[0.4vw] py-[0.1vh] text-[clamp(0.6rem,0.8vw,1rem)]">
-                        <span>{columnName}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-[0.2vw] h-[1vw] w-[1vw] p-0 text-zinc-400 hover:text-white"
-                          onClick={() => removeColumn(columnKey)}
-                        >
-                          <X className="h-[0.6vw] w-[0.6vw]" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <div className="flex items-center space-x-[0.5vw]">
-                  {availableUnselectedColumns.length > 0 && (
-                    <div className="relative">
-                      {!showColumnSelector ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowColumnSelector(true)}
-                          className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
-                        >
-                          <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
-                          Add Column
-                        </Button>
-                      ) : (
-                        <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
-                          <SelectTrigger className="w-[12vw] bg-gray-900 border-zinc-600 text-white text-[clamp(0.6rem,0.8vw,1rem)]">
-                            <SelectValue placeholder="Select column..." />
-                          </SelectTrigger>
-                          <SelectContent className="bg-gray-900 border-zinc-600">
-                            {availableUnselectedColumns.map(column => (
-                              <SelectItem 
-                                key={column.key} 
-                                value={column.key}
-                                className="text-white hover:bg-zinc-700 focus:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)]"
-                              >
-                                {column.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                {/* Previous Segment 1 */}
+                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
+                  <div className="flex items-center space-x-[1vw]">
+                    <div className="w-[4vw] text-center">
+                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
+                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
                     </div>
-                  )}
+                    <div className="flex-1">
+                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
+                      {selectedColumns.map(columnKey => {
+                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                        const value = prev1Info.columnData[columnKey] || '--';
+                        
+                        return (
+                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
+                            <span className="font-semibold">{columnName}:</span> {value}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Current Segment */}
+                <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
+                  <div className="flex items-center space-x-[1vw]">
+                    <div className="w-[4vw] text-center">
+                      <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-green-300 font-bold">LIVE</div>
+                      <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
+                      <div className="mt-[0.3vh]">
+                        {selectedColumns.map(columnKey => {
+                          const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                          const value = currInfo.columnData[columnKey] || '--';
+                          
+                          return (
+                            <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] text-green-200 mt-[0.2vh]">
+                              <span className="font-semibold">{columnName}:</span> {value}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Segment 1 */}
+                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-80">
+                  <div className="flex items-center space-x-[1vw]">
+                    <div className="w-[4vw] text-center">
+                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">NEXT</div>
+                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{next1Info.rowNumber}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{next1Info.name}</div>
+                      {selectedColumns.map(columnKey => {
+                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                        const value = next1Info.columnData[columnKey] || '--';
+                        
+                        return (
+                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
+                            <span className="font-semibold">{columnName}:</span> {value}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Segment 2 */}
+                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
+                  <div className="flex items-center space-x-[1vw]">
+                    <div className="w-[4vw] text-center">
+                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">NEXT</div>
+                      <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{next2Info.rowNumber}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{next2Info.name}</div>
+                      {selectedColumns.map(columnKey => {
+                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                        const value = next2Info.columnData[columnKey] || '--';
+                        
+                        return (
+                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
+                            <span className="font-semibold">{columnName}:</span> {value}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column Controls */}
+                <div className="flex items-center justify-between mt-[0.3vh] pt-[0.3vh] border-t border-zinc-700">
+                  <div className="flex items-center space-x-[0.3vw]">
+                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">Additional Columns:</div>
+                    {selectedColumns.map(columnKey => {
+                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                      return (
+                        <div key={columnKey} className="flex items-center bg-zinc-700 rounded px-[0.4vw] py-[0.1vh] text-[clamp(0.6rem,0.8vw,1rem)]">
+                          <span>{columnName}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-[0.2vw] h-[1vw] w-[1vw] p-0 text-zinc-400 hover:text-white"
+                            onClick={() => removeColumn(columnKey)}
+                          >
+                            <X className="h-[0.6vw] w-[0.6vw]" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
                   
-                  {/* Script Toggle Button - only show if there's meaningful script content */}
-                  {currentSegment && hasScriptContent(currentSegment.script) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowScript(!showScript)}
-                      className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
-                    >
-                      {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
-                      {showScript ? 'Hide Script' : 'Show Script'}
-                    </Button>
-                  )}
+                  <div className="flex items-center space-x-[0.5vw]">
+                    {availableUnselectedColumns.length > 0 && (
+                      <div className="relative">
+                        {!showColumnSelector ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowColumnSelector(true)}
+                            className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
+                          >
+                            <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
+                            Add Column
+                          </Button>
+                        ) : (
+                          <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
+                            <SelectTrigger className="w-[12vw] bg-gray-900 border-zinc-600 text-white text-[clamp(0.6rem,0.8vw,1rem)]">
+                              <SelectValue placeholder="Select column..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-900 border-zinc-600">
+                              {availableUnselectedColumns.map(column => (
+                                <SelectItem 
+                                  key={column.key} 
+                                  value={column.key}
+                                  className="text-white hover:bg-zinc-700 focus:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)]"
+                                >
+                                  {column.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Script Toggle Button - only show if there's meaningful script content */}
+                    {currentSegment && hasScriptContent(currentSegment.script) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowScript(!showScript)}
+                        className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
+                      >
+                        {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
+                        {showScript ? 'Hide Script' : 'Show Script'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
