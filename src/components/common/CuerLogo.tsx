@@ -4,12 +4,18 @@ import React from 'react';
 interface CuerLogoProps {
   className?: string;
   alt?: string;
+  isDark?: boolean;
 }
 
-const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo" }: CuerLogoProps) => {
+const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo", isDark = false }: CuerLogoProps) => {
+  // Use dark logo for dark mode, light logo for light mode
+  const logoSrc = isDark 
+    ? "/lovable-uploads/9bfd48af-1719-4d02-9dee-8af16d6c8322.png"  // Dark mode (white logo)
+    : "/lovable-uploads/afeee545-0420-4bb9-a4c1-cc3e2931ec3e.png"; // Light mode (dark logo)
+
   return (
     <img 
-      src="/lovable-uploads/d784967d-1e5e-4678-8c5b-a5139e079c11.png"
+      src={logoSrc}
       alt={alt}
       className={className}
     />
