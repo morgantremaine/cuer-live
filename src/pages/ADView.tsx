@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -373,16 +374,16 @@ const ADView = () => {
           </div>
         </div>
 
-        {/* Main Content - Viewport-based grid layout */}
+        {/* Main Content - Updated grid layout: smaller left column, larger script column */}
         <div className="flex-1 px-0 py-0">
           <div className="grid grid-cols-12 gap-[1.5vw] h-full p-[1.5vw]">
-            {/* Left Side - Timing Cards with dark gray backgrounds */}
-            <div className="col-span-3 space-y-[1.5vh]">
+            {/* Left Side - Timing Cards with smaller width and bigger text */}
+            <div className="col-span-2 space-y-[1.5vh]">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[1.1vw] text-zinc-400 mb-[1vh] font-semibold">SHOW ELAPSED</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-blue-400">
+                <CardContent className="p-[1.2vw] text-center">
+                  <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">SHOW ELAPSED</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-blue-400">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -390,9 +391,9 @@ const ADView = () => {
 
               {/* Show Remaining Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[1.1vw] text-zinc-400 mb-[1vh] font-semibold">SHOW REMAINING</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-orange-400">
+                <CardContent className="p-[1.2vw] text-center">
+                  <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">SHOW REMAINING</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-orange-400">
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -403,9 +404,9 @@ const ADView = () => {
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[1.1vw] text-zinc-400 mb-[1vh] font-semibold">ITEM ELAPSED</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-green-400">
+                <CardContent className="p-[1.2vw] text-center">
+                  <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">ITEM ELAPSED</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-green-400">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -413,16 +414,16 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[1.5vw] text-center">
-                  <div className="text-[1.1vw] text-zinc-400 mb-[1vh] font-semibold">ITEM REMAINING</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-yellow-400">
+                <CardContent className="p-[1.2vw] text-center">
+                  <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">ITEM REMAINING</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-yellow-400">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Center - Segments Display with dark gray backgrounds */}
+            {/* Center - Segments Display with same width */}
             <div className="col-span-6 flex flex-col justify-center space-y-[1.5vh]">
               {/* Previous Segment 2 */}
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[1.2vw] opacity-40">
@@ -562,8 +563,8 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script with dark gray background */}
-            <div className="col-span-3">
+            {/* Right Side - Script with wider column */}
+            <div className="col-span-4">
               <Card className="bg-gray-900 border-zinc-700 h-full">
                 <CardContent className="p-[1.5vw] h-full flex flex-col">
                   <div className="text-[1.1vw] text-zinc-400 mb-[1.5vh] font-semibold">CURRENT SCRIPT</div>
