@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -352,7 +353,7 @@ const ADView = () => {
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-[1vw]">
                 <CuerLogo 
-                  className="h-[3vh] w-auto flex-shrink-0"
+                  className="h-[5vh] w-auto flex-shrink-0"
                   isDark={true}
                   alt="Cuer Logo"
                 />
@@ -377,11 +378,11 @@ const ADView = () => {
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
           <div className="grid grid-cols-12 gap-[0.3vw] h-full p-[0.3vw]">
-            {/* Left Side - Timing Cards centered vertically with more spacing and taller cards */}
+            {/* Left Side - Timing Cards centered vertically with more spacing and much taller cards */}
             <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                <CardContent className="p-[0.8vw] text-center min-h-[12vh] flex flex-col justify-center">
                   <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW ELAPSED</div>
                   <div className="text-[2.5vw] font-mono font-bold text-blue-400 flex items-center justify-center">
                     {showElapsedTime}
@@ -391,7 +392,7 @@ const ADView = () => {
 
               {/* Show Remaining Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                <CardContent className="p-[0.8vw] text-center min-h-[12vh] flex flex-col justify-center">
                   <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW REMAINING</div>
                   <div className="text-[2.5vw] font-mono font-bold text-orange-400 flex items-center justify-center">
                     {showRemainingTime}
@@ -401,7 +402,7 @@ const ADView = () => {
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                <CardContent className="p-[0.8vw] text-center min-h-[12vh] flex flex-col justify-center">
                   <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM ELAPSED</div>
                   <div className="text-[2.5vw] font-mono font-bold text-green-400 flex items-center justify-center">
                     {currentItemElapsed}
@@ -411,7 +412,7 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center min-h-[8vh] flex flex-col justify-center">
+                <CardContent className="p-[0.8vw] text-center min-h-[12vh] flex flex-col justify-center">
                   <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM REMAINING</div>
                   <div className="text-[2.5vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
                     {formatTimeRemaining(timeRemaining)}
@@ -594,3 +595,4 @@ const ADView = () => {
 };
 
 export default ADView;
+
