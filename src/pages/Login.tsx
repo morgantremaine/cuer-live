@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
 import Footer from '@/components/Footer'
-import CuerLogo from '@/components/common/CuerLogo'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -142,7 +142,11 @@ const Login = () => {
           <Card className="w-full max-w-md bg-gray-800 border-gray-700">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-2">
-                <CuerLogo className="h-12 w-auto" isDark={true} />
+                <img 
+                  src="/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" 
+                  alt="Cuer Logo" 
+                  className="h-12 w-auto"
+                />
               </div>
               <CardTitle className="text-white">Reset Password</CardTitle>
               <CardDescription className="text-gray-400">
@@ -189,7 +193,11 @@ const Login = () => {
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-2">
-              <CuerLogo className="h-12 w-auto" isDark={true} />
+              <img 
+                src="/lovable-uploads/532ebea5-3595-410d-bf43-7d64381798d7.png" 
+                alt="Cuer Logo" 
+                className="h-12 w-auto"
+              />
             </div>
           </CardHeader>
           <CardContent>
