@@ -427,12 +427,21 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.7vw] text-zinc-500 font-semibold">PREV</div>
-                    <div className="text-[0.9vw] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
+                    <div className="text-[0.9vw] text-zinc-500 font-semibold">PREV</div>
+                    <div className="text-[1.1vw] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
                     <div className="text-[1.4vw] font-medium text-zinc-400">{prev2Info.name}</div>
-                    {renderColumnData(prev2Info.columnData)}
+                    {selectedColumns.map(columnKey => {
+                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                      const value = prev2Info.columnData[columnKey] || '--';
+                      
+                      return (
+                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                          <span className="font-semibold">{columnName}:</span> {value}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -441,12 +450,21 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.7vw] text-zinc-400 font-semibold">PREV</div>
-                    <div className="text-[1.1vw] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
+                    <div className="text-[0.9vw] text-zinc-400 font-semibold">PREV</div>
+                    <div className="text-[1.3vw] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
                     <div className="text-[1.6vw] font-semibold text-zinc-300">{prev1Info.name}</div>
-                    {renderColumnData(prev1Info.columnData)}
+                    {selectedColumns.map(columnKey => {
+                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                      const value = prev1Info.columnData[columnKey] || '--';
+                      
+                      return (
+                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                          <span className="font-semibold">{columnName}:</span> {value}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -455,8 +473,8 @@ const ADView = () => {
               <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[1vw] text-green-300 font-bold">ON AIR</div>
-                    <div className="text-[1.5vw] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
+                    <div className="text-[1.2vw] text-green-300 font-bold">ON AIR</div>
+                    <div className="text-[1.8vw] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
                     <div className="text-[2.2vw] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
@@ -466,7 +484,7 @@ const ADView = () => {
                         const value = currInfo.columnData[columnKey] || '--';
                         
                         return (
-                          <div key={columnKey} className="text-[1.1vw] text-green-200 mt-[0.2vh]">
+                          <div key={columnKey} className="text-[1.3vw] text-green-200 mt-[0.2vh]">
                             <span className="font-semibold">{columnName}:</span> {value}
                           </div>
                         );
@@ -480,12 +498,21 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-80">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.7vw] text-zinc-400 font-semibold">NEXT</div>
-                    <div className="text-[1.1vw] font-mono text-zinc-300">{next1Info.rowNumber}</div>
+                    <div className="text-[0.9vw] text-zinc-400 font-semibold">NEXT</div>
+                    <div className="text-[1.3vw] font-mono text-zinc-300">{next1Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
                     <div className="text-[1.6vw] font-semibold text-zinc-300">{next1Info.name}</div>
-                    {renderColumnData(next1Info.columnData)}
+                    {selectedColumns.map(columnKey => {
+                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                      const value = next1Info.columnData[columnKey] || '--';
+                      
+                      return (
+                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                          <span className="font-semibold">{columnName}:</span> {value}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -494,12 +521,21 @@ const ADView = () => {
               <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
-                    <div className="text-[0.7vw] text-zinc-500 font-semibold">NEXT</div>
-                    <div className="text-[0.9vw] font-mono text-zinc-400">{next2Info.rowNumber}</div>
+                    <div className="text-[0.9vw] text-zinc-500 font-semibold">NEXT</div>
+                    <div className="text-[1.1vw] font-mono text-zinc-400">{next2Info.rowNumber}</div>
                   </div>
                   <div className="flex-1">
                     <div className="text-[1.4vw] font-medium text-zinc-400">{next2Info.name}</div>
-                    {renderColumnData(next2Info.columnData)}
+                    {selectedColumns.map(columnKey => {
+                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                      const value = next2Info.columnData[columnKey] || '--';
+                      
+                      return (
+                        <div key={columnKey} className="text-[1vw] text-gray-400 mt-[0.1vh]">
+                          <span className="font-semibold">{columnName}:</span> {value}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
