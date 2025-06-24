@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -142,7 +143,7 @@ const Login = () => {
           <Card className="w-full max-w-md bg-gray-800 border-gray-700">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-2">
-                <CuerLogo className="h-12 w-auto" />
+                <CuerLogo className="h-12 w-auto" isDark={true} />
               </div>
               <CardTitle className="text-white">Reset Password</CardTitle>
               <CardDescription className="text-gray-400">
@@ -189,7 +190,7 @@ const Login = () => {
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-2">
-              <CuerLogo className="h-12 w-auto" />
+              <CuerLogo className="h-12 w-auto" isDark={true} />
             </div>
           </CardHeader>
           <CardContent>

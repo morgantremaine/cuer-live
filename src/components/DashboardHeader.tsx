@@ -41,7 +41,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
               </Button>
             )}
             <div className="flex items-center">
-              <CuerLogo />
+              <CuerLogo isDark={true} />
             </div>
           </div>
           

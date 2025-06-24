@@ -3,10 +3,12 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '@/hooks/useTheme';
 import CuerLogo from '@/components/common/CuerLogo';
 
 const HeaderLogo = () => {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');
@@ -23,7 +25,7 @@ const HeaderLogo = () => {
       >
         <ArrowLeft className="h-5 w-5" />
       </Button>
-      <CuerLogo />
+      <CuerLogo isDark={isDark} />
     </div>
   );
 };
