@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -469,7 +470,7 @@ const ADView = () => {
 
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
-          <div className={`grid gap-[0.3vw] h-full p-[0.3vw] ${shouldShowScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
+          <div className={`grid gap-[1.5vh] h-full p-[0.3vw] ${shouldShowScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
             {/* Left Side - Timing Cards centered vertically with more spacing and much taller cards */}
             <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
               {/* Show Elapsed Time */}
@@ -738,3 +739,4 @@ const ADView = () => {
 };
 
 export default ADView;
+
