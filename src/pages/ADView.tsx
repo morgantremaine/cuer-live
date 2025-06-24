@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -319,8 +320,8 @@ const ADView = () => {
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
       <div className="h-screen w-screen bg-black text-white flex flex-col overflow-hidden">
-        {/* Header - Using viewport-based sizing */}
-        <div className="bg-gray-900 border-b border-gray-700 px-[2vw] py-[1.5vh]">
+        {/* Header - Using viewport-based sizing with dark grey background */}
+        <div className="bg-gray-800 border-b border-gray-700 px-[2vw] py-[1.5vh]">
           <div className="grid grid-cols-[1fr_3fr_1fr] gap-[2vw] items-center">
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
@@ -358,7 +359,7 @@ const ADView = () => {
             <div className="flex justify-end">
               <div className="text-center min-w-[20vw]">
                 <div className="text-[1vw] text-gray-400 mb-[0.5vh] font-semibold">TIME OF DAY</div>
-                <div className="text-[3vw] font-mono font-bold text-white">
+                <div className="text-[3vw] font-mono font-bold text-blue-400">
                   {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
                 </div>
               </div>
@@ -369,20 +370,20 @@ const ADView = () => {
         {/* Main Content - Viewport-based grid layout */}
         <div className="flex-1 px-0 py-0">
           <div className="grid grid-cols-12 gap-[1.5vw] h-full p-[1.5vw]">
-            {/* Left Side - Timing Cards */}
+            {/* Left Side - Timing Cards with dark grey backgrounds */}
             <div className="col-span-3 space-y-[1.5vh]">
               {/* Show Elapsed Time */}
-              <Card className="bg-gray-900 border-gray-700">
+              <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
                   <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">SHOW ELAPSED</div>
-                  <div className="text-[2.5vw] font-mono font-bold text-white">
+                  <div className="text-[2.5vw] font-mono font-bold text-blue-400">
                     {showElapsedTime}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Show Remaining Time */}
-              <Card className="bg-gray-900 border-gray-700">
+              <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
                   <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">SHOW REMAINING</div>
                   <div className="text-[2.5vw] font-mono font-bold text-orange-400">
@@ -395,7 +396,7 @@ const ADView = () => {
               <div className="h-[2vh]"></div>
 
               {/* Current Item Elapsed */}
-              <Card className="bg-gray-900 border-gray-700">
+              <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
                   <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">ITEM ELAPSED</div>
                   <div className="text-[2.5vw] font-mono font-bold text-green-400">
@@ -405,7 +406,7 @@ const ADView = () => {
               </Card>
 
               {/* Current Item Time Remaining */}
-              <Card className="bg-gray-900 border-gray-700">
+              <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-[1.5vw] text-center">
                   <div className="text-[1.1vw] text-gray-400 mb-[1vh] font-semibold">ITEM REMAINING</div>
                   <div className="text-[2.5vw] font-mono font-bold text-yellow-400">
@@ -415,10 +416,10 @@ const ADView = () => {
               </Card>
             </div>
 
-            {/* Center - Segments Display */}
+            {/* Center - Segments Display with dark grey backgrounds */}
             <div className="col-span-6 flex flex-col justify-center space-y-[1.5vh]">
               {/* Previous Segment 2 */}
-              <div className="bg-gray-900 border border-gray-600 rounded-lg p-[1.2vw] opacity-40">
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-40">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-gray-500 font-semibold">PREV</div>
@@ -432,7 +433,7 @@ const ADView = () => {
               </div>
 
               {/* Previous Segment 1 */}
-              <div className="bg-gray-900 border border-gray-600 rounded-lg p-[1.2vw] opacity-60">
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-gray-400 font-semibold">PREV</div>
@@ -471,7 +472,7 @@ const ADView = () => {
               </div>
 
               {/* Next Segment 1 */}
-              <div className="bg-gray-900 border border-gray-600 rounded-lg p-[1.2vw] opacity-80">
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-80">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-gray-400 font-semibold">NEXT</div>
@@ -485,7 +486,7 @@ const ADView = () => {
               </div>
 
               {/* Next Segment 2 */}
-              <div className="bg-gray-900 border border-gray-600 rounded-lg p-[1.2vw] opacity-60">
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-[1.2vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-gray-500 font-semibold">NEXT</div>
@@ -555,9 +556,9 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script - Responsive height and sizing */}
+            {/* Right Side - Script with dark grey background */}
             <div className="col-span-3">
-              <Card className="bg-gray-900 border-gray-700 h-full">
+              <Card className="bg-gray-800 border-gray-700 h-full">
                 <CardContent className="p-[1.5vw] h-full flex flex-col">
                   <div className="text-[1.1vw] text-gray-400 mb-[1.5vh] font-semibold">CURRENT SCRIPT</div>
                   <div className="flex-1 bg-black rounded-lg p-[1.5vw] overflow-y-auto">
