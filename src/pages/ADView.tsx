@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { Clock, Plus, X, EyeOff, Eye } from 'lucide-react';
@@ -22,6 +21,8 @@ const ADView = () => {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [showScript, setShowScript] = useState(true);
+  const scriptContainerRef = useRef<HTMLDivElement>(null);
+  const [scriptFontSize, setScriptFontSize] = useState('1.3vw');
 
   // Check if showcaller is playing
   const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
@@ -305,6 +306,81 @@ const ADView = () => {
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Calculate dynamic font size for script based on content and container height
+  useEffect(() => {
+    if (!showScript || !scriptContainerRef.current || !currentSegment?.script) {
+      return;
+    }
+
+    const container = scriptContainerRef.current;
+    const script = currentSegment.script;
+    
+    // Skip scaling for [null] scripts
+    if (isNullScript(script)) {
+      setScriptFontSize('1.3vw');
+      return;
+    }
+
+    // Create a temporary element to measure text height
+    const measureElement = document.createElement('div');
+    measureElement.style.position = 'absolute';
+    measureElement.style.visibility = 'hidden';
+    measureElement.style.width = `${container.clientWidth - 32}px`; // Account for padding
+    measureElement.style.whiteSpace = 'pre-wrap';
+    measureElement.style.lineHeight = '1.4';
+    measureElement.style.wordBreak = 'break-words';
+    measureElement.textContent = script;
+    
+    document.body.appendChild(measureElement);
+    
+    const containerHeight = container.clientHeight - 32; // Account for padding
+    const baseFontSize = Math.min(window.innerWidth * 0.013, window.innerHeight * 0.025); // 1.3vw equivalent
+    
+    // Try different font sizes from largest to smallest
+    const fontSizes = [
+      Math.min(baseFontSize * 1.5, window.innerWidth * 0.025), // Up to 2.5vw max
+      baseFontSize * 1.3,
+      baseFontSize * 1.1,
+      baseFontSize,
+      baseFontSize * 0.9,
+      baseFontSize * 0.8,
+      baseFontSize * 0.7,
+      baseFontSize * 0.6,
+      baseFontSize * 0.5
+    ];
+    
+    let selectedFontSize = baseFontSize;
+    
+    for (const fontSize of fontSizes) {
+      measureElement.style.fontSize = `${fontSize}px`;
+      
+      if (measureElement.scrollHeight <= containerHeight) {
+        selectedFontSize = fontSize;
+        break;
+      }
+    }
+    
+    document.body.removeChild(measureElement);
+    
+    // Convert back to vw units for consistency
+    const vwSize = (selectedFontSize / window.innerWidth) * 100;
+    setScriptFontSize(`${vwSize.toFixed(2)}vw`);
+    
+  }, [showScript, currentSegment?.script, scriptContainerRef.current]);
+
+  // Recalculate font size on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (showScript && currentSegment?.script) {
+        // Trigger recalculation by updating a dependency
+        setScriptFontSize(prev => prev);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showScript, currentSegment?.script]);
 
   if (loading) {
     return (
@@ -616,12 +692,18 @@ const ADView = () => {
                 <Card className="bg-gray-900 border-zinc-700 h-full">
                   <CardContent className="p-[0.3vw] h-full flex flex-col">
                     <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
-                    <div className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-y-auto">
-                      <div className="text-white whitespace-pre-wrap leading-relaxed break-words text-[1.3vw] min-h-full flex items-start">
-                        <div className="w-full" style={{ 
-                          fontSize: 'clamp(0.8vw, 1.3vw, 3vw)',
-                          lineHeight: '1.4'
-                        }}>
+                    <div 
+                      ref={scriptContainerRef}
+                      className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-hidden"
+                    >
+                      <div className="text-white whitespace-pre-wrap leading-relaxed break-words h-full flex items-start">
+                        <div 
+                          className="w-full h-full overflow-y-auto" 
+                          style={{ 
+                            fontSize: scriptFontSize,
+                            lineHeight: '1.4'
+                          }}
+                        >
                           {(() => {
                             // Check if current segment has a script
                             if (!currentSegment?.script) {
