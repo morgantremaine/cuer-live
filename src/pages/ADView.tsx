@@ -383,7 +383,7 @@ const ADView = () => {
               <Card className="bg-gray-900 border-zinc-700">
                 <CardContent className="p-[1.2vw] text-center">
                   <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">SHOW ELAPSED</div>
-                  <div className="text-[2.8vw] font-mono font-bold text-blue-400">
+                  <div className="text-[2.8vw] font-mono font-bold text-blue-400 flex items-center justify-center">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -393,7 +393,7 @@ const ADView = () => {
               <Card className="bg-gray-900 border-zinc-700">
                 <CardContent className="p-[1.2vw] text-center">
                   <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">SHOW REMAINING</div>
-                  <div className="text-[2.8vw] font-mono font-bold text-orange-400">
+                  <div className="text-[2.8vw] font-mono font-bold text-orange-400 flex items-center justify-center">
                     {showRemainingTime}
                   </div>
                 </CardContent>
@@ -406,7 +406,7 @@ const ADView = () => {
               <Card className="bg-gray-900 border-zinc-700">
                 <CardContent className="p-[1.2vw] text-center">
                   <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">ITEM ELAPSED</div>
-                  <div className="text-[2.8vw] font-mono font-bold text-green-400">
+                  <div className="text-[2.8vw] font-mono font-bold text-green-400 flex items-center justify-center">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -416,7 +416,7 @@ const ADView = () => {
               <Card className="bg-gray-900 border-zinc-700">
                 <CardContent className="p-[1.2vw] text-center">
                   <div className="text-[1.2vw] text-zinc-400 mb-[1vh] font-semibold">ITEM REMAINING</div>
-                  <div className="text-[2.8vw] font-mono font-bold text-yellow-400">
+                  <div className="text-[2.8vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
