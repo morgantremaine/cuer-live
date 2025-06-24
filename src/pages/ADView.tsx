@@ -22,6 +22,7 @@ const ADView = () => {
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [showScript, setShowScript] = useState(true);
   const scriptContainerRef = useRef<HTMLDivElement>(null);
+  const scriptContentRef = useRef<HTMLDivElement>(null);
   const [scriptFontSize, setScriptFontSize] = useState('1.3vw');
 
   // Check if showcaller is playing
@@ -309,7 +310,7 @@ const ADView = () => {
 
   // Calculate dynamic font size for script based on content and container height
   useEffect(() => {
-    if (!showScript || !scriptContainerRef.current || !currentSegment?.script) {
+    if (!showScript || !scriptContainerRef.current || !scriptContentRef.current || !currentSegment?.script) {
       return;
     }
 
@@ -322,41 +323,49 @@ const ADView = () => {
       return;
     }
 
+    // Get the actual available height of the container
+    const containerHeight = container.clientHeight - 32; // Account for padding
+    const containerWidth = container.clientWidth - 32; // Account for padding
+    
+    if (containerHeight <= 0 || containerWidth <= 0) {
+      return;
+    }
+
     // Create a temporary element to measure text height
     const measureElement = document.createElement('div');
     measureElement.style.position = 'absolute';
     measureElement.style.visibility = 'hidden';
-    measureElement.style.width = `${container.clientWidth - 32}px`; // Account for padding
+    measureElement.style.width = `${containerWidth}px`;
     measureElement.style.whiteSpace = 'pre-wrap';
     measureElement.style.lineHeight = '1.4';
     measureElement.style.wordBreak = 'break-words';
+    measureElement.style.overflow = 'hidden';
     measureElement.textContent = script;
     
     document.body.appendChild(measureElement);
     
-    const containerHeight = container.clientHeight - 32; // Account for padding
     const baseFontSize = Math.min(window.innerWidth * 0.013, window.innerHeight * 0.025); // 1.3vw equivalent
+    const maxFontSize = Math.min(window.innerWidth * 0.03, window.innerHeight * 0.04); // Up to 3vw max
     
-    // Try different font sizes from largest to smallest
-    const fontSizes = [
-      Math.min(baseFontSize * 1.5, window.innerWidth * 0.025), // Up to 2.5vw max
-      baseFontSize * 1.3,
-      baseFontSize * 1.1,
-      baseFontSize,
-      baseFontSize * 0.9,
-      baseFontSize * 0.8,
-      baseFontSize * 0.7,
-      baseFontSize * 0.6,
-      baseFontSize * 0.5
-    ];
+    // Binary search for the optimal font size
+    let minSize = baseFontSize * 0.3; // Minimum reasonable size
+    let maxSize = maxFontSize;
+    let optimalSize = baseFontSize;
     
-    let selectedFontSize = baseFontSize;
-    
-    for (const fontSize of fontSizes) {
-      measureElement.style.fontSize = `${fontSize}px`;
+    // Use binary search to find the largest font size that fits
+    for (let i = 0; i < 20; i++) { // Limit iterations
+      const testSize = (minSize + maxSize) / 2;
+      measureElement.style.fontSize = `${testSize}px`;
       
       if (measureElement.scrollHeight <= containerHeight) {
-        selectedFontSize = fontSize;
+        optimalSize = testSize;
+        minSize = testSize;
+      } else {
+        maxSize = testSize;
+      }
+      
+      // If the range is small enough, break
+      if (maxSize - minSize < 0.5) {
         break;
       }
     }
@@ -364,17 +373,19 @@ const ADView = () => {
     document.body.removeChild(measureElement);
     
     // Convert back to vw units for consistency
-    const vwSize = (selectedFontSize / window.innerWidth) * 100;
-    setScriptFontSize(`${vwSize.toFixed(2)}vw`);
+    const vwSize = (optimalSize / window.innerWidth) * 100;
+    setScriptFontSize(`${Math.max(0.8, vwSize).toFixed(2)}vw`); // Ensure minimum readable size
     
-  }, [showScript, currentSegment?.script, scriptContainerRef.current]);
+  }, [showScript, currentSegment?.script, scriptContainerRef.current?.clientHeight, scriptContainerRef.current?.clientWidth]);
 
   // Recalculate font size on window resize
   useEffect(() => {
     const handleResize = () => {
-      if (showScript && currentSegment?.script) {
-        // Trigger recalculation by updating a dependency
-        setScriptFontSize(prev => prev);
+      if (showScript && currentSegment?.script && scriptContainerRef.current) {
+        // Small delay to ensure container dimensions are updated
+        setTimeout(() => {
+          setScriptFontSize(prev => prev); // Trigger recalculation
+        }, 100);
       }
     };
 
@@ -688,37 +699,36 @@ const ADView = () => {
 
             {/* Right Side - Script (conditionally rendered) */}
             {showScript && (
-              <div className="col-span-4">
-                <Card className="bg-gray-900 border-zinc-700 h-full">
-                  <CardContent className="p-[0.3vw] h-full flex flex-col">
+              <div className="col-span-4 flex flex-col h-full">
+                <Card className="bg-gray-900 border-zinc-700 flex-1 flex flex-col">
+                  <CardContent className="p-[0.3vw] flex-1 flex flex-col">
                     <div className="text-[0.8vw] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
                     <div 
                       ref={scriptContainerRef}
-                      className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-hidden"
+                      className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-hidden min-h-0"
                     >
-                      <div className="text-white whitespace-pre-wrap leading-relaxed break-words h-full flex items-start">
-                        <div 
-                          className="w-full h-full overflow-y-auto" 
-                          style={{ 
-                            fontSize: scriptFontSize,
-                            lineHeight: '1.4'
-                          }}
-                        >
-                          {(() => {
-                            // Check if current segment has a script
-                            if (!currentSegment?.script) {
-                              return 'No script available for current segment';
-                            }
-                            
-                            // Check if script is [null] (case-insensitive)
-                            if (isNullScript(currentSegment.script)) {
-                              return ''; // Don't display anything for [null] scripts
-                            }
-                            
-                            // Display the actual script content
-                            return currentSegment.script;
-                          })()}
-                        </div>
+                      <div 
+                        ref={scriptContentRef}
+                        className="text-white whitespace-pre-wrap leading-relaxed break-words h-full w-full overflow-hidden"
+                        style={{ 
+                          fontSize: scriptFontSize,
+                          lineHeight: '1.4'
+                        }}
+                      >
+                        {(() => {
+                          // Check if current segment has a script
+                          if (!currentSegment?.script) {
+                            return 'No script available for current segment';
+                          }
+                          
+                          // Check if script is [null] (case-insensitive)
+                          if (isNullScript(currentSegment.script)) {
+                            return ''; // Don't display anything for [null] scripts
+                          }
+                          
+                          // Display the actual script content
+                          return currentSegment.script;
+                        })()}
                       </div>
                     </div>
                   </CardContent>
