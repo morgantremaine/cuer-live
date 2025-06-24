@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -214,27 +215,21 @@ const ADView = () => {
     return secondsToTime(remainingSeconds);
   })();
 
-  // Calculate current item elapsed time
+  // Calculate current item elapsed time using the same logic as main showcaller system
   const currentItemElapsed = (() => {
-    if (!currentSegment?.duration || !rundownData?.showcallerState?.playbackStartTime) {
+    if (!currentSegment?.duration || !isShowcallerPlaying || timeRemaining === null || timeRemaining === undefined) {
       return '00:00';
     }
     
-    const durationParts = currentSegment.duration.split(':').map(Number);
-    let totalSeconds = 0;
+    // Get the segment duration in seconds
+    const segmentDurationSeconds = timeToSeconds(currentSegment.duration);
     
-    if (durationParts.length === 2) {
-      totalSeconds = durationParts[0] * 60 + durationParts[1];
-    } else if (durationParts.length === 3) {
-      totalSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
-    }
+    // Calculate elapsed time as: total duration - remaining time
+    const elapsedSeconds = Math.max(0, segmentDurationSeconds - timeRemaining);
     
-    const elapsed = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
-    const itemElapsed = Math.min(elapsed, totalSeconds);
-    
-    // Format as MM:SS instead of HH:MM:SS
-    const mins = Math.floor(itemElapsed / 60);
-    const secs = itemElapsed % 60;
+    // Format as MM:SS
+    const mins = Math.floor(elapsedSeconds / 60);
+    const secs = elapsedSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   })();
 
