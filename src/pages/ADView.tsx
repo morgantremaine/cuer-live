@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -326,13 +327,13 @@ const ADView = () => {
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
       <div className="h-screen w-screen bg-black text-white flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-gray-900 border-b border-zinc-700 px-[1vw] py-[0.5vh]">
+        {/* Header - Reduced padding */}
+        <div className="bg-gray-900 border-b border-zinc-700 px-[1vw] py-[0.8vh]">
           <div className="grid grid-cols-[1fr_3fr_1fr] gap-[1.5vw] items-center">
             {/* Left Column - Timing Status */}
             <div className="flex justify-start">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[0.9vw] text-zinc-400 mb-[0.2vh] font-semibold">TIMING STATUS</div>
+                <div className="text-[0.9vw] text-zinc-400 mb-[0.3vh] font-semibold">TIMING STATUS</div>
                 <div className={`text-[1.6vw] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
                   !isShowcallerPlaying ? 'text-green-400' :
                   timingStatus.isOnTime ? 'text-green-400' :
@@ -364,7 +365,7 @@ const ADView = () => {
             {/* Right Column - Time of Day */}
             <div className="flex justify-end">
               <div className="text-center min-w-[20vw]">
-                <div className="text-[0.9vw] text-zinc-400 mb-[0.2vh] font-semibold">TIME OF DAY</div>
+                <div className="text-[0.9vw] text-zinc-400 mb-[0.3vh] font-semibold">TIME OF DAY</div>
                 <div className="text-[2.5vw] font-mono font-bold text-blue-400">
                   {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
                 </div>
@@ -373,16 +374,16 @@ const ADView = () => {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - Reduced padding */}
         <div className="flex-1 px-0 py-0">
-          <div className="grid grid-cols-12 gap-[0.5vw] h-full p-[0.5vw]">
-            {/* Left Side - Timing Cards centered vertically */}
-            <div className="col-span-2 flex flex-col justify-center space-y-[0.5vh]">
+          <div className="grid grid-cols-12 gap-[1vw] h-full p-[1vw]">
+            {/* Left Side - Timing Cards with reduced spacing */}
+            <div className="col-span-2 space-y-[1vh]">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW ELAPSED</div>
-                  <div className="text-[3vw] font-mono font-bold text-blue-400 flex items-center justify-center">
+                <CardContent className="p-[0.8vw] text-center">
+                  <div className="text-[1vw] text-zinc-400 mb-[0.5vh] font-semibold">SHOW ELAPSED</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-blue-400 flex items-center justify-center">
                     {showElapsedTime}
                   </div>
                 </CardContent>
@@ -390,19 +391,22 @@ const ADView = () => {
 
               {/* Show Remaining Time */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">SHOW REMAINING</div>
-                  <div className="text-[3vw] font-mono font-bold text-orange-400 flex items-center justify-center">
+                <CardContent className="p-[0.8vw] text-center">
+                  <div className="text-[1vw] text-zinc-400 mb-[0.5vh] font-semibold">SHOW REMAINING</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-orange-400 flex items-center justify-center">
                     {showRemainingTime}
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Reduced spacing before Item Elapsed */}
+              <div className="h-[1vh]"></div>
+
               {/* Current Item Elapsed */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM ELAPSED</div>
-                  <div className="text-[3vw] font-mono font-bold text-green-400 flex items-center justify-center">
+                <CardContent className="p-[0.8vw] text-center">
+                  <div className="text-[1vw] text-zinc-400 mb-[0.5vh] font-semibold">ITEM ELAPSED</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-green-400 flex items-center justify-center">
                     {currentItemElapsed}
                   </div>
                 </CardContent>
@@ -410,19 +414,19 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700">
-                <CardContent className="p-[0.5vw] text-center">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.3vh] font-semibold">ITEM REMAINING</div>
-                  <div className="text-[3vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
+                <CardContent className="p-[0.8vw] text-center">
+                  <div className="text-[1vw] text-zinc-400 mb-[0.5vh] font-semibold">ITEM REMAINING</div>
+                  <div className="text-[2.8vw] font-mono font-bold text-yellow-400 flex items-center justify-center">
                     {formatTimeRemaining(timeRemaining)}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Center - Segments Display */}
-            <div className="col-span-6 flex flex-col justify-center space-y-[0.5vh]">
+            {/* Center - Segments Display with reduced spacing */}
+            <div className="col-span-6 flex flex-col justify-center space-y-[1vh]">
               {/* Previous Segment 2 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-40">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.8vw] opacity-40">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-500 font-semibold">PREV</div>
@@ -436,7 +440,7 @@ const ADView = () => {
               </div>
 
               {/* Previous Segment 1 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-60">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.8vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-400 font-semibold">PREV</div>
@@ -449,22 +453,22 @@ const ADView = () => {
                 </div>
               </div>
 
-              {/* Current Segment */}
-              <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.8vw] shadow-lg">
+              {/* Current Segment - Reduced padding */}
+              <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[1.2vw] shadow-lg">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[1vw] text-green-300 font-bold">ON AIR</div>
                     <div className="text-[1.5vw] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[1.8vw] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
-                    <div className="mt-[0.3vh]">
+                    <div className="text-[1.8vw] font-bold text-green-100 mb-[0.5vh]">{currInfo.name}</div>
+                    <div className="mt-[0.5vh]">
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                         const value = currInfo.columnData[columnKey] || '--';
                         
                         return (
-                          <div key={columnKey} className="text-[1.1vw] text-green-200 mt-[0.2vh]">
+                          <div key={columnKey} className="text-[1.1vw] text-green-200 mt-[0.3vh]">
                             <span className="font-semibold">{columnName}:</span> {value}
                           </div>
                         );
@@ -475,7 +479,7 @@ const ADView = () => {
               </div>
 
               {/* Next Segment 1 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-80">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.8vw] opacity-80">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-400 font-semibold">NEXT</div>
@@ -489,7 +493,7 @@ const ADView = () => {
               </div>
 
               {/* Next Segment 2 */}
-              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.5vw] opacity-60">
+              <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.8vw] opacity-60">
                 <div className="flex items-center space-x-[1vw]">
                   <div className="w-[4vw] text-center">
                     <div className="text-[0.7vw] text-zinc-500 font-semibold">NEXT</div>
@@ -502,22 +506,22 @@ const ADView = () => {
                 </div>
               </div>
 
-              {/* Column Controls */}
-              <div className="flex items-center justify-between mt-[0.5vh] pt-[0.5vh] border-t border-zinc-700">
-                <div className="flex items-center space-x-[0.3vw]">
+              {/* Column Controls - Reduced spacing */}
+              <div className="flex items-center justify-between mt-[1vh] pt-[1vh] border-t border-zinc-700">
+                <div className="flex items-center space-x-[0.5vw]">
                   <div className="text-[0.9vw] text-zinc-400 font-semibold">Additional Columns:</div>
                   {selectedColumns.map(columnKey => {
                     const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                     return (
-                      <div key={columnKey} className="flex items-center bg-zinc-700 rounded px-[0.4vw] py-[0.1vh] text-[0.8vw]">
+                      <div key={columnKey} className="flex items-center bg-zinc-700 rounded px-[0.6vw] py-[0.2vh] text-[0.8vw]">
                         <span>{columnName}</span>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="ml-[0.2vw] h-[1vw] w-[1vw] p-0 text-zinc-400 hover:text-white"
+                          className="ml-[0.3vw] h-[1.2vw] w-[1.2vw] p-0 text-zinc-400 hover:text-white"
                           onClick={() => removeColumn(columnKey)}
                         >
-                          <X className="h-[0.6vw] w-[0.6vw]" />
+                          <X className="h-[0.8vw] w-[0.8vw]" />
                         </Button>
                       </div>
                     );
@@ -531,9 +535,9 @@ const ADView = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowColumnSelector(true)}
-                        className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.6vw] py-[0.2vh]"
+                        className="border-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700 text-[0.8vw] px-[0.8vw] py-[0.3vh]"
                       >
-                        <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
+                        <Plus className="h-[1vw] w-[1vw] mr-[0.3vw]" />
                         Add Column
                       </Button>
                     ) : (
@@ -559,12 +563,12 @@ const ADView = () => {
               </div>
             </div>
 
-            {/* Right Side - Script */}
+            {/* Right Side - Script with reduced padding */}
             <div className="col-span-4">
               <Card className="bg-gray-900 border-zinc-700 h-full">
-                <CardContent className="p-[0.5vw] h-full flex flex-col">
-                  <div className="text-[1vw] text-zinc-400 mb-[0.5vh] font-semibold">CURRENT SCRIPT</div>
-                  <div className="flex-1 bg-black rounded-lg p-[0.8vw] overflow-y-auto">
+                <CardContent className="p-[1vw] h-full flex flex-col">
+                  <div className="text-[1vw] text-zinc-400 mb-[1vh] font-semibold">CURRENT SCRIPT</div>
+                  <div className="flex-1 bg-black rounded-lg p-[1vw] overflow-y-auto">
                     <div className="text-white whitespace-pre-wrap text-[1.2vw] leading-relaxed break-words">
                       {(() => {
                         // Check if current segment has a script
