@@ -474,7 +474,7 @@ const ADView = () => {
             <div className="col-span-2 flex flex-col justify-center space-y-[2vh]">
               {/* Show Elapsed Time */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="p-[1.2vw] text-center h-full flex flex-col justify-center">
+                <CardContent className="p-[2vw] text-center h-full flex flex-col justify-center">
                   <div className="text-[4vh] text-zinc-400 mb-[1vh] font-semibold tracking-wider">SHOW ELAPSED</div>
                   <div className="text-[8vh] font-mono font-bold text-blue-400 flex items-center justify-center leading-none">
                     {showElapsedTime}
@@ -484,7 +484,7 @@ const ADView = () => {
 
               {/* Show Remaining Time */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="p-[1.2vw] text-center h-full flex flex-col justify-center">
+                <CardContent className="p-[2vw] text-center h-full flex flex-col justify-center">
                   <div className="text-[4vh] text-zinc-400 mb-[1vh] font-semibold tracking-wider">SHOW REMAINING</div>
                   <div className="text-[8vh] font-mono font-bold text-orange-400 flex items-center justify-center leading-none">
                     {showRemainingTime}
@@ -494,7 +494,7 @@ const ADView = () => {
 
               {/* Current Item Elapsed */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="p-[1.2vw] text-center h-full flex flex-col justify-center">
+                <CardContent className="p-[2vw] text-center h-full flex flex-col justify-center">
                   <div className="text-[4vh] text-zinc-400 mb-[1vh] font-semibold tracking-wider">ITEM ELAPSED</div>
                   <div className="text-[8vh] font-mono font-bold text-green-400 flex items-center justify-center leading-none">
                     {currentItemElapsed}
@@ -504,7 +504,7 @@ const ADView = () => {
 
               {/* Current Item Time Remaining */}
               <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="p-[1.2vw] text-center h-full flex flex-col justify-center">
+                <CardContent className="p-[2vw] text-center h-full flex flex-col justify-center">
                   <div className="text-[4vh] text-zinc-400 mb-[1vh] font-semibold tracking-wider">ITEM REMAINING</div>
                   <div className="text-[8vh] font-mono font-bold text-yellow-400 flex items-center justify-center leading-none">
                     {formatTimeRemaining(timeRemaining)}
