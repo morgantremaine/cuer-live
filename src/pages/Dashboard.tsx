@@ -210,18 +210,7 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate counts for system folders - Updated to check for today only
-  const allCount = rundowns.length;
-  const recentCount = rundowns.filter(r => {
-    const today = new Date();
-    const updatedDate = new Date(r.updated_at);
-    return (
-      updatedDate.toDateString() === today.toDateString() && !r.archived
-    );
-  }).length;
-  const archivedCount = rundowns.filter(r => r.archived).length;
-
-  // Filter rundowns based on selected folder and search query - Updated recent filter
+  // Filter rundowns based on selected folder and search query
   const getFilteredRundowns = () => {
     let baseRundowns = savedRundowns;
 
@@ -240,11 +229,8 @@ const Dashboard = () => {
         return baseRundowns.filter(r => !r.archived);
       case 'recent':
         return baseRundowns.filter(r => {
-          const today = new Date();
-          const updatedDate = new Date(r.updated_at);
-          return (
-            updatedDate.toDateString() === today.toDateString() && !r.archived
-          );
+          const daysDiff = (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24);
+          return daysDiff <= 7 && !r.archived;
         });
       case 'archived':
         return baseRundowns.filter(r => r.archived);
