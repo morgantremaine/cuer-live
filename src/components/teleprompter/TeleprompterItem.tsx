@@ -231,8 +231,7 @@ const TeleprompterItem = ({
 
       {/* Script with bracket parsing and editing capability */}
       <div 
-        className={`text-left whitespace-pre-wrap ${getFontWeight()} font-sans`}
-        style={{ lineHeight: '0.9' }}
+        className={`text-left whitespace-pre-wrap ${getFontWeight()} font-sans leading-relaxed`}
       >
         {isEditing ? (
           <textarea
@@ -244,7 +243,7 @@ const TeleprompterItem = ({
             className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()} font-sans`}
             style={{ 
               fontSize: `${fontSize}px`,
-              lineHeight: '0.9',
+              lineHeight: '1.5',
               minHeight: '100px'
             }}
             placeholder="Enter script content..."
@@ -255,7 +254,7 @@ const TeleprompterItem = ({
             className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
             style={{ 
               fontSize: `${fontSize}px`,
-              lineHeight: '0.9'
+              lineHeight: '1.5'
             }}
           >
             {isNullItem ? (

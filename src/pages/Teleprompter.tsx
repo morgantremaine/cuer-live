@@ -175,7 +175,7 @@ const Teleprompter = () => {
               font-family: Arial, sans-serif;
               color: black;
               background: white;
-              line-height: 1.5;
+              line-height: 1.2;
               font-size: 12px;
             }
             .script-container {
@@ -197,12 +197,12 @@ const Teleprompter = () => {
             }
             .segment-content {
               font-size: 12px;
-              line-height: 1.5;
+              line-height: 1.2;
               margin-bottom: 0.5em;
               text-align: left;
             }
             .segment-content p {
-              margin: 0 0 0.5em 0;
+              margin: 0 0 0.3em 0;
             }
             .segment-content p:last-child {
               margin-bottom: 0;
