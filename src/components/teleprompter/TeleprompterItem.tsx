@@ -68,7 +68,7 @@ const TeleprompterItem = ({
       // Add text before the bracket
       if (match.index > lastIndex) {
         parts.push(
-          <span key={`text-${lastIndex}`} className={`${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>
+          <span key={`text-${lastIndex}`} className={`${getFontWeight()}`}>
             {formatText(text.slice(lastIndex, match.index))}
           </span>
         );
@@ -120,8 +120,7 @@ const TeleprompterItem = ({
           style={{ 
             backgroundColor,
             color: textColor,
-            fontSize: `${fontSize}px`,
-            fontFamily: 'Arial, sans-serif'
+            fontSize: `${fontSize}px`
           }}
         >
           {formatText(bracketText)}
@@ -134,13 +133,13 @@ const TeleprompterItem = ({
     // Add remaining text after the last bracket
     if (lastIndex < text.length) {
       parts.push(
-        <span key={`text-${lastIndex}`} className={`${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>
+        <span key={`text-${lastIndex}`} className={`${getFontWeight()}`}>
           {formatText(text.slice(lastIndex))}
         </span>
       );
     }
 
-    return parts.length > 0 ? parts : <span className={`${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>{formatText(text)}</span>;
+    return parts.length > 0 ? parts : <span className={`${getFontWeight()}`}>{formatText(text)}</span>;
   };
 
   const handleScriptClick = () => {
@@ -186,10 +185,9 @@ const TeleprompterItem = ({
     return (
       <div className="mb-8">
         <h2 
-          className={`${getFontWeight()} text-left mb-6`}
+          className={`${getFontWeight()} text-left mb-6 font-sans`}
           style={{ 
-            fontSize: `${fontSize + 8}px`,
-            fontFamily: 'Arial, sans-serif'
+            fontSize: `${fontSize + 8}px`
           }}
         >
           <span
@@ -197,8 +195,7 @@ const TeleprompterItem = ({
             style={{ 
               backgroundColor: 'white',
               color: 'black',
-              fontSize: `${fontSize + 8}px`,
-              fontFamily: 'Arial, sans-serif'
+              fontSize: `${fontSize + 8}px`
             }}
           >
             {getRowNumber(item.originalIndex)} - {formatText(headerTitle.toUpperCase())}
@@ -215,10 +212,9 @@ const TeleprompterItem = ({
     <div className="mb-8">
       {/* Segment Title */}
       <div 
-        className="text-left mb-6"
+        className="text-left mb-6 font-sans"
         style={{ 
-          fontSize: `${fontSize + 4}px`,
-          fontFamily: 'Arial, sans-serif'
+          fontSize: `${fontSize + 4}px`
         }}
       >
         <span
@@ -226,8 +222,7 @@ const TeleprompterItem = ({
           style={{ 
             backgroundColor: 'white',
             color: 'black',
-            fontSize: `${fontSize + 4}px`,
-            fontFamily: 'Arial, sans-serif'
+            fontSize: `${fontSize + 4}px`
           }}
         >
           {getRowNumber(item.originalIndex)} - {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}
@@ -236,8 +231,7 @@ const TeleprompterItem = ({
 
       {/* Script with bracket parsing and editing capability */}
       <div 
-        className={`leading-relaxed text-left whitespace-pre-wrap ${getFontWeight()}`}
-        style={{ fontFamily: 'Arial, sans-serif' }}
+        className={`leading-relaxed text-left whitespace-pre-wrap ${getFontWeight()} font-sans`}
       >
         {isEditing ? (
           <textarea
@@ -246,12 +240,11 @@ const TeleprompterItem = ({
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
-            className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()}`}
+            className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()} font-sans`}
             style={{ 
               fontSize: `${fontSize}px`,
               lineHeight: '1.2',
-              minHeight: '100px',
-              fontFamily: 'Arial, sans-serif'
+              minHeight: '100px'
             }}
             placeholder="Enter script content..."
           />
@@ -261,20 +254,19 @@ const TeleprompterItem = ({
             className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
             style={{ 
               fontSize: `${fontSize}px`,
-              lineHeight: '1.2',
-              fontFamily: 'Arial, sans-serif'
+              lineHeight: '1.2'
             }}
           >
             {isNullItem ? (
               // For [null] items, don't show any script content, but still show the segment title above
               canEdit ? (
-                <span className={`text-gray-500 italic ${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>Click to add script content...</span>
+                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
             ) : item.script ? (
               renderScriptWithBrackets(item.script)
             ) : (
               canEdit ? (
-                <span className={`text-gray-500 italic ${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>Click to add script content...</span>
+                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
             )}
           </div>
