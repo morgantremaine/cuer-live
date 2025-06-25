@@ -189,7 +189,7 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Enhanced layout loading with anonymous user support
+  // Enhanced layout loading with proper anonymous user support
   useEffect(() => {
     const loadSharedLayoutForAnonymous = async () => {
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
@@ -205,6 +205,8 @@ const SharedRundown = () => {
       layoutLoadedRef.current = rundownId;
       
       try {
+        logger.log('🔧 Loading shared layout for rundown:', rundownId);
+        
         // First, try to get the shared layout configuration
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
@@ -229,16 +231,18 @@ const SharedRundown = () => {
 
         // If there's a specific layout set, try to load it
         if (sharedLayoutData && sharedLayoutData.layout_id) {
-          // First try with authentication (for logged-in users)
+          logger.log('🎨 Found shared layout ID:', sharedLayoutData.layout_id);
+          
+          // First try with normal authentication (for logged-in users)
           let { data: layoutData, error: layoutError } = await supabase
             .from('column_layouts')
             .select('columns, name')
             .eq('id', sharedLayoutData.layout_id)
             .maybeSingle();
 
-          // If it fails (likely due to RLS for anonymous users), try using the new RPC function
+          // If it fails (likely due to RLS for anonymous users), try using the RPC function
           if (layoutError || !layoutData) {
-            logger.log('🔓 Attempting to load layout for anonymous user via RPC');
+            logger.log('🔓 Layout not accessible with normal auth, trying RPC for anonymous user');
             
             try {
               const { data: publicLayoutData, error: publicError } = await supabase.rpc(
@@ -249,18 +253,24 @@ const SharedRundown = () => {
                 }
               );
 
+              if (!isMountedRef.current) return;
+
               if (publicError) {
-                logger.error('❌ Error loading public layout:', publicError);
+                logger.error('❌ Error loading public layout via RPC:', publicError);
               } else if (publicLayoutData) {
+                logger.log('✅ Successfully loaded layout via RPC:', publicLayoutData);
                 setLayoutColumns(publicLayoutData.columns);
                 setLayoutName(publicLayoutData.name || 'Custom Layout');
                 return;
+              } else {
+                logger.log('⚠️ RPC returned null - layout may not be properly shared');
               }
             } catch (rpcError) {
-              logger.error('❌ RPC call failed, falling back to rundown columns:', rpcError);
+              logger.error('❌ RPC call failed:', rpcError);
             }
           } else {
             // Layout loaded successfully for authenticated user
+            logger.log('✅ Layout loaded with normal auth:', layoutData);
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
             return;
@@ -268,6 +278,7 @@ const SharedRundown = () => {
         }
 
         // Fallback to rundown's own columns or default
+        logger.log('📋 Using fallback layout');
         if (rundownData.columns && rundownData.columns.length > 0) {
           setLayoutColumns(rundownData.columns);
           setLayoutName('Rundown Layout');
