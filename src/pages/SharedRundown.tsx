@@ -21,6 +21,19 @@ const DEFAULT_COLUMNS = [
   { id: 'description', name: 'Description', key: 'description', isVisible: true, width: '300px' }
 ];
 
+// Helper function to check if data exists in shared_rundown_layouts table
+const checkSharedLayoutExists = async (rundownId: string) => {
+  console.log('🔍 Checking if shared layout exists for rundown:', rundownId);
+  
+  const { data, error } = await supabase
+    .from('shared_rundown_layouts')
+    .select('*')
+    .eq('rundown_id', rundownId);
+  
+  console.log('🔍 Shared layout query result:', { data, error });
+  return { data, error };
+};
+
 const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error } = useSharedRundownState();
   const [layoutColumns, setLayoutColumns] = useState(null);
@@ -190,7 +203,7 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // FIXED: Enhanced layout loading using the corrected RPC function
+  // Enhanced layout loading with better debugging
   useEffect(() => {
     const loadSharedLayout = async () => {
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
@@ -207,6 +220,9 @@ const SharedRundown = () => {
       layoutLoadedRef.current = rundownId;
       
       try {
+        // First, check if there's a shared layout record for this rundown
+        const sharedLayoutCheck = await checkSharedLayoutExists(rundownId);
+        
         // Use the FIXED RPC function to get shared layout data
         const { data: sharedLayoutData, error: rpcError } = await supabase
           .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
@@ -214,6 +230,7 @@ const SharedRundown = () => {
         if (!isMountedRef.current) return;
 
         console.log('📋 RPC Response:', { sharedLayoutData, rpcError });
+        console.log('📋 Shared layout check result:', sharedLayoutCheck);
 
         if (rpcError) {
           console.error('❌ Error loading shared layout via RPC:', rpcError);
@@ -230,14 +247,16 @@ const SharedRundown = () => {
           return;
         }
 
-        // FIXED: Better handling of shared layout data
+        // Better handling of shared layout data
         if (sharedLayoutData && sharedLayoutData.columns && Array.isArray(sharedLayoutData.columns)) {
           console.log('✅ Found shared layout with columns:', sharedLayoutData.columns.length);
+          console.log('📋 Shared layout data:', sharedLayoutData);
           setLayoutColumns(sharedLayoutData.columns);
           setLayoutName(sharedLayoutData.layout_name || 'Shared Layout');
         } else if (sharedLayoutData && sharedLayoutData.layout_id) {
           // If we have a layout_id but no columns, something went wrong - use fallback
           console.log('⚠️ Shared layout exists but no columns found, using fallback');
+          console.log('📋 Partial shared layout data:', sharedLayoutData);
           if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
@@ -248,6 +267,7 @@ const SharedRundown = () => {
         } else {
           // No shared layout configured, use rundown's own columns or default
           console.log('📋 No shared layout configured, using rundown columns or default');
+          console.log('📋 Rundown columns:', rundownData.columns);
           if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
