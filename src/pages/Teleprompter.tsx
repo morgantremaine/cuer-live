@@ -147,7 +147,7 @@ const Teleprompter = () => {
       return formatText(cleanText);
     };
 
-    // Generate HTML for print with minimal spacing
+    // Generate HTML for print with proper page flow
     const printHTML = `
       <!DOCTYPE html>
       <html>
@@ -156,7 +156,7 @@ const Teleprompter = () => {
           <style>
             @media print {
               @page {
-                margin: 0.5in;
+                margin: 0.75in;
                 size: letter;
               }
               body {
@@ -173,47 +173,51 @@ const Teleprompter = () => {
               font-family: Arial, sans-serif;
               color: black;
               background: white;
-              line-height: 1.4;
+              line-height: 1.5;
               font-size: 12px;
             }
             .script-container {
               max-width: 100%;
             }
             .script-segment {
-              margin-bottom: 6px;
+              margin-bottom: 1.5em;
               page-break-inside: avoid;
             }
             .segment-header {
               font-weight: bold;
               font-size: 11px;
-              margin-bottom: 2px;
-              padding: 1px 4px;
+              margin-bottom: 0.5em;
+              padding: 2px 6px;
               background: #f0f0f0;
-              border-left: 2px solid #333;
+              border-left: 3px solid #333;
               display: inline-block;
               page-break-after: avoid;
             }
             .segment-content {
               font-size: 12px;
-              line-height: 1.4;
-              margin-bottom: 4px;
+              line-height: 1.5;
+              margin-bottom: 0.5em;
               text-align: left;
             }
             .segment-content p {
-              margin: 0 0 4px 0;
+              margin: 0 0 0.5em 0;
             }
-            .page-break {
-              page-break-before: always;
+            .segment-content p:last-child {
+              margin-bottom: 0;
             }
             .header-segment {
-              margin: 8px 0 4px 0;
+              margin: 1em 0;
               page-break-after: avoid;
             }
             .header-segment .segment-header {
-              font-size: 12px;
+              font-size: 13px;
               background: #333;
               color: white;
-              padding: 2px 6px;
+              padding: 4px 8px;
+            }
+            /* Remove forced page breaks to let content flow naturally */
+            .page-break {
+              margin-top: 2em;
             }
           </style>
         </head>
@@ -228,13 +232,16 @@ const Teleprompter = () => {
               
               const scriptContent = processScriptForPrint(item.script || '');
               
-              // Only add page break every 12 segments to keep better flow
-              const needsPageBreak = index > 0 && index % 12 === 0;
+              // Only add spacing break every 15 segments to allow better flow
+              const needsSpacing = index > 0 && index % 15 === 0;
               
               return `
-                <div class="script-segment ${isHeader ? 'header-segment' : ''} ${needsPageBreak ? 'page-break' : ''}">
+                <div class="script-segment ${isHeader ? 'header-segment' : ''} ${needsSpacing ? 'page-break' : ''}">
                   <div class="segment-header">${title}</div>
-                  ${scriptContent ? `<div class="segment-content">${scriptContent.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '').filter(p => p).join('')}</div>` : ''}
+                  ${scriptContent ? `<div class="segment-content">${scriptContent.split('\n').map(line => {
+                    const trimmedLine = line.trim();
+                    return trimmedLine ? `<p>${trimmedLine}</p>` : '';
+                  }).filter(p => p).join('')}</div>` : ''}
                 </div>
               `;
             }).join('')}
