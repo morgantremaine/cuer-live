@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -61,7 +60,7 @@ const TeleprompterItem = ({
       // Add text before the bracket
       if (match.index > lastIndex) {
         parts.push(
-          <span key={`text-${lastIndex}`}>
+          <span key={`text-${lastIndex}`} className="font-bold">
             {formatText(text.slice(lastIndex, match.index))}
           </span>
         );
@@ -109,7 +108,7 @@ const TeleprompterItem = ({
       parts.push(
         <span
           key={`bracket-${match.index}`}
-          className="py-0.5 px-2 inline-block rounded mx-1"
+          className="py-0.5 px-2 inline-block rounded mx-1 font-bold"
           style={{ 
             backgroundColor,
             color: textColor,
@@ -126,13 +125,13 @@ const TeleprompterItem = ({
     // Add remaining text after the last bracket
     if (lastIndex < text.length) {
       parts.push(
-        <span key={`text-${lastIndex}`}>
+        <span key={`text-${lastIndex}`} className="font-bold">
           {formatText(text.slice(lastIndex))}
         </span>
       );
     }
 
-    return parts.length > 0 ? parts : formatText(text);
+    return parts.length > 0 ? parts : <span className="font-bold">{formatText(text)}</span>;
   };
 
   const handleScriptClick = () => {
@@ -182,7 +181,7 @@ const TeleprompterItem = ({
           style={{ fontSize: `${fontSize + 8}px` }}
         >
           <span
-            className="py-0.5 px-2 inline-block rounded"
+            className="py-0.5 px-2 inline-block rounded font-bold"
             style={{ 
               backgroundColor: 'white',
               color: 'black',
@@ -207,7 +206,7 @@ const TeleprompterItem = ({
         style={{ fontSize: `${fontSize + 4}px` }}
       >
         <span
-          className="py-0.5 px-2 inline-block rounded"
+          className="py-0.5 px-2 inline-block rounded font-bold"
           style={{ 
             backgroundColor: 'white',
             color: 'black',
@@ -219,7 +218,7 @@ const TeleprompterItem = ({
       </div>
 
       {/* Script with bracket parsing and editing capability */}
-      <div className="leading-relaxed text-left whitespace-pre-wrap">
+      <div className="leading-relaxed text-left whitespace-pre-wrap font-bold">
         {isEditing ? (
           <textarea
             ref={textareaRef}
@@ -227,7 +226,7 @@ const TeleprompterItem = ({
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
-            className="w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden"
+            className="w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden font-bold"
             style={{ 
               fontSize: `${fontSize}px`,
               lineHeight: '1.2',
@@ -247,13 +246,13 @@ const TeleprompterItem = ({
             {isNullItem ? (
               // For [null] items, don't show any script content, but still show the segment title above
               canEdit ? (
-                <span className="text-gray-500 italic">Click to add script content...</span>
+                <span className="text-gray-500 italic font-bold">Click to add script content...</span>
               ) : null
             ) : item.script ? (
               renderScriptWithBrackets(item.script)
             ) : (
               canEdit ? (
-                <span className="text-gray-500 italic">Click to add script content...</span>
+                <span className="text-gray-500 italic font-bold">Click to add script content...</span>
               ) : null
             )}
           </div>
