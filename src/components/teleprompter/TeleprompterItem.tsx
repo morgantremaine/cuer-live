@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -235,10 +236,13 @@ const TeleprompterItem = ({
         ) : (
           <div
             onClick={handleScriptClick}
-            className={`${canEdit ? 'cursor-text hover:bg-white hover:bg-opacity-5 rounded p-2 transition-colors' : ''}`}
+            className={`${canEdit ? 'cursor-text' : ''}`}
             style={{ 
               fontSize: `${fontSize}px`,
-              lineHeight: '1.5'
+              lineHeight: '1.5',
+              padding: '0',
+              margin: '0',
+              minHeight: isNullItem || !item.script ? '100px' : 'auto'
             }}
           >
             {isNullItem ? (
@@ -260,3 +264,4 @@ const TeleprompterItem = ({
 };
 
 export default TeleprompterItem;
+
