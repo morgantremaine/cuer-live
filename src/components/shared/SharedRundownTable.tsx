@@ -1,3 +1,4 @@
+
 import React, { forwardRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
@@ -362,6 +363,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             .showcaller-highlight {
               background: transparent !important;
               color: #000 !important;
+            }
+
+            /* Force black logo in print view */
+            img[src*="376f4f6f-fa91-4af6-b8fd-8da723bdc3fa.png"] {
+              content: url('/lovable-uploads/afb9e93f-aa34-4180-9c2a-5e154e539215.png') !important;
             }
           }
           
