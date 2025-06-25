@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
+import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { format } from 'date-fns';
 
@@ -168,13 +169,10 @@ const RundownHeader = ({
             />
             <span>Runtime: {totalRuntime}</span>
             {isConnected !== undefined && (
-              <div className="flex items-center">
-                {isConnected ? (
-                  <Wifi className="h-4 w-4 text-green-500" />
-                ) : (
-                  <WifiOff className="h-4 w-4 text-red-500" />
-                )}
-              </div>
+              <RealtimeStatusIndicator
+                isConnected={isConnected}
+                isProcessingUpdate={isProcessingRealtimeUpdate || false}
+              />
             )}
           </div>
         </div>
@@ -234,13 +232,10 @@ const RundownHeader = ({
           </div>
           
           {isConnected !== undefined && (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {isConnected ? (
-                <Wifi className="h-5 w-5 text-green-500" />
-              ) : (
-                <WifiOff className="h-5 w-5 text-red-500" />
-              )}
-            </div>
+            <RealtimeStatusIndicator
+              isConnected={isConnected}
+              isProcessingUpdate={isProcessingRealtimeUpdate || false}
+            />
           )}
         </div>
         
@@ -349,13 +344,10 @@ const RundownHeader = ({
           </span>
           
           {isConnected !== undefined && (
-            <div className="flex items-center space-x-2">
-              {isConnected ? (
-                <Wifi className="h-4 w-4 text-green-500" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-red-500" />
-              )}
-            </div>
+            <RealtimeStatusIndicator
+              isConnected={isConnected}
+              isProcessingUpdate={isProcessingRealtimeUpdate || false}
+            />
           )}
         </div>
       </div>
