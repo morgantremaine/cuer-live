@@ -4,6 +4,7 @@ import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useAuth } from './useAuth';
 import { logger } from '@/utils/logger';
+import { RundownItem } from '@/types/rundown';
 
 // Optimized state coordination with memory management
 export const useOptimizedRundownState = () => {
@@ -19,15 +20,6 @@ export const useOptimizedRundownState = () => {
     rundownId: rundownState.rundownId,
     userId: userId
   });
-
-  // Memory optimization: Limit undo history to prevent memory bloat
-  const limitedUndoHistory = useMemo(() => {
-    const maxHistory = 20; // Limit to 20 undo actions
-    if (rundownState.undoHistory && rundownState.undoHistory.length > maxHistory) {
-      return rundownState.undoHistory.slice(-maxHistory);
-    }
-    return rundownState.undoHistory || [];
-  }, [rundownState.undoHistory]);
 
   // Memory optimization: Debounced state updates to prevent excessive re-renders
   const debouncedUpdateRef = useRef<NodeJS.Timeout>();
@@ -45,6 +37,26 @@ export const useOptimizedRundownState = () => {
         clearTimeout(debouncedUpdateRef.current);
       }
     };
+  }, []);
+
+  // Helper function to calculate end time
+  const calculateEndTime = useCallback((startTime: string, duration: string) => {
+    const startParts = startTime.split(':').map(Number);
+    const durationParts = duration.split(':').map(Number);
+    
+    let totalSeconds = 0;
+    if (startParts.length >= 2) {
+      totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
+    }
+    if (durationParts.length >= 2) {
+      totalSeconds += durationParts[0] * 60 + durationParts[1];
+    }
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
   // Memoized calculations to prevent recalculation
@@ -98,6 +110,17 @@ export const useOptimizedRundownState = () => {
     addHeader: rundownState.addHeader,
     setTitle: rundownState.setTitle,
     setStartTime: rundownState.setStartTime,
+    setTimezone: rundownState.setTimezone,
+    setItems: rundownState.setItems,
+    setColumns: rundownState.setColumns,
+    
+    // Additional methods needed by other components
+    calculateEndTime,
+    markAsChanged: () => {}, // Auto-save handles this
+    addItem: (item: RundownItem) => {
+      const newItems = [...rundownState.items, item];
+      rundownState.setItems(newItems);
+    },
     
     // Showcaller controls
     play: showcallerVisual.play,
@@ -109,11 +132,10 @@ export const useOptimizedRundownState = () => {
     
     // Optimized undo system
     undo: rundownState.undo,
-    canUndo: limitedUndoHistory.length > 0,
+    canUndo: rundownState.canUndo,
     lastAction: rundownState.lastAction,
     
     // Memory management utilities
-    debouncedUpdate,
-    limitedUndoHistory
+    debouncedUpdate
   };
 };

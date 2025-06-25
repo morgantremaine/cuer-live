@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Memory monitoring utilities
 export class MemoryMonitor {
   private static instance: MemoryMonitor;

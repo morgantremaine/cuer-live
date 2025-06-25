@@ -1,3 +1,4 @@
+
 import { useOptimizedRundownState } from './useOptimizedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -48,38 +49,10 @@ export const useRundownStateCoordination = () => {
     return () => clearInterval(cleanup);
   }, [cleanupInactiveCells, memoryMonitor]);
 
-  // Helper function to calculate end time - memoized for performance
-  const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
-    const startParts = startTime.split(':').map(Number);
-    const durationParts = duration.split(':').map(Number);
-    
-    let totalSeconds = 0;
-    if (startParts.length >= 2) {
-      totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
-    }
-    if (durationParts.length >= 2) {
-      totalSeconds += durationParts[0] * 60 + durationParts[1];
-    }
-    
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, []);
-
   // Optimized interactions with debounced updates
   const interactions = useRundownGridInteractions(
     optimizedState.items,
-    (updater) => {
-      optimizedState.debouncedUpdate(() => {
-        if (typeof updater === 'function') {
-          optimizedState.setItems(updater(optimizedState.items));
-        } else {
-          optimizedState.setItems(updater);
-        }
-      });
-    },
+    optimizedState.setItems,
     optimizedState.updateItem,
     optimizedState.addRow,
     optimizedState.addHeader,
@@ -97,23 +70,18 @@ export const useRundownStateCoordination = () => {
           id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
         };
-        // Use debounced update for bulk operations
-        optimizedState.debouncedUpdate(() => {
-          optimizedState.addItem(itemToAdd);
-        });
+        optimizedState.addItem(itemToAdd);
       });
     },
     (columnId: string) => {
       const newColumns = optimizedState.columns.filter(col => col.id !== columnId);
       optimizedState.setColumns(newColumns);
     },
-    calculateEndTime,
+    optimizedState.calculateEndTime,
     (id: string, color: string) => {
       optimizedState.updateItem(id, 'color', color);
     },
-    () => {
-      // markAsChanged - handled internally
-    },
+    optimizedState.markAsChanged,
     optimizedState.setTitle,
     (insertIndex: number) => optimizedState.addRow(),
     (insertIndex: number) => optimizedState.addHeader()
@@ -124,9 +92,7 @@ export const useRundownStateCoordination = () => {
     optimizedState.items,
     optimizedState.visibleColumns,
     optimizedState.updateItem,
-    (columns) => {
-      optimizedState.setColumns(columns);
-    },
+    optimizedState.setColumns,
     optimizedState.columns
   );
 

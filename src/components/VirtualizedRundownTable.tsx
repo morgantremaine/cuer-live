@@ -9,6 +9,7 @@ interface VirtualizedRundownTableProps {
   items: RundownItem[];
   visibleColumns: Column[];
   height: number;
+  width?: number;
   rowHeight?: number;
   currentTime: Date;
   showColorPicker: string | null;
@@ -33,6 +34,7 @@ const VirtualizedRundownTable = ({
   items,
   visibleColumns,
   height,
+  width = 800,
   rowHeight = 60,
   currentTime,
   showColorPicker,
@@ -131,6 +133,7 @@ const VirtualizedRundownTable = ({
   return (
     <List
       height={height}
+      width={width}
       itemCount={items.length}
       itemSize={rowHeight}
       overscanCount={5} // Render 5 extra items for smooth scrolling
