@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -189,23 +190,33 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Fixed layout loading with proper anonymous user support
+  // Fixed layout loading with EXTENSIVE debugging
   useEffect(() => {
     const loadSharedLayoutForAnonymous = async () => {
+      console.log('🎯 DEBUG: Layout loading function called');
+      console.log('🎯 DEBUG: rundownId:', rundownId);
+      console.log('🎯 DEBUG: rundownData exists:', !!rundownData);
+      console.log('🎯 DEBUG: isLayoutLoadingRef.current:', isLayoutLoadingRef.current);
+      console.log('🎯 DEBUG: isMountedRef.current:', isMountedRef.current);
+      
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
+        console.log('🎯 DEBUG: Early return due to conditions not met');
         return;
       }
       
       if (layoutLoadedRef.current === rundownId) {
+        console.log('🎯 DEBUG: Layout already loaded for this rundown');
         return;
       }
       
+      console.log('🎯 DEBUG: Starting layout loading process');
       setLayoutLoading(true);
       isLayoutLoadingRef.current = true;
       layoutLoadedRef.current = rundownId;
       
       try {
         logger.log('🔧 Loading shared layout for rundown:', rundownId);
+        console.log('🎯 DEBUG: About to query shared_rundown_layouts table');
         
         // First, try to get the shared layout configuration
         const { data: sharedLayoutData, error: sharedError } = await supabase
@@ -214,15 +225,20 @@ const SharedRundown = () => {
           .eq('rundown_id', rundownId)
           .maybeSingle();
 
+        console.log('🎯 DEBUG: Shared layout query result:', { sharedLayoutData, sharedError });
+
         if (!isMountedRef.current) return;
 
         if (sharedError) {
           logger.error('❌ Error loading shared layout config:', sharedError);
+          console.log('🎯 DEBUG: Using fallback due to shared layout error');
           // Fallback to rundown's own columns
           if (rundownData.columns && rundownData.columns.length > 0) {
+            console.log('🎯 DEBUG: Using rundown columns:', rundownData.columns);
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
           } else {
+            console.log('🎯 DEBUG: Using default columns');
             setLayoutColumns(DEFAULT_COLUMNS);
             setLayoutName('Default Layout');
           }
@@ -232,10 +248,14 @@ const SharedRundown = () => {
         // If there's a specific layout set, try to load it
         if (sharedLayoutData && sharedLayoutData.layout_id) {
           logger.log('🎨 Found shared layout ID:', sharedLayoutData.layout_id);
+          console.log('🎯 DEBUG: Found layout ID, calling RPC function');
           
           // Always use the RPC function for anonymous users
           // This bypasses RLS issues and is specifically designed for shared layouts
           try {
+            console.log('🎯 DEBUG: Calling get_public_layout_for_rundown RPC');
+            console.log('🎯 DEBUG: RPC params:', { rundown_uuid: rundownId, layout_uuid: sharedLayoutData.layout_id });
+            
             const { data: publicLayoutData, error: publicError } = await supabase.rpc(
               'get_public_layout_for_rundown', 
               { 
@@ -244,34 +264,46 @@ const SharedRundown = () => {
               }
             );
 
+            console.log('🎯 DEBUG: RPC result:', { publicLayoutData, publicError });
+
             if (!isMountedRef.current) return;
 
             if (publicError) {
               logger.error('❌ Error loading public layout via RPC:', publicError);
+              console.log('🎯 DEBUG: RPC error, throwing to fallback');
               throw publicError;
             } 
             
             if (publicLayoutData) {
               logger.log('✅ Successfully loaded layout via RPC:', publicLayoutData);
+              console.log('🎯 DEBUG: RPC success, setting layout columns:', publicLayoutData.columns);
+              console.log('🎯 DEBUG: RPC success, setting layout name:', publicLayoutData.name);
               setLayoutColumns(publicLayoutData.columns);
               setLayoutName(publicLayoutData.name || 'Custom Layout');
               return;
             } else {
               logger.log('⚠️ RPC returned null - layout may not be properly shared');
+              console.log('🎯 DEBUG: RPC returned null, throwing to fallback');
               throw new Error('Layout not accessible');
             }
           } catch (rpcError) {
             logger.error('❌ RPC call failed:', rpcError);
+            console.log('🎯 DEBUG: RPC call failed with error:', rpcError);
             throw rpcError;
           }
+        } else {
+          console.log('🎯 DEBUG: No layout ID found in shared layout data');
         }
 
         // Fallback to rundown's own columns or default
         logger.log('📋 Using fallback layout');
+        console.log('🎯 DEBUG: Using fallback layout logic');
         if (rundownData.columns && rundownData.columns.length > 0) {
+          console.log('🎯 DEBUG: Fallback - using rundown columns:', rundownData.columns);
           setLayoutColumns(rundownData.columns);
           setLayoutName('Rundown Layout');
         } else {
+          console.log('🎯 DEBUG: Fallback - using default columns');
           setLayoutColumns(DEFAULT_COLUMNS);
           setLayoutName('Default Layout');
         }
@@ -280,16 +312,20 @@ const SharedRundown = () => {
         if (!isMountedRef.current) return;
         
         logger.error('💥 Failed to load shared layout:', error);
+        console.log('🎯 DEBUG: Exception caught, using final fallback:', error);
         // Final fallback
         if (rundownData.columns && rundownData.columns.length > 0) {
+          console.log('🎯 DEBUG: Final fallback - using rundown columns');
           setLayoutColumns(rundownData.columns);
           setLayoutName('Rundown Layout');
         } else {
+          console.log('🎯 DEBUG: Final fallback - using default columns');
           setLayoutColumns(DEFAULT_COLUMNS);
           setLayoutName('Default Layout');
         }
       } finally {
         if (isMountedRef.current) {
+          console.log('🎯 DEBUG: Layout loading complete, setting loading to false');
           setLayoutLoading(false);
           isLayoutLoadingRef.current = false;
         }
@@ -297,6 +333,7 @@ const SharedRundown = () => {
     };
 
     if (rundownData && rundownId && layoutLoadedRef.current !== rundownId) {
+      console.log('🎯 DEBUG: Triggering layout load for rundown:', rundownId);
       loadSharedLayoutForAnonymous();
     }
   }, [rundownId, rundownData]);
@@ -320,6 +357,14 @@ const SharedRundown = () => {
       }
     };
   }, []);
+
+  // Add debugging for layout state changes
+  useEffect(() => {
+    console.log('🎯 DEBUG: Layout state changed:');
+    console.log('🎯 DEBUG: - layoutColumns:', layoutColumns);
+    console.log('🎯 DEBUG: - layoutName:', layoutName);
+    console.log('🎯 DEBUG: - layoutLoading:', layoutLoading);
+  }, [layoutColumns, layoutName, layoutLoading]);
 
   if (loading) {
     return (
@@ -367,6 +412,13 @@ const SharedRundown = () => {
   // Use layout columns if available, otherwise fall back to rundown's default columns, or finally to DEFAULT_COLUMNS
   const columnsToUse = layoutColumns || rundownData.columns || DEFAULT_COLUMNS;
   const visibleColumns = getVisibleColumns(columnsToUse);
+
+  console.log('🎯 DEBUG: Final render columns decision:');
+  console.log('🎯 DEBUG: - layoutColumns:', layoutColumns);
+  console.log('🎯 DEBUG: - rundownData.columns:', rundownData.columns);
+  console.log('🎯 DEBUG: - DEFAULT_COLUMNS:', DEFAULT_COLUMNS);
+  console.log('🎯 DEBUG: - columnsToUse:', columnsToUse);
+  console.log('🎯 DEBUG: - visibleColumns:', visibleColumns);
 
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
