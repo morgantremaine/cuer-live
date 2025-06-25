@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -23,7 +24,6 @@ const TeleprompterItem = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.script || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const displayRef = useRef<HTMLDivElement>(null);
 
   const formatText = (text: string) => {
     return isUppercase ? text.toUpperCase() : text;
@@ -39,12 +39,11 @@ const TeleprompterItem = ({
   };
 
   useEffect(() => {
-    if (isEditing && textareaRef.current && displayRef.current) {
+    if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
-      // Copy exact dimensions from display element
-      const displayStyles = window.getComputedStyle(displayRef.current);
-      textareaRef.current.style.height = displayStyles.height;
-      textareaRef.current.style.minHeight = displayStyles.minHeight;
+      // Set cursor to end of text
+      const length = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(length, length);
     }
   }, [isEditing]);
 
@@ -162,7 +161,6 @@ const TeleprompterItem = ({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
-    // Don't auto-resize during editing to prevent shifts
   };
 
   if (isHeaderItem(item)) {
@@ -193,16 +191,16 @@ const TeleprompterItem = ({
 
   const isNullItem = item.script && isNullScript(item.script);
 
-  // Common style object for both display and textarea
+  // Common style object for consistent text rendering
   const scriptStyles = {
     fontSize: `${fontSize}px`,
     lineHeight: '1.5',
-    padding: '0',
-    margin: '0',
     fontFamily: 'inherit',
     fontWeight: isBold ? 'bold' : 'normal',
     whiteSpace: 'pre-wrap' as const,
-    wordWrap: 'break-word' as const
+    wordWrap: 'break-word' as const,
+    margin: '0',
+    padding: '0'
   };
 
   return (
@@ -225,37 +223,38 @@ const TeleprompterItem = ({
         </span>
       </div>
 
-      <div className={`text-left ${getFontWeight()} font-sans leading-relaxed`}>
-        {isEditing ? (
+      <div className={`text-left ${getFontWeight()} font-sans leading-relaxed relative`}>
+        {/* Display content - always present */}
+        <div
+          onClick={handleScriptClick}
+          className={`${canEdit ? 'cursor-text' : ''} ${isEditing ? 'opacity-0' : 'opacity-100'}`}
+          style={scriptStyles}
+        >
+          {isNullItem ? (
+            canEdit ? (
+              <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+            ) : null
+          ) : item.script ? (
+            renderScriptWithBrackets(item.script)
+          ) : (
+            canEdit ? (
+              <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+            ) : null
+          )}
+        </div>
+
+        {/* Textarea overlay - only visible when editing */}
+        {isEditing && (
           <textarea
             ref={textareaRef}
             value={editText}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
-            className={`w-full bg-transparent text-white border-none outline-none resize-none overflow-hidden ${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
+            className={`absolute inset-0 w-full bg-transparent text-white border-none outline-none resize-none overflow-hidden ${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
             style={scriptStyles}
             placeholder="Enter script content..."
           />
-        ) : (
-          <div
-            ref={displayRef}
-            onClick={handleScriptClick}
-            className={`${canEdit ? 'cursor-text' : ''}`}
-            style={scriptStyles}
-          >
-            {isNullItem ? (
-              canEdit ? (
-                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-              ) : null
-            ) : item.script ? (
-              renderScriptWithBrackets(item.script)
-            ) : (
-              canEdit ? (
-                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-              ) : null
-            )}
-          </div>
         )}
       </div>
     </div>
