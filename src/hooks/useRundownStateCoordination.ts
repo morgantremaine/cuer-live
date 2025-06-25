@@ -49,10 +49,15 @@ export const useRundownStateCoordination = () => {
     return () => clearInterval(cleanup);
   }, [cleanupInactiveCells, memoryMonitor]);
 
-  // Optimized interactions with debounced updates - fix function signatures
+  // Create wrapper function that converts updater function to direct array
+  const setItemsWrapper = useCallback((items: any[]) => {
+    optimizedState.setItems(() => items);
+  }, [optimizedState.setItems]);
+
+  // Optimized interactions with corrected function signatures
   const interactions = useRundownGridInteractions(
     optimizedState.items,
-    optimizedState.setItems, // This already expects updater function
+    setItemsWrapper, // Use wrapper that accepts direct array
     optimizedState.updateItem,
     optimizedState.addRow,
     optimizedState.addHeader,
@@ -63,15 +68,14 @@ export const useRundownStateCoordination = () => {
       ids.forEach(id => optimizedState.deleteRow(id));
     },
     (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
-      // Optimized multi-add - use updater function
-      optimizedState.setItems(prevItems => {
-        const itemsToAdd = newItems.map(item => ({
-          ...item,
-          id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
-        }));
-        return [...prevItems, ...itemsToAdd];
-      });
+      // Optimized multi-add - pass direct array to wrapper
+      const itemsToAdd = newItems.map(item => ({
+        ...item,
+        id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
+      }));
+      const newItemsList = [...optimizedState.items, ...itemsToAdd];
+      setItemsWrapper(newItemsList);
     },
     (columnId: string) => {
       const newColumns = optimizedState.columns.filter(col => col.id !== columnId);
