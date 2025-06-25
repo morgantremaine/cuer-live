@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -29,6 +28,7 @@ interface UseRealtimeRundownProps {
   trackOwnUpdate?: (timestamp: string) => void;
   onShowcallerActivity?: (active: boolean) => void;
   onShowcallerStateReceived?: (state: any) => void;
+  onProcessingStateChange?: (isProcessing: boolean) => void;
 }
 
 // Centralized timeout management to prevent memory leaks
@@ -65,7 +65,8 @@ export const useRealtimeRundown = ({
   isProcessingRealtimeUpdate = false,
   trackOwnUpdate,
   onShowcallerActivity,
-  onShowcallerStateReceived
+  onShowcallerStateReceived,
+  onProcessingStateChange
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
   const subscriptionRef = useRef<any>(null);
@@ -73,16 +74,27 @@ export const useRealtimeRundown = ({
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const onShowcallerActivityRef = useRef(onShowcallerActivity);
   const onShowcallerStateReceivedRef = useRef(onShowcallerStateReceived);
+  const onProcessingStateChangeRef = useRef(onProcessingStateChange);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
   onShowcallerActivityRef.current = onShowcallerActivity;
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
+  onProcessingStateChangeRef.current = onProcessingStateChange;
   trackOwnUpdateRef.current = trackOwnUpdate;
+
+  // Update processing state and notify parent
+  const updateProcessingState = useCallback((processing: boolean) => {
+    setIsProcessing(processing);
+    if (onProcessingStateChangeRef.current) {
+      onProcessingStateChangeRef.current(processing);
+    }
+  }, []);
 
   // Signal activity with centralized timeout management
   const signalActivity = useCallback(() => {
@@ -224,6 +236,9 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
+    // Set processing state to true when we receive a teammate update
+    updateProcessingState(true);
+
     // Debounce rapid updates to prevent conflicts using centralized timeout manager
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
@@ -235,10 +250,15 @@ export const useRealtimeRundown = ({
         onRundownUpdateRef.current(payload.new);
       } catch (error) {
         logger.error('Error processing realtime update:', error);
+      } finally {
+        // Clear processing state after update is complete
+        setTimeout(() => {
+          updateProcessingState(false);
+        }, 1000); // Show processing for 1 second
       }
     }, 150);
     
-  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
+  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate, updateProcessingState]);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -288,6 +308,7 @@ export const useRealtimeRundown = ({
 
   return {
     isConnected,
+    isProcessing,
     trackOwnUpdate: trackOwnUpdateLocal
   };
 };

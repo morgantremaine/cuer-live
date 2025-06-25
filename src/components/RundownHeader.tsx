@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
@@ -45,8 +46,8 @@ const RundownHeader = ({
   onUndo,
   canUndo,
   lastAction,
-  isConnected,
-  isProcessingRealtimeUpdate,
+  isConnected = false,
+  isProcessingRealtimeUpdate = false,
   isPlaying,
   currentSegmentId,
   timeRemaining,
@@ -178,11 +179,9 @@ const RundownHeader = ({
               {...timingStatus}
             />
             <span>Runtime: {totalRuntime}</span>
-            {isConnected !== undefined && (
-              <div className="flex items-center">
-                {renderConnectionIcon()}
-              </div>
-            )}
+            <div className="flex items-center">
+              {renderConnectionIcon()}
+            </div>
           </div>
         </div>
       </div>
@@ -240,11 +239,9 @@ const RundownHeader = ({
             />
           </div>
           
-          {isConnected !== undefined && (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {renderConnectionIcon()}
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {renderConnectionIcon()}
+          </div>
         </div>
         
         {/* Bottom row - Time info */}
@@ -351,11 +348,9 @@ const RundownHeader = ({
             Runtime: {totalRuntime}
           </span>
           
-          {isConnected !== undefined && (
-            <div className="flex items-center space-x-2">
-              {renderConnectionIcon()}
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            {renderConnectionIcon()}
+          </div>
         </div>
       </div>
     </div>
