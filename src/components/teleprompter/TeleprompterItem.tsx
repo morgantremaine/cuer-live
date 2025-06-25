@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -52,7 +53,9 @@ const TeleprompterItem = ({
       const length = textareaRef.current.value.length;
       textareaRef.current.setSelectionRange(length, length);
       // Initial resize
-      autoResizeTextarea();
+      setTimeout(() => {
+        autoResizeTextarea();
+      }, 0);
     }
   }, [isEditing]);
 
@@ -171,7 +174,9 @@ const TeleprompterItem = ({
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
     // Auto-resize as user types
-    autoResizeTextarea();
+    setTimeout(() => {
+      autoResizeTextarea();
+    }, 0);
   };
 
   if (isHeaderItem(item)) {
@@ -211,7 +216,13 @@ const TeleprompterItem = ({
     whiteSpace: 'pre-wrap' as const,
     wordWrap: 'break-word' as const,
     margin: '0',
-    padding: '0'
+    padding: '0',
+    width: '100%',
+    backgroundColor: 'transparent',
+    color: 'white',
+    border: 'none',
+    outline: 'none',
+    resize: 'none' as const
   };
 
   return (
@@ -234,42 +245,37 @@ const TeleprompterItem = ({
         </span>
       </div>
 
-      <div className={`text-left ${getFontWeight()} font-sans leading-relaxed relative`}>
-        {/* Display content - always present */}
-        <div
-          onClick={handleScriptClick}
-          className={`${canEdit ? 'cursor-text' : ''} ${isEditing ? 'opacity-0' : 'opacity-100'}`}
-          style={scriptStyles}
-        >
-          {isNullItem ? (
-            canEdit ? (
-              <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-            ) : null
-          ) : item.script ? (
-            renderScriptWithBrackets(item.script)
-          ) : (
-            canEdit ? (
-              <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-            ) : null
-          )}
-        </div>
-
-        {/* Textarea overlay - only visible when editing */}
-        {isEditing && (
+      <div className={`text-left ${getFontWeight()} font-sans leading-relaxed`}>
+        {/* Conditional rendering: show either display content OR textarea */}
+        {isEditing ? (
           <textarea
             ref={textareaRef}
             value={editText}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
-            className={`absolute inset-0 w-full bg-transparent text-white border-none outline-none resize-none ${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
-            style={{
-              ...scriptStyles,
-              minHeight: 'auto',
-              overflow: 'visible'
-            }}
+            className={`${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
+            style={scriptStyles}
             placeholder="Enter script content..."
           />
+        ) : (
+          <div
+            onClick={handleScriptClick}
+            className={`${canEdit ? 'cursor-text' : ''}`}
+            style={scriptStyles}
+          >
+            {isNullItem ? (
+              canEdit ? (
+                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+              ) : null
+            ) : item.script ? (
+              renderScriptWithBrackets(item.script)
+            ) : (
+              canEdit ? (
+                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+              ) : null
+            )}
+          </div>
         )}
       </div>
     </div>
