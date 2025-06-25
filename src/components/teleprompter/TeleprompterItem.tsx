@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -42,8 +40,6 @@ const TeleprompterItem = ({
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
     }
   }, [isEditing]);
 
@@ -161,8 +157,6 @@ const TeleprompterItem = ({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
   };
 
   if (isHeaderItem(item)) {
@@ -192,6 +186,9 @@ const TeleprompterItem = ({
   }
 
   const isNullItem = item.script && isNullScript(item.script);
+
+  // Calculate consistent height for both states
+  const baseHeight = isNullItem || !item.script ? '100px' : 'auto';
 
   return (
     <div className="mb-8">
@@ -227,9 +224,10 @@ const TeleprompterItem = ({
             style={{ 
               fontSize: `${fontSize}px`,
               lineHeight: '1.5',
-              minHeight: '100px',
               padding: '0',
-              margin: '0'
+              margin: '0',
+              minHeight: baseHeight,
+              height: baseHeight
             }}
             placeholder="Enter script content..."
           />
@@ -242,7 +240,8 @@ const TeleprompterItem = ({
               lineHeight: '1.5',
               padding: '0',
               margin: '0',
-              minHeight: isNullItem || !item.script ? '100px' : 'auto'
+              minHeight: baseHeight,
+              height: baseHeight
             }}
           >
             {isNullItem ? (
@@ -264,4 +263,3 @@ const TeleprompterItem = ({
 };
 
 export default TeleprompterItem;
-
