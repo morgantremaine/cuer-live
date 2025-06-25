@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -186,17 +185,19 @@ export const useRealtimeRundown = ({
 
     // Skip if this update originated from this user
     if (ownUpdateTrackingRef.current.has(updateData.timestamp)) {
+      console.log('🔄 Skipping own update:', updateData.timestamp);
       return;
     }
 
     // NEW: Show visual processing indicator for ALL team updates (both content and showcaller)
-    logger.log('📡 Received team update, showing visual processing indicator');
+    console.log('📡 Received team update, showing visual processing indicator. Current state:', isVisuallyProcessing);
     setIsVisuallyProcessing(true);
+    console.log('🔵 Visual processing set to TRUE');
     
     // Auto-hide visual processing after 1.5 seconds
     timeoutManagerRef.current.set('visual-processing', () => {
       setIsVisuallyProcessing(false);
-      logger.log('🔄 Visual processing indicator hidden');
+      console.log('🔄 Visual processing indicator hidden - set to FALSE');
     }, 1500);
 
     // Enhanced showcaller-only detection
@@ -251,7 +252,7 @@ export const useRealtimeRundown = ({
       }
     }, 150);
     
-  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
+  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate, isVisuallyProcessing]);
 
   useEffect(() => {
     // Clear any existing subscription

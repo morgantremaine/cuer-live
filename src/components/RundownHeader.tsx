@@ -59,6 +59,9 @@ const RundownHeader = ({
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
+  // DEBUG: Log the visual processing state
+  console.log('🎨 RundownHeader - isVisuallyProcessingTeamUpdate:', isVisuallyProcessingTeamUpdate);
+
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
     items,
