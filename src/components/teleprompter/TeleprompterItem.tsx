@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -221,18 +222,20 @@ const TeleprompterItem = ({
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
-            className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()} font-sans`}
+            className={`w-full bg-transparent text-white border-none outline-none resize-none overflow-hidden ${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
             style={{ 
               fontSize: `${fontSize}px`,
               lineHeight: '1.5',
-              minHeight: '100px'
+              minHeight: '100px',
+              padding: '0',
+              margin: '0'
             }}
             placeholder="Enter script content..."
           />
         ) : (
           <div
             onClick={handleScriptClick}
-            className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
+            className={`${canEdit ? 'cursor-text hover:bg-white hover:bg-opacity-5 rounded p-2 transition-colors' : ''}`}
             style={{ 
               fontSize: `${fontSize}px`,
               lineHeight: '1.5'
