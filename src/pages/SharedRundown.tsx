@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -190,15 +189,13 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Enhanced layout loading with better error handling and cleanup
+  // NEW: Enhanced layout loading using the security definer RPC function
   useEffect(() => {
     const loadSharedLayout = async () => {
-      // Only load if we have rundown data and haven't loaded this layout yet
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
         return;
       }
       
-      // Skip if we've already loaded layout for this rundown
       if (layoutLoadedRef.current === rundownId) {
         return;
       }
@@ -208,18 +205,14 @@ const SharedRundown = () => {
       layoutLoadedRef.current = rundownId;
       
       try {
-        // Get the shared layout configuration
-        const { data: sharedLayoutData, error: sharedError } = await supabase
-          .from('shared_rundown_layouts')
-          .select('layout_id')
-          .eq('rundown_id', rundownId)
-          .maybeSingle();
+        // Use the new RPC function to get shared layout data
+        const { data: sharedLayoutData, error: rpcError } = await supabase
+          .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
 
-        // Check if component is still mounted before updating state
         if (!isMountedRef.current) return;
 
-        if (sharedError) {
-          logger.error('❌ Error loading shared layout config:', sharedError);
+        if (rpcError) {
+          logger.error('❌ Error loading shared layout via RPC:', rpcError);
           // Fallback to rundown's own columns
           if (rundownData.columns && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
@@ -231,33 +224,12 @@ const SharedRundown = () => {
           return;
         }
 
-        // If there's a specific layout set, load it
-        if (sharedLayoutData && sharedLayoutData.layout_id) {
-          const { data: layoutData, error: layoutError } = await supabase
-            .from('column_layouts')
-            .select('columns, name')
-            .eq('id', sharedLayoutData.layout_id)
-            .maybeSingle();
-
-          // Check if component is still mounted before updating state
-          if (!isMountedRef.current) return;
-
-          if (layoutError || !layoutData) {
-            logger.error('❌ Error loading layout:', layoutError);
-            // Fallback to rundown's own columns
-            if (rundownData.columns && rundownData.columns.length > 0) {
-              setLayoutColumns(rundownData.columns);
-              setLayoutName('Rundown Layout');
-            } else {
-              setLayoutColumns(DEFAULT_COLUMNS);
-              setLayoutName('Default Layout');
-            }
-          } else {
-            setLayoutColumns(layoutData.columns);
-            setLayoutName(layoutData.name || 'Custom Layout');
-          }
+        // If we got shared layout data from the RPC function
+        if (sharedLayoutData && sharedLayoutData.columns) {
+          setLayoutColumns(sharedLayoutData.columns);
+          setLayoutName(sharedLayoutData.layout_name || 'Shared Layout');
         } else {
-          // No specific layout set, use rundown's own columns or default
+          // No shared layout, use rundown's own columns or default
           if (rundownData.columns && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
@@ -286,7 +258,6 @@ const SharedRundown = () => {
       }
     };
 
-    // Only load layout when rundown data is available and we haven't loaded it yet
     if (rundownData && rundownId && layoutLoadedRef.current !== rundownId) {
       loadSharedLayout();
     }
@@ -299,7 +270,6 @@ const SharedRundown = () => {
     return () => {
       isMountedRef.current = false;
       
-      // Clean up all timers and subscriptions
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
