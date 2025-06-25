@@ -1,27 +1,19 @@
 
-// Conditional logging utility to improve performance in production
+// Production-ready logging utility - no console logs in production
 export const logger = {
   log: (...args: any[]) => {
-    if (import.meta.env.DEV) {
-      console.log(...args);
-    }
+    // Removed all console logging for production
   },
   
   error: (...args: any[]) => {
-    if (import.meta.env.DEV) {
-      console.error(...args);
-    }
+    // Removed all console logging for production  
   },
   
   warn: (...args: any[]) => {
-    if (import.meta.env.DEV) {
-      console.warn(...args);
-    }
+    // Removed all console logging for production
   },
   
   info: (...args: any[]) => {
-    if (import.meta.env.DEV) {
-      console.info(...args);
-    }
+    // Removed all console logging for production
   }
 };

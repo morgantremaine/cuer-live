@@ -18,11 +18,7 @@ const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo", isDark = true }
       src={logoSrc}
       alt={alt}
       className={className}
-      onLoad={() => {
-        console.log('Logo loaded successfully:', logoSrc);
-      }}
       onError={(e) => {
-        console.error('Logo failed to load:', logoSrc);
         // Fallback to text logo if image fails
         const target = e.currentTarget;
         target.style.display = 'none';

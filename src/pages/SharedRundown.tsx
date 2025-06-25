@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -22,14 +23,10 @@ const DEFAULT_COLUMNS = [
 
 // Helper function to check if data exists in shared_rundown_layouts table
 const checkSharedLayoutExists = async (rundownId: string) => {
-  console.log('🔍 Checking if shared layout exists for rundown:', rundownId);
-  
   const { data, error } = await supabase
     .from('shared_rundown_layouts')
     .select('*')
     .eq('rundown_id', rundownId);
-  
-  console.log('🔍 Shared layout query result:', { data, error });
   
   // Additional debugging - check if rundown exists and its visibility
   const { data: rundownData, error: rundownError } = await supabase
@@ -37,8 +34,6 @@ const checkSharedLayoutExists = async (rundownId: string) => {
     .select('id, visibility, title')
     .eq('id', rundownId)
     .single();
-  
-  console.log('🔍 Rundown data:', { rundownData, rundownError });
   
   return { data, error };
 };
@@ -154,7 +149,7 @@ const SharedRundown = () => {
       return;
     }
 
-    logger.log('📺 Setting up real-time subscription for showcaller state:', rundownId);
+    logger.log('Setting up real-time subscription for showcaller state:', rundownId);
 
     const channel = supabase
       .channel(`shared-showcaller-${rundownId}`)
@@ -170,23 +165,23 @@ const SharedRundown = () => {
           // Check if component is still mounted before updating state
           if (!isMountedRef.current) return;
           
-          logger.log('📺 Received showcaller update:', payload);
+          logger.log('Received showcaller update:', payload);
           // Only update if showcaller_state changed
           if (payload.new?.showcaller_state) {
-            logger.log('📺 Updating showcaller state:', payload.new.showcaller_state);
+            logger.log('Updating showcaller state:', payload.new.showcaller_state);
             setRealtimeShowcallerState(payload.new.showcaller_state);
           }
         }
       )
       .subscribe((status) => {
-        logger.log('📺 Subscription status:', status);
+        logger.log('Subscription status:', status);
       });
 
     realtimeChannelRef.current = channel;
 
     return () => {
       if (realtimeChannelRef.current) {
-        logger.log('📺 Cleaning up subscription');
+        logger.log('Cleaning up subscription');
         supabase.removeChannel(realtimeChannelRef.current);
         realtimeChannelRef.current = null;
       }
@@ -223,14 +218,6 @@ const SharedRundown = () => {
         return;
       }
       
-      console.log('🔄 Loading shared layout for rundown:', rundownId);
-      console.log('🔍 Rundown data summary:', {
-        id: rundownData.id,
-        title: rundownData.title,
-        visibility: rundownData.visibility,
-        hasColumns: rundownData.columns?.length > 0
-      });
-      
       setLayoutLoading(true);
       isLayoutLoadingRef.current = true;
       layoutLoadedRef.current = rundownId;
@@ -238,12 +225,6 @@ const SharedRundown = () => {
       try {
         // First, check if there's a shared layout record for this rundown
         const sharedLayoutCheck = await checkSharedLayoutExists(rundownId);
-        
-        if (sharedLayoutCheck.data && sharedLayoutCheck.data.length === 0) {
-          console.log('❌ No shared layout record found for this rundown');
-          console.log('💡 This means no custom layout has been configured for sharing');
-          console.log('💡 The rundown owner needs to use the Share menu to set up a shared layout');
-        }
 
         // Use the FIXED RPC function to get shared layout data
         const { data: sharedLayoutData, error: rpcError } = await supabase
@@ -251,18 +232,12 @@ const SharedRundown = () => {
 
         if (!isMountedRef.current) return;
 
-        console.log('📋 RPC Response:', { sharedLayoutData, rpcError });
-        console.log('📋 Shared layout check result:', sharedLayoutCheck);
-
         if (rpcError) {
-          console.error('❌ Error loading shared layout via RPC:', rpcError);
           // Fallback to rundown's own columns
           if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
-            console.log('📋 Using rundown columns as fallback');
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
           } else {
-            console.log('📋 Using default columns as final fallback');
             setLayoutColumns(DEFAULT_COLUMNS);
             setLayoutName('Default Layout');
           }
@@ -271,14 +246,10 @@ const SharedRundown = () => {
 
         // Better handling of shared layout data
         if (sharedLayoutData && sharedLayoutData.columns && Array.isArray(sharedLayoutData.columns)) {
-          console.log('✅ Found shared layout with columns:', sharedLayoutData.columns.length);
-          console.log('📋 Shared layout data:', sharedLayoutData);
           setLayoutColumns(sharedLayoutData.columns);
           setLayoutName(sharedLayoutData.layout_name || 'Shared Layout');
         } else if (sharedLayoutData && sharedLayoutData.layout_id) {
           // If we have a layout_id but no columns, something went wrong - use fallback
-          console.log('⚠️ Shared layout exists but no columns found, using fallback');
-          console.log('📋 Partial shared layout data:', sharedLayoutData);
           if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
@@ -288,18 +259,6 @@ const SharedRundown = () => {
           }
         } else {
           // No shared layout configured, use rundown's own columns or default
-          console.log('📋 No shared layout configured, using rundown columns or default');
-          console.log('📋 Rundown columns:', rundownData.columns);
-          
-          if (sharedLayoutCheck.data && sharedLayoutCheck.data.length === 0) {
-            console.log('🚨 SOLUTION: To fix this, the rundown owner should:');
-            console.log('   1. Open the rundown in edit mode');
-            console.log('   2. Click the Share button');
-            console.log('   3. Select "Set Read-Only Layout..."');
-            console.log('   4. Choose a saved layout or create one');
-            console.log('   This will create the shared_rundown_layouts record needed for custom layouts');
-          }
-          
           if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
@@ -311,7 +270,6 @@ const SharedRundown = () => {
       } catch (error) {
         if (!isMountedRef.current) return;
         
-        console.error('💥 Failed to load shared layout:', error);
         // Final fallback
         if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
           setLayoutColumns(rundownData.columns);
@@ -398,14 +356,6 @@ const SharedRundown = () => {
   // Use layout columns if available, otherwise fall back to rundown's default columns, or finally to DEFAULT_COLUMNS
   const columnsToUse = layoutColumns || rundownData.columns || DEFAULT_COLUMNS;
   const visibleColumns = getVisibleColumns(columnsToUse);
-
-  console.log('🎯 Final columns being used:', {
-    layoutColumns: layoutColumns?.length || 0,
-    rundownColumns: rundownData.columns?.length || 0,
-    finalColumns: columnsToUse.length,
-    visibleColumns: visibleColumns.length,
-    layoutName
-  });
 
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
