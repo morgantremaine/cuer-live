@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -41,16 +39,12 @@ const TeleprompterItem = ({
   };
 
   useEffect(() => {
-    if (isEditing && textareaRef.current) {
+    if (isEditing && textareaRef.current && displayRef.current) {
       textareaRef.current.focus();
-      // Set height to match display content exactly
-      const displayHeight = displayRef.current?.scrollHeight || 0;
-      if (displayHeight > 0) {
-        textareaRef.current.style.height = displayHeight + 'px';
-      } else {
-        textareaRef.current.style.height = 'auto';
-        textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-      }
+      // Copy exact dimensions from display element
+      const displayStyles = window.getComputedStyle(displayRef.current);
+      textareaRef.current.style.height = displayStyles.height;
+      textareaRef.current.style.minHeight = displayStyles.minHeight;
     }
   }, [isEditing]);
 
@@ -168,9 +162,7 @@ const TeleprompterItem = ({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
-    // Auto-resize textarea as user types
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
+    // Don't auto-resize during editing to prevent shifts
   };
 
   if (isHeaderItem(item)) {
@@ -201,6 +193,18 @@ const TeleprompterItem = ({
 
   const isNullItem = item.script && isNullScript(item.script);
 
+  // Common style object for both display and textarea
+  const scriptStyles = {
+    fontSize: `${fontSize}px`,
+    lineHeight: '1.5',
+    padding: '0',
+    margin: '0',
+    fontFamily: 'inherit',
+    fontWeight: isBold ? 'bold' : 'normal',
+    whiteSpace: 'pre-wrap' as const,
+    wordWrap: 'break-word' as const
+  };
+
   return (
     <div className="mb-8">
       <div 
@@ -221,9 +225,7 @@ const TeleprompterItem = ({
         </span>
       </div>
 
-      <div 
-        className={`text-left whitespace-pre-wrap ${getFontWeight()} font-sans leading-relaxed`}
-      >
+      <div className={`text-left ${getFontWeight()} font-sans leading-relaxed`}>
         {isEditing ? (
           <textarea
             ref={textareaRef}
@@ -232,12 +234,7 @@ const TeleprompterItem = ({
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
             className={`w-full bg-transparent text-white border-none outline-none resize-none overflow-hidden ${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
-            style={{ 
-              fontSize: `${fontSize}px`,
-              lineHeight: '1.5',
-              padding: '0',
-              margin: '0'
-            }}
+            style={scriptStyles}
             placeholder="Enter script content..."
           />
         ) : (
@@ -245,13 +242,7 @@ const TeleprompterItem = ({
             ref={displayRef}
             onClick={handleScriptClick}
             className={`${canEdit ? 'cursor-text' : ''}`}
-            style={{ 
-              fontSize: `${fontSize}px`,
-              lineHeight: '1.5',
-              padding: '0',
-              margin: '0',
-              minHeight: isNullItem || !item.script ? '24px' : 'auto'
-            }}
+            style={scriptStyles}
           >
             {isNullItem ? (
               canEdit ? (
@@ -272,4 +263,3 @@ const TeleprompterItem = ({
 };
 
 export default TeleprompterItem;
-
