@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -38,12 +37,22 @@ const TeleprompterItem = ({
     return isBold ? 'font-bold' : 'font-normal';
   };
 
+  // Auto-resize textarea to fit content
+  const autoResizeTextarea = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  };
+
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
       // Set cursor to end of text
       const length = textareaRef.current.value.length;
       textareaRef.current.setSelectionRange(length, length);
+      // Initial resize
+      autoResizeTextarea();
     }
   }, [isEditing]);
 
@@ -161,6 +170,8 @@ const TeleprompterItem = ({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
+    // Auto-resize as user types
+    autoResizeTextarea();
   };
 
   if (isHeaderItem(item)) {
@@ -251,8 +262,12 @@ const TeleprompterItem = ({
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
-            className={`absolute inset-0 w-full bg-transparent text-white border-none outline-none resize-none overflow-hidden ${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
-            style={scriptStyles}
+            className={`absolute inset-0 w-full bg-transparent text-white border-none outline-none resize-none ${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
+            style={{
+              ...scriptStyles,
+              minHeight: 'auto',
+              overflow: 'visible'
+            }}
             placeholder="Enter script content..."
           />
         )}
