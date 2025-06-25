@@ -1,21 +1,21 @@
-import { useSimplifiedRundownState } from './useSimplifiedRundownState';
+import { useOptimizedRundownState } from './useOptimizedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
-import { useShowcallerVisualState } from './useShowcallerVisualState';
-import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
-import { useAuth } from './useAuth';
-import { UnifiedRundownState } from '@/types/interfaces';
-import { useState, useEffect, useMemo } from 'react';
+import { useOptimizedCellRefs } from './useOptimizedCellRefs';
+import { useMemoryMonitor } from '@/utils/memoryMonitor';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { logger } from '@/utils/logger';
 
 export const useRundownStateCoordination = () => {
-  // Get user ID from auth
-  const { user } = useAuth();
-  const userId = user?.id;
-
-  // Single source of truth for all rundown state (NO showcaller interference)
-  const simplifiedState = useSimplifiedRundownState();
-
+  // Use optimized state management
+  const optimizedState = useOptimizedRundownState();
+  
+  // Memory monitoring
+  const memoryMonitor = useMemoryMonitor();
+  
+  // Optimized cell refs
+  const { getCellRef, getCell, focusCell, cleanupInactiveCells, cellRefs } = useOptimizedCellRefs();
+  
   // Autoscroll state with localStorage persistence
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -32,23 +32,21 @@ export const useRundownStateCoordination = () => {
     }
   }, [autoScrollEnabled]);
 
-  const toggleAutoScroll = () => {
+  const toggleAutoScroll = useCallback(() => {
     setAutoScrollEnabled(prev => !prev);
-  };
+  }, []);
 
-  // Completely separate showcaller visual state management
-  const showcallerVisual = useShowcallerVisualState({
-    items: simplifiedState.items,
-    rundownId: simplifiedState.rundownId,
-    userId: userId
-  });
+  // Memory cleanup on interval
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      cleanupInactiveCells();
+      if (memoryMonitor.isMemoryHigh()) {
+        memoryMonitor.forceGarbageCollection();
+      }
+    }, 30000); // Every 30 seconds
 
-  // Separate realtime sync for showcaller visual state only  
-  const showcallerSync = useShowcallerRealtimeSync({
-    rundownId: simplifiedState.rundownId,
-    onExternalVisualStateReceived: showcallerVisual.applyExternalVisualState,
-    enabled: !!simplifiedState.rundownId
-  });
+    return () => clearInterval(cleanup);
+  }, [cleanupInactiveCells, memoryMonitor]);
 
   // Helper function to calculate end time - memoized for performance
   const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
@@ -70,163 +68,105 @@ export const useRundownStateCoordination = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
-  // Add the missing addMultipleRows function
-  const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
-    const itemsToAdd = newItems.map(item => ({
-      ...item,
-      id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
-    }));
-    
-    simplifiedState.setItems(itemsToAdd);
-  };
-
-  // Add the missing functions that simplifiedState should provide
-  const addRowAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addRowAtIndex) {
-      simplifiedState.addRowAtIndex(insertIndex);
-    } else {
-      simplifiedState.addRow();
-    }
-  };
-
-  const addHeaderAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addHeaderAtIndex) {
-      simplifiedState.addHeaderAtIndex(insertIndex);
-    } else {
-      simplifiedState.addHeader();
-    }
-  };
-
-  // UI interactions that depend on the core state (NO showcaller interference)
+  // Optimized interactions with debounced updates
   const interactions = useRundownGridInteractions(
-    simplifiedState.items,
+    optimizedState.items,
     (updater) => {
-      if (typeof updater === 'function') {
-        simplifiedState.setItems(updater(simplifiedState.items));
-      } else {
-        simplifiedState.setItems(updater);
-      }
+      optimizedState.debouncedUpdate(() => {
+        if (typeof updater === 'function') {
+          optimizedState.setItems(updater(optimizedState.items));
+        } else {
+          optimizedState.setItems(updater);
+        }
+      });
     },
-    simplifiedState.updateItem,
-    simplifiedState.addRow,
-    simplifiedState.addHeader,
-    simplifiedState.deleteRow,
-    simplifiedState.toggleFloat,
-    simplifiedState.deleteMultipleItems,
-    addMultipleRows,
+    optimizedState.updateItem,
+    optimizedState.addRow,
+    optimizedState.addHeader,
+    optimizedState.deleteRow,
+    optimizedState.toggleFloatRow,
+    (ids: string[]) => {
+      // Optimized multi-delete
+      ids.forEach(id => optimizedState.deleteRow(id));
+    },
+    (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
+      // Optimized multi-add
+      newItems.forEach(item => {
+        const itemToAdd = {
+          ...item,
+          id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
+        };
+        // Use debounced update for bulk operations
+        optimizedState.debouncedUpdate(() => {
+          optimizedState.addItem(itemToAdd);
+        });
+      });
+    },
     (columnId: string) => {
-      const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
-      simplifiedState.setColumns(newColumns);
+      const newColumns = optimizedState.columns.filter(col => col.id !== columnId);
+      optimizedState.setColumns(newColumns);
     },
     calculateEndTime,
     (id: string, color: string) => {
-      simplifiedState.updateItem(id, 'color', color);
+      optimizedState.updateItem(id, 'color', color);
     },
     () => {
-      // markAsChanged - handled internally by simplified state
+      // markAsChanged - handled internally
     },
-    simplifiedState.setTitle,
-    addRowAtIndex,
-    addHeaderAtIndex
+    optimizedState.setTitle,
+    (insertIndex: number) => optimizedState.addRow(),
+    (insertIndex: number) => optimizedState.addHeader()
   );
 
-  // Get UI state with enhanced navigation
+  // Get UI state with optimized cell refs
   const uiState = useRundownUIState(
-    simplifiedState.items,
-    simplifiedState.visibleColumns,
-    simplifiedState.updateItem,
-    simplifiedState.setColumns,
-    simplifiedState.columns
+    optimizedState.items,
+    optimizedState.visibleColumns,
+    optimizedState.updateItem,
+    (columns) => {
+      optimizedState.setColumns(columns);
+    },
+    optimizedState.columns
   );
 
   return {
     coreState: {
-      // Core data (NO showcaller interference)
-      items: simplifiedState.items,
-      columns: simplifiedState.columns,
-      visibleColumns: simplifiedState.visibleColumns,
-      rundownTitle: simplifiedState.rundownTitle,
-      rundownStartTime: simplifiedState.rundownStartTime,
-      timezone: simplifiedState.timezone,
-      currentTime: simplifiedState.currentTime,
-      rundownId: simplifiedState.rundownId,
-      
-      // State flags (NO showcaller interference)
-      isLoading: simplifiedState.isLoading,
-      hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
-      isSaving: simplifiedState.isSaving,
-      isConnected: simplifiedState.isConnected || showcallerSync.isConnected,
-      isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate,
-      
-      // Showcaller visual state from completely separate system
-      currentSegmentId: showcallerVisual.currentSegmentId,
-      isPlaying: showcallerVisual.isPlaying,
-      timeRemaining: showcallerVisual.timeRemaining,
-      isController: showcallerVisual.isController,
-      showcallerActivity: false, // No longer interferes with main state
-      
-      // Visual status overlay function (doesn't touch main state)
-      getItemVisualStatus: showcallerVisual.getItemVisualStatus,
-      
-      // Selection state
-      selectedRowId: simplifiedState.selectedRowId,
-      handleRowSelection: simplifiedState.handleRowSelection,
-      clearRowSelection: simplifiedState.clearRowSelection,
-      
-      // Calculations
-      totalRuntime: simplifiedState.totalRuntime,
-      getRowNumber: simplifiedState.getRowNumber,
-      getHeaderDuration: simplifiedState.getHeaderDuration,
-      calculateHeaderDuration: (index: number) => {
-        const item = simplifiedState.items[index];
-        return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
-      },
-      
-      // Core actions (NO showcaller interference)
-      updateItem: simplifiedState.updateItem,
-      deleteRow: simplifiedState.deleteRow,
-      toggleFloatRow: simplifiedState.toggleFloat,
-      deleteMultipleItems: simplifiedState.deleteMultipleItems,
-      addItem: simplifiedState.addItem,
-      setTitle: simplifiedState.setTitle,
-      setStartTime: simplifiedState.setStartTime,
-      setTimezone: simplifiedState.setTimezone,
-      addRow: simplifiedState.addRow,
-      addHeader: simplifiedState.addHeader,
-      addRowAtIndex,
-      addHeaderAtIndex,
-      
-      // Column management
-      addColumn: simplifiedState.addColumn,
-      updateColumnWidth: simplifiedState.updateColumnWidth,
-      setColumns: simplifiedState.setColumns,
-      
-      // Showcaller visual controls (completely separate from main state)
-      play: showcallerVisual.play,
-      pause: showcallerVisual.pause,
-      forward: showcallerVisual.forward,
-      backward: showcallerVisual.backward,
-      reset: showcallerVisual.reset,
-      jumpToSegment: showcallerVisual.jumpToSegment, // Add the new function
-      
-      // Undo functionality
-      undo: simplifiedState.undo,
-      canUndo: simplifiedState.canUndo,
-      lastAction: simplifiedState.lastAction,
-      
-      // Additional functionality
-      calculateEndTime,
-      markAsChanged: () => {
-        // Handled internally by simplified state
-      },
-      addMultipleRows,
-      
-      // Autoscroll state with enhanced debugging
+      ...optimizedState,
       autoScrollEnabled,
-      toggleAutoScroll
+      toggleAutoScroll,
+      
+      // Memory monitoring
+      memoryReport: memoryMonitor.getMemoryReport(),
+      isMemoryHigh: memoryMonitor.isMemoryHigh(),
+      forceGarbageCollection: memoryMonitor.forceGarbageCollection,
+      
+      // Optimized cell management
+      getCellRef,
+      getCell,
+      focusCell,
+      cleanupInactiveCells
     },
-    interactions,
-    uiState
+    
+    interactions: {
+      ...interactions,
+      // Optimized interactions with memory awareness
+      handleCopySelectedRows: () => {
+        // Copy logic with memory optimization
+        interactions.handleCopySelectedRows();
+        cleanupInactiveCells();
+      },
+      
+      handleDeleteSelectedRows: () => {
+        // Delete logic with memory cleanup
+        interactions.handleDeleteSelectedRows();
+        cleanupInactiveCells();
+      }
+    },
+    
+    uiState: {
+      ...uiState,
+      cellRefs // Use optimized cell refs
+    }
   };
 };
