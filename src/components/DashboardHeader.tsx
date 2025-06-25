@@ -36,8 +36,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                 onClick={onBack}
                 className="text-gray-300 hover:text-white hover:bg-gray-700"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             <div className="flex items-center">
