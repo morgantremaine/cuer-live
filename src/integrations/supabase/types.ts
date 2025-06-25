@@ -563,6 +563,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string[]
       }
+      is_layout_shared_for_public_rundown: {
+        Args: { layout_uuid: string }
+        Returns: boolean
+      }
       is_team_admin: {
         Args: { user_id: string; team_id: string }
         Returns: boolean
