@@ -16,9 +16,6 @@ export const useRundownStateCoordination = () => {
   // Single source of truth for all rundown state (NO showcaller interference)
   const simplifiedState = useSimplifiedRundownState();
 
-  // DEBUG: Log the visual processing state from simplified state
-  console.log('🎯 StateCoordination - isVisuallyProcessingTeamUpdate:', simplifiedState.isVisuallyProcessingTeamUpdate);
-
   // Autoscroll state with localStorage persistence
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -161,14 +158,6 @@ export const useRundownStateCoordination = () => {
       isSaving: simplifiedState.isSaving,
       isConnected: simplifiedState.isConnected || showcallerSync.isConnected,
       isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate,
-      isVisuallyProcessingTeamUpdate: simplifiedState.isVisuallyProcessingTeamUpdate, // NEW: Pass the visual processing state
-      
-      // DEBUG: Add console log here too
-      // Log the visual processing state being passed
-      ...(() => {
-        console.log('📦 Passing isVisuallyProcessingTeamUpdate to components:', simplifiedState.isVisuallyProcessingTeamUpdate);
-        return {};
-      })(),
       
       // Showcaller visual state from completely separate system
       currentSegmentId: showcallerVisual.currentSegmentId,

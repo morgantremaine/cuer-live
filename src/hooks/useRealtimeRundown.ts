@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -76,9 +77,6 @@ export const useRealtimeRundown = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
-  
-  // NEW: Separate visual processing state that doesn't interfere with autosave
-  const [isVisuallyProcessing, setIsVisuallyProcessing] = useState(false);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
@@ -185,20 +183,8 @@ export const useRealtimeRundown = ({
 
     // Skip if this update originated from this user
     if (ownUpdateTrackingRef.current.has(updateData.timestamp)) {
-      console.log('🔄 Skipping own update:', updateData.timestamp);
       return;
     }
-
-    // NEW: Show visual processing indicator for ALL team updates (both content and showcaller)
-    console.log('📡 Received team update, showing visual processing indicator. Current state:', isVisuallyProcessing);
-    setIsVisuallyProcessing(true);
-    console.log('🔵 Visual processing set to TRUE');
-    
-    // Auto-hide visual processing after 1.5 seconds
-    timeoutManagerRef.current.set('visual-processing', () => {
-      setIsVisuallyProcessing(false);
-      console.log('🔄 Visual processing indicator hidden - set to FALSE');
-    }, 1500);
 
     // Enhanced showcaller-only detection
     const isShowcallerOnly = isShowcallerOnlyUpdate(payload);
@@ -252,7 +238,7 @@ export const useRealtimeRundown = ({
       }
     }, 150);
     
-  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate, isVisuallyProcessing]);
+  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -302,7 +288,6 @@ export const useRealtimeRundown = ({
 
   return {
     isConnected,
-    isVisuallyProcessing, // NEW: Return the visual processing state
     trackOwnUpdate: trackOwnUpdateLocal
   };
 };

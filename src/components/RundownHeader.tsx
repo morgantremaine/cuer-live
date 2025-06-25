@@ -25,7 +25,6 @@ interface RundownHeaderProps {
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
-  isVisuallyProcessingTeamUpdate?: boolean; // NEW: Add this prop for visual indication
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
@@ -48,7 +47,6 @@ const RundownHeader = ({
   lastAction,
   isConnected,
   isProcessingRealtimeUpdate,
-  isVisuallyProcessingTeamUpdate, // NEW: Use this for visual indication
   isPlaying,
   currentSegmentId,
   timeRemaining,
@@ -58,9 +56,6 @@ const RundownHeader = ({
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-
-  // DEBUG: Log the visual processing state
-  console.log('🎨 RundownHeader - isVisuallyProcessingTeamUpdate:', isVisuallyProcessingTeamUpdate);
 
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
@@ -135,11 +130,7 @@ const RundownHeader = ({
 
   // Helper function to render connection status icon
   const renderConnectionIcon = () => {
-    // NEW: Check for visual team update processing first
-    if (isVisuallyProcessingTeamUpdate) {
-      console.log('🔵 Team update received - showing blue spinning icon');
-      return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
-    } else if (isProcessingRealtimeUpdate) {
+    if (isProcessingRealtimeUpdate) {
       return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     } else if (isConnected) {
       return <Wifi className="h-4 w-4 text-green-500" />;

@@ -1,42 +1,69 @@
 
 import React from 'react';
 import RundownHeader from './RundownHeader';
-import { UnifiedRundownState } from '@/types/interfaces';
+import { RundownContainerProps } from '@/types/rundownContainer';
+import { logger } from '@/utils/logger';
 
 interface RundownHeaderPropsAdapterProps {
-  coreState: UnifiedRundownState;
-  interactions: any;
-  uiState: any;
+  props: RundownContainerProps;
 }
 
-const RundownHeaderPropsAdapter = ({ coreState, interactions, uiState }: RundownHeaderPropsAdapterProps) => {
-  // DEBUG: Log the prop being passed
-  console.log('🔗 RundownHeaderPropsAdapter - isVisuallyProcessingTeamUpdate:', coreState.isVisuallyProcessingTeamUpdate);
+const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
+  const {
+    currentTime,
+    timezone,
+    totalRuntime,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId,
+    hasUnsavedChanges,
+    isSaving,
+    onUndo,
+    canUndo,
+    lastAction,
+    items,
+    visibleColumns,
+    isConnected,
+    isProcessingRealtimeUpdate,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    autoScrollEnabled,
+    onToggleAutoScroll
+  } = props;
+
+  // Debug logging for prop passing
+  logger.log('🔄 RundownHeaderPropsAdapter: Received props:', {
+    autoScrollEnabled,
+    hasToggleFunction: !!onToggleAutoScroll,
+    toggleFunctionType: typeof onToggleAutoScroll
+  });
 
   return (
     <RundownHeader
-      currentTime={coreState.currentTime}
-      timezone={coreState.timezone}
-      totalRuntime={coreState.totalRuntime}
-      hasUnsavedChanges={coreState.hasUnsavedChanges}
-      isSaving={coreState.isSaving}
-      title={coreState.rundownTitle}
-      onTitleChange={coreState.setTitle}
-      rundownStartTime={coreState.rundownStartTime}
-      onRundownStartTimeChange={coreState.setStartTime}
-      items={coreState.items}
-      visibleColumns={coreState.visibleColumns}
-      onUndo={coreState.undo}
-      canUndo={coreState.canUndo}
-      lastAction={coreState.lastAction}
-      isConnected={coreState.isConnected}
-      isProcessingRealtimeUpdate={coreState.isProcessingRealtimeUpdate}
-      isVisuallyProcessingTeamUpdate={coreState.isVisuallyProcessingTeamUpdate} // Make sure this is explicitly passed
-      isPlaying={coreState.isPlaying}
-      currentSegmentId={coreState.currentSegmentId}
-      timeRemaining={coreState.timeRemaining}
-      autoScrollEnabled={coreState.autoScrollEnabled}
-      onToggleAutoScroll={coreState.toggleAutoScroll}
+      currentTime={currentTime}
+      timezone={timezone}
+      totalRuntime={totalRuntime}
+      hasUnsavedChanges={hasUnsavedChanges}
+      isSaving={isSaving}
+      title={rundownTitle}
+      onTitleChange={onTitleChange}
+      rundownStartTime={rundownStartTime}
+      onRundownStartTimeChange={onRundownStartTimeChange}
+      items={items}
+      visibleColumns={visibleColumns}
+      onUndo={onUndo}
+      canUndo={canUndo}
+      lastAction={lastAction}
+      isConnected={isConnected}
+      isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+      isPlaying={isPlaying}
+      currentSegmentId={currentSegmentId}
+      timeRemaining={timeRemaining}
+      autoScrollEnabled={autoScrollEnabled}
+      onToggleAutoScroll={onToggleAutoScroll}
     />
   );
 };
