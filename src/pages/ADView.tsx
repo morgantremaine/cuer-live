@@ -1,813 +1,306 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useSharedRundownState } from '@/hooks/useSharedRundownState';
-import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
-import { Clock, Plus, X, EyeOff, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+import React, { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
+import { useTheme } from '@/hooks/useTheme';
+import { getVisibleColumns } from '@/utils/sharedRundownUtils';
+import { getCellValue } from '@/utils/sharedRundownUtils';
 import { getRowNumber } from '@/utils/sharedRundownUtils';
-import { timeToSeconds, secondsToTime, calculateItemsWithTiming } from '@/utils/rundownCalculations';
-import CuerLogo from '@/components/common/CuerLogo';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { getContrastTextColor } from '@/utils/colorUtils';
+import { Play } from 'lucide-react';
 
 const ADView = () => {
-  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
-  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
-  const [showColumnSelector, setShowColumnSelector] = useState(false);
-  const [showScript, setShowScript] = useState(true);
-  const scriptContainerRef = useRef<HTMLDivElement>(null);
-  const scriptContentRef = useRef<HTMLDivElement>(null);
-  const [scriptFontSize, setScriptFontSize] = useState('1.3vw');
+  const { id } = useParams();
+  const { coreState } = useRundownStateCoordination();
+  const { isDark } = useTheme();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const [dynamicRowHeight, setDynamicRowHeight] = useState(60);
 
-  // Check if showcaller is playing
-  const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
-
-  // Use the same timing hook as the main rundown
-  const timingStatus = useShowcallerTiming({
-    items: rundownData?.items || [],
-    rundownStartTime: rundownData?.startTime || '',
-    isPlaying: isShowcallerPlaying,
-    currentSegmentId: currentSegmentId || '',
-    timeRemaining: timeRemaining || 0
-  });
-
-  // Helper function to check if script is null (case-insensitive)
-  const isNullScript = (script: string) => {
-    const trimmed = script.trim();
-    return trimmed.toLowerCase() === '[null]';
-  };
-
-  // Helper function to check if there's meaningful script content
-  const hasScriptContent = (script: string | undefined) => {
-    if (!script) return false;
-    const trimmed = script.trim();
-    return trimmed !== '' && !isNullScript(trimmed);
-  };
-
-  // Get storage key based on rundown ID
-  const getStorageKey = () => {
-    return rundownData?.id ? `ad-view-columns-${rundownData.id}` : 'ad-view-columns-default';
-  };
-
-  // Load selected columns from localStorage on mount and when rundown changes
+  // Calculate dynamic row height based on available space
   useEffect(() => {
-    if (rundownData?.id) {
-      const storageKey = getStorageKey();
-      const savedColumns = localStorage.getItem(storageKey);
-      if (savedColumns) {
-        try {
-          const parsedColumns = JSON.parse(savedColumns);
-          if (Array.isArray(parsedColumns)) {
-            setSelectedColumns(parsedColumns);
-          }
-        } catch (error) {
-          console.error('Error parsing saved columns:', error);
-        }
-      }
-    }
-  }, [rundownData?.id]);
+    const calculateRowHeight = () => {
+      if (!containerRef.current || !headerRef.current || !controlsRef.current) return;
 
-  // Save selected columns to localStorage whenever they change
-  useEffect(() => {
-    if (rundownData?.id && selectedColumns.length > 0) {
-      const storageKey = getStorageKey();
-      localStorage.setItem(storageKey, JSON.stringify(selectedColumns));
-    }
-  }, [selectedColumns, rundownData?.id]);
-
-  // Calculate items with proper timing using the same method as main rundown
-  const calculatedItems = useMemo(() => {
-    if (!rundownData?.items || !rundownData?.startTime) return [];
-    return calculateItemsWithTiming(rundownData.items, rundownData.startTime);
-  }, [rundownData?.items, rundownData?.startTime]);
-
-  // Dynamically generate available columns based on rundown data
-  const availableColumns = useMemo(() => {
-    const columns = [
-      { key: 'talent', name: 'Talent' },
-      { key: 'script', name: 'Script' },
-      { key: 'gfx', name: 'GFX' },
-      { key: 'video', name: 'Video' },
-      { key: 'images', name: 'Images' },
-      { key: 'notes', name: 'Notes' },
-      { key: 'duration', name: 'Duration' }
-    ];
-
-    // Add custom columns from rundown data - prioritize the columns definition
-    if (rundownData?.columns) {
-      rundownData.columns.forEach(col => {
-        if (col.isCustom && !columns.find(c => c.key === col.key)) {
-          columns.push({
-            key: col.key,
-            name: col.name
-          });
-        }
-      });
-    }
-
-    // Extract custom fields from the customFields objects in rundown items
-    if (rundownData?.items && rundownData.items.length > 0) {
-      const customFieldKeys = new Set<string>();
+      const containerHeight = containerRef.current.clientHeight;
+      const headerHeight = headerRef.current.clientHeight;
+      const controlsHeight = controlsRef.current.clientHeight;
       
-      rundownData.items.forEach(item => {
-        if (item.customFields && typeof item.customFields === 'object') {
-          Object.keys(item.customFields).forEach(key => {
-            // Only include fields that have meaningful content in at least one item
-            const hasContent = rundownData.items.some(i => 
-              i.customFields?.[key] && String(i.customFields[key]).trim() !== ''
-            );
-            if (hasContent) {
-              customFieldKeys.add(key);
-            }
-          });
-        }
-      });
-
-      // Add custom field columns
-      customFieldKeys.forEach(key => {
-        if (!columns.find(c => c.key === key)) {
-          columns.push({
-            key: key,
-            name: key.charAt(0).toUpperCase() + key.slice(1)
-          });
-        }
-      });
-    }
-
-    return columns;
-  }, [rundownData?.columns, rundownData?.items]);
-
-  // Filter out header items for timing-based navigation
-  const timedItems = rundownData?.items?.filter(item => item.type !== 'header') || [];
-  
-  // Find current segment and its index in the timed items
-  const currentSegment = timedItems.find(item => item.id === currentSegmentId);
-  const currentTimedIndex = timedItems.findIndex(item => item.id === currentSegmentId);
-  
-  // Get previous 1 and next 3 segments (non-header items only)
-  const previousSegments = currentTimedIndex >= 0 ? [
-    currentTimedIndex >= 1 ? timedItems[currentTimedIndex - 1] : null
-  ] : [null];
-  
-  const nextSegments = currentTimedIndex >= 0 ? [
-    currentTimedIndex < timedItems.length - 1 ? timedItems[currentTimedIndex + 1] : null,
-    currentTimedIndex < timedItems.length - 2 ? timedItems[currentTimedIndex + 2] : null,
-    currentTimedIndex < timedItems.length - 3 ? timedItems[currentTimedIndex + 3] : null
-  ] : [null, null, null];
-
-  // Find the current header section based on the current segment
-  const getCurrentHeaderInfo = () => {
-    if (!currentSegmentId || !rundownData?.items || rundownData.items.length === 0) {
-      return { letter: '', name: '' };
-    }
-
-    // Find the index of the current segment in the full items array
-    const currentSegmentIndex = rundownData.items.findIndex(item => item.id === currentSegmentId);
-    
-    if (currentSegmentIndex === -1) {
-      return { letter: '', name: '' };
-    }
-
-    // Look backwards from the current segment to find the most recent header
-    for (let i = currentSegmentIndex; i >= 0; i--) {
-      const item = rundownData.items[i];
-      if (item.type === 'header') {
-        // Extract header letter and name
-        const headerText = item.name || '';
-        
-        // The header structure should be like "A - TOP OF SHOW" where A is the letter
-        // But we need to look at the actual rundown structure to find the header letter
-        // Let's check if this header has a single letter prefix followed by content
-        
-        // First, try to find if there's a clear A, B, C pattern in the header name
-        const singleLetterMatch = headerText.match(/^([A-Z])\s*[-–]\s*(.+)$/);
-        if (singleLetterMatch) {
-          return {
-            letter: singleLetterMatch[1],
-            name: singleLetterMatch[2].trim()
-          };
-        }
-        
-        // If the header text is just content like "TOP OF SHOW", we need to determine 
-        // the header letter based on its position in the rundown
-        // Count how many headers come before this one to determine A, B, C, etc.
-        let headerCount = 0;
-        for (let j = 0; j < i; j++) {
-          if (rundownData.items[j].type === 'header') {
-            headerCount++;
-          }
-        }
-        
-        // Convert header count to letter (0 = A, 1 = B, etc.)
-        const headerLetter = String.fromCharCode(65 + headerCount); // 65 is ASCII for 'A'
-        
-        return {
-          letter: headerLetter,
-          name: headerText
-        };
-      }
-    }
-
-    return { letter: '', name: '' };
-  };
-
-  const currentHeaderInfo = getCurrentHeaderInfo();
-
-  // Calculate show elapsed time using the same logic as useShowcallerTiming
-  const showElapsedTime = (() => {
-    if (!isShowcallerPlaying || !currentSegmentId || !rundownData?.items) {
-      return '00:00:00';
-    }
-
-    const currentSegmentIndex = rundownData.items.findIndex(item => item.id === currentSegmentId);
-    if (currentSegmentIndex === -1) {
-      return '00:00:00';
-    }
-
-    // Sum up durations of all completed segments
-    let showcallerElapsedSeconds = 0;
-    
-    for (let i = 0; i < currentSegmentIndex; i++) {
-      const item = rundownData.items[i];
-      if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
-        showcallerElapsedSeconds += timeToSeconds(item.duration || '00:00');
-      }
-    }
-    
-    // Add elapsed time within current segment
-    const currentSegmentItem = rundownData.items[currentSegmentIndex];
-    if (currentSegmentItem?.duration) {
-      const currentSegmentDuration = timeToSeconds(currentSegmentItem.duration);
-      const elapsedInCurrentSegment = currentSegmentDuration - (timeRemaining || 0);
-      showcallerElapsedSeconds += Math.max(0, elapsedInCurrentSegment);
-    }
-
-    return secondsToTime(showcallerElapsedSeconds);
-  })();
-
-  // Calculate show remaining time based on total runtime minus elapsed
-  const showRemainingTime = (() => {
-    if (!isShowcallerPlaying || !rundownData?.items) {
-      return '00:00:00';
-    }
-
-    // Calculate total runtime (sum of all non-floated, non-header item durations)
-    const totalRuntimeSeconds = rundownData.items.reduce((acc, item) => {
-      if (item.type === 'header' || item.isFloating || item.isFloated) return acc;
-      return acc + timeToSeconds(item.duration || '00:00');
-    }, 0);
-
-    // Get current show elapsed time in seconds
-    const showElapsedSeconds = timeToSeconds(showElapsedTime);
-    
-    // Calculate remaining time
-    const remainingSeconds = Math.max(0, totalRuntimeSeconds - showElapsedSeconds);
-    
-    return secondsToTime(remainingSeconds);
-  })();
-
-  // Calculate current item elapsed time using the same logic as main showcaller system
-  const currentItemElapsed = (() => {
-    if (!currentSegment?.duration || !isShowcallerPlaying || timeRemaining === null || timeRemaining === undefined) {
-      return '00:00';
-    }
-    
-    // Get the segment duration in seconds
-    const segmentDurationSeconds = timeToSeconds(currentSegment.duration);
-    
-    // Calculate elapsed time as: total duration - remaining time
-    const elapsedSeconds = Math.max(0, segmentDurationSeconds - timeRemaining);
-    
-    // Format as MM:SS
-    const mins = Math.floor(elapsedSeconds / 60);
-    const secs = elapsedSeconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  })();
-
-  // Get segment display info with row numbers and additional column data (removed color)
-  const getSegmentInfo = (segment: any) => {
-    if (!segment || !rundownData?.items) return { 
-      name: '--', 
-      rowNumber: '', 
-      columnData: {} 
-    };
-    
-    // Find the original index in the full items array (including headers)
-    const originalIndex = rundownData.items.findIndex(item => item.id === segment.id);
-    const rowNumber = getRowNumber(originalIndex, rundownData.items);
-    const name = segment.name || segment.segmentName || '--';
-    
-    // Extract data for selected columns
-    const columnData: { [key: string]: string } = {};
-    selectedColumns.forEach(columnKey => {
-      // First check if it's a standard field
-      let value = segment[columnKey] || '';
+      // Account for padding and margins (approximate)
+      const padding = 40;
+      const availableHeight = containerHeight - headerHeight - controlsHeight - padding;
       
-      // If not found in standard fields, check customFields
-      if (!value && segment.customFields && segment.customFields[columnKey]) {
-        value = segment.customFields[columnKey];
-      }
+      // Get visible columns to determine how many rows of content we have
+      const visibleColumns = getVisibleColumns(coreState.visibleColumns);
+      const itemCount = coreState.items.length;
       
-      columnData[columnKey] = value;
-    });
-    
-    return { name, rowNumber, columnData };
-  };
-
-  // Get info for all segments
-  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
-  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {} };
-  const next1Info = nextSegments[0] ? getSegmentInfo(nextSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
-  const next2Info = nextSegments[1] ? getSegmentInfo(nextSegments[1]) : { name: '--', rowNumber: '', columnData: {} };
-  const next3Info = nextSegments[2] ? getSegmentInfo(nextSegments[2]) : { name: '--', rowNumber: '', columnData: {} };
-
-  // Add a column to display
-  const addColumn = (columnKey: string) => {
-    if (!selectedColumns.includes(columnKey)) {
-      setSelectedColumns([...selectedColumns, columnKey]);
-    }
-    setShowColumnSelector(false);
-  };
-
-  // Remove a column from display
-  const removeColumn = (columnKey: string) => {
-    setSelectedColumns(selectedColumns.filter(key => key !== columnKey));
-  };
-
-  // Get available columns that aren't already selected
-  const availableUnselectedColumns = availableColumns.filter(
-    col => !selectedColumns.includes(col.key)
-  );
-
-  // Render additional column data for a segment
-  const renderColumnData = (columnData: { [key: string]: string }) => {
-    return selectedColumns.map(columnKey => {
-      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-      const value = columnData[columnKey] || '--';
-      
-      return (
-        <div key={columnKey} className="text-sm text-gray-400 mt-1">
-          <span className="font-semibold">{columnName}:</span> {value}
-        </div>
-      );
-    });
-  };
-
-  // Format time remaining
-  const formatTimeRemaining = (seconds: number | null) => {
-    if (seconds === null || seconds === undefined) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Determine if script should be shown based on content availability
-  const shouldShowScript = showScript && currentSegment && hasScriptContent(currentSegment.script);
-
-  // Calculate dynamic font size for script based on content and container height
-  useEffect(() => {
-    if (!shouldShowScript || !scriptContainerRef.current || !scriptContentRef.current || !currentSegment?.script) {
-      return;
-    }
-
-    const container = scriptContainerRef.current;
-    const script = currentSegment.script;
-    
-    // Skip scaling for [null] scripts or empty content
-    if (isNullScript(script) || !hasScriptContent(script)) {
-      setScriptFontSize('1.3vw');
-      return;
-    }
-
-    // Get the actual available height of the container
-    const containerHeight = container.clientHeight - 32; // Account for padding
-    const containerWidth = container.clientWidth - 32; // Account for padding
-    
-    if (containerHeight <= 0 || containerWidth <= 0) {
-      return;
-    }
-
-    // Create a temporary element to measure text height
-    const measureElement = document.createElement('div');
-    measureElement.style.position = 'absolute';
-    measureElement.style.visibility = 'hidden';
-    measureElement.style.width = `${containerWidth}px`;
-    measureElement.style.whiteSpace = 'pre-wrap';
-    measureElement.style.lineHeight = '1.4';
-    measureElement.style.wordBreak = 'break-words';
-    measureElement.style.overflow = 'hidden';
-    measureElement.textContent = script;
-    
-    document.body.appendChild(measureElement);
-    
-    const baseFontSize = Math.min(window.innerWidth * 0.013, window.innerHeight * 0.025); // 1.3vw equivalent
-    const maxFontSize = Math.min(window.innerWidth * 0.03, window.innerHeight * 0.04); // Up to 3vw max
-    
-    // Binary search for the optimal font size
-    let minSize = baseFontSize * 0.3; // Minimum reasonable size
-    let maxSize = maxFontSize;
-    let optimalSize = baseFontSize;
-    
-    // Use binary search to find the largest font size that fits
-    for (let i = 0; i < 20; i++) { // Limit iterations
-      const testSize = (minSize + maxSize) / 2;
-      measureElement.style.fontSize = `${testSize}px`;
-      
-      if (measureElement.scrollHeight <= containerHeight) {
-        optimalSize = testSize;
-        minSize = testSize;
-      } else {
-        maxSize = testSize;
-      }
-      
-      // If the range is small enough, break
-      if (maxSize - minSize < 0.5) {
-        break;
-      }
-    }
-    
-    document.body.removeChild(measureElement);
-    
-    // Convert back to vw units for consistency
-    const vwSize = (optimalSize / window.innerWidth) * 100;
-    setScriptFontSize(`${Math.max(0.8, vwSize).toFixed(2)}vw`); // Ensure minimum readable size
-    
-  }, [shouldShowScript, currentSegment?.script, scriptContainerRef.current?.clientHeight, scriptContainerRef.current?.clientWidth]);
-
-  // Recalculate font size on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (shouldShowScript && currentSegment?.script && scriptContainerRef.current) {
-        // Small delay to ensure container dimensions are updated
-        setTimeout(() => {
-          setScriptFontSize(prev => prev); // Trigger recalculation
-        }, 100);
+      if (itemCount > 0) {
+        // Calculate optimal row height, with min and max constraints
+        const calculatedRowHeight = Math.max(40, Math.min(120, availableHeight / itemCount));
+        setDynamicRowHeight(calculatedRowHeight);
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [shouldShowScript, currentSegment?.script]);
+    // Calculate on mount and window resize
+    calculateRowHeight();
+    
+    const resizeObserver = new ResizeObserver(calculateRowHeight);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
 
-  if (loading) {
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [coreState.items.length, coreState.visibleColumns]);
+
+  const visibleColumns = getVisibleColumns(coreState.visibleColumns);
+
+  // Helper function to render cell content with proper sizing
+  const renderCellContent = (item: any, column: any) => {
+    const value = getCellValue(item, column, coreState.rundownStartTime, '00:00:00');
+    
+    // For custom columns, truncate long content
+    if (column.key && !['segmentName', 'duration', 'startTime', 'endTime'].includes(column.key)) {
+      const maxLength = Math.floor(dynamicRowHeight / 3); // Adjust based on row height
+      if (typeof value === 'string' && value.length > maxLength) {
+        return value.substring(0, maxLength) + '...';
+      }
+    }
+    
+    return value;
+  };
+
+  if (!id) {
     return (
-      <div className="h-screen w-screen bg-black text-white flex items-center justify-center">
-        <div className="text-[2vw]">Loading...</div>
+      <div className="h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div>No rundown ID provided</div>
       </div>
     );
   }
 
-  if (error || !rundownData) {
+  if (coreState.isLoading) {
     return (
-      <div className="h-screen w-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-[2vw] text-red-400 mb-[1vh]">Error loading rundown</div>
-          <div className="text-[1.5vw] text-zinc-400">{error || 'Rundown not found'}</div>
-        </div>
+      <div className="h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div className="text-xl">Loading rundown...</div>
+      </div>
+    );
+  }
+
+  if (!coreState.items || coreState.items.length === 0) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div>No rundown items found</div>
       </div>
     );
   }
 
   return (
-    <ErrorBoundary fallbackTitle="AD View Error">
-      <div className="h-screen w-screen bg-black text-white flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-gray-900 border-b border-zinc-700 px-[1vw] py-[0.5vh]">
-          <div className="grid grid-cols-[1fr_3fr_1fr] gap-[1.5vw] items-center">
-            {/* Left Column - Timing Status */}
-            <div className="flex justify-start">
-              <div className="text-center min-w-[20vw]">
-                <div className="text-[clamp(0.9rem,1.1vw,1.6rem)] text-zinc-400 font-semibold">TIMING STATUS</div>
-                <div className={`text-[clamp(1.3rem,2.7vw,4rem)] font-bold font-mono min-h-[2vh] flex items-center justify-center truncate ${
-                  !isShowcallerPlaying ? 'text-green-400' :
-                  timingStatus.isOnTime ? 'text-green-400' :
-                  timingStatus.isAhead ? 'text-yellow-400' :
-                  'text-red-400'
-                }`}>
-                  {!isShowcallerPlaying ? 'PAUSED' :
-                   timingStatus.isOnTime ? 'ON TIME' :
-                   timingStatus.isAhead ? `Under -${timingStatus.timeDifference}` :
-                   `Over +${timingStatus.timeDifference}`}
-                </div>
-              </div>
-            </div>
-            
-            {/* Center Column - Logo and Title */}
-            <div className="flex items-center justify-center">
-              <div className="flex items-center space-x-[1vw]">
-                <CuerLogo 
-                  className="h-[6vh] w-auto flex-shrink-0"
-                  isDark={true}
-                  alt="Cuer Logo"
-                />
-                <div className="text-[clamp(1.2rem,1.8vw,3rem)] font-bold text-white text-center leading-tight">
-                  {rundownData.title}
-                </div>
-              </div>
-            </div>
-            
-            {/* Right Column - Time of Day */}
-            <div className="flex justify-end">
-              <div className="text-center min-w-[20vw]">
-                <div className="text-[clamp(0.9rem,1.1vw,1.6rem)] text-zinc-400 font-semibold">TIME OF DAY</div>
-                <div className="text-[clamp(1.3rem,2.9vw,4.5rem)] font-mono font-bold text-blue-400">
-                  {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
-                </div>
-              </div>
+    <div 
+      ref={containerRef}
+      className="h-screen flex flex-col bg-gray-900 text-white overflow-hidden"
+    >
+      {/* Header Section */}
+      <div 
+        ref={headerRef}
+        className="flex-shrink-0 p-4 border-b border-gray-700"
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-400">TIMING STATUS</div>
+            <div className={`text-lg font-bold ${coreState.isPlaying ? 'text-green-400' : 'text-green-400'}`}>
+              {coreState.isPlaying ? 'LIVE' : 'PAUSED'}
             </div>
           </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 px-0 py-0">
-          <div className={`grid gap-[1.5vh] h-full p-[1vh] ${shouldShowScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
-            {/* Left Side - Timing Cards centered vertically with container-relative sizing */}
-            <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
-              {/* Show Elapsed Time */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW ELAPSED</div>
-                  <div className={`font-mono font-bold text-blue-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {showElapsedTime}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Show Remaining Time */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW REMAINING</div>
-                  <div className={`font-mono font-bold text-orange-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {showRemainingTime}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Current Item Elapsed */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM ELAPSED</div>
-                  <div className={`font-mono font-bold text-green-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {currentItemElapsed}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Current Item Time Remaining */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM REMAINING</div>
-                  <div className={`font-mono font-bold text-yellow-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {formatTimeRemaining(timeRemaining)}
-                  </div>
-                </CardContent>
-              </Card>
+          
+          <div className="text-center">
+            <div className="flex items-center space-x-2">
+              <Play className="h-6 w-6 text-blue-500" />
+              <span className="text-xl font-bold">{coreState.rundownTitle}</span>
             </div>
-
-            {/* Center - Current Header Banner and Segments Display */}
-            <div className={`${shouldShowScript ? 'col-span-6' : 'col-span-6'} flex flex-col space-y-[0.5vh]`}>
-              {/* Current Header Section Banner */}
-              {currentHeaderInfo.letter && (
-                <div className="bg-gray-700 border border-zinc-600 rounded-lg px-[1vw] py-[0.3vh]">
-                  <div className="flex items-center space-x-[0.8vw]">
-                    <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-bold text-white">
-                      {currentHeaderInfo.letter}
-                    </div>
-                    <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-200">
-                      {currentHeaderInfo.name}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Segments Display */}
-              <div className="flex-1 flex flex-col justify-center space-y-[0.3vh]">
-                {/* Previous Segment 1 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
-                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
-                      {selectedColumns.map(columnKey => {
-                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                        const value = prev1Info.columnData[columnKey] || '--';
-                        
-                        return (
-                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                            <span className="font-semibold">{columnName}:</span> {value}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Current Segment */}
-                <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-green-300 font-bold">LIVE</div>
-                      <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
-                      <div className="mt-[0.3vh]">
-                        {selectedColumns.map(columnKey => {
-                          const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                          const value = currInfo.columnData[columnKey] || '--';
-                          
-                          return (
-                            <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] text-green-200 mt-[0.2vh]">
-                              <span className="font-semibold">{columnName}:</span> {value}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Next Segment 1 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-80">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">NEXT</div>
-                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{next1Info.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{next1Info.name}</div>
-                      {selectedColumns.map(columnKey => {
-                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                        const value = next1Info.columnData[columnKey] || '--';
-                        
-                        return (
-                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                            <span className="font-semibold">{columnName}:</span> {value}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Next Segment 2 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">NEXT</div>
-                      <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{next2Info.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{next2Info.name}</div>
-                      {selectedColumns.map(columnKey => {
-                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                        const value = next2Info.columnData[columnKey] || '--';
-                        
-                        return (
-                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                            <span className="font-semibold">{columnName}:</span> {value}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Next Segment 3 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-500 font-semibold">NEXT</div>
-                      <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{next3Info.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-400">{next3Info.name}</div>
-                      {selectedColumns.map(columnKey => {
-                        const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                        const value = next3Info.columnData[columnKey] || '--';
-                        
-                        return (
-                          <div key={columnKey} className="text-[clamp(0.7rem,1vw,1.3rem)] text-gray-400 mt-[0.1vh]">
-                            <span className="font-semibold">{columnName}:</span> {value}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Column Controls */}
-                <div className="flex items-center justify-between mt-[0.3vh] pt-[0.3vh] border-t border-zinc-700">
-                  <div className="flex items-center space-x-[0.3vw]">
-                    <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">Additional Columns:</div>
-                    {selectedColumns.map(columnKey => {
-                      const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                      return (
-                        <div key={columnKey} className="flex items-center bg-zinc-700 rounded px-[0.4vw] py-[0.1vh] text-[clamp(0.6rem,0.8vw,1rem)]">
-                          <span>{columnName}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="ml-[0.2vw] h-[1vw] w-[1vw] p-0 text-zinc-400 hover:text-white"
-                            onClick={() => removeColumn(columnKey)}
-                          >
-                            <X className="h-[0.6vw] w-[0.6vw]" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  <div className="flex items-center space-x-[0.5vw]">
-                    {availableUnselectedColumns.length > 0 && (
-                      <div className="relative">
-                        {!showColumnSelector ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowColumnSelector(true)}
-                            className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
-                          >
-                            <Plus className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />
-                            Add Column
-                          </Button>
-                        ) : (
-                          <Select onValueChange={addColumn} onOpenChange={(open) => !open && setShowColumnSelector(false)}>
-                            <SelectTrigger className="w-[12vw] bg-gray-900 border-zinc-600 text-white text-[clamp(0.6rem,0.8vw,1rem)]">
-                              <SelectValue placeholder="Select column..." />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-900 border-zinc-600">
-                              {availableUnselectedColumns.map(column => (
-                                <SelectItem 
-                                  key={column.key} 
-                                  value={column.key}
-                                  className="text-white hover:bg-zinc-700 focus:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)]"
-                                >
-                                  {column.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Script Toggle Button - only show if there's meaningful script content */}
-                    {currentSegment && hasScriptContent(currentSegment.script) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowScript(!showScript)}
-                        className="bg-gray-800 border-zinc-600 text-white hover:text-white hover:bg-zinc-700 text-[clamp(0.6rem,0.8vw,1rem)] px-[0.6vw] py-[0.2vh]"
-                      >
-                        {showScript ? <EyeOff className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" /> : <Eye className="h-[0.8vw] w-[0.8vw] mr-[0.2vw]" />}
-                        {showScript ? 'Hide Script' : 'Show Script'}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
+          </div>
+          
+          <div className="text-right">
+            <div className="text-sm text-gray-400">TIME OF DAY</div>
+            <div className="text-blue-400 text-lg font-mono">
+              {coreState.currentTime?.toLocaleTimeString('en-US', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              })}
             </div>
-
-            {/* Right Side - Script (conditionally rendered only when there's meaningful content) */}
-            {shouldShowScript && (
-              <div className="col-span-4 flex flex-col h-full">
-                <Card className="bg-gray-900 border-zinc-700 flex-1 flex flex-col">
-                  <CardContent className="p-[0.3vw] flex-1 flex flex-col">
-                    <div className="text-[clamp(0.6rem,0.8vw,1.1rem)] text-zinc-400 mb-[0.3vh] font-semibold">CURRENT SCRIPT</div>
-                    <div 
-                      ref={scriptContainerRef}
-                      className="flex-1 bg-black rounded-lg p-[0.5vw] overflow-hidden min-h-0"
-                      style={{ height: 'calc(100% - 2rem)' }}
-                    >
-                      <div 
-                        ref={scriptContentRef}
-                        className="text-white whitespace-pre-wrap leading-relaxed break-words h-full w-full overflow-hidden"
-                        style={{ 
-                          fontSize: scriptFontSize,
-                          lineHeight: '1.4'
-                        }}
-                      >
-                        {currentSegment.script}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
         </div>
       </div>
-    </ErrorBoundary>
+
+      {/* Main Content Area - Dynamically Sized */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar */}
+        <div className="w-64 flex-shrink-0 p-4 space-y-4">
+          <div className="bg-gray-800 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">SHOW ELAPSED</div>
+            <div className="text-blue-400 text-2xl font-mono">
+              {coreState.currentSegmentId ? '00:00:00' : '00:00:00'}
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">SHOW REMAINING</div>
+            <div className="text-orange-400 text-2xl font-mono">
+              {coreState.totalRuntime || '00:00:00'}
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">ITEM ELAPSED</div>
+            <div className="text-green-400 text-2xl font-mono">
+              {coreState.timeRemaining ? '00:00' : '00:00'}
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">ITEM REMAINING</div>
+            <div className="text-yellow-400 text-2xl font-mono">
+              {typeof coreState.timeRemaining === 'string' ? coreState.timeRemaining : '00:00'}
+            </div>
+          </div>
+        </div>
+
+        {/* Center Content - Rundown Table with Dynamic Height */}
+        <div className="flex-1 p-4 overflow-hidden">
+          <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
+            <div className="h-full flex flex-col">
+              {/* Table Content */}
+              <div className="flex-1 overflow-hidden">
+                <table className="w-full h-full">
+                  <tbody className="h-full">
+                    {coreState.items.map((item, index) => {
+                      const isCurrentSegment = item.id === coreState.currentSegmentId;
+                      const isFloated = item.isFloating || item.isFloated;
+                      
+                      // Determine row styling
+                      let rowBackgroundColor = undefined;
+                      let textColor = '#ffffff';
+                      
+                      if (item.type === 'header') {
+                        rowBackgroundColor = '#374151'; // gray-700
+                      } else if (isFloated) {
+                        rowBackgroundColor = '#dc2626'; // red-600
+                      } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '') {
+                        rowBackgroundColor = item.color;
+                        textColor = getContrastTextColor(item.color);
+                      }
+                      
+                      const rowStyles: React.CSSProperties = {
+                        height: `${dynamicRowHeight}px`,
+                        backgroundColor: rowBackgroundColor,
+                        color: textColor
+                      };
+                      
+                      return (
+                        <tr
+                          key={item.id}
+                          className={`border-b border-gray-700 ${isCurrentSegment ? 'ring-2 ring-blue-500' : ''}`}
+                          style={rowStyles}
+                        >
+                          {/* Row Number */}
+                          <td className="px-3 py-2 text-center align-middle" style={{ width: '60px' }}>
+                            <div className="flex items-center justify-center">
+                              {isCurrentSegment && (
+                                <Play className="h-4 w-4 text-blue-500 fill-blue-500 mr-1" />
+                              )}
+                              {isFloated && (
+                                <span className="text-yellow-400 mr-1">🛟</span>
+                              )}
+                              <span className="text-sm">{getRowNumber(index, coreState.items)}</span>
+                            </div>
+                          </td>
+                          
+                          {/* Dynamic Columns */}
+                          {visibleColumns.map((column) => {
+                            const isSegmentNameColumn = column.key === 'segmentName' || column.key === 'name';
+                            
+                            return (
+                              <td
+                                key={column.id}
+                                className={`px-3 py-2 align-middle ${
+                                  isCurrentSegment && isSegmentNameColumn ? 'bg-blue-600' : ''
+                                }`}
+                                style={{
+                                  fontSize: `${Math.max(12, dynamicRowHeight / 5)}px`,
+                                  lineHeight: '1.2'
+                                }}
+                              >
+                                <div 
+                                  className="break-words overflow-hidden"
+                                  style={{
+                                    maxHeight: `${dynamicRowHeight - 16}px`,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: Math.floor(dynamicRowHeight / 20),
+                                    WebkitBoxOrient: 'vertical'
+                                  }}
+                                >
+                                  {item.type === 'header' ? (
+                                    isSegmentNameColumn ? (
+                                      <strong>{item.name || ''}</strong>
+                                    ) : column.key === 'duration' ? (
+                                      <span className="text-sm text-gray-400">
+                                        ({coreState.calculateHeaderDuration(index)})
+                                      </span>
+                                    ) : ''
+                                  ) : (
+                                    renderCellContent(item, column)
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar - Script */}
+        <div className="w-96 flex-shrink-0 p-4">
+          <div className="h-full bg-gray-800 rounded-lg p-4">
+            <h3 className="text-sm text-gray-400 mb-4 uppercase tracking-wider">Current Script</h3>
+            <div className="text-white leading-relaxed overflow-y-auto h-full">
+              {coreState.currentSegmentId ? (
+                (() => {
+                  const currentItem = coreState.items.find(item => item.id === coreState.currentSegmentId);
+                  return currentItem?.script || 'No script available for current segment.';
+                })()
+              ) : (
+                'No segment currently playing.'
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Controls */}
+      <div 
+        ref={controlsRef}
+        className="flex-shrink-0 p-4 border-t border-gray-700"
+      >
+        <div className="flex justify-center items-center space-x-4">
+          <div className="text-sm text-gray-400">Additional Columns:</div>
+          <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm">
+            ➕ Add Column
+          </button>
+          <button className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-sm">
+            👁️ Hide Script
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
