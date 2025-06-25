@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -42,9 +43,14 @@ const TeleprompterItem = ({
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
-      // Auto-resize textarea to match content
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      // Set height to match display content exactly
+      const displayHeight = displayRef.current?.scrollHeight || 0;
+      if (displayHeight > 0) {
+        textareaRef.current.style.height = displayHeight + 'px';
+      } else {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      }
     }
   }, [isEditing]);
 
@@ -230,8 +236,7 @@ const TeleprompterItem = ({
               fontSize: `${fontSize}px`,
               lineHeight: '1.5',
               padding: '0',
-              margin: '0',
-              minHeight: '24px'
+              margin: '0'
             }}
             placeholder="Enter script content..."
           />
@@ -267,3 +272,4 @@ const TeleprompterItem = ({
 };
 
 export default TeleprompterItem;
+
