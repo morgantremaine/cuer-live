@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface SaveState {
@@ -15,6 +15,21 @@ interface TeleprompterSaveIndicatorProps {
 
 const TeleprompterSaveIndicator = ({ saveState }: TeleprompterSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError } = saveState;
+  const [showSaved, setShowSaved] = useState(false);
+
+  // Show saved indicator for 3 seconds after save
+  useEffect(() => {
+    if (lastSaved && !hasUnsavedChanges && !isSaving) {
+      setShowSaved(true);
+      const timer = setTimeout(() => {
+        setShowSaved(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowSaved(false);
+    }
+  }, [lastSaved, hasUnsavedChanges, isSaving]);
 
   const formatLastSaved = (date: Date) => {
     const now = new Date();
@@ -53,7 +68,7 @@ const TeleprompterSaveIndicator = ({ saveState }: TeleprompterSaveIndicatorProps
     );
   }
 
-  if (lastSaved) {
+  if (showSaved && lastSaved) {
     return (
       <div className="flex items-center gap-2 text-green-400 text-sm">
         <CheckCircle className="h-4 w-4" />
