@@ -189,7 +189,7 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Enhanced layout loading with proper anonymous user support
+  // Fixed layout loading with proper anonymous user support
   useEffect(() => {
     const loadSharedLayoutForAnonymous = async () => {
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
@@ -233,47 +233,36 @@ const SharedRundown = () => {
         if (sharedLayoutData && sharedLayoutData.layout_id) {
           logger.log('🎨 Found shared layout ID:', sharedLayoutData.layout_id);
           
-          // First try with normal authentication (for logged-in users)
-          let { data: layoutData, error: layoutError } = await supabase
-            .from('column_layouts')
-            .select('columns, name')
-            .eq('id', sharedLayoutData.layout_id)
-            .maybeSingle();
-
-          // If it fails (likely due to RLS for anonymous users), try using the RPC function
-          if (layoutError || !layoutData) {
-            logger.log('🔓 Layout not accessible with normal auth, trying RPC for anonymous user');
-            
-            try {
-              const { data: publicLayoutData, error: publicError } = await supabase.rpc(
-                'get_public_layout_for_rundown', 
-                { 
-                  rundown_uuid: rundownId,
-                  layout_uuid: sharedLayoutData.layout_id 
-                }
-              );
-
-              if (!isMountedRef.current) return;
-
-              if (publicError) {
-                logger.error('❌ Error loading public layout via RPC:', publicError);
-              } else if (publicLayoutData) {
-                logger.log('✅ Successfully loaded layout via RPC:', publicLayoutData);
-                setLayoutColumns(publicLayoutData.columns);
-                setLayoutName(publicLayoutData.name || 'Custom Layout');
-                return;
-              } else {
-                logger.log('⚠️ RPC returned null - layout may not be properly shared');
+          // Always use the RPC function for anonymous users
+          // This bypasses RLS issues and is specifically designed for shared layouts
+          try {
+            const { data: publicLayoutData, error: publicError } = await supabase.rpc(
+              'get_public_layout_for_rundown', 
+              { 
+                rundown_uuid: rundownId,
+                layout_uuid: sharedLayoutData.layout_id 
               }
-            } catch (rpcError) {
-              logger.error('❌ RPC call failed:', rpcError);
+            );
+
+            if (!isMountedRef.current) return;
+
+            if (publicError) {
+              logger.error('❌ Error loading public layout via RPC:', publicError);
+              throw publicError;
+            } 
+            
+            if (publicLayoutData) {
+              logger.log('✅ Successfully loaded layout via RPC:', publicLayoutData);
+              setLayoutColumns(publicLayoutData.columns);
+              setLayoutName(publicLayoutData.name || 'Custom Layout');
+              return;
+            } else {
+              logger.log('⚠️ RPC returned null - layout may not be properly shared');
+              throw new Error('Layout not accessible');
             }
-          } else {
-            // Layout loaded successfully for authenticated user
-            logger.log('✅ Layout loaded with normal auth:', layoutData);
-            setLayoutColumns(layoutData.columns);
-            setLayoutName(layoutData.name || 'Custom Layout');
-            return;
+          } catch (rpcError) {
+            logger.error('❌ RPC call failed:', rpcError);
+            throw rpcError;
           }
         }
 
