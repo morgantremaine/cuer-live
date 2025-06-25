@@ -7,7 +7,7 @@ export const useTeleprompterControls = () => {
   const [scrollSpeed, setScrollSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isUppercase, setIsUppercase] = useState(false);
-  const [isBold, setIsBold] = useState(true); // Default to bold since we made everything bold
+  const [isBold, setIsBold] = useState(false); // Changed from true to false
   const [showAllSegments, setShowAllSegments] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
