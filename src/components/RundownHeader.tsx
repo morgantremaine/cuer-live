@@ -45,8 +45,8 @@ const RundownHeader = ({
   onUndo,
   canUndo,
   lastAction,
-  isConnected = false,
-  isProcessingRealtimeUpdate = false,
+  isConnected,
+  isProcessingRealtimeUpdate,
   isPlaying,
   currentSegmentId,
   timeRemaining,
@@ -65,13 +65,6 @@ const RundownHeader = ({
     currentSegmentId,
     timeRemaining
   });
-
-  // Debug logging for processing state
-  React.useEffect(() => {
-    if (isProcessingRealtimeUpdate) {
-      console.log('📡 RundownHeader: Processing realtime update - icon should be blue');
-    }
-  }, [isProcessingRealtimeUpdate]);
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
@@ -135,10 +128,9 @@ const RundownHeader = ({
     }
   };
 
-  // Helper function to render connection status icon with enhanced processing detection
+  // Helper function to render connection status icon
   const renderConnectionIcon = () => {
     if (isProcessingRealtimeUpdate) {
-      console.log('🔵 Rendering blue spinning icon for realtime processing');
       return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     } else if (isConnected) {
       return <Wifi className="h-4 w-4 text-green-500" />;
@@ -186,9 +178,11 @@ const RundownHeader = ({
               {...timingStatus}
             />
             <span>Runtime: {totalRuntime}</span>
-            <div className="flex items-center">
-              {renderConnectionIcon()}
-            </div>
+            {isConnected !== undefined && (
+              <div className="flex items-center">
+                {renderConnectionIcon()}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -246,9 +240,11 @@ const RundownHeader = ({
             />
           </div>
           
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {renderConnectionIcon()}
-          </div>
+          {isConnected !== undefined && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {renderConnectionIcon()}
+            </div>
+          )}
         </div>
         
         {/* Bottom row - Time info */}
@@ -355,9 +351,11 @@ const RundownHeader = ({
             Runtime: {totalRuntime}
           </span>
           
-          <div className="flex items-center space-x-2">
-            {renderConnectionIcon()}
-          </div>
+          {isConnected !== undefined && (
+            <div className="flex items-center space-x-2">
+              {renderConnectionIcon()}
+            </div>
+          )}
         </div>
       </div>
     </div>
