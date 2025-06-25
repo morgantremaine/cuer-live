@@ -49,10 +49,10 @@ export const useRundownStateCoordination = () => {
     return () => clearInterval(cleanup);
   }, [cleanupInactiveCells, memoryMonitor]);
 
-  // Optimized interactions with debounced updates
+  // Optimized interactions with debounced updates - fix function signatures
   const interactions = useRundownGridInteractions(
     optimizedState.items,
-    optimizedState.setItems,
+    optimizedState.setItems, // This already expects updater function
     optimizedState.updateItem,
     optimizedState.addRow,
     optimizedState.addHeader,
@@ -63,14 +63,14 @@ export const useRundownStateCoordination = () => {
       ids.forEach(id => optimizedState.deleteRow(id));
     },
     (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
-      // Optimized multi-add
-      newItems.forEach(item => {
-        const itemToAdd = {
+      // Optimized multi-add - use updater function
+      optimizedState.setItems(prevItems => {
+        const itemsToAdd = newItems.map(item => ({
           ...item,
           id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
-        };
-        optimizedState.addItem(itemToAdd);
+        }));
+        return [...prevItems, ...itemsToAdd];
       });
     },
     (columnId: string) => {
