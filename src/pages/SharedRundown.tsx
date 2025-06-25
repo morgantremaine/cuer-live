@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -31,6 +30,16 @@ const checkSharedLayoutExists = async (rundownId: string) => {
     .eq('rundown_id', rundownId);
   
   console.log('🔍 Shared layout query result:', { data, error });
+  
+  // Additional debugging - check if rundown exists and its visibility
+  const { data: rundownData, error: rundownError } = await supabase
+    .from('rundowns')
+    .select('id, visibility, title')
+    .eq('id', rundownId)
+    .single();
+  
+  console.log('🔍 Rundown data:', { rundownData, rundownError });
+  
   return { data, error };
 };
 
@@ -215,6 +224,13 @@ const SharedRundown = () => {
       }
       
       console.log('🔄 Loading shared layout for rundown:', rundownId);
+      console.log('🔍 Rundown data summary:', {
+        id: rundownData.id,
+        title: rundownData.title,
+        visibility: rundownData.visibility,
+        hasColumns: rundownData.columns?.length > 0
+      });
+      
       setLayoutLoading(true);
       isLayoutLoadingRef.current = true;
       layoutLoadedRef.current = rundownId;
@@ -223,6 +239,12 @@ const SharedRundown = () => {
         // First, check if there's a shared layout record for this rundown
         const sharedLayoutCheck = await checkSharedLayoutExists(rundownId);
         
+        if (sharedLayoutCheck.data && sharedLayoutCheck.data.length === 0) {
+          console.log('❌ No shared layout record found for this rundown');
+          console.log('💡 This means no custom layout has been configured for sharing');
+          console.log('💡 The rundown owner needs to use the Share menu to set up a shared layout');
+        }
+
         // Use the FIXED RPC function to get shared layout data
         const { data: sharedLayoutData, error: rpcError } = await supabase
           .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
@@ -268,6 +290,16 @@ const SharedRundown = () => {
           // No shared layout configured, use rundown's own columns or default
           console.log('📋 No shared layout configured, using rundown columns or default');
           console.log('📋 Rundown columns:', rundownData.columns);
+          
+          if (sharedLayoutCheck.data && sharedLayoutCheck.data.length === 0) {
+            console.log('🚨 SOLUTION: To fix this, the rundown owner should:');
+            console.log('   1. Open the rundown in edit mode');
+            console.log('   2. Click the Share button');
+            console.log('   3. Select "Set Read-Only Layout..."');
+            console.log('   4. Choose a saved layout or create one');
+            console.log('   This will create the shared_rundown_layouts record needed for custom layouts');
+          }
+          
           if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
