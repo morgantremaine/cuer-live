@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -88,8 +89,9 @@ export const useRealtimeRundown = ({
   onProcessingStateChangeRef.current = onProcessingStateChange;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Update processing state and notify parent
+  // Update processing state and notify parent - with better error handling
   const updateProcessingState = useCallback((processing: boolean) => {
+    console.log(`🔄 Setting processing state to: ${processing}`);
     setIsProcessing(processing);
     if (onProcessingStateChangeRef.current) {
       onProcessingStateChangeRef.current(processing);
@@ -168,8 +170,10 @@ export const useRealtimeRundown = ({
     }
   }, []);
 
-  // Enhanced update handler with better showcaller detection
+  // Enhanced update handler with improved processing state management
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    console.log('📡 Received realtime update:', payload.new?.id, 'vs current:', rundownId);
+    
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
       return;
@@ -190,11 +194,13 @@ export const useRealtimeRundown = ({
 
     // Prevent processing duplicate updates based on timestamp
     if (updateData.timestamp === lastProcessedUpdateRef.current) {
+      console.log('⏭️ Skipping duplicate update');
       return;
     }
 
     // Skip if this update originated from this user
     if (ownUpdateTrackingRef.current.has(updateData.timestamp)) {
+      console.log('⏭️ Skipping own update');
       return;
     }
 
@@ -213,7 +219,7 @@ export const useRealtimeRundown = ({
 
     // If it's showcaller-only, handle it specially
     if (isShowcallerOnly) {
-      logger.log('📺 Received external showcaller visual state');
+      console.log('📺 Received external showcaller visual state');
       
       // Signal showcaller activity with extended timeout
       if (onShowcallerActivityRef.current) {
@@ -236,10 +242,15 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
+    console.log('🔄 Processing content update from teammate');
+    
     // Set processing state to true when we receive a teammate update
     updateProcessingState(true);
 
-    // Debounce rapid updates to prevent conflicts using centralized timeout manager
+    // Clear any existing processing timeout to prevent race conditions
+    timeoutManagerRef.current.clear('processing');
+
+    // Debounce rapid updates to prevent conflicts with guaranteed state reset
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
       
@@ -247,15 +258,17 @@ export const useRealtimeRundown = ({
       
       try {
         // Apply the rundown update (content changes only)
+        console.log('📄 Applying teammate content update');
         onRundownUpdateRef.current(payload.new);
       } catch (error) {
-        logger.error('Error processing realtime update:', error);
-      } finally {
-        // Clear processing state after update is complete
-        setTimeout(() => {
-          updateProcessingState(false);
-        }, 1000); // Show processing for 1 second
+        console.error('❌ Error processing realtime update:', error);
       }
+      
+      // Always reset processing state after a short delay - this is the key fix
+      setTimeout(() => {
+        console.log('✅ Resetting processing state to false');
+        updateProcessingState(false);
+      }, 1500); // 1.5 seconds to show the blue icon
     }, 150);
     
   }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate, updateProcessingState]);
@@ -273,6 +286,8 @@ export const useRealtimeRundown = ({
       return;
     }
     
+    console.log('🔗 Setting up realtime subscription for rundown:', rundownId);
+    
     const channel = supabase
       .channel(`rundown-realtime-${rundownId}`)
       .on(
@@ -286,6 +301,7 @@ export const useRealtimeRundown = ({
         handleRealtimeUpdate
       )
       .subscribe((status) => {
+        console.log('🔗 Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
         } else {
@@ -297,14 +313,17 @@ export const useRealtimeRundown = ({
 
     return () => {
       if (subscriptionRef.current) {
+        console.log('🔌 Cleaning up realtime subscription');
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
         setIsConnected(false);
       }
       // Clean up all timeouts when component unmounts
       timeoutManagerRef.current.clearAll();
+      // Reset processing state on cleanup
+      updateProcessingState(false);
     };
-  }, [rundownId, user, enabled, handleRealtimeUpdate]);
+  }, [rundownId, user, enabled, handleRealtimeUpdate, updateProcessingState]);
 
   return {
     isConnected,
