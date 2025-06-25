@@ -189,7 +189,7 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Enhanced layout loading with detailed debugging
+  // Enhanced layout loading with comprehensive debugging and investigation
   useEffect(() => {
     const loadSharedLayoutForAnonymous = async () => {
       console.log('🎯 DEBUG: Layout loading function called');
@@ -221,6 +221,31 @@ const SharedRundown = () => {
         logger.log('🔧 Loading shared layout for rundown:', rundownId);
         console.log('🎯 DEBUG: About to query shared_rundown_layouts table');
         
+        // COMPREHENSIVE INVESTIGATION: Let's check what layouts exist for this rundown
+        console.log('🔍 INVESTIGATION: Checking all shared layouts for this rundown...');
+        const { data: allSharedLayouts, error: allSharedError } = await supabase
+          .from('shared_rundown_layouts')
+          .select('*')
+          .eq('rundown_id', rundownId);
+        
+        console.log('🔍 INVESTIGATION: All shared layouts for rundown:', allSharedLayouts);
+        console.log('🔍 INVESTIGATION: All shared layouts error:', allSharedError);
+
+        // COMPREHENSIVE INVESTIGATION: Let's also check what column layouts exist that might be shareable
+        console.log('🔍 INVESTIGATION: Checking available column layouts...');
+        const { data: allColumnLayouts, error: allColumnError } = await supabase
+          .from('column_layouts')
+          .select('id, name, user_id, team_id, columns')
+          .limit(10);
+        
+        console.log('🔍 INVESTIGATION: Available column layouts:', allColumnLayouts);
+        console.log('🔍 INVESTIGATION: Column layouts error:', allColumnError);
+
+        // COMPREHENSIVE INVESTIGATION: Let's check if this rundown should be public
+        console.log('🔍 INVESTIGATION: Rundown visibility details:');
+        console.log('🔍 INVESTIGATION: - rundownData.visibility:', rundownData.visibility);
+        console.log('🔍 INVESTIGATION: - Should be public for sharing?', rundownData.visibility === 'public');
+
         // First, try to get the shared layout configuration
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
@@ -296,11 +321,17 @@ const SharedRundown = () => {
           }
         } else {
           console.log('🎯 DEBUG: No layout ID found in shared layout data');
+          console.log('🔍 INVESTIGATION: This means no custom layout is shared for this rundown');
         }
 
         // Fallback to rundown's own columns or default
         logger.log('📋 Using fallback layout');
         console.log('🎯 DEBUG: Using fallback layout logic');
+        console.log('🔍 INVESTIGATION: Why are rundown columns empty?');
+        console.log('🔍 INVESTIGATION: - This suggests the rundown was created with default columns');
+        console.log('🔍 INVESTIGATION: - Or the columns were never customized');
+        console.log('🔍 INVESTIGATION: - The owner may need to set up custom columns and share them');
+        
         console.log('🎯 DEBUG: rundownData.columns check:', rundownData.columns);
         console.log('🎯 DEBUG: rundownData.columns type:', typeof rundownData.columns);
         console.log('🎯 DEBUG: rundownData.columns is array:', Array.isArray(rundownData.columns));
@@ -311,6 +342,11 @@ const SharedRundown = () => {
           setLayoutName('Rundown Layout');
         } else {
           console.log('🎯 DEBUG: Fallback - rundown columns empty or invalid, using default columns');
+          console.log('🔍 INVESTIGATION: SOLUTION - The rundown owner needs to:');
+          console.log('🔍 INVESTIGATION: 1. Customize the rundown columns in the main editor');
+          console.log('🔍 INVESTIGATION: 2. Create/save a custom layout');
+          console.log('🔍 INVESTIGATION: 3. Share that layout for this rundown');
+          console.log('🔍 INVESTIGATION: 4. Make sure the rundown visibility allows sharing');
           console.log('🎯 DEBUG: rundownData.columns details:', {
             value: rundownData.columns,
             length: rundownData.columns?.length,
