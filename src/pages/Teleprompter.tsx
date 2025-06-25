@@ -26,6 +26,7 @@ const Teleprompter = () => {
     scrollSpeed,
     isFullscreen,
     isUppercase,
+    isBold,
     showAllSegments,
     containerRef,
     toggleScrolling,
@@ -34,6 +35,7 @@ const Teleprompter = () => {
     adjustScrollSpeed,
     toggleFullscreen,
     toggleUppercase,
+    toggleBold,
     toggleShowAllSegments,
     getCurrentSpeed,
     isReverse
@@ -360,11 +362,13 @@ const Teleprompter = () => {
           fontSize={fontSize}
           scrollSpeed={getCurrentSpeed()}
           isUppercase={isUppercase}
+          isBold={isBold}
           showAllSegments={showAllSegments}
           onToggleScrolling={toggleScrolling}
           onResetScroll={resetScroll}
           onToggleFullscreen={toggleFullscreen}
           onToggleUppercase={toggleUppercase}
+          onToggleBold={toggleBold}
           onToggleShowAllSegments={toggleShowAllSegments}
           onAdjustFontSize={adjustFontSize}
           onAdjustScrollSpeed={adjustScrollSpeed}
@@ -379,6 +383,7 @@ const Teleprompter = () => {
         itemsWithScript={itemsWithScript}
         fontSize={fontSize}
         isUppercase={isUppercase}
+        isBold={isBold}
         getRowNumber={getRowNumber}
         onUpdateScript={updateScriptContent}
         canEdit={!isFullscreen}

@@ -10,6 +10,7 @@ interface TeleprompterContentProps {
   itemsWithScript: (RundownItem & { originalIndex: number })[];
   fontSize: number;
   isUppercase: boolean;
+  isBold: boolean;
   getRowNumber: (index: number) => string;
   onUpdateScript?: (itemId: string, newScript: string) => void;
   canEdit?: boolean;
@@ -21,6 +22,7 @@ const TeleprompterContent = ({
   itemsWithScript,
   fontSize,
   isUppercase,
+  isBold,
   getRowNumber,
   onUpdateScript,
   canEdit = false
@@ -57,6 +59,7 @@ const TeleprompterContent = ({
               item={item}
               fontSize={fontSize}
               isUppercase={isUppercase}
+              isBold={isBold}
               getRowNumber={getRowNumber}
               onUpdateScript={onUpdateScript}
               canEdit={canEdit}

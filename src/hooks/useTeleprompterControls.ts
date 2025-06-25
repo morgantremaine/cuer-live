@@ -7,6 +7,7 @@ export const useTeleprompterControls = () => {
   const [scrollSpeed, setScrollSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isUppercase, setIsUppercase] = useState(false);
+  const [isBold, setIsBold] = useState(true); // Default to bold since we made everything bold
   const [showAllSegments, setShowAllSegments] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -184,6 +185,10 @@ export const useTeleprompterControls = () => {
     setIsUppercase(!isUppercase);
   };
 
+  const toggleBold = () => {
+    setIsBold(!isBold);
+  };
+
   const toggleShowAllSegments = () => {
     setShowAllSegments(!showAllSegments);
   };
@@ -194,6 +199,7 @@ export const useTeleprompterControls = () => {
     scrollSpeed,
     isFullscreen,
     isUppercase,
+    isBold,
     showAllSegments,
     containerRef,
     toggleScrolling,
@@ -202,6 +208,7 @@ export const useTeleprompterControls = () => {
     adjustScrollSpeed,
     toggleFullscreen,
     toggleUppercase,
+    toggleBold,
     toggleShowAllSegments,
     setIsScrolling,
     getCurrentSpeed,

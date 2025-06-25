@@ -1,16 +1,19 @@
+
 import React from 'react';
-import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type, Printer, List } from 'lucide-react';
+import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type, Printer, List, Bold } from 'lucide-react';
 
 interface TeleprompterControlsProps {
   isScrolling: boolean;
   fontSize: number;
   scrollSpeed: number; // This now represents the actual speed (can be negative)
   isUppercase: boolean;
+  isBold: boolean;
   showAllSegments: boolean;
   onToggleScrolling: () => void;
   onResetScroll: () => void;
   onToggleFullscreen: () => void;
   onToggleUppercase: () => void;
+  onToggleBold: () => void;
   onToggleShowAllSegments: () => void;
   onAdjustFontSize: (delta: number) => void;
   onAdjustScrollSpeed: (delta: number) => void;
@@ -22,11 +25,13 @@ const TeleprompterControls = ({
   fontSize,
   scrollSpeed,
   isUppercase,
+  isBold,
   showAllSegments,
   onToggleScrolling,
   onResetScroll,
   onToggleFullscreen,
   onToggleUppercase,
+  onToggleBold,
   onToggleShowAllSegments,
   onAdjustFontSize,
   onAdjustScrollSpeed,
@@ -79,6 +84,16 @@ const TeleprompterControls = ({
           >
             <Type className="h-4 w-4" />
             <span>UPPERCASE</span>
+          </button>
+
+          <button
+            onClick={onToggleBold}
+            className={`flex items-center space-x-2 px-4 py-2 rounded text-sm ${
+              isBold ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-800 hover:bg-gray-700'
+            }`}
+          >
+            <Bold className="h-4 w-4" />
+            <span>BOLD</span>
           </button>
 
           <button
