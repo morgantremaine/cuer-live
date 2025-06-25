@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -190,7 +189,7 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // SIMPLIFIED layout loading - try multiple approaches to get shared layout
+  // NEW: Enhanced layout loading using the security definer RPC function
   useEffect(() => {
     const loadSharedLayout = async () => {
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
@@ -206,66 +205,31 @@ const SharedRundown = () => {
       layoutLoadedRef.current = rundownId;
       
       try {
-        logger.log('🎨 Loading shared layout for rundown:', rundownId);
-        
-        // Method 1: Try the RPC function first
-        let sharedLayoutData = null;
-        try {
-          const { data: rpcData, error: rpcError } = await supabase
-            .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
-
-          if (!rpcError && rpcData) {
-            sharedLayoutData = rpcData;
-            logger.log('🎨 Got layout from RPC:', sharedLayoutData);
-          } else {
-            logger.log('🎨 RPC failed or returned null:', rpcError);
-          }
-        } catch (rpcErr) {
-          logger.log('🎨 RPC exception:', rpcErr);
-        }
-
-        // Method 2: If RPC failed, try direct query (this will work for logged-in users)
-        if (!sharedLayoutData) {
-          try {
-            logger.log('🎨 Trying direct query for shared layout...');
-            const { data: directData, error: directError } = await supabase
-              .from('shared_rundown_layouts')
-              .select(`
-                layout_id,
-                column_layouts:layout_id (
-                  id,
-                  name,
-                  columns
-                )
-              `)
-              .eq('rundown_id', rundownId)
-              .maybeSingle();
-
-            if (!directError && directData?.column_layouts) {
-              sharedLayoutData = {
-                layout_id: directData.layout_id,
-                layout_name: directData.column_layouts.name || 'Shared Layout',
-                columns: directData.column_layouts.columns || []
-              };
-              logger.log('🎨 Got layout from direct query:', sharedLayoutData);
-            } else {
-              logger.log('🎨 Direct query failed:', directError);
-            }
-          } catch (directErr) {
-            logger.log('🎨 Direct query exception:', directErr);
-          }
-        }
+        // Use the new RPC function to get shared layout data
+        const { data: sharedLayoutData, error: rpcError } = await supabase
+          .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
 
         if (!isMountedRef.current) return;
 
-        // If we got shared layout data, use it
+        if (rpcError) {
+          logger.error('❌ Error loading shared layout via RPC:', rpcError);
+          // Fallback to rundown's own columns
+          if (rundownData.columns && rundownData.columns.length > 0) {
+            setLayoutColumns(rundownData.columns);
+            setLayoutName('Rundown Layout');
+          } else {
+            setLayoutColumns(DEFAULT_COLUMNS);
+            setLayoutName('Default Layout');
+          }
+          return;
+        }
+
+        // If we got shared layout data from the RPC function
         if (sharedLayoutData && sharedLayoutData.columns) {
-          logger.log('🎨 Using shared layout:', sharedLayoutData);
           setLayoutColumns(sharedLayoutData.columns);
           setLayoutName(sharedLayoutData.layout_name || 'Shared Layout');
         } else {
-          // Fallback to rundown's own columns or default
-          logger.log('🎨 No shared layout found, using fallback');
+          // No shared layout, use rundown's own columns or default
           if (rundownData.columns && rundownData.columns.length > 0) {
             setLayoutColumns(rundownData.columns);
             setLayoutName('Rundown Layout');
