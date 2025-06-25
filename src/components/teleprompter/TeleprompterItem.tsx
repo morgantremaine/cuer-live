@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -231,7 +230,7 @@ const TeleprompterItem = ({
 
       {/* Script with bracket parsing and editing capability */}
       <div 
-        className={`leading-relaxed text-left whitespace-pre-wrap ${getFontWeight()} font-sans`}
+        className={`leading-none text-left whitespace-pre-wrap ${getFontWeight()} font-sans`}
       >
         {isEditing ? (
           <textarea
@@ -243,7 +242,7 @@ const TeleprompterItem = ({
             className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()} font-sans`}
             style={{ 
               fontSize: `${fontSize}px`,
-              lineHeight: '1.2',
+              lineHeight: '1.0',
               minHeight: '100px'
             }}
             placeholder="Enter script content..."
@@ -254,7 +253,7 @@ const TeleprompterItem = ({
             className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
             style={{ 
               fontSize: `${fontSize}px`,
-              lineHeight: '1.2'
+              lineHeight: '1.0'
             }}
           >
             {isNullItem ? (
