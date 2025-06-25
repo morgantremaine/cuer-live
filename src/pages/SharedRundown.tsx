@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
@@ -190,12 +189,16 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Fixed layout loading with EXTENSIVE debugging
+  // Enhanced layout loading with detailed debugging
   useEffect(() => {
     const loadSharedLayoutForAnonymous = async () => {
       console.log('🎯 DEBUG: Layout loading function called');
       console.log('🎯 DEBUG: rundownId:', rundownId);
       console.log('🎯 DEBUG: rundownData exists:', !!rundownData);
+      console.log('🎯 DEBUG: Full rundownData:', rundownData);
+      console.log('🎯 DEBUG: rundownData.columns:', rundownData?.columns);
+      console.log('🎯 DEBUG: rundownData.columns length:', rundownData?.columns?.length);
+      console.log('🎯 DEBUG: rundownData.visibility:', rundownData?.visibility);
       console.log('🎯 DEBUG: isLayoutLoadingRef.current:', isLayoutLoadingRef.current);
       console.log('🎯 DEBUG: isMountedRef.current:', isMountedRef.current);
       
@@ -298,12 +301,21 @@ const SharedRundown = () => {
         // Fallback to rundown's own columns or default
         logger.log('📋 Using fallback layout');
         console.log('🎯 DEBUG: Using fallback layout logic');
-        if (rundownData.columns && rundownData.columns.length > 0) {
+        console.log('🎯 DEBUG: rundownData.columns check:', rundownData.columns);
+        console.log('🎯 DEBUG: rundownData.columns type:', typeof rundownData.columns);
+        console.log('🎯 DEBUG: rundownData.columns is array:', Array.isArray(rundownData.columns));
+        
+        if (Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
           console.log('🎯 DEBUG: Fallback - using rundown columns:', rundownData.columns);
           setLayoutColumns(rundownData.columns);
           setLayoutName('Rundown Layout');
         } else {
-          console.log('🎯 DEBUG: Fallback - using default columns');
+          console.log('🎯 DEBUG: Fallback - rundown columns empty or invalid, using default columns');
+          console.log('🎯 DEBUG: rundownData.columns details:', {
+            value: rundownData.columns,
+            length: rundownData.columns?.length,
+            isArray: Array.isArray(rundownData.columns)
+          });
           setLayoutColumns(DEFAULT_COLUMNS);
           setLayoutName('Default Layout');
         }
@@ -314,7 +326,7 @@ const SharedRundown = () => {
         logger.error('💥 Failed to load shared layout:', error);
         console.log('🎯 DEBUG: Exception caught, using final fallback:', error);
         // Final fallback
-        if (rundownData.columns && rundownData.columns.length > 0) {
+        if (Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
           console.log('🎯 DEBUG: Final fallback - using rundown columns');
           setLayoutColumns(rundownData.columns);
           setLayoutName('Rundown Layout');
