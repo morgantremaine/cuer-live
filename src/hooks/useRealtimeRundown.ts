@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -188,6 +189,16 @@ export const useRealtimeRundown = ({
       return;
     }
 
+    // NEW: Show visual processing indicator for ALL team updates (both content and showcaller)
+    logger.log('📡 Received team update, showing visual processing indicator');
+    setIsVisuallyProcessing(true);
+    
+    // Auto-hide visual processing after 1.5 seconds
+    timeoutManagerRef.current.set('visual-processing', () => {
+      setIsVisuallyProcessing(false);
+      logger.log('🔄 Visual processing indicator hidden');
+    }, 1500);
+
     // Enhanced showcaller-only detection
     const isShowcallerOnly = isShowcallerOnlyUpdate(payload);
     
@@ -225,16 +236,6 @@ export const useRealtimeRundown = ({
       lastProcessedUpdateRef.current = updateData.timestamp;
       return; // Don't trigger content sync for showcaller-only updates
     }
-
-    // NEW: Show visual processing indicator for team updates
-    logger.log('📡 Received team update, showing visual processing indicator');
-    setIsVisuallyProcessing(true);
-    
-    // Auto-hide visual processing after 1.5 seconds
-    timeoutManagerRef.current.set('visual-processing', () => {
-      setIsVisuallyProcessing(false);
-      logger.log('🔄 Visual processing indicator hidden');
-    }, 1500);
 
     // Debounce rapid updates to prevent conflicts using centralized timeout manager
     timeoutManagerRef.current.set('processing', () => {
