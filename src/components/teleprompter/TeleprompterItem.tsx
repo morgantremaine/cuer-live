@@ -10,13 +10,6 @@ interface TeleprompterItemProps {
   getRowNumber: (index: number) => string;
   onUpdateScript?: (itemId: string, newScript: string) => void;
   canEdit?: boolean;
-  saveState?: {
-    isSaving: boolean;
-    lastSaved: Date | null;
-    hasUnsavedChanges: boolean;
-    saveError: string | null;
-  };
-  onManualSave?: () => void;
 }
 
 const TeleprompterItem = ({ 
@@ -26,9 +19,7 @@ const TeleprompterItem = ({
   isBold,
   getRowNumber, 
   onUpdateScript,
-  canEdit = false,
-  saveState,
-  onManualSave
+  canEdit = false
 }: TeleprompterItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.script || '');
@@ -64,15 +55,12 @@ const TeleprompterItem = ({
       if (isEditing && e.ctrlKey && e.key === 's') {
         e.preventDefault();
         handleScriptSave();
-        if (onManualSave) {
-          onManualSave();
-        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isEditing, editText, onManualSave]);
+  }, [isEditing, editText]);
 
   // Function to parse and render script text with bracket styling
   const renderScriptWithBrackets = (text: string) => {
@@ -203,43 +191,6 @@ const TeleprompterItem = ({
     e.target.style.height = e.target.scrollHeight + 'px';
   };
 
-  // Render save status indicator for this item
-  const renderSaveIndicator = () => {
-    if (!saveState || isHeaderItem(item)) return null;
-
-    const { isSaving, hasUnsavedChanges, saveError } = saveState;
-
-    if (isSaving) {
-      return (
-        <div className="text-blue-400 text-xs mt-1 opacity-75">
-          Saving...
-        </div>
-      );
-    }
-
-    if (saveError) {
-      return (
-        <div className="text-red-400 text-xs mt-1 opacity-75">
-          Save failed - {onManualSave && (
-            <button onClick={onManualSave} className="underline hover:text-red-300">
-              retry
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    if (hasUnsavedChanges) {
-      return (
-        <div className="text-yellow-400 text-xs mt-1 opacity-75">
-          Unsaved changes
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   if (isHeaderItem(item)) {
     // For headers, prioritize the name field which contains the custom text
     const headerTitle = item.name || item.segmentName || 'HEADER';
@@ -312,33 +263,30 @@ const TeleprompterItem = ({
               placeholder="Enter script content..."
             />
             <div className="text-xs text-gray-400 mt-2">
-              Press Ctrl+Enter to save, Escape to cancel, or Ctrl+S for manual save
+              Press Ctrl+Enter to save or Escape to cancel
             </div>
           </div>
         ) : (
-          <div>
-            <div
-              onClick={handleScriptClick}
-              className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
-              style={{ 
-                fontSize: `${fontSize}px`,
-                lineHeight: '1.5'
-              }}
-            >
-              {isNullItem ? (
-                // For [null] items, don't show any script content, but still show the segment title above
-                canEdit ? (
-                  <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-                ) : null
-              ) : item.script ? (
-                renderScriptWithBrackets(item.script)
-              ) : (
-                canEdit ? (
-                  <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-                ) : null
-              )}
-            </div>
-            {renderSaveIndicator()}
+          <div
+            onClick={handleScriptClick}
+            className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
+            style={{ 
+              fontSize: `${fontSize}px`,
+              lineHeight: '1.5'
+            }}
+          >
+            {isNullItem ? (
+              // For [null] items, don't show any script content, but still show the segment title above
+              canEdit ? (
+                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+              ) : null
+            ) : item.script ? (
+              renderScriptWithBrackets(item.script)
+            ) : (
+              canEdit ? (
+                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+              ) : null
+            )}
           </div>
         )}
       </div>

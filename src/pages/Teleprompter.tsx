@@ -159,19 +159,6 @@ const Teleprompter = () => {
     }, 3000);
   };
 
-  // Manual save handler
-  const handleManualSave = async (itemId?: string) => {
-    if (!rundownData || !itemId) return;
-    
-    const item = rundownData.items.find(i => i.id === itemId);
-    if (!item) return;
-
-    const success = await forceSave(itemId, item.script || '', rundownData);
-    if (success) {
-      toast.success('Script saved manually');
-    }
-  };
-
   // Print function with improved formatting
   const handlePrint = () => {
     if (!rundownData) return;
@@ -442,7 +429,6 @@ const Teleprompter = () => {
           <div className="fixed top-16 right-4 z-30">
             <TeleprompterSaveIndicator 
               saveState={saveState}
-              onManualSave={() => handleManualSave()}
             />
           </div>
         </>
@@ -459,17 +445,15 @@ const Teleprompter = () => {
         getRowNumber={getRowNumber}
         onUpdateScript={updateScriptContent}
         canEdit={!isFullscreen}
-        saveState={saveState}
-        onManualSave={handleManualSave}
       />
 
-      {/* Enhanced Keyboard Instructions - Only show when not fullscreen */}
+      {/* Simplified Keyboard Instructions - Only show when not fullscreen */}
       {!isFullscreen && (
         <div className="fixed bottom-4 left-4 bg-black bg-opacity-75 text-white text-xs p-3 rounded max-w-sm">
           <div className="space-y-1">
             <div>Enter Fullscreen for keyboard controls (Arrow Keys: Speed | Space: Play/Pause)</div>
             <div>Click on script text to edit</div>
-            <div>Ctrl+Enter or Ctrl+S to save while editing</div>
+            <div>Ctrl+Enter to save while editing</div>
             <div>Escape to cancel editing</div>
           </div>
         </div>

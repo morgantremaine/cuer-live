@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckCircle, AlertCircle, Loader2, Save } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface SaveState {
   isSaving: boolean;
@@ -11,10 +11,9 @@ interface SaveState {
 
 interface TeleprompterSaveIndicatorProps {
   saveState: SaveState;
-  onManualSave?: () => void;
 }
 
-const TeleprompterSaveIndicator = ({ saveState, onManualSave }: TeleprompterSaveIndicatorProps) => {
+const TeleprompterSaveIndicator = ({ saveState }: TeleprompterSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError } = saveState;
 
   const formatLastSaved = (date: Date) => {
@@ -41,14 +40,6 @@ const TeleprompterSaveIndicator = ({ saveState, onManualSave }: TeleprompterSave
       <div className="flex items-center gap-2 text-red-400 text-sm">
         <AlertCircle className="h-4 w-4" />
         <span>Save failed</span>
-        {onManualSave && (
-          <button
-            onClick={onManualSave}
-            className="text-blue-400 hover:text-blue-300 underline ml-2"
-          >
-            Retry
-          </button>
-        )}
       </div>
     );
   }
@@ -56,16 +47,8 @@ const TeleprompterSaveIndicator = ({ saveState, onManualSave }: TeleprompterSave
   if (hasUnsavedChanges) {
     return (
       <div className="flex items-center gap-2 text-yellow-400 text-sm">
-        <Save className="h-4 w-4" />
+        <AlertCircle className="h-4 w-4" />
         <span>Unsaved changes</span>
-        {onManualSave && (
-          <button
-            onClick={onManualSave}
-            className="text-blue-400 hover:text-blue-300 underline ml-2"
-          >
-            Save now
-          </button>
-        )}
       </div>
     );
   }
