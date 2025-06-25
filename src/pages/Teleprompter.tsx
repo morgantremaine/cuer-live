@@ -189,10 +189,6 @@ const Teleprompter = () => {
               font-weight: bold;
               font-size: 11px;
               margin-bottom: 0.5em;
-              padding: 2px 6px;
-              background: #f0f0f0;
-              border-left: 3px solid #333;
-              display: inline-block;
               page-break-after: avoid;
             }
             .segment-content {
@@ -213,9 +209,7 @@ const Teleprompter = () => {
             }
             .header-segment .segment-header {
               font-size: 13px;
-              background: #333;
-              color: white;
-              padding: 4px 8px;
+              font-weight: bold;
             }
             /* Remove forced page breaks to let content flow naturally */
             .page-break {
@@ -229,8 +223,8 @@ const Teleprompter = () => {
               const rowNumber = getRowNumber(item.originalIndex);
               const isHeader = item.type === 'header';
               const title = isHeader 
-                ? `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}`
-                : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
+                ? `[${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}]`
+                : `[${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}]`;
               
               const scriptContent = processScriptForPrint(item.script || '');
               
