@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -67,7 +68,7 @@ const TeleprompterItem = ({
       // Add text before the bracket
       if (match.index > lastIndex) {
         parts.push(
-          <span key={`text-${lastIndex}`} className={`${getFontWeight()} font-sans`}>
+          <span key={`text-${lastIndex}`} className={`${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>
             {formatText(text.slice(lastIndex, match.index))}
           </span>
         );
@@ -115,11 +116,12 @@ const TeleprompterItem = ({
       parts.push(
         <span
           key={`bracket-${match.index}`}
-          className={`py-0.5 px-2 inline-block rounded mx-1 ${getFontWeight()} font-sans`}
+          className={`py-0.5 px-2 inline-block rounded mx-1 ${getFontWeight()}`}
           style={{ 
             backgroundColor,
             color: textColor,
-            fontSize: `${fontSize}px`
+            fontSize: `${fontSize}px`,
+            fontFamily: 'Arial, sans-serif'
           }}
         >
           {formatText(bracketText)}
@@ -132,13 +134,13 @@ const TeleprompterItem = ({
     // Add remaining text after the last bracket
     if (lastIndex < text.length) {
       parts.push(
-        <span key={`text-${lastIndex}`} className={`${getFontWeight()} font-sans`}>
+        <span key={`text-${lastIndex}`} className={`${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>
           {formatText(text.slice(lastIndex))}
         </span>
       );
     }
 
-    return parts.length > 0 ? parts : <span className={`${getFontWeight()} font-sans`}>{formatText(text)}</span>;
+    return parts.length > 0 ? parts : <span className={`${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>{formatText(text)}</span>;
   };
 
   const handleScriptClick = () => {
@@ -184,15 +186,19 @@ const TeleprompterItem = ({
     return (
       <div className="mb-8">
         <h2 
-          className={`${getFontWeight()} font-sans text-left mb-6`}
-          style={{ fontSize: `${fontSize + 8}px` }}
+          className={`${getFontWeight()} text-left mb-6`}
+          style={{ 
+            fontSize: `${fontSize + 8}px`,
+            fontFamily: 'Arial, sans-serif'
+          }}
         >
           <span
-            className={`py-0.5 px-2 inline-block rounded ${getFontWeight()} font-sans`}
+            className={`py-0.5 px-2 inline-block rounded ${getFontWeight()}`}
             style={{ 
               backgroundColor: 'white',
               color: 'black',
-              fontSize: `${fontSize + 8}px`
+              fontSize: `${fontSize + 8}px`,
+              fontFamily: 'Arial, sans-serif'
             }}
           >
             {getRowNumber(item.originalIndex)} - {formatText(headerTitle.toUpperCase())}
@@ -210,14 +216,18 @@ const TeleprompterItem = ({
       {/* Segment Title */}
       <div 
         className="text-left mb-6"
-        style={{ fontSize: `${fontSize + 4}px` }}
+        style={{ 
+          fontSize: `${fontSize + 4}px`,
+          fontFamily: 'Arial, sans-serif'
+        }}
       >
         <span
-          className={`py-0.5 px-2 inline-block rounded ${getFontWeight()} font-sans`}
+          className={`py-0.5 px-2 inline-block rounded ${getFontWeight()}`}
           style={{ 
             backgroundColor: 'white',
             color: 'black',
-            fontSize: `${fontSize + 4}px`
+            fontSize: `${fontSize + 4}px`,
+            fontFamily: 'Arial, sans-serif'
           }}
         >
           {getRowNumber(item.originalIndex)} - {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}
@@ -225,7 +235,10 @@ const TeleprompterItem = ({
       </div>
 
       {/* Script with bracket parsing and editing capability */}
-      <div className={`leading-relaxed text-left whitespace-pre-wrap ${getFontWeight()} font-sans`}>
+      <div 
+        className={`leading-relaxed text-left whitespace-pre-wrap ${getFontWeight()}`}
+        style={{ fontFamily: 'Arial, sans-serif' }}
+      >
         {isEditing ? (
           <textarea
             ref={textareaRef}
@@ -233,11 +246,12 @@ const TeleprompterItem = ({
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             onBlur={handleScriptSave}
-            className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()} font-sans`}
+            className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()}`}
             style={{ 
               fontSize: `${fontSize}px`,
               lineHeight: '1.2',
-              minHeight: '100px'
+              minHeight: '100px',
+              fontFamily: 'Arial, sans-serif'
             }}
             placeholder="Enter script content..."
           />
@@ -247,19 +261,20 @@ const TeleprompterItem = ({
             className={`${canEdit ? 'cursor-text hover:bg-gray-900 hover:bg-opacity-30 rounded p-2 transition-colors' : ''}`}
             style={{ 
               fontSize: `${fontSize}px`,
-              lineHeight: '1.2'
+              lineHeight: '1.2',
+              fontFamily: 'Arial, sans-serif'
             }}
           >
             {isNullItem ? (
               // For [null] items, don't show any script content, but still show the segment title above
               canEdit ? (
-                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+                <span className={`text-gray-500 italic ${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>Click to add script content...</span>
               ) : null
             ) : item.script ? (
               renderScriptWithBrackets(item.script)
             ) : (
               canEdit ? (
-                <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
+                <span className={`text-gray-500 italic ${getFontWeight()}`} style={{ fontFamily: 'Arial, sans-serif' }}>Click to add script content...</span>
               ) : null
             )}
           </div>
