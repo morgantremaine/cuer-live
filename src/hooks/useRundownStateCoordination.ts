@@ -6,6 +6,7 @@ import { useOptimizedCellRefs } from './useOptimizedCellRefs';
 import { useMemoryMonitor } from '@/utils/memoryMonitor';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { logger } from '@/utils/logger';
+import { RundownItem } from '@/types/rundown';
 
 export const useRundownStateCoordination = () => {
   // Use optimized state management
@@ -50,9 +51,10 @@ export const useRundownStateCoordination = () => {
   }, [cleanupInactiveCells, memoryMonitor]);
 
   // Create wrapper that matches the expected signature for useRundownGridInteractions
-  const setItemsWrapper = useCallback((updater: (prev: any[]) => any[]) => {
-    optimizedState.setItems(updater);
-  }, [optimizedState.setItems]);
+  const setItemsWrapper = useCallback((updater: (prev: RundownItem[]) => RundownItem[]) => {
+    const newItems = updater(optimizedState.items);
+    optimizedState.setItems(newItems);
+  }, [optimizedState.setItems, optimizedState.items]);
 
   // Optimized interactions with corrected function signatures
   const interactions = useRundownGridInteractions(
@@ -67,14 +69,15 @@ export const useRundownStateCoordination = () => {
       // Optimized multi-delete
       ids.forEach(id => optimizedState.deleteRow(id));
     },
-    (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
-      // Optimized multi-add - use updater function pattern
+    (newItems: RundownItem[], calcEndTime: (startTime: string, duration: string) => string) => {
+      // Optimized multi-add - use direct setItems call
       const itemsToAdd = newItems.map(item => ({
         ...item,
         id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
       }));
-      optimizedState.setItems(prevItems => [...prevItems, ...itemsToAdd]);
+      const newItemsList = [...optimizedState.items, ...itemsToAdd];
+      optimizedState.setItems(newItemsList);
     },
     (columnId: string) => {
       const newColumns = optimizedState.columns.filter(col => col.id !== columnId);
