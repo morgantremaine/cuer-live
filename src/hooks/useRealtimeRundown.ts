@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -77,6 +76,9 @@ export const useRealtimeRundown = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
+  
+  // NEW: Separate visual processing state that doesn't interfere with autosave
+  const [isVisuallyProcessing, setIsVisuallyProcessing] = useState(false);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
@@ -224,6 +226,16 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
+    // NEW: Show visual processing indicator for team updates
+    logger.log('📡 Received team update, showing visual processing indicator');
+    setIsVisuallyProcessing(true);
+    
+    // Auto-hide visual processing after 1.5 seconds
+    timeoutManagerRef.current.set('visual-processing', () => {
+      setIsVisuallyProcessing(false);
+      logger.log('🔄 Visual processing indicator hidden');
+    }, 1500);
+
     // Debounce rapid updates to prevent conflicts using centralized timeout manager
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
@@ -288,6 +300,7 @@ export const useRealtimeRundown = ({
 
   return {
     isConnected,
+    isVisuallyProcessing, // NEW: Return the visual processing state
     trackOwnUpdate: trackOwnUpdateLocal
   };
 };

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
@@ -408,6 +409,7 @@ export const useSimplifiedRundownState = () => {
     // Realtime connection status
     isConnected,
     isProcessingRealtimeUpdate,
+    isVisuallyProcessingTeamUpdate: realtimeRundown.isVisuallyProcessing, // NEW: Expose the visual processing state
     
     // Calculations
     totalRuntime,
