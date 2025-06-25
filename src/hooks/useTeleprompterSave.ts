@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -122,9 +121,6 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess }: UseTeleprompte
 
         // Call success callback
         onSaveSuccess?.(itemId, newScript);
-        
-        // Show success toast briefly
-        toast.success('Script saved', { duration: 2000 });
         
         return true;
       }

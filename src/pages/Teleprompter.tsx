@@ -453,8 +453,6 @@ const Teleprompter = () => {
           <div className="space-y-1">
             <div>Enter Fullscreen for keyboard controls (Arrow Keys: Speed | Space: Play/Pause)</div>
             <div>Click on script text to edit</div>
-            <div>Ctrl+Enter to save while editing</div>
-            <div>Escape to cancel editing</div>
           </div>
         </div>
       )}

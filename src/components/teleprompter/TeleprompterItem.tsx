@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -29,18 +28,15 @@ const TeleprompterItem = ({
     return isUppercase ? text.toUpperCase() : text;
   };
 
-  // Helper function to check if script is null (case-insensitive)
   const isNullScript = (script: string) => {
     const trimmed = script.trim();
     return trimmed.toLowerCase() === '[null]';
   };
 
-  // Get font weight class based on bold setting
   const getFontWeight = () => {
     return isBold ? 'font-bold' : 'font-normal';
   };
 
-  // Auto-resize textarea and focus when editing starts
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
@@ -49,28 +45,11 @@ const TeleprompterItem = ({
     }
   }, [isEditing]);
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isEditing && e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        handleScriptSave();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isEditing, editText]);
-
-  // Function to parse and render script text with bracket styling
   const renderScriptWithBrackets = (text: string) => {
-    // Handle [null] case (case-insensitive) - don't render any script content
     if (isNullScript(text)) {
       return null;
     }
 
-    // Regex to match brackets with optional color specification
-    // Matches [TEXT] or [TEXT{COLOR}]
     const bracketRegex = /\[([^\[\]{}]+)(?:\{([^}]+)\})?\]/g;
     
     const parts = [];
@@ -78,7 +57,6 @@ const TeleprompterItem = ({
     let match;
 
     while ((match = bracketRegex.exec(text)) !== null) {
-      // Add text before the bracket
       if (match.index > lastIndex) {
         parts.push(
           <span key={`text-${lastIndex}`} className={`${getFontWeight()}`}>
@@ -87,16 +65,13 @@ const TeleprompterItem = ({
         );
       }
 
-      // Extract the text and optional color from the match
-      const bracketText = match[1]; // The text inside brackets
-      const colorName = match[2]?.toLowerCase(); // The color name (if specified)
+      const bracketText = match[1];
+      const colorName = match[2]?.toLowerCase();
 
-      // Determine background color
-      let backgroundColor = 'white'; // default for simple brackets
+      let backgroundColor = 'white';
       let textColor = 'black';
 
       if (colorName) {
-        // Map common color names to CSS colors
         const colorMap: { [key: string]: string } = {
           'red': '#ef4444',
           'blue': '#3b82f6',
@@ -121,11 +96,10 @@ const TeleprompterItem = ({
           'zinc': '#71717a'
         };
         
-        backgroundColor = colorMap[colorName] || colorName; // Use mapped color or raw color name
-        textColor = 'white'; // White text on colored backgrounds for better contrast
+        backgroundColor = colorMap[colorName] || colorName;
+        textColor = 'white';
       }
 
-      // Add the styled bracket content with minimal top/bottom padding to match horizontal
       parts.push(
         <span
           key={`bracket-${match.index}`}
@@ -143,7 +117,6 @@ const TeleprompterItem = ({
       lastIndex = bracketRegex.lastIndex;
     }
 
-    // Add remaining text after the last bracket
     if (lastIndex < text.length) {
       parts.push(
         <span key={`text-${lastIndex}`} className={`${getFontWeight()}`}>
@@ -186,13 +159,11 @@ const TeleprompterItem = ({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
-    // Auto-resize textarea
     e.target.style.height = 'auto';
     e.target.style.height = e.target.scrollHeight + 'px';
   };
 
   if (isHeaderItem(item)) {
-    // For headers, prioritize the name field which contains the custom text
     const headerTitle = item.name || item.segmentName || 'HEADER';
     
     return (
@@ -218,12 +189,10 @@ const TeleprompterItem = ({
     );
   }
 
-  // Check if this is a [null] item (case-insensitive)
   const isNullItem = item.script && isNullScript(item.script);
 
   return (
     <div className="mb-8">
-      {/* Segment Title */}
       <div 
         className="text-left mb-6 font-sans"
         style={{ 
@@ -242,30 +211,24 @@ const TeleprompterItem = ({
         </span>
       </div>
 
-      {/* Script with bracket parsing and editing capability */}
       <div 
         className={`text-left whitespace-pre-wrap ${getFontWeight()} font-sans leading-relaxed`}
       >
         {isEditing ? (
-          <div>
-            <textarea
-              ref={textareaRef}
-              value={editText}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              onBlur={handleScriptSave}
-              className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()} font-sans`}
-              style={{ 
-                fontSize: `${fontSize}px`,
-                lineHeight: '1.5',
-                minHeight: '100px'
-              }}
-              placeholder="Enter script content..."
-            />
-            <div className="text-xs text-gray-400 mt-2">
-              Press Ctrl+Enter to save or Escape to cancel
-            </div>
-          </div>
+          <textarea
+            ref={textareaRef}
+            value={editText}
+            onChange={handleTextareaChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleScriptSave}
+            className={`w-full bg-gray-800 text-white border border-gray-600 rounded p-3 resize-none overflow-hidden ${getFontWeight()} font-sans`}
+            style={{ 
+              fontSize: `${fontSize}px`,
+              lineHeight: '1.5',
+              minHeight: '100px'
+            }}
+            placeholder="Enter script content..."
+          />
         ) : (
           <div
             onClick={handleScriptClick}
@@ -276,7 +239,6 @@ const TeleprompterItem = ({
             }}
           >
             {isNullItem ? (
-              // For [null] items, don't show any script content, but still show the segment title above
               canEdit ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
