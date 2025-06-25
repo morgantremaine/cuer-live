@@ -117,22 +117,7 @@ const Teleprompter = () => {
     }
   };
 
-  // Updated helper function to check if item should be included in teleprompter
-  const shouldIncludeInTeleprompter = (item: RundownItem) => {
-    if (showAllSegments) {
-      // Show all segments when toggle is on
-      return true;
-    } else {
-      // Original logic - only show items with script content
-      if (!item.script) return false;
-      const trimmedScript = item.script.trim();
-      if (trimmedScript === '') return false;
-      // Include items with [null] marker (case-insensitive) or any other content
-      return true;
-    }
-  };
-
-  // Print function
+  // Print function with improved formatting
   const handlePrint = () => {
     if (!rundownData) return;
 
@@ -162,7 +147,7 @@ const Teleprompter = () => {
       return formatText(cleanText);
     };
 
-    // Generate HTML for print
+    // Generate HTML for print with improved continuous flow
     const printHTML = `
       <!DOCTYPE html>
       <html>
@@ -186,55 +171,74 @@ const Teleprompter = () => {
               font-family: Arial, sans-serif;
               color: black;
               background: white;
-              line-height: 1.4;
+              line-height: 1.6;
               margin: 0;
               padding: 0;
               font-size: 14px;
             }
-            .script-item {
-              margin-bottom: 25px;
-              page-break-inside: avoid;
-              orphans: 2;
-              widows: 2;
+            .script-container {
+              max-width: 100%;
             }
-            .script-title {
+            .script-segment {
+              margin-bottom: 12px;
+              page-break-inside: avoid;
+            }
+            .segment-header {
               font-weight: bold;
-              font-size: 16px;
-              margin-bottom: 8px;
-              padding: 4px 8px;
-              background: #f0f0f0;
-              border: 1px solid #ccc;
+              font-size: 12px;
+              margin-bottom: 4px;
+              padding: 2px 6px;
+              background: #f5f5f5;
+              border-left: 3px solid #333;
               display: inline-block;
               page-break-after: avoid;
             }
-            .script-content {
+            .segment-content {
               font-size: 14px;
-              line-height: 1.5;
-              white-space: pre-wrap;
-              margin-left: 0;
+              line-height: 1.6;
+              margin-bottom: 8px;
+              text-align: left;
+            }
+            .segment-content p {
+              margin: 0 0 8px 0;
             }
             .page-break {
               page-break-before: always;
             }
+            .header-segment {
+              margin: 16px 0 8px 0;
+              page-break-after: avoid;
+            }
+            .header-segment .segment-header {
+              font-size: 14px;
+              background: #333;
+              color: white;
+              padding: 4px 8px;
+            }
           </style>
         </head>
         <body>
-          ${itemsWithScript.map((item, index) => {
-            const rowNumber = getRowNumber(item.originalIndex);
-            const isHeader = item.type === 'header';
-            const title = isHeader 
-              ? `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}`
-              : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
-            
-            const scriptContent = processScriptForPrint(item.script || '');
-            
-            return `
-              <div class="script-item ${index > 0 && index % 4 === 0 ? 'page-break' : ''}">
-                <div class="script-title">${title}</div>
-                ${scriptContent ? `<div class="script-content">${scriptContent}</div>` : ''}
-              </div>
-            `;
-          }).join('')}
+          <div class="script-container">
+            ${itemsWithScript.map((item, index) => {
+              const rowNumber = getRowNumber(item.originalIndex);
+              const isHeader = item.type === 'header';
+              const title = isHeader 
+                ? `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}`
+                : `${rowNumber} - ${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}`;
+              
+              const scriptContent = processScriptForPrint(item.script || '');
+              
+              // Only add page break every 8 segments to keep better flow
+              const needsPageBreak = index > 0 && index % 8 === 0;
+              
+              return `
+                <div class="script-segment ${isHeader ? 'header-segment' : ''} ${needsPageBreak ? 'page-break' : ''}">
+                  <div class="segment-header">${title}</div>
+                  ${scriptContent ? `<div class="segment-content">${scriptContent.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '<p>&nbsp;</p>').join('')}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
         </body>
       </html>
     `;
@@ -244,6 +248,21 @@ const Teleprompter = () => {
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
+  };
+
+  // Updated helper function to check if item should be included in teleprompter
+  const shouldIncludeInTeleprompter = (item: RundownItem) => {
+    if (showAllSegments) {
+      // Show all segments when toggle is on
+      return true;
+    } else {
+      // Original logic - only show items with script content
+      if (!item.script) return false;
+      const trimmedScript = item.script.trim();
+      if (trimmedScript === '') return false;
+      // Include items with [null] marker (case-insensitive) or any other content
+      return true;
+    }
   };
 
   // Initial load
