@@ -527,10 +527,6 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
-      get_public_layout_for_rundown: {
-        Args: { rundown_uuid: string; layout_uuid: string }
-        Returns: Json
-      }
       get_user_email_safe: {
         Args: { user_uuid: string }
         Returns: string
@@ -562,10 +558,6 @@ export type Database = {
       get_user_teams: {
         Args: { user_uuid: string }
         Returns: string[]
-      }
-      is_layout_shared_for_public_rundown: {
-        Args: { layout_uuid: string }
-        Returns: boolean
       }
       is_team_admin: {
         Args: { user_id: string; team_id: string }

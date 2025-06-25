@@ -190,13 +190,15 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Fixed layout loading for shared rundowns
+  // Enhanced layout loading with better error handling and cleanup
   useEffect(() => {
-    const loadSharedLayoutForAnonymous = async () => {
+    const loadSharedLayout = async () => {
+      // Only load if we have rundown data and haven't loaded this layout yet
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
         return;
       }
       
+      // Skip if we've already loaded layout for this rundown
       if (layoutLoadedRef.current === rundownId) {
         return;
       }
@@ -206,15 +208,14 @@ const SharedRundown = () => {
       layoutLoadedRef.current = rundownId;
       
       try {
-        logger.log('🔧 Loading shared layout for rundown:', rundownId);
-        
-        // First, try to get the shared layout configuration
+        // Get the shared layout configuration
         const { data: sharedLayoutData, error: sharedError } = await supabase
           .from('shared_rundown_layouts')
           .select('layout_id')
           .eq('rundown_id', rundownId)
           .maybeSingle();
 
+        // Check if component is still mounted before updating state
         if (!isMountedRef.current) return;
 
         if (sharedError) {
@@ -230,59 +231,47 @@ const SharedRundown = () => {
           return;
         }
 
-        // If there's a specific layout set, try to load it
+        // If there's a specific layout set, load it
         if (sharedLayoutData && sharedLayoutData.layout_id) {
-          logger.log('🎨 Found shared layout ID:', sharedLayoutData.layout_id);
-          
-          // Always use the RPC function for anonymous users
-          // This bypasses RLS issues and is specifically designed for shared layouts
-          try {
-            const { data: publicLayoutData, error: publicError } = await supabase.rpc(
-              'get_public_layout_for_rundown', 
-              { 
-                rundown_uuid: rundownId,
-                layout_uuid: sharedLayoutData.layout_id 
-              }
-            );
+          const { data: layoutData, error: layoutError } = await supabase
+            .from('column_layouts')
+            .select('columns, name')
+            .eq('id', sharedLayoutData.layout_id)
+            .maybeSingle();
 
-            if (!isMountedRef.current) return;
+          // Check if component is still mounted before updating state
+          if (!isMountedRef.current) return;
 
-            if (publicError) {
-              logger.error('❌ Error loading public layout via RPC:', publicError);
-              throw publicError;
-            } 
-            
-            if (publicLayoutData) {
-              logger.log('✅ Successfully loaded layout via RPC:', publicLayoutData);
-              setLayoutColumns(publicLayoutData.columns);
-              setLayoutName(publicLayoutData.name || 'Custom Layout');
-              return;
+          if (layoutError || !layoutData) {
+            logger.error('❌ Error loading layout:', layoutError);
+            // Fallback to rundown's own columns
+            if (rundownData.columns && rundownData.columns.length > 0) {
+              setLayoutColumns(rundownData.columns);
+              setLayoutName('Rundown Layout');
             } else {
-              logger.log('⚠️ RPC returned null - layout may not be properly shared');
-              throw new Error('Layout not accessible');
+              setLayoutColumns(DEFAULT_COLUMNS);
+              setLayoutName('Default Layout');
             }
-          } catch (rpcError) {
-            logger.error('❌ RPC call failed:', rpcError);
-            throw rpcError;
+          } else {
+            setLayoutColumns(layoutData.columns);
+            setLayoutName(layoutData.name || 'Custom Layout');
+          }
+        } else {
+          // No specific layout set, use rundown's own columns or default
+          if (rundownData.columns && rundownData.columns.length > 0) {
+            setLayoutColumns(rundownData.columns);
+            setLayoutName('Rundown Layout');
+          } else {
+            setLayoutColumns(DEFAULT_COLUMNS);
+            setLayoutName('Default Layout');
           }
         }
-
-        // Fallback to rundown's own columns or default
-        logger.log('📋 Using fallback layout');
-        if (Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
-          setLayoutColumns(rundownData.columns);
-          setLayoutName('Rundown Layout');
-        } else {
-          setLayoutColumns(DEFAULT_COLUMNS);
-          setLayoutName('Default Layout');
-        }
-
       } catch (error) {
         if (!isMountedRef.current) return;
         
         logger.error('💥 Failed to load shared layout:', error);
         // Final fallback
-        if (Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
+        if (rundownData.columns && rundownData.columns.length > 0) {
           setLayoutColumns(rundownData.columns);
           setLayoutName('Rundown Layout');
         } else {
@@ -297,8 +286,9 @@ const SharedRundown = () => {
       }
     };
 
+    // Only load layout when rundown data is available and we haven't loaded it yet
     if (rundownData && rundownId && layoutLoadedRef.current !== rundownId) {
-      loadSharedLayoutForAnonymous();
+      loadSharedLayout();
     }
   }, [rundownId, rundownData]);
 
