@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
@@ -67,6 +66,13 @@ const RundownHeader = ({
     timeRemaining
   });
 
+  // Debug logging for processing state
+  React.useEffect(() => {
+    if (isProcessingRealtimeUpdate) {
+      console.log('📡 RundownHeader: Processing realtime update - icon should be blue');
+    }
+  }, [isProcessingRealtimeUpdate]);
+
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
     
@@ -129,9 +135,10 @@ const RundownHeader = ({
     }
   };
 
-  // Helper function to render connection status icon
+  // Helper function to render connection status icon with enhanced processing detection
   const renderConnectionIcon = () => {
     if (isProcessingRealtimeUpdate) {
+      console.log('🔵 Rendering blue spinning icon for realtime processing');
       return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     } else if (isConnected) {
       return <Wifi className="h-4 w-4 text-green-500" />;

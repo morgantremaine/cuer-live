@@ -94,7 +94,11 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions, isSaving]),
     hasUnsavedChanges: state.hasUnsavedChanges,
-    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate
+    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate,
+    onProcessingStateChange: useCallback((processing: boolean) => {
+      console.log('🔄 Realtime processing state changed:', processing);
+      setIsProcessingRealtimeUpdate(processing);
+    }, [])
   });
 
   // Stable realtime collaboration - unchanged
@@ -405,7 +409,7 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSaving || isSavingColumns,
     showcallerActivity,
     
-    // Realtime connection status
+    // Realtime connection status - now properly includes processing state
     isConnected,
     isProcessingRealtimeUpdate,
     
