@@ -527,6 +527,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      get_public_layout_for_rundown: {
+        Args: { rundown_uuid: string; layout_uuid: string }
+        Returns: Json
+      }
       get_user_email_safe: {
         Args: { user_uuid: string }
         Returns: string

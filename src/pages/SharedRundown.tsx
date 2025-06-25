@@ -236,11 +236,10 @@ const SharedRundown = () => {
             .eq('id', sharedLayoutData.layout_id)
             .maybeSingle();
 
-          // If it fails (likely due to RLS for anonymous users), try using a service call
+          // If it fails (likely due to RLS for anonymous users), try using the new RPC function
           if (layoutError || !layoutData) {
             logger.log('🔓 Attempting to load layout for anonymous user via RPC');
             
-            // Try to get layout data through a more permissive approach
             try {
               const { data: publicLayoutData, error: publicError } = await supabase.rpc(
                 'get_public_layout_for_rundown', 
@@ -261,7 +260,7 @@ const SharedRundown = () => {
               logger.error('❌ RPC call failed, falling back to rundown columns:', rpcError);
             }
           } else {
-            // Layout loaded successfully
+            // Layout loaded successfully for authenticated user
             setLayoutColumns(layoutData.columns);
             setLayoutName(layoutData.name || 'Custom Layout');
             return;
