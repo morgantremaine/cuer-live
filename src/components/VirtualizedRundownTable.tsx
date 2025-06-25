@@ -34,7 +34,7 @@ const VirtualizedRundownTable = ({
   items,
   visibleColumns,
   height,
-  width = 800,
+  width,
   rowHeight = 60,
   currentTime,
   showColorPicker,
@@ -54,6 +54,21 @@ const VirtualizedRundownTable = ({
   onRowSelect,
   onJumpToHere
 }: VirtualizedRundownTableProps) => {
+  
+  // Calculate total width from columns if not provided
+  const calculatedWidth = useMemo(() => {
+    if (width) return width;
+    
+    // Calculate based on column widths
+    const totalWidth = visibleColumns.reduce((acc, column) => {
+      const columnWidth = getColumnWidth(column);
+      const numericWidth = parseInt(columnWidth.replace('px', '')) || 150;
+      return acc + numericWidth;
+    }, 0);
+    
+    // Add some padding and ensure minimum width
+    return Math.max(totalWidth + 100, 800);
+  }, [width, visibleColumns, getColumnWidth]);
   
   // Memoized row renderer to prevent unnecessary re-renders
   const RowRenderer = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
@@ -133,7 +148,7 @@ const VirtualizedRundownTable = ({
   return (
     <List
       height={height}
-      width={width}
+      width={calculatedWidth}
       itemCount={items.length}
       itemSize={rowHeight}
       overscanCount={5} // Render 5 extra items for smooth scrolling
