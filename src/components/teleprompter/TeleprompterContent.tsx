@@ -14,6 +14,13 @@ interface TeleprompterContentProps {
   getRowNumber: (index: number) => string;
   onUpdateScript?: (itemId: string, newScript: string) => void;
   canEdit?: boolean;
+  saveState?: {
+    isSaving: boolean;
+    lastSaved: Date | null;
+    hasUnsavedChanges: boolean;
+    saveError: string | null;
+  };
+  onManualSave?: (itemId?: string) => void;
 }
 
 const TeleprompterContent = ({
@@ -25,7 +32,9 @@ const TeleprompterContent = ({
   isBold,
   getRowNumber,
   onUpdateScript,
-  canEdit = false
+  canEdit = false,
+  saveState,
+  onManualSave
 }: TeleprompterContentProps) => {
   return (
     <div className={`relative ${isFullscreen ? 'cursor-none' : ''}`}>
@@ -63,6 +72,8 @@ const TeleprompterContent = ({
               getRowNumber={getRowNumber}
               onUpdateScript={onUpdateScript}
               canEdit={canEdit}
+              saveState={saveState}
+              onManualSave={() => onManualSave?.(item.id)}
             />
           ))}
         </div>

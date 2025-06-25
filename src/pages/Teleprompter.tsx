@@ -4,9 +4,12 @@ import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
+import { useTeleprompterSave } from '@/hooks/useTeleprompterSave';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
+import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const Teleprompter = () => {
   const { user } = useAuth();
@@ -19,6 +22,7 @@ const Teleprompter = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPollingPaused, setIsPollingPaused] = useState(false);
 
   const {
     fontSize,
@@ -44,7 +48,24 @@ const Teleprompter = () => {
   // Use the scroll hook with reverse support
   useTeleprompterScroll(isScrolling, scrollSpeed, containerRef, isReverse());
 
-  // Load rundown data with authentication
+  // Enhanced save system
+  const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
+    rundownId: rundownId!,
+    onSaveSuccess: (itemId, script) => {
+      // Update local state immediately on successful save
+      if (rundownData) {
+        const updatedItems = rundownData.items.map(item =>
+          item.id === itemId ? { ...item, script } : item
+        );
+        setRundownData({
+          ...rundownData,
+          items: updatedItems
+        });
+      }
+    }
+  });
+
+  // Load rundown data with authentication and backup restoration
   const loadRundownData = async () => {
     if (!rundownId || !user) {
       setLoading(false);
@@ -67,10 +88,37 @@ const Teleprompter = () => {
         setError(`Unable to load rundown: ${queryError.message}`);
         setRundownData(null);
       } else if (data) {
-        setRundownData({
+        const loadedData = {
           title: data.title || 'Untitled Rundown',
           items: data.items || []
-        });
+        };
+        
+        // Check for and restore any backed up changes
+        const backupData = loadBackup();
+        if (Object.keys(backupData).length > 0) {
+          // Restore backed up changes
+          const restoredItems = loadedData.items.map((item: any) => {
+            if (backupData[item.id]) {
+              return { ...item, script: backupData[item.id] };
+            }
+            return item;
+          });
+          
+          loadedData.items = restoredItems;
+          
+          toast.info('Restored unsaved changes from local backup', {
+            duration: 4000,
+            action: {
+              label: 'Clear backup',
+              onClick: () => {
+                localStorage.removeItem(`teleprompter_backup_${rundownId}`);
+                loadRundownData(); // Reload without backup
+              }
+            }
+          });
+        }
+        
+        setRundownData(loadedData);
         setError(null);
       } else {
         setError('Rundown not found');
@@ -85,37 +133,42 @@ const Teleprompter = () => {
     setLoading(false);
   };
 
-  // Update script content and sync back to main rundown
+  // Enhanced script update with robust saving
   const updateScriptContent = async (itemId: string, newScript: string) => {
     if (!rundownData || !user) return;
 
-    try {
-      // Update the local state immediately
-      const updatedItems = rundownData.items.map(item =>
-        item.id === itemId ? { ...item, script: newScript } : item
-      );
-      
-      setRundownData({
-        ...rundownData,
-        items: updatedItems
-      });
+    // Pause polling during edit to prevent conflicts
+    setIsPollingPaused(true);
+    
+    // Update local state immediately for responsiveness
+    const updatedItems = rundownData.items.map(item =>
+      item.id === itemId ? { ...item, script: newScript } : item
+    );
+    
+    setRundownData({
+      ...rundownData,
+      items: updatedItems
+    });
 
-      // Update the database
-      const { error } = await supabase
-        .from('rundowns')
-        .update({ 
-          items: updatedItems,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', rundownId);
+    // Use debounced save to prevent rapid-fire saves
+    debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems });
+    
+    // Resume polling after a delay
+    setTimeout(() => {
+      setIsPollingPaused(false);
+    }, 3000);
+  };
 
-      if (error) {
-        console.error('Error updating script:', error);
-        // Revert local state on error
-        setRundownData(rundownData);
-      }
-    } catch (error) {
-      console.error('Error updating script:', error);
+  // Manual save handler
+  const handleManualSave = async (itemId?: string) => {
+    if (!rundownData || !itemId) return;
+    
+    const item = rundownData.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const success = await forceSave(itemId, item.script || '', rundownData);
+    if (success) {
+      toast.success('Script saved manually');
     }
   };
 
@@ -273,18 +326,20 @@ const Teleprompter = () => {
     loadRundownData();
   }, [rundownId, user]);
 
-  // Set up polling for updates (check every 5 seconds)
+  // Enhanced polling with pause support
   useEffect(() => {
-    if (!rundownId || loading || !user) return;
+    if (!rundownId || loading || !user || isPollingPaused) return;
     
     const pollInterval = setInterval(() => {
-      loadRundownData();
-    }, 5000);
+      if (!isPollingPaused && !saveState.isSaving) {
+        loadRundownData();
+      }
+    }, 8000); // Increased interval to 8 seconds
 
     return () => {
       clearInterval(pollInterval);
     };
-  }, [rundownId, loading, user]);
+  }, [rundownId, loading, user, isPollingPaused, saveState.isSaving]);
 
   const getRowNumber = (index: number) => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -308,6 +363,19 @@ const Teleprompter = () => {
       return `${letter}${numberIndex}`;
     }
   };
+
+  // Handle beforeunload to warn about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (saveState.hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveState.hasUnsavedChanges]);
 
   if (loading) {
     return (
@@ -351,23 +419,33 @@ const Teleprompter = () => {
     <div className="min-h-screen bg-black text-white overflow-hidden">
       {/* Top Menu Controls - Hidden in fullscreen */}
       {!isFullscreen && (
-        <TeleprompterControls
-          isScrolling={isScrolling}
-          fontSize={fontSize}
-          scrollSpeed={getCurrentSpeed()}
-          isUppercase={isUppercase}
-          isBold={isBold}
-          showAllSegments={showAllSegments}
-          onToggleScrolling={toggleScrolling}
-          onResetScroll={resetScroll}
-          onToggleFullscreen={toggleFullscreen}
-          onToggleUppercase={toggleUppercase}
-          onToggleBold={toggleBold}
-          onToggleShowAllSegments={toggleShowAllSegments}
-          onAdjustFontSize={adjustFontSize}
-          onAdjustScrollSpeed={adjustScrollSpeed}
-          onPrint={handlePrint}
-        />
+        <>
+          <TeleprompterControls
+            isScrolling={isScrolling}
+            fontSize={fontSize}
+            scrollSpeed={getCurrentSpeed()}
+            isUppercase={isUppercase}
+            isBold={isBold}
+            showAllSegments={showAllSegments}
+            onToggleScrolling={toggleScrolling}
+            onResetScroll={resetScroll}
+            onToggleFullscreen={toggleFullscreen}
+            onToggleUppercase={toggleUppercase}
+            onToggleBold={toggleBold}
+            onToggleShowAllSegments={toggleShowAllSegments}
+            onAdjustFontSize={adjustFontSize}
+            onAdjustScrollSpeed={adjustScrollSpeed}
+            onPrint={handlePrint}
+          />
+          
+          {/* Save Status Indicator */}
+          <div className="fixed top-16 right-4 z-30">
+            <TeleprompterSaveIndicator 
+              saveState={saveState}
+              onManualSave={() => handleManualSave()}
+            />
+          </div>
+        </>
       )}
 
       {/* Content */}
@@ -381,13 +459,19 @@ const Teleprompter = () => {
         getRowNumber={getRowNumber}
         onUpdateScript={updateScriptContent}
         canEdit={!isFullscreen}
+        saveState={saveState}
+        onManualSave={handleManualSave}
       />
 
-      {/* Keyboard Instructions - Only show when not fullscreen */}
+      {/* Enhanced Keyboard Instructions - Only show when not fullscreen */}
       {!isFullscreen && (
-        <div className="fixed bottom-4 left-4 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
-          <div>Enter Fullscreen for keyboard controls (Arrow Keys: Speed | Space: Play/Pause)</div>
-          <div>Click on script text to edit</div>
+        <div className="fixed bottom-4 left-4 bg-black bg-opacity-75 text-white text-xs p-3 rounded max-w-sm">
+          <div className="space-y-1">
+            <div>Enter Fullscreen for keyboard controls (Arrow Keys: Speed | Space: Play/Pause)</div>
+            <div>Click on script text to edit</div>
+            <div>Ctrl+Enter or Ctrl+S to save while editing</div>
+            <div>Escape to cancel editing</div>
+          </div>
         </div>
       )}
     </div>
