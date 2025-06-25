@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -23,6 +24,7 @@ const TeleprompterItem = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.script || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const displayRef = useRef<HTMLDivElement>(null);
 
   const formatText = (text: string) => {
     return isUppercase ? text.toUpperCase() : text;
@@ -40,6 +42,9 @@ const TeleprompterItem = ({
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
+      // Auto-resize textarea to match content
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
     }
   }, [isEditing]);
 
@@ -157,6 +162,9 @@ const TeleprompterItem = ({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
+    // Auto-resize textarea as user types
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
   };
 
   if (isHeaderItem(item)) {
@@ -186,9 +194,6 @@ const TeleprompterItem = ({
   }
 
   const isNullItem = item.script && isNullScript(item.script);
-
-  // Calculate consistent height for both states
-  const baseHeight = isNullItem || !item.script ? '100px' : 'auto';
 
   return (
     <div className="mb-8">
@@ -226,13 +231,13 @@ const TeleprompterItem = ({
               lineHeight: '1.5',
               padding: '0',
               margin: '0',
-              minHeight: baseHeight,
-              height: baseHeight
+              minHeight: '24px'
             }}
             placeholder="Enter script content..."
           />
         ) : (
           <div
+            ref={displayRef}
             onClick={handleScriptClick}
             className={`${canEdit ? 'cursor-text' : ''}`}
             style={{ 
@@ -240,8 +245,7 @@ const TeleprompterItem = ({
               lineHeight: '1.5',
               padding: '0',
               margin: '0',
-              minHeight: baseHeight,
-              height: baseHeight
+              minHeight: isNullItem || !item.script ? '24px' : 'auto'
             }}
           >
             {isNullItem ? (
