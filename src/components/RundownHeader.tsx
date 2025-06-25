@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock } from 'lucide-react';
+import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
-import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { format } from 'date-fns';
 
@@ -129,6 +128,17 @@ const RundownHeader = ({
     }
   };
 
+  // Helper function to render connection status icon
+  const renderConnectionIcon = () => {
+    if (isProcessingRealtimeUpdate) {
+      return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+    } else if (isConnected) {
+      return <Wifi className="h-4 w-4 text-green-500" />;
+    } else {
+      return <WifiOff className="h-4 w-4 text-red-500" />;
+    }
+  };
+
   if (isMobile) {
     return (
       <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -169,10 +179,9 @@ const RundownHeader = ({
             />
             <span>Runtime: {totalRuntime}</span>
             {isConnected !== undefined && (
-              <RealtimeStatusIndicator
-                isConnected={isConnected}
-                isProcessingUpdate={isProcessingRealtimeUpdate || false}
-              />
+              <div className="flex items-center">
+                {renderConnectionIcon()}
+              </div>
             )}
           </div>
         </div>
@@ -232,10 +241,9 @@ const RundownHeader = ({
           </div>
           
           {isConnected !== undefined && (
-            <RealtimeStatusIndicator
-              isConnected={isConnected}
-              isProcessingUpdate={isProcessingRealtimeUpdate || false}
-            />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {renderConnectionIcon()}
+            </div>
           )}
         </div>
         
@@ -344,10 +352,9 @@ const RundownHeader = ({
           </span>
           
           {isConnected !== undefined && (
-            <RealtimeStatusIndicator
-              isConnected={isConnected}
-              isProcessingUpdate={isProcessingRealtimeUpdate || false}
-            />
+            <div className="flex items-center space-x-2">
+              {renderConnectionIcon()}
+            </div>
           )}
         </div>
       </div>
