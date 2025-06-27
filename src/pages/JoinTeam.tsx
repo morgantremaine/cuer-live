@@ -48,13 +48,13 @@ const JoinTeam = () => {
       try {
         console.log('Loading invitation data for token:', token);
         
-        // Use the new safe function to get all invitation details including inviter profile
-        const { data: invitationDetails, error: invitationError } = await supabase.rpc(
+        // Use the safe function to get all invitation details
+        const { data: invitationResponse, error: invitationError } = await supabase.rpc(
           'get_invitation_details_safe',
           { invitation_token: token }
         );
 
-        console.log('Invitation details loaded:', { invitationDetails, invitationError });
+        console.log('Invitation details response:', { invitationResponse, invitationError });
 
         if (invitationError) {
           console.error('Error loading invitation:', invitationError);
@@ -68,11 +68,12 @@ const JoinTeam = () => {
           return;
         }
 
-        if (!invitationDetails || invitationDetails.error) {
-          console.log('Invalid or expired invitation token');
+        // Check if the response contains an error (function returned error object)
+        if (!invitationResponse || invitationResponse.error) {
+          console.log('Invalid or expired invitation token:', invitationResponse?.error);
           toast({
             title: 'Invalid Invitation',
-            description: invitationDetails?.error || 'This invitation link is invalid or has expired.',
+            description: invitationResponse?.error || 'This invitation link is invalid or has expired.',
             variant: 'destructive',
           });
           localStorage.removeItem('pendingInvitationToken');
@@ -82,13 +83,13 @@ const JoinTeam = () => {
 
         // Set invitation and inviter profile from the function result
         setInvitation({
-          ...invitationDetails.invitation,
-          teams: invitationDetails.team
+          ...invitationResponse.invitation,
+          teams: invitationResponse.team
         });
-        setEmail(invitationDetails.invitation.email);
+        setEmail(invitationResponse.invitation.email);
 
-        if (invitationDetails.inviter) {
-          setInviterProfile(invitationDetails.inviter);
+        if (invitationResponse.inviter) {
+          setInviterProfile(invitationResponse.inviter);
           setProfileError(false);
         } else {
           console.log('No inviter profile found, using fallback display');
@@ -96,7 +97,7 @@ const JoinTeam = () => {
         }
         
         // Check if user already exists with this email
-        await checkUserExists(invitationDetails.invitation.email);
+        await checkUserExists(invitationResponse.invitation.email);
       } catch (error) {
         console.error('Error loading invitation:', error);
         toast({
@@ -312,6 +313,60 @@ const JoinTeam = () => {
       return inviterProfile.email;
     }
     return 'A team member';
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password.length < 6) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 6 characters long',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    console.log('Creating account for:', email);
+    
+    const { error } = await signUp(email, password, fullName);
+    
+    if (error) {
+      console.error('Sign up error:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsProcessing(false);
+    } else {
+      console.log('Account created successfully');
+      toast({
+        title: 'Account Created',
+        description: 'Please check your email to verify your account, then return to this page to join the team.',
+      });
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    setIsProcessing(true);
+    console.log('Signing in user:', email);
+    
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      console.error('Sign in error:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsProcessing(false);
+    }
+    // If successful, the useEffect will handle accepting the invitation
   };
 
   return (
