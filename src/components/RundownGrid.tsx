@@ -27,7 +27,9 @@ const RundownGrid = React.memo(() => {
     forward,
     backward,
     isPlaying,
-    timeRemaining
+    timeRemaining,
+    // Add updateItem for find and replace
+    updateItem
   } = coreState;
 
   const {
@@ -185,6 +187,12 @@ const RundownGrid = React.memo(() => {
     logger.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
   };
 
+  // Handler for find and replace jump to item
+  const handleJumpToItem = (itemId: string) => {
+    // Use the existing jump to here functionality
+    handleJumpToHere(itemId);
+  };
+
   return (
     <RundownTable
       items={items}
@@ -226,6 +234,8 @@ const RundownGrid = React.memo(() => {
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}
       onJumpToHere={handleJumpToHere}
+      // Pass find and replace props
+      onJumpToItem={handleJumpToItem}
     />
   );
 });
