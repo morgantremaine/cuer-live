@@ -2,6 +2,7 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
+import { SearchHighlight } from '../SearchHighlight';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -18,6 +19,8 @@ interface RegularRowContentProps {
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
   currentSegmentId?: string | null;
+  searchTerm?: string;
+  caseSensitive?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -35,6 +38,8 @@ const RegularRowContent = ({
   isDraggingMultiple = false,
   isSelected = false,
   currentSegmentId,
+  searchTerm = '',
+  caseSensitive = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -56,7 +61,13 @@ const RegularRowContent = ({
               className="h-5 w-5 text-blue-500 fill-blue-500" 
             />
           )}
-          <span style={{ color: textColor }}>{rowNumber}</span>
+          <SearchHighlight 
+            text={rowNumber}
+            searchTerm={searchTerm}
+            caseSensitive={caseSensitive}
+            className={textColor ? '' : ''}
+            style={{ color: textColor }}
+          />
         </div>
       </td>
       {/* Dynamic columns */}
@@ -86,6 +97,8 @@ const RegularRowContent = ({
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
               width={columnWidth}
+              searchTerm={searchTerm}
+              caseSensitive={caseSensitive}
             />
           </td>
         );

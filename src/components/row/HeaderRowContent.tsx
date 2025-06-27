@@ -1,6 +1,7 @@
 
 import React from 'react';
 import CellRenderer from '../CellRenderer';
+import { SearchHighlight } from '../SearchHighlight';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -12,6 +13,8 @@ interface HeaderRowContentProps {
   rowNumber: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
+  searchTerm?: string;
+  caseSensitive?: boolean;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -26,6 +29,8 @@ const HeaderRowContent = ({
   rowNumber,
   backgroundColor,
   currentSegmentId,
+  searchTerm = '',
+  caseSensitive = false,
   cellRefs,
   onUpdateItem,
   onCellClick,
@@ -47,7 +52,11 @@ const HeaderRowContent = ({
           maxWidth: '64px' // Ensure exact width matching
         }}
       >
-        <span style={{ color: textColor }}>{rowNumber}</span>
+        <SearchHighlight 
+          text={rowNumber}
+          searchTerm={searchTerm}
+          caseSensitive={caseSensitive}
+        />
       </td>
       {/* Dynamic columns */}
       {columns.map((column) => {
@@ -86,6 +95,8 @@ const HeaderRowContent = ({
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
                   width={columnWidth}
+                  searchTerm={searchTerm}
+                  caseSensitive={caseSensitive}
                 />
               </div>
             </td>
@@ -104,7 +115,11 @@ const HeaderRowContent = ({
               }}
             >
               <div className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
-                ({headerDuration})
+                <SearchHighlight 
+                  text={`(${headerDuration})`}
+                  searchTerm={searchTerm}
+                  caseSensitive={caseSensitive}
+                />
               </div>
             </td>
           );

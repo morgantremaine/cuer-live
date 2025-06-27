@@ -19,6 +19,8 @@ interface HeaderRowProps {
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  searchTerm?: string;
+  caseSensitive?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -50,6 +52,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     showColorPicker,
     hasClipboardData = false,
     currentSegmentId,
+    searchTerm,
+    caseSensitive,
     onColorSelect,
     onClearSelection,
     onAddRow,
@@ -178,6 +182,8 @@ const HeaderRow = (props: HeaderRowProps) => {
           backgroundColor={backgroundColor}
           currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
+          searchTerm={searchTerm}
+          caseSensitive={caseSensitive}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
