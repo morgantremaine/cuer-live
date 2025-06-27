@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
@@ -42,7 +43,7 @@ export const useShowcallerVisualState = ({
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
-  const precisionTimerRef = useRef<number | null>(null);
+  const precisionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use precision timing utility
   const {
