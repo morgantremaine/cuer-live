@@ -2,6 +2,7 @@
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
+import { useFindReplace } from '@/hooks/useFindReplace';
 import { logger } from '@/utils/logger';
 
 const RundownGrid = React.memo(() => {
@@ -62,6 +63,22 @@ const RundownGrid = React.memo(() => {
     handleKeyDown,
     cellRefs
   } = uiState;
+
+  // Find and Replace functionality
+  const findReplace = useFindReplace({
+    items,
+    onUpdateItem: coreState.updateItem,
+    onJumpToItem: (itemId: string) => {
+      // Scroll to the item
+      const element = document.querySelector(`[data-item-id="${itemId}"]`);
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }
+  });
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
@@ -207,6 +224,11 @@ const RundownGrid = React.memo(() => {
       currentSegmentId={currentSegmentId}
       hasClipboardData={hasClipboardData()}
       selectedRowId={selectedRowId}
+      searchTerm={findReplace.searchTerm}
+      caseSensitive={findReplace.caseSensitive}
+      currentMatchIndex={findReplace.currentMatchIndex}
+      matchCount={findReplace.matchCount}
+      matches={findReplace.matches}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       getRowNumber={getRowNumber}

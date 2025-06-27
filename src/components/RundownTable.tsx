@@ -17,6 +17,11 @@ interface RundownTableProps {
   currentSegmentId: string | null;
   hasClipboardData: boolean;
   selectedRowId: string | null;
+  searchTerm?: string;
+  caseSensitive?: boolean;
+  currentMatchIndex?: number;
+  matchCount?: number;
+  matches?: Array<{ itemId: string; field: string }>;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -57,6 +62,11 @@ const RundownTable = ({
   currentSegmentId,
   hasClipboardData,
   selectedRowId,
+  searchTerm = '',
+  caseSensitive = false,
+  currentMatchIndex = 0,
+  matchCount = 0,
+  matches = [],
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -112,6 +122,9 @@ const RundownTable = ({
     }
   };
 
+  // Determine current match
+  const currentMatch = matches[currentMatchIndex];
+
   return (
     <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">
@@ -125,6 +138,7 @@ const RundownTable = ({
             const isActuallySelected = isMultiSelected || isSingleSelected;
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
+            const isCurrentMatch = currentMatch?.itemId === item.id;
 
             return (
               <React.Fragment key={item.id}>
@@ -154,6 +168,9 @@ const RundownTable = ({
                   hasClipboardData={hasClipboardData}
                   currentSegmentId={currentSegmentId}
                   isDragging={isDragging}
+                  searchTerm={searchTerm}
+                  caseSensitive={caseSensitive}
+                  isCurrentMatch={isCurrentMatch}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}

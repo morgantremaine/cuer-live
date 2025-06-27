@@ -35,6 +35,13 @@ interface RundownHeaderProps {
   onToggleAutoScroll?: () => void;
   onUpdateItem?: (id: string, field: string, value: string) => void;
   onJumpToItem?: (itemId: string) => void;
+  searchState?: {
+    searchTerm: string;
+    caseSensitive: boolean;
+    currentMatchIndex: number;
+    matchCount: number;
+  };
+  onSearchStateChange?: (state: any) => void;
 }
 
 const RundownHeader = ({
@@ -59,7 +66,9 @@ const RundownHeader = ({
   onToggleAutoScroll,
   items = [],
   onUpdateItem,
-  onJumpToItem
+  onJumpToItem,
+  searchState,
+  onSearchStateChange
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -70,6 +79,35 @@ const RundownHeader = ({
     onUpdateItem: onUpdateItem || (() => {}),
     onJumpToItem
   });
+
+  // Use external search state if provided, otherwise use internal state
+  const searchTerm = searchState?.searchTerm ?? findReplace.searchTerm;
+  const caseSensitive = searchState?.caseSensitive ?? findReplace.caseSensitive;
+  const currentMatchIndex = searchState?.currentMatchIndex ?? findReplace.currentMatchIndex;
+  const matchCount = searchState?.matchCount ?? findReplace.matchCount;
+
+  // Handlers that update both internal and external state
+  const handleSearchTermChange = (term: string) => {
+    findReplace.setSearchTerm(term);
+    if (onSearchStateChange) {
+      onSearchStateChange({ ...searchState, searchTerm: term });
+    }
+  };
+
+  const handleCaseSensitiveChange = (enabled: boolean) => {
+    findReplace.setCaseSensitive(enabled);
+    if (onSearchStateChange) {
+      onSearchStateChange({ ...searchState, caseSensitive: enabled });
+    }
+  };
+
+  const handleNextMatch = () => {
+    findReplace.nextMatch();
+  };
+
+  const handlePreviousMatch = () => {
+    findReplace.previousMatch();
+  };
 
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
@@ -210,16 +248,16 @@ const RundownHeader = ({
             <Clock className="h-4 w-4" />
             <span>{format(currentTime, 'HH:mm:ss')}</span>
             <FindReplaceDialog
-              searchTerm={findReplace.searchTerm}
+              searchTerm={searchTerm}
               replaceTerm={findReplace.replaceTerm}
-              caseSensitive={findReplace.caseSensitive}
-              currentMatchIndex={findReplace.currentMatchIndex}
-              matchCount={findReplace.matchCount}
-              onSearchTermChange={findReplace.setSearchTerm}
+              caseSensitive={caseSensitive}
+              currentMatchIndex={currentMatchIndex}
+              matchCount={matchCount}
+              onSearchTermChange={handleSearchTermChange}
               onReplaceTermChange={findReplace.setReplaceTerm}
-              onCaseSensitiveChange={findReplace.setCaseSensitive}
-              onNextMatch={findReplace.nextMatch}
-              onPreviousMatch={findReplace.previousMatch}
+              onCaseSensitiveChange={handleCaseSensitiveChange}
+              onNextMatch={handleNextMatch}
+              onPreviousMatch={handlePreviousMatch}
               onReplaceCurrent={findReplace.replaceCurrent}
               onReplaceAll={findReplace.replaceAll}
               onReset={findReplace.reset}
@@ -312,16 +350,16 @@ const RundownHeader = ({
               onTimezoneChange={() => {}}
             />
             <FindReplaceDialog
-              searchTerm={findReplace.searchTerm}
+              searchTerm={searchTerm}
               replaceTerm={findReplace.replaceTerm}
-              caseSensitive={findReplace.caseSensitive}
-              currentMatchIndex={findReplace.currentMatchIndex}
-              matchCount={findReplace.matchCount}
-              onSearchTermChange={findReplace.setSearchTerm}
+              caseSensitive={caseSensitive}
+              currentMatchIndex={currentMatchIndex}
+              matchCount={matchCount}
+              onSearchTermChange={handleSearchTermChange}
               onReplaceTermChange={findReplace.setReplaceTerm}
-              onCaseSensitiveChange={findReplace.setCaseSensitive}
-              onNextMatch={findReplace.nextMatch}
-              onPreviousMatch={findReplace.previousMatch}
+              onCaseSensitiveChange={handleCaseSensitiveChange}
+              onNextMatch={handleNextMatch}
+              onPreviousMatch={handlePreviousMatch}
               onReplaceCurrent={findReplace.replaceCurrent}
               onReplaceAll={findReplace.replaceAll}
               onReset={findReplace.reset}
@@ -406,16 +444,16 @@ const RundownHeader = ({
           />
           
           <FindReplaceDialog
-            searchTerm={findReplace.searchTerm}
+            searchTerm={searchTerm}
             replaceTerm={findReplace.replaceTerm}
-            caseSensitive={findReplace.caseSensitive}
-            currentMatchIndex={findReplace.currentMatchIndex}
-            matchCount={findReplace.matchCount}
-            onSearchTermChange={findReplace.setSearchTerm}
+            caseSensitive={caseSensitive}
+            currentMatchIndex={currentMatchIndex}
+            matchCount={matchCount}
+            onSearchTermChange={handleSearchTermChange}
             onReplaceTermChange={findReplace.setReplaceTerm}
-            onCaseSensitiveChange={findReplace.setCaseSensitive}
-            onNextMatch={findReplace.nextMatch}
-            onPreviousMatch={findReplace.previousMatch}
+            onCaseSensitiveChange={handleCaseSensitiveChange}
+            onNextMatch={handleNextMatch}
+            onPreviousMatch={handlePreviousMatch}
             onReplaceCurrent={findReplace.replaceCurrent}
             onReplaceAll={findReplace.replaceAll}
             onReset={findReplace.reset}
