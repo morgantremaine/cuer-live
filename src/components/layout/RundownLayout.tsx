@@ -1,21 +1,64 @@
-import React from 'react';
-import RundownTable from './RundownTable';
-import { FindReplaceDialog } from './FindReplaceDialog';
-import { Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { RundownItem } from '@/types/rundown';
+import { Rundown } from '@/hooks/useRundownData';
+import RundownContent from '../RundownContent';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
-import { useFindReplace } from '@/hooks/useFindReplace';
 import { logger } from '@/utils/logger';
 
-const RundownGrid = React.memo(() => {
+interface RundownLayoutProps {
+  rundown: Rundown;
+  items: RundownItem[];
+  onUpdateRundown: (id: string, title: string, items: RundownItem[], silent?: boolean, archived?: boolean) => void;
+  onUpdateItem: (id: string, field: string, value: string) => void;
+  onDeleteRow: (id: string) => void;
+  onAddRow: () => void;
+  onReorderItems: (items: RundownItem[]) => void;
+  onAddHeader: () => void;
+  onDuplicateRow: (id: string) => void;
+  onToggleFloat: (id: string) => void;
+  searchTerm?: string;
+  caseSensitive?: boolean;
+  currentMatchIndex?: number;
+  matchCount?: number;
+  matches?: any[];
+}
+
+const RundownLayout = ({
+  rundown,
+  items,
+  onUpdateRundown,
+  onUpdateItem,
+  onDeleteRow,
+  onAddRow,
+  onReorderItems,
+  onAddHeader,
+  onDuplicateRow,
+  onToggleFloat,
+  searchTerm = '',
+  caseSensitive = false,
+  currentMatchIndex = 0,
+  matchCount = 0,
+  matches = []
+}: RundownLayoutProps) => {
+  // Use the state coordination hook to manage core state, interactions, and UI state
   const {
     coreState,
     interactions,
     uiState
-  } = useRundownStateCoordination();
+  } = useRundownStateCoordination({
+    rundown,
+    items,
+    onUpdateRundown,
+    onUpdateItem,
+    onDeleteRow,
+    onAddRow,
+    onReorderItems,
+    onAddHeader,
+    onDuplicateRow,
+    onToggleFloat
+  });
 
   const {
-    items,
     visibleColumns,
     currentTime,
     currentSegmentId,
@@ -24,14 +67,12 @@ const RundownGrid = React.memo(() => {
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
-    // Showcaller controls - ensure these are properly passed through
     play,
     pause,
     forward,
     backward,
     isPlaying,
     timeRemaining,
-    // Add updateItem for find and replace
     updateItem
   } = coreState;
 
@@ -65,22 +106,6 @@ const RundownGrid = React.memo(() => {
     handleKeyDown,
     cellRefs
   } = uiState;
-
-  // Find and Replace functionality
-  const findReplace = useFindReplace({
-    items,
-    onUpdateItem: coreState.updateItem,
-    onJumpToItem: (itemId: string) => {
-      // Scroll to the item
-      const element = document.querySelector(`[data-item-id="${itemId}"]`);
-      if (element) {
-        element.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-      }
-    }
-  });
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
@@ -147,7 +172,7 @@ const RundownGrid = React.memo(() => {
 
   // Fixed jump to here handler that properly checks playing state
   const handleJumpToHere = (segmentId: string) => {
-    logger.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid FIXED VERSION) ===');
+    logger.log('🎯 === JUMP TO HERE DEBUG START (RundownLayout FIXED VERSION) ===');
     logger.log('🎯 Target segment ID:', segmentId);
     logger.log('🎯 Current segment ID before jump:', currentSegmentId);
     logger.log('🎯 Is currently playing:', isPlaying);
@@ -181,14 +206,14 @@ const RundownGrid = React.memo(() => {
     
     // CRITICAL FIX: Only start playback if the showcaller is already playing
     if (isPlaying) {
-      logger.log('🎯 RundownGrid: Showcaller is playing - jumping and continuing playback');
+      logger.log('🎯 RundownLayout: Showcaller is playing - jumping and continuing playback');
       play(segmentId);
     } else {
-      logger.log('🎯 RundownGrid: Showcaller is paused - jumping but staying paused');
+      logger.log('🎯 RundownLayout: Showcaller is paused - jumping but staying paused');
       // For paused state, we need to update the showcaller visual state to point to the new segment
       // but without starting playback. We'll use the showcaller's visual state update mechanism
       // to set the current segment without triggering play
-      logger.log('🎯 RundownGrid: Updating showcaller current segment without starting playback');
+      logger.log('🎯 RundownLayout: Updating showcaller current segment without starting playback');
       
       // We need to manually update the showcaller's current segment without calling play()
       // This will be handled by the showcaller visual state system
@@ -200,10 +225,10 @@ const RundownGrid = React.memo(() => {
       };
       
       // Call the showcaller's visual state update directly (this needs to be exposed from the state coordination)
-      logger.log('🎯 RundownGrid: Visual state update needed for paused jump:', showcallerVisualUpdate);
+      logger.log('🎯 RundownLayout: Visual state update needed for paused jump:', showcallerVisualUpdate);
     }
     
-    logger.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
+    logger.log('🎯 === JUMP TO HERE DEBUG END (RundownLayout FIXED VERSION) ===');
   };
 
   // Handler for find and replace jump to item
@@ -212,39 +237,23 @@ const RundownGrid = React.memo(() => {
     handleJumpToHere(itemId);
   };
 
-  return (
-    <div className="relative w-full">
-      {/* Find & Replace Toolbar */}
-      <div className="flex items-center justify-end p-2 border-b border-border bg-background">
-        <FindReplaceDialog
-          searchTerm={findReplace.searchTerm}
-          replaceTerm={findReplace.replaceTerm}
-          caseSensitive={findReplace.caseSensitive}
-          currentMatchIndex={findReplace.currentMatchIndex}
-          matchCount={findReplace.matchCount}
-          onSearchTermChange={findReplace.setSearchTerm}
-          onReplaceTermChange={findReplace.setReplaceTerm}
-          onCaseSensitiveChange={findReplace.setCaseSensitive}
-          onNextMatch={findReplace.nextMatch}
-          onPreviousMatch={findReplace.previousMatch}
-          onReplaceCurrent={findReplace.replaceCurrent}
-          onReplaceAll={findReplace.replaceAll}
-          onReset={findReplace.reset}
-          trigger={
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              title="Find & Replace"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          }
-        />
-      </div>
+  // State and handlers for autoscroll toggle
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+  const handleToggleAutoScroll = () => {
+    setAutoScrollEnabled(prev => !prev);
+  };
 
-      {/* Main Table */}
-      <RundownTable
+  // Clear selection handler
+  const handleClearSelection = () => {
+    clearSelection();
+    clearRowSelection();
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Header and toolbar could be here if needed */}
+
+      <RundownContent
         items={items}
         visibleColumns={visibleColumns}
         currentTime={currentTime}
@@ -257,23 +266,26 @@ const RundownGrid = React.memo(() => {
         currentSegmentId={currentSegmentId}
         hasClipboardData={hasClipboardData()}
         selectedRowId={selectedRowId}
-        searchTerm={findReplace.searchTerm}
-        caseSensitive={findReplace.caseSensitive}
-        currentMatchIndex={findReplace.currentMatchIndex}
-        matchCount={findReplace.matchCount}
-        matches={findReplace.matches}
+        isPlaying={isPlaying}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={handleToggleAutoScroll}
+        searchTerm={searchTerm}
+        caseSensitive={caseSensitive}
+        currentMatchIndex={currentMatchIndex}
+        matchCount={matchCount}
+        matches={matches}
         getColumnWidth={getColumnWidth}
-        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+        updateColumnWidth={updateColumnWidth}
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusForTable}
-        getHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={coreState.updateItem}
+        calculateHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={onUpdateItem}
         onCellClick={handleCellClickWrapper}
         onKeyDown={handleKeyDownWrapper}
         onToggleColorPicker={handleToggleColorPicker}
         onColorSelect={handleColorSelect}
-        onDeleteRow={coreState.deleteRow}
-        onToggleFloat={coreState.toggleFloatRow}
+        onDeleteRow={onDeleteRow}
+        onToggleFloat={onToggleFloat}
         onRowSelect={handleEnhancedRowSelection}
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}
@@ -282,20 +294,13 @@ const RundownGrid = React.memo(() => {
         onCopySelectedRows={handleCopySelectedRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
         onPasteRows={handlePasteRows}
-        onClearSelection={() => {
-          clearSelection();
-          clearRowSelection();
-        }}
-        onAddRow={handleAddRow}
-        onAddHeader={handleAddHeader}
+        onClearSelection={handleClearSelection}
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
         onJumpToHere={handleJumpToHere}
-        // Pass find and replace props
-        onJumpToItem={handleJumpToItem}
       />
     </div>
   );
-});
+};
 
-RundownGrid.displayName = 'RundownGrid';
-
-export default RundownGrid;
+export default RundownLayout;

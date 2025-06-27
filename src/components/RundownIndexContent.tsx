@@ -1,416 +1,136 @@
-import React, { useRef } from 'react';
-import RundownContainer from '@/components/RundownContainer';
-import CuerChatButton from '@/components/cuer/CuerChatButton';
-import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
-import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
-import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-import { useColumnsManager } from '@/hooks/useColumnsManager';
-import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 
-const RundownIndexContent = () => {
-  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+import React, { useState, useEffect } from 'react';
+import { useParams, Navigate } from 'react-router-dom';
+import RundownLayout from './layout/RundownLayout';
+import { useRundownData } from '@/hooks/useRundownData';
+import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/utils/logger';
+
+interface RundownIndexContentProps {
+  rundownId?: string;
+  searchTerm?: string;
+  caseSensitive?: boolean;
+  currentMatchIndex?: number;
+  matchCount?: number;
+  matches?: any[];
+}
+
+const RundownIndexContent = ({ 
+  rundownId: propRundownId,
+  searchTerm = '',
+  caseSensitive = false,
+  currentMatchIndex = 0,
+  matchCount = 0,
+  matches = []
+}: RundownIndexContentProps) => {
+  const { id: paramRundownId } = useParams();
+  const { user } = useAuth();
+  const rundownId = propRundownId || paramRundownId;
   
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Monitor auth state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingAuth(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [user]);
+
   const {
-    coreState,
-    interactions,
-    uiState
-  } = useRundownStateCoordination();
-  
-  // Extract all needed values from the unified state
-  const {
-    currentTime,
-    timezone,
-    rundownTitle,
-    rundownStartTime,
-    rundownId,
+    rundown,
     items,
-    currentSegmentId,
-    getRowNumber,
-    calculateHeaderDuration,
+    loading: dataLoading,
+    error,
+    updateRundown,
     updateItem,
     deleteRow,
-    toggleFloatRow,
     addRow,
+    reorderItems,
     addHeader,
-    isPlaying,
-    timeRemaining,
-    play,
-    pause,
-    forward,
-    backward,
-    reset,
-    hasUnsavedChanges,
-    isSaving,
-    totalRuntime,
-    setTitle,
-    setStartTime,
-    setTimezone,
-    undo,
-    canUndo,
-    lastAction,
-    isConnected,
-    isProcessingRealtimeUpdate,
-    autoScrollEnabled,
-    toggleAutoScroll
-  } = coreState;
+    duplicateRow,
+    toggleFloatRow
+  } = useRundownData(rundownId);
 
-  // Use user column preferences for persistent column management
-  const { 
-    columns: userColumns, 
-    setColumns: setUserColumns, 
-    updateColumnWidth: updateUserColumnWidth,
-    isLoading: isLoadingPreferences,
-    isSaving: isSavingPreferences 
-  } = useUserColumnPreferences(rundownId);
-
-  // Use columns manager for operations
-  const {
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth
-  } = useColumnsManager(() => {
-    // Mark as changed - handled by auto-save
-  });
-
-  // Filter visible columns
-  const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
-
-  const {
-    selectedRows,
-    toggleRowSelection,
-    clearSelection,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    hasClipboardData,
-    handleCopySelectedRows,
-    handlePasteRows,
-    handleDeleteSelectedRows,
-    handleRowSelection,
-    handleAddRow,
-    handleAddHeader
-  } = interactions;
-
-  const { 
-    showColorPicker, 
-    handleCellClick, 
-    handleKeyDown, 
-    handleToggleColorPicker, 
-    selectColor, 
-    getRowStatus,
-    getColumnWidth
-  } = uiState;
-
-  // State for column manager
-  const [showColumnManager, setShowColumnManager] = React.useState(false);
-
-  // Calculate end time helper
-  const calculateEndTime = (startTime: string, duration: string) => {
-    const startParts = startTime.split(':').map(Number);
-    const durationParts = duration.split(':').map(Number);
-    
-    let totalSeconds = 0;
-    if (startParts.length >= 2) {
-      totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
-    }
-    if (durationParts.length >= 2) {
-      totalSeconds += durationParts[0] * 60 + durationParts[1];
-    }
-    
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Create the handleJumpToHere function that respects current playing state
-  const handleJumpToHere = (segmentId: string) => {
-    console.log('🎯 === FIXED IndexContent: handleJumpToHere called ===');
-    console.log('🎯 IndexContent: segmentId:', segmentId);
-    console.log('🎯 IndexContent: current segment ID before jump:', currentSegmentId);
-    console.log('🎯 IndexContent: is currently playing:', isPlaying);
-    
-    // Find the target segment to ensure it exists
-    const targetSegment = items.find(item => item.id === segmentId);
-    console.log('🎯 IndexContent: target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
-    
-    if (!targetSegment) {
-      console.error('🎯 IndexContent: Cannot jump - target segment not found');
-      return;
-    }
-    
-    // CRITICAL FIX: Check current playing state and act accordingly
-    if (isPlaying) {
-      console.log('🎯 IndexContent: Showcaller is playing - jumping and continuing playback');
-      if (play) {
-        play(segmentId);
-        console.log('🎯 IndexContent: Play function called successfully');
-      }
-    } else {
-      console.log('🎯 IndexContent: Showcaller is paused - jumping but staying paused');
-      if (coreState.jumpToSegment) {
-        coreState.jumpToSegment(segmentId);
-        console.log('🎯 IndexContent: jumpToSegment function called successfully');
-      } else {
-        console.error('🎯 IndexContent: jumpToSegment function not available');
-      }
-    }
-    
-    // Clear the selection after jumping, like other context menu actions
-    clearSelection();
-    console.log('🎯 IndexContent: Selection cleared after jump');
-    console.log('🎯 === FIXED IndexContent: handleJumpToHere completed ===');
-  };
-
-  // Create wrapper for cell click to match signature
-  const handleCellClickWrapper = (itemId: string, field: string) => {
-    const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
-    handleCellClick(itemId, field, mockEvent);
-  };
-
-  // Create wrapper for key down to match signature
-  const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
-    const itemIndex = items.findIndex(item => item.id === itemId);
-    handleKeyDown(e, itemId, field, itemIndex);
-  };
-
-  // Create wrapper for getRowStatus that filters out "header" for components that don't expect it
-  const getRowStatusForContainer = (item: any): 'upcoming' | 'current' | 'completed' => {
-    const status = getRowStatus(item);
-    if (status === 'header') {
-      return 'upcoming'; // Default fallback for headers
-    }
-    return status;
-  };
-
-  // Use simplified handlers for common operations (but NOT add operations)
-  const {
-    handleRundownStartTimeChange,
-    handleTimezoneChange,
-    handleOpenTeleprompter,
-    handleRowSelect
-  } = useIndexHandlers({
-    items,
-    selectedRows,
-    rundownId,
-    addRow: () => addRow(),
-    addHeader: () => addHeader(),
-    calculateEndTime,
-    toggleRowSelection,
-    setRundownStartTime: setStartTime,
-    setTimezone,
-    markAsChanged: () => {} // Handled internally by unified state
-  });
-
-  const selectedRowsArray = Array.from(selectedRows);
-  const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
-
-  // Convert timeRemaining to number (assuming it's in seconds)
-  const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
-
-  // Enhanced column management handlers that integrate with user preferences
-  const handleAddColumnWrapper = (name: string) => {
-    console.log('🔄 Adding new column:', name);
-    const newColumn = {
-      id: `custom_${Date.now()}`,
-      name,
-      key: name.toLowerCase().replace(/\s+/g, '_'),
-      isVisible: true,
-      width: '150px',
-      isCustom: true,
-      isEditable: true
-    };
-    
-    // Add to existing columns and update user preferences
-    const updatedColumns = [...userColumns];
-    updatedColumns.splice(1, 0, newColumn); // Insert after segment name
-    setUserColumns(updatedColumns, true); // Immediate save for structural changes
-  };
-
-  const handleReorderColumnsWrapper = (reorderedColumns: any[]) => {
-    console.log('🔄 Reordering columns to:', reorderedColumns.length, 'columns');
-    setUserColumns(reorderedColumns, true); // Immediate save for reordering
-  };
-
-  const handleDeleteColumnWrapper = (columnId: string) => {
-    console.log('🗑️ Deleting column:', columnId);
-    const filteredColumns = userColumns.filter(col => col.id !== columnId);
-    setUserColumns(filteredColumns, true); // Immediate save for deletion
-  };
-
-  const handleRenameColumnWrapper = (columnId: string, newName: string) => {
-    console.log('✏️ Renaming column:', columnId, 'to:', newName);
-    const updatedColumns = userColumns.map(col => {
-      if (col.id === columnId) {
-        return { ...col, name: newName };
-      }
-      return col;
-    });
-    setUserColumns(updatedColumns, true); // Immediate save for renaming
-  };
-
-  const handleToggleColumnVisibilityWrapper = (columnId: string) => {
-    console.log('👁️ Toggling visibility for column:', columnId);
-    const updatedColumns = userColumns.map(col => {
-      if (col.id === columnId) {
-        const newVisibility = col.isVisible !== false ? false : true;
-        return { ...col, isVisible: newVisibility };
-      }
-      return col;
-    });
-    setUserColumns(updatedColumns, true); // Immediate save for visibility changes
-  };
-
-  const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
-    console.log('📥 Loading layout with', layoutColumns.length, 'columns');
-    
-    if (!Array.isArray(layoutColumns)) {
-      console.error('❌ Invalid layout columns - not an array:', layoutColumns);
-      return;
-    }
-
-    // Validate and clean the layout columns
-    const validColumns = layoutColumns.filter(col => 
-      col && 
-      typeof col === 'object' && 
-      col.id && 
-      col.name && 
-      col.key
+  // Show loading while checking auth
+  if (isLoadingAuth) {
+    logger.log('🔄 RundownIndexContent: Waiting for auth state...');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
     );
+  }
 
-    if (validColumns.length === 0) {
-      console.error('❌ No valid columns found in layout');
-      return;
-    }
+  // Redirect to login if not authenticated
+  if (!user) {
+    logger.log('🔄 RundownIndexContent: No user, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
 
-    console.log('✅ Loading', validColumns.length, 'valid columns');
-    setUserColumns(validColumns, true); // Immediate save for layout loading
-  };
+  // Redirect to dashboard if no rundown ID
+  if (!rundownId) {
+    logger.log('🔄 RundownIndexContent: No rundown ID, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
-    // Use the specialized updateColumnWidth method from useUserColumnPreferences
-    // which handles proper debouncing during resize operations
-    updateUserColumnWidth(columnId, `${width}px`);
-  };
+  if (dataLoading) {
+    logger.log('🔄 RundownIndexContent: Loading rundown data...');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-  // Prepare rundown data for Cuer AI
-  const rundownData = {
-    id: rundownId,
-    title: rundownTitle,
-    startTime: rundownStartTime,
-    timezone: timezone,
-    items: items,
-    columns: userColumns,
-    totalRuntime: totalRuntime
-  };
+  if (error) {
+    logger.error('🔄 RundownIndexContent: Error loading rundown:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Error Loading Rundown
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {error}
+          </p>
+          <Navigate to="/dashboard" replace />
+        </div>
+      </div>
+    );
+  }
 
-  // Create wrapper functions that match the expected signatures for drag operations
-  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
-    handleDragStart(e, index);
-  };
+  if (!rundown) {
+    logger.log('🔄 RundownIndexContent: No rundown found, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
-    handleDragOver(e, targetIndex);
-  };
-
-  const handleDragLeaveWrapper = (e: React.DragEvent) => {
-    handleDragLeave(e);
-  };
-
-  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
-    handleDrop(e, targetIndex);
-  };
+  logger.log('🔄 RundownIndexContent: Rendering rundown layout with search props:', {
+    searchTerm,
+    caseSensitive,
+    currentMatchIndex,
+    matchCount
+  });
 
   return (
-    <RealtimeConnectionProvider
-      isConnected={isConnected || false}
-      isProcessingUpdate={isProcessingRealtimeUpdate || false}
-    >
-      <RundownContainer
-        currentTime={currentTime}
-        timezone={timezone}
-        onTimezoneChange={handleTimezoneChange}
-        totalRuntime={totalRuntime}
-        showColumnManager={showColumnManager}
-        setShowColumnManager={setShowColumnManager}
-        items={items}
-        visibleColumns={visibleColumns}
-        columns={userColumns}
-        showColorPicker={showColorPicker}
-        cellRefs={cellRefs}
-        selectedRows={selectedRows}
-        draggedItemIndex={draggedItemIndex}
-        isDraggingMultiple={isDraggingMultiple}
-        dropTargetIndex={dropTargetIndex}
-        currentSegmentId={currentSegmentId}
-        getColumnWidth={getColumnWidth}
-        updateColumnWidth={handleUpdateColumnWidthWrapper}
-        getRowNumber={getRowNumber}
-        getRowStatus={getRowStatusForContainer}
-        calculateHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={updateItem}
-        onCellClick={handleCellClickWrapper}
-        onKeyDown={handleKeyDownWrapper}
-        onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={(id, color) => selectColor(id, color)}
-        onDeleteRow={deleteRow}
-        onToggleFloat={toggleFloatRow}
-        onRowSelect={handleRowSelect}
-        onDragStart={handleDragStartWrapper}
-        onDragOver={handleDragOverWrapper}
-        onDragLeave={handleDragLeaveWrapper}
-        onDrop={handleDropWrapper}
-        onAddRow={handleAddRow}
-        onAddHeader={handleAddHeader}
-        selectedCount={selectedRows.size}
-        hasClipboardData={hasClipboardData()}
-        onCopySelectedRows={handleCopySelectedRows}
-        onPasteRows={handlePasteRows}
-        onDeleteSelectedRows={handleDeleteSelectedRows}
-        onClearSelection={clearSelection}
-        selectedRowId={selectedRowId}
-        isPlaying={isPlaying}
-        timeRemaining={timeRemainingNumber}
-        onPlay={play}
-        onPause={pause}
-        onForward={forward}
-        onBackward={backward}
-        onReset={reset}
-        handleAddColumn={handleAddColumnWrapper}
-        handleReorderColumns={handleReorderColumnsWrapper}
-        handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}
-        handleRenameColumn={handleRenameColumnWrapper}
-        handleToggleColumnVisibility={handleToggleColumnVisibilityWrapper}
-        handleLoadLayout={handleLoadLayoutWrapper}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving || isSavingPreferences}
-        rundownTitle={rundownTitle}
-        onTitleChange={setTitle}
-        rundownStartTime={rundownStartTime}
-        onRundownStartTimeChange={handleRundownStartTimeChange}
-        rundownId={rundownId}
-        onOpenTeleprompter={handleOpenTeleprompter}
-        onUndo={undo}
-        canUndo={canUndo}
-        lastAction={lastAction || ''}
-        isConnected={isConnected}
-        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        onJumpToHere={handleJumpToHere}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={toggleAutoScroll}
-      />
-      
-      <CuerChatButton rundownData={rundownData} />
-    </RealtimeConnectionProvider>
+    <RundownLayout
+      rundown={rundown}
+      items={items}
+      onUpdateRundown={updateRundown}
+      onUpdateItem={updateItem}
+      onDeleteRow={deleteRow}
+      onAddRow={addRow}
+      onReorderItems={reorderItems}
+      onAddHeader={addHeader}
+      onDuplicateRow={duplicateRow}
+      onToggleFloat={toggleFloatRow}
+      searchTerm={searchTerm}
+      caseSensitive={caseSensitive}
+      currentMatchIndex={currentMatchIndex}
+      matchCount={matchCount}
+      matches={matches}
+    />
   );
 };
 

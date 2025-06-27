@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import RundownTableHeader from './RundownTableHeader';
@@ -47,6 +46,11 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  searchTerm?: string;
+  caseSensitive?: boolean;
+  currentMatchIndex?: number;
+  matchCount?: number;
+  matches?: any[];
 }
 
 const RundownContent = ({
@@ -88,7 +92,12 @@ const RundownContent = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere
+  onJumpToHere,
+  searchTerm = '',
+  caseSensitive = false,
+  currentMatchIndex = 0,
+  matchCount = 0,
+  matches = []
 }: RundownContentProps) => {
 
   // Initialize autoscroll functionality
@@ -129,6 +138,11 @@ const RundownContent = ({
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
             selectedRowId={selectedRowId}
+            searchTerm={searchTerm}
+            caseSensitive={caseSensitive}
+            currentMatchIndex={currentMatchIndex}
+            matchCount={matchCount}
+            matches={matches}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
