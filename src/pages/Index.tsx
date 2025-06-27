@@ -67,8 +67,8 @@ const Index = () => {
     timezone: coreState.timezone,
     onTimezoneChange: coreState.setTimezone,
     totalRuntime: coreState.totalRuntime,
-    showColumnManager: uiState.showColumnManager || false,
-    setShowColumnManager: uiState.setShowColumnManager || (() => {}),
+    showColumnManager: uiState.showColumnManager,
+    setShowColumnManager: uiState.setShowColumnManager,
     items: coreState.items,
     visibleColumns: coreState.visibleColumns,
     columns: coreState.columns,
@@ -85,7 +85,7 @@ const Index = () => {
     getRowStatus: getRowStatusForContainer,
     calculateHeaderDuration: coreState.calculateHeaderDuration,
     onUpdateItem: coreState.updateItem,
-    onCellClick: uiState.handleCellClick,
+    onCellClick: (itemId: string, field: string) => uiState.handleCellClick(itemId, field),
     onKeyDown: uiState.handleKeyDown,
     onToggleColorPicker: uiState.handleToggleColorPicker,
     onColorSelect: uiState.selectColor,
@@ -126,7 +126,7 @@ const Index = () => {
     },
     handleToggleColumnVisibility: (columnId: string) => {
       const updatedColumns = coreState.columns.map(col => 
-        col.id === columnId ? { ...col, visible: !col.visible } : col
+        col.id === columnId ? { ...col, isVisible: !col.isVisible } : col
       );
       coreState.setColumns(updatedColumns);
     },

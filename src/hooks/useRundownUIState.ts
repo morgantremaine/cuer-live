@@ -12,6 +12,7 @@ export const useRundownUIState = (
 ) => {
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [editingCell, setEditingCell] = useState<string | null>(null);
+  const [showColumnManager, setShowColumnManager] = useState(false);
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -92,7 +93,7 @@ export const useRundownUIState = (
   const handleCellClick = useCallback((
     itemId: string,
     field: string,
-    event: React.MouseEvent
+    event?: React.MouseEvent
   ) => {
     const cellKey = `${itemId}-${field}`;
     setEditingCell(cellKey);
@@ -196,7 +197,9 @@ export const useRundownUIState = (
     showColorPicker,
     cellRefs,
     editingCell,
+    showColumnManager,
     setEditingCell,
+    setShowColumnManager,
     handleToggleColorPicker,
     selectColor,
     getRowStatus,
