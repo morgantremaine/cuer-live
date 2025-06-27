@@ -20,85 +20,80 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [authInitialized, setAuthInitialized] = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
-  // Debounce auth state changes to prevent rapid-fire events
-  const debouncedSetUser = useCallback((newUser: User | null) => {
-    setUser(prevUser => {
-      // Only update if actually different
-      if (prevUser?.id !== newUser?.id) {
-        return newUser;
-      }
-      return prevUser;
-    });
-  }, []);
-
+  // Initialize auth state only once
   useEffect(() => {
-    if (authInitialized) return; // Prevent multiple initializations
+    if (initialized) return;
     
     console.log('Initializing auth state...');
     
-    // Set up auth state listener FIRST
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email || 'no user');
-      
-      // Handle token refresh errors gracefully
-      if (event === 'TOKEN_REFRESHED' && !session) {
-        console.log('Token refresh failed, but maintaining current user state');
-        // Don't clear user state on token refresh failure
-        setLoading(false);
-        return;
-      }
-      
-      // Handle sign out events
-      if (event === 'SIGNED_OUT') {
-        console.log('User signed out, clearing state');
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      
-      // Use debounced setter to prevent rapid updates
-      debouncedSetUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Only clean up invalid tokens when there's actually a user session
-      // and avoid doing it on every auth state change
-      if (session?.user && event === 'SIGNED_IN' && !authInitialized) {
-        // Use a longer delay to prevent interference with auth flow
-        setTimeout(() => clearInvalidTokens(), 1000);
-      }
-    })
+    let mounted = true;
+    
+    const initializeAuth = async () => {
+      try {
+        // Set up auth state listener first
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (!mounted) return;
+          
+          console.log('Auth state changed:', event, session?.user?.email || 'no user');
+          
+          // Update user state
+          setUser(session?.user ?? null);
+          
+          // Only set loading to false after we've processed the auth state
+          if (event !== 'TOKEN_REFRESHED' || session) {
+            setLoading(false);
+          }
+          
+          // Clean up invalid tokens when user signs in (but not on every auth event)
+          if (session?.user && event === 'SIGNED_IN') {
+            setTimeout(() => clearInvalidTokens(), 500);
+          }
+        });
 
-    // THEN get initial session with better error handling
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Error getting initial session:', error);
-        // Don't treat session retrieval errors as sign-out events
-        // Just log the error and continue
-      } else {
-        console.log('Initial session:', session?.user?.email || 'no user');
-        debouncedSetUser(session?.user ?? null);
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Only clean up invalid tokens if there's a user
-        if (session?.user) {
-          setTimeout(() => clearInvalidTokens(), 1000);
+        if (mounted) {
+          if (error) {
+            console.error('Error getting initial session:', error);
+          } else {
+            console.log('Initial session:', session?.user?.email || 'no user');
+          }
+          
+          setUser(session?.user ?? null);
+          setLoading(false);
+          setInitialized(true);
+          
+          // Clean up invalid tokens if there's a user
+          if (session?.user) {
+            setTimeout(() => clearInvalidTokens(), 500);
+          }
+        }
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        if (mounted) {
+          console.error('Auth initialization error:', error);
+          setLoading(false);
+          setInitialized(true);
         }
       }
-      
-      setLoading(false);
-      setAuthInitialized(true);
-    })
+    };
 
+    const cleanup = initializeAuth();
+    
     return () => {
-      console.log('Cleaning up auth subscription');
-      subscription.unsubscribe();
-    }
-  }, [authInitialized, debouncedSetUser]) // Add authInitialized to dependencies
+      mounted = false;
+      cleanup?.then(cleanupFn => cleanupFn?.());
+    };
+  }, [initialized]);
 
-  // Memoize auth functions to prevent unnecessary re-renders
   const signIn = useCallback(async (email: string, password: string) => {
     console.log('Attempting to sign in:', email);
     setLoading(true);
@@ -107,20 +102,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
       
       if (error) {
         console.error('Sign in error:', error);
-        setLoading(false); // Set loading to false on error
+        setLoading(false);
         return { error };
       }
       
-      // On success, don't set loading to false here - let auth state change handle it
-      // But add a timeout as a safety net in case auth state change doesn't fire
-      setTimeout(() => {
-        setLoading(false);
-      }, 5000); // 5 second timeout as safety net
-      
+      // Success - auth state change will handle setting loading to false
       return { error: null };
     } catch (err) {
       console.error('Sign in catch error:', err);
