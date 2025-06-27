@@ -32,7 +32,6 @@ export const usePlaybackControls = (
     currentSegmentId,
     timeRemaining,
     isController,
-    trackOwnUpdate,
     isInitialized
   } = useShowcallerVisualState({
     items,
@@ -49,7 +48,6 @@ export const usePlaybackControls = (
     isEditing,
     hasUnsavedChanges,
     isProcessingRealtimeUpdate,
-    trackOwnUpdate,
     onShowcallerActivity,
     onShowcallerStateReceived: applyExternalVisualState
   });
