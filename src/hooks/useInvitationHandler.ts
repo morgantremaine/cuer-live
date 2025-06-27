@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { useTeam } from './useTeam';
 import { useRundownStorage } from './useRundownStorage';
@@ -13,19 +13,21 @@ export const useInvitationHandler = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Use ref to prevent multiple simultaneous processing
+  const isProcessingRef = useRef(false);
+  const processedUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Don't run the invitation handler if we're on the JoinTeam page
-    // The JoinTeam page should handle its own invitation flow
     if (location.pathname.startsWith('/join-team/')) {
       console.log('On JoinTeam page, skipping invitation handler');
       return;
     }
 
     const handlePendingInvitation = async () => {
-      // Wait for user state to be determined (either logged in or null)
-      if (user === undefined) {
-        console.log('User state not yet determined, waiting...');
+      // Wait for user state to be determined and prevent multiple processing
+      if (user === undefined || isProcessingRef.current) {
         return;
       }
 
@@ -34,13 +36,21 @@ export const useInvitationHandler = () => {
         return;
       }
 
+      // Check if we already processed for this user
+      if (processedUserRef.current === user.id) {
+        return;
+      }
+
       const pendingToken = localStorage.getItem('pendingInvitationToken');
       if (!pendingToken) {
         console.log('No pending invitation token found');
+        processedUserRef.current = user.id; // Mark as processed
         return;
       }
 
       console.log('Processing pending invitation for user:', user.email);
+      isProcessingRef.current = true;
+      processedUserRef.current = user.id;
 
       try {
         // Let useTeam handle the invitation acceptance via loadTeamData
@@ -53,10 +63,10 @@ export const useInvitationHandler = () => {
           // Force reload rundowns after successful team join
           console.log('Invitation processed successfully, reloading rundowns...');
           
-          // Add a small delay to ensure team data is fully loaded before reloading rundowns
+          // Add a delay to ensure team data is fully loaded before reloading rundowns
           setTimeout(async () => {
             await loadRundowns();
-          }, 500);
+          }, 1000);
           
           toast({
             title: 'Success',
@@ -68,10 +78,9 @@ export const useInvitationHandler = () => {
             navigate('/dashboard');
           }
         } else {
-          // Token is still there, which might mean the invitation failed or is invalid
+          // Token is still there, validate it
           console.log('Invitation token still present, checking validity...');
           
-          // Try to validate the token - if it's invalid, clear it
           try {
             const { validateInvitationToken } = await import('@/utils/invitationUtils');
             const isValid = await validateInvitationToken(pendingToken);
@@ -102,11 +111,22 @@ export const useInvitationHandler = () => {
           description: 'Failed to process team invitation. Please try again or request a new invitation.',
           variant: 'destructive',
         });
+      } finally {
+        isProcessingRef.current = false;
       }
     };
 
-    // Small delay to ensure auth state is fully established
-    const timer = setTimeout(handlePendingInvitation, 1000);
-    return () => clearTimeout(timer);
+    // Use a longer delay to ensure auth state is fully established
+    const timer = setTimeout(handlePendingInvitation, 2000);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [user, loadTeamData, loadRundowns, toast, navigate, location.pathname]);
+
+  // Reset processing flag when user changes
+  useEffect(() => {
+    if (user?.id !== processedUserRef.current) {
+      isProcessingRef.current = false;
+    }
+  }, [user?.id]);
 };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { clearInvalidTokens } from '@/utils/invitationUtils'
@@ -21,8 +21,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authInitialized, setAuthInitialized] = useState(false)
+
+  // Debounce auth state changes to prevent rapid-fire events
+  const debouncedSetUser = useCallback((newUser: User | null) => {
+    setUser(prevUser => {
+      // Only update if actually different
+      if (prevUser?.id !== newUser?.id) {
+        return newUser;
+      }
+      return prevUser;
+    });
+  }, []);
 
   useEffect(() => {
+    if (authInitialized) return; // Prevent multiple initializations
+    
     console.log('Initializing auth state...');
     
     // Set up auth state listener FIRST
@@ -30,14 +44,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email || 'no user');
-      setUser(session?.user ?? null)
-      setLoading(false)
+      
+      // Use debounced setter to prevent rapid updates
+      debouncedSetUser(session?.user ?? null);
+      setLoading(false);
       
       // Only clean up invalid tokens when there's actually a user session
-      // This prevents clearing tokens during initial auth state determination
-      if (session?.user && event === 'SIGNED_IN') {
-        // Use a small delay to prevent interference with auth flow
-        setTimeout(() => clearInvalidTokens(), 500);
+      // and avoid doing it on every auth state change
+      if (session?.user && event === 'SIGNED_IN' && !authInitialized) {
+        // Use a longer delay to prevent interference with auth flow
+        setTimeout(() => clearInvalidTokens(), 1000);
       }
     })
 
@@ -47,12 +63,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error getting initial session:', error);
       }
       console.log('Initial session:', session?.user?.email || 'no user');
-      setUser(session?.user ?? null)
-      setLoading(false)
+      debouncedSetUser(session?.user ?? null);
+      setLoading(false);
+      setAuthInitialized(true);
       
       // Only clean up invalid tokens if there's a user
       if (session?.user) {
-        setTimeout(() => clearInvalidTokens(), 500);
+        setTimeout(() => clearInvalidTokens(), 1000);
       }
     })
 
@@ -60,9 +77,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('Cleaning up auth subscription');
       subscription.unsubscribe();
     }
-  }, []) // Remove the initialized dependency to prevent multiple runs
+  }, [authInitialized, debouncedSetUser]) // Add authInitialized to dependencies
 
-  const signIn = async (email: string, password: string) => {
+  // Memoize auth functions to prevent unnecessary re-renders
+  const signIn = useCallback(async (email: string, password: string) => {
     console.log('Attempting to sign in:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -72,9 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Sign in error:', error);
     }
     return { error }
-  }
+  }, []);
 
-  const signUp = async (email: string, password: string, fullName?: string, inviteCode?: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName?: string, inviteCode?: string) => {
     console.log('Attempting to sign up:', email);
     
     // For normal signups (from login page), require invite code
@@ -94,8 +112,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    // Don't try to create profile manually - let the database trigger handle it
-    // The handle_new_user() trigger will create the profile automatically
     if (error) {
       console.error('Sign up error:', error);
     } else {
@@ -103,9 +119,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     return { error }
-  }
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       console.log('Attempting to sign out...')
       const { error } = await supabase.auth.signOut()
@@ -128,16 +144,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('pendingInvitationToken')
       console.log('User state cleared due to error')
     }
-  }
+  }, []);
 
-  const updatePassword = async (password: string) => {
+  const updatePassword = useCallback(async (password: string) => {
     const { error } = await supabase.auth.updateUser({
       password: password
     })
     return { error }
-  }
+  }, []);
 
-  const updateProfile = async (fullName: string) => {
+  const updateProfile = useCallback(async (fullName: string) => {
     if (!user) return { error: { message: 'No user logged in' } }
 
     // Update auth user metadata
@@ -154,16 +170,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', user.id)
 
     return { error: profileError }
-  }
+  }, [user]);
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     })
     return { error }
-  }
+  }, []);
 
-  const resendConfirmation = async (email: string) => {
+  const resendConfirmation = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
@@ -172,20 +188,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
     return { error }
-  }
+  }, []);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user, 
+    loading, 
+    signIn, 
+    signUp, 
+    signOut, 
+    updatePassword, 
+    updateProfile, 
+    resetPassword, 
+    resendConfirmation 
+  }), [user, loading, signIn, signUp, signOut, updatePassword, updateProfile, resetPassword, resendConfirmation]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      signIn, 
-      signUp, 
-      signOut, 
-      updatePassword, 
-      updateProfile, 
-      resetPassword, 
-      resendConfirmation 
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,7 +1,17 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import { supabase } from '@/lib/supabase';
+
+interface TeamMember {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  full_name?: string;
+  email?: string;
+}
 
 interface Team {
   id: string;
@@ -10,631 +20,256 @@ interface Team {
   updated_at: string;
 }
 
-interface TeamMember {
-  id: string;
-  user_id: string;
-  team_id: string;
-  role: string;
-  joined_at: string;
-  profiles?: {
-    full_name: string | null;
-    email: string;
-  };
-}
-
-interface TeamInvitation {
-  id: string;
-  email: string;
-  team_id: string;
-  invited_by: string;
-  accepted: boolean;
-  created_at: string;
-  expires_at: string;
-  token: string;
-}
-
-interface TransferPreview {
-  member_email: string;
-  member_name: string | null;
-  rundown_count: number;
-  blueprint_count: number;
-  will_delete_account: boolean;
+interface TeamData {
+  team: Team | null;
+  members: TeamMember[];
+  pendingInvitations: any[];
+  userRole: string | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 export const useTeam = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [pendingInvitations, setPendingInvitations] = useState<TeamInvitation[]>([]);
-  const [userRole, setUserRole] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [teamData, setTeamData] = useState<TeamData>({
+    team: null,
+    members: [],
+    pendingInvitations: [],
+    userRole: null,
+    isLoading: true,
+    error: null
+  });
 
-  // Enhanced cleanup function that runs all cleanup operations
-  const runFullCleanup = async () => {
-    try {
-      console.log('Running full cleanup operations...');
-      
-      // Run all cleanup functions
-      await supabase.rpc('cleanup_orphaned_memberships');
-      await supabase.rpc('cleanup_accepted_invitations');
-      
-      console.log('Full cleanup completed successfully');
-    } catch (error) {
-      console.error('Error during full cleanup:', error);
-    }
-  };
+  // Use refs to prevent multiple simultaneous loads
+  const isLoadingRef = useRef(false);
+  const loadTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastLoadedUserRef = useRef<string | null>(null);
 
-  const loadTeamData = async () => {
-    if (!user) {
-      console.log('No user found, skipping team data load');
-      setLoading(false);
+  // Debounced load function to prevent excessive calls
+  const debouncedLoadTeamData = useCallback(async () => {
+    if (!user || isLoadingRef.current || lastLoadedUserRef.current === user.id) {
       return;
     }
 
-    try {
+    // Clear any existing timeout
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+
+    // Set a debounce timeout
+    loadTimeoutRef.current = setTimeout(async () => {
+      if (isLoadingRef.current) return;
+      
+      isLoadingRef.current = true;
+      lastLoadedUserRef.current = user.id;
+      
       console.log('Loading team data for user:', user.id);
       
-      // Run cleanup first to ensure clean state
-      await runFullCleanup();
-      
-      // Check for pending invitation token first
-      const pendingToken = localStorage.getItem('pendingInvitationToken');
-      if (pendingToken) {
-        console.log('Found pending invitation token, checking if valid:', pendingToken);
-        
-        // Use the new safe acceptance function
-        try {
-          const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_team_invitation_safe', {
-            invitation_token: pendingToken
-          });
+      try {
+        setTeamData(prev => ({ ...prev, isLoading: true, error: null }));
 
-          if (!acceptError && acceptResult?.success) {
-            console.log('Invitation accepted successfully:', acceptResult.message);
-            localStorage.removeItem('pendingInvitationToken');
-            toast({
-              title: 'Success',
-              description: acceptResult.message || 'Successfully joined the team!',
+        // Check for pending invitation first
+        const pendingToken = localStorage.getItem('pendingInvitationToken');
+        if (pendingToken) {
+          console.log('Processing pending invitation token...');
+          try {
+            const { data: invitationData } = await supabase.rpc('accept_team_invitation_safe', {
+              invitation_token: pendingToken
             });
-            // Continue to load the team data below
-          } else {
-            console.log('Failed to accept invitation or invitation invalid:', acceptResult?.error || acceptError);
+
+            if (invitationData?.success) {
+              localStorage.removeItem('pendingInvitationToken');
+              console.log('Successfully accepted team invitation');
+              
+              toast({
+                title: 'Welcome to the team!',
+                description: 'You have successfully joined the team.',
+              });
+            } else if (invitationData?.error && !invitationData.error.includes('already a member')) {
+              console.error('Failed to accept invitation:', invitationData.error);
+              localStorage.removeItem('pendingInvitationToken');
+            }
+          } catch (error) {
+            console.error('Error processing invitation:', error);
             localStorage.removeItem('pendingInvitationToken');
           }
-        } catch (error) {
-          console.error('Error accepting invitation:', error);
-          localStorage.removeItem('pendingInvitationToken');
         }
-      }
-      
-      // Get user's team memberships
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('team_members')
-        .select(`
-          id,
-          user_id,
-          team_id,
-          role,
-          joined_at,
-          teams (
-            id,
-            name,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('user_id', user.id);
 
-      console.log('Membership query result:', { membershipData, membershipError });
-
-      if (membershipError) {
-        console.error('Error fetching team memberships:', membershipError);
-        setLoading(false);
-        return;
-      }
-
-      if (!membershipData || membershipData.length === 0) {
-        console.log('No team memberships found for user');
-        // Only create default team if there's no pending invitation
-        const pendingToken = localStorage.getItem('pendingInvitationToken');
-        if (!pendingToken) {
-          console.log('No pending invitation, creating or getting user team');
-          await createOrGetUserTeam();
-        } else {
-          console.log('Pending invitation exists, not creating default team');
-          setLoading(false);
-        }
-        return;
-      }
-
-      // Use the first team (users can only be in one team for now)
-      const membership = membershipData[0];
-      const teamData = membership.teams as any;
-      
-      console.log('Found team data:', teamData);
-      console.log('User role:', membership.role);
-
-      setTeam(teamData);
-      setUserRole(membership.role);
-
-      // Load team members
-      await loadTeamMembers(teamData.id);
-      
-      // Load pending invitations if user is admin
-      if (membership.role === 'admin') {
-        await loadPendingInvitations(teamData.id);
-      }
-
-    } catch (error) {
-      console.error('Error in loadTeamData:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createOrGetUserTeam = async () => {
-    if (!user) return;
-
-    try {
-      console.log('Creating or getting user team for user:', user.id);
-      
-      // Use the new database function that prevents duplicates
-      const { data: teamId, error } = await supabase.rpc('get_or_create_user_team', {
-        user_uuid: user.id
-      });
-
-      if (error) {
-        console.error('Error creating/getting user team:', error);
-        return;
-      }
-
-      console.log('Got team ID:', teamId);
-
-      // Reload team data
-      await loadTeamData();
-    } catch (error) {
-      console.error('Error in createOrGetUserTeam:', error);
-    }
-  };
-
-  const loadTeamMembers = async (teamId: string) => {
-    try {
-      console.log('Loading team members for team:', teamId);
-      
-      // First get team members
-      const { data: teamMembersData, error: teamMembersError } = await supabase
-        .from('team_members')
-        .select('id, user_id, team_id, role, joined_at')
-        .eq('team_id', teamId);
-
-      console.log('Team members query result:', { teamMembersData, teamMembersError });
-
-      if (teamMembersError) {
-        console.error('Error loading team members:', teamMembersError);
-        return;
-      }
-
-      if (!teamMembersData || teamMembersData.length === 0) {
-        console.log('No team members found');
-        setTeamMembers([]);
-        return;
-      }
-
-      // Get user IDs to fetch profiles
-      const userIds = teamMembersData.map(member => member.user_id);
-
-      // Fetch profiles for these users
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', userIds);
-
-      console.log('Profiles query result:', { profilesData, profilesError });
-
-      if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
-        return;
-      }
-
-      // Combine team members with their profiles
-      const transformedData = teamMembersData.map(member => {
-        const profile = profilesData?.find(p => p.id === member.user_id);
-        return {
-          ...member,
-          profiles: profile ? {
-            full_name: profile.full_name,
-            email: profile.email
-          } : null
-        };
-      });
-
-      console.log('Transformed team members data:', transformedData);
-      setTeamMembers(transformedData);
-    } catch (error) {
-      console.error('Error in loadTeamMembers:', error);
-    }
-  };
-
-  const loadPendingInvitations = async (teamId: string) => {
-    try {
-      console.log('Loading pending invitations for team:', teamId);
-      
-      // Run cleanup first to ensure accurate data
-      await runFullCleanup();
-      
-      const { data, error } = await supabase
-        .from('team_invitations')
-        .select('*')
-        .eq('team_id', teamId)
-        .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString());
-
-      console.log('Pending invitations query result:', { data, error });
-
-      if (error) {
-        console.error('Error loading pending invitations:', error);
-        return;
-      }
-
-      setPendingInvitations(data || []);
-    } catch (error) {
-      console.error('Error in loadPendingInvitations:', error);
-    }
-  };
-
-  const inviteTeamMember = async (email: string) => {
-    if (!team || !user) {
-      return { error: 'No team or user found' };
-    }
-
-    try {
-      console.log('Inviting team member:', email);
-      
-      // First run cleanup to ensure clean state
-      await runFullCleanup();
-      
-      // Check if user already exists in team by checking profiles
-      const { data: existingMember } = await supabase
-        .from('team_members')
-        .select('id, user_id')
-        .eq('team_id', team.id);
-
-      if (existingMember && existingMember.length > 0) {
-        // Get user IDs and check their profiles
-        const userIds = existingMember.map(m => m.user_id);
-        
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .in('id', userIds);
-
-        const memberEmails = profilesData?.map(p => p.email).filter(Boolean);
-        
-        console.log('Existing member emails:', memberEmails);
-        
-        if (memberEmails?.includes(email)) {
-          return { error: 'User is already a member of this team' };
-        }
-      }
-
-      // Check for existing pending invitations for this email
-      const { data: existingInvitation } = await supabase
-        .from('team_invitations')
-        .select('id')
-        .eq('team_id', team.id)
-        .eq('email', email)
-        .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-
-      if (existingInvitation) {
-        return { error: 'An invitation is already pending for this email address' };
-      }
-
-      // Generate invitation token
-      const token = crypto.randomUUID();
-      console.log('Generated invitation token:', token);
-
-      // Create invitation
-      const { error: invitationError } = await supabase
-        .from('team_invitations')
-        .insert({
-          team_id: team.id,
-          email,
-          invited_by: user.id,
-          token,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
-        });
-
-      if (invitationError) {
-        console.error('Error creating invitation:', invitationError);
-        return { error: 'Failed to create invitation' };
-      }
-
-      console.log('Invitation created successfully, sending email with token:', token);
-
-      // Send invitation email via edge function
-      const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
-        body: {
-          email,
-          teamName: team.name,
-          inviterName: user.user_metadata?.full_name || user.email,
-          token: token
-        }
-      });
-
-      if (emailError) {
-        console.error('Error sending invitation email:', emailError);
-        return { error: 'Invitation created but email could not be sent' };
-      }
-
-      console.log('Invitation email sent successfully');
-
-      // Reload pending invitations
-      await loadPendingInvitations(team.id);
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error inviting team member:', error);
-      return { error: 'Failed to invite team member' };
-    }
-  };
-
-  const acceptInvitation = async (token: string) => {
-    if (!user) {
-      return { error: 'No user logged in' };
-    }
-
-    try {
-      console.log('Accepting invitation with token:', token);
-      
-      // Use the new safe acceptance function
-      const { data: result, error } = await supabase.rpc('accept_team_invitation_safe', {
-        invitation_token: token
-      });
-
-      if (error) {
-        console.error('Error accepting invitation:', error);
-        return { error: 'Failed to accept invitation' };
-      }
-
-      if (!result?.success) {
-        console.error('Invitation acceptance failed:', result?.error);
-        return { error: result?.error || 'Failed to accept invitation' };
-      }
-
-      console.log('Invitation accepted successfully:', result.message);
-      return { error: null };
-    } catch (error) {
-      console.error('Error accepting invitation:', error);
-      return { error: 'Failed to accept invitation' };
-    }
-  };
-
-  const removeTeamMember = async (memberId: string) => {
-    if (!team) {
-      return { error: 'No team found' };
-    }
-
-    try {
-      console.log('Removing team member:', memberId);
-      
-      // Get member details before deletion for cleanup
-      const { data: memberData } = await supabase
-        .from('team_members')
-        .select('user_id, team_id')
-        .eq('id', memberId)
-        .single();
-
-      const { error } = await supabase
-        .from('team_members')
-        .delete()
-        .eq('id', memberId);
-
-      if (error) {
-        console.error('Error removing team member:', error);
-        return { error: 'Failed to remove team member' };
-      }
-
-      // If member was successfully removed, also revoke any pending invitations for that user
-      if (memberData) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', memberData.user_id)
+        // Get user's team membership
+        const { data: membershipData, error: membershipError } = await supabase
+          .from('team_members')
+          .select(`
+            team_id,
+            role,
+            teams (
+              id,
+              name,
+              created_at,
+              updated_at
+            )
+          `)
+          .eq('user_id', user.id)
+          .limit(1)
           .single();
 
-        if (profileData?.email) {
-          await supabase
+        if (membershipError && membershipError.code !== 'PGRST116') {
+          throw membershipError;
+        }
+
+        if (!membershipData) {
+          // Create a new team for the user
+          console.log('No team found, creating new team...');
+          const userEmail = user.email || 'User';
+          const teamName = `${userEmail.split('@')[0]}'s Team`;
+
+          const { data: newTeam, error: teamError } = await supabase
+            .from('teams')
+            .insert({ name: teamName })
+            .select()
+            .single();
+
+          if (teamError) throw teamError;
+
+          const { error: memberError } = await supabase
+            .from('team_members')
+            .insert({
+              user_id: user.id,
+              team_id: newTeam.id,
+              role: 'admin'
+            });
+
+          if (memberError) throw memberError;
+
+          setTeamData({
+            team: newTeam,
+            members: [],
+            pendingInvitations: [],
+            userRole: 'admin',
+            isLoading: false,
+            error: null
+          });
+          return;
+        }
+
+        const team = membershipData.teams as Team;
+        const userRole = membershipData.role;
+
+        // Load team members and their profiles
+        const { data: teamMembersData, error: teamMembersError } = await supabase
+          .from('team_members')
+          .select(`
+            id,
+            user_id,
+            role,
+            joined_at,
+            profiles (
+              full_name,
+              email
+            )
+          `)
+          .eq('team_id', team.id)
+          .order('joined_at');
+
+        if (teamMembersError) throw teamMembersError;
+
+        // Transform the data
+        const members = teamMembersData.map(member => ({
+          id: member.id,
+          user_id: member.user_id,
+          role: member.role,
+          joined_at: member.joined_at,
+          full_name: member.profiles?.full_name || '',
+          email: member.profiles?.email || ''
+        }));
+
+        // Load pending invitations if user is admin
+        let pendingInvitations: any[] = [];
+        if (userRole === 'admin') {
+          const { data: invitationsData } = await supabase
             .from('team_invitations')
-            .delete()
-            .eq('team_id', memberData.team_id)
-            .eq('email', profileData.email);
+            .select('*')
+            .eq('team_id', team.id)
+            .eq('accepted', false)
+            .gt('expires_at', new Date().toISOString());
+
+          pendingInvitations = invitationsData || [];
         }
+
+        setTeamData({
+          team,
+          members,
+          pendingInvitations,
+          userRole,
+          isLoading: false,
+          error: null
+        });
+
+      } catch (error) {
+        console.error('Error loading team data:', error);
+        setTeamData(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Failed to load team data'
+        }));
+      } finally {
+        isLoadingRef.current = false;
       }
+    }, 300); // 300ms debounce
+  }, [user, toast]);
 
-      // Run cleanup and reload team members
-      await runFullCleanup();
-      await loadTeamMembers(team.id);
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error removing team member:', error);
-      return { error: 'Failed to remove team member' };
+  // Load team data when user changes, but only if it's actually different
+  useEffect(() => {
+    if (user && user.id !== lastLoadedUserRef.current) {
+      debouncedLoadTeamData();
     }
-  };
+  }, [user, debouncedLoadTeamData]);
 
-  const removeTeamMemberWithTransfer = async (memberId: string) => {
-    if (!team || !user) {
-      return { error: 'No team or user found' };
-    }
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Memoized functions to prevent unnecessary re-renders
+  const loadTeamData = useCallback(() => {
+    lastLoadedUserRef.current = null; // Reset to force reload
+    debouncedLoadTeamData();
+  }, [debouncedLoadTeamData]);
+
+  const inviteTeamMember = useCallback(async (email: string) => {
+    if (!teamData.team || !user) return { success: false, error: 'No team or user' };
 
     try {
-      console.log('Removing team member with transfer:', memberId);
-      
-      const { data, error } = await supabase.rpc('remove_team_member_with_transfer', {
-        member_id: memberId,
-        admin_id: user.id,
-        team_id_param: team.id
-      });
-
-      if (error) {
-        console.error('Error removing team member:', error);
-        return { error: 'Failed to remove team member' };
-      }
-
-      if (data?.error) {
-        return { error: data.error };
-      }
-
-      console.log('Team member removed successfully:', data);
-
-      // Run cleanup and reload team members
-      await runFullCleanup();
-      await loadTeamMembers(team.id);
-
-      return { 
-        error: null, 
-        result: {
-          rundownsTransferred: data.rundowns_transferred,
-          blueprintsTransferred: data.blueprints_transferred,
-          userDeleted: data.user_deleted
-        }
-      };
-    } catch (error) {
-      console.error('Error removing team member:', error);
-      return { error: 'Failed to remove team member' };
-    }
-  };
-
-  const getTransferPreview = async (memberId: string): Promise<{ data: TransferPreview | null; error: string | null }> => {
-    if (!team) {
-      return { data: null, error: 'No team found' };
-    }
-
-    try {
-      console.log('Getting transfer preview for member:', memberId);
-      
-      const { data, error } = await supabase.rpc('get_member_transfer_preview', {
-        member_id: memberId,
-        team_id_param: team.id
-      });
-
-      if (error) {
-        console.error('Error getting transfer preview:', error);
-        return { data: null, error: 'Failed to get transfer preview' };
-      }
-
-      if (data?.error) {
-        return { data: null, error: data.error };
-      }
-
-      return { data: data as TransferPreview, error: null };
-    } catch (error) {
-      console.error('Error in getTransferPreview:', error);
-      return { data: null, error: 'Failed to get transfer preview' };
-    }
-  };
-
-  const revokeInvitation = async (invitationId: string) => {
-    try {
-      console.log('Revoking invitation:', invitationId);
-      
-      const { error } = await supabase
-        .from('team_invitations')
-        .delete()
-        .eq('id', invitationId);
-
-      if (error) {
-        console.error('Error revoking invitation:', error);
-        return { error: 'Failed to revoke invitation' };
-      }
-
-      // Reload pending invitations
-      if (team) {
-        await loadPendingInvitations(team.id);
-      }
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error revoking invitation:', error);
-      return { error: 'Failed to revoke invitation' };
-    }
-  };
-
-  const resendInvitation = async (invitationId: string, email: string) => {
-    if (!team || !user) {
-      return { error: 'No team or user found' };
-    }
-
-    try {
-      console.log('Resending invitation to:', email);
-      
-      // First run cleanup to ensure clean state
-      await runFullCleanup();
-      
-      // Generate new invitation token
-      const newToken = crypto.randomUUID();
-      console.log('Generated new invitation token:', newToken);
-
-      // Update the invitation with new token and extended expiry
-      const { error: updateError } = await supabase
-        .from('team_invitations')
-        .update({
-          token: newToken,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
-        })
-        .eq('id', invitationId);
-
-      if (updateError) {
-        console.error('Error updating invitation:', updateError);
-        return { error: 'Failed to update invitation' };
-      }
-
-      // Send new invitation email
-      const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
+      const { data, error } = await supabase.functions.invoke('send-team-invitation', {
         body: {
           email,
-          teamName: team.name,
-          inviterName: user.user_metadata?.full_name || user.email,
-          token: newToken
+          teamId: teamData.team.id,
+          invitedBy: user.id
         }
       });
 
-      if (emailError) {
-        console.error('Error resending invitation email:', emailError);
-        return { error: 'Failed to resend invitation email' };
-      }
+      if (error) throw error;
 
-      console.log('Invitation resent successfully');
+      // Reload team data to get updated invitations
+      loadTeamData();
 
-      // Reload pending invitations
-      await loadPendingInvitations(team.id);
-
-      return { error: null };
+      return { success: true, data };
     } catch (error) {
-      console.error('Error resending invitation:', error);
-      return { error: 'Failed to resend invitation' };
+      console.error('Error inviting team member:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send invitation' 
+      };
     }
-  };
-
-  useEffect(() => {
-    loadTeamData();
-  }, [user]);
+  }, [teamData.team, user, loadTeamData]);
 
   return {
-    team,
-    teamMembers,
-    pendingInvitations,
-    userRole,
-    loading,
+    ...teamData,
     loadTeamData,
-    inviteTeamMember,
-    acceptInvitation,
-    removeTeamMember,
-    removeTeamMemberWithTransfer,
-    getTransferPreview,
-    revokeInvitation,
-    resendInvitation
+    inviteTeamMember
   };
 };

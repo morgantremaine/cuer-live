@@ -1,291 +1,220 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { useTeamId } from './useTeamId';
+import { RundownItem, isHeaderItem } from '@/types/rundown';
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
-import { RundownItem } from '@/hooks/useRundownItems';
-import { mapDatabaseToRundown, mapRundownToDatabase, mapRundownsFromDatabase } from './useRundownStorage/dataMapper';
-import { SavedRundown } from './useRundownStorage/types';
-import { RundownOperations } from './useRundownStorage/operations';
-import { v4 as uuidv4 } from 'uuid';
+interface SavedRundown {
+  id: string;
+  title: string;
+  items: RundownItem[];
+  created_at: string;
+  updated_at: string;
+  archived: boolean;
+  folder_id?: string;
+  user_id: string;
+  team_id: string;
+}
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { teamId } = useTeamId();
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  // Use refs to prevent multiple simultaneous loads
+  const isLoadingRef = useRef(false);
+  const loadTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastLoadedUserRef = useRef<string | null>(null);
+  const lastLoadedTeamRef = useRef<string | null>(null);
 
-  // Load rundowns from Supabase (team rundowns only, including archived ones)
-  const loadRundowns = useCallback(async () => {
-    if (!user) {
-      setSavedRundowns([]);
-      setLoading(false);
+  // Debounced load function
+  const debouncedLoadRundowns = useCallback(async () => {
+    if (!user || !teamId || isLoadingRef.current) {
       return;
     }
 
-    try {
+    // Check if we already loaded for this user/team combination
+    const currentKey = `${user.id}-${teamId}`;
+    const lastKey = `${lastLoadedUserRef.current}-${lastLoadedTeamRef.current}`;
+    if (currentKey === lastKey) {
+      return;
+    }
+
+    // Clear any existing timeout
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+
+    // Set a debounce timeout
+    loadTimeoutRef.current = setTimeout(async () => {
+      if (isLoadingRef.current) return;
+      
+      isLoadingRef.current = true;
+      lastLoadedUserRef.current = user.id;
+      lastLoadedTeamRef.current = teamId;
+      
       console.log('Loading rundowns from database for user:', user.id);
-      
-      // Get user's team memberships to know which teams they belong to
-      const { data: teamMemberships, error: teamError } = await supabase
-        .from('team_members')
-        .select('team_id')
-        .eq('user_id', user.id);
+      setLoading(true);
 
-      if (teamError) {
-        console.error('Error loading team memberships:', teamError);
+      try {
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('team_id', teamId)
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+
+        const rundowns = (data || []).map(rundown => ({
+          ...rundown,
+          items: Array.isArray(rundown.items) ? rundown.items : []
+        }));
+
+        setSavedRundowns(rundowns);
+        console.log('Loaded rundowns from database:', rundowns.length);
+      } catch (error) {
+        console.error('Error loading rundowns:', error);
         setSavedRundowns([]);
+      } finally {
         setLoading(false);
-        return;
+        isLoadingRef.current = false;
       }
+    }, 200); // 200ms debounce
+  }, [user, teamId]);
 
-      const teamIds = teamMemberships?.map(membership => membership.team_id) || [];
-      
-      if (teamIds.length === 0) {
-        console.log('User is not a member of any teams');
-        setSavedRundowns([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Query rundowns from user's teams - include both archived and active
-      const { data: rundownsData, error: rundownsError } = await supabase
-        .from('rundowns')
-        .select(`
-          *,
-          teams:team_id (
-            id,
-            name
-          )
-        `)
-        .in('team_id', teamIds)
-        .order('updated_at', { ascending: false });
-
-      if (rundownsError) {
-        console.error('Database error loading rundowns:', rundownsError);
-        throw rundownsError;
-      }
-
-      // Get all unique user IDs from rundowns to fetch their profiles
-      const userIds = [...new Set(rundownsData?.map(r => r.user_id) || [])];
-      
-      let profilesData = [];
-      if (userIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', userIds);
-
-        if (profilesError) {
-          console.error('Error loading profiles:', profilesError);
-          // Continue without profile data instead of failing
-        } else {
-          profilesData = profiles || [];
-        }
-      }
-
-      // Map rundowns and attach creator profile data
-      const rundowns = (rundownsData || []).map(rundown => {
-        const creatorProfile = profilesData.find(p => p.id === rundown.user_id);
-        const mappedRundown = {
-          id: rundown.id,
-          user_id: rundown.user_id,
-          title: rundown.title,
-          items: rundown.items || [],
-          columns: rundown.columns,
-          timezone: rundown.timezone,
-          start_time: rundown.start_time,
-          icon: rundown.icon,
-          archived: rundown.archived || false,
-          created_at: rundown.created_at,
-          updated_at: rundown.updated_at,
-          undo_history: rundown.undo_history || [],
-          team_id: rundown.team_id,
-          visibility: rundown.visibility,
-          folder_id: rundown.folder_id || null,
-          teams: rundown.teams ? {
-            id: rundown.teams.id,
-            name: rundown.teams.name
-          } : null,
-          creator_profile: creatorProfile ? {
-            full_name: creatorProfile.full_name,
-            email: creatorProfile.email
-          } : null
-        };
-        
-        return mappedRundown;
-      });
-
-      setSavedRundowns(rundowns);
-      console.log('Loaded rundowns from database:', rundowns.length);
-    } catch (error) {
-      console.error('Error loading rundowns:', error);
-      setSavedRundowns([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  // Save rundown to Supabase
-  const saveRundown = useCallback(async (rundown: SavedRundown): Promise<string> => {
-    if (!user || !rundown) {
-      throw new Error('User not authenticated or rundown is invalid');
-    }
-
-    // Ensure rundown has a team_id - get user's first team if not provided
-    if (!rundown.team_id) {
-      const { data: teamMemberships } = await supabase
-        .from('team_members')
-        .select('team_id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (!teamMemberships || teamMemberships.length === 0) {
-        // Use the new function to get or create a team
-        const { data: teamId, error: teamError } = await supabase.rpc('get_or_create_user_team', {
-          user_uuid: user.id
-        });
-
-        if (teamError || !teamId) {
-          throw new Error('Failed to get or create team for user. Cannot create rundown.');
-        }
-
-        rundown.team_id = teamId;
-      } else {
-        rundown.team_id = teamMemberships[0].team_id;
+  // Load rundowns when user or team changes
+  useEffect(() => {
+    if (user && teamId) {
+      const currentKey = `${user.id}-${teamId}`;
+      const lastKey = `${lastLoadedUserRef.current}-${lastLoadedTeamRef.current}`;
+      if (currentKey !== lastKey) {
+        debouncedLoadRundowns();
       }
     }
+  }, [user, teamId, debouncedLoadRundowns]);
 
-    setIsSaving(true);
-    
-    try {
-      // Prepare rundown data - don't include id for new rundowns
-      const rundownData = mapRundownToDatabase(rundown, user.id);
-      
-      // For new rundowns, remove the id field to let database generate it
-      if (!rundown.id || rundown.id === '') {
-        delete rundownData.id;
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
       }
-      
-      const { data, error } = await supabase
-        .from('rundowns')
-        .upsert(rundownData)
-        .select()
-        .single();
+    };
+  }, []);
 
-      if (error) {
-        console.error('Database error saving rundown:', error);
-        throw error;
-      }
+  const loadRundowns = useCallback(() => {
+    lastLoadedUserRef.current = null;
+    lastLoadedTeamRef.current = null;
+    debouncedLoadRundowns();
+  }, [debouncedLoadRundowns]);
 
-      const savedRundown = mapDatabaseToRundown(data);
-      
-      // Update local state
-      setSavedRundowns(prevRundowns => {
-        const existingIndex = prevRundowns.findIndex(r => r.id === savedRundown.id);
-        if (existingIndex >= 0) {
-          const newRundowns = [...prevRundowns];
-          newRundowns[existingIndex] = savedRundown;
-          return newRundowns;
-        } else {
-          return [savedRundown, ...prevRundowns];
-        }
-      });
+  const createRundown = useCallback(async (title: string, items: RundownItem[] = [], folderId?: string | null) => {
+    if (!user || !teamId) throw new Error('User not authenticated or no team');
 
-      return savedRundown.id;
-    } catch (error) {
-      console.error('Error saving rundown:', error);
-      throw error;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [user]);
-
-  const createRundown = async (title: string, items: RundownItem[] = [], folderId: string | null = null) => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      // Get user's first team or create one using the new function
-      const { data: teamMemberships } = await supabase
-        .from('team_members')
-        .select('team_id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      let teamId: string;
-
-      if (!teamMemberships || teamMemberships.length === 0) {
-        // Use the new function to get or create a team
-        const { data: newTeamId, error: teamError } = await supabase.rpc('get_or_create_user_team', {
-          user_uuid: user.id
-        });
-
-        if (teamError || !newTeamId) {
-          throw new Error('Failed to get or create team for user. Cannot create rundown.');
-        }
-
-        teamId = newTeamId;
-      } else {
-        teamId = teamMemberships[0].team_id;
-      }
-
-      const rundownId = uuidv4();
-      const now = new Date().toISOString();
-      
-      const rundownData: SavedRundown = {
-        id: rundownId,
-        user_id: user.id,
+    const { data, error } = await supabase
+      .from('rundowns')
+      .insert({
         title,
         items,
-        start_time: new Date().toISOString().split('T')[1].substring(0, 5),
-        created_at: now,
-        updated_at: now,
-        archived: false,
+        user_id: user.id,
         team_id: teamId,
-        folder_id: folderId
-      };
+        folder_id: folderId,
+        archived: false
+      })
+      .select()
+      .single();
 
-      const { error } = await supabase
-        .from('rundowns')
-        .insert([mapRundownToDatabase(rundownData, user.id)]);
+    if (error) throw error;
 
-      if (error) throw error;
+    // Add to local state
+    const newRundown = {
+      ...data,
+      items: Array.isArray(data.items) ? data.items : []
+    };
+    setSavedRundowns(prev => [newRundown, ...prev]);
 
-      // Update local state
-      setSavedRundowns(prev => [rundownData, ...prev]);
+    return data.id;
+  }, [user, teamId]);
 
-      return rundownId;
-    } catch (error) {
-      console.error('Error creating rundown:', error);
-      throw error;
-    }
-  };
+  const updateRundown = useCallback(async (id: string, title: string, items: RundownItem[], skipReload = false, archived = false) => {
+    if (!user) throw new Error('User not authenticated');
 
-  const operations = new RundownOperations(user, saveRundown, setSavedRundowns);
+    const { error } = await supabase
+      .from('rundowns')
+      .update({
+        title,
+        items,
+        archived,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
 
-  useEffect(() => {
-    loadRundowns();
-  }, [loadRundowns]);
+    if (error) throw error;
 
-  // Also reload rundowns when team changes (important for team invite flow)
-  useEffect(() => {
-    if (user && team) {
-      console.log('Team changed, reloading rundowns for team:', team.name);
-      loadRundowns();
-    }
-  }, [user, team?.id, loadRundowns]);
+    // Update local state
+    setSavedRundowns(prev => prev.map(rundown => 
+      rundown.id === id 
+        ? { ...rundown, title, items, archived, updated_at: new Date().toISOString() }
+        : rundown
+    ));
+  }, [user]);
+
+  const deleteRundown = useCallback(async (id: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('rundowns')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    // Remove from local state
+    setSavedRundowns(prev => prev.filter(rundown => rundown.id !== id));
+  }, [user]);
+
+  const duplicateRundown = useCallback(async (originalRundown: SavedRundown) => {
+    if (!user || !teamId) throw new Error('User not authenticated or no team');
+
+    const duplicatedTitle = `${originalRundown.title} (Copy)`;
+    const duplicatedItems = originalRundown.items.map(item => ({
+      ...item,
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+
+    const { data, error } = await supabase
+      .from('rundowns')
+      .insert({
+        title: duplicatedTitle,
+        items: duplicatedItems,
+        user_id: user.id,
+        team_id: teamId,
+        folder_id: originalRundown.folder_id,
+        archived: false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Add to local state
+    const newRundown = {
+      ...data,
+      items: Array.isArray(data.items) ? data.items : []
+    };
+    setSavedRundowns(prev => [newRundown, ...prev]);
+
+    return data.id;
+  }, [user, teamId]);
 
   return {
     savedRundowns,
     loading,
-    isSaving,
-    saveRundown,
-    updateRundown: operations.updateRundown.bind(operations),
-    deleteRundown: operations.deleteRundown.bind(operations),
-    archiveRundown: operations.archiveRundown.bind(operations),
-    duplicateRundown: operations.duplicateRundown.bind(operations),
     loadRundowns,
-    createRundown
+    createRundown,
+    updateRundown,
+    deleteRundown,
+    duplicateRundown
   };
 };
