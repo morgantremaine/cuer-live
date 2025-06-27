@@ -29,6 +29,7 @@ const ADView = () => {
   const segmentsContainerRef = useRef<HTMLDivElement>(null);
   const measureRowRef = useRef<HTMLDivElement>(null);
   const [maxNextSegments, setMaxNextSegments] = useState(3); // Default fallback
+  const [showSecondPrevious, setShowSecondPrevious] = useState(false);
 
   // Check if showcaller is playing
   const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
@@ -155,10 +156,11 @@ const ADView = () => {
   const currentSegment = timedItems.find(item => item.id === currentSegmentId);
   const currentTimedIndex = timedItems.findIndex(item => item.id === currentSegmentId);
   
-  // Get segments based on current position and maximum allowed
+  // Get segments based on current position and maximum allowed - now with dynamic previous segments
   const previousSegments = currentTimedIndex >= 0 ? [
+    currentTimedIndex >= 2 && showSecondPrevious ? timedItems[currentTimedIndex - 2] : null,
     currentTimedIndex >= 1 ? timedItems[currentTimedIndex - 1] : null
-  ] : [null];
+  ].filter(Boolean) : [];
   
   // Dynamically generate next segments based on calculated maximum
   const nextSegments = useMemo(() => {
@@ -172,7 +174,7 @@ const ADView = () => {
     return segments;
   }, [currentTimedIndex, timedItems, maxNextSegments]);
 
-  // Dynamic calculation of maximum next segments based on available space
+  // Dynamic calculation of maximum next segments and previous segments based on available space
   useEffect(() => {
     if (!segmentsContainerRef.current || !measureRowRef.current) return;
 
@@ -184,7 +186,7 @@ const ADView = () => {
 
       // Get container height minus header banner space
       const containerHeight = container.clientHeight;
-      const headerBannerHeight = 60; // Approximate height of header banner
+      const headerBannerHeight = currentHeaderInfo.letter ? 60 : 0; // Only if there's a header
       const availableHeight = containerHeight - headerBannerHeight;
       
       // Measure the height of a single row including additional columns
@@ -193,21 +195,34 @@ const ADView = () => {
       if (rowHeight === 0 || availableHeight <= 0) return;
       
       // Calculate how many rows can fit
-      // Reserve space for: current row + 1 previous row + controls at bottom
-      const reservedRowsHeight = rowHeight * 2; // current + prev
-      const controlsHeight = 60; // Approximate height of column controls
-      const availableForNext = availableHeight - reservedRowsHeight - controlsHeight;
+      // Reserve space for: current row + controls at bottom, with reduced overhead
+      const currentRowHeight = rowHeight;
+      const controlsHeight = 40; // Reduced from 60 to allow more segments
+      const reservedSpace = currentRowHeight + controlsHeight;
+      const availableForSegments = availableHeight - reservedSpace;
       
-      // Calculate maximum next segments (minimum 1, maximum 6)
-      const maxPossible = Math.floor(availableForNext / rowHeight);
-      const calculatedMax = Math.max(1, Math.min(6, maxPossible));
+      // Calculate total segments we can fit (previous + next)
+      const totalPossibleSegments = Math.floor(availableForSegments / rowHeight);
+      
+      // Determine if we should show second previous row
+      // Show second previous if we have room for at least 4 total segments (2 prev + 2 next minimum)
+      const shouldShowSecondPrev = totalPossibleSegments >= 4 && currentTimedIndex >= 2;
+      setShowSecondPrevious(shouldShowSecondPrev);
+      
+      // Calculate next segments based on remaining space
+      const previousCount = shouldShowSecondPrev ? 2 : 1;
+      const maxPossibleNext = Math.max(1, totalPossibleSegments - previousCount);
+      const calculatedMax = Math.min(6, maxPossibleNext); // Still cap at 6 for sanity
       
       console.log('Dynamic segments calculation:', {
         containerHeight,
         availableHeight,
         rowHeight,
-        availableForNext,
-        maxPossible,
+        availableForSegments,
+        totalPossibleSegments,
+        shouldShowSecondPrev,
+        previousCount,
+        maxPossibleNext,
         calculatedMax,
         selectedColumnsCount: selectedColumns.length
       });
@@ -229,7 +244,7 @@ const ADView = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [selectedColumns, currentSegmentId, segmentsContainerRef.current?.clientHeight]);
+  }, [selectedColumns, currentSegmentId, currentTimedIndex, segmentsContainerRef.current?.clientHeight]);
 
   // Find the current header section based on the current segment
   const getCurrentHeaderInfo = () => {
@@ -390,8 +405,10 @@ const ADView = () => {
     return { name, rowNumber, columnData };
   };
 
-  // Get info for all segments
-  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
+  // Get info for all segments - now dynamic previous segments
+  const prevSegmentInfos = previousSegments.map(segment => 
+    segment ? getSegmentInfo(segment) : { name: '--', rowNumber: '', columnData: {} }
+  );
   const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {} };
   
   // Dynamic next segment info based on calculated maximum
@@ -681,19 +698,21 @@ const ADView = () => {
                   </div>
                 </div>
 
-                {/* Previous Segment 1 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
-                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
-                      {renderColumnData(prev1Info.columnData)}
+                {/* Dynamic Previous Segments */}
+                {prevSegmentInfos.map((prevInfo, index) => (
+                  <div key={`prev-${index}`} className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
+                    <div className="flex items-center space-x-[1vw]">
+                      <div className="w-[4vw] text-center">
+                        <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
+                        <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prevInfo.rowNumber}</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prevInfo.name}</div>
+                        {renderColumnData(prevInfo.columnData)}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
 
                 {/* Current Segment */}
                 <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
