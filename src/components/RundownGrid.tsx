@@ -1,6 +1,8 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
+import { FindReplaceDialog } from './FindReplaceDialog';
+import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useFindReplace } from '@/hooks/useFindReplace';
 import { logger } from '@/utils/logger';
@@ -211,54 +213,86 @@ const RundownGrid = React.memo(() => {
   };
 
   return (
-    <RundownTable
-      items={items}
-      visibleColumns={visibleColumns}
-      currentTime={currentTime}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      dropTargetIndex={dropTargetIndex}
-      currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData()}
-      selectedRowId={selectedRowId}
-      searchTerm={findReplace.searchTerm}
-      caseSensitive={findReplace.caseSensitive}
-      currentMatchIndex={findReplace.currentMatchIndex}
-      matchCount={findReplace.matchCount}
-      matches={findReplace.matches}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-      getRowNumber={getRowNumber}
-      getRowStatus={getRowStatusForTable}
-      getHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={coreState.updateItem}
-      onCellClick={handleCellClickWrapper}
-      onKeyDown={handleKeyDownWrapper}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
-      onDeleteRow={coreState.deleteRow}
-      onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStartWrapper}
-      onDragOver={handleDragOverWrapper}
-      onDragLeave={handleDragLeaveWrapper}
-      onDrop={handleDropWrapper}
-      onCopySelectedRows={handleCopySelectedRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
-      onPasteRows={handlePasteRows}
-      onClearSelection={() => {
-        clearSelection();
-        clearRowSelection();
-      }}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
-      onJumpToHere={handleJumpToHere}
-      // Pass find and replace props
-      onJumpToItem={handleJumpToItem}
-    />
+    <div className="relative w-full">
+      {/* Find & Replace Toolbar */}
+      <div className="flex items-center justify-end p-2 border-b border-border bg-background">
+        <FindReplaceDialog
+          searchTerm={findReplace.searchTerm}
+          replaceTerm={findReplace.replaceTerm}
+          caseSensitive={findReplace.caseSensitive}
+          currentMatchIndex={findReplace.currentMatchIndex}
+          matchCount={findReplace.matchCount}
+          onSearchTermChange={findReplace.setSearchTerm}
+          onReplaceTermChange={findReplace.setReplaceTerm}
+          onCaseSensitiveChange={findReplace.setCaseSensitive}
+          onNextMatch={findReplace.nextMatch}
+          onPreviousMatch={findReplace.previousMatch}
+          onReplaceCurrent={findReplace.replaceCurrent}
+          onReplaceAll={findReplace.replaceAll}
+          onReset={findReplace.reset}
+          trigger={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="Find & Replace"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          }
+        />
+      </div>
+
+      {/* Main Table */}
+      <RundownTable
+        items={items}
+        visibleColumns={visibleColumns}
+        currentTime={currentTime}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
+        hasClipboardData={hasClipboardData()}
+        selectedRowId={selectedRowId}
+        searchTerm={findReplace.searchTerm}
+        caseSensitive={findReplace.caseSensitive}
+        currentMatchIndex={findReplace.currentMatchIndex}
+        matchCount={findReplace.matchCount}
+        matches={findReplace.matches}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+        getRowNumber={getRowNumber}
+        getRowStatus={getRowStatusForTable}
+        getHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={coreState.updateItem}
+        onCellClick={handleCellClickWrapper}
+        onKeyDown={handleKeyDownWrapper}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={handleColorSelect}
+        onDeleteRow={coreState.deleteRow}
+        onToggleFloat={coreState.toggleFloatRow}
+        onRowSelect={handleEnhancedRowSelection}
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
+        onCopySelectedRows={handleCopySelectedRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
+        onPasteRows={handlePasteRows}
+        onClearSelection={() => {
+          clearSelection();
+          clearRowSelection();
+        }}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
+        onJumpToHere={handleJumpToHere}
+        // Pass find and replace props
+        onJumpToItem={handleJumpToItem}
+      />
+    </div>
   );
 });
 
