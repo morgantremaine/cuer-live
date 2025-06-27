@@ -9,8 +9,10 @@ interface TeamMember {
   user_id: string;
   role: string;
   joined_at: string;
-  full_name?: string;
-  email?: string;
+  profiles?: {
+    full_name?: string;
+    email?: string;
+  };
 }
 
 interface Team {
@@ -179,8 +181,7 @@ export const useTeam = () => {
           user_id: member.user_id,
           role: member.role,
           joined_at: member.joined_at,
-          full_name: member.profiles?.full_name || '',
-          email: member.profiles?.email || ''
+          profiles: member.profiles
         }));
 
         // Load pending invitations if user is admin
@@ -267,9 +268,101 @@ export const useTeam = () => {
     }
   }, [teamData.team, user, loadTeamData]);
 
+  const acceptInvitation = useCallback(async (token: string) => {
+    try {
+      const { data, error } = await supabase.rpc('accept_team_invitation_safe', {
+        invitation_token: token
+      });
+
+      if (error) throw error;
+
+      if (!data?.success) {
+        return { error: data?.error || 'Failed to accept invitation' };
+      }
+
+      // Reload team data after accepting invitation
+      loadTeamData();
+      return { error: null };
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      return { error: error instanceof Error ? error.message : 'Failed to accept invitation' };
+    }
+  }, [loadTeamData]);
+
+  const removeTeamMemberWithTransfer = useCallback(async (memberId: string) => {
+    if (!teamData.team || !user) return { error: 'No team or user' };
+
+    try {
+      const { data, error } = await supabase.rpc('remove_team_member_with_transfer', {
+        member_id: memberId,
+        admin_id: user.id,
+        team_id_param: teamData.team.id
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        return { error: data.error };
+      }
+
+      // Reload team data
+      loadTeamData();
+      return { error: null, result: data };
+    } catch (error) {
+      console.error('Error removing team member:', error);
+      return { error: error instanceof Error ? error.message : 'Failed to remove team member' };
+    }
+  }, [teamData.team, user, loadTeamData]);
+
+  const getTransferPreview = useCallback(async (memberId: string) => {
+    if (!teamData.team) return { error: 'No team' };
+
+    try {
+      const { data, error } = await supabase.rpc('get_member_transfer_preview', {
+        member_id: memberId,
+        team_id_param: teamData.team.id
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        return { error: data.error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error getting transfer preview:', error);
+      return { error: error instanceof Error ? error.message : 'Failed to get transfer preview' };
+    }
+  }, [teamData.team]);
+
+  const revokeInvitation = useCallback(async (invitationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) throw error;
+
+      // Reload team data
+      loadTeamData();
+      return { error: null };
+    } catch (error) {
+      console.error('Error revoking invitation:', error);
+      return { error: error instanceof Error ? error.message : 'Failed to revoke invitation' };
+    }
+  }, [loadTeamData]);
+
   return {
     ...teamData,
+    teamMembers: teamData.members, // Add alias for backward compatibility
+    loading: teamData.isLoading, // Add alias for backward compatibility
     loadTeamData,
-    inviteTeamMember
+    inviteTeamMember,
+    acceptInvitation,
+    removeTeamMemberWithTransfer,
+    getTransferPreview,
+    revokeInvitation
   };
 };

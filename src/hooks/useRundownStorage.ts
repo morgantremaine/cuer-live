@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -14,6 +15,14 @@ interface SavedRundown {
   folder_id?: string;
   user_id: string;
   team_id: string;
+  columns?: any;
+  timezone?: string;
+  start_time?: string;
+  icon?: string | null;
+  visibility?: string;
+  undo_history?: any[];
+  teams?: any;
+  creator_profile?: any;
 }
 
 export const useRundownStorage = () => {
@@ -137,17 +146,62 @@ export const useRundownStorage = () => {
     return data.id;
   }, [user, teamId]);
 
-  const updateRundown = useCallback(async (id: string, title: string, items: RundownItem[], skipReload = false, archived = false) => {
+  const saveRundown = useCallback(async (rundown: SavedRundown) => {
+    if (!user || !teamId) throw new Error('User not authenticated or no team');
+
+    const { data, error } = await supabase
+      .from('rundowns')
+      .insert({
+        title: rundown.title,
+        items: rundown.items,
+        user_id: user.id,
+        team_id: teamId,
+        columns: rundown.columns,
+        timezone: rundown.timezone,
+        start_time: rundown.start_time,
+        archived: false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Add to local state
+    const newRundown = {
+      ...data,
+      items: Array.isArray(data.items) ? data.items : []
+    };
+    setSavedRundowns(prev => [newRundown, ...prev]);
+
+    return data.id;
+  }, [user, teamId]);
+
+  const updateRundown = useCallback(async (
+    id: string, 
+    title: string, 
+    items: RundownItem[], 
+    skipReload = false, 
+    archived = false,
+    columns?: any,
+    timezone?: string,
+    startTime?: string
+  ) => {
     if (!user) throw new Error('User not authenticated');
+
+    const updateData: any = {
+      title,
+      items,
+      archived,
+      updated_at: new Date().toISOString()
+    };
+
+    if (columns !== undefined) updateData.columns = columns;
+    if (timezone !== undefined) updateData.timezone = timezone;
+    if (startTime !== undefined) updateData.start_time = startTime;
 
     const { error } = await supabase
       .from('rundowns')
-      .update({
-        title,
-        items,
-        archived,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id);
 
     if (error) throw error;
@@ -155,7 +209,16 @@ export const useRundownStorage = () => {
     // Update local state
     setSavedRundowns(prev => prev.map(rundown => 
       rundown.id === id 
-        ? { ...rundown, title, items, archived, updated_at: new Date().toISOString() }
+        ? { 
+            ...rundown, 
+            title, 
+            items, 
+            archived, 
+            columns: columns !== undefined ? columns : rundown.columns,
+            timezone: timezone !== undefined ? timezone : rundown.timezone,
+            start_time: startTime !== undefined ? startTime : rundown.start_time,
+            updated_at: new Date().toISOString() 
+          }
         : rundown
     ));
   }, [user]);
@@ -213,6 +276,7 @@ export const useRundownStorage = () => {
     loading,
     loadRundowns,
     createRundown,
+    saveRundown,
     updateRundown,
     deleteRundown,
     duplicateRundown
