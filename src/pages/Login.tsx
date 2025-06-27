@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,7 +6,6 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { useNavigate } from 'react-router-dom'
 import Footer from '@/components/Footer'
 import CuerLogo from '@/components/common/CuerLogo'
 
@@ -22,7 +20,6 @@ const Login = () => {
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
   const { signIn, signUp, resetPassword, resendConfirmation } = useAuth()
   const { toast } = useToast()
-  const navigate = useNavigate()
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,7 +47,7 @@ const Login = () => {
         title: 'Success',
         description: 'Signed in successfully!',
       })
-      navigate('/dashboard')
+      // Remove manual navigation - let App.tsx handle the redirect based on auth state
     }
     
     setLoading(false)
