@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { Clock, Plus, X, EyeOff, Eye } from 'lucide-react';
@@ -29,6 +29,7 @@ const ADView = () => {
   const segmentsContainerRef = useRef<HTMLDivElement>(null);
   const measureRowRef = useRef<HTMLDivElement>(null);
   const [maxNextSegments, setMaxNextSegments] = useState(3); // Default fallback
+  const [calculationTimeout, setCalculationTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Check if showcaller is playing
   const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
@@ -157,8 +158,9 @@ const ADView = () => {
   
   // Get segments based on current position and maximum allowed
   const previousSegments = currentTimedIndex >= 0 ? [
+    currentTimedIndex >= 2 ? timedItems[currentTimedIndex - 2] : null,
     currentTimedIndex >= 1 ? timedItems[currentTimedIndex - 1] : null
-  ] : [null];
+  ] : [null, null];
   
   // Dynamically generate next segments based on calculated maximum
   const nextSegments = useMemo(() => {
@@ -172,64 +174,97 @@ const ADView = () => {
     return segments;
   }, [currentTimedIndex, timedItems, maxNextSegments]);
 
-  // Dynamic calculation of maximum next segments based on available space
-  useEffect(() => {
+  // Debounced calculation function
+  const calculateMaxSegments = useCallback(() => {
     if (!segmentsContainerRef.current || !measureRowRef.current) return;
 
-    const calculateMaxSegments = () => {
+    // Clear any pending timeout
+    if (calculationTimeout) {
+      clearTimeout(calculationTimeout);
+    }
+
+    // Set a new timeout to debounce rapid changes
+    const timeout = setTimeout(() => {
       const container = segmentsContainerRef.current;
       const measureRow = measureRowRef.current;
       
       if (!container || !measureRow) return;
 
-      // Get container height minus header banner space
-      const containerHeight = container.clientHeight;
-      const headerBannerHeight = 60; // Approximate height of header banner
-      const availableHeight = containerHeight - headerBannerHeight;
-      
-      // Measure the height of a single row including additional columns
-      const rowHeight = measureRow.offsetHeight;
-      
-      if (rowHeight === 0 || availableHeight <= 0) return;
-      
-      // Calculate how many rows can fit
-      // Reserve space for: current row + 1 previous row + controls at bottom
-      const reservedRowsHeight = rowHeight * 2; // current + prev
-      const controlsHeight = 60; // Approximate height of column controls
-      const availableForNext = availableHeight - reservedRowsHeight - controlsHeight;
-      
-      // Calculate maximum next segments (minimum 1, maximum 6)
-      const maxPossible = Math.floor(availableForNext / rowHeight);
-      const calculatedMax = Math.max(1, Math.min(6, maxPossible));
-      
-      console.log('Dynamic segments calculation:', {
-        containerHeight,
-        availableHeight,
-        rowHeight,
-        availableForNext,
-        maxPossible,
-        calculatedMax,
-        selectedColumnsCount: selectedColumns.length
+      // Wait for DOM to settle after column changes
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Get container height minus header banner space
+          const containerHeight = container.clientHeight;
+          const headerBannerHeight = 60; // Approximate height of header banner
+          const availableHeight = containerHeight - headerBannerHeight;
+          
+          // Measure the height of a single row including additional columns
+          const rowHeight = measureRow.offsetHeight;
+          
+          if (rowHeight === 0 || availableHeight <= 0) {
+            console.log('Invalid dimensions, using default segments');
+            setMaxNextSegments(3);
+            return;
+          }
+          
+          // Calculate how many rows can fit
+          // Reserve space for: current row + previous rows + controls at bottom
+          const currentRowHeight = rowHeight;
+          const previousRowsHeight = rowHeight * 2; // Up to 2 previous rows
+          const controlsHeight = 60; // Column controls
+          const minPadding = 20; // Minimum padding to prevent tight fit
+          
+          const usedHeight = currentRowHeight + previousRowsHeight + controlsHeight + minPadding;
+          const availableForNext = Math.max(0, availableHeight - usedHeight);
+          
+          // Calculate maximum next segments (minimum 1, maximum 6)
+          const maxPossible = Math.floor(availableForNext / rowHeight);
+          const calculatedMax = Math.max(1, Math.min(6, maxPossible));
+          
+          console.log('Dynamic segments calculation:', {
+            containerHeight,
+            availableHeight,
+            rowHeight,
+            usedHeight,
+            availableForNext,
+            maxPossible,
+            calculatedMax,
+            selectedColumnsCount: selectedColumns.length
+          });
+          
+          // Only update if the value actually changed to prevent unnecessary re-renders
+          setMaxNextSegments(prev => prev !== calculatedMax ? calculatedMax : prev);
+        });
       });
-      
-      setMaxNextSegments(calculatedMax);
-    };
+    }, 150); // 150ms debounce
 
-    // Initial calculation
+    setCalculationTimeout(timeout);
+  }, [selectedColumns.length, calculationTimeout]);
+
+  // Dynamic calculation of maximum next segments based on available space
+  useEffect(() => {
     calculateMaxSegments();
 
-    // Recalculate on window resize
+    // Cleanup timeout on unmount
+    return () => {
+      if (calculationTimeout) {
+        clearTimeout(calculationTimeout);
+      }
+    };
+  }, [calculateMaxSegments]);
+
+  // Recalculate on window resize with debouncing
+  useEffect(() => {
     const handleResize = () => {
-      setTimeout(calculateMaxSegments, 100);
+      calculateMaxSegments();
     };
 
     window.addEventListener('resize', handleResize);
     
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [selectedColumns, currentSegmentId, segmentsContainerRef.current?.clientHeight]);
+  }, [calculateMaxSegments]);
 
   // Find the current header section based on the current segment
   const getCurrentHeaderInfo = () => {
@@ -391,7 +426,8 @@ const ADView = () => {
   };
 
   // Get info for all segments
-  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
+  const prev1Info = previousSegments[1] ? getSegmentInfo(previousSegments[1]) : { name: '--', rowNumber: '', columnData: {} };
+  const prev2Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
   const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {} };
   
   // Dynamic next segment info based on calculated maximum
@@ -659,9 +695,9 @@ const ADView = () => {
               )}
 
               {/* Segments Display - with dynamic sizing */}
-              <div ref={segmentsContainerRef} className="flex-1 flex flex-col justify-center space-y-[0.3vh]">
+              <div ref={segmentsContainerRef} className="flex-1 flex flex-col justify-center space-y-[0.3vh] overflow-hidden">
                 {/* Hidden measurement row for calculating row heights */}
-                <div ref={measureRowRef} className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-0 absolute pointer-events-none">
+                <div ref={measureRowRef} className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-0 absolute pointer-events-none top-0 left-0 z-[-1]">
                   <div className="flex items-center space-x-[1vw]">
                     <div className="w-[4vw] text-center">
                       <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">MEAS</div>
@@ -681,19 +717,37 @@ const ADView = () => {
                   </div>
                 </div>
 
-                {/* Previous Segment 1 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
-                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
-                      {renderColumnData(prev1Info.columnData)}
+                {/* Previous Segment 2 (only show if there's enough space and we have 2+ previous segments) */}
+                {previousSegments[0] && selectedColumns.length <= 2 && (
+                  <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-40">
+                    <div className="flex items-center space-x-[1vw]">
+                      <div className="w-[4vw] text-center">
+                        <div className="text-[clamp(0.6rem,0.8vw,1.1rem)] text-zinc-500 font-semibold">PREV</div>
+                        <div className="text-[clamp(0.8rem,1.1vw,1.5rem)] font-mono text-zinc-400">{prev2Info.rowNumber}</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[clamp(1rem,1.4vw,2rem)] font-semibold text-zinc-400">{prev2Info.name}</div>
+                        {renderColumnData(prev2Info.columnData)}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* Previous Segment 1 */}
+                {previousSegments[1] && (
+                  <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
+                    <div className="flex items-center space-x-[1vw]">
+                      <div className="w-[4vw] text-center">
+                        <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
+                        <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
+                        {renderColumnData(prev1Info.columnData)}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Current Segment */}
                 <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
