@@ -46,9 +46,9 @@ export const useRundownAutoscroll = ({
     }
   }, [currentSegmentId, autoScrollEnabled]);
 
-  // Scroll when current segment changes and we're playing
+  // Scroll when current segment changes - now works regardless of playing state
   useEffect(() => {
-    if (isPlaying && autoScrollEnabled && currentSegmentId) {
+    if (autoScrollEnabled && currentSegmentId) {
       // Small delay to ensure DOM is updated
       const timeoutId = setTimeout(() => {
         scrollToCurrentSegment();
@@ -56,7 +56,7 @@ export const useRundownAutoscroll = ({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [currentSegmentId, isPlaying, autoScrollEnabled, scrollToCurrentSegment]);
+  }, [currentSegmentId, autoScrollEnabled, scrollToCurrentSegment]);
 
   // Reset scroll tracking when autoscroll is disabled
   useEffect(() => {
