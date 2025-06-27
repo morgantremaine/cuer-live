@@ -92,8 +92,6 @@ const RundownRow = ({
   if (isHeaderItem(item)) {
     return (
       <HeaderRow
-        data-item-id={item.id}
-        className={isCurrentMatch ? 'current-search-match' : ''}
         item={item}
         index={index}
         rowNumber={rowNumber}
@@ -133,8 +131,6 @@ const RundownRow = ({
 
   return (
     <RegularRow
-      data-item-id={item.id}
-      className={isCurrentMatch ? 'current-search-match' : ''}
       item={item}
       index={index}
       rowNumber={rowNumber}
