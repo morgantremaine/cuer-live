@@ -34,11 +34,11 @@ const Index = () => {
     updateItem
   } = coreState;
 
-  // Initialize find/replace functionality
+  // Initialize find/replace functionality with correct parameters
   const findReplace = useFindReplace({
     items,
     onUpdateItem: (itemId: string, field: string, value: string) => {
-      updateItem(itemId, { [field]: value });
+      updateItem(itemId, field, value);
     },
     onJumpToItem: (itemId: string) => {
       // Scroll to the item
@@ -52,14 +52,23 @@ const Index = () => {
     }
   });
 
+  // Create wrapper for getRowStatus to match expected return type
+  const getRowStatusForContainer = (item: any): 'upcoming' | 'current' | 'completed' => {
+    const status = uiState.getRowStatus(item);
+    if (status === 'header') {
+      return 'upcoming'; // Default fallback for headers
+    }
+    return status;
+  };
+
   // Create the props object for RundownContainer
   const containerProps = {
     currentTime: coreState.currentTime,
     timezone: coreState.timezone,
     onTimezoneChange: coreState.setTimezone,
     totalRuntime: coreState.totalRuntime,
-    showColumnManager: uiState.showColumnManager,
-    setShowColumnManager: uiState.setShowColumnManager,
+    showColumnManager: uiState.showColumnManager || false,
+    setShowColumnManager: uiState.setShowColumnManager || (() => {}),
     items: coreState.items,
     visibleColumns: coreState.visibleColumns,
     columns: coreState.columns,
@@ -73,7 +82,7 @@ const Index = () => {
     getColumnWidth: uiState.getColumnWidth,
     updateColumnWidth: uiState.updateColumnWidth,
     getRowNumber: coreState.getRowNumber,
-    getRowStatus: uiState.getRowStatus,
+    getRowStatus: getRowStatusForContainer,
     calculateHeaderDuration: coreState.calculateHeaderDuration,
     onUpdateItem: coreState.updateItem,
     onCellClick: uiState.handleCellClick,
@@ -103,18 +112,31 @@ const Index = () => {
     onForward: coreState.forward,
     onBackward: coreState.backward,
     onReset: coreState.reset,
-    handleAddColumn: coreState.handleAddColumn,
-    handleReorderColumns: coreState.handleReorderColumns,
-    handleDeleteColumnWithCleanup: coreState.handleDeleteColumnWithCleanup,
-    handleRenameColumn: coreState.handleRenameColumn,
-    handleToggleColumnVisibility: coreState.handleToggleColumnVisibility,
-    handleLoadLayout: coreState.handleLoadLayout,
+    handleAddColumn: coreState.addColumn,
+    handleReorderColumns: coreState.setColumns,
+    handleDeleteColumnWithCleanup: (columnId: string) => {
+      const newColumns = coreState.columns.filter(col => col.id !== columnId);
+      coreState.setColumns(newColumns);
+    },
+    handleRenameColumn: (columnId: string, newName: string) => {
+      const updatedColumns = coreState.columns.map(col => 
+        col.id === columnId ? { ...col, name: newName } : col
+      );
+      coreState.setColumns(updatedColumns);
+    },
+    handleToggleColumnVisibility: (columnId: string) => {
+      const updatedColumns = coreState.columns.map(col => 
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      );
+      coreState.setColumns(updatedColumns);
+    },
+    handleLoadLayout: coreState.setColumns,
     hasUnsavedChanges: coreState.hasUnsavedChanges,
     isSaving: coreState.isSaving,
     rundownTitle: coreState.rundownTitle,
-    onTitleChange: coreState.setRundownTitle,
+    onTitleChange: coreState.setTitle,
     rundownStartTime: coreState.rundownStartTime,
-    onRundownStartTimeChange: coreState.setRundownStartTime,
+    onRundownStartTimeChange: coreState.setStartTime,
     rundownId: id,
     onOpenTeleprompter: () => {
       const teleprompterUrl = `/teleprompter/${id}`;
@@ -125,7 +147,7 @@ const Index = () => {
     lastAction: coreState.lastAction,
     isConnected: coreState.isConnected,
     isProcessingRealtimeUpdate: coreState.isProcessingRealtimeUpdate,
-    onJumpToHere: coreState.jumpToHere,
+    onJumpToHere: coreState.jumpToSegment,
     autoScrollEnabled: coreState.autoScrollEnabled,
     onToggleAutoScroll: coreState.toggleAutoScroll,
     // Add find/replace state to be passed through to components
