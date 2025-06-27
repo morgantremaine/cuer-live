@@ -28,10 +28,10 @@ const queryClient = new QueryClient();
 const AppRoutes = () => {
   const { user, loading } = useAuth();
 
-  console.log('AppRoutes render - loading:', loading, 'user:', user?.email || 'no user');
+  console.log('🔄 AppRoutes render - loading:', loading, 'user:', user?.email || 'no user');
 
   if (loading) {
-    console.log('AppRoutes: Showing loading spinner');
+    console.log('🔄 AppRoutes: Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -39,21 +39,19 @@ const AppRoutes = () => {
     );
   }
 
-  console.log('AppRoutes: Auth state determined, rendering routes');
+  console.log('🔄 AppRoutes: Auth state determined, rendering routes');
 
   return (
     <Routes>
-      {/* Redirect root to appropriate page based on auth state */}
-      <Route 
-        path="/" 
-        element={
-          user ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
+      {/* Public routes */}
+      <Route path="/shared/rundown/:id" element={<SharedRundown />} />
+      <Route path="/ad-view/:id" element={<ADView />} />
+      <Route path="/join-team/:token" element={<JoinTeam />} />
+      <Route path="/help" element={<Help />} />
+      
+      {/* Auth callback routes */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
       
       {/* Login route - redirect if already authenticated */}
       <Route 
@@ -66,16 +64,6 @@ const AppRoutes = () => {
           )
         } 
       />
-      
-      {/* Public routes */}
-      <Route path="/shared/rundown/:id" element={<SharedRundown />} />
-      <Route path="/ad-view/:id" element={<ADView />} />
-      <Route path="/join-team/:token" element={<JoinTeam />} />
-      <Route path="/help" element={<Help />} />
-      
-      {/* Auth callback routes */}
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/auth/reset-password" element={<ResetPassword />} />
       
       {/* Protected routes */}
       <Route 
@@ -132,6 +120,18 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <Teleprompter />
           </ProtectedRoute>
+        } 
+      />
+      
+      {/* Root redirect - this should come after other routes to avoid conflicts */}
+      <Route 
+        path="/" 
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
         } 
       />
       
