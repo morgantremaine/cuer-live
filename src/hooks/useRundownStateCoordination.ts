@@ -198,8 +198,19 @@ export const useRundownStateCoordination = () => {
       addRowAtIndex,
       addHeaderAtIndex,
       
-      // Column management - fix handleAddColumn to match expected signature
-      handleAddColumn: (name: string) => simplifiedState.addColumn(name),
+      // Column management - fix handleAddColumn to create proper Column object
+      handleAddColumn: (name: string) => {
+        const newColumn = {
+          id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: name,
+          key: name.toLowerCase().replace(/\s+/g, '_'),
+          width: '150px',
+          isCustom: true,
+          isEditable: true,
+          isVisible: true
+        };
+        simplifiedState.addColumn(newColumn);
+      },
       addColumn: simplifiedState.addColumn,
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
