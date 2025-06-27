@@ -1,3 +1,4 @@
+
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -81,23 +82,6 @@ export const useRundownStateCoordination = () => {
     simplifiedState.setItems(itemsToAdd);
   };
 
-  // Add the missing functions that simplifiedState should provide
-  const addRowAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addRowAtIndex) {
-      simplifiedState.addRowAtIndex(insertIndex);
-    } else {
-      simplifiedState.addRow();
-    }
-  };
-
-  const addHeaderAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addHeaderAtIndex) {
-      simplifiedState.addHeaderAtIndex(insertIndex);
-    } else {
-      simplifiedState.addHeader();
-    }
-  };
-
   // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
     simplifiedState.items,
@@ -127,8 +111,8 @@ export const useRundownStateCoordination = () => {
       // markAsChanged - handled internally by simplified state
     },
     simplifiedState.setTitle,
-    addRowAtIndex,
-    addHeaderAtIndex
+    simplifiedState.addRowAtIndex,
+    simplifiedState.addHeaderAtIndex
   );
 
   // Get UI state with enhanced navigation
@@ -194,8 +178,8 @@ export const useRundownStateCoordination = () => {
       setTimezone: simplifiedState.setTimezone,
       addRow: simplifiedState.addRow,
       addHeader: simplifiedState.addHeader,
-      addRowAtIndex,
-      addHeaderAtIndex,
+      addRowAtIndex: simplifiedState.addRowAtIndex,
+      addHeaderAtIndex: simplifiedState.addHeaderAtIndex,
       
       // Column management
       addColumn: simplifiedState.addColumn,
@@ -210,7 +194,7 @@ export const useRundownStateCoordination = () => {
       reset: showcallerVisual.reset,
       jumpToSegment: showcallerVisual.jumpToSegment, // Add the new function
       
-      // Undo functionality
+      // Enhanced undo functionality with persistence across page refreshes
       undo: simplifiedState.undo,
       canUndo: simplifiedState.canUndo,
       lastAction: simplifiedState.lastAction,
