@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 
 interface FindReplaceDialogProps {
@@ -24,6 +24,7 @@ interface FindReplaceDialogProps {
   onReplaceCurrent: () => void;
   onReplaceAll: () => void;
   onReset: () => void;
+  trigger: React.ReactNode;
 }
 
 export const FindReplaceDialog = ({
@@ -41,15 +42,19 @@ export const FindReplaceDialog = ({
   onPreviousMatch,
   onReplaceCurrent,
   onReplaceAll,
-  onReset
+  onReset,
+  trigger
 }: FindReplaceDialogProps) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Focus search input when dialog opens
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-      searchInputRef.current.select();
+      // Small delay to ensure the popover is fully rendered
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }, 100);
     }
   }, [isOpen]);
 
@@ -65,6 +70,7 @@ export const FindReplaceDialog = ({
         e.preventDefault();
         onPreviousMatch();
       } else if (e.key === 'Escape') {
+        e.preventDefault();
         onClose();
       }
     };
@@ -78,27 +84,44 @@ export const FindReplaceDialog = ({
   const canReplace = hasMatches && replaceTerm.trim().length > 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Search className="h-4 w-4" />
-            Find & Replace
-          </DialogTitle>
-        </DialogHeader>
-
+    <Popover open={isOpen} onOpenChange={onClose}>
+      <PopoverTrigger asChild>
+        {trigger}
+      </PopoverTrigger>
+      <PopoverContent 
+        className="w-80 p-4" 
+        align="end" 
+        side="bottom"
+        sideOffset={8}
+      >
         <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              <span className="font-semibold">Find & Replace</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
           {/* Search Section */}
           <div className="space-y-2">
-            <Label htmlFor="search-input">Find</Label>
-            <div className="flex gap-2">
+            <Label htmlFor="search-input" className="text-sm">Find</Label>
+            <div className="flex gap-1">
               <Input
                 id="search-input"
                 ref={searchInputRef}
                 value={searchTerm}
                 onChange={(e) => onSearchTermChange(e.target.value)}
                 placeholder="Enter search term..."
-                className="flex-1"
+                className="flex-1 h-8"
               />
               <Button
                 variant="outline"
@@ -106,8 +129,9 @@ export const FindReplaceDialog = ({
                 onClick={onPreviousMatch}
                 disabled={!hasMatches}
                 title="Previous match (Shift+Enter)"
+                className="h-8 w-8 p-0"
               >
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-3 w-3" />
               </Button>
               <Button
                 variant="outline"
@@ -115,13 +139,14 @@ export const FindReplaceDialog = ({
                 onClick={onNextMatch}
                 disabled={!hasMatches}
                 title="Next match (Enter)"
+                className="h-8 w-8 p-0"
               >
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3 w-3" />
               </Button>
             </div>
             
             {/* Match counter */}
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               {hasSearchTerm ? (
                 hasMatches ? (
                   `${currentMatchIndex + 1} of ${matchCount} matches`
@@ -138,23 +163,25 @@ export const FindReplaceDialog = ({
 
           {/* Replace Section */}
           <div className="space-y-2">
-            <Label htmlFor="replace-input">Replace with</Label>
+            <Label htmlFor="replace-input" className="text-sm">Replace with</Label>
             <Input
               id="replace-input"
               value={replaceTerm}
               onChange={(e) => onReplaceTermChange(e.target.value)}
               placeholder="Enter replacement text..."
+              className="h-8"
             />
             
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onReplaceCurrent}
                 disabled={!canReplace}
                 title="Replace current match"
+                className="h-8 text-xs"
               >
-                <Replace className="h-4 w-4 mr-1" />
+                <Replace className="h-3 w-3 mr-1" />
                 Replace
               </Button>
               <Button
@@ -163,6 +190,7 @@ export const FindReplaceDialog = ({
                 onClick={onReplaceAll}
                 disabled={!canReplace}
                 title="Replace all matches"
+                className="h-8 text-xs"
               >
                 Replace All
               </Button>
@@ -178,34 +206,26 @@ export const FindReplaceDialog = ({
                 id="case-sensitive"
                 checked={caseSensitive}
                 onCheckedChange={onCaseSensitiveChange}
+                className="scale-75"
               />
-              <Label htmlFor="case-sensitive" className="text-sm">
+              <Label htmlFor="case-sensitive" className="text-xs">
                 Case sensitive
               </Label>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onReset}
-                title="Clear all"
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Clear
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                title="Close (Escape)"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReset}
+              title="Clear all"
+              className="h-8 text-xs"
+            >
+              <RotateCcw className="h-3 w-3 mr-1" />
+              Clear
+            </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 };

@@ -166,6 +166,18 @@ const RundownHeader = ({
     }
   };
 
+  // Create the search trigger button
+  const searchTrigger = (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 w-8 p-0"
+      title="Find & Replace (Ctrl+F)"
+    >
+      <Search className="h-4 w-4" />
+    </Button>
+  );
+
   if (isMobile) {
     return (
       <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -198,15 +210,24 @@ const RundownHeader = ({
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span>{format(currentTime, 'HH:mm:ss')}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={findReplace.open}
-              className="h-8 w-8 p-0"
-              title="Find & Replace (Ctrl+F)"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+            <FindReplaceDialog
+              isOpen={findReplace.isOpen}
+              onClose={findReplace.close}
+              searchTerm={findReplace.searchTerm}
+              replaceTerm={findReplace.replaceTerm}
+              caseSensitive={findReplace.caseSensitive}
+              currentMatchIndex={findReplace.currentMatchIndex}
+              matchCount={findReplace.matchCount}
+              onSearchTermChange={findReplace.setSearchTerm}
+              onReplaceTermChange={findReplace.setReplaceTerm}
+              onCaseSensitiveChange={findReplace.setCaseSensitive}
+              onNextMatch={findReplace.nextMatch}
+              onPreviousMatch={findReplace.previousMatch}
+              onReplaceCurrent={findReplace.replaceCurrent}
+              onReplaceAll={findReplace.replaceAll}
+              onReset={findReplace.reset}
+              trigger={searchTrigger}
+            />
           </div>
           
           <div className="flex items-center gap-2">
@@ -221,24 +242,6 @@ const RundownHeader = ({
             )}
           </div>
         </div>
-
-        <FindReplaceDialog
-          isOpen={findReplace.isOpen}
-          onClose={findReplace.close}
-          searchTerm={findReplace.searchTerm}
-          replaceTerm={findReplace.replaceTerm}
-          caseSensitive={findReplace.caseSensitive}
-          currentMatchIndex={findReplace.currentMatchIndex}
-          matchCount={findReplace.matchCount}
-          onSearchTermChange={findReplace.setSearchTerm}
-          onReplaceTermChange={findReplace.setReplaceTerm}
-          onCaseSensitiveChange={findReplace.setCaseSensitive}
-          onNextMatch={findReplace.nextMatch}
-          onPreviousMatch={findReplace.previousMatch}
-          onReplaceCurrent={findReplace.replaceCurrent}
-          onReplaceAll={findReplace.replaceAll}
-          onReset={findReplace.reset}
-        />
       </div>
     );
   }
@@ -311,15 +314,24 @@ const RundownHeader = ({
               currentTimezone={timezone}
               onTimezoneChange={() => {}}
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={findReplace.open}
-              className="h-8 w-8 p-0"
-              title="Find & Replace (Ctrl+F)"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+            <FindReplaceDialog
+              isOpen={findReplace.isOpen}
+              onClose={findReplace.close}
+              searchTerm={findReplace.searchTerm}
+              replaceTerm={findReplace.replaceTerm}
+              caseSensitive={findReplace.caseSensitive}
+              currentMatchIndex={findReplace.currentMatchIndex}
+              matchCount={findReplace.matchCount}
+              onSearchTermChange={findReplace.setSearchTerm}
+              onReplaceTermChange={findReplace.setReplaceTerm}
+              onCaseSensitiveChange={findReplace.setCaseSensitive}
+              onNextMatch={findReplace.nextMatch}
+              onPreviousMatch={findReplace.previousMatch}
+              onReplaceCurrent={findReplace.replaceCurrent}
+              onReplaceAll={findReplace.replaceAll}
+              onReset={findReplace.reset}
+              trigger={searchTrigger}
+            />
           </div>
           
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -337,24 +349,6 @@ const RundownHeader = ({
             <span>Runtime: {totalRuntime}</span>
           </div>
         </div>
-
-        <FindReplaceDialog
-          isOpen={findReplace.isOpen}
-          onClose={findReplace.close}
-          searchTerm={findReplace.searchTerm}
-          replaceTerm={findReplace.replaceTerm}
-          caseSensitive={findReplace.caseSensitive}
-          currentMatchIndex={findReplace.currentMatchIndex}
-          matchCount={findReplace.matchCount}
-          onSearchTermChange={findReplace.setSearchTerm}
-          onReplaceTermChange={findReplace.setReplaceTerm}
-          onCaseSensitiveChange={findReplace.setCaseSensitive}
-          onNextMatch={findReplace.nextMatch}
-          onPreviousMatch={findReplace.previousMatch}
-          onReplaceCurrent={findReplace.replaceCurrent}
-          onReplaceAll={findReplace.replaceAll}
-          onReset={findReplace.reset}
-        />
       </div>
     );
   }
@@ -416,15 +410,24 @@ const RundownHeader = ({
             onTimezoneChange={() => {}}
           />
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={findReplace.open}
-            className="h-8 w-8 p-0"
-            title="Find & Replace (Ctrl+F)"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
+          <FindReplaceDialog
+            isOpen={findReplace.isOpen}
+            onClose={findReplace.close}
+            searchTerm={findReplace.searchTerm}
+            replaceTerm={findReplace.replaceTerm}
+            caseSensitive={findReplace.caseSensitive}
+            currentMatchIndex={findReplace.currentMatchIndex}
+            matchCount={findReplace.matchCount}
+            onSearchTermChange={findReplace.setSearchTerm}
+            onReplaceTermChange={findReplace.setReplaceTerm}
+            onCaseSensitiveChange={findReplace.setCaseSensitive}
+            onNextMatch={findReplace.nextMatch}
+            onPreviousMatch={findReplace.previousMatch}
+            onReplaceCurrent={findReplace.replaceCurrent}
+            onReplaceAll={findReplace.replaceAll}
+            onReset={findReplace.reset}
+            trigger={searchTrigger}
+          />
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
@@ -449,24 +452,6 @@ const RundownHeader = ({
           )}
         </div>
       </div>
-
-      <FindReplaceDialog
-        isOpen={findReplace.isOpen}
-        onClose={findReplace.close}
-        searchTerm={findReplace.searchTerm}
-        replaceTerm={findReplace.replaceTerm}
-        caseSensitive={findReplace.caseSensitive}
-        currentMatchIndex={findReplace.currentMatchIndex}
-        matchCount={findReplace.matchCount}
-        onSearchTermChange={findReplace.setSearchTerm}
-        onReplaceTermChange={findReplace.setReplaceTerm}
-        onCaseSensitiveChange={findReplace.setCaseSensitive}
-        onNextMatch={findReplace.nextMatch}
-        onPreviousMatch={findReplace.previousMatch}
-        onReplaceCurrent={findReplace.replaceCurrent}
-        onReplaceAll={findReplace.replaceAll}
-        onReset={findReplace.reset}
-      />
     </div>
   );
 };
