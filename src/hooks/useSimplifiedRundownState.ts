@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { RundownItem } from '@/types/rundown';
@@ -37,17 +36,16 @@ export const useSimplifiedRundownState = () => {
   const changeTracking = useChangeTracking();
   const isInitialLoadRef = useRef(true);
 
-  // Undo/Redo state - fix the hook usage
-  const undoSystem = useStandaloneUndo();
+  // Undo/Redo state - fix the hook usage with proper callback
+  const undoSystem = useStandaloneUndo(() => {
+    // Undo callback - this will be called when undo is performed
+    logger.log('Undo performed');
+  });
 
   // Autosave - fix the hook parameters
-  useAutoSave({
-    data: { items, columns, rundownTitle, rundownStartTime, timezone },
-    enabled: !isInitialLoadRef.current && !!rundownId && !isProcessingRealtimeUpdate,
-    isSaving,
-    hasUnsavedChanges,
-    onChange: (hasChanges) => setHasUnsavedChanges(hasChanges),
-    onSave: async (data) => {
+  useAutoSave(
+    { items, columns, rundownTitle, rundownStartTime, timezone },
+    async (data) => {
       if (!rundownId) {
         logger.warn('Cannot save rundown - no rundown ID');
         return false;
@@ -83,8 +81,13 @@ export const useSimplifiedRundownState = () => {
       } finally {
         setIsSaving(false);
       }
+    },
+    {
+      enabled: !isInitialLoadRef.current && !!rundownId && !isProcessingRealtimeUpdate,
+      onSavingChange: setIsSaving,
+      onHasUnsavedChangesChange: setHasUnsavedChanges
     }
-  });
+  );
 
   // Load rundown on mount
   useEffect(() => {

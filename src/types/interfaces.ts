@@ -4,7 +4,7 @@ export interface Column {
   id: string;
   key: string;
   name: string;
-  width?: string; // Change from number to string to match useColumnsManager
+  width: string; // Make required to match useColumnsManager
   visible?: boolean;
   isCustom?: boolean;
   isResizable?: boolean;
