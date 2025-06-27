@@ -21,11 +21,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    if (initialized) return; // Prevent multiple initializations
-    
     console.log('Initializing auth state...');
     
     // Set up auth state listener FIRST
@@ -59,13 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    setInitialized(true);
-
     return () => {
       console.log('Cleaning up auth subscription');
       subscription.unsubscribe();
     }
-  }, [initialized])
+  }, []) // Remove the initialized dependency to prevent multiple runs
 
   const signIn = async (email: string, password: string) => {
     console.log('Attempting to sign in:', email);
