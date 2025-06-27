@@ -1,9 +1,8 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
 import { useShowcallerInitialState } from './useShowcallerInitialState';
-import { useShowcallerTimingSync } from './useShowcallerTimingSync';
+import { useShowcallerPrecisionTiming } from './useShowcallerPrecisionTiming';
 
 export interface ShowcallerVisualState {
   currentItemStatuses: Map<string, string>; // item id -> status
@@ -43,9 +42,22 @@ export const useShowcallerVisualState = ({
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
+  const precisionTimerRef = useRef<number | null>(null);
 
-  // Use timing synchronization utility
-  const { calculateSynchronizedTimeRemaining, timeToSeconds } = useShowcallerTimingSync({ items });
+  // Use precision timing utility
+  const {
+    timeToMilliseconds,
+    getPreciseTime,
+    calculatePreciseTimeRemaining,
+    calculatePrecisePlaybackStart,
+    resetDriftCompensation,
+    synchronizeWithExternalState
+  } = useShowcallerPrecisionTiming({ items });
+
+  // Legacy time conversion for compatibility
+  const timeToSeconds = useCallback((timeStr: string) => {
+    return Math.round(timeToMilliseconds(timeStr) / 1000);
+  }, [timeToMilliseconds]);
 
   // Track our own updates to prevent feedback loops
   const trackOwnUpdate = useCallback((timestamp: string) => {
@@ -57,9 +69,9 @@ export const useShowcallerVisualState = ({
     }, 10000);
   }, []);
 
-  // Handle initial state loading
+  // Handle initial state loading with precision timing
   const handleInitialStateLoaded = useCallback((loadedState: any) => {
-    console.log('📺 Applying loaded initial state');
+    console.log('📺 Applying loaded initial state with precision timing');
     
     // Convert plain object back to Map for statuses
     const statusMap = new Map();
@@ -69,8 +81,8 @@ export const useShowcallerVisualState = ({
       });
     }
 
-    // Calculate synchronized timing for ongoing playback
-    const synchronizedState = calculateSynchronizedTimeRemaining({
+    // Use precision timing for synchronization
+    const synchronizedState = synchronizeWithExternalState({
       ...loadedState,
       currentItemStatuses: statusMap
     });
@@ -78,12 +90,12 @@ export const useShowcallerVisualState = ({
     setVisualState(synchronizedState);
     setIsInitialized(true);
 
-    // If it was playing when saved, restart the timer
+    // If it was playing when saved, restart the precision timer
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
-      console.log('📺 Restarting timer from saved state');
-      setTimeout(() => startTimer(), 100);
+      console.log('📺 Restarting precision timer from saved state');
+      setTimeout(() => startPrecisionTimer(), 50);
     }
-  }, [calculateSynchronizedTimeRemaining]);
+  }, [synchronizeWithExternalState]);
 
   // Initialize state loading
   const { hasLoaded } = useShowcallerInitialState({
@@ -140,7 +152,7 @@ export const useShowcallerVisualState = ({
     }
 
     // Use shorter delay for critical changes (segment transitions), longer for routine updates
-    const delay = isCritical ? 100 : 1000;
+    const delay = isCritical ? 50 : 2000;
 
     saveTimeoutRef.current = setTimeout(() => {
       saveShowcallerVisualState(state);
@@ -163,38 +175,6 @@ export const useShowcallerVisualState = ({
       return newState;
     });
   }, [debouncedSaveVisualState]);
-
-  // Set item status in visual state only
-  const setItemVisualStatus = useCallback((itemId: string, status: string) => {
-    setVisualState(prev => {
-      const newStatuses = new Map(prev.currentItemStatuses);
-      if (status === 'upcoming' || status === '') {
-        newStatuses.delete(itemId);
-      } else {
-        newStatuses.set(itemId, status);
-      }
-      
-      return {
-        ...prev,
-        currentItemStatuses: newStatuses,
-        lastUpdate: new Date().toISOString()
-      };
-    });
-  }, []);
-
-  // Clear all visual statuses
-  const clearAllVisualStatuses = useCallback(() => {
-    setVisualState(prev => ({
-      ...prev,
-      currentItemStatuses: new Map(),
-      lastUpdate: new Date().toISOString()
-    }));
-  }, []);
-
-  // Get visual status for an item
-  const getItemVisualStatus = useCallback((itemId: string) => {
-    return visualState.currentItemStatuses.get(itemId) || 'upcoming';
-  }, [visualState.currentItemStatuses]);
 
   // Navigation helpers - now skip floated items
   const getNextSegment = useCallback((currentId: string) => {
@@ -221,7 +201,7 @@ export const useShowcallerVisualState = ({
     return null;
   }, [items]);
 
-  // Enhanced jump to segment function
+  // Enhanced jump to segment function with precision timing
   const jumpToSegment = useCallback((segmentId: string) => {
     console.log('📺 Visual jumpToSegment called with segmentId:', segmentId);
     
@@ -246,44 +226,58 @@ export const useShowcallerVisualState = ({
     });
     
     const duration = timeToSeconds(targetSegment.duration || '00:00');
+    const preciseStartTime = getPreciseTime();
     
     updateVisualState({
       currentSegmentId: segmentId,
       timeRemaining: duration,
+      playbackStartTime: preciseStartTime,
       currentItemStatuses: newStatuses,
       controllerId: userId
-    }, true, true); // Mark as critical change
+    }, true, true);
     
-    console.log('📺 Visual jumpToSegment completed - staying in current playback state');
-  }, [items, timeToSeconds, userId, updateVisualState]);
+    console.log('📺 Visual jumpToSegment completed with precision timing');
+  }, [items, timeToSeconds, getPreciseTime, userId, updateVisualState]);
 
-  // Enhanced timer management with safety checks
-  const startTimer = useCallback(() => {
-    // Stop any existing timer
+  // High-precision timer management
+  const startPrecisionTimer = useCallback(() => {
+    // Stop any existing timers
     if (timerRef.current) {
       clearInterval(timerRef.current);
+    }
+    if (precisionTimerRef.current) {
+      clearTimeout(precisionTimerRef.current);
     }
 
     // Safety check - don't start timer if no current segment
     if (!visualState.currentSegmentId) {
-      console.warn('📺 Cannot start timer - no current segment');
+      console.warn('📺 Cannot start precision timer - no current segment');
       return;
     }
 
     const isController = visualState.controllerId === userId;
     
-    timerRef.current = setInterval(() => {
+    const updatePrecisionTimer = () => {
       setVisualState(prevState => {
         // Safety checks before processing timer tick
-        if (!prevState.currentSegmentId || !prevState.isPlaying) {
+        if (!prevState.currentSegmentId || !prevState.isPlaying || !prevState.playbackStartTime) {
           return prevState;
         }
 
-        // CRITICAL FIX: Change condition from <= 1 to <= 0 to prevent premature advancement
-        if (prevState.timeRemaining <= 0) {
+        // Calculate precise time remaining
+        const preciseRemainingMs = calculatePreciseTimeRemaining(
+          prevState.currentSegmentId,
+          prevState.playbackStartTime,
+          prevState.isPlaying
+        );
+
+        const remainingSeconds = Math.max(0, Math.ceil(preciseRemainingMs / 1000));
+
+        // CRITICAL FIX: Only advance when we have truly reached 0 milliseconds remaining
+        if (preciseRemainingMs <= 0) {
           // Rate limiting: prevent rapid advancement
-          const now = Date.now();
-          if (now - lastAdvancementTimeRef.current < 2000) {
+          const now = getPreciseTime();
+          if (now - lastAdvancementTimeRef.current < 1500) {
             console.log('📺 Rate limiting: skipping advancement too soon');
             return { ...prevState, timeRemaining: 0 };
           }
@@ -298,7 +292,7 @@ export const useShowcallerVisualState = ({
             isAdvancingRef.current = true;
             lastAdvancementTimeRef.current = now;
 
-            // Move to next segment (skipping floated items)
+            // Move to next segment with precision timing
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
             if (nextSegment) {
@@ -307,11 +301,18 @@ export const useShowcallerVisualState = ({
               newStatuses.set(prevState.currentSegmentId, 'completed');
               newStatuses.set(nextSegment.id, 'current');
               
+              // Calculate precise playback start time for next segment
+              const preciseStartTime = calculatePrecisePlaybackStart(
+                prevState.currentSegmentId,
+                prevState.playbackStartTime,
+                now
+              );
+              
               const newState = {
                 ...prevState,
                 currentSegmentId: nextSegment.id,
                 timeRemaining: duration,
-                playbackStartTime: Date.now(),
+                playbackStartTime: preciseStartTime,
                 currentItemStatuses: newStatuses,
                 lastUpdate: new Date().toISOString()
               };
@@ -319,10 +320,13 @@ export const useShowcallerVisualState = ({
               // Save immediately for segment transitions (critical change)
               debouncedSaveVisualState(newState, true);
               
-              // Reset advancement flag after a delay
+              // Reset advancement flag and restart precision timer
               setTimeout(() => {
                 isAdvancingRef.current = false;
-              }, 1000);
+                if (newState.isPlaying) {
+                  startPrecisionTimer();
+                }
+              }, 100);
               
               return newState;
             } else {
@@ -339,6 +343,7 @@ export const useShowcallerVisualState = ({
               
               debouncedSaveVisualState(newState, true);
               isAdvancingRef.current = false;
+              resetDriftCompensation();
               return newState;
             }
           } else {
@@ -352,34 +357,56 @@ export const useShowcallerVisualState = ({
         
         const newState = {
           ...prevState,
-          timeRemaining: Math.max(0, prevState.timeRemaining - 1),
+          timeRemaining: remainingSeconds,
           lastUpdate: new Date().toISOString()
         };
         
         // Reduced sync frequency: only save every 60 seconds to reduce database load
-        if (isController && prevState.timeRemaining % 60 === 0) {
+        if (isController && remainingSeconds > 0 && remainingSeconds % 60 === 0) {
           debouncedSaveVisualState(newState, false);
         }
         
         return newState;
       });
-    }, 1000);
-  }, [visualState.controllerId, visualState.currentSegmentId, userId, getNextSegment, timeToSeconds, debouncedSaveVisualState]);
 
-  const stopTimer = useCallback(() => {
+      // Schedule next precise update - aim for 100ms precision
+      precisionTimerRef.current = setTimeout(updatePrecisionTimer, 100);
+    };
+
+    // Start the precision timer loop
+    updatePrecisionTimer();
+  }, [
+    visualState.controllerId, 
+    visualState.currentSegmentId, 
+    userId, 
+    getNextSegment, 
+    timeToSeconds, 
+    debouncedSaveVisualState,
+    calculatePreciseTimeRemaining,
+    calculatePrecisePlaybackStart,
+    resetDriftCompensation,
+    getPreciseTime
+  ]);
+
+  const stopPrecisionTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+    if (precisionTimerRef.current) {
+      clearTimeout(precisionTimerRef.current);
+      precisionTimerRef.current = null;
     }
     // Reset advancement flags
     isAdvancingRef.current = false;
   }, []);
 
-  // Enhanced control functions that only affect visual state
+  // Enhanced control functions with precision timing
   const play = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Visual play called with segmentId:', selectedSegmentId);
     
     const newStatuses = new Map();
+    const preciseStartTime = getPreciseTime();
     
     if (selectedSegmentId) {
       // Mark segments before selected as completed, after as upcoming (skip floated items)
@@ -401,10 +428,10 @@ export const useShowcallerVisualState = ({
         isPlaying: true,
         currentSegmentId: selectedSegmentId,
         timeRemaining: duration,
-        playbackStartTime: Date.now(),
+        playbackStartTime: preciseStartTime,
         controllerId: userId,
         currentItemStatuses: newStatuses
-      }, true, true); // Critical change
+      }, true, true);
     } else if (!visualState.currentSegmentId) {
       // Find first non-floated regular item
       const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
@@ -416,33 +443,36 @@ export const useShowcallerVisualState = ({
           isPlaying: true,
           currentSegmentId: firstSegment.id,
           timeRemaining: duration,
-          playbackStartTime: Date.now(),
+          playbackStartTime: preciseStartTime,
           controllerId: userId,
           currentItemStatuses: newStatuses
-        }, true, true); // Critical change
+        }, true, true);
       }
     } else {
-      // Resume current segment
+      // Resume current segment with updated start time
       updateVisualState({
         isPlaying: true,
-        playbackStartTime: Date.now(),
+        playbackStartTime: preciseStartTime,
         controllerId: userId
-      }, true, true); // Critical change
+      }, true, true);
     }
     
-    startTimer();
-  }, [items, visualState.currentSegmentId, userId, timeToSeconds, updateVisualState, startTimer]);
+    resetDriftCompensation(); // Reset drift tracking on new play
+    startPrecisionTimer();
+  }, [items, visualState.currentSegmentId, userId, timeToSeconds, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
 
   const pause = useCallback(() => {
     console.log('📺 Visual pause called');
     
-    stopTimer();
+    stopPrecisionTimer();
     updateVisualState({
       isPlaying: false,
       playbackStartTime: null,
       controllerId: userId
-    }, true, true); // Critical change
-  }, [stopTimer, updateVisualState, userId]);
+    }, true, true);
+  }, [stopPrecisionTimer, updateVisualState, userId]);
+
+  // ... keep existing code (forward, backward, reset functions with minimal changes)
 
   const forward = useCallback(() => {
     console.log('📺 Visual forward called');
@@ -455,21 +485,23 @@ export const useShowcallerVisualState = ({
         newStatuses.set(nextSegment.id, 'current');
         
         const duration = timeToSeconds(nextSegment.duration || '00:00');
+        const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
         
         updateVisualState({
           currentSegmentId: nextSegment.id,
           timeRemaining: duration,
-          playbackStartTime: visualState.isPlaying ? Date.now() : null,
+          playbackStartTime: preciseStartTime,
           controllerId: userId,
           currentItemStatuses: newStatuses
-        }, true, true); // Critical change
+        }, true, true);
         
         if (visualState.isPlaying) {
-          startTimer();
+          resetDriftCompensation();
+          startPrecisionTimer();
         }
       }
     }
-  }, [visualState, getNextSegment, timeToSeconds, userId, updateVisualState, startTimer]);
+  }, [visualState, getNextSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
 
   const backward = useCallback(() => {
     console.log('📺 Visual backward called');
@@ -482,23 +514,25 @@ export const useShowcallerVisualState = ({
         newStatuses.set(prevSegment.id, 'current');
         
         const duration = timeToSeconds(prevSegment.duration || '00:00');
+        const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
         
         updateVisualState({
           currentSegmentId: prevSegment.id,
           timeRemaining: duration,
-          playbackStartTime: visualState.isPlaying ? Date.now() : null,
+          playbackStartTime: preciseStartTime,
           controllerId: userId,
           currentItemStatuses: newStatuses
-        }, true, true); // Critical change
+        }, true, true);
         
         if (visualState.isPlaying) {
-          startTimer();
+          resetDriftCompensation();
+          startPrecisionTimer();
         }
       }
     }
-  }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startTimer]);
+  }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
 
-  // Reset function - resets timer to full duration of current segment
+  // Reset function with precision timing
   const reset = useCallback(() => {
     console.log('📺 Visual reset called');
     
@@ -506,22 +540,23 @@ export const useShowcallerVisualState = ({
       const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
       if (currentSegment) {
         const duration = timeToSeconds(currentSegment.duration || '00:00');
+        const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
         
         updateVisualState({
           timeRemaining: duration,
-          playbackStartTime: visualState.isPlaying ? Date.now() : null,
+          playbackStartTime: preciseStartTime,
           controllerId: userId
-        }, true, false); // Not critical, just a reset
+        }, true, false);
         
-        // If currently playing, restart the timer with the reset time
         if (visualState.isPlaying) {
-          startTimer();
+          resetDriftCompensation();
+          startPrecisionTimer();
         }
       }
     }
-  }, [visualState, items, timeToSeconds, userId, updateVisualState, startTimer]);
+  }, [visualState, items, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
 
-  // Enhanced apply external visual state with better filtering
+  // Enhanced apply external visual state with precision synchronization
   const applyExternalVisualState = useCallback((externalState: any) => {
     // Skip if this is our own update
     if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
@@ -545,7 +580,7 @@ export const useShowcallerVisualState = ({
     
     console.log('📺 Applying external visual state from controller:', externalState.controllerId);
     
-    stopTimer();
+    stopPrecisionTimer();
     
     // Convert plain object back to Map
     const statusMap = new Map();
@@ -555,8 +590,8 @@ export const useShowcallerVisualState = ({
       });
     }
     
-    // Use timing synchronization utility
-    const synchronizedState = calculateSynchronizedTimeRemaining({
+    // Use precision timing synchronization
+    const synchronizedState = synchronizeWithExternalState({
       ...externalState,
       currentItemStatuses: statusMap
     });
@@ -564,9 +599,9 @@ export const useShowcallerVisualState = ({
     setVisualState(synchronizedState);
     
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
-      setTimeout(() => startTimer(), 100);
+      setTimeout(() => startPrecisionTimer(), 50);
     }
-  }, [stopTimer, calculateSynchronizedTimeRemaining, startTimer, visualState.controllerId, userId]);
+  }, [stopPrecisionTimer, synchronizeWithExternalState, startPrecisionTimer, visualState.controllerId, userId]);
 
   // Initialize current segment - skip floated items, but only after state is loaded
   useEffect(() => {
@@ -589,6 +624,9 @@ export const useShowcallerVisualState = ({
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (precisionTimerRef.current) {
+        clearTimeout(precisionTimerRef.current);
+      }
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -600,9 +638,32 @@ export const useShowcallerVisualState = ({
 
   return {
     visualState,
-    getItemVisualStatus,
-    setItemVisualStatus,
-    clearAllVisualStatuses,
+    getItemVisualStatus: useCallback((itemId: string) => {
+      return visualState.currentItemStatuses.get(itemId) || 'upcoming';
+    }, [visualState.currentItemStatuses]),
+    setItemVisualStatus: useCallback((itemId: string, status: string) => {
+      setVisualState(prev => {
+        const newStatuses = new Map(prev.currentItemStatuses);
+        if (status === 'upcoming' || status === '') {
+          newStatuses.delete(itemId);
+        } else {
+          newStatuses.set(itemId, status);
+        }
+        
+        return {
+          ...prev,
+          currentItemStatuses: newStatuses,
+          lastUpdate: new Date().toISOString()
+        };
+      });
+    }, []),
+    clearAllVisualStatuses: useCallback(() => {
+      setVisualState(prev => ({
+        ...prev,
+        currentItemStatuses: new Map(),
+        lastUpdate: new Date().toISOString()
+      }));
+    }, []),
     play,
     pause,
     forward,

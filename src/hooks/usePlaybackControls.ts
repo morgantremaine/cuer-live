@@ -19,7 +19,7 @@ export const usePlaybackControls = (
   const { user } = useAuth();
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize showcaller visual state management with enhanced initialization handling
+  // Initialize showcaller visual state management with precision timing
   const {
     visualState,
     play,
@@ -41,16 +41,16 @@ export const usePlaybackControls = (
     userId: user?.id
   });
 
-  // Enhanced initialization check with timeout safety
+  // Enhanced initialization check with better timing control
   const shouldEnableRealtime = useCallback(() => {
     return !!rundownId && isInitialized;
   }, [rundownId, isInitialized]);
 
-  // Initialize realtime synchronization with better timing control
+  // Initialize realtime synchronization with precision timing support
   const { isConnected } = useRealtimeRundown({
     rundownId,
     onRundownUpdate: () => {}, // We only care about showcaller state here
-    enabled: shouldEnableRealtime(), // Only enable after proper initialization
+    enabled: shouldEnableRealtime(),
     currentContentHash,
     isEditing,
     hasUnsavedChanges,
@@ -60,13 +60,13 @@ export const usePlaybackControls = (
     onShowcallerStateReceived: applyExternalVisualState
   });
 
-  // Safety timeout for initialization
+  // Reduced timeout for initialization with precision timing
   useEffect(() => {
     if (rundownId && !isInitialized) {
-      // Set a safety timeout to force initialization if it takes too long
+      // Set a reduced timeout for faster initialization
       initializationTimeoutRef.current = setTimeout(() => {
         console.warn('📺 Showcaller initialization timeout - forcing ready state');
-      }, 5000);
+      }, 3000); // Reduced from 5000ms
     } else if (isInitialized && initializationTimeoutRef.current) {
       clearTimeout(initializationTimeoutRef.current);
       initializationTimeoutRef.current = null;
@@ -82,12 +82,13 @@ export const usePlaybackControls = (
   // Only expose controls after proper initialization
   const controlsReady = isInitialized;
 
-  // Enhanced control wrappers with validation
+  // Enhanced control wrappers with precision timing validation
   const safePlay = useCallback((segmentId?: string) => {
     if (!controlsReady) {
       console.warn('📺 Play called before initialization complete');
       return;
     }
+    console.log('📺 Safe play called with precision timing support');
     play(segmentId);
   }, [controlsReady, play]);
 
@@ -96,6 +97,7 @@ export const usePlaybackControls = (
       console.warn('📺 Pause called before initialization complete');
       return;
     }
+    console.log('📺 Safe pause called with precision timing support');
     pause();
   }, [controlsReady, pause]);
 
@@ -104,6 +106,7 @@ export const usePlaybackControls = (
       console.warn('📺 Forward called before initialization complete');
       return;
     }
+    console.log('📺 Safe forward called with precision timing support');
     forward();
   }, [controlsReady, forward]);
 
@@ -112,6 +115,7 @@ export const usePlaybackControls = (
       console.warn('📺 Backward called before initialization complete');
       return;
     }
+    console.log('📺 Safe backward called with precision timing support');
     backward();
   }, [controlsReady, backward]);
 
@@ -120,6 +124,7 @@ export const usePlaybackControls = (
       console.warn('📺 Reset called before initialization complete');
       return;
     }
+    console.log('📺 Safe reset called with precision timing support');
     reset();
   }, [controlsReady, reset]);
 
@@ -128,6 +133,7 @@ export const usePlaybackControls = (
       console.warn('📺 JumpToSegment called before initialization complete');
       return;
     }
+    console.log('📺 Safe jumpToSegment called with precision timing support');
     jumpToSegment(segmentId);
   }, [controlsReady, jumpToSegment]);
 
