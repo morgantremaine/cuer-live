@@ -40,7 +40,7 @@ export const useSimplifiedRundownState = () => {
   // Undo/Redo state - fix the hook usage
   const undoSystem = useStandaloneUndo();
 
-  // Autosave
+  // Autosave - fix the hook parameters
   useAutoSave({
     data: { items, columns, rundownTitle, rundownStartTime, timezone },
     enabled: !isInitialLoadRef.current && !!rundownId && !isProcessingRealtimeUpdate,
@@ -55,6 +55,7 @@ export const useSimplifiedRundownState = () => {
       
       setIsSaving(true);
       try {
+        // Fix the saveRundown call to include required team_id
         await storage.saveRundown({
           id: rundownId,
           title: data.rundownTitle,
@@ -65,6 +66,7 @@ export const useSimplifiedRundownState = () => {
           updated_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           user_id: '',
+          team_id: '', // Add required team_id
           archived: false,
           folder_id: null
         });
@@ -94,16 +96,16 @@ export const useSimplifiedRundownState = () => {
     const loadRundown = async () => {
       setIsLoading(true);
       try {
-        // Use the correct method name from storage
-        const savedRundowns = await storage.loadRundowns();
-        const data = savedRundowns.find(r => r.id === rundownId);
+        // Fix the loadRundowns call to properly await and get the result
+        await storage.loadRundowns();
+        const data = storage.savedRundowns.find(r => r.id === rundownId);
         if (data) {
           setItems(data.items);
-          setColumns(data.columns);
+          setColumns(data.columns || []);
           setRundownTitle(data.title);
-          setRundownStartTime(data.start_time);
-          setTimezone(data.timezone);
-          changeTracking.markAsSaved(data.items, data.title, data.columns, data.timezone, data.start_time);
+          setRundownStartTime(data.start_time || '12:00:00');
+          setTimezone(data.timezone || 'America/New_York');
+          changeTracking.markAsSaved(data.items, data.title, data.columns || [], data.timezone || 'America/New_York', data.start_time || '12:00:00');
         }
       } catch (error) {
         logger.error('Error loading rundown:', error);
@@ -290,7 +292,7 @@ export const useSimplifiedRundownState = () => {
     setColumns(prevColumns => {
       return prevColumns.map(column => {
         if (column.id === id) {
-          return { ...column, width };
+          return { ...column, width: `${width}px` }; // Convert number to string
         }
         return column;
       });

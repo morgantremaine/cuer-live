@@ -4,11 +4,11 @@ export interface Column {
   id: string;
   key: string;
   name: string;
-  width?: number;
+  width?: string; // Change from number to string to match useColumnsManager
   visible?: boolean;
   isCustom?: boolean;
   isResizable?: boolean;
-  isEditable?: boolean; // Add the missing property
+  isEditable?: boolean;
 }
 
 export interface CoreRundownState {
