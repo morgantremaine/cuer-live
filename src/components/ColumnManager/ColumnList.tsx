@@ -124,7 +124,7 @@ const ColumnList = ({
                     {column.name}
                   </span>
                   {(column as any).isTeamColumn && (
-                    <Users className="h-3 w-3 text-blue-500" title="Team Column" />
+                    <Users className="h-3 w-3 text-blue-500" />
                   )}
                 </div>
               )}
