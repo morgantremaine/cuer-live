@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
@@ -40,6 +41,8 @@ export const useShowcallerVisualState = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const lastProcessedUpdateRef = useRef<string | null>(null);
+  const lastAdvancementTimeRef = useRef<number>(0);
+  const isAdvancingRef = useRef<boolean>(false);
 
   // Use timing synchronization utility
   const { calculateSynchronizedTimeRemaining, timeToSeconds } = useShowcallerTimingSync({ items });
@@ -96,7 +99,7 @@ export const useShowcallerVisualState = ({
     }
   }, [rundownId, hasLoaded, isInitialized]);
 
-  // Save showcaller visual state to database (completely separate from main rundown)
+  // Save showcaller visual state to database with enhanced debouncing
   const saveShowcallerVisualState = useCallback(async (state: ShowcallerVisualState) => {
     if (!rundownId) return;
 
@@ -130,19 +133,22 @@ export const useShowcallerVisualState = ({
     }
   }, [rundownId, trackOwnUpdate]);
 
-  // Debounced save to prevent rapid database updates
-  const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState) => {
+  // Enhanced debounced save with longer delay and critical change detection
+  const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState, isCritical: boolean = false) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
+    // Use shorter delay for critical changes (segment transitions), longer for routine updates
+    const delay = isCritical ? 100 : 1000;
+
     saveTimeoutRef.current = setTimeout(() => {
       saveShowcallerVisualState(state);
-    }, 300);
+    }, delay);
   }, [saveShowcallerVisualState]);
 
   // Update visual state without touching main rundown state
-  const updateVisualState = useCallback((updates: Partial<ShowcallerVisualState>, shouldSync: boolean = false) => {
+  const updateVisualState = useCallback((updates: Partial<ShowcallerVisualState>, shouldSync: boolean = false, isCritical: boolean = false) => {
     setVisualState(prev => {
       const newState = {
         ...prev,
@@ -151,7 +157,7 @@ export const useShowcallerVisualState = ({
       };
 
       if (shouldSync) {
-        debouncedSaveVisualState(newState);
+        debouncedSaveVisualState(newState, isCritical);
       }
 
       return newState;
@@ -215,7 +221,7 @@ export const useShowcallerVisualState = ({
     return null;
   }, [items]);
 
-  // New function to jump to a segment without starting playback
+  // Enhanced jump to segment function
   const jumpToSegment = useCallback((segmentId: string) => {
     console.log('📺 Visual jumpToSegment called with segmentId:', segmentId);
     
@@ -245,25 +251,53 @@ export const useShowcallerVisualState = ({
       currentSegmentId: segmentId,
       timeRemaining: duration,
       currentItemStatuses: newStatuses,
-      // Keep current playing state - don't change it
       controllerId: userId
-    }, true);
+    }, true, true); // Mark as critical change
     
     console.log('📺 Visual jumpToSegment completed - staying in current playback state');
   }, [items, timeToSeconds, userId, updateVisualState]);
 
-  // Timer management
+  // Enhanced timer management with safety checks
   const startTimer = useCallback(() => {
+    // Stop any existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
+    }
+
+    // Safety check - don't start timer if no current segment
+    if (!visualState.currentSegmentId) {
+      console.warn('📺 Cannot start timer - no current segment');
+      return;
     }
 
     const isController = visualState.controllerId === userId;
     
     timerRef.current = setInterval(() => {
       setVisualState(prevState => {
-        if (prevState.timeRemaining <= 1) {
-          if (isController && prevState.currentSegmentId) {
+        // Safety checks before processing timer tick
+        if (!prevState.currentSegmentId || !prevState.isPlaying) {
+          return prevState;
+        }
+
+        // CRITICAL FIX: Change condition from <= 1 to <= 0 to prevent premature advancement
+        if (prevState.timeRemaining <= 0) {
+          // Rate limiting: prevent rapid advancement
+          const now = Date.now();
+          if (now - lastAdvancementTimeRef.current < 2000) {
+            console.log('📺 Rate limiting: skipping advancement too soon');
+            return { ...prevState, timeRemaining: 0 };
+          }
+
+          // Prevent concurrent advancement
+          if (isAdvancingRef.current) {
+            console.log('📺 Already advancing, skipping');
+            return prevState;
+          }
+
+          if (isController) {
+            isAdvancingRef.current = true;
+            lastAdvancementTimeRef.current = now;
+
             // Move to next segment (skipping floated items)
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
@@ -282,7 +316,14 @@ export const useShowcallerVisualState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              debouncedSaveVisualState(newState);
+              // Save immediately for segment transitions (critical change)
+              debouncedSaveVisualState(newState, true);
+              
+              // Reset advancement flag after a delay
+              setTimeout(() => {
+                isAdvancingRef.current = false;
+              }, 1000);
+              
               return newState;
             } else {
               // No more segments, stop playback
@@ -296,7 +337,8 @@ export const useShowcallerVisualState = ({
                 lastUpdate: new Date().toISOString()
               };
               
-              debouncedSaveVisualState(newState);
+              debouncedSaveVisualState(newState, true);
+              isAdvancingRef.current = false;
               return newState;
             }
           } else {
@@ -310,28 +352,30 @@ export const useShowcallerVisualState = ({
         
         const newState = {
           ...prevState,
-          timeRemaining: prevState.timeRemaining - 1,
+          timeRemaining: Math.max(0, prevState.timeRemaining - 1),
           lastUpdate: new Date().toISOString()
         };
         
-        // Sync every 30 seconds to reduce database load
-        if (isController && prevState.timeRemaining % 30 === 0) {
-          debouncedSaveVisualState(newState);
+        // Reduced sync frequency: only save every 60 seconds to reduce database load
+        if (isController && prevState.timeRemaining % 60 === 0) {
+          debouncedSaveVisualState(newState, false);
         }
         
         return newState;
       });
     }, 1000);
-  }, [visualState.controllerId, userId, getNextSegment, timeToSeconds, debouncedSaveVisualState]);
+  }, [visualState.controllerId, visualState.currentSegmentId, userId, getNextSegment, timeToSeconds, debouncedSaveVisualState]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    // Reset advancement flags
+    isAdvancingRef.current = false;
   }, []);
 
-  // Control functions that only affect visual state
+  // Enhanced control functions that only affect visual state
   const play = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Visual play called with segmentId:', selectedSegmentId);
     
@@ -360,7 +404,7 @@ export const useShowcallerVisualState = ({
         playbackStartTime: Date.now(),
         controllerId: userId,
         currentItemStatuses: newStatuses
-      }, true);
+      }, true, true); // Critical change
     } else if (!visualState.currentSegmentId) {
       // Find first non-floated regular item
       const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
@@ -375,7 +419,7 @@ export const useShowcallerVisualState = ({
           playbackStartTime: Date.now(),
           controllerId: userId,
           currentItemStatuses: newStatuses
-        }, true);
+        }, true, true); // Critical change
       }
     } else {
       // Resume current segment
@@ -383,7 +427,7 @@ export const useShowcallerVisualState = ({
         isPlaying: true,
         playbackStartTime: Date.now(),
         controllerId: userId
-      }, true);
+      }, true, true); // Critical change
     }
     
     startTimer();
@@ -397,7 +441,7 @@ export const useShowcallerVisualState = ({
       isPlaying: false,
       playbackStartTime: null,
       controllerId: userId
-    }, true);
+    }, true, true); // Critical change
   }, [stopTimer, updateVisualState, userId]);
 
   const forward = useCallback(() => {
@@ -418,7 +462,7 @@ export const useShowcallerVisualState = ({
           playbackStartTime: visualState.isPlaying ? Date.now() : null,
           controllerId: userId,
           currentItemStatuses: newStatuses
-        }, true);
+        }, true, true); // Critical change
         
         if (visualState.isPlaying) {
           startTimer();
@@ -445,7 +489,7 @@ export const useShowcallerVisualState = ({
           playbackStartTime: visualState.isPlaying ? Date.now() : null,
           controllerId: userId,
           currentItemStatuses: newStatuses
-        }, true);
+        }, true, true); // Critical change
         
         if (visualState.isPlaying) {
           startTimer();
@@ -467,7 +511,7 @@ export const useShowcallerVisualState = ({
           timeRemaining: duration,
           playbackStartTime: visualState.isPlaying ? Date.now() : null,
           controllerId: userId
-        }, true);
+        }, true, false); // Not critical, just a reset
         
         // If currently playing, restart the timer with the reset time
         if (visualState.isPlaying) {
@@ -477,7 +521,7 @@ export const useShowcallerVisualState = ({
     }
   }, [visualState, items, timeToSeconds, userId, updateVisualState, startTimer]);
 
-  // Apply external visual state with proper filtering and timing sync
+  // Enhanced apply external visual state with better filtering
   const applyExternalVisualState = useCallback((externalState: any) => {
     // Skip if this is our own update
     if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
@@ -488,6 +532,12 @@ export const useShowcallerVisualState = ({
     // Skip duplicate updates
     if (externalState.lastUpdate === lastProcessedUpdateRef.current) {
       console.log('⏭️ Skipping duplicate showcaller update');
+      return;
+    }
+
+    // Skip updates if we're currently the controller (prevent conflicts)
+    if (visualState.controllerId === userId && externalState.controllerId !== userId) {
+      console.log('⏭️ Skipping external update - we are the controller');
       return;
     }
 
@@ -516,7 +566,7 @@ export const useShowcallerVisualState = ({
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
       setTimeout(() => startTimer(), 100);
     }
-  }, [stopTimer, calculateSynchronizedTimeRemaining, startTimer]);
+  }, [stopTimer, calculateSynchronizedTimeRemaining, startTimer, visualState.controllerId, userId]);
 
   // Initialize current segment - skip floated items, but only after state is loaded
   useEffect(() => {
@@ -533,7 +583,7 @@ export const useShowcallerVisualState = ({
     }
   }, [isInitialized, items.length, visualState.currentSegmentId, timeToSeconds]);
 
-  // Cleanup
+  // Enhanced cleanup
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -542,6 +592,9 @@ export const useShowcallerVisualState = ({
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      // Reset all refs
+      isAdvancingRef.current = false;
+      lastAdvancementTimeRef.current = 0;
     };
   }, []);
 
