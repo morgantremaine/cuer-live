@@ -6,16 +6,18 @@ interface SearchHighlightProps {
   searchTerm: string;
   caseSensitive?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const SearchHighlight = ({ 
   text, 
   searchTerm, 
   caseSensitive = false,
-  className = '' 
+  className = '',
+  style = {}
 }: SearchHighlightProps) => {
   if (!searchTerm || !text) {
-    return <span className={className}>{text}</span>;
+    return <span className={className} style={style}>{text}</span>;
   }
 
   const searchValue = caseSensitive ? searchTerm : searchTerm.toLowerCase();
@@ -53,7 +55,7 @@ export const SearchHighlight = ({
   }
 
   return (
-    <span className={className}>
+    <span className={className} style={style}>
       {parts.map((part, index) => (
         part.isMatch ? (
           <mark 
