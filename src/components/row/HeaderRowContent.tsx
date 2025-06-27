@@ -15,6 +15,7 @@ interface HeaderRowContentProps {
   currentSegmentId?: string | null;
   searchTerm?: string;
   caseSensitive?: boolean;
+  currentMatch?: { itemId: string; field: string } | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -31,6 +32,7 @@ const HeaderRowContent = ({
   currentSegmentId,
   searchTerm = '',
   caseSensitive = false,
+  currentMatch = null,
   cellRefs,
   onUpdateItem,
   onCellClick,
@@ -61,7 +63,7 @@ const HeaderRowContent = ({
       {/* Dynamic columns */}
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
-        const widthValue = parseInt(columnWidth.replace('px', ''));
+        const isCurrentMatch = currentMatch?.itemId === item.id && currentMatch?.field === column.key;
         
         // Special handling for headers - only show specific fields
         if (column.key === 'segmentName' || column.key === 'name') {
@@ -69,7 +71,9 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px] relative overflow-visible"
+              className={`align-middle border border-border min-h-[56px] relative overflow-visible ${
+                isCurrentMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+              }`}
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -93,7 +97,7 @@ const HeaderRowContent = ({
                   currentSegmentId={currentSegmentId}
                   searchTerm={searchTerm}
                   caseSensitive={caseSensitive}
-                  isCurrentMatch={false} // This will be calculated inside CellRenderer
+                  isCurrentMatch={isCurrentMatch}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}

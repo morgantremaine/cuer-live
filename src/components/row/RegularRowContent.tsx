@@ -21,6 +21,7 @@ interface RegularRowContentProps {
   currentSegmentId?: string | null;
   searchTerm?: string;
   caseSensitive?: boolean;
+  currentMatch?: { itemId: string; field: string } | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -40,6 +41,7 @@ const RegularRowContent = ({
   currentSegmentId,
   searchTerm = '',
   caseSensitive = false,
+  currentMatch = null,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -86,11 +88,15 @@ const RegularRowContent = ({
             ? fieldValue.includes(searchTerm) 
             : fieldValue.toLowerCase().includes(searchTerm.toLowerCase())
           );
+
+        const isCurrentMatch = currentMatch?.itemId === item.id && currentMatch?.field === column.key;
         
         return (
           <td
             key={column.id}
-            className={`align-middle border border-border ${isCurrentSegmentName ? 'relative' : ''}`}
+            className={`align-middle border border-border ${isCurrentSegmentName ? 'relative' : ''} ${
+              isCurrentMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+            }`}
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
@@ -108,7 +114,7 @@ const RegularRowContent = ({
               currentSegmentId={currentSegmentId}
               searchTerm={searchTerm}
               caseSensitive={caseSensitive}
-              isCurrentMatch={false} // This will be calculated inside CellRenderer
+              isCurrentMatch={isCurrentMatch}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}

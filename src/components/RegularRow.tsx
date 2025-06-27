@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -23,6 +24,7 @@ interface RegularRowProps {
   currentSegmentId?: string | null;
   searchTerm?: string;
   caseSensitive?: boolean;
+  currentMatch?: { itemId: string; field: string } | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -61,6 +63,7 @@ const RegularRow = (props: RegularRowProps) => {
     currentSegmentId,
     searchTerm,
     caseSensitive,
+    currentMatch,
     onToggleFloat,
     onColorSelect,
     onClearSelection,
@@ -205,6 +208,7 @@ const RegularRow = (props: RegularRowProps) => {
           cellRefs={props.cellRefs}
           searchTerm={searchTerm}
           caseSensitive={caseSensitive}
+          currentMatch={currentMatch}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

@@ -128,15 +128,17 @@ const RundownTable = ({
   // Scroll to current match when it changes
   React.useEffect(() => {
     if (currentMatch && matchCount > 0) {
-      console.log('🔍 Scrolling to current match:', currentMatch);
-      const element = document.querySelector(`[data-item-id="${currentMatch.itemId}"]`);
+      console.log('🔍 RundownTable: Scrolling to current match:', currentMatch);
+      // Use a more specific selector that targets the actual row
+      const element = document.querySelector(`tr[data-item-id="${currentMatch.itemId}"]`);
       if (element) {
+        console.log('🔍 RundownTable: Found element, scrolling to it');
         element.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'center' 
         });
       } else {
-        console.log('🔍 Could not find element for item:', currentMatch.itemId);
+        console.log('🔍 RundownTable: Could not find element for item:', currentMatch.itemId);
       }
     }
   }, [currentMatch, currentMatchIndex, matchCount]);
@@ -187,6 +189,7 @@ const RundownTable = ({
                   searchTerm={searchTerm}
                   caseSensitive={caseSensitive}
                   isCurrentMatch={isCurrentMatch}
+                  currentMatch={currentMatch}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}

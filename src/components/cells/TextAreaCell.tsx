@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { SearchHighlight } from '../SearchHighlight';
 
@@ -175,8 +176,23 @@ const TextAreaCell = ({
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
   // Determine if we should show highlighted text or editable textarea
-  const shouldShowHighlighting = !isEditing && searchTerm && value;
+  const shouldShowHighlighting = !isEditing && searchTerm && value && 
+    (caseSensitive 
+      ? value.includes(searchTerm) 
+      : value.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
   const currentMatchClass = isCurrentMatch ? 'ring-2 ring-blue-500 ring-offset-1' : '';
+
+  console.log('🔍 TextAreaCell render:', {
+    itemId,
+    cellRefKey,
+    shouldShowHighlighting,
+    isEditing,
+    searchTerm,
+    value: value.substring(0, 50) + (value.length > 50 ? '...' : ''),
+    isCurrentMatch
+  });
 
   return (
     <div className={`relative w-full ${currentMatchClass}`} style={{ backgroundColor, height: calculatedHeight }}>

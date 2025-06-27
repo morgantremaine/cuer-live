@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -21,6 +22,7 @@ interface HeaderRowProps {
   currentSegmentId?: string | null;
   searchTerm?: string;
   caseSensitive?: boolean;
+  currentMatch?: { itemId: string; field: string } | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -54,6 +56,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     currentSegmentId,
     searchTerm,
     caseSensitive,
+    currentMatch,
     onColorSelect,
     onClearSelection,
     onAddRow,
@@ -184,6 +187,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           cellRefs={props.cellRefs}
           searchTerm={searchTerm}
           caseSensitive={caseSensitive}
+          currentMatch={currentMatch}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

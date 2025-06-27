@@ -25,6 +25,7 @@ interface RundownRowProps {
   searchTerm?: string;
   caseSensitive?: boolean;
   isCurrentMatch?: boolean;
+  currentMatch?: { itemId: string; field: string } | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -66,6 +67,7 @@ const RundownRow = ({
   searchTerm = '',
   caseSensitive = false,
   isCurrentMatch = false,
+  currentMatch = null,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -87,16 +89,11 @@ const RundownRow = ({
   getColumnWidth
 }: RundownRowProps) => {
 
-  // Add data attributes for search functionality
-  const rowProps = {
-    'data-item-id': item.id,
-    className: isCurrentMatch ? 'current-search-match' : ''
-  };
-
   if (isHeaderItem(item)) {
     return (
       <HeaderRow
-        {...rowProps}
+        data-item-id={item.id}
+        className={isCurrentMatch ? 'current-search-match' : ''}
         item={item}
         index={index}
         rowNumber={rowNumber}
@@ -107,6 +104,7 @@ const RundownRow = ({
         headerDuration={headerDuration}
         searchTerm={searchTerm}
         caseSensitive={caseSensitive}
+        currentMatch={currentMatch}
         isDragging={isDragging}
         selectedRowsCount={selectedRowsCount}
         selectedRows={selectedRows}
@@ -135,7 +133,8 @@ const RundownRow = ({
 
   return (
     <RegularRow
-      {...rowProps}
+      data-item-id={item.id}
+      className={isCurrentMatch ? 'current-search-match' : ''}
       item={item}
       index={index}
       rowNumber={rowNumber}
@@ -153,6 +152,7 @@ const RundownRow = ({
       isDragging={isDragging}
       searchTerm={searchTerm}
       caseSensitive={caseSensitive}
+      currentMatch={currentMatch}
       onUpdateItem={onUpdateItem}
       onCellClick={onCellClick}
       onKeyDown={onKeyDown}
