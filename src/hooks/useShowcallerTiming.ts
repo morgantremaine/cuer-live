@@ -9,6 +9,7 @@ interface UseShowcallerTimingProps {
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
+  segmentStartTime?: number | null; // When the current segment started
 }
 
 interface TimingStatus {
@@ -23,7 +24,8 @@ export const useShowcallerTiming = ({
   rundownStartTime,
   isPlaying,
   currentSegmentId,
-  timeRemaining
+  timeRemaining,
+  segmentStartTime
 }: UseShowcallerTimingProps): TimingStatus => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -76,7 +78,15 @@ export const useShowcallerTiming = ({
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
 
-    // Calculate where the showcaller currently is (total elapsed time in showcaller)
+    // Calculate elapsed time since rundown start
+    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+    
+    // Handle day boundary crossing
+    if (realElapsedSeconds < 0) {
+      realElapsedSeconds += 24 * 3600;
+    }
+
+    // Calculate showcaller position more accurately
     let showcallerElapsedSeconds = 0;
     
     // Add up durations of all completed segments
@@ -89,40 +99,24 @@ export const useShowcallerTiming = ({
     
     // Add elapsed time within current segment
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
-    const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
-    showcallerElapsedSeconds += elapsedInCurrentSegment;
-
-    // Check if we're before or after the rundown start time WITHOUT day boundary adjustment
-    const isPreStart = currentTimeSeconds < rundownStartSeconds;
     
-    let differenceSeconds: number;
-    let realElapsedSeconds: number;
-    
-    if (isPreStart) {
-      // PRE-START LOGIC: Show hasn't started yet
-      // Real elapsed time is negative (we're before the start)
-      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds; // This will be negative
-      
-      // Calculate difference: showcaller position vs where it should be (which is 0 or negative)
-      // If showcaller has progressed into the rundown but show hasn't started = showcaller is ahead = UNDER
-      differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
+    // Use segment start time for more accurate calculation if available
+    if (segmentStartTime) {
+      const segmentElapsed = Math.floor((Date.now() - segmentStartTime) / 1000);
+      showcallerElapsedSeconds += Math.min(segmentElapsed, currentSegmentDuration);
     } else {
-      // POST-START LOGIC: Show has started
-      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
-      
-      // Only NOW apply day boundary logic if needed
-      if (realElapsedSeconds < 0) {
-        realElapsedSeconds += 24 * 3600; // Handle day crossing
-      }
-      
-      differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
+      // Fallback to time remaining calculation
+      const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
+      showcallerElapsedSeconds += Math.max(0, elapsedInCurrentSegment);
     }
+
+    // Calculate the timing difference
+    const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
-    // TIMING LOGIC:
-    // Positive difference = showcaller is ahead of where it should be = UNDER time
-    // Negative difference = showcaller is behind where it should be = OVER time
-    const isOnTime = Math.abs(differenceSeconds) <= 5;
-    const isAhead = differenceSeconds > 5; // Showcaller ahead of schedule = under time
+    // Determine timing status
+    const toleranceSeconds = 5; // 5 second tolerance
+    const isOnTime = Math.abs(differenceSeconds) <= toleranceSeconds;
+    const isAhead = differenceSeconds > toleranceSeconds; // Showcaller ahead = under time
     
     const absoluteDifference = Math.abs(differenceSeconds);
     const timeDifference = secondsToTime(absoluteDifference);
@@ -133,7 +127,7 @@ export const useShowcallerTiming = ({
       timeDifference,
       isVisible: true
     };
-  }, [items, rundownStartTime, isPlaying, currentSegmentId, currentTime, timeRemaining]);
+  }, [items, rundownStartTime, isPlaying, currentSegmentId, currentTime, timeRemaining, segmentStartTime]);
 
   return timingStatus;
 };
