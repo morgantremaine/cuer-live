@@ -116,12 +116,12 @@ export const useFindReplace = ({ items, onUpdateItem, onJumpToItem }: UseFindRep
       if (fieldMatches.length === 0) return;
       
       const { itemId, field, value } = fieldMatches[0];
-      const searchQuery = caseSensitive ? searchTerm : searchTerm.toLowerCase();
-      const targetValue = caseSensitive ? value : value.toLowerCase();
       
       let newValue = value;
       if (caseSensitive) {
-        newValue = value.replaceAll(searchTerm, replaceTerm);
+        // Use replace with global flag instead of replaceAll
+        const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        newValue = value.replace(regex, replaceTerm);
       } else {
         // Case insensitive replacement preserving original case
         const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
