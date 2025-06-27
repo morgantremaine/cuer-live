@@ -103,18 +103,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('Attempting to sign in:', email);
     setLoading(true);
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    
-    if (error) {
-      console.error('Sign in error:', error);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        setLoading(false); // Set loading to false on error
+        return { error };
+      }
+      
+      // On success, don't set loading to false here - let auth state change handle it
+      // But add a timeout as a safety net in case auth state change doesn't fire
+      setTimeout(() => {
+        setLoading(false);
+      }, 5000); // 5 second timeout as safety net
+      
+      return { error: null };
+    } catch (err) {
+      console.error('Sign in catch error:', err);
       setLoading(false);
+      return { error: err };
     }
-    // Don't set loading to false here on success - let the auth state change handle it
-    
-    return { error }
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string, inviteCode?: string) => {
