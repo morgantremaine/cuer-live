@@ -6,6 +6,7 @@ import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 import LayoutManager from './ColumnManager/LayoutManager';
 import ColumnEditor from './ColumnManager/ColumnEditor';
 import ColumnList from './ColumnManager/ColumnList';
+import TeamCustomColumns from './ColumnManager/TeamCustomColumns';
 
 interface Column {
   id: string;
@@ -107,6 +108,11 @@ const ColumnManager = ({
           />
 
           <ColumnEditor onAddColumn={onAddColumn} />
+
+          <TeamCustomColumns
+            columns={columns}
+            onToggleColumnVisibility={onToggleColumnVisibility}
+          />
 
           <ColumnList
             columns={columns}

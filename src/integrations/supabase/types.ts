@@ -337,6 +337,36 @@ export type Database = {
         }
         Relationships: []
       }
+      team_custom_columns: {
+        Row: {
+          column_key: string
+          column_name: string
+          created_at: string
+          created_by: string
+          id: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          column_key: string
+          column_name: string
+          created_at?: string
+          created_by: string
+          id?: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          column_key?: string
+          column_name?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_invitations: {
         Row: {
           accepted: boolean | null
@@ -535,6 +565,16 @@ export type Database = {
         Args: { rundown_uuid: string }
         Returns: Json
       }
+      get_team_custom_columns: {
+        Args: { team_uuid: string }
+        Returns: {
+          id: string
+          column_key: string
+          column_name: string
+          created_by: string
+          created_at: string
+        }[]
+      }
       get_user_email_safe: {
         Args: { user_uuid: string }
         Returns: string
@@ -610,6 +650,10 @@ export type Database = {
       is_user_team_member: {
         Args: { user_uuid: string; team_uuid: string }
         Returns: boolean
+      }
+      migrate_existing_custom_columns: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       remove_team_member_with_transfer: {
         Args: { member_id: string; admin_id: string; team_id_param: string }
