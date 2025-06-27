@@ -198,10 +198,29 @@ export const useRundownStateCoordination = () => {
       addRowAtIndex,
       addHeaderAtIndex,
       
-      // Column management
+      // Column management - fix handleAddColumn to match expected signature
+      handleAddColumn: (name: string) => simplifiedState.addColumn(name),
       addColumn: simplifiedState.addColumn,
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
+      handleReorderColumns: simplifiedState.setColumns,
+      handleDeleteColumnWithCleanup: (columnId: string) => {
+        const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
+        simplifiedState.setColumns(newColumns);
+      },
+      handleRenameColumn: (columnId: string, newName: string) => {
+        const updatedColumns = simplifiedState.columns.map(col => 
+          col.id === columnId ? { ...col, name: newName } : col
+        );
+        simplifiedState.setColumns(updatedColumns);
+      },
+      handleToggleColumnVisibility: (columnId: string) => {
+        const updatedColumns = simplifiedState.columns.map(col => 
+          col.id === columnId ? { ...col, isVisible: !col.isVisible } : col
+        );
+        simplifiedState.setColumns(updatedColumns);
+      },
+      handleLoadLayout: simplifiedState.setColumns,
       
       // Showcaller visual controls (completely separate from main state)
       play: showcallerVisual.play,
