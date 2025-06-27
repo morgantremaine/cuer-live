@@ -16,7 +16,18 @@ interface UseFindReplaceProps {
   onJumpToItem?: (itemId: string) => void;
 }
 
-const SEARCHABLE_FIELDS = ['name', 'talent', 'script', 'gfx', 'video', 'images', 'notes'] as const;
+// Map search fields to actual item properties and custom field handling
+const FIELD_MAPPING = {
+  'name': 'name',
+  'talent': 'talent', 
+  'script': 'script',
+  'gfx': 'gfx',
+  'video': 'video',
+  'images': 'images',
+  'notes': 'notes'
+} as const;
+
+const SEARCHABLE_FIELDS = Object.keys(FIELD_MAPPING) as Array<keyof typeof FIELD_MAPPING>;
 
 export const useFindReplace = ({ items, onUpdateItem, onJumpToItem }: UseFindReplaceProps) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,8 +44,22 @@ export const useFindReplace = ({ items, onUpdateItem, onJumpToItem }: UseFindRep
     const searchValue = caseSensitive ? searchTerm : searchTerm.toLowerCase();
 
     items.forEach(item => {
-      SEARCHABLE_FIELDS.forEach(field => {
-        const fieldValue = item[field] || '';
+      SEARCHABLE_FIELDS.forEach(fieldKey => {
+        // Get field value, handling both direct properties and custom fields
+        let fieldValue = '';
+        
+        if (fieldKey in FIELD_MAPPING) {
+          const mappedField = FIELD_MAPPING[fieldKey];
+          fieldValue = item[mappedField] || '';
+        }
+        
+        // Also check custom fields
+        if (item.customFields && item.customFields[fieldKey]) {
+          fieldValue = item.customFields[fieldKey];
+        }
+        
+        if (!fieldValue) return;
+        
         const searchableValue = caseSensitive ? fieldValue : fieldValue.toLowerCase();
         
         let startIndex = 0;
@@ -44,7 +69,7 @@ export const useFindReplace = ({ items, onUpdateItem, onJumpToItem }: UseFindRep
           
           allMatches.push({
             itemId: item.id,
-            field,
+            field: fieldKey,
             startIndex: foundIndex,
             endIndex: foundIndex + searchTerm.length,
             text: fieldValue.substring(foundIndex, foundIndex + searchTerm.length)
@@ -67,6 +92,7 @@ export const useFindReplace = ({ items, onUpdateItem, onJumpToItem }: UseFindRep
     
     const match = matches[clampedIndex];
     if (match && onJumpToItem) {
+      console.log('🔍 Jumping to match:', match);
       onJumpToItem(match.itemId);
     }
   }, [matches, onJumpToItem]);
@@ -101,12 +127,35 @@ export const useFindReplace = ({ items, onUpdateItem, onJumpToItem }: UseFindRep
     const item = items.find(i => i.id === match.itemId);
     if (!item) return;
 
-    const fieldValue = item[match.field] || '';
-    const newValue = fieldValue.substring(0, match.startIndex) + 
-                    replaceTerm + 
-                    fieldValue.substring(match.endIndex);
+    // Get current field value
+    let currentValue = '';
+    const fieldKey = match.field;
+    
+    if (fieldKey in FIELD_MAPPING) {
+      const mappedField = FIELD_MAPPING[fieldKey as keyof typeof FIELD_MAPPING];
+      currentValue = item[mappedField] || '';
+    }
+    
+    // Also check custom fields
+    if (!currentValue && item.customFields && item.customFields[fieldKey]) {
+      currentValue = item.customFields[fieldKey];
+    }
 
-    onUpdateItem(match.itemId, match.field, newValue);
+    // Perform the replacement
+    const newValue = currentValue.substring(0, match.startIndex) + 
+                    replaceTerm + 
+                    currentValue.substring(match.endIndex);
+
+    // Update the item with proper field mapping
+    if (fieldKey in FIELD_MAPPING) {
+      const mappedField = FIELD_MAPPING[fieldKey as keyof typeof FIELD_MAPPING];
+      onUpdateItem(match.itemId, mappedField, newValue);
+    } else {
+      // Handle custom field
+      onUpdateItem(match.itemId, `customFields.${fieldKey}`, newValue);
+    }
+
+    console.log('🔄 Replaced match:', { match, oldValue: currentValue, newValue, fieldKey });
   }, [matches, currentMatchIndex, replaceTerm, items, onUpdateItem]);
 
   // Replace all matches
@@ -123,23 +172,42 @@ export const useFindReplace = ({ items, onUpdateItem, onJumpToItem }: UseFindRep
 
     // Process each field
     Object.entries(groupedMatches).forEach(([key, fieldMatches]) => {
-      const [itemId, field] = key.split('-');
+      const [itemId, fieldKey] = key.split('-');
       const item = items.find(i => i.id === itemId);
       if (!item) return;
 
-      let fieldValue = item[field] || '';
-      const searchValue = caseSensitive ? searchTerm : searchTerm.toLowerCase();
-      const replaceValue = caseSensitive ? fieldValue : fieldValue.toLowerCase();
+      // Get current field value
+      let fieldValue = '';
+      if (fieldKey in FIELD_MAPPING) {
+        const mappedField = FIELD_MAPPING[fieldKey as keyof typeof FIELD_MAPPING];
+        fieldValue = item[mappedField] || '';
+      }
       
-      // Replace all occurrences
+      // Also check custom fields
+      if (!fieldValue && item.customFields && item.customFields[fieldKey]) {
+        fieldValue = item.customFields[fieldKey];
+      }
+      
+      // Replace all occurrences using regex
+      const searchValue = caseSensitive ? searchTerm : searchTerm.toLowerCase();
       const regex = new RegExp(
         searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 
         caseSensitive ? 'g' : 'gi'
       );
       
       const newValue = fieldValue.replace(regex, replaceTerm);
-      onUpdateItem(itemId, field, newValue);
+      
+      // Update the item with proper field mapping
+      if (fieldKey in FIELD_MAPPING) {
+        const mappedField = FIELD_MAPPING[fieldKey as keyof typeof FIELD_MAPPING];
+        onUpdateItem(itemId, mappedField, newValue);
+      } else {
+        // Handle custom field
+        onUpdateItem(itemId, `customFields.${fieldKey}`, newValue);
+      }
     });
+
+    console.log('🔄 Replaced all matches:', matches.length, 'replacements made');
   }, [matches, replaceTerm, searchTerm, caseSensitive, items, onUpdateItem]);
 
   // Reset search

@@ -125,6 +125,22 @@ const RundownTable = ({
   // Determine current match
   const currentMatch = matches[currentMatchIndex];
 
+  // Scroll to current match when it changes
+  React.useEffect(() => {
+    if (currentMatch && matchCount > 0) {
+      console.log('🔍 Scrolling to current match:', currentMatch);
+      const element = document.querySelector(`[data-item-id="${currentMatch.itemId}"]`);
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      } else {
+        console.log('🔍 Could not find element for item:', currentMatch.itemId);
+      }
+    }
+  }, [currentMatch, currentMatchIndex, matchCount]);
+
   return (
     <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
       <table className="w-full border-collapse border border-border">

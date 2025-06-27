@@ -76,6 +76,17 @@ const RegularRowContent = ({
         const isCurrentSegmentName = currentSegmentId === item.id && 
           (column.key === 'segmentName' || column.key === 'name');
         
+        // Check if this specific field contains the current search match
+        const fieldValue = column.isCustom 
+          ? (item.customFields?.[column.key] || '')
+          : (item as any)[column.key] || '';
+        
+        const hasSearchMatch = searchTerm && fieldValue && 
+          (caseSensitive 
+            ? fieldValue.includes(searchTerm) 
+            : fieldValue.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        
         return (
           <td
             key={column.id}
@@ -85,6 +96,8 @@ const RegularRowContent = ({
               minWidth: columnWidth,
               backgroundColor 
             }}
+            data-field={column.key}
+            data-has-match={hasSearchMatch}
           >
             <CellRenderer
               column={column}
@@ -93,12 +106,13 @@ const RegularRowContent = ({
               textColor={textColor}
               backgroundColor={backgroundColor}
               currentSegmentId={currentSegmentId}
+              searchTerm={searchTerm}
+              caseSensitive={caseSensitive}
+              isCurrentMatch={false} // This will be calculated inside CellRenderer
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
               width={columnWidth}
-              searchTerm={searchTerm}
-              caseSensitive={caseSensitive}
             />
           </td>
         );

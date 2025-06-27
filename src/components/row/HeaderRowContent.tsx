@@ -91,12 +91,13 @@ const HeaderRowContent = ({
                   textColor={textColor}
                   backgroundColor={backgroundColor}
                   currentSegmentId={currentSegmentId}
+                  searchTerm={searchTerm}
+                  caseSensitive={caseSensitive}
+                  isCurrentMatch={false} // This will be calculated inside CellRenderer
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
                   width={columnWidth}
-                  searchTerm={searchTerm}
-                  caseSensitive={caseSensitive}
                 />
               </div>
             </td>
