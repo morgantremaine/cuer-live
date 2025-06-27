@@ -154,7 +154,14 @@ export const useTeam = () => {
           return;
         }
 
-        const team = membershipData.teams as Team;
+        // Fix: Extract the team object from the array properly
+        const teamRecord = membershipData.teams as any;
+        const team: Team = {
+          id: teamRecord.id,
+          name: teamRecord.name,
+          created_at: teamRecord.created_at,
+          updated_at: teamRecord.updated_at
+        };
         const userRole = membershipData.role;
 
         // Load team members and their profiles
@@ -175,13 +182,13 @@ export const useTeam = () => {
 
         if (teamMembersError) throw teamMembersError;
 
-        // Transform the data
-        const members = teamMembersData.map(member => ({
+        // Fix: Transform the data properly - profiles is a single object, not an array
+        const members: TeamMember[] = (teamMembersData || []).map(member => ({
           id: member.id,
           user_id: member.user_id,
           role: member.role,
           joined_at: member.joined_at,
-          profiles: member.profiles
+          profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
         }));
 
         // Load pending invitations if user is admin
