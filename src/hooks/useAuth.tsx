@@ -20,16 +20,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
 
   // Initialize auth state only once
   useEffect(() => {
-    if (initialized) return;
-    
     console.log('Initializing auth state...');
     
     let mounted = true;
-    
+    let loadingTimeout: NodeJS.Timeout;
+
     const initializeAuth = async () => {
       try {
         // Set up auth state listener first
@@ -40,15 +38,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           console.log('Auth state changed:', event, session?.user?.email || 'no user');
           
+          // Clear any existing timeout
+          if (loadingTimeout) {
+            clearTimeout(loadingTimeout);
+          }
+          
           // Update user state
           setUser(session?.user ?? null);
           
-          // Only set loading to false after we've processed the auth state
-          if (event !== 'TOKEN_REFRESHED' || session) {
-            setLoading(false);
-          }
+          // Always set loading to false when we have a definitive auth state
+          setLoading(false);
           
-          // Clean up invalid tokens when user signs in (but not on every auth event)
+          // Clean up invalid tokens when user signs in
           if (session?.user && event === 'SIGNED_IN') {
             setTimeout(() => clearInvalidTokens(), 500);
           }
@@ -66,7 +67,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           setUser(session?.user ?? null);
           setLoading(false);
-          setInitialized(true);
           
           // Clean up invalid tokens if there's a user
           if (session?.user) {
@@ -74,14 +74,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
 
+        // Set a timeout fallback to prevent infinite loading
+        loadingTimeout = setTimeout(() => {
+          if (mounted) {
+            console.log('Auth loading timeout - forcing loading to false');
+            setLoading(false);
+          }
+        }, 5000);
+
         return () => {
           subscription.unsubscribe();
+          if (loadingTimeout) {
+            clearTimeout(loadingTimeout);
+          }
         };
       } catch (error) {
         if (mounted) {
           console.error('Auth initialization error:', error);
           setLoading(false);
-          setInitialized(true);
         }
       }
     };
@@ -92,11 +102,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       cleanup?.then(cleanupFn => cleanupFn?.());
     };
-  }, [initialized]);
+  }, []); // Remove dependencies to prevent re-initialization
 
   const signIn = useCallback(async (email: string, password: string) => {
     console.log('Attempting to sign in:', email);
-    setLoading(true);
     
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -106,15 +115,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('Sign in error:', error);
-        setLoading(false);
         return { error };
       }
       
-      // Success - auth state change will handle setting loading to false
+      // Success - auth state change will handle the rest
+      console.log('Sign in successful');
       return { error: null };
     } catch (err) {
       console.error('Sign in catch error:', err);
-      setLoading(false);
       return { error: err };
     }
   }, []);
@@ -151,7 +159,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = useCallback(async () => {
     try {
       console.log('Attempting to sign out...')
-      setLoading(true);
       
       const { error } = await supabase.auth.signOut()
       
@@ -162,16 +169,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear any pending invitation tokens on logout
       localStorage.removeItem('pendingInvitationToken')
       
-      // Force clear the user state locally
-      setUser(null)
-      setLoading(false);
-      console.log('User state cleared locally')
+      console.log('Sign out completed')
       
     } catch (error) {
       console.error('Logout error:', error)
-      // Always clear local state even if logout fails
-      setUser(null)
-      setLoading(false);
+      // Clear local storage even if logout fails
       localStorage.removeItem('pendingInvitationToken')
       console.log('User state cleared due to error')
     }
