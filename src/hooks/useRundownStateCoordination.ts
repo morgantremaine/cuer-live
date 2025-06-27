@@ -209,7 +209,9 @@ export const useRundownStateCoordination = () => {
           isEditable: true,
           isVisible: true
         };
-        simplifiedState.addColumn(newColumn);
+        if (simplifiedState.addColumn) {
+          simplifiedState.addColumn(newColumn);
+        }
       },
       addColumn: simplifiedState.addColumn,
       updateColumnWidth: simplifiedState.updateColumnWidth,

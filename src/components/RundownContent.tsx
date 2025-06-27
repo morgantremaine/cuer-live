@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import RundownTableHeader from './RundownTableHeader';
@@ -29,7 +30,7 @@ interface RundownContentProps {
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
-  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string, itemIndex: number) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
