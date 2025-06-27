@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -45,6 +44,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email || 'no user');
       
+      // Handle token refresh errors gracefully
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.log('Token refresh failed, but maintaining current user state');
+        // Don't clear user state on token refresh failure
+        setLoading(false);
+        return;
+      }
+      
+      // Handle sign out events
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, clearing state');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
       // Use debounced setter to prevent rapid updates
       debouncedSetUser(session?.user ?? null);
       setLoading(false);
@@ -57,20 +72,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    // THEN get initial session
+    // THEN get initial session with better error handling
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('Error getting initial session:', error);
+        // Don't treat session retrieval errors as sign-out events
+        // Just log the error and continue
+      } else {
+        console.log('Initial session:', session?.user?.email || 'no user');
+        debouncedSetUser(session?.user ?? null);
+        
+        // Only clean up invalid tokens if there's a user
+        if (session?.user) {
+          setTimeout(() => clearInvalidTokens(), 1000);
+        }
       }
-      console.log('Initial session:', session?.user?.email || 'no user');
-      debouncedSetUser(session?.user ?? null);
+      
       setLoading(false);
       setAuthInitialized(true);
-      
-      // Only clean up invalid tokens if there's a user
-      if (session?.user) {
-        setTimeout(() => clearInvalidTokens(), 1000);
-      }
     })
 
     return () => {
@@ -82,13 +101,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Memoize auth functions to prevent unnecessary re-renders
   const signIn = useCallback(async (email: string, password: string) => {
     console.log('Attempting to sign in:', email);
+    setLoading(true);
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+    
     if (error) {
       console.error('Sign in error:', error);
+      setLoading(false);
     }
+    // Don't set loading to false here on success - let the auth state change handle it
+    
     return { error }
   }, []);
 
@@ -124,6 +149,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = useCallback(async () => {
     try {
       console.log('Attempting to sign out...')
+      setLoading(true);
+      
       const { error } = await supabase.auth.signOut()
       
       if (error) {
@@ -135,12 +162,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Force clear the user state locally
       setUser(null)
+      setLoading(false);
       console.log('User state cleared locally')
       
     } catch (error) {
       console.error('Logout error:', error)
       // Always clear local state even if logout fails
       setUser(null)
+      setLoading(false);
       localStorage.removeItem('pendingInvitationToken')
       console.log('User state cleared due to error')
     }
