@@ -8,6 +8,7 @@ export interface Column {
   visible?: boolean;
   isCustom?: boolean;
   isResizable?: boolean;
+  isEditable?: boolean; // Add the missing property
 }
 
 export interface CoreRundownState {

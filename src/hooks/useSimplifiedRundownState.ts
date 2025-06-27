@@ -22,7 +22,7 @@ export const useSimplifiedRundownState = () => {
   const [columns, setColumns] = useState<Column[]>([]);
   const [rundownTitle, setRundownTitle] = useState('Untitled Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('12:00:00');
-  const [timezone, setRundownTimezone] = useState('America/New_York');
+  const [timezone, setTimezone] = useState('America/New_York');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -37,15 +37,8 @@ export const useSimplifiedRundownState = () => {
   const changeTracking = useChangeTracking();
   const isInitialLoadRef = useRef(true);
 
-  // Undo/Redo state
-  const {
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    lastAction,
-    registerAction
-  } = useStandaloneUndo();
+  // Undo/Redo state - fix the hook usage
+  const undoSystem = useStandaloneUndo();
 
   // Autosave
   useAutoSave({
@@ -62,7 +55,19 @@ export const useSimplifiedRundownState = () => {
       
       setIsSaving(true);
       try {
-        await storage.saveRundown(rundownId, data.items, data.columns, data.rundownTitle, data.rundownStartTime, data.timezone);
+        await storage.saveRundown({
+          id: rundownId,
+          title: data.rundownTitle,
+          items: data.items,
+          columns: data.columns,
+          start_time: data.rundownStartTime,
+          timezone: data.timezone,
+          updated_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          user_id: '',
+          archived: false,
+          folder_id: null
+        });
         changeTracking.markAsSaved(data.items, data.rundownTitle, data.columns, data.timezone, data.rundownStartTime);
         return true;
       } catch (error) {
@@ -89,14 +94,16 @@ export const useSimplifiedRundownState = () => {
     const loadRundown = async () => {
       setIsLoading(true);
       try {
-        const data = await storage.loadSingleRundown(rundownId);
+        // Use the correct method name from storage
+        const savedRundowns = await storage.loadRundowns();
+        const data = savedRundowns.find(r => r.id === rundownId);
         if (data) {
           setItems(data.items);
           setColumns(data.columns);
-          setRundownTitle(data.rundownTitle);
-          setRundownStartTime(data.rundownStartTime);
-          setRundownTimezone(data.timezone);
-          changeTracking.markAsSaved(data.items, data.rundownTitle, data.columns, data.timezone, data.rundownStartTime);
+          setRundownTitle(data.title);
+          setRundownStartTime(data.start_time);
+          setTimezone(data.timezone);
+          changeTracking.markAsSaved(data.items, data.title, data.columns, data.timezone, data.start_time);
         }
       } catch (error) {
         logger.error('Error loading rundown:', error);
@@ -121,7 +128,7 @@ export const useSimplifiedRundownState = () => {
       setColumns(updatedRundown.columns || []);
       setRundownTitle(updatedRundown.title || 'Untitled Rundown');
       setRundownStartTime(updatedRundown.start_time || '12:00:00');
-      setRundownTimezone(updatedRundown.timezone || 'America/New_York');
+      setTimezone(updatedRundown.timezone || 'America/New_York');
       
       // Reset change tracking after applying remote update
       changeTracking.markAsSaved(
@@ -177,10 +184,6 @@ export const useSimplifiedRundownState = () => {
 
   const setStartTime = useCallback((startTime: string) => {
     setRundownStartTime(startTime);
-  }, []);
-
-  const setTimezone = useCallback((timezone: string) => {
-    setRundownTimezone(timezone);
   }, []);
 
   const addRow = useCallback(() => {
@@ -332,11 +335,10 @@ export const useSimplifiedRundownState = () => {
     handleRowSelection: setSelectedRowId,
     clearRowSelection: () => setSelectedRowId(null),
     
-    // Calculations
+    // Calculations - fix getRowNumber to match expected signature
     totalRuntime: calculateTotalRuntime(items),
-    getRowNumber: (itemId: string) => {
-      const index = items.findIndex(item => item.id === itemId);
-      return index >= 0 ? index + 1 : 0;
+    getRowNumber: (index: number) => {
+      return (index + 1).toString();
     },
     getHeaderDuration: (headerId: string) => {
       const headerIndex = items.findIndex(item => item.id === headerId);
@@ -379,9 +381,9 @@ export const useSimplifiedRundownState = () => {
     updateColumnWidth,
     setColumns,
     
-    // Undo functionality
-    undo,
-    canUndo,
-    lastAction
+    // Undo functionality - use the actual available methods
+    undo: undoSystem.undo,
+    canUndo: undoSystem.canUndo,
+    lastAction: undoSystem.lastAction
   };
 };
