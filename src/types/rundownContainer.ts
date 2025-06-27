@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -81,4 +82,22 @@ export interface RundownContainerProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+
+  // Find/Replace functionality
+  searchTerm?: string;
+  caseSensitive?: boolean;
+  currentMatchIndex?: number;
+  matchCount?: number;
+  matches?: any[];
+  findReplaceActions?: {
+    setSearchTerm: (term: string) => void;
+    setReplaceTerm: (term: string) => void;
+    setCaseSensitive: (caseSensitive: boolean) => void;
+    nextMatch: () => void;
+    previousMatch: () => void;
+    replaceCurrent: () => void;
+    replaceAll: () => void;
+    reset: () => void;
+    replaceTerm: string;
+  };
 }
