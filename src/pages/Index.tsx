@@ -118,7 +118,7 @@ const Index = () => {
     onForward: coreState.forward,
     onBackward: coreState.backward,
     onReset: coreState.reset,
-    handleAddColumn: coreState.addColumn,
+    handleAddColumn: coreState.handleAddColumn, // This now correctly accepts a string
     handleReorderColumns: coreState.setColumns,
     handleDeleteColumnWithCleanup: (columnId: string) => {
       const newColumns = coreState.columns.filter(col => col.id !== columnId);
