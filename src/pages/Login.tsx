@@ -1,4 +1,6 @@
-import { useState } from 'react'
+
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,8 +20,18 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
-  const { signIn, signUp, resetPassword, resendConfirmation } = useAuth()
+  const { user, signIn, signUp, resetPassword, resendConfirmation } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      const from = location.state?.from?.pathname || '/dashboard'
+      navigate(from, { replace: true })
+    }
+  }, [user, navigate, location])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +59,7 @@ const Login = () => {
         title: 'Success',
         description: 'Signed in successfully!',
       })
-      // Remove manual navigation - let App.tsx handle the redirect based on auth state
+      // Navigation will be handled by useEffect above
     }
     
     setLoading(false)
